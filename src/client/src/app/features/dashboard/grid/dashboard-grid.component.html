@@ -1,0 +1,76 @@
+<div class="flex flex-col border border-gray-300 rounded-lg overflow-hidden">
+  <!-- Zoom control -->
+  <div class="flex items-center justify-end border-b border-gray-200 bg-white px-4 py-2">
+    <app-zoom-control
+      [zoomLevel]="zoomLevel()"
+      (zoomChange)="onZoomChange($event)"
+    />
+  </div>
+
+  <!-- Scrollable grid area -->
+  <div class="overflow-x-auto">
+    <div class="flex">
+      <!-- Left labels column -->
+      <div class="flex-none w-48 bg-white border-r border-gray-300">
+        <!-- Header spacer -->
+        <div class="border-b border-gray-300 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
+          Trial
+        </div>
+        @if (hasSubColumns()) {
+          <div class="border-b border-gray-200 bg-gray-50 px-3 py-0.5 text-xs text-gray-400">
+            &nbsp;
+          </div>
+        }
+
+        <!-- Row labels -->
+        @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+          <div
+            class="border-b border-gray-200 px-3 py-2 text-sm text-gray-700 truncate"
+            [class.bg-white]="idx % 2 === 0"
+            [class.bg-gray-50]="idx % 2 !== 0"
+            [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+          >
+            {{ row.trial.name }}
+          </div>
+        }
+      </div>
+
+      <!-- Timeline area -->
+      <div class="flex-1 min-w-0">
+        <!-- Header -->
+        <app-grid-header
+          [columns]="columns()"
+          [totalWidth]="totalWidth()"
+        />
+
+        <!-- Trial rows -->
+        <div [style.width.px]="totalWidth()">
+          @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+            <div
+              class="relative border-b border-gray-200"
+              [class.bg-white]="idx % 2 === 0"
+              [class.bg-gray-50]="idx % 2 !== 0"
+              [style.height.px]="36"
+            >
+              <!-- Vertical grid lines -->
+              @for (col of columns(); track col.label) {
+                <div
+                  class="absolute top-0 bottom-0 border-l border-gray-100"
+                  [style.left.px]="col.startX"
+                ></div>
+                @if (col.subColumns) {
+                  @for (sub of col.subColumns; track sub.label) {
+                    <div
+                      class="absolute top-0 bottom-0 border-l border-gray-50"
+                      [style.left.px]="sub.startX"
+                    ></div>
+                  }
+                }
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
