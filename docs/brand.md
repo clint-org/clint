@@ -47,6 +47,15 @@ Each clinical phase has a distinct, meaningful color:
 - Borders are slate-200, not gray-300
 - Subtle alternating row tints, not stark zebra striping
 
+## PrimeNG Theming
+
+- Base preset: **Aura** (from `@primeng/themes/aura`)
+- Primary palette: **Teal** (50-950) -- maps to brand hero accent
+- Surface palette: **Slate** (50-950) -- maps to brand neutrals
+- Dark mode: **Disabled** (`darkModeSelector: false`)
+- Icons: **FontAwesome** (`@fortawesome/fontawesome-free`) for custom icons
+- Theme config: `src/client/src/app/config/primeng-theme.ts`
+
 ## Anti-Patterns (Avoid)
 - Generic indigo-600 as accent (use teal)
 - Pure gray palette (use slate-tinted)

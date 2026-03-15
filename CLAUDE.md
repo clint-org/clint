@@ -1,7 +1,7 @@
 # Clinical Trial Status Dashboard
 
 ## Tech Stack
-- **Frontend:** Angular 19 (standalone components, no SSR) with Tailwind CSS v4, deployed to Netlify
+- **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Netlify
 - **Backend:** Supabase (Auth, Database)
 - **Database:** PostgreSQL via Supabase
 - **Auth:** Google OAuth via Supabase Auth
@@ -38,12 +38,22 @@ Follow `docs/brand.md` for all visual decisions. Key points:
 - Keep data access logic in services, not components
 - Cross-cutting validation logic goes in shared services, not inline in components
 
+## PrimeNG Conventions
+
+- Use **PrimeNG 19** as the baseline UI component library
+- Custom theme preset in `src/app/config/primeng-theme.ts` (Aura base, teal primary, slate surface)
+- Import PrimeNG components directly in standalone component `imports` arrays (e.g., `TableModule`, `ButtonModule`, `Dialog`)
+- Use `p-table` for all data tables, `p-dialog` for modals, `p-button` for buttons
+- Use PrimeNG form components (`pInputText`, `p-inputnumber`, `p-select`, `p-colorpicker`, `pTextarea`, `p-checkbox`) over native HTML inputs
+- Use design tokens for theming -- do not override PrimeNG colors with inline Tailwind color classes
+- Domain-specific visualization components (SVG timeline, phase bars, markers) remain custom
+
 ## Tailwind CSS Conventions
 
 - Use **Tailwind CSS v4** with the PostCSS plugin (`.postcssrc.json`)
 - Import via `@import "tailwindcss"` in `src/styles.css`
-- Use utility classes directly in templates -- avoid custom CSS unless absolutely necessary
-- No component library (no Angular Material, no DaisyUI) -- pure Tailwind utilities
+- Use utility classes for layout (`flex`, `grid`, `gap`, `p-*`, `m-*`), spacing, and responsive design
+- Tailwind handles layout around PrimeNG components; PrimeNG handles interactive component styling
 - Responsive design via Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`)
 
 ## Supabase Local Development
@@ -80,7 +90,8 @@ src/client/
   src/app/
     core/           # Auth, services, models
     features/       # Feature modules (auth, dashboard, manage)
-    shared/         # Reusable components (modal, multi-select, svg-icons)
+    shared/         # Reusable components (svg-icons)
+    config/         # App configuration (PrimeNG theme preset)
 supabase/
   migrations/       # Timestamped migration SQL files (source of truth for schema)
   seed.sql          # Marker types + demo data (run after migrations)
