@@ -1,7 +1,7 @@
 {
   "specId": "spec-2026-001",
-  "status": "draft",
-  "branch": null,
+  "status": "in-progress",
+  "branch": "spec/clinical-trial-dashboard",
   "tasks": {
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
