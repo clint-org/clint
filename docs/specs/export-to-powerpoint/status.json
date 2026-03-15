@@ -1,0 +1,11 @@
+{
+  "specId": "spec-2026-003",
+  "status": "draft",
+  "branch": null,
+  "tasks": {
+    "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T3": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+  },
+  "updatedAt": "2026-03-15T15:00:00Z"
+}
