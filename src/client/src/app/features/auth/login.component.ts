@@ -6,12 +6,12 @@ import { SupabaseService } from '../../core/services/supabase.service';
   selector: 'app-login',
   standalone: true,
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-50">
+    <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 class="mb-2 text-center text-3xl font-bold text-gray-900">
+        <h1 class="mb-2 text-center text-3xl font-bold text-slate-900">
           Clinical Trial Dashboard
         </h1>
-        <p class="mb-8 text-center text-gray-600">
+        <p class="mb-8 text-center text-slate-600">
           Sign in to continue
         </p>
 
@@ -24,12 +24,12 @@ import { SupabaseService } from '../../core/services/supabase.service';
         <button
           (click)="signInWithGoogle()"
           [disabled]="loading()"
-          class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          class="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Sign in with Google"
         >
           @if (loading()) {
             <svg
-              class="h-5 w-5 animate-spin text-gray-500"
+              class="h-5 w-5 animate-spin text-slate-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"

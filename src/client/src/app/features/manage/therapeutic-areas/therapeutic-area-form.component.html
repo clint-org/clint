@@ -6,13 +6,13 @@
   }
 
   <div class="mb-4">
-    <label for="ta-name" class="mb-1 block text-sm font-medium text-gray-700">
+    <label for="ta-name" class="mb-1 block text-sm font-medium text-slate-700">
       Name
     </label>
     <input
       id="ta-name"
       type="text"
-      class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
       [class.border-red-500]="nameInvalid"
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
@@ -27,13 +27,13 @@
   </div>
 
   <div class="mb-6">
-    <label for="ta-abbreviation" class="mb-1 block text-sm font-medium text-gray-700">
+    <label for="ta-abbreviation" class="mb-1 block text-sm font-medium text-slate-700">
       Abbreviation
     </label>
     <input
       id="ta-abbreviation"
       type="text"
-      class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
       [ngModel]="abbreviation()"
       (ngModelChange)="abbreviation.set($event)"
     />
@@ -42,14 +42,14 @@
   <div class="flex justify-end gap-3">
     <button
       type="button"
-      class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
       (click)="cancelled.emit()"
     >
       Cancel
     </button>
     <button
       type="submit"
-      class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+      class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
       [disabled]="submitting()"
     >
       {{ isEdit ? 'Update' : 'Create' }}

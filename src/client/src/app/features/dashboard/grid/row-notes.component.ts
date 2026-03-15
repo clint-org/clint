@@ -9,7 +9,7 @@ import { TrialNote } from '../../../core/models/trial.model';
     <div class="flex max-w-xs flex-col gap-0.5 px-2 py-1">
       @if (trialNotes()) {
         <span
-          class="truncate text-sm text-gray-700"
+          class="truncate text-sm text-slate-700"
           [title]="trialNotes()!"
         >
           {{ trialNotes() }}
@@ -19,7 +19,7 @@ import { TrialNote } from '../../../core/models/trial.model';
         <div class="flex flex-col gap-0.5">
           @for (note of notes(); track note.id) {
             <span
-              class="truncate text-sm text-gray-500"
+              class="truncate text-sm text-slate-500"
               [title]="note.content"
             >
               {{ note.content }}

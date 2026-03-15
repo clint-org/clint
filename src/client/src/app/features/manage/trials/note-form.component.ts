@@ -11,7 +11,7 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4">
       <div>
-        <label for="note-content" class="block text-sm font-medium text-gray-700">
+        <label for="note-content" class="block text-sm font-medium text-slate-700">
           Content
         </label>
         <textarea
@@ -21,8 +21,8 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
           rows="4"
           required
           aria-required="true"
-          class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+                 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           placeholder="Enter note content"
         ></textarea>
       </div>
@@ -31,9 +31,9 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
         <button
           type="button"
           (click)="cancelled.emit()"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium
-                 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2
-                 focus:ring-blue-500 focus:ring-offset-2"
+          class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
+                 text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
+                 focus:ring-teal-500 focus:ring-offset-2"
           aria-label="Cancel note form"
         >
           Cancel
@@ -41,8 +41,8 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
         <button
           type="submit"
           [disabled]="saving()"
-          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white
-                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+          class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
+                 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
                  focus:ring-offset-2 disabled:opacity-50"
           aria-label="Save note"
         >

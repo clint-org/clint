@@ -1,7 +1,7 @@
 <form (ngSubmit)="onSubmit()" class="space-y-4">
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <div class="sm:col-span-2">
-      <label for="trial-name" class="block text-sm font-medium text-gray-700">
+      <label for="trial-name" class="block text-sm font-medium text-slate-700">
         Name <span class="text-red-500">*</span>
       </label>
       <input
@@ -11,14 +11,14 @@
         name="name"
         required
         aria-required="true"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         placeholder="Trial name"
       />
     </div>
 
     <div>
-      <label for="trial-identifier" class="block text-sm font-medium text-gray-700">
+      <label for="trial-identifier" class="block text-sm font-medium text-slate-700">
         Identifier
       </label>
       <input
@@ -26,23 +26,23 @@
         type="text"
         [(ngModel)]="identifier"
         name="identifier"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         placeholder="e.g. NCT12345678"
         aria-label="Trial identifier"
       />
     </div>
 
     <div>
-      <label for="trial-status" class="block text-sm font-medium text-gray-700">
+      <label for="trial-status" class="block text-sm font-medium text-slate-700">
         Status
       </label>
       <select
         id="trial-status"
         [(ngModel)]="status"
         name="status"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Trial status"
       >
         <option value="">Select status</option>
@@ -53,15 +53,15 @@
     </div>
 
     <div>
-      <label for="trial-product" class="block text-sm font-medium text-gray-700">
+      <label for="trial-product" class="block text-sm font-medium text-slate-700">
         Product
       </label>
       <select
         id="trial-product"
         [(ngModel)]="productId"
         name="productId"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Trial product"
       >
         <option value="">Select product</option>
@@ -72,15 +72,15 @@
     </div>
 
     <div>
-      <label for="trial-therapeutic-area" class="block text-sm font-medium text-gray-700">
+      <label for="trial-therapeutic-area" class="block text-sm font-medium text-slate-700">
         Therapeutic Area
       </label>
       <select
         id="trial-therapeutic-area"
         [(ngModel)]="therapeuticAreaId"
         name="therapeuticAreaId"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Trial therapeutic area"
       >
         <option value="">Select therapeutic area</option>
@@ -91,7 +91,7 @@
     </div>
 
     <div>
-      <label for="trial-sample-size" class="block text-sm font-medium text-gray-700">
+      <label for="trial-sample-size" class="block text-sm font-medium text-slate-700">
         Sample Size
       </label>
       <input
@@ -100,14 +100,14 @@
         [(ngModel)]="sampleSize"
         name="sampleSize"
         min="0"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Trial sample size"
       />
     </div>
 
     <div>
-      <label for="trial-display-order" class="block text-sm font-medium text-gray-700">
+      <label for="trial-display-order" class="block text-sm font-medium text-slate-700">
         Display Order
       </label>
       <input
@@ -116,14 +116,14 @@
         [(ngModel)]="displayOrder"
         name="displayOrder"
         min="0"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Trial display order"
       />
     </div>
 
     <div class="sm:col-span-2">
-      <label for="trial-notes" class="block text-sm font-medium text-gray-700">
+      <label for="trial-notes" class="block text-sm font-medium text-slate-700">
         Notes
       </label>
       <textarea
@@ -131,8 +131,8 @@
         [(ngModel)]="notes"
         name="notes"
         rows="3"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         placeholder="Additional notes"
         aria-label="Trial notes"
       ></textarea>
@@ -143,9 +143,9 @@
     <button
       type="button"
       (click)="cancelled.emit()"
-      class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium
-             text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2
-             focus:ring-blue-500 focus:ring-offset-2"
+      class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
+             text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
+             focus:ring-teal-500 focus:ring-offset-2"
       aria-label="Cancel trial form"
     >
       Cancel
@@ -153,8 +153,8 @@
     <button
       type="submit"
       [disabled]="saving()"
-      class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white
-             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+      class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
+             hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
              focus:ring-offset-2 disabled:opacity-50"
       aria-label="Save trial"
     >

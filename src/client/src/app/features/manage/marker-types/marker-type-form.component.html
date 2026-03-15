@@ -1,7 +1,7 @@
 <form (ngSubmit)="onSubmit()" class="space-y-4">
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <div class="sm:col-span-2">
-      <label for="mt-name" class="block text-sm font-medium text-gray-700">
+      <label for="mt-name" class="block text-sm font-medium text-slate-700">
         Name <span class="text-red-500">*</span>
       </label>
       <input
@@ -11,14 +11,14 @@
         name="name"
         required
         aria-required="true"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         placeholder="Marker type name"
       />
     </div>
 
     <div>
-      <label for="mt-shape" class="block text-sm font-medium text-gray-700">
+      <label for="mt-shape" class="block text-sm font-medium text-slate-700">
         Shape
       </label>
       <select
@@ -27,8 +27,8 @@
         name="shape"
         required
         aria-required="true"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
       >
         @for (s of shapes; track s) {
           <option [value]="s">{{ s }}</option>
@@ -37,7 +37,7 @@
     </div>
 
     <div>
-      <label for="mt-fill-style" class="block text-sm font-medium text-gray-700">
+      <label for="mt-fill-style" class="block text-sm font-medium text-slate-700">
         Fill Style
       </label>
       <select
@@ -46,8 +46,8 @@
         name="fillStyle"
         required
         aria-required="true"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
       >
         @for (fs of fillStyles; track fs) {
           <option [value]="fs">{{ fs }}</option>
@@ -56,7 +56,7 @@
     </div>
 
     <div>
-      <label for="mt-color" class="block text-sm font-medium text-gray-700">
+      <label for="mt-color" class="block text-sm font-medium text-slate-700">
         Color
       </label>
       <input
@@ -64,13 +64,13 @@
         type="color"
         [(ngModel)]="color"
         name="color"
-        class="mt-1 block h-10 w-20 cursor-pointer rounded-md border border-gray-300"
+        class="mt-1 block h-10 w-20 cursor-pointer rounded-md border border-slate-300"
         aria-label="Marker type color"
       />
     </div>
 
     <div>
-      <label for="mt-icon" class="block text-sm font-medium text-gray-700">
+      <label for="mt-icon" class="block text-sm font-medium text-slate-700">
         Icon
       </label>
       <input
@@ -78,15 +78,15 @@
         type="text"
         [(ngModel)]="icon"
         name="icon"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         placeholder="Optional icon identifier"
         aria-label="Marker type icon"
       />
     </div>
 
     <div>
-      <label for="mt-display-order" class="block text-sm font-medium text-gray-700">
+      <label for="mt-display-order" class="block text-sm font-medium text-slate-700">
         Display Order
       </label>
       <input
@@ -95,16 +95,16 @@
         [(ngModel)]="displayOrder"
         name="displayOrder"
         min="0"
-        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-               focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+               focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
         aria-label="Marker type display order"
       />
     </div>
   </div>
 
   <!-- Preview -->
-  <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
-    <p class="mb-2 text-sm font-medium text-gray-700">Preview</p>
+  <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+    <p class="mb-2 text-sm font-medium text-slate-700">Preview</p>
     <div class="flex items-center gap-3">
       <svg
         width="32"
@@ -166,7 +166,7 @@
           }
         }
       </svg>
-      <span class="text-sm text-gray-600">{{ name || 'Untitled' }} -- {{ shape }}, {{ fillStyle }}</span>
+      <span class="text-sm text-slate-600">{{ name || 'Untitled' }} -- {{ shape }}, {{ fillStyle }}</span>
     </div>
   </div>
 
@@ -174,9 +174,9 @@
     <button
       type="button"
       (click)="cancelled.emit()"
-      class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium
-             text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2
-             focus:ring-blue-500 focus:ring-offset-2"
+      class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
+             text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
+             focus:ring-teal-500 focus:ring-offset-2"
       aria-label="Cancel marker type form"
     >
       Cancel
@@ -184,8 +184,8 @@
     <button
       type="submit"
       [disabled]="saving()"
-      class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white
-             hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+      class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
+             hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
              focus:ring-offset-2 disabled:opacity-50"
       aria-label="Save marker type"
     >

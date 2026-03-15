@@ -7,13 +7,13 @@ import { Trial } from '../../../core/models/trial.model';
   standalone: true,
   template: `
     <div
-      class="flex border-b border-gray-200"
+      class="flex border-b border-slate-200"
       [class.bg-white]="even()"
-      [class.bg-gray-50]="!even()"
+      [class.bg-slate-50]="!even()"
     >
       <!-- Trial name label -->
       <div
-        class="w-48 flex-none border-r border-gray-200 px-3 py-2 text-sm text-gray-700 truncate"
+        class="w-48 flex-none border-r border-slate-200 px-3 py-2 text-sm text-slate-700 truncate"
         [title]="trial().name"
       >
         {{ trial().name }}

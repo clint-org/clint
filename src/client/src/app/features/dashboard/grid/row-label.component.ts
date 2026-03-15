@@ -5,7 +5,7 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div
-      class="border-b border-r border-gray-200 px-3 py-2 text-left text-sm font-medium text-gray-800"
+      class="border-b border-r border-slate-200 px-3 py-2 text-left text-sm font-medium text-slate-800"
       [style.grid-row]="'span ' + rowSpan()"
     >
       {{ label() }}

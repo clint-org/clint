@@ -12,7 +12,7 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
     <form (ngSubmit)="onSubmit()" class="space-y-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="phase-type" class="block text-sm font-medium text-gray-700">
+          <label for="phase-type" class="block text-sm font-medium text-slate-700">
             Phase Type
           </label>
           <select
@@ -21,8 +21,8 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
             name="phaseType"
             required
             aria-required="true"
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="" disabled>Select phase type</option>
             @for (pt of phaseTypes; track pt) {
@@ -32,7 +32,7 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
         </div>
 
         <div>
-          <label for="phase-label" class="block text-sm font-medium text-gray-700">
+          <label for="phase-label" class="block text-sm font-medium text-slate-700">
             Label
           </label>
           <input
@@ -40,14 +40,14 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
             type="text"
             [(ngModel)]="label"
             name="label"
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
             aria-label="Phase label"
           />
         </div>
 
         <div>
-          <label for="phase-start-date" class="block text-sm font-medium text-gray-700">
+          <label for="phase-start-date" class="block text-sm font-medium text-slate-700">
             Start Date
           </label>
           <input
@@ -57,13 +57,13 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
             name="startDate"
             required
             aria-required="true"
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
 
         <div>
-          <label for="phase-end-date" class="block text-sm font-medium text-gray-700">
+          <label for="phase-end-date" class="block text-sm font-medium text-slate-700">
             End Date
           </label>
           <input
@@ -71,14 +71,14 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
             type="date"
             [(ngModel)]="endDate"
             name="endDate"
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
+                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
             aria-label="Phase end date"
           />
         </div>
 
         <div>
-          <label for="phase-color" class="block text-sm font-medium text-gray-700">
+          <label for="phase-color" class="block text-sm font-medium text-slate-700">
             Color
           </label>
           <input
@@ -86,7 +86,7 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
             type="color"
             [(ngModel)]="color"
             name="color"
-            class="mt-1 block h-10 w-20 cursor-pointer rounded-md border border-gray-300"
+            class="mt-1 block h-10 w-20 cursor-pointer rounded-md border border-slate-300"
             aria-label="Phase color"
           />
         </div>
@@ -96,9 +96,9 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
         <button
           type="button"
           (click)="cancelled.emit()"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium
-                 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2
-                 focus:ring-blue-500 focus:ring-offset-2"
+          class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
+                 text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
+                 focus:ring-teal-500 focus:ring-offset-2"
           aria-label="Cancel phase form"
         >
           Cancel
@@ -106,8 +106,8 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
         <button
           type="submit"
           [disabled]="saving()"
-          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white
-                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+          class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
+                 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
                  focus:ring-offset-2 disabled:opacity-50"
           aria-label="Save phase"
         >
