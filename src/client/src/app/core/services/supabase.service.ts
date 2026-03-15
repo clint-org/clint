@@ -9,13 +9,24 @@ export class SupabaseService {
   readonly currentUser = signal<User | null>(null);
   readonly session = signal<Session | null>(null);
 
+  private sessionReady: Promise<void>;
+
   constructor() {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
+
+    this.sessionReady = this.supabase.auth.getSession().then(({ data }) => {
+      this.session.set(data.session);
+      this.currentUser.set(data.session?.user ?? null);
+    });
 
     this.supabase.auth.onAuthStateChange((_event, session) => {
       this.session.set(session);
       this.currentUser.set(session?.user ?? null);
     });
+  }
+
+  waitForSession(): Promise<void> {
+    return this.sessionReady;
   }
 
   get client(): SupabaseClient {

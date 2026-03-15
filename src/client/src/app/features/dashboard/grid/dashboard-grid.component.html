@@ -5,10 +5,10 @@
       <!-- Left labels columns -->
       <div class="flex-none bg-white border-r border-slate-200">
         <!-- Header row -->
-        <div class="flex border-b border-slate-200 bg-slate-50">
-          <div class="w-36 px-3 py-1 text-sm font-semibold text-slate-500">Company</div>
-          <div class="w-32 px-3 py-1 text-sm font-semibold text-slate-500 border-l border-slate-200">Product</div>
-          <div class="w-48 px-3 py-1 text-sm font-semibold text-slate-500 border-l border-slate-200">Trial</div>
+        <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
+          <div class="w-36 px-3 text-xs font-semibold text-slate-500">Company</div>
+          <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Product</div>
+          <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Trial</div>
         </div>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-50/50">
@@ -135,7 +135,7 @@
       <!-- Notes column -->
       @if (flattenedTrials().length > 0) {
         <div class="flex-none w-48 bg-white border-l border-slate-200">
-          <div class="border-b border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-500">
+          <div class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold text-slate-500">
             Notes
           </div>
           @if (hasSubColumns()) {

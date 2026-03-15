@@ -8,10 +8,10 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
   template: `
     <div class="relative" [style.width.px]="totalWidth()">
       <!-- Primary row (years) -->
-      <div class="flex border-b border-slate-200 bg-slate-50">
+      <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
         @for (col of columns(); track col.label) {
           <div
-            class="flex-none border-r border-slate-200 px-2 py-1 text-center font-mono text-xs tracking-wider font-semibold text-slate-600"
+            class="flex-none border-r border-slate-200 px-2 text-center font-mono text-xs tracking-wider font-semibold text-slate-600"
             [style.width.px]="col.width"
           >
             {{ col.label }}
