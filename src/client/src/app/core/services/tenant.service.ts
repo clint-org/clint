@@ -8,19 +8,12 @@ export class TenantService {
   private supabase = inject(SupabaseService);
 
   async createTenant(name: string, slug: string): Promise<Tenant> {
-    const { data: tenant, error: tenantError } = await this.supabase.client
-      .from('tenants')
-      .insert({ name, slug })
-      .select()
-      .single();
-    if (tenantError) throw tenantError;
-
-    const { error: memberError } = await this.supabase.client
-      .from('tenant_members')
-      .insert({ tenant_id: tenant.id, user_id: (await this.supabase.client.auth.getUser()).data.user!.id, role: 'owner' });
-    if (memberError) throw memberError;
-
-    return tenant;
+    const { data, error } = await this.supabase.client.rpc('create_tenant', {
+      p_name: name,
+      p_slug: slug,
+    });
+    if (error) throw error;
+    return data as Tenant;
   }
 
   async listMyTenants(): Promise<Tenant[]> {

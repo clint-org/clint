@@ -8,20 +8,13 @@ export class SpaceService {
   private supabase = inject(SupabaseService);
 
   async createSpace(tenantId: string, name: string, description?: string): Promise<Space> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
-    const { data: space, error: spaceError } = await this.supabase.client
-      .from('spaces')
-      .insert({ tenant_id: tenantId, name, description: description ?? null, created_by: userId })
-      .select()
-      .single();
-    if (spaceError) throw spaceError;
-
-    const { error: memberError } = await this.supabase.client
-      .from('space_members')
-      .insert({ space_id: space.id, user_id: userId, role: 'owner' });
-    if (memberError) throw memberError;
-
-    return space;
+    const { data, error } = await this.supabase.client.rpc('create_space', {
+      p_tenant_id: tenantId,
+      p_name: name,
+      p_description: description ?? null,
+    });
+    if (error) throw error;
+    return data as Space;
   }
 
   async listSpaces(tenantId: string): Promise<Space[]> {
