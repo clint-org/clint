@@ -1,4 +1,4 @@
-<div class="relative" #container>
+<div class="relative">
   <button
     type="button"
     class="flex w-full items-center justify-between rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:border-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none"
@@ -31,6 +31,9 @@
   </button>
 
   @if (isOpen()) {
+    <!-- Invisible backdrop to close dropdown when clicking outside -->
+    <div class="fixed inset-0 z-40" (click)="close()"></div>
+
     <div
       class="absolute z-50 mt-1 w-full min-w-[200px] rounded-md border border-slate-200 bg-white shadow-lg"
       role="listbox"
@@ -43,14 +46,14 @@
         <button
           type="button"
           class="text-xs font-medium text-teal-600 hover:text-teal-800 focus:outline-none focus:underline"
-          (click)="selectAll($event)"
+          (click)="selectAll()"
         >
           Select All
         </button>
         <button
           type="button"
           class="text-xs font-medium text-slate-500 hover:text-slate-700 focus:outline-none focus:underline"
-          (click)="clearAll($event)"
+          (click)="clearAll()"
         >
           Clear All
         </button>
@@ -64,9 +67,7 @@
             class="flex cursor-pointer items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
             [class.bg-teal-50]="focusedIndex() === i"
             tabindex="-1"
-            (click)="toggleOption(option.id, $event)"
-            (keydown.enter)="toggleOption(option.id)"
-            (keydown.space)="toggleOption(option.id); $event.preventDefault()"
+            (click)="toggleOption(option.id)"
           >
             <span
               class="mr-2 flex h-4 w-4 shrink-0 items-center justify-center rounded border"
