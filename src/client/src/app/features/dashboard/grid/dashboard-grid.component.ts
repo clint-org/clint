@@ -12,7 +12,9 @@ import { RowNotesComponent } from './row-notes.component';
 
 interface FlattenedTrial {
   companyName: string;
+  companyLogoUrl: string | null;
   productName: string;
+  productLogoUrl: string | null;
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInProduct: boolean;
@@ -56,7 +58,9 @@ export class DashboardGridComponent {
         for (const trial of trials) {
           rows.push({
             companyName: company.name,
+            companyLogoUrl: company.logo_url ?? null,
             productName: product.name,
+            productLogoUrl: product.logo_url ?? null,
             trial,
             isFirstInCompany,
             isFirstInProduct,

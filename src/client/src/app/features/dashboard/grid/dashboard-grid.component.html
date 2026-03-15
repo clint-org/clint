@@ -1,4 +1,4 @@
-<div class="flex flex-col border border-slate-200 rounded-lg overflow-hidden">
+<div class="flex flex-col border border-slate-200 rounded-lg">
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
@@ -31,20 +31,34 @@
           >
             <!-- Company column -->
             <div
-              class="w-36 px-3 flex items-center truncate"
+              class="w-36 px-3 flex items-center gap-1.5 truncate"
               [title]="row.companyName"
             >
               @if (row.isFirstInCompany) {
-                <span class="font-semibold text-xs uppercase tracking-wide text-slate-400">{{ row.companyName }}</span>
+                @if (row.companyLogoUrl) {
+                  <img
+                    [src]="row.companyLogoUrl"
+                    [alt]="row.companyName"
+                    class="h-5 w-5 rounded object-contain flex-none"
+                  />
+                }
+                <span class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate">{{ row.companyName }}</span>
               }
             </div>
             <!-- Product column -->
             <div
-              class="w-32 px-3 flex items-center truncate border-l border-slate-200"
+              class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200"
               [title]="row.productName"
             >
               @if (row.isFirstInProduct) {
-                <span class="text-sm text-slate-600 font-medium">{{ row.productName }}</span>
+                @if (row.productLogoUrl) {
+                  <img
+                    [src]="row.productLogoUrl"
+                    [alt]="row.productName"
+                    class="h-5 w-5 rounded object-contain flex-none"
+                  />
+                }
+                <span class="text-sm text-slate-600 font-medium truncate">{{ row.productName }}</span>
               }
             </div>
             <!-- Trial column -->
