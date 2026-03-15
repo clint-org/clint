@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +16,7 @@ import { TenantService } from '../../core/services/tenant.service';
 @Component({
   selector: 'app-space-list',
   standalone: true,
-  imports: [FormsModule, ButtonModule, Dialog, InputText, Textarea, MessageModule],
+  imports: [DatePipe, FormsModule, ButtonModule, Dialog, InputText, Textarea, MessageModule],
   template: `
     <div class="min-h-screen bg-slate-50">
       <div class="bg-white border-b border-slate-200">
