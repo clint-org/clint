@@ -5,7 +5,9 @@ import { Select } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { SupabaseService } from '../services/supabase.service';
 import { SpaceService } from '../services/space.service';
+import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
+import { Tenant } from '../models/tenant.model';
 
 @Component({
   selector: 'app-header',
@@ -15,19 +17,35 @@ import { Space } from '../models/space.model';
     <header class="bg-white border-b border-slate-200">
       <div class="h-0.5 bg-teal-500"></div>
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
           <a [routerLink]="['/t', tenantId(), 'spaces']" class="text-base font-semibold text-slate-900 tracking-tight">
             Clint
           </a>
 
+          @if (tenants().length > 1) {
+            <p-select
+              [options]="tenants()"
+              [ngModel]="tenantId()"
+              (ngModelChange)="switchTenant($event)"
+              optionLabel="name"
+              optionValue="id"
+              [style]="{ width: '10rem' }"
+              size="small"
+              placeholder="Organization"
+            />
+          } @else if (tenants().length === 1) {
+            <span class="text-sm text-slate-500">{{ tenants()[0].name }}</span>
+          }
+
           @if (spaces().length > 0 && spaceId()) {
+            <span class="text-slate-300">/</span>
             <p-select
               [options]="spaces()"
               [ngModel]="spaceId()"
               (ngModelChange)="switchSpace($event)"
               optionLabel="name"
               optionValue="id"
-              [style]="{ width: '12rem' }"
+              [style]="{ width: '11rem' }"
               size="small"
             />
           }
@@ -75,6 +93,14 @@ import { Space } from '../models/space.model';
         }
 
         <div class="flex items-center gap-3">
+          @if (tenantId()) {
+            <a
+              [routerLink]="['/t', tenantId(), 'settings']"
+              class="text-xs text-slate-400 transition hover:text-slate-600"
+            >
+              <i class="fa-solid fa-gear"></i>
+            </a>
+          }
           @if (user()) {
             <span class="text-xs text-slate-400">{{ user()!.email }}</span>
           }
@@ -93,6 +119,7 @@ import { Space } from '../models/space.model';
 export class HeaderComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
   private readonly spaceService = inject(SpaceService);
+  private readonly tenantService = inject(TenantService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -100,14 +127,27 @@ export class HeaderComponent implements OnInit {
   tenantId = signal('');
   spaceId = signal('');
   spaces = signal<Space[]>([]);
+  tenants = signal<Tenant[]>([]);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.router.events.subscribe(() => this.extractRouteParams());
     this.extractRouteParams();
+
+    try {
+      const tenants = await this.tenantService.listMyTenants();
+      this.tenants.set(tenants);
+    } catch {
+      this.tenants.set([]);
+    }
   }
 
   spaceBase(): string[] {
     return ['/t', this.tenantId(), 's', this.spaceId()];
+  }
+
+  switchTenant(newTenantId: string): void {
+    localStorage.setItem('lastTenantId', newTenantId);
+    this.router.navigate(['/t', newTenantId, 'spaces']);
   }
 
   switchSpace(newSpaceId: string): void {
