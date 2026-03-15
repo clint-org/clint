@@ -1,57 +1,73 @@
 @if (loading()) {
   <div class="flex items-center gap-2 px-2 py-1.5">
-    <div class="h-4 w-4 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" aria-hidden="true"></div>
+    <p-progressspinner strokeWidth="4" [style]="{ width: '1rem', height: '1rem' }" aria-hidden="true" />
     <span class="text-sm text-slate-500">Loading filters...</span>
   </div>
 } @else {
   <div class="flex flex-wrap items-center gap-3 px-2 py-1.5">
-    <div class="w-44">
-      <app-multi-select
-        label="Company"
-        [options]="companyOptions()"
-        [selected]="selectedCompanyIds()"
-        (selectionChange)="selectedCompanyIds.set($event)"
-      />
-    </div>
+    <p-multiselect
+      [options]="companyOptions()"
+      [(ngModel)]="selectedCompanyIds"
+      placeholder="Company"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [filter]="true"
+      [showClear]="true"
+      [style]="{ width: '11rem' }"
+      size="small"
+    />
 
-    <div class="w-44">
-      <app-multi-select
-        label="Product"
-        [options]="productOptions()"
-        [selected]="selectedProductIds()"
-        (selectionChange)="selectedProductIds.set($event)"
-      />
-    </div>
+    <p-multiselect
+      [options]="productOptions()"
+      [(ngModel)]="selectedProductIds"
+      placeholder="Product"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [filter]="true"
+      [showClear]="true"
+      [style]="{ width: '11rem' }"
+      size="small"
+    />
 
-    <div class="w-44">
-      <app-multi-select
-        label="Therapeutic Area"
-        [options]="taOptions()"
-        [selected]="selectedTAIds()"
-        (selectionChange)="selectedTAIds.set($event)"
-      />
-    </div>
+    <p-multiselect
+      [options]="taOptions()"
+      [(ngModel)]="selectedTAIds"
+      placeholder="Therapeutic Area"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [filter]="true"
+      [showClear]="true"
+      [style]="{ width: '11rem' }"
+      size="small"
+    />
 
     <div class="flex items-center gap-2">
       <label for="start-year" class="text-sm text-slate-600">From</label>
-      <input
-        id="start-year"
-        type="number"
-        class="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none"
-        [value]="startYear()"
-        (change)="onStartYearInput($event)"
+      <p-inputnumber
+        inputId="start-year"
+        [(ngModel)]="startYear"
+        [useGrouping]="false"
+        [min]="1990"
+        [max]="2040"
+        [style]="{ width: '5rem' }"
+        size="small"
         aria-label="Start year"
       />
     </div>
 
     <div class="flex items-center gap-2">
       <label for="end-year" class="text-sm text-slate-600">To</label>
-      <input
-        id="end-year"
-        type="number"
-        class="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none"
-        [value]="endYear()"
-        (change)="onEndYearInput($event)"
+      <p-inputnumber
+        inputId="end-year"
+        [(ngModel)]="endYear"
+        [useGrouping]="false"
+        [min]="1990"
+        [max]="2040"
+        [style]="{ width: '5rem' }"
+        size="small"
         aria-label="End year"
       />
     </div>

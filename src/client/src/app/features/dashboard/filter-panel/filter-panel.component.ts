@@ -1,18 +1,23 @@
 import { Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MultiSelect } from 'primeng/multiselect';
+import { InputNumber } from 'primeng/inputnumber';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { DashboardFilters } from '../../../core/models/dashboard.model';
 import { CompanyService } from '../../../core/services/company.service';
 import { ProductService } from '../../../core/services/product.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
-import {
-  MultiSelectComponent,
-  MultiSelectOption,
-} from '../../../shared/components/multi-select/multi-select.component';
+
+interface SelectOption {
+  label: string;
+  value: string;
+}
 
 @Component({
   selector: 'app-filter-panel',
   standalone: true,
-  imports: [MultiSelectComponent],
+  imports: [FormsModule, MultiSelect, InputNumber, ProgressSpinner],
   templateUrl: './filter-panel.component.html',
 })
 export class FilterPanelComponent implements OnInit {
@@ -23,9 +28,9 @@ export class FilterPanelComponent implements OnInit {
   filtersChange = output<DashboardFilters>();
 
   loading = signal(true);
-  companyOptions = signal<MultiSelectOption[]>([]);
-  productOptions = signal<MultiSelectOption[]>([]);
-  taOptions = signal<MultiSelectOption[]>([]);
+  companyOptions = signal<SelectOption[]>([]);
+  productOptions = signal<SelectOption[]>([]);
+  taOptions = signal<SelectOption[]>([]);
 
   selectedCompanyIds = signal<string[]>([]);
   selectedProductIds = signal<string[]>([]);
@@ -55,26 +60,16 @@ export class FilterPanelComponent implements OnInit {
       ]);
 
       this.companyOptions.set(
-        companies.map((c) => ({ id: c.id, name: c.name })),
+        companies.map((c) => ({ label: c.name, value: c.id })),
       );
       this.productOptions.set(
-        products.map((p) => ({ id: p.id, name: p.name })),
+        products.map((p) => ({ label: p.name, value: p.id })),
       );
       this.taOptions.set(
-        areas.map((a) => ({ id: a.id, name: a.name })),
+        areas.map((a) => ({ label: a.name, value: a.id })),
       );
     } finally {
       this.loading.set(false);
     }
-  }
-
-  onStartYearInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.startYear.set(value ? parseInt(value, 10) : null);
-  }
-
-  onEndYearInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.endYear.set(value ? parseInt(value, 10) : null);
   }
 }

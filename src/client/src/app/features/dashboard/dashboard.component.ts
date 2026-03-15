@@ -5,6 +5,9 @@ import { DashboardFilters, ZoomLevel } from '../../core/models/dashboard.model';
 import { TrialMarker } from '../../core/models/marker.model';
 import { TrialPhase } from '../../core/models/trial.model';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
+import { ProgressSpinner } from 'primeng/progressspinner';
 import { DashboardGridComponent } from './grid/dashboard-grid.component';
 import { FilterPanelComponent } from './filter-panel/filter-panel.component';
 import { LegendComponent } from './legend/legend.component';
@@ -18,6 +21,9 @@ import { ZoomControlComponent } from './zoom-control/zoom-control.component';
     FilterPanelComponent,
     LegendComponent,
     ZoomControlComponent,
+    ButtonModule,
+    MessageModule,
+    ProgressSpinner,
   ],
   templateUrl: './dashboard.component.html',
 })
