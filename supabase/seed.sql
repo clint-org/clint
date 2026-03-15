@@ -56,12 +56,33 @@ begin
   -- create a demo user for seeding (supabase db reset wipes auth.users)
   insert into auth.users (
     id, instance_id, aud, role, email, encrypted_password,
-    email_confirmed_at, created_at, updated_at, confirmation_token, raw_app_meta_data, raw_user_meta_data
+    email_confirmed_at, created_at, updated_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, email_change_confirm_status,
+    phone, phone_change, phone_change_token, reauthentication_token,
+    is_sso_user, is_anonymous,
+    raw_app_meta_data, raw_user_meta_data
   ) values (
     uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
     'aadityamadala@gmail.com', '',
-    now(), now(), now(), '', '{"provider":"google","providers":["google"]}'::jsonb, '{"full_name":"Aaditya Madala"}'::jsonb
+    now(), now(), now(),
+    '', '', '', '',
+    '', 0,
+    '', '', '', '',
+    false, false,
+    '{"provider":"google","providers":["google"]}'::jsonb,
+    '{"full_name":"Aaditya Madala","email":"aadityamadala@gmail.com"}'::jsonb
   ) on conflict (id) do nothing;
+
+  -- create identity for Google OAuth
+  insert into auth.identities (
+    id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+  ) values (
+    uid, uid,
+    jsonb_build_object('sub', uid::text, 'email', 'aadityamadala@gmail.com', 'full_name', 'Aaditya Madala'),
+    'google', uid::text,
+    now(), now(), now()
+  ) on conflict do nothing;
 
   -- companies
   insert into public.companies (id, user_id, name, logo_url, display_order) values
