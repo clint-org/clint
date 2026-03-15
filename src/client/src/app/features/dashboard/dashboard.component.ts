@@ -45,10 +45,18 @@ export class DashboardComponent {
   startYear = signal(2016);
   endYear = signal(2026);
 
+  private seeded = false;
+
   dashboardData = resource({
     request: () => this.filters(),
     loader: async ({ request: filters }) => {
-      return await this.dashboardService.getDashboardData(filters);
+      const data = await this.dashboardService.getDashboardData(filters);
+      if (!this.seeded && data.companies.length === 0) {
+        this.seeded = true;
+        await this.dashboardService.seedDemoData();
+        return await this.dashboardService.getDashboardData(filters);
+      }
+      return data;
     },
   });
 

@@ -39,4 +39,9 @@ export class DashboardService {
 
     return { companies } as DashboardData;
   }
+
+  async seedDemoData(): Promise<void> {
+    const { error } = await this.supabase.client.rpc('seed_demo_data');
+    if (error) throw error;
+  }
 }
