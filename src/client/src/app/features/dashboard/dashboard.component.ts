@@ -8,6 +8,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { DashboardGridComponent } from './grid/dashboard-grid.component';
 import { FilterPanelComponent } from './filter-panel/filter-panel.component';
 import { LegendComponent } from './legend/legend.component';
@@ -18,6 +19,7 @@ import { ZoomControlComponent } from './zoom-control/zoom-control.component';
   standalone: true,
   imports: [
     DashboardGridComponent,
+    ExportDialogComponent,
     FilterPanelComponent,
     LegendComponent,
     ZoomControlComponent,
@@ -51,6 +53,7 @@ export class DashboardComponent {
   });
 
   companies = computed(() => this.dashboardData.value()?.companies ?? []);
+  exportDialogOpen = signal(false);
 
   constructor() {
     effect(() => {

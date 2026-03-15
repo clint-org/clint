@@ -15,8 +15,7 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      [style]="{ width: '11rem' }"
-      size="small"
+      styleClass="w-44"
     />
 
     <p-multiselect
@@ -29,8 +28,7 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      [style]="{ width: '11rem' }"
-      size="small"
+      styleClass="w-44"
     />
 
     <p-multiselect
@@ -43,38 +41,7 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      [style]="{ width: '11rem' }"
-      size="small"
+      styleClass="w-52"
     />
-
-    <div class="flex items-center gap-2">
-      <label for="start-year" class="text-sm text-slate-600">From</label>
-      <p-inputnumber
-        inputId="start-year"
-        [ngModel]="startYear()"
-        (ngModelChange)="startYear.set($event)"
-        [useGrouping]="false"
-        [min]="1990"
-        [max]="2040"
-        [style]="{ width: '5rem' }"
-        size="small"
-        aria-label="Start year"
-      />
-    </div>
-
-    <div class="flex items-center gap-2">
-      <label for="end-year" class="text-sm text-slate-600">To</label>
-      <p-inputnumber
-        inputId="end-year"
-        [ngModel]="endYear()"
-        (ngModelChange)="endYear.set($event)"
-        [useGrouping]="false"
-        [min]="1990"
-        [max]="2040"
-        [style]="{ width: '5rem' }"
-        size="small"
-        aria-label="End year"
-      />
-    </div>
   </div>
 }

@@ -6,6 +6,15 @@
       (zoomChange)="onZoomChange($event)"
     />
     <app-filter-panel (filtersChange)="onFiltersChange($event)" />
+    <p-button
+      label="Export"
+      icon="fa-solid fa-file-powerpoint"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      [disabled]="companies().length === 0"
+      (onClick)="exportDialogOpen.set(true)"
+    />
   </div>
 
   <!-- Main content: scrollable grid -->
@@ -60,3 +69,11 @@
     <app-legend />
   </div>
 </div>
+
+<app-export-dialog
+  [companies]="companies()"
+  [startYear]="startYear()"
+  [endYear]="endYear()"
+  [open]="exportDialogOpen()"
+  (closed)="exportDialogOpen.set(false)"
+/>

@@ -1,7 +1,6 @@
 import { Component, effect, inject, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MultiSelect } from 'primeng/multiselect';
-import { InputNumber } from 'primeng/inputnumber';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { DashboardFilters } from '../../../core/models/dashboard.model';
@@ -17,7 +16,7 @@ interface SelectOption {
 @Component({
   selector: 'app-filter-panel',
   standalone: true,
-  imports: [FormsModule, MultiSelect, InputNumber, ProgressSpinner],
+  imports: [FormsModule, MultiSelect, ProgressSpinner],
   templateUrl: './filter-panel.component.html',
 })
 export class FilterPanelComponent implements OnInit {
@@ -35,8 +34,6 @@ export class FilterPanelComponent implements OnInit {
   selectedCompanyIds = signal<string[]>([]);
   selectedProductIds = signal<string[]>([]);
   selectedTAIds = signal<string[]>([]);
-  startYear = signal<number | null>(null);
-  endYear = signal<number | null>(null);
 
   constructor() {
     effect(() => {
@@ -44,8 +41,8 @@ export class FilterPanelComponent implements OnInit {
         companyIds: this.selectedCompanyIds().length > 0 ? this.selectedCompanyIds() : null,
         productIds: this.selectedProductIds().length > 0 ? this.selectedProductIds() : null,
         therapeuticAreaIds: this.selectedTAIds().length > 0 ? this.selectedTAIds() : null,
-        startYear: this.startYear(),
-        endYear: this.endYear(),
+        startYear: null,
+        endYear: null,
       };
       this.filtersChange.emit(filters);
     });
