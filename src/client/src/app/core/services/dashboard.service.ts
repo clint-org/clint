@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 
 import { DashboardData, DashboardFilters } from '../models/dashboard.model';
+import { Company } from '../models/company.model';
 import { SupabaseService } from './supabase.service';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -17,6 +20,24 @@ export class DashboardService {
     });
 
     if (error) throw error;
-    return data as DashboardData;
+
+    const companies = (data ?? []).map((c: any) => ({
+      ...c,
+      products: (c.products ?? []).map((p: any) => ({
+        ...p,
+        trials: (p.trials ?? []).map((t: any) => ({
+          ...t,
+          therapeutic_areas: t.therapeutic_area ?? null,
+          trial_phases: t.phases ?? [],
+          trial_markers: (t.markers ?? []).map((m: any) => ({
+            ...m,
+            marker_types: m.marker_type ?? null,
+          })),
+          trial_notes: t.trial_notes ?? [],
+        })),
+      })),
+    }));
+
+    return { companies } as DashboardData;
   }
 }
