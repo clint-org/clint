@@ -1,0 +1,23 @@
+[build]
+  base = "src/client"
+  command = """
+    sed -i "s|SUPABASE_URL_PLACEHOLDER|$SUPABASE_URL|g" src/environments/environment.ts && \
+    sed -i "s|SUPABASE_ANON_KEY_PLACEHOLDER|$SUPABASE_ANON_KEY|g" src/environments/environment.ts && \
+    npm ci && npx ng build --configuration production
+  """
+  publish = "dist/clinical-trial-dashboard/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
