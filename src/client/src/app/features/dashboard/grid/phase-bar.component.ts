@@ -4,15 +4,15 @@ import { TrialPhase } from '../../../core/models/trial.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 
 const DEFAULT_COLORS: Record<string, string> = {
-  P1: '#60a5fa',
-  P2: '#34d399',
-  P3: '#f97316',
-  P4: '#a855f7',
-  OBS: '#6b7280',
+  P1: '#93c5fd',
+  P2: '#6ee7b7',
+  P3: '#7dd3fc',
+  P4: '#c4b5fd',
+  OBS: '#d1d5db',
 };
 
-const BAR_HEIGHT = 24;
-const CORNER_RADIUS = 4;
+const BAR_HEIGHT = 14;
+const CORNER_RADIUS = 3;
 const MIN_LABEL_WIDTH = 40;
 
 @Component({
@@ -31,12 +31,12 @@ export class PhaseBarComponent {
   phaseClick = output<TrialPhase>();
 
   protected barX = computed(() =>
-    this.timeline.dateToX(
+    Math.max(0, this.timeline.dateToX(
       this.phase().start_date,
       this.startYear(),
       this.endYear(),
       this.totalWidth(),
-    ),
+    )),
   );
 
   protected barWidth = computed(() => {
@@ -44,13 +44,20 @@ export class PhaseBarComponent {
     if (!endDate) {
       return 0;
     }
-    const endX = this.timeline.dateToX(
-      endDate,
+    const rawStart = this.timeline.dateToX(
+      this.phase().start_date,
       this.startYear(),
       this.endYear(),
       this.totalWidth(),
     );
-    return Math.max(0, endX - this.barX());
+    const endX = Math.min(this.totalWidth(), this.timeline.dateToX(
+      endDate,
+      this.startYear(),
+      this.endYear(),
+      this.totalWidth(),
+    ));
+    const clampedStart = Math.max(0, rawStart);
+    return Math.max(0, endX - clampedStart);
   });
 
   protected barColor = computed(() => {
@@ -58,7 +65,7 @@ export class PhaseBarComponent {
     return phase.color ?? DEFAULT_COLORS[phase.phase_type] ?? '#6b7280';
   });
 
-  protected labelText = computed(() => this.phase().label ?? this.phase().phase_type);
+  protected labelText = computed(() => this.phase().phase_type);
 
   protected showLabelInside = computed(() => this.barWidth() >= MIN_LABEL_WIDTH);
 

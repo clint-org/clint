@@ -5,8 +5,8 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div
-      class="absolute z-50 rounded-md bg-gray-900 px-3 py-2 text-xs text-white shadow-lg"
-      style="bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; max-width: 220px;"
+      class="absolute z-50 rounded-lg bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white shadow-xl"
+      style="bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 10px; max-width: 250px;"
     >
       @if (imageUrl()) {
         <img
@@ -15,7 +15,7 @@ import { Component, input } from '@angular/core';
           class="mb-1.5 h-16 w-full rounded object-cover"
         />
       }
-      <p class="whitespace-normal leading-snug">{{ text() }}</p>
+      <p class="whitespace-nowrap" [class.whitespace-normal]="text().length > 40">{{ text() }}</p>
       <!-- Arrow -->
       <div
         class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900"

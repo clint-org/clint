@@ -14,6 +14,9 @@ interface FlattenedTrial {
   companyName: string;
   productName: string;
   trial: Trial;
+  isFirstInCompany: boolean;
+  isFirstInProduct: boolean;
+  isLastInCompany: boolean;
 }
 
 @Component({
@@ -44,14 +47,28 @@ export class DashboardGridComponent {
   flattenedTrials = computed<FlattenedTrial[]>(() => {
     const rows: FlattenedTrial[] = [];
     for (const company of this.companies()) {
-      for (const product of company.products ?? []) {
-        for (const trial of product.trials ?? []) {
+      let isFirstInCompany = true;
+      const products = company.products ?? [];
+      for (let pIdx = 0; pIdx < products.length; pIdx++) {
+        const product = products[pIdx];
+        let isFirstInProduct = true;
+        const trials = product.trials ?? [];
+        for (const trial of trials) {
           rows.push({
             companyName: company.name,
             productName: product.name,
             trial,
+            isFirstInCompany,
+            isFirstInProduct,
+            isLastInCompany: false,
           });
+          isFirstInCompany = false;
+          isFirstInProduct = false;
         }
+      }
+      // Mark the last row of this company
+      if (rows.length > 0) {
+        rows[rows.length - 1].isLastInCompany = true;
       }
     }
     return rows;

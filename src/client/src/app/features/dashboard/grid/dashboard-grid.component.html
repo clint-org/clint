@@ -2,27 +2,58 @@
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
-      <!-- Left labels column -->
-      <div class="flex-none w-48 bg-white border-r border-gray-300">
-        <!-- Header spacer -->
-        <div class="border-b border-gray-300 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
-          Trial
+      <!-- Left labels columns -->
+      <div class="flex-none bg-white border-r border-gray-300">
+        <!-- Header row -->
+        <div class="flex border-b border-gray-300 bg-gray-100">
+          <div class="w-36 px-3 py-1 text-sm font-semibold text-gray-700">Company</div>
+          <div class="w-32 px-3 py-1 text-sm font-semibold text-gray-700 border-l border-gray-200">Product</div>
+          <div class="w-48 px-3 py-1 text-sm font-semibold text-gray-700 border-l border-gray-200">Trial</div>
         </div>
         @if (hasSubColumns()) {
-          <div class="border-b border-gray-200 bg-gray-50 px-3 py-0.5 text-xs text-gray-400">
-            &nbsp;
+          <div class="flex border-b border-gray-200 bg-gray-50">
+            <div class="w-36 px-3 py-0.5 text-xs text-gray-400">&nbsp;</div>
+            <div class="w-32 px-3 py-0.5 text-xs text-gray-400 border-l border-gray-200">&nbsp;</div>
+            <div class="w-48 px-3 py-0.5 text-xs text-gray-400 border-l border-gray-200">&nbsp;</div>
           </div>
         }
 
         <!-- Row labels -->
         @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
           <div
-            class="border-b border-gray-200 px-3 py-2 text-sm text-gray-700 truncate"
+            class="flex border-gray-200"
+            [class.border-b-2]="row.isLastInCompany"
+            [class.border-b]="!row.isLastInCompany"
+            [class.border-gray-300]="row.isLastInCompany"
             [class.bg-white]="idx % 2 === 0"
             [class.bg-gray-50]="idx % 2 !== 0"
-            [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+            [style.height.px]="30"
           >
-            {{ row.trial.name }}
+            <!-- Company column -->
+            <div
+              class="w-36 px-3 flex items-center truncate"
+              [title]="row.companyName"
+            >
+              @if (row.isFirstInCompany) {
+                <span class="font-semibold text-xs uppercase tracking-wide text-gray-400">{{ row.companyName }}</span>
+              }
+            </div>
+            <!-- Product column -->
+            <div
+              class="w-32 px-3 flex items-center truncate border-l border-gray-200"
+              [title]="row.productName"
+            >
+              @if (row.isFirstInProduct) {
+                <span class="text-sm text-gray-600 font-medium">{{ row.productName }}</span>
+              }
+            </div>
+            <!-- Trial column -->
+            <div
+              class="w-48 px-3 flex items-center text-sm text-gray-700 truncate border-l border-gray-200"
+              [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+            >
+              {{ row.trial.name }}
+            </div>
           </div>
         }
       </div>
@@ -39,10 +70,13 @@
         <div [style.width.px]="totalWidth()">
           @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
             <div
-              class="relative border-b border-gray-200"
+              class="relative border-gray-200"
+              [class.border-b-2]="row.isLastInCompany"
+              [class.border-b]="!row.isLastInCompany"
+              [class.border-gray-300]="row.isLastInCompany"
               [class.bg-white]="idx % 2 === 0"
               [class.bg-gray-50]="idx % 2 !== 0"
-              [style.height.px]="36"
+              [style.height.px]="30"
             >
               <!-- Vertical grid lines -->
               @for (col of columns(); track col.label) {
@@ -63,9 +97,9 @@
               <!-- Phase bars (SVG overlay) -->
               @if (row.trial.trial_phases && row.trial.trial_phases.length > 0) {
                 <svg
-                  class="absolute top-1 left-0"
+                  class="absolute top-0 left-0"
                   [attr.width]="totalWidth()"
-                  [attr.height]="28"
+                  [attr.height]="30"
                   aria-hidden="true"
                 >
                   @for (phase of row.trial.trial_phases; track phase.id) {
@@ -112,10 +146,13 @@
 
           @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
             <div
-              class="border-b border-gray-200"
+              class="border-gray-200"
+              [class.border-b-2]="row.isLastInCompany"
+              [class.border-b]="!row.isLastInCompany"
+              [class.border-gray-300]="row.isLastInCompany"
               [class.bg-white]="idx % 2 === 0"
               [class.bg-gray-50]="idx % 2 !== 0"
-              [style.height.px]="36"
+              [style.height.px]="30"
             >
               <app-row-notes
                 [notes]="row.trial.trial_notes ?? []"

@@ -1,6 +1,6 @@
 @if (markerType(); as mt) {
   <div
-    class="absolute cursor-pointer"
+    class="absolute z-10 cursor-pointer"
     [style.left.px]="markerX()"
     [style.top.px]="topOffset"
     (mouseenter)="showTooltip = true"
@@ -26,6 +26,12 @@
         />
       </svg>
     } @else {
+      <div class="absolute rounded-full bg-white/80 shadow-sm"
+           [style.width.px]="iconSize + 4"
+           [style.height.px]="iconSize + 4"
+           [style.margin-left.px]="-(iconSize + 4) / 2"
+           [style.margin-top.px]="-2">
+      </div>
       <svg
         [attr.width]="iconSize"
         [attr.height]="iconSize"

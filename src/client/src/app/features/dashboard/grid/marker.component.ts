@@ -10,8 +10,8 @@ import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-ico
 import { XIconComponent } from '../../../shared/components/svg-icons/x-icon.component';
 import { MarkerTooltipComponent } from './marker-tooltip.component';
 
-const ICON_SIZE = 16;
-const TOP_OFFSET = 10;
+const ICON_SIZE = 20;
+const TOP_OFFSET = 5;
 
 @Component({
   selector: 'app-marker',
@@ -45,12 +45,12 @@ export class MarkerComponent {
   markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
 
   markerX = computed(() =>
-    this.timeline.dateToX(
+    Math.max(0, this.timeline.dateToX(
       this.marker().event_date,
       this.startYear(),
       this.endYear(),
       this.totalWidth(),
-    ),
+    )),
   );
 
   isRange = computed(() => !!this.marker().end_date);

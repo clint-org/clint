@@ -1,4 +1,4 @@
-import { Component, inject, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DashboardFilters, ZoomLevel } from '../../core/models/dashboard.model';
@@ -33,8 +33,8 @@ export class DashboardComponent {
     endYear: null,
   });
 
-  zoomLevel = signal<ZoomLevel>('quarterly');
-  startYear = signal(2020);
+  zoomLevel = signal<ZoomLevel>('yearly');
+  startYear = signal(2016);
   endYear = signal(2026);
 
   dashboardData = resource({
@@ -43,6 +43,41 @@ export class DashboardComponent {
       return await this.dashboardService.getDashboardData(filters);
     },
   });
+
+  constructor() {
+    effect(() => {
+      const data = this.dashboardData.value();
+      if (!data || !data.companies.length) return;
+
+      let minYear = Infinity;
+      let maxYear = -Infinity;
+
+      for (const company of data.companies) {
+        for (const product of company.products ?? []) {
+          for (const trial of product.trials ?? []) {
+            for (const phase of trial.trial_phases ?? []) {
+              const sy = new Date(phase.start_date).getFullYear();
+              if (sy < minYear) minYear = sy;
+              if (phase.end_date) {
+                const ey = new Date(phase.end_date).getFullYear();
+                if (ey > maxYear) maxYear = ey;
+              }
+            }
+            for (const marker of trial.trial_markers ?? []) {
+              const my = new Date(marker.event_date).getFullYear();
+              if (my < minYear) minYear = my;
+              if (my > maxYear) maxYear = my;
+            }
+          }
+        }
+      }
+
+      if (minYear !== Infinity) {
+        this.startYear.set(minYear - 1);
+        this.endYear.set(Math.max(maxYear + 1, new Date().getFullYear() + 1));
+      }
+    });
+  }
 
   onFiltersChange(filters: DashboardFilters): void {
     this.filters.set(filters);

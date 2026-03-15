@@ -1,45 +1,46 @@
-@if (loading()) {
-  <div class="flex items-center gap-2 border-t border-gray-200 px-4 py-3 text-sm text-gray-400">
-    Loading legend...
-  </div>
-} @else {
+@if (!loading()) {
   <div
-    class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-gray-200 px-4 py-3"
+    class="border-t border-gray-100 bg-white px-4 py-2.5"
     role="list"
     aria-label="Marker type legend"
   >
-    @for (mt of markerTypes(); track mt.id) {
-      <div class="flex items-center gap-1.5 text-sm text-gray-600" role="listitem">
-        <svg
-          [attr.width]="16"
-          [attr.height]="16"
-          [attr.viewBox]="'0 0 16 16'"
-          class="shrink-0"
-          aria-hidden="true"
-        >
-          @switch (mt.shape) {
-            @case ('circle') {
-              <g app-circle-icon [size]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
+    <div class="flex flex-wrap items-center gap-y-1.5">
+      @for (mt of markerTypes(); track mt.id; let last = $last) {
+        <div class="flex items-center gap-1.5 text-[11px] text-gray-500" role="listitem">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            class="shrink-0"
+            aria-hidden="true"
+          >
+            @switch (mt.shape) {
+              @case ('circle') {
+                <g app-circle-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
+              @case ('diamond') {
+                <g app-diamond-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
+              @case ('flag') {
+                <g app-flag-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
+              @case ('arrow') {
+                <g app-arrow-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
+              @case ('x') {
+                <g app-x-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
+              @case ('bar') {
+                <g app-bar-icon [width]="12" [height]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+              }
             }
-            @case ('diamond') {
-              <g app-diamond-icon [size]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
-            }
-            @case ('flag') {
-              <g app-flag-icon [size]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
-            }
-            @case ('arrow') {
-              <g app-arrow-icon [size]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
-            }
-            @case ('x') {
-              <g app-x-icon [size]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
-            }
-            @case ('bar') {
-              <g app-bar-icon [width]="16" [height]="16" [color]="mt.color" [fillStyle]="mt.fill_style" />
-            }
-          }
-        </svg>
-        <span>{{ mt.name }}</span>
-      </div>
-    }
+          </svg>
+          <span>{{ mt.name }}</span>
+        </div>
+        @if (!last) {
+          <span class="mx-2.5 text-gray-300" aria-hidden="true">&middot;</span>
+        }
+      }
+    </div>
   </div>
 }

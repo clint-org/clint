@@ -1,11 +1,12 @@
 <svg:rect
   [attr.x]="barX()"
-  [attr.y]="0"
+  [attr.y]="8"
   [attr.width]="barWidth()"
   [attr.height]="barHeight"
   [attr.rx]="cornerRadius"
   [attr.fill]="barColor()"
-  class="cursor-pointer transition-opacity hover:opacity-80"
+  opacity="0.6"
+  class="cursor-pointer transition-opacity hover:opacity-100"
   role="button"
   [attr.aria-label]="labelText() + ' phase'"
   tabindex="0"
@@ -16,11 +17,13 @@
 @if (barWidth() > 0) {
   <svg:text
     [attr.x]="labelX()"
-    [attr.y]="barHeight / 2"
+    [attr.y]="8 + barHeight / 2"
     dy="0.35em"
     [attr.text-anchor]="labelAnchor()"
-    class="pointer-events-none select-none text-xs"
-    [attr.fill]="showLabelInside() ? '#ffffff' : barColor()"
+    font-size="9"
+    font-weight="600"
+    class="pointer-events-none select-none"
+    [attr.fill]="showLabelInside() ? '#1e293b' : '#64748b'"
   >
     {{ labelText() }}
   </svg:text>
