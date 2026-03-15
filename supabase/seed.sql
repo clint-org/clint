@@ -28,7 +28,7 @@ values
 
 do $$
 declare
-  uid uuid;
+  uid uuid := 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1';
   -- companies
   c_az uuid := 'c0c0c0c0-0000-0000-0000-000000000001';
   c_lilly uuid := 'c0c0c0c0-0000-0000-0000-000000000002';
@@ -53,12 +53,15 @@ declare
   t7 uuid := 'e0e0e0e0-0000-0000-0000-000000000007';
   t8 uuid := 'e0e0e0e0-0000-0000-0000-000000000008';
 begin
-  -- find the first authenticated user; skip demo data if none exists
-  select id into uid from auth.users limit 1;
-  if uid is null then
-    raise notice 'no authenticated user found -- skipping demo data. sign in first, then run supabase db reset.';
-    return;
-  end if;
+  -- create a demo user for seeding (supabase db reset wipes auth.users)
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at, confirmation_token, raw_app_meta_data, raw_user_meta_data
+  ) values (
+    uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    'aadityamadala@gmail.com', '',
+    now(), now(), now(), '', '{"provider":"google","providers":["google"]}'::jsonb, '{"full_name":"Aaditya Madala"}'::jsonb
+  ) on conflict (id) do nothing;
 
   -- companies
   insert into public.companies (id, user_id, name, logo_url, display_order) values
