@@ -21,7 +21,7 @@ import { Component, input } from '@angular/core';
       <svg:defs>
         <svg:linearGradient [attr.id]="'grad-bar-' + patternId" x1="0%" y1="0%" x2="100%" y2="0%">
           <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
-          <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
+          <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.2" />
         </svg:linearGradient>
       </svg:defs>
     }
@@ -30,11 +30,23 @@ import { Component, input } from '@angular/core';
       [attr.y]="(height() - barHeight) / 2"
       [attr.width]="width()"
       [attr.height]="barHeight"
-      rx="2"
+      rx="4"
       [attr.fill]="computedFill()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1 : 0"
     />
+    @if (fillStyle() === 'filled') {
+      <svg:line
+        x1="4"
+        [attr.x2]="width() - 4"
+        [attr.y1]="(height() - barHeight) / 2 + 2"
+        [attr.y2]="(height() - barHeight) / 2 + 2"
+        stroke="white"
+        stroke-width="1"
+        opacity="0.3"
+        stroke-linecap="round"
+      />
+    }
   `,
 })
 export class BarIconComponent {
@@ -44,7 +56,7 @@ export class BarIconComponent {
   fillStyle = input<'outline' | 'filled' | 'striped' | 'gradient'>('filled');
 
   readonly patternId = Math.random().toString(36).substring(2, 8);
-  readonly barHeight = 6;
+  readonly barHeight = 8;
 
   computedFill(): string {
     switch (this.fillStyle()) {

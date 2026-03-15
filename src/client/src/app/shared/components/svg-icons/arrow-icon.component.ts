@@ -28,8 +28,8 @@ import { Component, computed, input } from '@angular/core';
     <svg:path
       [attr.d]="arrowPath()"
       [attr.fill]="computedFill()"
-      [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2.5 : 0"
+      [attr.stroke]="fillStyle() === 'outline' ? color() : (fillStyle() === 'filled' ? '#ffffff' : 'none')"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : (fillStyle() === 'filled' ? 0.5 : 0)"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
@@ -44,12 +44,12 @@ export class ArrowIconComponent {
 
   arrowPath = computed(() => {
     const s = this.size();
-    const half = s / 2;
-    const stemWidth = s * 0.3;
-    const headHeight = s * 0.45;
-    const left = half - stemWidth / 2;
-    const right = half + stemWidth / 2;
-    return `M ${half},0 L ${s},${headHeight} L ${right},${headHeight} L ${right},${s} L ${left},${s} L ${left},${headHeight} L 0,${headHeight} Z`;
+    const cx = s / 2;
+    const stemW = s * 0.15;
+    const headW = s * 0.4;
+    const headH = s * 0.4;
+    const stemTop = headH;
+    return `M ${cx},0 L ${cx + headW},${headH} L ${cx + stemW},${stemTop} L ${cx + stemW},${s} L ${cx - stemW},${s} L ${cx - stemW},${stemTop} L ${cx - headW},${headH} Z`;
   });
 
   computedFill(): string {

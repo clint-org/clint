@@ -31,8 +31,18 @@ import { Component, input } from '@angular/core';
       [attr.r]="size() / 2 - 1"
       [attr.fill]="computedFill()"
       [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : fillStyle() === 'filled' ? 1 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : fillStyle() === 'filled' ? 0.5 : 0"
+      [attr.stroke-linecap]="fillStyle() === 'outline' ? 'round' : null"
     />
+    @if (fillStyle() === 'filled') {
+      <svg:circle
+        [attr.cx]="size() / 2 - 1"
+        [attr.cy]="size() / 2 - 1"
+        [attr.r]="size() / 4"
+        fill="white"
+        opacity="0.2"
+      />
+    }
   `,
 })
 export class CircleIconComponent {

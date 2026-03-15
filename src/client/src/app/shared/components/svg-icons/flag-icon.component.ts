@@ -27,19 +27,21 @@ import { Component, computed, input } from '@angular/core';
     }
     <!-- Pole -->
     <svg:line
-      x1="1"
+      [attr.x1]="poleX()"
       y1="0"
-      x2="1"
+      [attr.x2]="poleX()"
       [attr.y2]="size()"
       [attr.stroke]="color()"
-      stroke-width="2"
+      stroke-width="1.5"
+      stroke-linecap="round"
     />
     <!-- Flag -->
     <svg:path
       [attr.d]="flagPath()"
       [attr.fill]="computedFill()"
-      [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : 0"
+      [attr.stroke]="fillStyle() === 'outline' ? color() : (fillStyle() === 'filled' ? '#ffffff' : 'none')"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : (fillStyle() === 'filled' ? 0.5 : 0)"
+      stroke-linejoin="round"
     />
   `,
 })
@@ -50,10 +52,16 @@ export class FlagIconComponent {
 
   readonly patternId = Math.random().toString(36).substring(2, 8);
 
+  poleX = computed(() => this.size() * 0.15);
+
   flagPath = computed(() => {
     const s = this.size();
-    const flagHeight = s * 0.55;
-    return `M 2,0 L ${s},${flagHeight / 2} L 2,${flagHeight} Z`;
+    const poleX = s * 0.15;
+    const flagTop = s * 0.05;
+    const flagBottom = s * 0.55;
+    const flagRight = s * 0.9;
+    const midY = (flagTop + flagBottom) / 2;
+    return `M ${poleX},${flagTop} C ${flagRight * 0.5},${flagTop - 1} ${flagRight * 0.8},${midY - 2} ${flagRight},${midY} C ${flagRight * 0.8},${midY + 2} ${flagRight * 0.5},${flagBottom + 1} ${poleX},${flagBottom} Z`;
   });
 
   computedFill(): string {

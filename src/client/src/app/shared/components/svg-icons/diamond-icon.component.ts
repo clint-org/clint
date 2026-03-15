@@ -25,12 +25,20 @@ import { Component, computed, input } from '@angular/core';
         </svg:linearGradient>
       </svg:defs>
     }
-    <svg:polygon
-      [attr.points]="points()"
+    <svg:path
+      [attr.d]="diamondPath()"
       [attr.fill]="computedFill()"
       [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : fillStyle() === 'filled' ? 1 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : fillStyle() === 'filled' ? 0.5 : 0"
+      stroke-linejoin="round"
     />
+    @if (fillStyle() === 'filled') {
+      <svg:path
+        [attr.d]="highlightPath()"
+        fill="white"
+        opacity="0.2"
+      />
+    }
   `,
 })
 export class DiamondIconComponent {
@@ -40,10 +48,26 @@ export class DiamondIconComponent {
 
   readonly patternId = Math.random().toString(36).substring(2, 8);
 
-  points = computed(() => {
+  diamondPath = computed(() => {
     const s = this.size();
-    const half = s / 2;
-    return `${half},0 ${s},${half} ${half},${s} 0,${half}`;
+    const cx = s / 2;
+    const cy = s / 2;
+    const hw = s * 0.42;  // half-width (slightly narrower)
+    const hh = s * 0.48;  // half-height (slightly taller)
+    return `M ${cx},${cy - hh} L ${cx + hw},${cy} L ${cx},${cy + hh} L ${cx - hw},${cy} Z`;
+  });
+
+  highlightPath = computed(() => {
+    const s = this.size();
+    const cx = s / 2;
+    const cy = s / 2;
+    const hw = s * 0.42;
+    const hh = s * 0.48;
+    // Small highlight in upper-left quadrant
+    const scale = 0.4;
+    const ox = -1; // offset left
+    const oy = -1; // offset up
+    return `M ${cx + ox},${cy - hh * scale + oy} L ${cx + hw * scale + ox},${cy + oy} L ${cx + ox},${cy + hh * scale + oy} L ${cx - hw * scale + ox},${cy + oy} Z`;
   });
 
   computedFill(): string {
