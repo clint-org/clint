@@ -1,6 +1,6 @@
 {
   "specId": "spec-2026-002",
-  "status": "draft",
+  "status": "in-progress",
   "branch": "spec/primeng-migration",
   "tasks": {
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
@@ -17,5 +17,5 @@
     "T12": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T13": { "status": "pending", "agent": null, "attempts": 0, "error": null }
   },
-  "updatedAt": "2026-03-15T00:00:00Z"
+  "updatedAt": "2026-03-15T14:00:00Z"
 }
