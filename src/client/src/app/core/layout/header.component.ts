@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import { filter } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
@@ -130,7 +131,7 @@ export class HeaderComponent implements OnInit {
   tenants = signal<Tenant[]>([]);
 
   async ngOnInit(): Promise<void> {
-    this.router.events.subscribe(() => this.extractRouteParams());
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.extractRouteParams());
     this.extractRouteParams();
 
     try {

@@ -36,14 +36,16 @@ import { TenantService } from '../../core/services/tenant.service';
           <p-table [value]="members()" [loading]="loading()">
             <ng-template #header>
               <tr>
-                <th>User ID</th>
+                <th>Name</th>
+                <th>Email</th>
                 <th>Role</th>
                 <th class="text-right">Actions</th>
               </tr>
             </ng-template>
             <ng-template #body let-member>
               <tr>
-                <td class="text-sm">{{ member.user_id }}</td>
+                <td class="text-sm font-medium">{{ member.display_name }}</td>
+                <td class="text-sm text-slate-500">{{ member.email }}</td>
                 <td class="text-sm capitalize">{{ member.role }}</td>
                 <td class="text-right">
                   <p-button label="Remove" [text]="true" severity="danger" size="small" (onClick)="removeMember(member)" />

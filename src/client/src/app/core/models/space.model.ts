@@ -15,4 +15,5 @@ export interface SpaceMember {
   role: 'owner' | 'editor' | 'viewer';
   created_at: string;
   email?: string;
+  display_name?: string;
 }

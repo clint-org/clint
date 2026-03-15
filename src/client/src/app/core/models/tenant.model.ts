@@ -13,6 +13,7 @@ export interface TenantMember {
   role: 'owner' | 'member';
   created_at: string;
   email?: string;
+  display_name?: string;
 }
 
 export interface TenantInvite {

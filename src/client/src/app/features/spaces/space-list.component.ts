@@ -100,9 +100,21 @@ export class SpaceListComponent implements OnInit {
   private tenantId = '';
 
   async ngOnInit(): Promise<void> {
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('tenantId');
+      if (id && id !== this.tenantId) {
+        this.tenantId = id;
+        localStorage.setItem('lastTenantId', id);
+        this.loadData();
+      }
+    });
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     localStorage.setItem('lastTenantId', this.tenantId);
+    await this.loadData();
+  }
 
+  private async loadData(): Promise<void> {
+    this.loading.set(true);
     try {
       const [tenant, spaces] = await Promise.all([
         this.tenantService.getTenant(this.tenantId),
