@@ -1,9 +1,18 @@
-# Executive Assessment Simulator
+# Clinical Trial Status Dashboard
 
 ## Tech Stack
 - **Frontend:** Angular 19 (standalone components, no SSR) with Tailwind CSS v4, deployed to Netlify
-- **Backend:** Supabase (Auth, Database, Edge Functions)
+- **Backend:** Supabase (Auth, Database)
 - **Database:** PostgreSQL via Supabase
+- **Auth:** Google OAuth via Supabase Auth
+
+## Brand & Design
+
+Follow `docs/brand.md` for all visual decisions. Key points:
+- **Personality:** Clinical precision -- serious analytical tool for pharma executives
+- **Palette:** Teal accent, slate neutrals (not generic gray or indigo)
+- **Visual hierarchy:** Markers pop > phase bars are subtle backdrop > company/product grouping structures the left
+- **Anti-patterns:** No indigo-600, no pure grays, no dark mode, no glassmorphism, no gradient text
 
 ## Angular Conventions
 
@@ -12,7 +21,6 @@
 - Use **signals** for reactive state where possible (`signal()`, `computed()`, `effect()`)
 - Use the new control flow syntax: `@if`, `@for`, `@switch` (not `*ngIf`, `*ngFor`)
 - Lazy-load feature routes via `loadComponent` / `loadChildren`
-- Write unit tests for each feature (components and services) -- verify with `ng lint`, `ng test`, and `ng build`
 - No SSR -- static client-side build only
 - Keep components lean; business logic belongs in services
 
@@ -35,7 +43,6 @@
 - Use **Tailwind CSS v4** with the PostCSS plugin (`.postcssrc.json`)
 - Import via `@import "tailwindcss"` in `src/styles.css`
 - Use utility classes directly in templates -- avoid custom CSS unless absolutely necessary
-- Use Tailwind's built-in dark mode, spacing, typography, and color utilities
 - No component library (no Angular Material, no DaisyUI) -- pure Tailwind utilities
 - Responsive design via Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`)
 
@@ -54,7 +61,7 @@ supabase stop           # Stop local stack
 
 ### Workflow
 1. All schema changes go in `supabase/migrations/` as timestamped SQL files
-2. Seed data (question bank) goes in `supabase/seed.sql` -- executed after migrations on `start` and `reset`
+2. Seed data goes in `supabase/seed.sql` -- executed after migrations on `start` and `reset`
 3. To rebuild from scratch: `supabase db reset` (re-applies all migrations + seed)
 4. Never edit migration files after they've been applied -- create new migrations instead
 5. Migration files follow naming: `YYYYMMDDHHmmss_short_description.sql`
@@ -69,35 +76,27 @@ Follow these guides for all database work:
 ## Project Structure
 
 ```
-src/app/
-  core/           # Auth, services, models
-  features/       # Feature modules (auth, dashboard, test-config, test-session, results)
-  shared/         # Reusable components
+src/client/
+  src/app/
+    core/           # Auth, services, models
+    features/       # Feature modules (auth, dashboard, manage)
+    shared/         # Reusable components (modal, multi-select, svg-icons)
 supabase/
-  migrations/     # Timestamped migration SQL files (the source of truth for schema)
-  seed.sql        # Question bank seed data (run after migrations)
+  migrations/       # Timestamped migration SQL files (source of truth for schema)
+  seed.sql          # Marker types + demo data (run after migrations)
+  config.toml       # Supabase local config (Google OAuth enabled)
+  .env              # Local secrets (not committed)
 docs/
-  specs/          # Feature specifications
-  supabase-guides/ # Supabase development guidelines
+  brand.md          # Brand guide and design decisions
+  specs/            # Feature specifications
+  supabase-guides/  # Supabase development guidelines
 ```
-
-## UI Development Flow
-
-After building or modifying any UI component (template, styles, layout), automatically run these steps before considering the work done:
-
-1. **Build** -- run `/audit` on the changed component to check accessibility, performance, and responsiveness
-2. **Review** -- run `/critique` on the changed component for UX design quality
-3. **Present findings** -- summarize the audit and critique results, then ask the user which issues to fix
-4. **Fix** -- apply the agreed-upon changes
-5. **Polish** -- run `/polish` as a final pass, ask the user to confirm the result
-
-Do not skip these steps or wait to be asked. This is part of the standard workflow for any UI work.
 
 ## Verification
 
 ```bash
-ng lint && ng build && ng test --watch=false
+cd src/client && ng lint && ng build
 ```
 
 ## Spec Location
-- Active spec: `docs/specs/ea-simulator/spec.md`
+- Active spec: `docs/specs/clinical-trial-dashboard/spec.md`

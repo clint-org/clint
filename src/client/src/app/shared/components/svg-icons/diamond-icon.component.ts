@@ -28,8 +28,8 @@ import { Component, computed, input } from '@angular/core';
     <svg:polygon
       [attr.points]="points()"
       [attr.fill]="computedFill()"
-      [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : 0"
+      [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : fillStyle() === 'filled' ? 1 : 0"
     />
   `,
 })

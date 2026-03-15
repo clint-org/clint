@@ -1,45 +1,43 @@
 @if (!loading()) {
   <div
-    class="border-t border-gray-100 bg-white px-4 py-2.5"
+    class="border-t border-slate-200 bg-slate-50/50 px-5 py-3"
     role="list"
     aria-label="Marker type legend"
   >
-    <div class="flex flex-wrap items-center gap-y-1.5">
-      @for (mt of markerTypes(); track mt.id; let last = $last) {
-        <div class="flex items-center gap-1.5 text-[11px] text-gray-500" role="listitem">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            class="shrink-0"
-            aria-hidden="true"
-          >
-            @switch (mt.shape) {
-              @case ('circle') {
-                <g app-circle-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
-              @case ('diamond') {
-                <g app-diamond-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
-              @case ('flag') {
-                <g app-flag-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
-              @case ('arrow') {
-                <g app-arrow-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
-              @case ('x') {
-                <g app-x-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
-              @case ('bar') {
-                <g app-bar-icon [width]="12" [height]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-              }
+    <div class="flex flex-wrap items-start gap-x-8 gap-y-2">
+      @for (group of groupedMarkerTypes(); track group.label) {
+        <div class="flex items-center gap-x-3">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ group.label }}</span>
+          <div class="flex items-center gap-x-3">
+            @for (mt of group.types; track mt.id) {
+              <div class="flex items-center gap-1 text-[11px] text-slate-500" role="listitem">
+                <svg width="12" height="12" viewBox="0 0 12 12" class="shrink-0" aria-hidden="true">
+                  @switch (mt.shape) {
+                    @case ('circle') {
+                      <g app-circle-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                    @case ('diamond') {
+                      <g app-diamond-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                    @case ('flag') {
+                      <g app-flag-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                    @case ('arrow') {
+                      <g app-arrow-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                    @case ('x') {
+                      <g app-x-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                    @case ('bar') {
+                      <g app-bar-icon [width]="12" [height]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
+                    }
+                  }
+                </svg>
+                <span>{{ mt.name }}</span>
+              </div>
             }
-          </svg>
-          <span>{{ mt.name }}</span>
+          </div>
         </div>
-        @if (!last) {
-          <span class="mx-2.5 text-gray-300" aria-hidden="true">&middot;</span>
-        }
       }
     </div>
   </div>

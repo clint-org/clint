@@ -6,15 +6,15 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
   selector: 'app-zoom-control',
   standalone: true,
   template: `
-    <div class="inline-flex rounded-md border border-gray-300 bg-white" role="group" aria-label="Zoom level">
+    <div class="inline-flex rounded-md border border-slate-300 bg-white" role="group" aria-label="Zoom level">
       @for (option of zoomOptions; track option.value) {
         <button
           type="button"
           class="px-2.5 py-1 text-xs font-medium transition-colors first:rounded-l-md last:rounded-r-md"
-          [class.bg-gray-900]="zoomLevel() === option.value"
+          [class.bg-slate-800]="zoomLevel() === option.value"
           [class.text-white]="zoomLevel() === option.value"
-          [class.text-gray-700]="zoomLevel() !== option.value"
-          [class.hover:bg-gray-100]="zoomLevel() !== option.value"
+          [class.text-slate-600]="zoomLevel() !== option.value"
+          [class.hover:bg-slate-100]="zoomLevel() !== option.value"
           [attr.aria-pressed]="zoomLevel() === option.value"
           (click)="zoomChange.emit(option.value)"
         >

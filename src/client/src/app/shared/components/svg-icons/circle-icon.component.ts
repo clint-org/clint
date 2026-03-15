@@ -30,8 +30,8 @@ import { Component, input } from '@angular/core';
       [attr.cy]="size() / 2"
       [attr.r]="size() / 2 - 1"
       [attr.fill]="computedFill()"
-      [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : 0"
+      [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : fillStyle() === 'filled' ? 1 : 0"
     />
   `,
 })

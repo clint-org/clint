@@ -4,11 +4,11 @@ import { TrialPhase } from '../../../core/models/trial.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 
 const DEFAULT_COLORS: Record<string, string> = {
-  P1: '#93c5fd',
-  P2: '#6ee7b7',
-  P3: '#7dd3fc',
-  P4: '#c4b5fd',
-  OBS: '#d1d5db',
+  P1: '#94a3b8',
+  P2: '#67e8f9',
+  P3: '#2dd4bf',
+  P4: '#a78bfa',
+  OBS: '#fbbf24',
 };
 
 const BAR_HEIGHT = 14;

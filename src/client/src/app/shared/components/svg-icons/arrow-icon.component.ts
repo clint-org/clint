@@ -29,7 +29,9 @@ import { Component, computed, input } from '@angular/core';
       [attr.d]="arrowPath()"
       [attr.fill]="computedFill()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 2.5 : 0"
+      stroke-linecap="round"
+      stroke-linejoin="round"
     />
   `,
 })

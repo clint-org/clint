@@ -8,10 +8,10 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
   template: `
     <div class="relative" [style.width.px]="totalWidth()">
       <!-- Primary row (years) -->
-      <div class="flex border-b border-gray-300 bg-gray-100">
+      <div class="flex border-b border-slate-200 bg-slate-50">
         @for (col of columns(); track col.label) {
           <div
-            class="flex-none border-r border-gray-300 px-2 py-1 text-center text-sm font-semibold text-gray-700"
+            class="flex-none border-r border-slate-200 px-2 py-1 text-center font-mono text-xs tracking-wider font-semibold text-slate-600"
             [style.width.px]="col.width"
           >
             {{ col.label }}
@@ -21,12 +21,12 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
 
       <!-- Sub-column row (quarters/months) if present -->
       @if (hasSubColumns()) {
-        <div class="flex border-b border-gray-200 bg-gray-50">
+        <div class="flex border-b border-slate-200 bg-slate-50/50">
           @for (col of columns(); track col.label) {
             @if (col.subColumns) {
               @for (sub of col.subColumns; track sub.label) {
                 <div
-                  class="flex-none border-r border-gray-200 px-1 py-0.5 text-center text-xs text-gray-500 truncate"
+                  class="flex-none border-r border-slate-200 px-1 py-0.5 text-center text-xs text-slate-500 truncate"
                   [style.width.px]="sub.width"
                 >
                   {{ sub.label }}
@@ -41,13 +41,13 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
       <div class="pointer-events-none absolute inset-0">
         @for (col of columns(); track col.label) {
           <div
-            class="absolute top-0 bottom-0 border-l border-gray-200"
+            class="absolute top-0 bottom-0 border-l border-slate-200"
             [style.left.px]="col.startX"
           ></div>
           @if (col.subColumns) {
             @for (sub of col.subColumns; track sub.label) {
               <div
-                class="absolute top-0 bottom-0 border-l border-gray-100"
+                class="absolute top-0 bottom-0 border-l border-slate-100"
                 [style.left.px]="sub.startX"
               ></div>
             }

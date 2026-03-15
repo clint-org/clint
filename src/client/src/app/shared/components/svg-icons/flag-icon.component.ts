@@ -39,7 +39,7 @@ import { Component, computed, input } from '@angular/core';
       [attr.d]="flagPath()"
       [attr.fill]="computedFill()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? 2 : 0"
     />
   `,
 })

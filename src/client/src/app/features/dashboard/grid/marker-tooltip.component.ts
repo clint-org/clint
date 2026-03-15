@@ -5,8 +5,8 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div
-      class="absolute z-50 rounded-lg bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white shadow-xl"
-      style="bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 10px; max-width: 250px;"
+      class="absolute z-50 rounded-md bg-slate-900 px-3 py-2 text-xs leading-relaxed text-white shadow-lg"
+      style="bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 10px; max-width: 280px;"
     >
       @if (imageUrl()) {
         <img
@@ -18,7 +18,7 @@ import { Component, input } from '@angular/core';
       <p class="whitespace-nowrap" [class.whitespace-normal]="text().length > 40">{{ text() }}</p>
       <!-- Arrow -->
       <div
-        class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900"
+        class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-slate-900"
         style="top: 100%;"
       ></div>
     </div>
