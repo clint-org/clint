@@ -1,0 +1,61 @@
+@if (loading()) {
+  <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+    <div class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" aria-hidden="true"></div>
+    <span class="text-sm text-gray-500">Loading filters...</span>
+  </div>
+} @else {
+  <div class="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+    <span class="text-sm font-medium text-gray-600">Filters</span>
+
+    <div class="w-48">
+      <app-multi-select
+        label="Company"
+        [options]="companyOptions()"
+        [selected]="selectedCompanyIds()"
+        (selectionChange)="selectedCompanyIds.set($event)"
+      />
+    </div>
+
+    <div class="w-48">
+      <app-multi-select
+        label="Product"
+        [options]="productOptions()"
+        [selected]="selectedProductIds()"
+        (selectionChange)="selectedProductIds.set($event)"
+      />
+    </div>
+
+    <div class="w-48">
+      <app-multi-select
+        label="Therapeutic Area"
+        [options]="taOptions()"
+        [selected]="selectedTAIds()"
+        (selectionChange)="selectedTAIds.set($event)"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="start-year" class="text-sm text-gray-600">From</label>
+      <input
+        id="start-year"
+        type="number"
+        class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        [value]="startYear()"
+        (input)="onStartYearInput($event)"
+        aria-label="Start year"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label for="end-year" class="text-sm text-gray-600">To</label>
+      <input
+        id="end-year"
+        type="number"
+        class="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        [value]="endYear()"
+        (input)="onEndYearInput($event)"
+        aria-label="End year"
+      />
+    </div>
+  </div>
+}

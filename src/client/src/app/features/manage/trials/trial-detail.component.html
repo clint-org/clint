@@ -1,0 +1,302 @@
+<div class="mx-auto max-w-4xl p-6">
+  @if (loading()) {
+    <p class="text-gray-500">Loading trial...</p>
+  } @else if (error()) {
+    <div class="rounded-md bg-red-50 p-4" role="alert">
+      <p class="text-sm text-red-700">{{ error() }}</p>
+    </div>
+  } @else if (trial()) {
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ trial()!.name }}</h1>
+        @if (trial()!.identifier) {
+          <p class="text-sm text-gray-500">{{ trial()!.identifier }}</p>
+        }
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="editingTrial.set(true)"
+          class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white
+                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:ring-offset-2"
+          aria-label="Edit trial"
+        >
+          Edit Trial
+        </button>
+        <a
+          routerLink="/manage/products"
+          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium
+                 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2
+                 focus:ring-blue-500 focus:ring-offset-2"
+          aria-label="Back to products"
+        >
+          Back
+        </a>
+      </div>
+    </div>
+
+    <!-- Trial Form (edit mode) -->
+    @if (editingTrial()) {
+      <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 class="mb-4 text-lg font-semibold text-gray-900">Edit Trial</h2>
+        <app-trial-form
+          [trial]="trial()"
+          (saved)="onTrialSaved()"
+          (cancelled)="editingTrial.set(false)"
+        />
+      </section>
+    }
+
+    <!-- Basic Info -->
+    <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="basic-info-heading">
+      <h2 id="basic-info-heading" class="mb-4 text-lg font-semibold text-gray-900">Basic Info</h2>
+      <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Status</dt>
+          <dd class="mt-1 text-sm text-gray-900">{{ trial()!.status || 'Not set' }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Therapeutic Area</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            {{ trial()!.therapeutic_areas?.name || 'Not set' }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Sample Size</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            {{ trial()!.sample_size !== null ? trial()!.sample_size : 'Not set' }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Display Order</dt>
+          <dd class="mt-1 text-sm text-gray-900">{{ trial()!.display_order }}</dd>
+        </div>
+        @if (trial()!.notes) {
+          <div class="sm:col-span-2">
+            <dt class="text-sm font-medium text-gray-500">Notes</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ trial()!.notes }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+
+    <!-- Phases Section -->
+    <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="phases-heading">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="phases-heading" class="text-lg font-semibold text-gray-900">Phases</h2>
+        <button
+          (click)="addingPhase.set(true); editingPhase.set(null)"
+          class="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white
+                 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500
+                 focus:ring-offset-2"
+          aria-label="Add phase"
+        >
+          Add Phase
+        </button>
+      </div>
+
+      @if (addingPhase() || editingPhase()) {
+        <div class="mb-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+          <app-phase-form
+            [phase]="editingPhase()"
+            [trialId]="trialId()"
+            (saved)="onPhaseSaved()"
+            (cancelled)="addingPhase.set(false); editingPhase.set(null)"
+          />
+        </div>
+      }
+
+      @if (trial()!.trial_phases && trial()!.trial_phases!.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200" aria-label="Trial phases">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Label</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Start Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">End Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Color</th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              @for (phase of trial()!.trial_phases; track phase.id) {
+                <tr>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ phase.phase_type }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ phase.label || '-' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ phase.start_date }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ phase.end_date || '-' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm">
+                    @if (phase.color) {
+                      <span
+                        class="inline-block h-5 w-5 rounded-full border border-gray-300"
+                        [style.background-color]="phase.color"
+                        [attr.aria-label]="'Color: ' + phase.color"
+                      ></span>
+                    } @else {
+                      <span class="text-gray-400">-</span>
+                    }
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                    <button
+                      (click)="editingPhase.set(phase); addingPhase.set(false)"
+                      class="mr-2 text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
+                      [attr.aria-label]="'Edit phase ' + phase.phase_type"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      (click)="deletePhase(phase.id)"
+                      class="text-red-600 hover:text-red-800 focus:outline-none focus:underline"
+                      [attr.aria-label]="'Delete phase ' + phase.phase_type"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="text-sm text-gray-500">No phases defined.</p>
+      }
+    </section>
+
+    <!-- Markers Section -->
+    <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="markers-heading">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="markers-heading" class="text-lg font-semibold text-gray-900">Markers</h2>
+        <button
+          (click)="addingMarker.set(true); editingMarker.set(null)"
+          class="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white
+                 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500
+                 focus:ring-offset-2"
+          aria-label="Add marker"
+        >
+          Add Marker
+        </button>
+      </div>
+
+      @if (addingMarker() || editingMarker()) {
+        <div class="mb-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+          <app-marker-form
+            [marker]="editingMarker()"
+            [trialId]="trialId()"
+            (saved)="onMarkerSaved()"
+            (cancelled)="addingMarker.set(false); editingMarker.set(null)"
+          />
+        </div>
+      }
+
+      @if (trial()!.trial_markers && trial()!.trial_markers!.length > 0) {
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200" aria-label="Trial markers">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Event Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">End Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tooltip</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Projected</th>
+                <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              @for (marker of trial()!.trial_markers; track marker.id) {
+                <tr>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                    {{ marker.marker_types?.name || 'Unknown' }}
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ marker.event_date }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ marker.end_date || '-' }}</td>
+                  <td class="max-w-xs truncate px-4 py-3 text-sm text-gray-900">{{ marker.tooltip_text || '-' }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                    {{ marker.is_projected ? 'Yes' : 'No' }}
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                    <button
+                      (click)="editingMarker.set(marker); addingMarker.set(false)"
+                      class="mr-2 text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
+                      [attr.aria-label]="'Edit marker ' + (marker.marker_types?.name || 'unknown')"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      (click)="deleteMarker(marker.id)"
+                      class="text-red-600 hover:text-red-800 focus:outline-none focus:underline"
+                      [attr.aria-label]="'Delete marker ' + (marker.marker_types?.name || 'unknown')"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="text-sm text-gray-500">No markers defined.</p>
+      }
+    </section>
+
+    <!-- Notes Section -->
+    <section class="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm" aria-labelledby="notes-heading">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 id="notes-heading" class="text-lg font-semibold text-gray-900">Notes</h2>
+        <button
+          (click)="addingNote.set(true); editingNote.set(null)"
+          class="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white
+                 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500
+                 focus:ring-offset-2"
+          aria-label="Add note"
+        >
+          Add Note
+        </button>
+      </div>
+
+      @if (addingNote() || editingNote()) {
+        <div class="mb-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+          <app-note-form
+            [note]="editingNote()"
+            [trialId]="trialId()"
+            (saved)="onNoteSaved()"
+            (cancelled)="addingNote.set(false); editingNote.set(null)"
+          />
+        </div>
+      }
+
+      @if (trial()!.trial_notes && trial()!.trial_notes!.length > 0) {
+        <div class="space-y-3">
+          @for (note of trial()!.trial_notes; track note.id) {
+            <div class="rounded-md border border-gray-200 bg-gray-50 p-4">
+              <div class="flex items-start justify-between">
+                <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ note.content }}</p>
+                <div class="ml-4 flex shrink-0 gap-2">
+                  <button
+                    (click)="editingNote.set(note); addingNote.set(false)"
+                    class="text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus:underline"
+                    [attr.aria-label]="'Edit note'"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="deleteNote(note.id)"
+                    class="text-sm text-red-600 hover:text-red-800 focus:outline-none focus:underline"
+                    [attr.aria-label]="'Delete note'"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <p class="mt-2 text-xs text-gray-400">{{ note.updated_at }}</p>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-gray-500">No notes yet.</p>
+      }
+    </section>
+  }
+</div>

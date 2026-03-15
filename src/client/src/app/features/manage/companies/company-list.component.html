@@ -1,0 +1,76 @@
+<div class="p-4">
+  <div class="mb-4 flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-gray-900">Companies</h1>
+    <button
+      type="button"
+      class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      (click)="openCreateModal()"
+    >
+      Add Company
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-gray-500" aria-live="polite">Loading companies...</p>
+  } @else if (companies().length === 0) {
+    <p class="text-sm text-gray-500">No companies found. Add one to get started.</p>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200" aria-label="Companies table">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Logo URL</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Order</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+          @for (company of companies(); track company.id) {
+            <tr>
+              <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{{ company.name }}</td>
+              <td class="max-w-[200px] truncate px-4 py-3 text-sm text-gray-500">{{ company.logo_url ?? '-' }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{{ company.display_order }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                <button
+                  type="button"
+                  class="mr-2 text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  [attr.aria-label]="'Edit ' + company.name"
+                  (click)="openEditModal(company)"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  [attr.aria-label]="'Delete ' + company.name"
+                  (click)="confirmDelete(company)"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (deleteError()) {
+    <div class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert" aria-live="assertive">
+      {{ deleteError() }}
+    </div>
+  }
+</div>
+
+<app-modal
+  [isOpen]="modalOpen()"
+  [title]="editingCompany() ? 'Edit Company' : 'Add Company'"
+  (closed)="closeModal()"
+>
+  <app-company-form
+    [company]="editingCompany()"
+    (saved)="onSaved()"
+    (cancelled)="closeModal()"
+  />
+</app-modal>

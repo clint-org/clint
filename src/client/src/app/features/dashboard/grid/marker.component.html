@@ -1,0 +1,90 @@
+@if (markerType(); as mt) {
+  <div
+    class="absolute cursor-pointer"
+    [style.left.px]="markerX()"
+    [style.top.px]="topOffset"
+    (mouseenter)="showTooltip = true"
+    (mouseleave)="showTooltip = false"
+    (click)="onMarkerClick()"
+    (keydown.enter)="onMarkerClick()"
+    (keydown.space)="onMarkerClick()"
+    tabindex="0"
+    role="button"
+    [attr.aria-label]="tooltipText()"
+  >
+    @if (isRange()) {
+      <svg
+        [attr.width]="rangeWidth()"
+        [attr.height]="iconSize"
+        class="overflow-visible"
+      >
+        <g app-bar-icon
+          [width]="rangeWidth()"
+          [height]="iconSize"
+          [color]="mt.color"
+          [fillStyle]="mt.fill_style"
+        />
+      </svg>
+    } @else {
+      <svg
+        [attr.width]="iconSize"
+        [attr.height]="iconSize"
+        class="overflow-visible"
+        [style.margin-left.px]="-iconSize / 2"
+      >
+        @switch (mt.shape) {
+          @case ('circle') {
+            <g app-circle-icon
+              [size]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+          @case ('diamond') {
+            <g app-diamond-icon
+              [size]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+          @case ('flag') {
+            <g app-flag-icon
+              [size]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+          @case ('arrow') {
+            <g app-arrow-icon
+              [size]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+          @case ('x') {
+            <g app-x-icon
+              [size]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+          @case ('bar') {
+            <g app-bar-icon
+              [width]="iconSize * 2"
+              [height]="iconSize"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+            />
+          }
+        }
+      </svg>
+    }
+
+    @if (showTooltip && tooltipText()) {
+      <app-marker-tooltip
+        [text]="tooltipText()!"
+        [imageUrl]="marker().tooltip_image_url"
+      />
+    }
+  </div>
+}

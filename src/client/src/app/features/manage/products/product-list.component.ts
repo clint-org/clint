@@ -1,8 +1,84 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
+
+import { Product } from '../../../core/models/product.model';
+import { Company } from '../../../core/models/company.model';
+import { ProductService } from '../../../core/services/product.service';
+import { CompanyService } from '../../../core/services/company.service';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ProductFormComponent } from './product-form.component';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  template: `<p class="p-4 text-lg">Product list works!</p>`,
+  imports: [ModalComponent, ProductFormComponent],
+  templateUrl: './product-list.component.html',
 })
-export class ProductListComponent {}
+export class ProductListComponent implements OnInit {
+  products = signal<Product[]>([]);
+  companies = signal<Company[]>([]);
+  loading = signal(false);
+  modalOpen = signal(false);
+  editingProduct = signal<Product | null>(null);
+  deleteError = signal<string | null>(null);
+
+  private productService = inject(ProductService);
+  private companyService = inject(CompanyService);
+
+  async ngOnInit(): Promise<void> {
+    await this.loadData();
+  }
+
+  getCompanyName(companyId: string): string {
+    const company = this.companies().find((c) => c.id === companyId);
+    return company?.name ?? '-';
+  }
+
+  openCreateModal(): void {
+    this.editingProduct.set(null);
+    this.modalOpen.set(true);
+  }
+
+  openEditModal(product: Product): void {
+    this.editingProduct.set(product);
+    this.modalOpen.set(true);
+  }
+
+  closeModal(): void {
+    this.modalOpen.set(false);
+    this.editingProduct.set(null);
+  }
+
+  async onSaved(): Promise<void> {
+    this.closeModal();
+    await this.loadData();
+  }
+
+  async confirmDelete(product: Product): Promise<void> {
+    const confirmed = window.confirm(`Delete "${product.name}"? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    this.deleteError.set(null);
+    try {
+      await this.productService.delete(product.id);
+      await this.loadData();
+    } catch (err) {
+      this.deleteError.set(err instanceof Error ? err.message : 'Failed to delete product');
+    }
+  }
+
+  private async loadData(): Promise<void> {
+    this.loading.set(true);
+    try {
+      const [products, companies] = await Promise.all([
+        this.productService.list(),
+        this.companyService.list(),
+      ]);
+      this.products.set(products);
+      this.companies.set(companies);
+    } catch {
+      // Silently handle - empty list shown
+    } finally {
+      this.loading.set(false);
+    }
+  }
+}
