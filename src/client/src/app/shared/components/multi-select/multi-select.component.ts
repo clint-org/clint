@@ -43,7 +43,8 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
     document.removeEventListener('click', this.boundOnDocumentClick);
   }
 
-  toggle(): void {
+  toggle(event?: MouseEvent): void {
+    event?.stopPropagation();
     this.isOpen.update((v) => !v);
     if (!this.isOpen()) {
       this.focusedIndex.set(-1);

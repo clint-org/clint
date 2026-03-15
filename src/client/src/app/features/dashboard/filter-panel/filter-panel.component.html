@@ -39,7 +39,7 @@
         type="number"
         class="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none"
         [value]="startYear()"
-        (input)="onStartYearInput($event)"
+        (change)="onStartYearInput($event)"
         aria-label="Start year"
       />
     </div>
@@ -51,7 +51,7 @@
         type="number"
         class="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500 focus:outline-none"
         [value]="endYear()"
-        (input)="onEndYearInput($event)"
+        (change)="onEndYearInput($event)"
         aria-label="End year"
       />
     </div>

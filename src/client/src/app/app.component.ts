@@ -8,10 +8,14 @@ import { SupabaseService } from './core/services/supabase.service';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent],
   template: `
-    @if (supabase.currentUser()) {
-      <app-header />
-    }
-    <router-outlet />
+    <div class="flex flex-col h-screen">
+      @if (supabase.currentUser()) {
+        <app-header />
+      }
+      <div class="flex-1 overflow-hidden">
+        <router-outlet />
+      </div>
+    </div>
   `,
 })
 export class AppComponent {

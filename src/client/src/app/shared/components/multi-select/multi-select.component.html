@@ -5,7 +5,7 @@
     [attr.aria-expanded]="isOpen()"
     [attr.aria-label]="label() + ', ' + selectedCount() + ' selected'"
     aria-haspopup="listbox"
-    (click)="toggle()"
+    (click)="toggle($event)"
     (keydown)="onTriggerKeydown($event)"
   >
     <span class="truncate">
