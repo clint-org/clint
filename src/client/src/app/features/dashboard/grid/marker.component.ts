@@ -2,26 +2,16 @@ import { Component, computed, inject, input, output } from '@angular/core';
 
 import { MarkerType, TrialMarker } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
-import { ArrowIconComponent } from '../../../shared/components/svg-icons/arrow-icon.component';
 import { BarIconComponent } from '../../../shared/components/svg-icons/bar-icon.component';
-import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
-import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
-import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
-import { XIconComponent } from '../../../shared/components/svg-icons/x-icon.component';
 import { MarkerTooltipComponent } from './marker-tooltip.component';
 
-const ICON_SIZE = 20;
-const TOP_OFFSET = 5;
+const ICON_SIZE = 18;
+const TOP_OFFSET = 4;
 
 @Component({
   selector: 'app-marker',
   standalone: true,
   imports: [
-    CircleIconComponent,
-    DiamondIconComponent,
-    FlagIconComponent,
-    ArrowIconComponent,
-    XIconComponent,
     BarIconComponent,
     MarkerTooltipComponent,
   ],
@@ -65,6 +55,29 @@ export class MarkerComponent {
       this.totalWidth(),
     );
     return Math.max(0, endX - this.markerX());
+  });
+
+  faIcon = computed(() => {
+    const mt = this.markerType();
+    if (!mt) return 'fa-solid fa-circle';
+    const shape = mt.shape;
+    const fill = mt.fill_style;
+    switch (shape) {
+      case 'circle':
+        return fill === 'outline' ? 'fa-regular fa-circle' : 'fa-solid fa-circle';
+      case 'diamond':
+        return fill === 'outline' ? 'fa-regular fa-gem' : 'fa-solid fa-gem';
+      case 'flag':
+        return fill === 'outline' ? 'fa-regular fa-flag' : 'fa-solid fa-flag';
+      case 'arrow':
+        return 'fa-solid fa-arrow-up';
+      case 'x':
+        return 'fa-solid fa-circle-xmark';
+      case 'bar':
+        return 'fa-solid fa-grip-lines';
+      default:
+        return 'fa-solid fa-circle';
+    }
   });
 
   shortDate = computed(() => {

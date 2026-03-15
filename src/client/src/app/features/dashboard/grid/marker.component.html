@@ -1,7 +1,7 @@
 @if (markerType(); as mt) {
   <div
     class="absolute z-10 cursor-pointer"
-    style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3))"
+    style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25))"
     [style.left.px]="markerX()"
     [style.top.px]="topOffset"
     (mouseenter)="showTooltip = true"
@@ -27,58 +27,19 @@
         />
       </svg>
     } @else {
-      <svg
-        [attr.width]="iconSize"
-        [attr.height]="iconSize"
-        class="overflow-visible"
+      <div
+        class="flex items-center justify-center"
+        [style.width.px]="iconSize"
+        [style.height.px]="iconSize"
         [style.margin-left.px]="-iconSize / 2"
       >
-        @switch (mt.shape) {
-          @case ('circle') {
-            <g app-circle-icon
-              [size]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-          @case ('diamond') {
-            <g app-diamond-icon
-              [size]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-          @case ('flag') {
-            <g app-flag-icon
-              [size]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-          @case ('arrow') {
-            <g app-arrow-icon
-              [size]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-          @case ('x') {
-            <g app-x-icon
-              [size]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-          @case ('bar') {
-            <g app-bar-icon
-              [width]="iconSize * 2"
-              [height]="iconSize"
-              [color]="mt.color"
-              [fillStyle]="mt.fill_style"
-            />
-          }
-        }
-      </svg>
+        <i
+          [class]="faIcon()"
+          [style.color]="mt.color"
+          [style.font-size.px]="iconSize - 4"
+          style="-webkit-text-stroke: 0.5px white;"
+        ></i>
+      </div>
     }
 
     <div

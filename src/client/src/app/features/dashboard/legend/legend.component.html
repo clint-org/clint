@@ -10,29 +10,12 @@
           <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ group.label }}</span>
           <div class="flex items-center gap-x-3">
             @for (mt of group.types; track mt.id) {
-              <div class="flex items-center gap-1 text-[11px] text-slate-500" role="listitem">
-                <svg width="12" height="12" viewBox="0 0 12 12" class="shrink-0" aria-hidden="true">
-                  @switch (mt.shape) {
-                    @case ('circle') {
-                      <g app-circle-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                    @case ('diamond') {
-                      <g app-diamond-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                    @case ('flag') {
-                      <g app-flag-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                    @case ('arrow') {
-                      <g app-arrow-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                    @case ('x') {
-                      <g app-x-icon [size]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                    @case ('bar') {
-                      <g app-bar-icon [width]="12" [height]="12" [color]="mt.color" [fillStyle]="mt.fill_style" />
-                    }
-                  }
-                </svg>
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-500" role="listitem">
+                <i
+                  [class]="faIcon(mt)"
+                  [style.color]="mt.color"
+                  style="font-size: 11px;"
+                ></i>
                 <span>{{ mt.name }}</span>
               </div>
             }

@@ -2,24 +2,10 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
-import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
-import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
-import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
-import { ArrowIconComponent } from '../../../shared/components/svg-icons/arrow-icon.component';
-import { XIconComponent } from '../../../shared/components/svg-icons/x-icon.component';
-import { BarIconComponent } from '../../../shared/components/svg-icons/bar-icon.component';
 
 @Component({
   selector: 'app-legend',
   standalone: true,
-  imports: [
-    CircleIconComponent,
-    DiamondIconComponent,
-    FlagIconComponent,
-    ArrowIconComponent,
-    XIconComponent,
-    BarIconComponent,
-  ],
   templateUrl: './legend.component.html',
 })
 export class LegendComponent implements OnInit {
@@ -51,6 +37,25 @@ export class LegendComponent implements OnInit {
       },
     ].filter(g => g.types.length > 0);
   });
+
+  faIcon(mt: MarkerType): string {
+    switch (mt.shape) {
+      case 'circle':
+        return mt.fill_style === 'outline' ? 'fa-regular fa-circle' : 'fa-solid fa-circle';
+      case 'diamond':
+        return mt.fill_style === 'outline' ? 'fa-regular fa-gem' : 'fa-solid fa-gem';
+      case 'flag':
+        return mt.fill_style === 'outline' ? 'fa-regular fa-flag' : 'fa-solid fa-flag';
+      case 'arrow':
+        return 'fa-solid fa-arrow-up';
+      case 'x':
+        return 'fa-solid fa-circle-xmark';
+      case 'bar':
+        return 'fa-solid fa-grip-lines';
+      default:
+        return 'fa-solid fa-circle';
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     try {
