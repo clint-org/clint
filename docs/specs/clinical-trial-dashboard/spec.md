@@ -2,7 +2,7 @@
 id: spec-2026-001
 title: Clinical Trial Status Dashboard
 slug: clinical-trial-dashboard
-status: approved
+status: completed
 created: 2026-03-14
 updated: 2026-03-15
 ---
