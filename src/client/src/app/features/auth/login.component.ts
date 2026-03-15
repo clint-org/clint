@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
@@ -64,11 +65,19 @@ import { SupabaseService } from '../../core/services/supabase.service';
     </div>
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
+  private readonly router = inject(Router);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+
+  async ngOnInit() {
+    await this.supabaseService.waitForSession();
+    if (this.supabaseService.session()) {
+      this.router.navigate(['/']);
+    }
+  }
 
   async signInWithGoogle() {
     this.loading.set(true);

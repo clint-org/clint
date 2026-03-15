@@ -20,32 +20,36 @@ import { SupabaseService } from '../../core/services/supabase.service';
 })
 export class AuthCallbackComponent implements OnInit {
   private readonly router = inject(Router);
-  private readonly supabaseService = inject(SupabaseService);
+  private readonly supabase = inject(SupabaseService);
 
-  async ngOnInit() {
-    // Wait for Supabase to process the OAuth tokens from the URL hash
-    const { data, error } = await this.supabaseService.client.auth.getSession();
-
-    if (error || !data.session) {
-      // If no session yet, listen for the auth state change (token exchange)
-      const { data: { subscription } } = this.supabaseService.client.auth.onAuthStateChange((event, session) => {
+  ngOnInit() {
+    // Supabase JS client auto-processes the hash fragment tokens.
+    // We just need to wait for onAuthStateChange to fire.
+    const { data: { subscription } } = this.supabase.client.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         subscription.unsubscribe();
-        if (session) {
-          this.router.navigate(['/']);
-        } else {
-          this.router.navigate(['/login']);
-        }
-      });
-
-      // Timeout after 5 seconds
-      setTimeout(() => {
+        this.router.navigate(['/']);
+      } else if (event === 'SIGNED_OUT') {
         subscription.unsubscribe();
-        if (!this.supabaseService.session()) {
-          this.router.navigate(['/login']);
-        }
-      }, 5000);
-    } else {
-      await this.router.navigate(['/']);
-    }
+        this.router.navigate(['/login']);
+      }
+    });
+
+    // Fallback: if already signed in (session exists), redirect immediately
+    setTimeout(async () => {
+      const { data } = await this.supabase.client.auth.getSession();
+      if (data.session) {
+        subscription.unsubscribe();
+        this.router.navigate(['/']);
+      }
+    }, 500);
+
+    // Timeout: if nothing happens after 8 seconds, go to login
+    setTimeout(() => {
+      subscription.unsubscribe();
+      if (!this.supabase.session()) {
+        this.router.navigate(['/login']);
+      }
+    }, 8000);
   }
 }
