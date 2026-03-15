@@ -1,4 +1,5 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
@@ -35,6 +36,7 @@ export class ProductFormComponent implements OnInit {
 
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);
+  private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<void> {
     const p = this.product();
@@ -47,7 +49,8 @@ export class ProductFormComponent implements OnInit {
     }
 
     try {
-      const list = await this.companyService.list();
+      const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+      const list = await this.companyService.list(spaceId);
       this.companies.set(list);
       if (!p && list.length > 0) {
         this.companyId.set(list[0].id);
@@ -86,7 +89,8 @@ export class ProductFormComponent implements OnInit {
       if (existing) {
         result = await this.productService.update(existing.id, payload);
       } else {
-        result = await this.productService.create(payload);
+        const sid = this.route.snapshot.paramMap.get('spaceId')!;
+        result = await this.productService.create(sid, payload);
       }
       this.saved.emit(result);
     } catch (err) {

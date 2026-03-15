@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -26,8 +27,11 @@ export class ProductListComponent implements OnInit {
 
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);
+  private route = inject(ActivatedRoute);
+  spaceId = '';
 
   async ngOnInit(): Promise<void> {
+    this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     await this.loadData();
   }
 
@@ -73,8 +77,8 @@ export class ProductListComponent implements OnInit {
     this.loading.set(true);
     try {
       const [products, companies] = await Promise.all([
-        this.productService.list(),
-        this.companyService.list(),
+        this.productService.list(this.spaceId),
+        this.companyService.list(this.spaceId),
       ]);
       this.products.set(products);
       this.companies.set(companies);

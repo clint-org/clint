@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -22,8 +23,11 @@ export class CompanyListComponent implements OnInit {
   deleteError = signal<string | null>(null);
 
   private companyService = inject(CompanyService);
+  private route = inject(ActivatedRoute);
+  spaceId = '';
 
   async ngOnInit(): Promise<void> {
+    this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     await this.loadCompanies();
   }
 
@@ -63,7 +67,7 @@ export class CompanyListComponent implements OnInit {
   private async loadCompanies(): Promise<void> {
     this.loading.set(true);
     try {
-      const data = await this.companyService.list();
+      const data = await this.companyService.list(this.spaceId);
       this.companies.set(data);
     } catch {
       // Silently handle - empty list shown

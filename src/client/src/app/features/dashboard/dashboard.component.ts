@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, resource, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DashboardFilters, ZoomLevel } from '../../core/models/dashboard.model';
 import { TrialMarker } from '../../core/models/marker.model';
@@ -32,6 +32,10 @@ import { ZoomControlComponent } from './zoom-control/zoom-control.component';
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly tenantId = signal('');
+  readonly spaceId = signal('');
 
   filters = signal<DashboardFilters>({
     companyIds: null,
@@ -48,13 +52,14 @@ export class DashboardComponent {
   private seeded = false;
 
   dashboardData = resource({
-    request: () => this.filters(),
-    loader: async ({ request: filters }) => {
-      const data = await this.dashboardService.getDashboardData(filters);
+    request: () => ({ filters: this.filters(), spaceId: this.spaceId() }),
+    loader: async ({ request }) => {
+      if (!request.spaceId) return { companies: [] };
+      const data = await this.dashboardService.getDashboardData(request.spaceId, request.filters);
       if (!this.seeded && data.companies.length === 0) {
         this.seeded = true;
-        await this.dashboardService.seedDemoData();
-        return await this.dashboardService.getDashboardData(filters);
+        await this.dashboardService.seedDemoData(request.spaceId);
+        return await this.dashboardService.getDashboardData(request.spaceId, request.filters);
       }
       return data;
     },
@@ -64,6 +69,10 @@ export class DashboardComponent {
   exportDialogOpen = signal(false);
 
   constructor() {
+    const params = this.route.snapshot.paramMap;
+    this.tenantId.set(params.get('tenantId') ?? '');
+    this.spaceId.set(params.get('spaceId') ?? '');
+
     effect(() => {
       const data = this.dashboardData.value();
       if (!data || !data.companies.length) return;
@@ -107,11 +116,11 @@ export class DashboardComponent {
   }
 
   onPhaseClick(phase: TrialPhase): void {
-    this.router.navigate(['/manage/trials', phase.trial_id]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', phase.trial_id]);
   }
 
   onMarkerClick(marker: TrialMarker): void {
-    this.router.navigate(['/manage/trials', marker.trial_id]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', marker.trial_id]);
   }
 
   retry(): void {

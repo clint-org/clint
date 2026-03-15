@@ -1,4 +1,5 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
@@ -28,6 +29,7 @@ export class TrialFormComponent implements OnInit {
   private trialService = inject(TrialService);
   private productService = inject(ProductService);
   private therapeuticAreaService = inject(TherapeuticAreaService);
+  private route = inject(ActivatedRoute);
 
   readonly statusOptions = [
     { label: 'Active', value: 'Active' },
@@ -70,8 +72,8 @@ export class TrialFormComponent implements OnInit {
   private async loadDropdowns(): Promise<void> {
     try {
       const [products, areas] = await Promise.all([
-        this.productService.list(),
-        this.therapeuticAreaService.list(),
+        this.productService.list(this.route.snapshot.paramMap.get('spaceId')!),
+        this.therapeuticAreaService.list(this.route.snapshot.paramMap.get('spaceId')!),
       ]);
       this.products.set(products);
       this.therapeuticAreas.set(areas);
@@ -102,7 +104,8 @@ export class TrialFormComponent implements OnInit {
       if (existing) {
         await this.trialService.update(existing.id, payload);
       } else {
-        await this.trialService.create(payload);
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        await this.trialService.create(spaceId, payload);
       }
       this.saved.emit();
     } catch (err) {

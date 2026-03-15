@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MultiSelect } from 'primeng/multiselect';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -24,6 +24,7 @@ export class FilterPanelComponent implements OnInit {
   private productService = inject(ProductService);
   private therapeuticAreaService = inject(TherapeuticAreaService);
 
+  spaceId = input.required<string>();
   filtersChange = output<DashboardFilters>();
 
   loading = signal(true);
@@ -50,10 +51,11 @@ export class FilterPanelComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
+      const sid = this.spaceId();
       const [companies, products, areas] = await Promise.all([
-        this.companyService.list(),
-        this.productService.list(),
-        this.therapeuticAreaService.list(),
+        this.companyService.list(sid),
+        this.productService.list(sid),
+        this.therapeuticAreaService.list(sid),
       ]);
 
       this.companyOptions.set(

@@ -1,4 +1,5 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
@@ -22,6 +23,7 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private markerTypeService = inject(MarkerTypeService);
+  private route = inject(ActivatedRoute);
 
   readonly shapeOptions = [
     { label: 'Circle', value: 'circle' },
@@ -80,7 +82,8 @@ export class MarkerTypeFormComponent implements OnInit {
       if (existing) {
         await this.markerTypeService.update(existing.id, payload);
       } else {
-        await this.markerTypeService.create(payload);
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        await this.markerTypeService.create(spaceId, payload);
       }
       this.saved.emit();
     } catch (e) {
