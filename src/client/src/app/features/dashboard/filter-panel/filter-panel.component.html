@@ -7,7 +7,8 @@
   <div class="flex flex-wrap items-center gap-3 px-2 py-1.5">
     <p-multiselect
       [options]="companyOptions()"
-      [(ngModel)]="selectedCompanyIds"
+      [ngModel]="selectedCompanyIds()"
+      (ngModelChange)="selectedCompanyIds.set($event)"
       placeholder="Company"
       optionLabel="label"
       optionValue="value"
@@ -20,7 +21,8 @@
 
     <p-multiselect
       [options]="productOptions()"
-      [(ngModel)]="selectedProductIds"
+      [ngModel]="selectedProductIds()"
+      (ngModelChange)="selectedProductIds.set($event)"
       placeholder="Product"
       optionLabel="label"
       optionValue="value"
@@ -33,7 +35,8 @@
 
     <p-multiselect
       [options]="taOptions()"
-      [(ngModel)]="selectedTAIds"
+      [ngModel]="selectedTAIds()"
+      (ngModelChange)="selectedTAIds.set($event)"
       placeholder="Therapeutic Area"
       optionLabel="label"
       optionValue="value"
@@ -48,7 +51,8 @@
       <label for="start-year" class="text-sm text-slate-600">From</label>
       <p-inputnumber
         inputId="start-year"
-        [(ngModel)]="startYear"
+        [ngModel]="startYear()"
+        (ngModelChange)="startYear.set($event)"
         [useGrouping]="false"
         [min]="1990"
         [max]="2040"
@@ -62,7 +66,8 @@
       <label for="end-year" class="text-sm text-slate-600">To</label>
       <p-inputnumber
         inputId="end-year"
-        [(ngModel)]="endYear"
+        [ngModel]="endYear()"
+        (ngModelChange)="endYear.set($event)"
         [useGrouping]="false"
         [min]="1990"
         [max]="2040"

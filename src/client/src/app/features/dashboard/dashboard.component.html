@@ -35,31 +35,15 @@
           />
         </div>
       </div>
-    } @else if (dashboardData.value()) {
-      @if (dashboardData.value()!.companies.length > 0) {
-        @defer {
-          <app-dashboard-grid
-            [companies]="dashboardData.value()!.companies"
-            [zoomLevel]="zoomLevel()"
-            [startYear]="startYear()"
-            [endYear]="endYear()"
-            (phaseClick)="onPhaseClick($event)"
-            (markerClick)="onMarkerClick($event)"
-          />
-        } @placeholder {
-          <div class="flex items-center justify-center py-20">
-            <span class="text-sm text-slate-500">Preparing grid...</span>
-          </div>
-        }
-      } @else {
-        <div class="flex items-center justify-center py-20">
-          <div class="flex flex-col items-center gap-3 text-center">
-            <p-message severity="info" [closable]="false">
-              No clinical trial data to display. Add companies, products, and trials to see them on the dashboard.
-            </p-message>
-          </div>
-        </div>
-      }
+    } @else if (companies().length > 0) {
+      <app-dashboard-grid
+        [companies]="companies()"
+        [zoomLevel]="zoomLevel()"
+        [startYear]="startYear()"
+        [endYear]="endYear()"
+        (phaseClick)="onPhaseClick($event)"
+        (markerClick)="onMarkerClick($event)"
+      />
     } @else {
       <div class="flex items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3 text-center">

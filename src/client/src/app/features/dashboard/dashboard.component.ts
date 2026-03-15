@@ -1,4 +1,4 @@
-import { Component, effect, inject, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { DashboardFilters, ZoomLevel } from '../../core/models/dashboard.model';
@@ -49,6 +49,8 @@ export class DashboardComponent {
       return await this.dashboardService.getDashboardData(filters);
     },
   });
+
+  companies = computed(() => this.dashboardData.value()?.companies ?? []);
 
   constructor() {
     effect(() => {
