@@ -12,7 +12,7 @@ import { SupabaseService } from './core/services/supabase.service';
       @if (supabase.currentUser()) {
         <app-header />
       }
-      <div class="flex-1 overflow-hidden">
+      <div class="flex-1 min-h-0">
         <router-outlet />
       </div>
     </div>

@@ -2,12 +2,10 @@ import {
   Component,
   computed,
   ElementRef,
+  HostListener,
   input,
-  OnDestroy,
-  OnInit,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 
 export interface MultiSelectOption {
@@ -20,7 +18,7 @@ export interface MultiSelectOption {
   standalone: true,
   templateUrl: './multi-select.component.html',
 })
-export class MultiSelectComponent implements OnInit, OnDestroy {
+export class MultiSelectComponent {
   label = input.required<string>();
   options = input.required<MultiSelectOption[]>();
   selected = input<string[]>([]);
@@ -32,19 +30,18 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
 
   selectedCount = computed(() => this.selected().length);
 
-  private container = viewChild.required<ElementRef<HTMLElement>>('container');
-  private boundOnDocumentClick = this.onDocumentClick.bind(this);
-
-  ngOnInit(): void {
-    document.addEventListener('click', this.boundOnDocumentClick);
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const el = (event.target as HTMLElement);
+    if (!this.elementRef.nativeElement.contains(el)) {
+      this.isOpen.set(false);
+      this.focusedIndex.set(-1);
+    }
   }
 
-  ngOnDestroy(): void {
-    document.removeEventListener('click', this.boundOnDocumentClick);
-  }
+  constructor(private elementRef: ElementRef) {}
 
-  toggle(event?: MouseEvent): void {
-    event?.stopPropagation();
+  toggle(): void {
     this.isOpen.update((v) => !v);
     if (!this.isOpen()) {
       this.focusedIndex.set(-1);
@@ -55,7 +52,8 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
     return this.selected().includes(id);
   }
 
-  toggleOption(id: string): void {
+  toggleOption(id: string, event: MouseEvent): void {
+    event.stopPropagation();
     const current = this.selected();
     const updated = this.isSelected(id)
       ? current.filter((s) => s !== id)
@@ -63,12 +61,14 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
     this.selectionChange.emit(updated);
   }
 
-  selectAll(): void {
+  selectAll(event: MouseEvent): void {
+    event.stopPropagation();
     const allIds = this.options().map((o) => o.id);
     this.selectionChange.emit(allIds);
   }
 
-  clearAll(): void {
+  clearAll(event: MouseEvent): void {
+    event.stopPropagation();
     this.selectionChange.emit([]);
   }
 
@@ -102,7 +102,12 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
       case ' ':
         event.preventDefault();
         if (idx >= 0 && idx < opts.length) {
-          this.toggleOption(opts[idx].id);
+          const current = this.selected();
+          const optId = opts[idx].id;
+          const updated = this.isSelected(optId)
+            ? current.filter((s) => s !== optId)
+            : [...current, optId];
+          this.selectionChange.emit(updated);
         }
         break;
       case 'Escape':
@@ -118,14 +123,6 @@ export class MultiSelectComponent implements OnInit, OnDestroy {
         event.preventDefault();
         this.focusedIndex.set(opts.length - 1);
         break;
-    }
-  }
-
-  private onDocumentClick(event: MouseEvent): void {
-    const el = this.container()?.nativeElement;
-    if (el && !el.contains(event.target as Node)) {
-      this.isOpen.set(false);
-      this.focusedIndex.set(-1);
     }
   }
 }
