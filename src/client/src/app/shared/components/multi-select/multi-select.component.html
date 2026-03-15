@@ -32,10 +32,11 @@
 
   @if (isOpen()) {
     <!-- Invisible backdrop to close dropdown when clicking outside -->
-    <div class="fixed inset-0 z-40" (click)="close()"></div>
+    <div class="fixed inset-0" style="z-index: 40;" (click)="close()"></div>
 
     <div
-      class="absolute z-50 mt-1 w-full min-w-[200px] rounded-md border border-slate-200 bg-white shadow-lg"
+      class="absolute mt-1 w-full min-w-[200px] rounded-md border border-slate-200 bg-white shadow-lg"
+      style="z-index: 50;"
       role="listbox"
       tabindex="0"
       [attr.aria-label]="label() + ' options'"
