@@ -55,8 +55,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     for (const company of this.companies()) {
       let isFirstInCompany = true;
       const products = company.products ?? [];
-      for (let pIdx = 0; pIdx < products.length; pIdx++) {
-        const product = products[pIdx];
+      for (const product of products) {
         let isFirstInProduct = true;
         const trials = product.trials ?? [];
         for (const trial of trials) {

@@ -17,6 +17,9 @@ import { TrialNote } from '../../../core/models/trial.model';
       tooltipPosition="left"
       [tooltipOptions]="{ showDelay: 300 }"
       (click)="hasNotes() && op.toggle($event)"
+      (keydown.enter)="hasNotes() && op.toggle($event)"
+      [tabindex]="hasNotes() ? 0 : -1"
+      [attr.role]="hasNotes() ? 'button' : null"
     >
       @if (trialNotes()) {
         <span class="truncate text-sm text-slate-700">

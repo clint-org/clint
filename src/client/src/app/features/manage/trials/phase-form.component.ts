@@ -42,8 +42,8 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
-          <p-colorpicker [(ngModel)]="color" name="color" />
+          <label for="phase-color" class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+          <p-colorpicker [(ngModel)]="color" name="color" inputId="phase-color" />
         </div>
       </div>
 

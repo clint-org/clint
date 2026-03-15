@@ -2,7 +2,7 @@
 id: spec-2026-002
 title: PrimeNG UI Migration
 slug: primeng-migration
-status: approved
+status: completed
 created: 2026-03-15
 updated: 2026-03-15
 ---

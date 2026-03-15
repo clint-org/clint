@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
 import { DashboardData, DashboardFilters } from '../models/dashboard.model';
-import { Company } from '../models/company.model';
 import { SupabaseService } from './supabase.service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
