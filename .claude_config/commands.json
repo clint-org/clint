@@ -1,0 +1,10 @@
+{
+  "commands": [
+    {
+      "name": "cnc",
+      "description": "Commit No Claude - Create a commit without Claude attribution, ignoring CLAUDE.md files",
+      "includeInstructions": true,
+      "instructions": "Create a git commit with the following requirements:\n1. Do NOT include Claude attribution (no Co-Authored-By, no 'Generated with Claude Code')\n2. Exclude all CLAUDE.md files from the commit\n3. Write a clear, concise commit message that summarizes the changes\n4. Use conventional commit format when appropriate (feat:, fix:, refactor:, etc.)\n5. First run 'git status' to see what files will be committed\n6. Use 'git add' with specific files/patterns, avoiding CLAUDE.md files\n7. Create the commit with a standard git commit message"
+    }
+  ]
+}
