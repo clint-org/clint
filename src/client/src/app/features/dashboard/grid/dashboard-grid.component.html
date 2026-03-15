@@ -2,19 +2,30 @@
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
-      <!-- Left labels columns -->
-      <div class="flex-none bg-white border-r border-slate-200">
+      <!-- Left labels columns (sticky) -->
+      <div
+        class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none transition-all duration-200"
+        [style.min-width]="isScrolled() ? '48px' : undefined"
+      >
         <!-- Header row -->
         <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
-          <div class="w-36 px-3 text-xs font-semibold text-slate-500">Company</div>
-          <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Product</div>
-          <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Trial</div>
+          @if (!isScrolled()) {
+            <div class="w-36 px-3 text-xs font-semibold text-slate-500">Company</div>
+            <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Product</div>
+            <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Trial</div>
+          } @else {
+            <div class="w-12 px-2 text-xs font-semibold text-slate-500 text-center"></div>
+          }
         </div>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-50/50">
-            <div class="w-36 px-3 py-0.5 text-xs text-slate-400">&nbsp;</div>
-            <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
-            <div class="w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+            @if (!isScrolled()) {
+              <div class="w-36 px-3 py-0.5 text-xs text-slate-400">&nbsp;</div>
+              <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+              <div class="w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+            } @else {
+              <div class="w-12 px-2 py-0.5">&nbsp;</div>
+            }
           </div>
         }
 
@@ -29,45 +40,52 @@
             [class.bg-slate-50]="idx % 2 !== 0"
             [style.height.px]="36"
           >
-            <!-- Company column -->
-            <div
-              class="w-36 px-3 flex items-center gap-1.5 truncate"
-              [title]="row.companyName"
-            >
-              @if (row.isFirstInCompany) {
-                @if (row.companyLogoUrl) {
+            @if (!isScrolled()) {
+              <!-- Full view: Company / Product / Trial -->
+              <div
+                class="w-36 px-3 flex items-center gap-1.5 truncate"
+                [title]="row.companyName"
+              >
+                @if (row.isFirstInCompany) {
+                  @if (row.companyLogoUrl) {
+                    <img
+                      [src]="row.companyLogoUrl"
+                      [alt]="row.companyName"
+                      class="h-5 w-5 rounded object-contain flex-none"
+                    />
+                  }
+                  <span class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate">{{ row.companyName }}</span>
+                }
+              </div>
+              <div
+                class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200"
+                [title]="row.productName"
+              >
+                @if (row.isFirstInProduct) {
+                  <span class="text-sm text-slate-600 font-medium truncate">{{ row.productName }}</span>
+                }
+              </div>
+              <div
+                class="w-48 px-3 flex items-center text-sm text-slate-700 truncate border-l border-slate-200"
+                [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+              >
+                {{ row.trial.name }}
+              </div>
+            } @else {
+              <!-- Collapsed view: just company logo -->
+              <div
+                class="w-12 px-2 flex items-center justify-center"
+                [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+              >
+                @if (row.isFirstInCompany && row.companyLogoUrl) {
                   <img
                     [src]="row.companyLogoUrl"
                     [alt]="row.companyName"
-                    class="h-5 w-5 rounded object-contain flex-none"
+                    class="h-5 w-5 rounded object-contain"
                   />
                 }
-                <span class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate">{{ row.companyName }}</span>
-              }
-            </div>
-            <!-- Product column -->
-            <div
-              class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200"
-              [title]="row.productName"
-            >
-              @if (row.isFirstInProduct) {
-                @if (row.productLogoUrl) {
-                  <img
-                    [src]="row.productLogoUrl"
-                    [alt]="row.productName"
-                    class="h-5 w-5 rounded object-contain flex-none"
-                  />
-                }
-                <span class="text-sm text-slate-600 font-medium truncate">{{ row.productName }}</span>
-              }
-            </div>
-            <!-- Trial column -->
-            <div
-              class="w-48 px-3 flex items-center text-sm text-slate-700 truncate border-l border-slate-200"
-              [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
-            >
-              {{ row.trial.name }}
-            </div>
+              </div>
+            }
           </div>
         }
       </div>
