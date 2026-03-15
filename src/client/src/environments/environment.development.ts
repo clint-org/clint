@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  supabaseUrl: 'http://localhost:54321',
-  supabaseAnonKey: 'YOUR_LOCAL_SUPABASE_ANON_KEY'
+  supabaseUrl: 'http://127.0.0.1:54321',
+  supabaseAnonKey: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH'
 };
