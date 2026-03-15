@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, output, signal, AfterViewInit, OnDestroy } from '@angular/core';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
@@ -27,8 +27,10 @@ interface FlattenedTrial {
   imports: [GridHeaderComponent, PhaseBarComponent, MarkerComponent, RowNotesComponent],
   templateUrl: './dashboard-grid.component.html',
 })
-export class DashboardGridComponent {
+export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private timeline = inject(TimelineService);
+  private elRef = inject(ElementRef);
+  private scrollListener: (() => void) | null = null;
 
   companies = input.required<Company[]>();
   zoomLevel = input.required<ZoomLevel>();
@@ -37,6 +39,8 @@ export class DashboardGridComponent {
 
   phaseClick = output<TrialPhase>();
   markerClick = output<TrialMarker>();
+
+  isScrolled = signal(false);
 
   columns = computed<TimelineColumn[]>(() =>
     this.timeline.getColumns(this.startYear(), this.endYear(), this.zoomLevel())
@@ -76,6 +80,23 @@ export class DashboardGridComponent {
     }
     return rows;
   });
+
+  ngAfterViewInit(): void {
+    const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
+    if (scrollEl) {
+      this.scrollListener = () => {
+        this.isScrolled.set(scrollEl.scrollLeft > 50);
+      };
+      scrollEl.addEventListener('scroll', this.scrollListener, { passive: true });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.scrollListener) {
+      const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
+      scrollEl?.removeEventListener('scroll', this.scrollListener);
+    }
+  }
 
   hasSubColumns(): boolean {
     return this.columns().some(c => c.subColumns && c.subColumns.length > 0);
