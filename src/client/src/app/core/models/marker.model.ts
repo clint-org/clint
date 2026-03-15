@@ -1,6 +1,7 @@
 export interface MarkerType {
   id: string;
-  user_id: string | null;
+  space_id: string | null;
+  created_by: string | null;
   name: string;
   icon: string | null;
   shape: 'circle' | 'diamond' | 'flag' | 'arrow' | 'x' | 'bar';
@@ -13,7 +14,8 @@ export interface MarkerType {
 
 export interface TrialMarker {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   trial_id: string;
   marker_type_id: string;
   event_date: string;

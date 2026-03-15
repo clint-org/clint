@@ -2,7 +2,8 @@ import { TrialMarker } from './marker.model';
 
 export interface Trial {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   product_id: string;
   therapeutic_area_id: string;
   name: string;
@@ -21,7 +22,8 @@ export interface Trial {
 
 export interface TrialPhase {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   trial_id: string;
   phase_type: string;
   start_date: string;
@@ -33,7 +35,8 @@ export interface TrialPhase {
 
 export interface TrialNote {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   trial_id: string;
   content: string;
   created_at: string;
@@ -42,7 +45,8 @@ export interface TrialNote {
 
 export interface TherapeuticArea {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   name: string;
   abbreviation: string | null;
   created_at: string;

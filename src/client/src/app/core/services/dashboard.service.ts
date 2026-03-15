@@ -9,8 +9,9 @@ import { SupabaseService } from './supabase.service';
 export class DashboardService {
   private supabase = inject(SupabaseService);
 
-  async getDashboardData(filters: DashboardFilters): Promise<DashboardData> {
+  async getDashboardData(spaceId: string, filters: DashboardFilters): Promise<DashboardData> {
     const { data, error } = await this.supabase.client.rpc('get_dashboard_data', {
+      p_space_id: spaceId,
       p_company_ids: filters.companyIds,
       p_product_ids: filters.productIds,
       p_therapeutic_area_ids: filters.therapeuticAreaIds,
@@ -40,8 +41,8 @@ export class DashboardService {
     return { companies } as DashboardData;
   }
 
-  async seedDemoData(): Promise<void> {
-    const { error } = await this.supabase.client.rpc('seed_demo_data');
+  async seedDemoData(spaceId: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('seed_demo_data', { p_space_id: spaceId });
     if (error) throw error;
   }
 }

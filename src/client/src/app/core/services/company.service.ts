@@ -7,12 +7,12 @@ import { SupabaseService } from './supabase.service';
 export class CompanyService {
   private supabase = inject(SupabaseService);
 
-  async list(): Promise<Company[]> {
+  async list(spaceId: string): Promise<Company[]> {
     const { data, error } = await this.supabase.client
       .from('companies')
       .select('*, products(*)')
+      .eq('space_id', spaceId)
       .order('display_order');
-
     if (error) throw error;
     return data as Company[];
   }
@@ -23,18 +23,17 @@ export class CompanyService {
       .select('*, products(*)')
       .eq('id', id)
       .single();
-
     if (error) throw error;
     return data as Company;
   }
 
-  async create(company: Partial<Company>): Promise<Company> {
+  async create(spaceId: string, company: Partial<Company>): Promise<Company> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('companies')
-      .insert(company)
+      .insert({ ...company, space_id: spaceId, created_by: userId })
       .select()
       .single();
-
     if (error) throw error;
     return data as Company;
   }
@@ -46,7 +45,6 @@ export class CompanyService {
       .eq('id', id)
       .select()
       .single();
-
     if (error) throw error;
     return data as Company;
   }
@@ -56,7 +54,6 @@ export class CompanyService {
       .from('companies')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 }
