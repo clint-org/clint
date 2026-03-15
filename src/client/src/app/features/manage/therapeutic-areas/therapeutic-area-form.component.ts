@@ -1,5 +1,8 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { TherapeuticArea } from '../../../core/models/trial.model';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
@@ -7,7 +10,7 @@ import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.
 @Component({
   selector: 'app-therapeutic-area-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, ButtonModule, MessageModule],
   templateUrl: './therapeutic-area-form.component.html',
 })
 export class TherapeuticAreaFormComponent implements OnInit {

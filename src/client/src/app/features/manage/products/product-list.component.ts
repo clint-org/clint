@@ -1,16 +1,19 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 
 import { Product } from '../../../core/models/product.model';
 import { Company } from '../../../core/models/company.model';
 import { ProductService } from '../../../core/services/product.service';
 import { CompanyService } from '../../../core/services/company.service';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { ProductFormComponent } from './product-form.component';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [ModalComponent, ProductFormComponent],
+  imports: [TableModule, ButtonModule, Dialog, MessageModule, ProductFormComponent],
   templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnInit {

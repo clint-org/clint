@@ -1,5 +1,11 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { Select } from 'primeng/select';
+import { ColorPicker } from 'primeng/colorpicker';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
@@ -7,7 +13,7 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
 @Component({
   selector: 'app-marker-type-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, InputNumber, Select, ColorPicker, ButtonModule, MessageModule],
   templateUrl: './marker-type-form.component.html',
 })
 export class MarkerTypeFormComponent implements OnInit {
@@ -17,8 +23,21 @@ export class MarkerTypeFormComponent implements OnInit {
 
   private markerTypeService = inject(MarkerTypeService);
 
-  readonly shapes: MarkerType['shape'][] = ['circle', 'diamond', 'flag', 'arrow', 'x', 'bar'];
-  readonly fillStyles: MarkerType['fill_style'][] = ['outline', 'filled', 'striped', 'gradient'];
+  readonly shapeOptions = [
+    { label: 'Circle', value: 'circle' },
+    { label: 'Diamond', value: 'diamond' },
+    { label: 'Flag', value: 'flag' },
+    { label: 'Arrow', value: 'arrow' },
+    { label: 'X', value: 'x' },
+    { label: 'Bar', value: 'bar' },
+  ];
+
+  readonly fillStyleOptions = [
+    { label: 'Outline', value: 'outline' },
+    { label: 'Filled', value: 'filled' },
+    { label: 'Striped', value: 'striped' },
+    { label: 'Gradient', value: 'gradient' },
+  ];
 
   name = '';
   shape: MarkerType['shape'] = 'circle';

@@ -1,5 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { Trial, TrialPhase, TrialNote } from '../../../core/models/trial.model';
 import { TrialMarker } from '../../../core/models/marker.model';
@@ -18,6 +21,9 @@ import { NoteFormComponent } from './note-form.component';
   standalone: true,
   imports: [
     RouterLink,
+    TableModule,
+    ButtonModule,
+    MessageModule,
     TrialFormComponent,
     PhaseFormComponent,
     MarkerFormComponent,

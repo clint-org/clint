@@ -1,14 +1,17 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 
 import { TherapeuticArea } from '../../../core/models/trial.model';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { TherapeuticAreaFormComponent } from './therapeutic-area-form.component';
 
 @Component({
   selector: 'app-therapeutic-area-list',
   standalone: true,
-  imports: [ModalComponent, TherapeuticAreaFormComponent],
+  imports: [TableModule, ButtonModule, Dialog, MessageModule, TherapeuticAreaFormComponent],
   templateUrl: './therapeutic-area-list.component.html',
 })
 export class TherapeuticAreaListComponent implements OnInit {
@@ -63,7 +66,7 @@ export class TherapeuticAreaListComponent implements OnInit {
       const data = await this.areaService.list();
       this.areas.set(data);
     } catch {
-      // Silently handle - empty list shown
+      // Silently handle
     } finally {
       this.loading.set(false);
     }

@@ -1,19 +1,16 @@
 <form (ngSubmit)="onSubmit()" novalidate>
   @if (error()) {
-    <div class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">
+    <p-message severity="error" [closable]="false" class="mb-4">
       {{ error() }}
-    </div>
+    </p-message>
   }
 
   <div class="mb-4">
-    <label for="company-name" class="mb-1 block text-sm font-medium text-slate-700">
-      Name
-    </label>
+    <label for="company-name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
     <input
+      pInputText
       id="company-name"
-      type="text"
-      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-      [class.border-red-500]="nameInvalid"
+      class="w-full"
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
       (blur)="nameBlurred.set(true)"
@@ -27,45 +24,28 @@
   </div>
 
   <div class="mb-4">
-    <label for="company-logo-url" class="mb-1 block text-sm font-medium text-slate-700">
-      Logo URL
-    </label>
+    <label for="company-logo-url" class="mb-1 block text-sm font-medium text-slate-700">Logo URL</label>
     <input
+      pInputText
       id="company-logo-url"
-      type="url"
-      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+      class="w-full"
       [ngModel]="logoUrl()"
       (ngModelChange)="logoUrl.set($event)"
     />
   </div>
 
   <div class="mb-6">
-    <label for="company-display-order" class="mb-1 block text-sm font-medium text-slate-700">
-      Display Order
-    </label>
-    <input
-      id="company-display-order"
-      type="number"
-      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+    <label for="company-display-order" class="mb-1 block text-sm font-medium text-slate-700">Display Order</label>
+    <p-inputnumber
+      inputId="company-display-order"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
+      [style]="{ width: '100%' }"
     />
   </div>
 
   <div class="flex justify-end gap-3">
-    <button
-      type="button"
-      class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-      (click)="cancelled.emit()"
-    >
-      Cancel
-    </button>
-    <button
-      type="submit"
-      class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
-      [disabled]="submitting()"
-    >
-      {{ isEdit ? 'Update' : 'Create' }}
-    </button>
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+    <p-button [label]="isEdit ? 'Update' : 'Create'" type="submit" [loading]="submitting()" />
   </div>
 </form>

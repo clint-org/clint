@@ -1,58 +1,23 @@
 <form (ngSubmit)="onSubmit()" novalidate>
   @if (error()) {
-    <div class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">
-      {{ error() }}
-    </div>
+    <p-message severity="error" [closable]="false" class="mb-4">{{ error() }}</p-message>
   }
 
   <div class="mb-4">
-    <label for="ta-name" class="mb-1 block text-sm font-medium text-slate-700">
-      Name
-    </label>
-    <input
-      id="ta-name"
-      type="text"
-      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-      [class.border-red-500]="nameInvalid"
-      [ngModel]="name()"
-      (ngModelChange)="name.set($event)"
-      (blur)="nameBlurred.set(true)"
-      [attr.aria-required]="true"
-      [attr.aria-invalid]="nameInvalid"
-      [attr.aria-describedby]="nameInvalid ? 'ta-name-error' : null"
-    />
+    <label for="ta-name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+    <input pInputText id="ta-name" class="w-full" [ngModel]="name()" (ngModelChange)="name.set($event)" (blur)="nameBlurred.set(true)" [attr.aria-required]="true" [attr.aria-invalid]="nameInvalid" />
     @if (nameInvalid) {
-      <p id="ta-name-error" class="mt-1 text-sm text-red-600">Name is required.</p>
+      <p class="mt-1 text-sm text-red-600">Name is required.</p>
     }
   </div>
 
   <div class="mb-6">
-    <label for="ta-abbreviation" class="mb-1 block text-sm font-medium text-slate-700">
-      Abbreviation
-    </label>
-    <input
-      id="ta-abbreviation"
-      type="text"
-      class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-      [ngModel]="abbreviation()"
-      (ngModelChange)="abbreviation.set($event)"
-    />
+    <label for="ta-abbreviation" class="mb-1 block text-sm font-medium text-slate-700">Abbreviation</label>
+    <input pInputText id="ta-abbreviation" class="w-full" [ngModel]="abbreviation()" (ngModelChange)="abbreviation.set($event)" />
   </div>
 
   <div class="flex justify-end gap-3">
-    <button
-      type="button"
-      class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-      (click)="cancelled.emit()"
-    >
-      Cancel
-    </button>
-    <button
-      type="submit"
-      class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
-      [disabled]="submitting()"
-    >
-      {{ isEdit ? 'Update' : 'Create' }}
-    </button>
+    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+    <p-button [label]="isEdit ? 'Update' : 'Create'" type="submit" [loading]="submitting()" />
   </div>
 </form>

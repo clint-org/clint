@@ -1,5 +1,9 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../../core/services/company.service';
@@ -7,7 +11,7 @@ import { CompanyService } from '../../../core/services/company.service';
 @Component({
   selector: 'app-company-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, InputNumber, ButtonModule, MessageModule],
   templateUrl: './company-form.component.html',
 })
 export class CompanyFormComponent implements OnInit {

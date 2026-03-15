@@ -1,5 +1,11 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
+import { ColorPicker } from 'primeng/colorpicker';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { TrialPhase } from '../../../core/models/trial.model';
 import { TrialPhaseService } from '../../../core/services/trial-phase.service';
@@ -7,117 +13,44 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
 @Component({
   selector: 'app-phase-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, Select, DatePicker, ColorPicker, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4">
+      @if (error()) {
+        <p-message severity="error" [closable]="false">{{ error() }}</p-message>
+      }
+
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="phase-type" class="block text-sm font-medium text-slate-700">
-            Phase Type
-          </label>
-          <select
-            id="phase-type"
-            [(ngModel)]="phaseType"
-            name="phaseType"
-            required
-            aria-required="true"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
-                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          >
-            <option value="" disabled>Select phase type</option>
-            @for (pt of phaseTypes; track pt) {
-              <option [value]="pt">{{ pt }}</option>
-            }
-          </select>
+          <label for="phase-type" class="block text-sm font-medium text-slate-700">Phase Type</label>
+          <p-select inputId="phase-type" [options]="phaseTypeOptions" [(ngModel)]="phaseType" name="phaseType" optionLabel="label" optionValue="value" placeholder="Select phase type" [style]="{ width: '100%' }" class="mt-1" />
         </div>
 
         <div>
-          <label for="phase-label" class="block text-sm font-medium text-slate-700">
-            Label
-          </label>
-          <input
-            id="phase-label"
-            type="text"
-            [(ngModel)]="label"
-            name="label"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
-                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            aria-label="Phase label"
-          />
+          <label for="phase-label" class="block text-sm font-medium text-slate-700">Label</label>
+          <input pInputText id="phase-label" class="w-full mt-1" [(ngModel)]="label" name="label" />
         </div>
 
         <div>
-          <label for="phase-start-date" class="block text-sm font-medium text-slate-700">
-            Start Date
-          </label>
-          <input
-            id="phase-start-date"
-            type="date"
-            [(ngModel)]="startDate"
-            name="startDate"
-            required
-            aria-required="true"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
-                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          />
+          <label for="phase-start-date" class="block text-sm font-medium text-slate-700">Start Date</label>
+          <input type="date" id="phase-start-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="startDate" name="startDate" required />
         </div>
 
         <div>
-          <label for="phase-end-date" class="block text-sm font-medium text-slate-700">
-            End Date
-          </label>
-          <input
-            id="phase-end-date"
-            type="date"
-            [(ngModel)]="endDate"
-            name="endDate"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
-                   focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            aria-label="Phase end date"
-          />
+          <label for="phase-end-date" class="block text-sm font-medium text-slate-700">End Date</label>
+          <input type="date" id="phase-end-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="endDate" name="endDate" />
         </div>
 
         <div>
-          <label for="phase-color" class="block text-sm font-medium text-slate-700">
-            Color
-          </label>
-          <input
-            id="phase-color"
-            type="color"
-            [(ngModel)]="color"
-            name="color"
-            class="mt-1 block h-10 w-20 cursor-pointer rounded-md border border-slate-300"
-            aria-label="Phase color"
-          />
+          <label class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+          <p-colorpicker [(ngModel)]="color" name="color" />
         </div>
       </div>
 
       <div class="flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelled.emit()"
-          class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
-                 text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
-                 focus:ring-teal-500 focus:ring-offset-2"
-          aria-label="Cancel phase form"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          [disabled]="saving()"
-          class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
-                 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
-                 focus:ring-offset-2 disabled:opacity-50"
-          aria-label="Save phase"
-        >
-          {{ saving() ? 'Saving...' : 'Save' }}
-        </button>
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+        <p-button label="Save" type="submit" [loading]="saving()" />
       </div>
-
-      @if (error()) {
-        <p class="text-sm text-red-600" role="alert">{{ error() }}</p>
-      }
     </form>
   `,
 })
@@ -129,7 +62,13 @@ export class PhaseFormComponent implements OnInit {
 
   private phaseService = inject(TrialPhaseService);
 
-  readonly phaseTypes = ['P1', 'P2', 'P3', 'P4', 'OBS'];
+  readonly phaseTypeOptions = [
+    { label: 'P1', value: 'P1' },
+    { label: 'P2', value: 'P2' },
+    { label: 'P3', value: 'P3' },
+    { label: 'P4', value: 'P4' },
+    { label: 'OBS', value: 'OBS' },
+  ];
 
   phaseType = '';
   startDate = '';

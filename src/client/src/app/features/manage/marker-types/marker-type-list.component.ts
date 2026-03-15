@@ -1,4 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
@@ -7,7 +11,7 @@ import { MarkerTypeFormComponent } from './marker-type-form.component';
 @Component({
   selector: 'app-marker-type-list',
   standalone: true,
-  imports: [MarkerTypeFormComponent],
+  imports: [TableModule, ButtonModule, Dialog, MessageModule, MarkerTypeFormComponent],
   templateUrl: './marker-type-list.component.html',
 })
 export class MarkerTypeListComponent implements OnInit {
@@ -16,11 +20,26 @@ export class MarkerTypeListComponent implements OnInit {
   markerTypes = signal<MarkerType[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
-  addingType = signal(false);
+  modalOpen = signal(false);
   editingType = signal<MarkerType | null>(null);
 
   ngOnInit(): void {
     this.loadMarkerTypes();
+  }
+
+  openCreateModal(): void {
+    this.editingType.set(null);
+    this.modalOpen.set(true);
+  }
+
+  openEditModal(mt: MarkerType): void {
+    this.editingType.set(mt);
+    this.modalOpen.set(true);
+  }
+
+  closeModal(): void {
+    this.modalOpen.set(false);
+    this.editingType.set(null);
   }
 
   async loadMarkerTypes(): Promise<void> {
@@ -38,8 +57,7 @@ export class MarkerTypeListComponent implements OnInit {
   }
 
   async onTypeSaved(): Promise<void> {
-    this.addingType.set(false);
-    this.editingType.set(null);
+    this.closeModal();
     await this.loadMarkerTypes();
   }
 

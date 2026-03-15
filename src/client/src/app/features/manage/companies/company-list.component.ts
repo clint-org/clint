@@ -1,14 +1,17 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
+import { MessageModule } from 'primeng/message';
 
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../../core/services/company.service';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { CompanyFormComponent } from './company-form.component';
 
 @Component({
   selector: 'app-company-list',
   standalone: true,
-  imports: [ModalComponent, CompanyFormComponent],
+  imports: [TableModule, ButtonModule, Dialog, MessageModule, CompanyFormComponent],
   templateUrl: './company-list.component.html',
 })
 export class CompanyListComponent implements OnInit {

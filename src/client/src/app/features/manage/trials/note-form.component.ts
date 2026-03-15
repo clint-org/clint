@@ -1,5 +1,8 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Textarea } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { TrialNote } from '../../../core/models/trial.model';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
@@ -7,52 +10,22 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
 @Component({
   selector: 'app-note-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, Textarea, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4">
+      @if (error()) {
+        <p-message severity="error" [closable]="false">{{ error() }}</p-message>
+      }
+
       <div>
-        <label for="note-content" class="block text-sm font-medium text-slate-700">
-          Content
-        </label>
-        <textarea
-          id="note-content"
-          [(ngModel)]="content"
-          name="content"
-          rows="4"
-          required
-          aria-required="true"
-          class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm
-                 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          placeholder="Enter note content"
-        ></textarea>
+        <label for="note-content" class="block text-sm font-medium text-slate-700">Content</label>
+        <textarea pTextarea id="note-content" [(ngModel)]="content" name="content" rows="4" required class="w-full mt-1" placeholder="Enter note content"></textarea>
       </div>
 
       <div class="flex justify-end gap-2">
-        <button
-          type="button"
-          (click)="cancelled.emit()"
-          class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
-                 text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2
-                 focus:ring-teal-500 focus:ring-offset-2"
-          aria-label="Cancel note form"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          [disabled]="saving()"
-          class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white
-                 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500
-                 focus:ring-offset-2 disabled:opacity-50"
-          aria-label="Save note"
-        >
-          {{ saving() ? 'Saving...' : 'Save' }}
-        </button>
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+        <p-button label="Save" type="submit" [loading]="saving()" />
       </div>
-
-      @if (error()) {
-        <p class="text-sm text-red-600" role="alert">{{ error() }}</p>
-      }
     </form>
   `,
 })

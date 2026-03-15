@@ -1,5 +1,11 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { Select } from 'primeng/select';
+import { Textarea } from 'primeng/textarea';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { Trial } from '../../../core/models/trial.model';
 import { Product } from '../../../core/models/product.model';
@@ -11,7 +17,7 @@ import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.
 @Component({
   selector: 'app-trial-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, InputNumber, Select, Textarea, ButtonModule, MessageModule],
   templateUrl: './trial-form.component.html',
 })
 export class TrialFormComponent implements OnInit {
@@ -23,7 +29,13 @@ export class TrialFormComponent implements OnInit {
   private productService = inject(ProductService);
   private therapeuticAreaService = inject(TherapeuticAreaService);
 
-  readonly statuses = ['Active', 'Completed', 'Terminated', 'Suspended', 'Withdrawn'];
+  readonly statusOptions = [
+    { label: 'Active', value: 'Active' },
+    { label: 'Completed', value: 'Completed' },
+    { label: 'Terminated', value: 'Terminated' },
+    { label: 'Suspended', value: 'Suspended' },
+    { label: 'Withdrawn', value: 'Withdrawn' },
+  ];
 
   products = signal<Product[]>([]);
   therapeuticAreas = signal<TherapeuticArea[]>([]);

@@ -1,5 +1,10 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { InputText } from 'primeng/inputtext';
+import { InputNumber } from 'primeng/inputnumber';
+import { Select } from 'primeng/select';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 
 import { Product } from '../../../core/models/product.model';
 import { Company } from '../../../core/models/company.model';
@@ -9,7 +14,7 @@ import { CompanyService } from '../../../core/services/company.service';
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, InputText, InputNumber, Select, ButtonModule, MessageModule],
   templateUrl: './product-form.component.html',
 })
 export class ProductFormComponent implements OnInit {
