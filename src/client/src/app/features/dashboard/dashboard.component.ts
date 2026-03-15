@@ -43,6 +43,9 @@ export class DashboardComponent {
     therapeuticAreaIds: null,
     startYear: null,
     endYear: null,
+    recruitmentStatuses: null,
+    studyTypes: null,
+    phases: null,
   });
 
   zoomLevel = signal<ZoomLevel>('yearly');

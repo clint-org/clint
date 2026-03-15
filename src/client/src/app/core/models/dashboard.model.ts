@@ -10,6 +10,9 @@ export interface DashboardFilters {
   therapeuticAreaIds: string[] | null;
   startYear: number | null;
   endYear: number | null;
+  recruitmentStatuses: string[] | null;
+  studyTypes: string[] | null;
+  phases: string[] | null;
 }
 
 export type ZoomLevel = 'yearly' | 'quarterly' | 'monthly' | 'daily';

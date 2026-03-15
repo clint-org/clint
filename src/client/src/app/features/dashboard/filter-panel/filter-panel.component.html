@@ -43,5 +43,41 @@
       [showClear]="true"
       styleClass="w-52"
     />
+
+    <p-multiselect
+      [options]="statusOptions"
+      [ngModel]="selectedStatuses()"
+      (ngModelChange)="selectedStatuses.set($event)"
+      placeholder="Status"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [showClear]="true"
+      styleClass="w-40"
+    />
+
+    <p-multiselect
+      [options]="phaseOptions"
+      [ngModel]="selectedPhases()"
+      (ngModelChange)="selectedPhases.set($event)"
+      placeholder="Phase"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [showClear]="true"
+      styleClass="w-36"
+    />
+
+    <p-multiselect
+      [options]="studyTypeOptions"
+      [ngModel]="selectedStudyTypes()"
+      (ngModelChange)="selectedStudyTypes.set($event)"
+      placeholder="Study Type"
+      optionLabel="label"
+      optionValue="value"
+      display="comma"
+      [showClear]="true"
+      styleClass="w-40"
+    />
   </div>
 }

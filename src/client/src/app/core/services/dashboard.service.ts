@@ -17,6 +17,9 @@ export class DashboardService {
       p_therapeutic_area_ids: filters.therapeuticAreaIds,
       p_start_year: filters.startYear,
       p_end_year: filters.endYear,
+      p_recruitment_statuses: filters.recruitmentStatuses,
+      p_study_types: filters.studyTypes,
+      p_phases: filters.phases,
     });
 
     if (error) throw error;
