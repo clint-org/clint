@@ -1,12 +1,4 @@
 <div class="flex flex-col border border-gray-300 rounded-lg overflow-hidden">
-  <!-- Zoom control -->
-  <div class="flex items-center justify-end border-b border-gray-200 bg-white px-4 py-2">
-    <app-zoom-control
-      [zoomLevel]="zoomLevel()"
-      (zoomChange)="onZoomChange($event)"
-    />
-  </div>
-
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
@@ -67,10 +59,72 @@
                   }
                 }
               }
+
+              <!-- Phase bars (SVG overlay) -->
+              @if (row.trial.trial_phases && row.trial.trial_phases.length > 0) {
+                <svg
+                  class="absolute top-1 left-0"
+                  [attr.width]="totalWidth()"
+                  [attr.height]="28"
+                  aria-hidden="true"
+                >
+                  @for (phase of row.trial.trial_phases; track phase.id) {
+                    <g
+                      app-phase-bar
+                      [phase]="phase"
+                      [startYear]="startYear()"
+                      [endYear]="endYear()"
+                      [totalWidth]="totalWidth()"
+                      (phaseClick)="onPhaseClick($event)"
+                    />
+                  }
+                </svg>
+              }
+
+              <!-- Markers (absolute positioned) -->
+              @if (row.trial.trial_markers && row.trial.trial_markers.length > 0) {
+                @for (marker of row.trial.trial_markers; track marker.id) {
+                  <app-marker
+                    [marker]="marker"
+                    [startYear]="startYear()"
+                    [endYear]="endYear()"
+                    [totalWidth]="totalWidth()"
+                    (markerClick)="onMarkerClick($event)"
+                  />
+                }
+              }
             </div>
           }
         </div>
       </div>
+
+      <!-- Notes column -->
+      @if (flattenedTrials().length > 0) {
+        <div class="flex-none w-48 bg-white border-l border-gray-300">
+          <div class="border-b border-gray-300 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
+            Notes
+          </div>
+          @if (hasSubColumns()) {
+            <div class="border-b border-gray-200 bg-gray-50 px-3 py-0.5 text-xs text-gray-400">
+              &nbsp;
+            </div>
+          }
+
+          @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+            <div
+              class="border-b border-gray-200"
+              [class.bg-white]="idx % 2 === 0"
+              [class.bg-gray-50]="idx % 2 !== 0"
+              [style.height.px]="36"
+            >
+              <app-row-notes
+                [notes]="row.trial.trial_notes ?? []"
+                [trialNotes]="row.trial.notes ?? null"
+              />
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 </div>

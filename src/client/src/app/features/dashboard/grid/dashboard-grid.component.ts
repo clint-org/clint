@@ -2,10 +2,13 @@ import { Component, computed, inject, input, output } from '@angular/core';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
-import { Trial } from '../../../core/models/trial.model';
+import { TrialMarker } from '../../../core/models/marker.model';
+import { Trial, TrialPhase } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
-import { ZoomControlComponent } from '../zoom-control/zoom-control.component';
 import { GridHeaderComponent } from './grid-header.component';
+import { MarkerComponent } from './marker.component';
+import { PhaseBarComponent } from './phase-bar.component';
+import { RowNotesComponent } from './row-notes.component';
 
 interface FlattenedTrial {
   companyName: string;
@@ -16,7 +19,7 @@ interface FlattenedTrial {
 @Component({
   selector: 'app-dashboard-grid',
   standalone: true,
-  imports: [GridHeaderComponent, ZoomControlComponent],
+  imports: [GridHeaderComponent, PhaseBarComponent, MarkerComponent, RowNotesComponent],
   templateUrl: './dashboard-grid.component.html',
 })
 export class DashboardGridComponent {
@@ -26,7 +29,9 @@ export class DashboardGridComponent {
   zoomLevel = input.required<ZoomLevel>();
   startYear = input.required<number>();
   endYear = input.required<number>();
-  zoomChange = output<ZoomLevel>();
+
+  phaseClick = output<TrialPhase>();
+  markerClick = output<TrialMarker>();
 
   columns = computed<TimelineColumn[]>(() =>
     this.timeline.getColumns(this.startYear(), this.endYear(), this.zoomLevel())
@@ -56,7 +61,11 @@ export class DashboardGridComponent {
     return this.columns().some(c => c.subColumns && c.subColumns.length > 0);
   }
 
-  onZoomChange(zoom: ZoomLevel): void {
-    this.zoomChange.emit(zoom);
+  onPhaseClick(phase: TrialPhase): void {
+    this.phaseClick.emit(phase);
+  }
+
+  onMarkerClick(marker: TrialMarker): void {
+    this.markerClick.emit(marker);
   }
 }
