@@ -6,19 +6,14 @@ import { SupabaseService } from '../../core/services/supabase.service';
   selector: 'app-auth-callback',
   standalone: true,
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-50">
+    <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="text-center">
-        <svg
-          class="mx-auto h-8 w-8 animate-spin text-blue-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-        <p class="mt-4 text-gray-600">Completing sign in...</p>
+        <div
+          class="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600"
+          role="status"
+          aria-label="Completing sign in"
+        ></div>
+        <p class="mt-4 text-slate-600">Completing sign in...</p>
       </div>
     </div>
   `,
@@ -28,12 +23,29 @@ export class AuthCallbackComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
 
   async ngOnInit() {
-    const { data } = await this.supabaseService.client.auth.getSession();
+    // Wait for Supabase to process the OAuth tokens from the URL hash
+    const { data, error } = await this.supabaseService.client.auth.getSession();
 
-    if (data.session) {
-      await this.router.navigate(['/']);
+    if (error || !data.session) {
+      // If no session yet, listen for the auth state change (token exchange)
+      const { data: { subscription } } = this.supabaseService.client.auth.onAuthStateChange((event, session) => {
+        subscription.unsubscribe();
+        if (session) {
+          this.router.navigate(['/']);
+        } else {
+          this.router.navigate(['/login']);
+        }
+      });
+
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        subscription.unsubscribe();
+        if (!this.supabaseService.session()) {
+          this.router.navigate(['/login']);
+        }
+      }, 5000);
     } else {
-      await this.router.navigate(['/login']);
+      await this.router.navigate(['/']);
     }
   }
 }
