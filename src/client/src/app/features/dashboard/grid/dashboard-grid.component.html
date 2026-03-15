@@ -27,7 +27,7 @@
             [class.border-slate-300]="row.isLastInCompany"
             [class.bg-white]="idx % 2 === 0"
             [class.bg-slate-50]="idx % 2 !== 0"
-            [style.height.px]="30"
+            [style.height.px]="36"
           >
             <!-- Company column -->
             <div
@@ -76,7 +76,7 @@
               [class.border-slate-300]="row.isLastInCompany"
               [class.bg-white]="idx % 2 === 0"
               [class.bg-slate-50]="idx % 2 !== 0"
-              [style.height.px]="30"
+              [style.height.px]="36"
             >
               <!-- Vertical grid lines -->
               @for (col of columns(); track col.label) {
@@ -99,7 +99,7 @@
                 <svg
                   class="absolute top-0 left-0"
                   [attr.width]="totalWidth()"
-                  [attr.height]="30"
+                  [attr.height]="36"
                   aria-hidden="true"
                 >
                   @for (phase of row.trial.trial_phases; track phase.id) {
@@ -152,7 +152,7 @@
               [class.border-slate-300]="row.isLastInCompany"
               [class.bg-white]="idx % 2 === 0"
               [class.bg-slate-50]="idx % 2 !== 0"
-              [style.height.px]="30"
+              [style.height.px]="36"
             >
               <app-row-notes
                 [notes]="row.trial.trial_notes ?? []"

@@ -67,6 +67,29 @@ export class MarkerComponent {
     return Math.max(0, endX - this.markerX());
   });
 
+  shortDate = computed(() => {
+    const d = new Date(this.marker().event_date);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+  });
+
+  shortLabel = computed(() => {
+    const name = this.markerType()?.name ?? '';
+    const abbrevs: Record<string, string> = {
+      'Projected Data Reported': 'Proj',
+      'Data Reported': 'DR',
+      'Primary Completion Date (PCD)': 'PCD',
+      'Projected Regulatory Filing': 'Proj',
+      'Submitted Regulatory Filing': 'Filed',
+      'Label Projected Approval/Launch': 'Proj',
+      'Label Update': 'Label',
+      'Est. Range of Potential Launch': 'Range',
+      'Change from Prior Update': 'Chg',
+      'Event No Longer Expected': 'Rmvd',
+    };
+    return abbrevs[name] ?? name.slice(0, 4);
+  });
+
   tooltipText = computed(() => {
     const m = this.marker();
     return m.tooltip_text ?? this.markerType()?.name ?? '';

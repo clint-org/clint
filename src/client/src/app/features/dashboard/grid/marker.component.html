@@ -81,9 +81,23 @@
       </svg>
     }
 
+    <div
+      class="text-center whitespace-nowrap font-mono leading-none"
+      style="font-size: 8px; margin-top: 1px;"
+      [style.color]="mt.color"
+      [style.margin-left.px]="-iconSize / 2"
+      [style.width.px]="iconSize * 2"
+    >
+      {{ shortDate() }}
+    </div>
+
     @if (showTooltip && tooltipText()) {
       <app-marker-tooltip
         [text]="tooltipText()!"
+        [typeName]="markerType()?.name ?? ''"
+        [typeColor]="markerType()?.color ?? '#64748b'"
+        [date]="marker().event_date"
+        [isProjected]="marker().is_projected"
         [imageUrl]="marker().tooltip_image_url"
       />
     }
