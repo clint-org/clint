@@ -15,40 +15,23 @@ const TRIAL_SELECT = `
 export class TrialService {
   private supabase = inject(SupabaseService);
 
-  async list(filters?: { productId?: string }): Promise<Trial[]> {
-    let query = this.supabase.client
-      .from('trials')
-      .select(TRIAL_SELECT)
-      .order('display_order');
-
-    if (filters?.productId) {
-      query = query.eq('product_id', filters.productId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data as Trial[];
-  }
-
   async getById(id: string): Promise<Trial> {
     const { data, error } = await this.supabase.client
       .from('trials')
       .select(TRIAL_SELECT)
       .eq('id', id)
       .single();
-
     if (error) throw error;
     return data as Trial;
   }
 
-  async create(trial: Partial<Trial>): Promise<Trial> {
+  async create(spaceId: string, trial: Partial<Trial>): Promise<Trial> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('trials')
-      .insert(trial)
+      .insert({ ...trial, space_id: spaceId, created_by: userId })
       .select()
       .single();
-
     if (error) throw error;
     return data as Trial;
   }
@@ -60,7 +43,6 @@ export class TrialService {
       .eq('id', id)
       .select()
       .single();
-
     if (error) throw error;
     return data as Trial;
   }
@@ -70,7 +52,6 @@ export class TrialService {
       .from('trials')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 }

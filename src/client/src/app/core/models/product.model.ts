@@ -2,7 +2,8 @@ import { Trial } from './trial.model';
 
 export interface Product {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   company_id: string;
   name: string;
   generic_name: string | null;

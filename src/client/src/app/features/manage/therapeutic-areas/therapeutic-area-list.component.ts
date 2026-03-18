@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -22,8 +23,11 @@ export class TherapeuticAreaListComponent implements OnInit {
   deleteError = signal<string | null>(null);
 
   private areaService = inject(TherapeuticAreaService);
+  private route = inject(ActivatedRoute);
+  spaceId = '';
 
   async ngOnInit(): Promise<void> {
+    this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     await this.loadAreas();
   }
 
@@ -63,7 +67,7 @@ export class TherapeuticAreaListComponent implements OnInit {
   private async loadAreas(): Promise<void> {
     this.loading.set(true);
     try {
-      const data = await this.areaService.list();
+      const data = await this.areaService.list(this.spaceId);
       this.areas.set(data);
     } catch {
       // Silently handle

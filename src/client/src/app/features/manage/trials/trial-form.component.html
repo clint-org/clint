@@ -2,7 +2,11 @@
   @if (error()) {
     <p-message severity="error" [closable]="false">{{ error() }}</p-message>
   }
+  @if (syncSuccess()) {
+    <p-message severity="success" [closable]="true">{{ syncSuccess() }}</p-message>
+  }
 
+  <!-- Basic Info -->
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <div class="sm:col-span-2">
       <label for="trial-name" class="block text-sm font-medium text-slate-700">Name <span class="text-red-500">*</span></label>
@@ -10,8 +14,16 @@
     </div>
 
     <div>
-      <label for="trial-identifier" class="block text-sm font-medium text-slate-700">Identifier</label>
-      <input pInputText id="trial-identifier" class="w-full mt-1" [(ngModel)]="identifier" name="identifier" placeholder="e.g. NCT12345678" />
+      <label for="trial-identifier" class="block text-sm font-medium text-slate-700">NCT Identifier</label>
+      <div class="flex gap-2 mt-1">
+        <input pInputText id="trial-identifier" class="flex-1" [(ngModel)]="identifier" name="identifier" placeholder="e.g. NCT12345678" />
+        @if (isNctId) {
+          <p-button label="Sync from CT.gov" icon="fa-solid fa-rotate" size="small" [loading]="syncing()" (onClick)="syncFromCtgov()" />
+        }
+      </div>
+      @if (ctgovLastSyncedAt) {
+        <p class="mt-1 text-xs text-slate-400">Last synced: {{ ctgovLastSyncedAt | date:'medium' }}</p>
+      }
     </div>
 
     <div>
@@ -41,9 +53,107 @@
 
     <div class="sm:col-span-2">
       <label for="trial-notes" class="block text-sm font-medium text-slate-700">Notes</label>
-      <textarea pTextarea id="trial-notes" [(ngModel)]="notes" name="notes" rows="3" class="w-full mt-1" placeholder="Additional notes"></textarea>
+      <textarea pTextarea id="trial-notes" [(ngModel)]="notes" name="notes" rows="2" class="w-full mt-1" placeholder="Additional notes"></textarea>
     </div>
   </div>
+
+  <!-- Study Design -->
+  <p-fieldset legend="Study Design" [toggleable]="true" [collapsed]="true">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="trial-study-type" class="block text-sm font-medium text-slate-700">Study Type</label>
+        <p-select inputId="trial-study-type" [options]="studyTypeOptions" [(ngModel)]="studyType" name="studyType" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div>
+        <label for="trial-phase" class="block text-sm font-medium text-slate-700">Phase</label>
+        <p-select inputId="trial-phase" [options]="phaseOptions" [(ngModel)]="phase" name="phase" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div>
+        <label for="trial-masking" class="block text-sm font-medium text-slate-700">Masking</label>
+        <p-select inputId="trial-masking" [options]="maskingOptions" [(ngModel)]="designMasking" name="designMasking" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div>
+        <label for="trial-purpose" class="block text-sm font-medium text-slate-700">Primary Purpose</label>
+        <p-select inputId="trial-purpose" [options]="purposeOptions" [(ngModel)]="designPrimaryPurpose" name="designPrimaryPurpose" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div>
+        <label for="trial-intervention-type" class="block text-sm font-medium text-slate-700">Intervention Type</label>
+        <input pInputText id="trial-intervention-type" class="w-full mt-1" [(ngModel)]="interventionType" name="interventionType" placeholder="e.g. Drug, Biologic, Device" />
+      </div>
+      <div>
+        <label for="trial-intervention-name" class="block text-sm font-medium text-slate-700">Intervention Name</label>
+        <input pInputText id="trial-intervention-name" class="w-full mt-1" [(ngModel)]="interventionName" name="interventionName" placeholder="Drug/device name" />
+      </div>
+    </div>
+  </p-fieldset>
+
+  <!-- Eligibility -->
+  <p-fieldset legend="Eligibility" [toggleable]="true" [collapsed]="true">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="trial-sex" class="block text-sm font-medium text-slate-700">Sex</label>
+        <p-select inputId="trial-sex" [options]="sexOptions" [(ngModel)]="eligibilitySex" name="eligibilitySex" optionLabel="label" optionValue="value" placeholder="Select" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div>
+        <label for="trial-min-age" class="block text-sm font-medium text-slate-700">Min Age</label>
+        <input pInputText id="trial-min-age" class="w-full mt-1" [(ngModel)]="eligibilityMinAge" name="eligibilityMinAge" placeholder="e.g. 18 Years" />
+      </div>
+      <div>
+        <label for="trial-max-age" class="block text-sm font-medium text-slate-700">Max Age</label>
+        <input pInputText id="trial-max-age" class="w-full mt-1" [(ngModel)]="eligibilityMaxAge" name="eligibilityMaxAge" placeholder="e.g. 65 Years" />
+      </div>
+      <div class="flex items-center pt-6">
+        <p-checkbox [(ngModel)]="acceptsHealthyVolunteers" name="acceptsHealthyVolunteers" [binary]="true" inputId="trial-healthy" />
+        <label for="trial-healthy" class="ml-2 text-sm text-slate-700">Accepts Healthy Volunteers</label>
+      </div>
+    </div>
+  </p-fieldset>
+
+  <!-- Timeline -->
+  <p-fieldset legend="Timeline" [toggleable]="true" [collapsed]="true">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="trial-start-date" class="block text-sm font-medium text-slate-700">Start Date</label>
+        <input type="date" id="trial-start-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="startDateStr" name="startDateStr" />
+      </div>
+      <div>
+        <label for="trial-pcd" class="block text-sm font-medium text-slate-700">Primary Completion Date</label>
+        <input type="date" id="trial-pcd" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="primaryCompletionDateStr" name="primaryCompletionDateStr" />
+      </div>
+      <div>
+        <label for="trial-lead-sponsor" class="block text-sm font-medium text-slate-700">Lead Sponsor</label>
+        <input pInputText id="trial-lead-sponsor" class="w-full mt-1" [(ngModel)]="leadSponsor" name="leadSponsor" />
+      </div>
+      <div>
+        <label for="trial-recruitment" class="block text-sm font-medium text-slate-700">Recruitment Status</label>
+        <input pInputText id="trial-recruitment" class="w-full mt-1" [(ngModel)]="recruitmentStatus" name="recruitmentStatus" placeholder="e.g. Recruiting, Completed" />
+      </div>
+    </div>
+  </p-fieldset>
+
+  <!-- Regulatory -->
+  <p-fieldset legend="Regulatory" [toggleable]="true" [collapsed]="true">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <label for="trial-fda-designations" class="block text-sm font-medium text-slate-700">FDA Designations</label>
+        <p-multiselect inputId="trial-fda-designations" [options]="fdaDesignationOptions" [(ngModel)]="fdaDesignations" name="fdaDesignations" optionLabel="label" optionValue="value" placeholder="Select designations" [showClear]="true" [style]="{ width: '100%' }" class="mt-1" />
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center">
+          <p-checkbox [(ngModel)]="hasDmc" name="hasDmc" [binary]="true" inputId="trial-dmc" />
+          <label for="trial-dmc" class="ml-2 text-sm text-slate-700">Has DMC</label>
+        </div>
+        <div class="flex items-center">
+          <p-checkbox [(ngModel)]="isFdaRegulatedDrug" name="isFdaRegulatedDrug" [binary]="true" inputId="trial-fda-drug" />
+          <label for="trial-fda-drug" class="ml-2 text-sm text-slate-700">FDA Regulated Drug</label>
+        </div>
+        <div class="flex items-center">
+          <p-checkbox [(ngModel)]="isFdaRegulatedDevice" name="isFdaRegulatedDevice" [binary]="true" inputId="trial-fda-device" />
+          <label for="trial-fda-device" class="ml-2 text-sm text-slate-700">FDA Regulated Device</label>
+        </div>
+      </div>
+    </div>
+  </p-fieldset>
 
   <div class="flex justify-end gap-2">
     <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />

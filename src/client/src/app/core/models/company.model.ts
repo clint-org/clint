@@ -2,7 +2,8 @@ import { Product } from './product.model';
 
 export interface Company {
   id: string;
-  user_id: string;
+  space_id: string;
+  created_by: string;
   name: string;
   logo_url: string | null;
   display_order: number;

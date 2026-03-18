@@ -1,4 +1,5 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Textarea } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
@@ -36,6 +37,7 @@ export class NoteFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private noteService = inject(TrialNoteService);
+  private route = inject(ActivatedRoute);
 
   content = '';
   saving = signal(false);
@@ -59,7 +61,8 @@ export class NoteFormComponent implements OnInit {
       if (existing) {
         await this.noteService.update(existing.id, { content: this.content });
       } else {
-        await this.noteService.create({
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        await this.noteService.create(spaceId, {
           trial_id: this.trialId(),
           content: this.content,
         });

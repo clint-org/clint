@@ -7,13 +7,13 @@ import { SupabaseService } from './supabase.service';
 export class TrialMarkerService {
   private supabase = inject(SupabaseService);
 
-  async create(marker: Partial<TrialMarker>): Promise<TrialMarker> {
+  async create(spaceId: string, marker: Partial<TrialMarker>): Promise<TrialMarker> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('trial_markers')
-      .insert(marker)
+      .insert({ ...marker, space_id: spaceId, created_by: userId })
       .select()
       .single();
-
     if (error) throw error;
     return data as TrialMarker;
   }
@@ -25,7 +25,6 @@ export class TrialMarkerService {
       .eq('id', id)
       .select()
       .single();
-
     if (error) throw error;
     return data as TrialMarker;
   }
@@ -35,7 +34,6 @@ export class TrialMarkerService {
       .from('trial_markers')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 }

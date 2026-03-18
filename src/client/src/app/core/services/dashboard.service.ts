@@ -9,13 +9,17 @@ import { SupabaseService } from './supabase.service';
 export class DashboardService {
   private supabase = inject(SupabaseService);
 
-  async getDashboardData(filters: DashboardFilters): Promise<DashboardData> {
+  async getDashboardData(spaceId: string, filters: DashboardFilters): Promise<DashboardData> {
     const { data, error } = await this.supabase.client.rpc('get_dashboard_data', {
+      p_space_id: spaceId,
       p_company_ids: filters.companyIds,
       p_product_ids: filters.productIds,
       p_therapeutic_area_ids: filters.therapeuticAreaIds,
       p_start_year: filters.startYear,
       p_end_year: filters.endYear,
+      p_recruitment_statuses: filters.recruitmentStatuses,
+      p_study_types: filters.studyTypes,
+      p_phases: filters.phases,
     });
 
     if (error) throw error;
@@ -40,8 +44,8 @@ export class DashboardService {
     return { companies } as DashboardData;
   }
 
-  async seedDemoData(): Promise<void> {
-    const { error } = await this.supabase.client.rpc('seed_demo_data');
+  async seedDemoData(spaceId: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('seed_demo_data', { p_space_id: spaceId });
     if (error) throw error;
   }
 }

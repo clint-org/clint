@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, onboardingRedirectGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -15,51 +15,84 @@ export const routes: Routes = [
       ),
   },
   {
-    path: '',
+    path: 'onboarding',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent
+      import('./features/onboarding/onboarding.component').then(
+        (m) => m.OnboardingComponent
       ),
   },
   {
-    path: 'manage/companies',
+    path: 't/:tenantId',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import(
-        './features/manage/companies/company-list.component'
-      ).then((m) => m.CompanyListComponent),
+    children: [
+      {
+        path: 'spaces',
+        loadComponent: () =>
+          import('./features/spaces/space-list.component').then(
+            (m) => m.SpaceListComponent
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/tenant-settings/tenant-settings.component').then(
+            (m) => m.TenantSettingsComponent
+          ),
+      },
+      {
+        path: 's/:spaceId',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/dashboard/dashboard.component').then(
+                (m) => m.DashboardComponent
+              ),
+          },
+          {
+            path: 'manage/companies',
+            loadComponent: () =>
+              import('./features/manage/companies/company-list.component').then(
+                (m) => m.CompanyListComponent
+              ),
+          },
+          {
+            path: 'manage/products',
+            loadComponent: () =>
+              import('./features/manage/products/product-list.component').then(
+                (m) => m.ProductListComponent
+              ),
+          },
+          {
+            path: 'manage/trials/:id',
+            loadComponent: () =>
+              import('./features/manage/trials/trial-detail.component').then(
+                (m) => m.TrialDetailComponent
+              ),
+          },
+          {
+            path: 'manage/marker-types',
+            loadComponent: () =>
+              import('./features/manage/marker-types/marker-type-list.component').then(
+                (m) => m.MarkerTypeListComponent
+              ),
+          },
+          {
+            path: 'manage/therapeutic-areas',
+            loadComponent: () =>
+              import('./features/manage/therapeutic-areas/therapeutic-area-list.component').then(
+                (m) => m.TherapeuticAreaListComponent
+              ),
+          },
+        ],
+      },
+    ],
   },
   {
-    path: 'manage/products',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import(
-        './features/manage/products/product-list.component'
-      ).then((m) => m.ProductListComponent),
+    path: '',
+    canActivate: [onboardingRedirectGuard],
+    children: [],
   },
-  {
-    path: 'manage/trials/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import(
-        './features/manage/trials/trial-detail.component'
-      ).then((m) => m.TrialDetailComponent),
-  },
-  {
-    path: 'manage/marker-types',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import(
-        './features/manage/marker-types/marker-type-list.component'
-      ).then((m) => m.MarkerTypeListComponent),
-  },
-  {
-    path: 'manage/therapeutic-areas',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import(
-        './features/manage/therapeutic-areas/therapeutic-area-list.component'
-      ).then((m) => m.TherapeuticAreaListComponent),
-  },
+  { path: '**', redirectTo: '' },
 ];

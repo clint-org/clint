@@ -1,4 +1,5 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
@@ -67,6 +68,7 @@ export class MarkerFormComponent implements OnInit {
 
   private markerService = inject(TrialMarkerService);
   private markerTypeService = inject(MarkerTypeService);
+  private route = inject(ActivatedRoute);
 
   markerTypes = signal<MarkerType[]>([]);
   markerTypeId = '';
@@ -94,7 +96,7 @@ export class MarkerFormComponent implements OnInit {
 
   private async loadMarkerTypes(): Promise<void> {
     try {
-      const types = await this.markerTypeService.list();
+      const types = await this.markerTypeService.list(this.route.snapshot.paramMap.get('spaceId')!);
       this.markerTypes.set(types);
     } catch {
       this.error.set('Failed to load marker types');
@@ -121,7 +123,8 @@ export class MarkerFormComponent implements OnInit {
       if (existing) {
         await this.markerService.update(existing.id, payload);
       } else {
-        await this.markerService.create({ ...payload, trial_id: this.trialId() });
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        await this.markerService.create(spaceId, { ...payload, trial_id: this.trialId() });
       }
       this.saved.emit();
     } catch (err) {

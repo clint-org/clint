@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -16,6 +17,8 @@ import { MarkerTypeFormComponent } from './marker-type-form.component';
 })
 export class MarkerTypeListComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);
+  private route = inject(ActivatedRoute);
+  spaceId = '';
 
   markerTypes = signal<MarkerType[]>([]);
   loading = signal(true);
@@ -24,6 +27,7 @@ export class MarkerTypeListComponent implements OnInit {
   editingType = signal<MarkerType | null>(null);
 
   ngOnInit(): void {
+    this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.loadMarkerTypes();
   }
 
@@ -47,7 +51,7 @@ export class MarkerTypeListComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const types = await this.markerTypeService.list();
+      const types = await this.markerTypeService.list(this.spaceId);
       this.markerTypes.set(types);
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load marker types');

@@ -1,4 +1,5 @@
 import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
@@ -61,6 +62,7 @@ export class PhaseFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private phaseService = inject(TrialPhaseService);
+  private route = inject(ActivatedRoute);
 
   readonly phaseTypeOptions = [
     { label: 'P1', value: 'P1' },
@@ -108,7 +110,8 @@ export class PhaseFormComponent implements OnInit {
       if (existing) {
         await this.phaseService.update(existing.id, payload);
       } else {
-        await this.phaseService.create({ ...payload, trial_id: this.trialId() });
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        await this.phaseService.create(spaceId, { ...payload, trial_id: this.trialId() });
       }
       this.saved.emit();
     } catch (e) {

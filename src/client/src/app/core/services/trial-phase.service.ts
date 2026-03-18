@@ -7,13 +7,13 @@ import { SupabaseService } from './supabase.service';
 export class TrialPhaseService {
   private supabase = inject(SupabaseService);
 
-  async create(phase: Partial<TrialPhase>): Promise<TrialPhase> {
+  async create(spaceId: string, phase: Partial<TrialPhase>): Promise<TrialPhase> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('trial_phases')
-      .insert(phase)
+      .insert({ ...phase, space_id: spaceId, created_by: userId })
       .select()
       .single();
-
     if (error) throw error;
     return data as TrialPhase;
   }
@@ -25,7 +25,6 @@ export class TrialPhaseService {
       .eq('id', id)
       .select()
       .single();
-
     if (error) throw error;
     return data as TrialPhase;
   }
@@ -35,7 +34,6 @@ export class TrialPhaseService {
       .from('trial_phases')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 }

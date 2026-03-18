@@ -5,7 +5,7 @@
       [zoomLevel]="zoomLevel()"
       (zoomChange)="onZoomChange($event)"
     />
-    <app-filter-panel (filtersChange)="onFiltersChange($event)" />
+    <app-filter-panel [spaceId]="spaceId()" (filtersChange)="onFiltersChange($event)" />
     <p-button
       label="Export"
       icon="fa-solid fa-file-powerpoint"

@@ -1,4 +1,5 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -26,6 +27,7 @@ export class TherapeuticAreaFormComponent implements OnInit {
   nameBlurred = signal(false);
 
   private areaService = inject(TherapeuticAreaService);
+  private route = inject(ActivatedRoute);
 
   ngOnInit(): void {
     const a = this.area();
@@ -61,7 +63,8 @@ export class TherapeuticAreaFormComponent implements OnInit {
       if (existing) {
         result = await this.areaService.update(existing.id, payload);
       } else {
-        result = await this.areaService.create(payload);
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        result = await this.areaService.create(spaceId, payload);
       }
       this.saved.emit(result);
     } catch (err) {

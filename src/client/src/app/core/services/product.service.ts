@@ -7,18 +7,12 @@ import { SupabaseService } from './supabase.service';
 export class ProductService {
   private supabase = inject(SupabaseService);
 
-  async list(companyId?: string): Promise<Product[]> {
-    let query = this.supabase.client
+  async list(spaceId: string): Promise<Product[]> {
+    const { data, error } = await this.supabase.client
       .from('products')
       .select('*')
+      .eq('space_id', spaceId)
       .order('display_order');
-
-    if (companyId) {
-      query = query.eq('company_id', companyId);
-    }
-
-    const { data, error } = await query;
-
     if (error) throw error;
     return data as Product[];
   }
@@ -29,18 +23,17 @@ export class ProductService {
       .select('*')
       .eq('id', id)
       .single();
-
     if (error) throw error;
     return data as Product;
   }
 
-  async create(product: Partial<Product>): Promise<Product> {
+  async create(spaceId: string, product: Partial<Product>): Promise<Product> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('products')
-      .insert(product)
+      .insert({ ...product, space_id: spaceId, created_by: userId })
       .select()
       .single();
-
     if (error) throw error;
     return data as Product;
   }
@@ -52,7 +45,6 @@ export class ProductService {
       .eq('id', id)
       .select()
       .single();
-
     if (error) throw error;
     return data as Product;
   }
@@ -62,7 +54,6 @@ export class ProductService {
       .from('products')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   }
 }

@@ -1,4 +1,5 @@
 import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
@@ -28,6 +29,7 @@ export class CompanyFormComponent implements OnInit {
   nameBlurred = signal(false);
 
   private companyService = inject(CompanyService);
+  private route = inject(ActivatedRoute);
 
   ngOnInit(): void {
     const c = this.company();
@@ -65,7 +67,8 @@ export class CompanyFormComponent implements OnInit {
       if (existing) {
         result = await this.companyService.update(existing.id, payload);
       } else {
-        result = await this.companyService.create(payload);
+        const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+        result = await this.companyService.create(spaceId, payload);
       }
       this.saved.emit(result);
     } catch (err) {
