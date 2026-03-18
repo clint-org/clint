@@ -15,6 +15,16 @@ const TRIAL_SELECT = `
 export class TrialService {
   private supabase = inject(SupabaseService);
 
+  async listByProduct(productId: string): Promise<Trial[]> {
+    const { data, error } = await this.supabase.client
+      .from('trials')
+      .select(TRIAL_SELECT)
+      .eq('product_id', productId)
+      .order('display_order');
+    if (error) throw error;
+    return data as Trial[];
+  }
+
   async getById(id: string): Promise<Trial> {
     const { data, error } = await this.supabase.client
       .from('trials')

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DashboardFilters, ZoomLevel } from '../../core/models/dashboard.model';
 import { TrialMarker } from '../../core/models/marker.model';
-import { TrialPhase } from '../../core/models/trial.model';
+import { Trial, TrialPhase } from '../../core/models/trial.model';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -124,6 +124,10 @@ export class DashboardComponent {
 
   onMarkerClick(marker: TrialMarker): void {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', marker.trial_id]);
+  }
+
+  onTrialClick(trial: Trial): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
   }
 
   retry(): void {

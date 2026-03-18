@@ -74,8 +74,13 @@
             </div>
             <!-- Trial column -->
             <div
-              class="w-48 px-3 flex items-center text-sm text-slate-700 truncate border-l border-slate-200"
+              class="w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 text-slate-700 transition-colors"
               [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+              role="button"
+              tabindex="0"
+              (click)="onTrialClick(row.trial)"
+              (keydown.enter)="onTrialClick(row.trial)"
+              (keydown.space)="onTrialClick(row.trial)"
             >
               {{ row.trial.name }}
             </div>

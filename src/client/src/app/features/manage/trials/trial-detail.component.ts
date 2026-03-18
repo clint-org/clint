@@ -1,5 +1,6 @@
+import { Location } from '@angular/common';
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -20,7 +21,6 @@ import { NoteFormComponent } from './note-form.component';
   selector: 'app-trial-detail',
   standalone: true,
   imports: [
-    RouterLink,
     TableModule,
     ButtonModule,
     MessageModule,
@@ -32,6 +32,7 @@ import { NoteFormComponent } from './note-form.component';
   templateUrl: './trial-detail.component.html',
 })
 export class TrialDetailComponent implements OnInit {
+  private location = inject(Location);
   private route = inject(ActivatedRoute);
   private trialService = inject(TrialService);
   private phaseService = inject(TrialPhaseService);
@@ -124,5 +125,9 @@ export class TrialDetailComponent implements OnInit {
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to delete note');
     }
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }

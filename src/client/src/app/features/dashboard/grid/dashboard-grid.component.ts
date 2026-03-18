@@ -10,7 +10,7 @@ import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
 import { RowNotesComponent } from './row-notes.component';
 
-interface FlattenedTrial {
+export interface FlattenedTrial {
   companyName: string;
   companyLogoUrl: string | null;
   productName: string;
@@ -39,6 +39,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   phaseClick = output<TrialPhase>();
   markerClick = output<TrialMarker>();
+  trialClick = output<Trial>();
 
   isScrolled = signal(false);
 
@@ -107,5 +108,9 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   onMarkerClick(marker: TrialMarker): void {
     this.markerClick.emit(marker);
+  }
+
+  onTrialClick(trial: Trial): void {
+    this.trialClick.emit(trial);
   }
 }

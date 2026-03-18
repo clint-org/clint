@@ -14,7 +14,7 @@
       </div>
       <div class="flex gap-2">
         <p-button label="Edit Trial" (onClick)="editingTrial.set(true)" />
-        <p-button label="Back" severity="secondary" [outlined]="true" routerLink="/manage/products" />
+        <p-button label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
       </div>
     </div>
 

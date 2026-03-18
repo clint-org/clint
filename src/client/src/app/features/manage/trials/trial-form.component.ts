@@ -28,6 +28,7 @@ import { CtgovSyncService } from '../../../core/services/ctgov-sync.service';
 })
 export class TrialFormComponent implements OnInit {
   readonly trial = input<Trial | null>(null);
+  readonly preselectedProductId = input<string | null>(null);
   readonly saved = output<void>();
   readonly cancelled = output<void>();
 
@@ -135,6 +136,10 @@ export class TrialFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDropdowns();
+    const preselected = this.preselectedProductId();
+    if (preselected) {
+      this.productId = preselected;
+    }
     const existing = this.trial();
     if (existing) {
       this.name = existing.name;
