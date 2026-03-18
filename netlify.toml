@@ -1,7 +1,7 @@
 [build]
   base = "src/client"
   command = "node scripts/set-env.js && npm ci && npx ng build --configuration production"
-  publish = "src/client/dist/clinical-trial-dashboard/browser"
+  publish = "dist/clinical-trial-dashboard/browser"
 
 [build.environment]
   NODE_VERSION = "20"
