@@ -1,7 +1,8 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
+import { getMarkerIcon } from '../../../shared/utils/marker-icon';
 
 @Component({
   selector: 'app-legend',
@@ -11,6 +12,7 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
 export class LegendComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);
 
+  spaceId = input<string>();
   markerTypes = signal<MarkerType[]>([]);
   loading = signal(true);
 
@@ -40,27 +42,12 @@ export class LegendComponent implements OnInit {
   });
 
   faIcon(mt: MarkerType): string {
-    switch (mt.shape) {
-      case 'circle':
-        return mt.fill_style === 'outline' ? 'fa-regular fa-circle' : 'fa-solid fa-circle';
-      case 'diamond':
-        return mt.fill_style === 'outline' ? 'fa-regular fa-gem' : 'fa-solid fa-gem';
-      case 'flag':
-        return mt.fill_style === 'outline' ? 'fa-regular fa-flag' : 'fa-solid fa-flag';
-      case 'arrow':
-        return 'fa-solid fa-arrow-up';
-      case 'x':
-        return 'fa-solid fa-circle-xmark';
-      case 'bar':
-        return 'fa-solid fa-grip-lines';
-      default:
-        return 'fa-solid fa-circle';
-    }
+    return getMarkerIcon(mt.shape, mt.fill_style);
   }
 
   async ngOnInit(): Promise<void> {
     try {
-      const types = await this.markerTypeService.list();
+      const types = await this.markerTypeService.list(this.spaceId());
       this.markerTypes.set(types);
     } catch {
       this.markerTypes.set([]);

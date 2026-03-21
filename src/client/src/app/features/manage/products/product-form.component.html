@@ -18,6 +18,7 @@
       (blur)="nameBlurred.set(true)"
       [attr.aria-required]="true"
       [attr.aria-invalid]="nameInvalid"
+      [attr.aria-describedby]="nameInvalid ? 'product-name-error' : null"
     />
   </app-form-field>
 
@@ -28,6 +29,7 @@
       class="w-full"
       [ngModel]="genericName()"
       (ngModelChange)="genericName.set($event)"
+      placeholder="e.g. pembrolizumab"
     />
   </app-form-field>
 
@@ -50,6 +52,7 @@
       class="w-full"
       [ngModel]="logoUrl()"
       (ngModelChange)="logoUrl.set($event)"
+      placeholder="https://..."
     />
   </app-form-field>
 
@@ -63,7 +66,7 @@
   </app-form-field>
 
   <app-form-actions
-    [submitLabel]="isEdit ? 'Update' : 'Create'"
+    [submitLabel]="isEdit ? 'Update Product' : 'Create Product'"
     [loading]="submitting()"
     (cancelled)="cancelled.emit()"
   />

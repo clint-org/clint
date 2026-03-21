@@ -61,7 +61,9 @@ export class TherapeuticAreaListComponent implements OnInit {
       await this.loadAreas();
     } catch (err) {
       this.deleteError.set(
-        err instanceof Error ? err.message : 'Failed to delete therapeutic area'
+        err instanceof Error
+          ? err.message
+          : 'Could not delete therapeutic area. It may have associated trials.'
       );
     }
   }

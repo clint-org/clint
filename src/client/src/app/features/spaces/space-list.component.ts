@@ -23,7 +23,7 @@ import { TenantService } from '../../core/services/tenant.service';
         <div class="h-0.5 bg-teal-500"></div>
         <div class="mx-auto max-w-4xl flex items-center justify-between px-6 py-4">
           <div>
-            <h1 class="text-xl font-bold text-slate-900">{{ tenant()?.name }}</h1>
+            <h1 class="text-xl font-semibold text-slate-800">{{ tenant()?.name }}</h1>
             <p class="text-sm text-slate-500">Select a workspace</p>
           </div>
           <div class="flex gap-2">
@@ -50,9 +50,11 @@ import { TenantService } from '../../core/services/tenant.service';
           <p class="text-slate-500">Loading spaces...</p>
         } @else if (spaces().length === 0) {
           <div class="text-center py-16">
-            <p class="text-lg text-slate-600 mb-2">No spaces yet</p>
+            <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-4"></i>
+            <p class="text-lg text-slate-600 mb-2">Welcome to your organization</p>
             <p class="text-sm text-slate-400 mb-6">
-              Create your first workspace to start tracking clinical trials
+              Spaces are dedicated workspaces for tracking clinical trial pipelines. Create your
+              first one to get started.
             </p>
             <p-button
               label="Create Space"
@@ -83,9 +85,14 @@ import { TenantService } from '../../core/services/tenant.service';
       header="Create Space"
       [(visible)]="createDialogOpen"
       [modal]="true"
-      [style]="{ width: '28rem' }"
+      [style]="{ width: '32rem' }"
+      (onHide)="resetCreateForm()"
     >
       <form (ngSubmit)="createSpace()" class="space-y-4">
+        <p class="text-xs text-slate-500">
+          A space is a workspace for organizing and visualizing a set of clinical trials -- for
+          example, by therapeutic area or competitive landscape.
+        </p>
         <div>
           <label for="space-name" class="block text-sm font-medium text-slate-700 mb-1">Name</label>
           <input
@@ -123,7 +130,7 @@ import { TenantService } from '../../core/services/tenant.service';
           [outlined]="true"
           (onClick)="createDialogOpen.set(false)"
         />
-        <p-button label="Create" (onClick)="createSpace()" [loading]="creating()" />
+        <p-button label="Create Space" (onClick)="createSpace()" [loading]="creating()" />
       </ng-template>
     </p-dialog>
   `,
@@ -182,6 +189,12 @@ export class SpaceListComponent implements OnInit {
     this.router.navigate(['/t', this.tenantId, 'settings']);
   }
 
+  resetCreateForm(): void {
+    this.newSpaceName = '';
+    this.newSpaceDesc = '';
+    this.createError.set(null);
+  }
+
   async createSpace(): Promise<void> {
     if (!this.newSpaceName.trim()) return;
     this.creating.set(true);
@@ -198,7 +211,11 @@ export class SpaceListComponent implements OnInit {
       this.newSpaceDesc = '';
       this.openSpace(space);
     } catch (e) {
-      this.createError.set(e instanceof Error ? e.message : 'Failed to create space');
+      this.createError.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not create space. Check your connection and try again.'
+      );
     } finally {
       this.creating.set(false);
     }

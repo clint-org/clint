@@ -60,7 +60,11 @@ export class CompanyListComponent implements OnInit {
       await this.companyService.delete(company.id);
       await this.loadCompanies();
     } catch (err) {
-      this.deleteError.set(err instanceof Error ? err.message : 'Failed to delete company');
+      this.deleteError.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not delete company. It may have associated products.'
+      );
     }
   }
 

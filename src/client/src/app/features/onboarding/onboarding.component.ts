@@ -16,7 +16,7 @@ import { TenantService } from '../../core/services/tenant.service';
     <div class="min-h-screen bg-slate-50 flex items-center justify-center">
       <div class="w-full max-w-md">
         <div class="text-center mb-8">
-          <h1 class="text-2xl font-bold text-slate-900">Welcome to Clint</h1>
+          <h1 class="text-2xl font-semibold text-slate-800">Welcome to Clint</h1>
           <p class="mt-2 text-sm text-slate-500">Create an organization or join an existing one</p>
         </div>
 
@@ -29,6 +29,10 @@ import { TenantService } from '../../core/services/tenant.service';
             <p-tabpanels>
               <p-tabpanel value="0">
                 <form (ngSubmit)="createTenant()" class="space-y-4 pt-4">
+                  <p class="text-xs text-slate-500">
+                    An organization groups your team's clinical trial workspaces and controls member
+                    access.
+                  </p>
                   <div>
                     <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
                       >Organization Name</label
@@ -41,10 +45,15 @@ import { TenantService } from '../../core/services/tenant.service';
                       name="tenantName"
                       placeholder="e.g. Acme Pharma"
                       required
+                      aria-required="true"
+                      [attr.aria-invalid]="createError() ? true : null"
+                      aria-describedby="org-name-error"
                     />
                   </div>
                   @if (createError()) {
-                    <p-message severity="error" [closable]="false">{{ createError() }}</p-message>
+                    <p-message id="org-name-error" severity="error" [closable]="false">{{
+                      createError()
+                    }}</p-message>
                   }
                   <p-button
                     label="Create Organization"
@@ -56,6 +65,9 @@ import { TenantService } from '../../core/services/tenant.service';
               </p-tabpanel>
               <p-tabpanel value="1">
                 <form (ngSubmit)="joinTenant()" class="space-y-4 pt-4">
+                  <p class="text-xs text-slate-500">
+                    Ask your organization admin for an invite code to join an existing team.
+                  </p>
                   <div>
                     <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1"
                       >Invite Code</label
@@ -68,10 +80,15 @@ import { TenantService } from '../../core/services/tenant.service';
                       name="inviteCode"
                       placeholder="e.g. AB3K9X2M"
                       required
+                      aria-required="true"
+                      [attr.aria-invalid]="joinError() ? true : null"
+                      aria-describedby="invite-code-error"
                     />
                   </div>
                   @if (joinError()) {
-                    <p-message severity="error" [closable]="false">{{ joinError() }}</p-message>
+                    <p-message id="invite-code-error" severity="error" [closable]="false">{{
+                      joinError()
+                    }}</p-message>
                   }
                   <p-button
                     label="Join Organization"
@@ -114,7 +131,11 @@ export class OnboardingComponent {
       localStorage.setItem('lastTenantId', tenant.id);
       this.router.navigate(['/t', tenant.id, 'spaces']);
     } catch (e) {
-      this.createError.set(e instanceof Error ? e.message : 'Failed to create organization');
+      this.createError.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not create organization. Check your connection and try again.'
+      );
     } finally {
       this.creating.set(false);
     }

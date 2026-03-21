@@ -86,7 +86,11 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
           [outlined]="true"
           (onClick)="cancelled.emit()"
         />
-        <p-button label="Save" type="submit" [loading]="saving()" />
+        <p-button
+          [label]="phase() ? 'Update Phase' : 'Add Phase'"
+          type="submit"
+          [loading]="saving()"
+        />
       </div>
     </form>
   `,
@@ -111,7 +115,7 @@ export class PhaseFormComponent implements OnInit {
   phaseType = '';
   startDate = '';
   endDate = '';
-  color = '#3b82f6';
+  color = '#14b8a6';
   label = '';
   saving = signal(false);
   error = signal<string | null>(null);
@@ -122,7 +126,7 @@ export class PhaseFormComponent implements OnInit {
       this.phaseType = existing.phase_type;
       this.startDate = existing.start_date;
       this.endDate = existing.end_date ?? '';
-      this.color = existing.color ?? '#3b82f6';
+      this.color = existing.color ?? '#14b8a6';
       this.label = existing.label ?? '';
     }
   }
@@ -151,7 +155,11 @@ export class PhaseFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to save phase');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not save phase. Check your connection and try again.'
+      );
     } finally {
       this.saving.set(false);
     }

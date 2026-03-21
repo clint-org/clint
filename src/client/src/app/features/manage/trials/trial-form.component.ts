@@ -222,7 +222,11 @@ export class TrialFormComponent implements OnInit {
       this.ctgovLastSyncedAt = new Date().toISOString();
       this.syncSuccess.set('Synced successfully from ClinicalTrials.gov');
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to sync from CT.gov');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not sync from ClinicalTrials.gov. Verify the NCT ID and try again.'
+      );
     } finally {
       this.syncing.set(false);
     }
@@ -238,7 +242,9 @@ export class TrialFormComponent implements OnInit {
       this.products.set(products);
       this.therapeuticAreas.set(areas);
     } catch {
-      this.error.set('Failed to load dropdown data');
+      this.error.set(
+        'Could not load products and therapeutic areas. Check your connection and try again.'
+      );
     }
   }
 
@@ -288,7 +294,11 @@ export class TrialFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to save trial');
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not save trial. Check your connection and try again.'
+      );
     } finally {
       this.saving.set(false);
     }

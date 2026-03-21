@@ -29,7 +29,7 @@ import { TenantService } from '../../core/services/tenant.service';
       <div class="bg-white border-b border-slate-200">
         <div class="h-0.5 bg-teal-500"></div>
         <div class="mx-auto max-w-4xl flex items-center justify-between px-6 py-4">
-          <h1 class="text-xl font-bold text-slate-900">{{ tenant()?.name }} -- Settings</h1>
+          <h1 class="text-xl font-semibold text-slate-800">{{ tenant()?.name }} -- Settings</h1>
           <p-button
             label="Back to Spaces"
             icon="fa-solid fa-arrow-left"
@@ -42,10 +42,16 @@ import { TenantService } from '../../core/services/tenant.service';
       </div>
 
       <div class="mx-auto max-w-4xl px-6 py-8 space-y-8">
+        @if (removeError()) {
+          <p-message severity="error" [closable]="true" (onClose)="removeError.set(null)">{{
+            removeError()
+          }}</p-message>
+        }
+
         <!-- Members -->
         <section>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-900">Members</h2>
+            <h2 class="text-lg font-semibold text-slate-700">Members</h2>
             <p-button
               label="Invite Member"
               icon="fa-solid fa-plus"
@@ -54,7 +60,7 @@ import { TenantService } from '../../core/services/tenant.service';
             />
           </div>
 
-          <p-table [value]="members()" [loading]="loading()">
+          <p-table [value]="members()" [loading]="loading()" aria-label="Organization members">
             <ng-template #header>
               <tr>
                 <th>Name</th>
@@ -71,6 +77,7 @@ import { TenantService } from '../../core/services/tenant.service';
                 <td class="text-right">
                   <p-button
                     label="Remove"
+                    [attr.aria-label]="'Remove member ' + member.display_name"
                     [text]="true"
                     severity="danger"
                     size="small"
@@ -84,11 +91,11 @@ import { TenantService } from '../../core/services/tenant.service';
 
         <!-- Pending Invites -->
         <section>
-          <h2 class="text-lg font-semibold text-slate-900 mb-4">Pending Invites</h2>
+          <h2 class="text-lg font-semibold text-slate-700 mb-4">Pending Invites</h2>
           @if (invites().length === 0) {
             <p class="text-sm text-slate-500">No pending invites.</p>
           } @else {
-            <p-table [value]="invites()">
+            <p-table [value]="invites()" aria-label="Pending invites">
               <ng-template #header>
                 <tr>
                   <th>Email</th>
@@ -102,7 +109,7 @@ import { TenantService } from '../../core/services/tenant.service';
                   <td class="text-sm">{{ invite.email }}</td>
                   <td class="text-sm capitalize">{{ invite.role }}</td>
                   <td class="text-sm font-mono">{{ invite.invite_code }}</td>
-                  <td class="text-sm">{{ invite.expires_at }}</td>
+                  <td class="text-sm font-mono tabular-nums">{{ invite.expires_at }}</td>
                 </tr>
               </ng-template>
             </p-table>
@@ -115,7 +122,7 @@ import { TenantService } from '../../core/services/tenant.service';
       header="Invite Member"
       [(visible)]="inviteDialogOpen"
       [modal]="true"
-      [style]="{ width: '24rem' }"
+      [style]="{ width: '32rem' }"
     >
       <form (ngSubmit)="sendInvite()" class="space-y-4">
         <div>
@@ -174,6 +181,7 @@ export class TenantSettingsComponent implements OnInit {
   inviteDialogOpen = signal(false);
   inviting = signal(false);
   inviteError = signal<string | null>(null);
+  removeError = signal<string | null>(null);
   inviteEmail = '';
   inviteRole: 'owner' | 'member' = 'member';
 
@@ -213,8 +221,8 @@ export class TenantSettingsComponent implements OnInit {
     try {
       await this.tenantService.removeMember(this.tenantId, member.user_id);
       await this.loadData();
-    } catch {
-      // handle silently
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to remove member');
     }
   }
 

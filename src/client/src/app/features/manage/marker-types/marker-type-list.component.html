@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-4xl p-6">
   <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-slate-900">Marker Types</h1>
+    <h1 class="text-xl font-semibold text-slate-800">Marker Types</h1>
     <p-button
       label="Add Marker Type"
       icon="fa-solid fa-plus"
@@ -13,7 +13,12 @@
     <p-message severity="error" [closable]="false" class="mb-4">{{ error() }}</p-message>
   }
 
-  <p-table [value]="markerTypes()" [loading]="loading()" [tableStyle]="{ 'min-width': '40rem' }">
+  <p-table
+    [value]="markerTypes()"
+    [loading]="loading()"
+    [scrollable]="true"
+    [tableStyle]="{ 'min-width': '40rem' }"
+  >
     <ng-template #header>
       <tr>
         <th>Name</th>
@@ -57,17 +62,19 @@
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="text-center text-sm text-slate-500 py-8">No marker types found.</td>
+        <td colspan="6" class="text-center text-sm text-slate-500 py-8">
+          No marker types found. Add one to get started.
+        </td>
       </tr>
     </ng-template>
   </p-table>
 </div>
 
 <p-dialog
-  [header]="editingType() ? 'Edit Marker Type' : 'New Marker Type'"
+  [header]="editingType() ? 'Edit Marker Type' : 'Add Marker Type'"
   [(visible)]="modalOpen"
   [modal]="true"
-  [style]="{ width: '36rem' }"
+  [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
   <app-marker-type-form

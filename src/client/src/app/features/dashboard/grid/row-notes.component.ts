@@ -32,7 +32,7 @@ import { TrialNote } from '../../../core/models/trial.model';
       }
     </div>
 
-    <p-popover #op>
+    <p-popover #op ariaLabel="Trial notes">
       <div class="max-w-xs max-h-[300px] overflow-y-auto p-1">
         @if (trialNotes()) {
           <p class="text-sm text-slate-700 mb-2">{{ trialNotes() }}</p>

@@ -41,6 +41,9 @@ src/client/
         tenant-settings/        # Tenant management and member invites
       shared/
         components/svg-icons/   # 6 SVG shape components for markers
+        utils/
+          marker-icon.ts        # Shared marker shape-to-icon mapping
+          grid-constants.ts     # Shared grid dimension constants
       config/
         primeng-theme.ts        # Aura preset, teal primary, slate surface
     environments/

@@ -98,7 +98,11 @@ export class ProductListComponent implements OnInit {
       }
       await this.loadData();
     } catch (err) {
-      this.deleteError.set(err instanceof Error ? err.message : 'Failed to delete product');
+      this.deleteError.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not delete product. It may have associated trials.'
+      );
     }
   }
 
@@ -168,7 +172,11 @@ export class ProductListComponent implements OnInit {
         await this.loadTrials(expandedId);
       }
     } catch (err) {
-      this.trialDeleteError.set(err instanceof Error ? err.message : 'Failed to delete trial');
+      this.trialDeleteError.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not delete trial. Check your connection and try again.'
+      );
     }
   }
 

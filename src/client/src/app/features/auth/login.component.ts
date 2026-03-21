@@ -8,8 +8,13 @@ import { SupabaseService } from '../../core/services/supabase.service';
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 class="mb-2 text-center text-3xl font-bold text-slate-900">Clinical Trial Dashboard</h1>
-        <p class="mb-8 text-center text-slate-600">Sign in to continue</p>
+        <h1 class="mb-2 text-center text-2xl font-semibold text-slate-800">
+          Clinical Trial Dashboard
+        </h1>
+        <p class="text-center text-sm text-slate-500">
+          Clinical trial intelligence for informed decisions
+        </p>
+        <p class="mb-8 mt-4 text-center text-slate-600">Sign in to continue</p>
 
         @if (error()) {
           <div class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">

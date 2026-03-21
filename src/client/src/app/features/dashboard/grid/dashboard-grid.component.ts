@@ -43,6 +43,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private timeline = inject(TimelineService);
   private elRef = inject(ElementRef);
   private scrollListener: (() => void) | null = null;
+  private scrollRafId: number | null = null;
 
   companies = input.required<Company[]>();
   zoomLevel = input.required<ZoomLevel>();
@@ -101,7 +102,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
     if (scrollEl) {
       this.scrollListener = () => {
-        this.isScrolled.set(scrollEl.scrollLeft > 50);
+        if (this.scrollRafId !== null) return;
+        this.scrollRafId = requestAnimationFrame(() => {
+          this.isScrolled.set(scrollEl.scrollLeft > 50);
+          this.scrollRafId = null;
+        });
       };
       scrollEl.addEventListener('scroll', this.scrollListener, { passive: true });
     }
@@ -111,6 +116,9 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     if (this.scrollListener) {
       const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
       scrollEl?.removeEventListener('scroll', this.scrollListener);
+    }
+    if (this.scrollRafId !== null) {
+      cancelAnimationFrame(this.scrollRafId);
     }
   }
 

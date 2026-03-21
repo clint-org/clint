@@ -26,7 +26,7 @@
     font-size="9"
     font-weight="600"
     class="pointer-events-none select-none"
-    [attr.fill]="showLabelInside() ? '#1e293b' : '#64748b'"
+    [attr.fill]="showLabelInside() ? insideLabelColor() : '#64748b'"
   >
     {{ labelText() }}
   </svg:text>

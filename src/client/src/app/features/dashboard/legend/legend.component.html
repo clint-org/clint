@@ -1,4 +1,12 @@
-@if (!loading()) {
+@if (loading()) {
+  <div class="border-t border-slate-200 bg-slate-50/50 px-5 py-3">
+    <span class="text-[10px] text-slate-400">Loading legend...</span>
+  </div>
+} @else if (groupedMarkerTypes().length === 0) {
+  <div class="border-t border-slate-200 bg-slate-50/50 px-5 py-3">
+    <span class="text-[10px] text-slate-400">No marker types configured</span>
+  </div>
+} @else {
   <div
     class="border-t border-slate-200 bg-slate-50/50 px-5 py-3"
     role="list"

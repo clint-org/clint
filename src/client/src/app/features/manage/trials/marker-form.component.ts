@@ -89,6 +89,7 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
             class="w-full mt-1"
             [(ngModel)]="tooltipImageUrl"
             name="tooltipImageUrl"
+            placeholder="https://..."
           />
         </div>
 
@@ -110,7 +111,11 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
           [outlined]="true"
           (onClick)="cancelled.emit()"
         />
-        <p-button label="Save" type="submit" [loading]="saving()" />
+        <p-button
+          [label]="marker() ? 'Update Marker' : 'Add Marker'"
+          type="submit"
+          [loading]="saving()"
+        />
       </div>
     </form>
   `,
@@ -154,7 +159,7 @@ export class MarkerFormComponent implements OnInit {
       const types = await this.markerTypeService.list(this.route.snapshot.paramMap.get('spaceId')!);
       this.markerTypes.set(types);
     } catch {
-      this.error.set('Failed to load marker types');
+      this.error.set('Could not load marker types. Check your connection and try again.');
     }
   }
 
@@ -183,7 +188,11 @@ export class MarkerFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to save marker');
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not save marker. Check your connection and try again.'
+      );
     } finally {
       this.saving.set(false);
     }

@@ -5,21 +5,22 @@
       [style]="{ width: '1rem', height: '1rem' }"
       aria-hidden="true"
     />
-    <span class="text-sm text-slate-500">Loading filters...</span>
+    <span class="text-sm text-slate-500" aria-live="polite">Loading filters...</span>
   </div>
 } @else {
-  <div class="flex flex-wrap items-center gap-3 px-2 py-1.5">
+  <div class="flex flex-wrap items-center gap-2 md:gap-3 px-2 py-1.5">
     <p-multiselect
       [options]="companyOptions()"
       [ngModel]="selectedCompanyIds()"
       (ngModelChange)="selectedCompanyIds.set($event)"
       placeholder="Company"
+      ariaLabel="Filter by company"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-44"
+      styleClass="w-full sm:w-36 md:w-44"
     />
 
     <p-multiselect
@@ -27,12 +28,13 @@
       [ngModel]="selectedProductIds()"
       (ngModelChange)="selectedProductIds.set($event)"
       placeholder="Product"
+      ariaLabel="Filter by product"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-44"
+      styleClass="w-full sm:w-36 md:w-44"
     />
 
     <p-multiselect
@@ -40,12 +42,13 @@
       [ngModel]="selectedTAIds()"
       (ngModelChange)="selectedTAIds.set($event)"
       placeholder="Therapeutic Area"
+      ariaLabel="Filter by therapeutic area"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-52"
+      styleClass="w-full sm:w-40 md:w-52"
     />
 
     <p-multiselect
@@ -53,11 +56,12 @@
       [ngModel]="selectedStatuses()"
       (ngModelChange)="selectedStatuses.set($event)"
       placeholder="Status"
+      ariaLabel="Filter by recruitment status"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-40"
+      styleClass="w-full sm:w-32 md:w-40"
     />
 
     <p-multiselect
@@ -65,11 +69,12 @@
       [ngModel]="selectedPhases()"
       (ngModelChange)="selectedPhases.set($event)"
       placeholder="Phase"
+      ariaLabel="Filter by trial phase"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-36"
+      styleClass="w-full sm:w-28 md:w-36"
     />
 
     <p-multiselect
@@ -77,11 +82,12 @@
       [ngModel]="selectedStudyTypes()"
       (ngModelChange)="selectedStudyTypes.set($event)"
       placeholder="Study Type"
+      ariaLabel="Filter by study type"
       optionLabel="label"
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-40"
+      styleClass="w-full sm:w-32 md:w-40"
     />
   </div>
 }

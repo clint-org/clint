@@ -1,4 +1,11 @@
 <div class="flex flex-col border border-slate-200 rounded-lg">
+  <!-- Small screen hint -->
+  <div
+    class="block md:hidden px-3 py-2 bg-slate-100 text-xs text-slate-500 text-center border-b border-slate-200"
+  >
+    Scroll horizontally to view the full timeline
+  </div>
+
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
@@ -9,7 +16,7 @@
         <!-- Header row -->
         <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
           <div
-            class="px-3 text-xs font-semibold text-slate-500 transition-all duration-200"
+            class="hidden lg:block px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 transition-all duration-200"
             [class.w-36]="!isScrolled()"
             [class.w-10]="isScrolled()"
           >
@@ -17,26 +24,32 @@
               Company
             }
           </div>
-          <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">
+          <div
+            class="w-28 md:w-32 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 lg:border-l border-slate-200"
+          >
             Product
           </div>
-          <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">
+          <div
+            class="w-36 md:w-48 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 border-l border-slate-200"
+          >
             Trial
           </div>
         </div>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-50/50">
             <div
-              class="px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
+              class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"
               [class.w-10]="isScrolled()"
             >
               &nbsp;
             </div>
-            <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+            <div
+              class="w-28 md:w-32 px-3 py-0.5 text-xs text-slate-400 lg:border-l border-slate-200"
+            >
               &nbsp;
             </div>
-            <div class="w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+            <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
               &nbsp;
             </div>
           </div>
@@ -53,9 +66,9 @@
             [class.bg-slate-50]="idx % 2 !== 0"
             [style.height.px]="36"
           >
-            <!-- Company column (collapses to logo on scroll) -->
+            <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             <div
-              class="flex items-center transition-all duration-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
+              class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
               [class.w-36]="!isScrolled()"
               [class.px-3]="!isScrolled()"
               [class.gap-1.5]="!isScrolled()"
@@ -87,7 +100,7 @@
             </div>
             <!-- Product column -->
             <div
-              class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
+              class="w-28 md:w-32 px-3 flex items-center gap-1.5 truncate lg:border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
               [title]="row.productName"
               role="button"
               tabindex="0"
@@ -103,7 +116,7 @@
             </div>
             <!-- Trial column -->
             <div
-              class="w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 text-slate-700 transition-colors"
+              class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 text-slate-700 transition-colors"
               [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
               role="button"
               tabindex="0"
@@ -188,11 +201,11 @@
         </div>
       </div>
 
-      <!-- Notes column -->
+      <!-- Notes column (hidden below lg) -->
       @if (flattenedTrials().length > 0) {
-        <div class="flex-none w-48 bg-white border-l border-slate-200">
+        <div class="hidden lg:block flex-none w-48 bg-white border-l border-slate-200">
           <div
-            class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold text-slate-500"
+            class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold uppercase tracking-wider text-slate-500"
           >
             Notes
           </div>

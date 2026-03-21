@@ -35,7 +35,11 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
 
         @if (exporting()) {
           <div class="flex items-center justify-center gap-2 py-2">
-            <p-progressspinner strokeWidth="4" [style]="{ width: '1.5rem', height: '1.5rem' }" />
+            <p-progressspinner
+              strokeWidth="4"
+              [style]="{ width: '1.5rem', height: '1.5rem' }"
+              aria-label="Exporting to PowerPoint"
+            />
             <span class="text-sm text-slate-500">Generating PowerPoint...</span>
           </div>
         }
@@ -48,7 +52,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
       <ng-template #footer>
         <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closed.emit()" />
         <p-button
-          label="Export"
+          label="Export to PowerPoint"
           icon="fa-solid fa-file-powerpoint"
           (onClick)="doExport()"
           [loading]="exporting()"
@@ -95,7 +99,11 @@ export class ExportDialogComponent {
       this.visible.set(false);
       this.closed.emit();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Export failed');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not generate PowerPoint file. Check your connection and try again.'
+      );
     } finally {
       this.exporting.set(false);
     }

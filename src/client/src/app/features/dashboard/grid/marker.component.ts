@@ -1,12 +1,11 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 
 import { MarkerType, TrialMarker } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { BarIconComponent } from '../../../shared/components/svg-icons/bar-icon.component';
+import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
+import { getMarkerIcon } from '../../../shared/utils/marker-icon';
 import { MarkerTooltipComponent } from './marker-tooltip.component';
-
-const ICON_SIZE = 18;
-const TOP_OFFSET = 4;
 
 @Component({
   selector: 'app-marker',
@@ -24,10 +23,10 @@ export class MarkerComponent {
 
   markerClick = output<TrialMarker>();
 
-  showTooltip = false;
+  showTooltip = signal(false);
 
-  readonly iconSize = ICON_SIZE;
-  readonly topOffset = TOP_OFFSET;
+  readonly iconSize = MARKER_ICON_SIZE;
+  readonly topOffset = MARKER_TOP_OFFSET;
 
   markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
 
@@ -60,24 +59,7 @@ export class MarkerComponent {
   faIcon = computed(() => {
     const mt = this.markerType();
     if (!mt) return 'fa-solid fa-circle';
-    const shape = mt.shape;
-    const fill = mt.fill_style;
-    switch (shape) {
-      case 'circle':
-        return fill === 'outline' ? 'fa-regular fa-circle' : 'fa-solid fa-circle';
-      case 'diamond':
-        return fill === 'outline' ? 'fa-regular fa-gem' : 'fa-solid fa-gem';
-      case 'flag':
-        return fill === 'outline' ? 'fa-regular fa-flag' : 'fa-solid fa-flag';
-      case 'arrow':
-        return 'fa-solid fa-arrow-up';
-      case 'x':
-        return 'fa-solid fa-circle-xmark';
-      case 'bar':
-        return 'fa-solid fa-grip-lines';
-      default:
-        return 'fa-solid fa-circle';
-    }
+    return getMarkerIcon(mt.shape, mt.fill_style);
   });
 
   shortDate = computed(() => {

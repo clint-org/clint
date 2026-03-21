@@ -1,13 +1,22 @@
 <div class="mx-auto max-w-4xl p-6">
   @if (loading()) {
-    <p class="text-slate-500">Loading trial...</p>
+    <div class="flex items-center justify-center py-20">
+      <div class="flex flex-col items-center gap-3">
+        <p-progressspinner
+          strokeWidth="4"
+          [style]="{ width: '2rem', height: '2rem' }"
+          aria-label="Loading trial data"
+        />
+        <span class="text-sm text-slate-500">Loading trial...</span>
+      </div>
+    </div>
   } @else if (error()) {
     <p-message severity="error" [closable]="false">{{ error() }}</p-message>
   } @else if (trial()) {
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">{{ trial()!.name }}</h1>
+        <h1 class="text-xl font-semibold text-slate-800">{{ trial()!.name }}</h1>
         @if (trial()!.identifier) {
           <p class="text-sm text-slate-500">{{ trial()!.identifier }}</p>
         }
@@ -83,7 +92,12 @@
         </div>
       }
 
-      <p-table [value]="trial()!.trial_phases ?? []" [tableStyle]="{ 'min-width': '40rem' }">
+      <p-table
+        [value]="trial()!.trial_phases ?? []"
+        [scrollable]="true"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        aria-label="Trial phases"
+      >
         <ng-template #header>
           <tr>
             <th>Type</th>
@@ -98,8 +112,8 @@
           <tr>
             <td>{{ phase.phase_type }}</td>
             <td>{{ phase.label || '-' }}</td>
-            <td>{{ phase.start_date }}</td>
-            <td>{{ phase.end_date || '-' }}</td>
+            <td class="font-mono tabular-nums">{{ phase.start_date }}</td>
+            <td class="font-mono tabular-nums">{{ phase.end_date || '-' }}</td>
             <td>
               @if (phase.color) {
                 <app-color-swatch [color]="phase.color" />
@@ -127,7 +141,9 @@
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="text-center text-sm text-slate-500 py-4">No phases defined.</td>
+            <td colspan="6" class="text-center text-sm text-slate-500 py-8">
+              No phases yet. Add one to get started.
+            </td>
           </tr>
         </ng-template>
       </p-table>
@@ -155,7 +171,12 @@
         </div>
       }
 
-      <p-table [value]="trial()!.trial_markers ?? []" [tableStyle]="{ 'min-width': '40rem' }">
+      <p-table
+        [value]="trial()!.trial_markers ?? []"
+        [scrollable]="true"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        aria-label="Trial markers"
+      >
         <ng-template #header>
           <tr>
             <th>Type</th>
@@ -169,8 +190,8 @@
         <ng-template #body let-marker>
           <tr>
             <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
-            <td>{{ marker.event_date }}</td>
-            <td>{{ marker.end_date || '-' }}</td>
+            <td class="font-mono tabular-nums">{{ marker.event_date }}</td>
+            <td class="font-mono tabular-nums">{{ marker.end_date || '-' }}</td>
             <td class="max-w-xs truncate">{{ marker.tooltip_text || '-' }}</td>
             <td>{{ marker.is_projected ? 'Yes' : 'No' }}</td>
             <td class="text-right">
@@ -193,7 +214,9 @@
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="text-center text-sm text-slate-500 py-4">No markers defined.</td>
+            <td colspan="6" class="text-center text-sm text-slate-500 py-8">
+              No markers yet. Add one to get started.
+            </td>
           </tr>
         </ng-template>
       </p-table>
@@ -243,12 +266,14 @@
                   />
                 </div>
               </div>
-              <p class="mt-2 text-xs text-slate-400">{{ note.updated_at }}</p>
+              <p class="mt-2 text-xs text-slate-400 font-mono tabular-nums">
+                {{ note.updated_at }}
+              </p>
             </div>
           }
         </div>
       } @else {
-        <p class="text-sm text-slate-500">No notes yet.</p>
+        <p class="text-sm text-slate-500">No notes yet. Add one to get started.</p>
       }
     </app-section-card>
   }

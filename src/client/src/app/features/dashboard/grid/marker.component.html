@@ -1,11 +1,13 @@
 @if (markerType(); as mt) {
   <div
     class="absolute cursor-pointer"
-    [style.z-index]="showTooltip ? 9999 : 10"
+    [style.z-index]="showTooltip() ? 9999 : 10"
     [style.left.px]="markerX()"
     [style.top.px]="topOffset"
-    (mouseenter)="showTooltip = true"
-    (mouseleave)="showTooltip = false"
+    (mouseenter)="showTooltip.set(true)"
+    (mouseleave)="showTooltip.set(false)"
+    (focus)="showTooltip.set(true)"
+    (blur)="showTooltip.set(false)"
     (click)="onMarkerClick()"
     (keydown.enter)="onMarkerClick()"
     (keydown.space)="onMarkerClick()"
@@ -25,8 +27,7 @@
       </svg>
     } @else {
       <div
-        class="flex items-center justify-center"
-        style="filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))"
+        class="flex items-center justify-center drop-shadow-sm"
         [style.width.px]="iconSize"
         [style.height.px]="iconSize"
         [style.margin-left.px]="-iconSize / 2"
@@ -41,8 +42,7 @@
     }
 
     <div
-      class="text-center whitespace-nowrap font-mono leading-none"
-      style="font-size: 8px; margin-top: 1px"
+      class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
       [style.color]="mt.color"
       [style.margin-left.px]="-iconSize / 2"
       [style.width.px]="iconSize * 2"
@@ -50,7 +50,7 @@
       {{ shortDate() }}
     </div>
 
-    @if (showTooltip && tooltipText()) {
+    @if (showTooltip() && tooltipText()) {
       <app-marker-tooltip
         [text]="tooltipText()!"
         [typeName]="markerType()?.name ?? ''"

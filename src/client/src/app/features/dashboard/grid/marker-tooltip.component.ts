@@ -20,13 +20,20 @@ import {
       [style.top.px]="tooltipY()"
       [style.min-width]="'200px'"
       [style.max-width]="'300px'"
-      [style.transform]="'translateX(-50%)'"
+      [style.transform]="flipAbove() ? 'translate(-50%, -100%)' : 'translateX(-50%)'"
     >
-      <!-- Arrow pointing up -->
-      <div
-        class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-b-[6px] border-x-transparent border-b-slate-900"
-        style="bottom: 100%;"
-      ></div>
+      <!-- Arrow -->
+      @if (flipAbove()) {
+        <div
+          class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-slate-900"
+          style="top: 100%;"
+        ></div>
+      } @else {
+        <div
+          class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-b-[6px] border-x-transparent border-b-slate-900"
+          style="bottom: 100%;"
+        ></div>
+      }
 
       <!-- Colored accent bar -->
       <div class="h-1" [style.background]="typeColor()"></div>
@@ -75,6 +82,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   tooltipX = signal(0);
   tooltipY = signal(0);
+  flipAbove = signal(false);
 
   formattedDate = computed(() => {
     if (!this.date()) return '';
@@ -86,8 +94,24 @@ export class MarkerTooltipComponent implements AfterViewInit {
     const markerEl = this.el.nativeElement.closest('[role="button"]');
     if (markerEl) {
       const rect = markerEl.getBoundingClientRect();
-      this.tooltipX.set(rect.left + rect.width / 2);
-      this.tooltipY.set(rect.bottom + 8);
+      const tooltipWidth = 250; // approximate mid-point of min/max width
+      const margin = 12;
+
+      // Horizontal: clamp to viewport
+      let x = rect.left + rect.width / 2;
+      const minX = tooltipWidth / 2 + margin;
+      const maxX = window.innerWidth - tooltipWidth / 2 - margin;
+      x = Math.max(minX, Math.min(maxX, x));
+
+      // Vertical: flip above if near bottom
+      let y = rect.bottom + 8;
+      if (y + 150 > window.innerHeight) {
+        y = rect.top - 8;
+        this.flipAbove.set(true);
+      }
+
+      this.tooltipX.set(x);
+      this.tooltipY.set(y);
       this.cdr.detectChanges();
     }
   }

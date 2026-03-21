@@ -82,7 +82,11 @@ export class CompanyFormComponent implements OnInit {
       }
       this.saved.emit(result);
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to save company');
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not save company. Check your connection and try again.'
+      );
     } finally {
       this.submitting.set(false);
     }

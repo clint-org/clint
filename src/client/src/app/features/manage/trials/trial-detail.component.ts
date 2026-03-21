@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { Trial, TrialPhase, TrialNote } from '../../../core/models/trial.model';
 import { TrialMarker } from '../../../core/models/marker.model';
@@ -26,6 +27,7 @@ import { ColorSwatchComponent } from '../../../shared/components/color-swatch.co
     TableModule,
     ButtonModule,
     MessageModule,
+    ProgressSpinnerModule,
     TrialFormComponent,
     PhaseFormComponent,
     MarkerFormComponent,
@@ -93,11 +95,16 @@ export class TrialDetailComponent implements OnInit {
   }
 
   async deletePhase(id: string): Promise<void> {
+    if (!confirm('Delete this phase? This cannot be undone.')) return;
     try {
       await this.phaseService.delete(id);
       await this.loadTrial();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to delete phase');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not delete phase. Check your connection and try again.'
+      );
     }
   }
 
@@ -108,11 +115,16 @@ export class TrialDetailComponent implements OnInit {
   }
 
   async deleteMarker(id: string): Promise<void> {
+    if (!confirm('Delete this marker? This cannot be undone.')) return;
     try {
       await this.markerService.delete(id);
       await this.loadTrial();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to delete marker');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not delete marker. Check your connection and try again.'
+      );
     }
   }
 
@@ -123,11 +135,16 @@ export class TrialDetailComponent implements OnInit {
   }
 
   async deleteNote(id: string): Promise<void> {
+    if (!confirm('Delete this note? This cannot be undone.')) return;
     try {
       await this.noteService.delete(id);
       await this.loadTrial();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to delete note');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not delete note. Check your connection and try again.'
+      );
     }
   }
 

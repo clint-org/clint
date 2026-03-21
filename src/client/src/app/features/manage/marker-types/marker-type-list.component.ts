@@ -74,11 +74,21 @@ export class MarkerTypeListComponent implements OnInit {
   }
 
   async deleteType(id: string): Promise<void> {
+    if (
+      !confirm(
+        'Delete this marker type? Any markers using it will lose their type. This cannot be undone.'
+      )
+    )
+      return;
     try {
       await this.markerTypeService.delete(id);
       await this.loadMarkerTypes();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to delete marker type');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not delete marker type. Check your connection and try again.'
+      );
     }
   }
 }

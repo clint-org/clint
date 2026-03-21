@@ -16,7 +16,7 @@
         [(ngModel)]="name"
         name="name"
         required
-        placeholder="Trial name"
+        placeholder="e.g. KEYNOTE-522"
       />
     </app-form-field>
 
@@ -138,7 +138,7 @@
           name="studyType"
           optionLabel="label"
           optionValue="value"
-          placeholder="Select"
+          placeholder="Select study type"
           [showClear]="true"
           [style]="{ width: '100%' }"
           class="mt-1"
@@ -152,7 +152,7 @@
           name="phase"
           optionLabel="label"
           optionValue="value"
-          placeholder="Select"
+          placeholder="Select phase"
           [showClear]="true"
           [style]="{ width: '100%' }"
           class="mt-1"
@@ -166,7 +166,7 @@
           name="designMasking"
           optionLabel="label"
           optionValue="value"
-          placeholder="Select"
+          placeholder="Select masking"
           [showClear]="true"
           [style]="{ width: '100%' }"
           class="mt-1"
@@ -180,7 +180,7 @@
           name="designPrimaryPurpose"
           optionLabel="label"
           optionValue="value"
-          placeholder="Select"
+          placeholder="Select purpose"
           [showClear]="true"
           [style]="{ width: '100%' }"
           class="mt-1"
@@ -220,7 +220,7 @@
           name="eligibilitySex"
           optionLabel="label"
           optionValue="value"
-          placeholder="Select"
+          placeholder="Select sex"
           [showClear]="true"
           [style]="{ width: '100%' }"
           class="mt-1"
@@ -353,5 +353,9 @@
     </div>
   </p-fieldset>
 
-  <app-form-actions submitLabel="Save" [loading]="saving()" (cancelled)="cancelled.emit()" />
+  <app-form-actions
+    [submitLabel]="trial() ? 'Update Trial' : 'Create Trial'"
+    [loading]="saving()"
+    (cancelled)="cancelled.emit()"
+  />
 </form>

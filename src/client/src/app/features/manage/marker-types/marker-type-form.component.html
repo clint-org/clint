@@ -4,7 +4,13 @@
   }
 
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <app-form-field label="Name" fieldId="mt-name" [required]="true" spacing="sm:col-span-2">
+    <app-form-field
+      label="Name"
+      fieldId="mt-name"
+      [required]="true"
+      [error]="nameInvalid ? 'Name is required.' : null"
+      spacing="sm:col-span-2"
+    >
       <input
         pInputText
         id="mt-name"
@@ -12,7 +18,9 @@
         [(ngModel)]="name"
         name="name"
         required
-        placeholder="Marker type name"
+        placeholder="e.g. FDA Approval, Data Readout"
+        (blur)="nameBlurred.set(true)"
+        [attr.aria-invalid]="nameInvalid"
       />
     </app-form-field>
 
@@ -53,7 +61,7 @@
         class="w-full mt-1"
         [(ngModel)]="icon"
         name="icon"
-        placeholder="Optional icon identifier"
+        placeholder="e.g. fa-solid fa-check"
       />
     </app-form-field>
 
@@ -145,5 +153,9 @@
     </div>
   </div>
 
-  <app-form-actions submitLabel="Save" [loading]="saving()" (cancelled)="cancelled.emit()" />
+  <app-form-actions
+    [submitLabel]="markerType() ? 'Update Marker Type' : 'Create Marker Type'"
+    [loading]="saving()"
+    (cancelled)="cancelled.emit()"
+  />
 </form>

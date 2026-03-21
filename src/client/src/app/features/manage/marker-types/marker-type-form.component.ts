@@ -56,11 +56,16 @@ export class MarkerTypeFormComponent implements OnInit {
   name = '';
   shape: MarkerType['shape'] = 'circle';
   fillStyle: MarkerType['fill_style'] = 'filled';
-  color = '#3b82f6';
+  color = '#14b8a6';
   icon = '';
   displayOrder = 0;
   saving = signal(false);
   error = signal<string | null>(null);
+  nameBlurred = signal(false);
+
+  get nameInvalid(): boolean {
+    return this.nameBlurred() && !this.name.trim();
+  }
 
   ngOnInit(): void {
     const existing = this.markerType();
@@ -99,7 +104,11 @@ export class MarkerTypeFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to save marker type');
+      this.error.set(
+        e instanceof Error
+          ? e.message
+          : 'Could not save marker type. Check your connection and try again.'
+      );
     } finally {
       this.saving.set(false);
     }

@@ -1,6 +1,6 @@
-<div class="p-4">
-  <div class="mb-4 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-900">Therapeutic Areas</h1>
+<div class="mx-auto max-w-4xl p-6">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-slate-800">Therapeutic Areas</h1>
     <p-button
       label="Add Therapeutic Area"
       icon="fa-solid fa-plus"
@@ -9,7 +9,12 @@
     />
   </div>
 
-  <p-table [value]="areas()" [loading]="loading()" [tableStyle]="{ 'min-width': '30rem' }">
+  <p-table
+    [value]="areas()"
+    [loading]="loading()"
+    [scrollable]="true"
+    [tableStyle]="{ 'min-width': '30rem' }"
+  >
     <ng-template #header>
       <tr>
         <th>Name</th>
@@ -42,7 +47,7 @@
     <ng-template #emptymessage>
       <tr>
         <td colspan="3" class="text-center text-sm text-slate-500 py-8">
-          No therapeutic areas found.
+          No therapeutic areas found. Add one to get started.
         </td>
       </tr>
     </ng-template>

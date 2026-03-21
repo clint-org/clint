@@ -28,7 +28,7 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
           rows="4"
           required
           class="w-full mt-1"
-          placeholder="Enter note content"
+          placeholder="Add a clinical observation, status update, or decision rationale..."
         ></textarea>
       </div>
 
@@ -39,7 +39,11 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
           [outlined]="true"
           (onClick)="cancelled.emit()"
         />
-        <p-button label="Save" type="submit" [loading]="saving()" />
+        <p-button
+          [label]="note() ? 'Update Note' : 'Add Note'"
+          type="submit"
+          [loading]="saving()"
+        />
       </div>
     </form>
   `,
@@ -83,7 +87,9 @@ export class NoteFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to save note');
+      this.error.set(
+        e instanceof Error ? e.message : 'Could not save note. Check your connection and try again.'
+      );
     } finally {
       this.saving.set(false);
     }

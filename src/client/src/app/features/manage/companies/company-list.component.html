@@ -1,6 +1,6 @@
-<div class="p-4">
-  <div class="mb-4 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-900">Companies</h1>
+<div class="mx-auto max-w-4xl p-6">
+  <div class="mb-6 flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-slate-800">Companies</h1>
     <p-button
       label="Add Company"
       icon="fa-solid fa-plus"
@@ -9,7 +9,12 @@
     />
   </div>
 
-  <p-table [value]="companies()" [loading]="loading()" [tableStyle]="{ 'min-width': '40rem' }">
+  <p-table
+    [value]="companies()"
+    [loading]="loading()"
+    [scrollable]="true"
+    [tableStyle]="{ 'min-width': '40rem' }"
+  >
     <ng-template #header>
       <tr>
         <th>Name</th>
@@ -22,7 +27,7 @@
       <tr>
         <td class="font-medium">{{ company.name }}</td>
         <td class="max-w-[200px] truncate text-slate-500">{{ company.logo_url ?? '-' }}</td>
-        <td class="text-slate-500">{{ company.display_order }}</td>
+        <td class="text-slate-500 tabular-nums">{{ company.display_order }}</td>
         <td class="text-right">
           <p-button
             label="Edit"
