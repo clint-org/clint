@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
 import ClinicalTheme from './config/primeng-theme';
@@ -8,7 +8,7 @@ import ClinicalTheme from './config/primeng-theme';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
