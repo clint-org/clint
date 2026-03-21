@@ -11,8 +11,10 @@ import { PhaseBarComponent } from './phase-bar.component';
 import { RowNotesComponent } from './row-notes.component';
 
 export interface FlattenedTrial {
+  companyId: string;
   companyName: string;
   companyLogoUrl: string | null;
+  productId: string;
   productName: string;
   productLogoUrl: string | null;
   trial: Trial;
@@ -40,6 +42,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   phaseClick = output<TrialPhase>();
   markerClick = output<TrialMarker>();
   trialClick = output<Trial>();
+  companyClick = output<string>();
+  productClick = output<string>();
 
   isScrolled = signal(false);
 
@@ -61,8 +65,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
         const trials = product.trials ?? [];
         for (const trial of trials) {
           rows.push({
+            companyId: company.id,
             companyName: company.name,
             companyLogoUrl: company.logo_url ?? null,
+            productId: product.id,
             productName: product.name,
             productLogoUrl: product.logo_url ?? null,
             trial,
@@ -112,5 +118,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   onTrialClick(trial: Trial): void {
     this.trialClick.emit(trial);
+  }
+
+  onCompanyClick(companyId: string): void {
+    this.companyClick.emit(companyId);
+  }
+
+  onProductClick(productId: string): void {
+    this.productClick.emit(productId);
   }
 }

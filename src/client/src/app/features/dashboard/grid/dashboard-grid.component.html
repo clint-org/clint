@@ -41,7 +41,7 @@
           >
             <!-- Company column (collapses to logo on scroll) -->
             <div
-              class="flex items-center transition-all duration-200"
+              class="flex items-center transition-all duration-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 transition-colors"
               [class.w-36]="!isScrolled()"
               [class.px-3]="!isScrolled()"
               [class.gap-1.5]="!isScrolled()"
@@ -49,6 +49,11 @@
               [class.justify-center]="isScrolled()"
               [class.truncate]="!isScrolled()"
               [title]="row.companyName"
+              role="button"
+              tabindex="0"
+              (click)="onCompanyClick(row.companyId)"
+              (keydown.enter)="onCompanyClick(row.companyId)"
+              (keydown.space)="onCompanyClick(row.companyId)"
             >
               @if (row.isFirstInCompany) {
                 @if (row.companyLogoUrl) {
@@ -65,8 +70,13 @@
             </div>
             <!-- Product column -->
             <div
-              class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200"
+              class="w-32 px-3 flex items-center gap-1.5 truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 transition-colors"
               [title]="row.productName"
+              role="button"
+              tabindex="0"
+              (click)="onProductClick(row.productId)"
+              (keydown.enter)="onProductClick(row.productId)"
+              (keydown.space)="onProductClick(row.productId)"
             >
               @if (row.isFirstInProduct) {
                 <span class="text-sm text-slate-600 font-medium truncate">{{ row.productName }}</span>

@@ -130,6 +130,14 @@ export class DashboardComponent {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
   }
 
+  onCompanyClick(_companyId: string): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'companies']);
+  }
+
+  onProductClick(_productId: string): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'products']);
+  }
+
   retry(): void {
     this.dashboardData.reload();
   }
