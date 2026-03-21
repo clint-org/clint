@@ -50,10 +50,7 @@ export class ProductService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('products').delete().eq('id', id);
     if (error) throw error;
   }
 }

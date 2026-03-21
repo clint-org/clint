@@ -19,7 +19,13 @@ import { Component, computed, input } from '@angular/core';
     }
     @if (fillStyle() === 'gradient') {
       <svg:defs>
-        <svg:linearGradient [attr.id]="'grad-flag-' + patternId" x1="0%" y1="0%" x2="100%" y2="100%">
+        <svg:linearGradient
+          [attr.id]="'grad-flag-' + patternId"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
           <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
         </svg:linearGradient>
@@ -39,8 +45,10 @@ import { Component, computed, input } from '@angular/core';
     <svg:path
       [attr.d]="flagPath()"
       [attr.fill]="computedFill()"
-      [attr.stroke]="fillStyle() === 'outline' ? color() : (fillStyle() === 'filled' ? '#ffffff' : 'none')"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : (fillStyle() === 'filled' ? 0.5 : 0)"
+      [attr.stroke]="
+        fillStyle() === 'outline' ? color() : fillStyle() === 'filled' ? '#ffffff' : 'none'
+      "
+      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : fillStyle() === 'filled' ? 0.5 : 0"
       stroke-linejoin="round"
     />
   `,

@@ -1,7 +1,12 @@
 <div class="p-4">
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-semibold text-slate-900">Therapeutic Areas</h1>
-    <p-button label="Add Therapeutic Area" icon="fa-solid fa-plus" size="small" (onClick)="openCreateModal()" />
+    <p-button
+      label="Add Therapeutic Area"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
   </div>
 
   <p-table [value]="areas()" [loading]="loading()" [tableStyle]="{ 'min-width': '30rem' }">
@@ -17,14 +22,28 @@
         <td class="font-medium">{{ area.name }}</td>
         <td class="text-slate-500">{{ area.abbreviation ?? '-' }}</td>
         <td class="text-right">
-          <p-button label="Edit" [text]="true" size="small" (onClick)="openEditModal(area)" class="mr-1" />
-          <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="confirmDelete(area)" />
+          <p-button
+            label="Edit"
+            [text]="true"
+            size="small"
+            (onClick)="openEditModal(area)"
+            class="mr-1"
+          />
+          <p-button
+            label="Delete"
+            [text]="true"
+            severity="danger"
+            size="small"
+            (onClick)="confirmDelete(area)"
+          />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="3" class="text-center text-sm text-slate-500 py-8">No therapeutic areas found.</td>
+        <td colspan="3" class="text-center text-sm text-slate-500 py-8">
+          No therapeutic areas found.
+        </td>
       </tr>
     </ng-template>
   </p-table>

@@ -49,10 +49,7 @@ export class SpaceService {
   }
 
   async deleteSpace(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('spaces')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('spaces').delete().eq('id', id);
     if (error) throw error;
   }
 
@@ -66,7 +63,11 @@ export class SpaceService {
     return data ?? [];
   }
 
-  async addMember(spaceId: string, userId: string, role: 'owner' | 'editor' | 'viewer'): Promise<SpaceMember> {
+  async addMember(
+    spaceId: string,
+    userId: string,
+    role: 'owner' | 'editor' | 'viewer'
+  ): Promise<SpaceMember> {
     const { data, error } = await this.supabase.client
       .from('space_members')
       .insert({ space_id: spaceId, user_id: userId, role })
@@ -76,7 +77,11 @@ export class SpaceService {
     return data;
   }
 
-  async updateMemberRole(spaceId: string, userId: string, role: 'owner' | 'editor' | 'viewer'): Promise<void> {
+  async updateMemberRole(
+    spaceId: string,
+    userId: string,
+    role: 'owner' | 'editor' | 'viewer'
+  ): Promise<void> {
     const { error } = await this.supabase.client
       .from('space_members')
       .update({ role })

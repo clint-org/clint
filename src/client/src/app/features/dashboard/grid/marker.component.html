@@ -14,12 +14,9 @@
     [attr.aria-label]="tooltipText()"
   >
     @if (isRange()) {
-      <svg
-        [attr.width]="rangeWidth()"
-        [attr.height]="iconSize"
-        class="overflow-visible"
-      >
-        <g app-bar-icon
+      <svg [attr.width]="rangeWidth()" [attr.height]="iconSize" class="overflow-visible">
+        <g
+          app-bar-icon
           [width]="rangeWidth()"
           [height]="iconSize"
           [color]="mt.color"
@@ -29,7 +26,7 @@
     } @else {
       <div
         class="flex items-center justify-center"
-        style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25))"
+        style="filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))"
         [style.width.px]="iconSize"
         [style.height.px]="iconSize"
         [style.margin-left.px]="-iconSize / 2"
@@ -38,14 +35,14 @@
           [class]="faIcon()"
           [style.color]="mt.color"
           [style.font-size.px]="iconSize - 4"
-          style="-webkit-text-stroke: 0.5px white;"
+          style="-webkit-text-stroke: 0.5px white"
         ></i>
       </div>
     }
 
     <div
       class="text-center whitespace-nowrap font-mono leading-none"
-      style="font-size: 8px; margin-top: 1px;"
+      style="font-size: 8px; margin-top: 1px"
       [style.color]="mt.color"
       [style.margin-left.px]="-iconSize / 2"
       [style.width.px]="iconSize * 2"

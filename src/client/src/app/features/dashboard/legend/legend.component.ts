@@ -19,23 +19,24 @@ export class LegendComponent implements OnInit {
     return [
       {
         label: 'Data',
-        types: types.filter(t => t.name.includes('Data') || t.name.includes('Completion')),
+        types: types.filter((t) => t.name.includes('Data') || t.name.includes('Completion')),
       },
       {
         label: 'Regulatory',
-        types: types.filter(t => t.name.includes('Regulatory') || t.name.includes('Filing')),
+        types: types.filter((t) => t.name.includes('Regulatory') || t.name.includes('Filing')),
       },
       {
         label: 'Approval',
         types: types.filter(
-          t => t.name.includes('Approval') || t.name.includes('Launch') || t.name.includes('Label')
+          (t) =>
+            t.name.includes('Approval') || t.name.includes('Launch') || t.name.includes('Label')
         ),
       },
       {
         label: 'Other',
-        types: types.filter(t => t.name.includes('Change') || t.name.includes('No Longer')),
+        types: types.filter((t) => t.name.includes('Change') || t.name.includes('No Longer')),
       },
-    ].filter(g => g.types.length > 0);
+    ].filter((g) => g.types.length > 0);
   });
 
   faIcon(mt: MarkerType): string {

@@ -8,11 +8,19 @@ import { MessageModule } from 'primeng/message';
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerTypeFormComponent } from './marker-type-form.component';
+import { ColorSwatchComponent } from '../../../shared/components/color-swatch.component';
 
 @Component({
   selector: 'app-marker-type-list',
   standalone: true,
-  imports: [TableModule, ButtonModule, Dialog, MessageModule, MarkerTypeFormComponent],
+  imports: [
+    TableModule,
+    ButtonModule,
+    Dialog,
+    MessageModule,
+    MarkerTypeFormComponent,
+    ColorSwatchComponent,
+  ],
   templateUrl: './marker-type-list.component.html',
 })
 export class MarkerTypeListComponent implements OnInit {

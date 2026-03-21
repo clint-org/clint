@@ -20,19 +20,17 @@
 
     <!-- Trial Form (edit mode) -->
     @if (editingTrial()) {
-      <section class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="mb-4 text-lg font-semibold text-slate-900">Edit Trial</h2>
+      <app-section-card title="Edit Trial">
         <app-trial-form
           [trial]="trial()"
           (saved)="onTrialSaved()"
           (cancelled)="editingTrial.set(false)"
         />
-      </section>
+      </app-section-card>
     }
 
     <!-- Basic Info -->
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 class="mb-4 text-lg font-semibold text-slate-900">Basic Info</h2>
+    <app-section-card title="Basic Info">
       <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <dt class="text-sm font-medium text-slate-500">Status</dt>
@@ -40,11 +38,15 @@
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Therapeutic Area</dt>
-          <dd class="mt-1 text-sm text-slate-900">{{ trial()!.therapeutic_areas?.name || 'Not set' }}</dd>
+          <dd class="mt-1 text-sm text-slate-900">
+            {{ trial()!.therapeutic_areas?.name || 'Not set' }}
+          </dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Sample Size</dt>
-          <dd class="mt-1 text-sm text-slate-900">{{ trial()!.sample_size !== null ? trial()!.sample_size : 'Not set' }}</dd>
+          <dd class="mt-1 text-sm text-slate-900">
+            {{ trial()!.sample_size !== null ? trial()!.sample_size : 'Not set' }}
+          </dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-slate-500">Display Order</dt>
@@ -57,14 +59,18 @@
           </div>
         }
       </dl>
-    </section>
+    </app-section-card>
 
     <!-- Phases Section -->
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-slate-900">Phases</h2>
-        <p-button label="Add Phase" icon="fa-solid fa-plus" severity="success" size="small" (onClick)="addingPhase.set(true); editingPhase.set(null)" />
-      </div>
+    <app-section-card title="Phases">
+      <p-button
+        actions
+        label="Add Phase"
+        icon="fa-solid fa-plus"
+        severity="success"
+        size="small"
+        (onClick)="addingPhase.set(true); editingPhase.set(null)"
+      />
 
       @if (addingPhase() || editingPhase()) {
         <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -96,29 +102,47 @@
             <td>{{ phase.end_date || '-' }}</td>
             <td>
               @if (phase.color) {
-                <span class="inline-block h-5 w-5 rounded-full border border-slate-300" [style.background-color]="phase.color"></span>
+                <app-color-swatch [color]="phase.color" />
               } @else {
                 -
               }
             </td>
             <td class="text-right">
-              <p-button label="Edit" [text]="true" size="small" (onClick)="editingPhase.set(phase); addingPhase.set(false)" class="mr-1" />
-              <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="deletePhase(phase.id)" />
+              <p-button
+                label="Edit"
+                [text]="true"
+                size="small"
+                (onClick)="editingPhase.set(phase); addingPhase.set(false)"
+                class="mr-1"
+              />
+              <p-button
+                label="Delete"
+                [text]="true"
+                severity="danger"
+                size="small"
+                (onClick)="deletePhase(phase.id)"
+              />
             </td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
-          <tr><td colspan="6" class="text-center text-sm text-slate-500 py-4">No phases defined.</td></tr>
+          <tr>
+            <td colspan="6" class="text-center text-sm text-slate-500 py-4">No phases defined.</td>
+          </tr>
         </ng-template>
       </p-table>
-    </section>
+    </app-section-card>
 
     <!-- Markers Section -->
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-slate-900">Markers</h2>
-        <p-button label="Add Marker" icon="fa-solid fa-plus" severity="success" size="small" (onClick)="addingMarker.set(true); editingMarker.set(null)" />
-      </div>
+    <app-section-card title="Markers">
+      <p-button
+        actions
+        label="Add Marker"
+        icon="fa-solid fa-plus"
+        severity="success"
+        size="small"
+        (onClick)="addingMarker.set(true); editingMarker.set(null)"
+      />
 
       @if (addingMarker() || editingMarker()) {
         <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -150,23 +174,41 @@
             <td class="max-w-xs truncate">{{ marker.tooltip_text || '-' }}</td>
             <td>{{ marker.is_projected ? 'Yes' : 'No' }}</td>
             <td class="text-right">
-              <p-button label="Edit" [text]="true" size="small" (onClick)="editingMarker.set(marker); addingMarker.set(false)" class="mr-1" />
-              <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="deleteMarker(marker.id)" />
+              <p-button
+                label="Edit"
+                [text]="true"
+                size="small"
+                (onClick)="editingMarker.set(marker); addingMarker.set(false)"
+                class="mr-1"
+              />
+              <p-button
+                label="Delete"
+                [text]="true"
+                severity="danger"
+                size="small"
+                (onClick)="deleteMarker(marker.id)"
+              />
             </td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
-          <tr><td colspan="6" class="text-center text-sm text-slate-500 py-4">No markers defined.</td></tr>
+          <tr>
+            <td colspan="6" class="text-center text-sm text-slate-500 py-4">No markers defined.</td>
+          </tr>
         </ng-template>
       </p-table>
-    </section>
+    </app-section-card>
 
     <!-- Notes Section -->
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-slate-900">Notes</h2>
-        <p-button label="Add Note" icon="fa-solid fa-plus" severity="success" size="small" (onClick)="addingNote.set(true); editingNote.set(null)" />
-      </div>
+    <app-section-card title="Notes">
+      <p-button
+        actions
+        label="Add Note"
+        icon="fa-solid fa-plus"
+        severity="success"
+        size="small"
+        (onClick)="addingNote.set(true); editingNote.set(null)"
+      />
 
       @if (addingNote() || editingNote()) {
         <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -186,8 +228,19 @@
               <div class="flex items-start justify-between">
                 <p class="text-sm text-slate-900 whitespace-pre-wrap">{{ note.content }}</p>
                 <div class="ml-4 flex shrink-0 gap-2">
-                  <p-button label="Edit" [text]="true" size="small" (onClick)="editingNote.set(note); addingNote.set(false)" />
-                  <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="deleteNote(note.id)" />
+                  <p-button
+                    label="Edit"
+                    [text]="true"
+                    size="small"
+                    (onClick)="editingNote.set(note); addingNote.set(false)"
+                  />
+                  <p-button
+                    label="Delete"
+                    [text]="true"
+                    severity="danger"
+                    size="small"
+                    (onClick)="deleteNote(note.id)"
+                  />
                 </div>
               </div>
               <p class="mt-2 text-xs text-slate-400">{{ note.updated_at }}</p>
@@ -197,6 +250,6 @@
       } @else {
         <p class="text-sm text-slate-500">No notes yet.</p>
       }
-    </section>
+    </app-section-card>
   }
 </div>

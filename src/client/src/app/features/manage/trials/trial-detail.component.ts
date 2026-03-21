@@ -16,6 +16,8 @@ import { TrialFormComponent } from './trial-form.component';
 import { PhaseFormComponent } from './phase-form.component';
 import { MarkerFormComponent } from './marker-form.component';
 import { NoteFormComponent } from './note-form.component';
+import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { ColorSwatchComponent } from '../../../shared/components/color-swatch.component';
 
 @Component({
   selector: 'app-trial-detail',
@@ -28,6 +30,8 @@ import { NoteFormComponent } from './note-form.component';
     PhaseFormComponent,
     MarkerFormComponent,
     NoteFormComponent,
+    SectionCardComponent,
+    ColorSwatchComponent,
   ],
   templateUrl: './trial-detail.component.html',
 })

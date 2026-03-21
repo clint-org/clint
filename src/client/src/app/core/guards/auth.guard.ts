@@ -33,7 +33,7 @@ export const onboardingRedirectGuard: CanActivateFn = async () => {
       return router.createUrlTree(['/onboarding']);
     }
     const lastTenantId = localStorage.getItem('lastTenantId');
-    const tenant = tenants.find(t => t.id === lastTenantId) ?? tenants[0];
+    const tenant = tenants.find((t) => t.id === lastTenantId) ?? tenants[0];
     return router.createUrlTree(['/t', tenant.id, 'spaces']);
   } catch {
     return router.createUrlTree(['/onboarding']);

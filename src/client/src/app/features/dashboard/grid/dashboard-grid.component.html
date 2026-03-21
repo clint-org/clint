@@ -3,7 +3,9 @@
   <div class="overflow-x-auto">
     <div class="flex">
       <!-- Left labels columns (frozen pane) -->
-      <div class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+      <div
+        class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+      >
         <!-- Header row -->
         <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
           <div
@@ -11,10 +13,16 @@
             [class.w-36]="!isScrolled()"
             [class.w-10]="isScrolled()"
           >
-            @if (!isScrolled()) { Company }
+            @if (!isScrolled()) {
+              Company
+            }
           </div>
-          <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Product</div>
-          <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">Trial</div>
+          <div class="w-32 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">
+            Product
+          </div>
+          <div class="w-48 px-3 text-xs font-semibold text-slate-500 border-l border-slate-200">
+            Trial
+          </div>
         </div>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-50/50">
@@ -22,9 +30,15 @@
               class="px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"
               [class.w-10]="isScrolled()"
-            >&nbsp;</div>
-            <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
-            <div class="w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+            >
+              &nbsp;
+            </div>
+            <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+              &nbsp;
+            </div>
+            <div class="w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+              &nbsp;
+            </div>
           </div>
         }
 
@@ -64,7 +78,10 @@
                   />
                 }
                 @if (!isScrolled()) {
-                  <span class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate">{{ row.companyName }}</span>
+                  <span
+                    class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate"
+                    >{{ row.companyName }}</span
+                  >
                 }
               }
             </div>
@@ -79,7 +96,9 @@
               (keydown.space)="onProductClick(row.productId)"
             >
               @if (row.isFirstInProduct) {
-                <span class="text-sm text-slate-600 font-medium truncate">{{ row.productName }}</span>
+                <span class="text-sm text-slate-600 font-medium truncate">{{
+                  row.productName
+                }}</span>
               }
             </div>
             <!-- Trial column -->
@@ -101,10 +120,7 @@
       <!-- Timeline area -->
       <div class="flex-none" [style.width.px]="totalWidth()">
         <!-- Header -->
-        <app-grid-header
-          [columns]="columns()"
-          [totalWidth]="totalWidth()"
-        />
+        <app-grid-header [columns]="columns()" [totalWidth]="totalWidth()" />
 
         <!-- Trial rows -->
         <div [style.width.px]="totalWidth()">
@@ -175,11 +191,15 @@
       <!-- Notes column -->
       @if (flattenedTrials().length > 0) {
         <div class="flex-none w-48 bg-white border-l border-slate-200">
-          <div class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold text-slate-500">
+          <div
+            class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold text-slate-500"
+          >
             Notes
           </div>
           @if (hasSubColumns()) {
-            <div class="border-b border-slate-200 bg-slate-50/50 px-3 py-0.5 text-xs text-slate-400">
+            <div
+              class="border-b border-slate-200 bg-slate-50/50 px-3 py-0.5 text-xs text-slate-400"
+            >
               &nbsp;
             </div>
           }

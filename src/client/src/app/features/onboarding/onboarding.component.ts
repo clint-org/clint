@@ -30,25 +30,55 @@ import { TenantService } from '../../core/services/tenant.service';
               <p-tabpanel value="0">
                 <form (ngSubmit)="createTenant()" class="space-y-4 pt-4">
                   <div>
-                    <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1">Organization Name</label>
-                    <input pInputText id="org-name" class="w-full" [(ngModel)]="tenantName" name="tenantName" placeholder="e.g. Acme Pharma" required />
+                    <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
+                      >Organization Name</label
+                    >
+                    <input
+                      pInputText
+                      id="org-name"
+                      class="w-full"
+                      [(ngModel)]="tenantName"
+                      name="tenantName"
+                      placeholder="e.g. Acme Pharma"
+                      required
+                    />
                   </div>
                   @if (createError()) {
                     <p-message severity="error" [closable]="false">{{ createError() }}</p-message>
                   }
-                  <p-button label="Create Organization" type="submit" [loading]="creating()" [style]="{ width: '100%' }" />
+                  <p-button
+                    label="Create Organization"
+                    type="submit"
+                    [loading]="creating()"
+                    [style]="{ width: '100%' }"
+                  />
                 </form>
               </p-tabpanel>
               <p-tabpanel value="1">
                 <form (ngSubmit)="joinTenant()" class="space-y-4 pt-4">
                   <div>
-                    <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1">Invite Code</label>
-                    <input pInputText id="invite-code" class="w-full" [(ngModel)]="inviteCode" name="inviteCode" placeholder="e.g. AB3K9X2M" required />
+                    <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1"
+                      >Invite Code</label
+                    >
+                    <input
+                      pInputText
+                      id="invite-code"
+                      class="w-full"
+                      [(ngModel)]="inviteCode"
+                      name="inviteCode"
+                      placeholder="e.g. AB3K9X2M"
+                      required
+                    />
                   </div>
                   @if (joinError()) {
                     <p-message severity="error" [closable]="false">{{ joinError() }}</p-message>
                   }
-                  <p-button label="Join Organization" type="submit" [loading]="joining()" [style]="{ width: '100%' }" />
+                  <p-button
+                    label="Join Organization"
+                    type="submit"
+                    [loading]="joining()"
+                    [style]="{ width: '100%' }"
+                  />
                 </form>
               </p-tabpanel>
             </p-tabpanels>
@@ -75,7 +105,11 @@ export class OnboardingComponent {
     this.createError.set(null);
 
     try {
-      const slug = this.tenantName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slug = this.tenantName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
       const tenant = await this.tenantService.createTenant(this.tenantName.trim(), slug);
       localStorage.setItem('lastTenantId', tenant.id);
       this.router.navigate(['/t', tenant.id, 'spaces']);

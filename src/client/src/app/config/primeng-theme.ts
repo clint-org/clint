@@ -14,7 +14,7 @@ const ClinicalTheme = definePreset(Aura, {
       700: '{teal.700}',
       800: '{teal.800}',
       900: '{teal.900}',
-      950: '{teal.950}'
+      950: '{teal.950}',
     },
     colorScheme: {
       light: {
@@ -30,11 +30,11 @@ const ClinicalTheme = definePreset(Aura, {
           700: '{slate.700}',
           800: '{slate.800}',
           900: '{slate.900}',
-          950: '{slate.950}'
-        }
-      }
-    }
-  }
+          950: '{slate.950}',
+        },
+      },
+    },
+  },
 });
 
 export default ClinicalTheme;

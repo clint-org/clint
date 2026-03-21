@@ -1,7 +1,12 @@
 <div class="mx-auto max-w-4xl p-6">
   <div class="mb-6 flex items-center justify-between">
     <h1 class="text-2xl font-bold text-slate-900">Marker Types</h1>
-    <p-button label="Add Marker Type" icon="fa-solid fa-plus" size="small" (onClick)="openCreateModal()" />
+    <p-button
+      label="Add Marker Type"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
   </div>
 
   @if (error()) {
@@ -25,13 +30,25 @@
         <td>{{ mt.shape }}</td>
         <td>{{ mt.fill_style }}</td>
         <td>
-          <span class="inline-block h-5 w-5 rounded-full border border-slate-300" [style.background-color]="mt.color"></span>
+          <app-color-swatch [color]="mt.color" />
         </td>
         <td>{{ mt.is_system ? 'Yes' : 'No' }}</td>
         <td class="text-right">
           @if (!mt.is_system) {
-            <p-button label="Edit" [text]="true" size="small" (onClick)="openEditModal(mt)" class="mr-1" />
-            <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="deleteType(mt.id)" />
+            <p-button
+              label="Edit"
+              [text]="true"
+              size="small"
+              (onClick)="openEditModal(mt)"
+              class="mr-1"
+            />
+            <p-button
+              label="Delete"
+              [text]="true"
+              severity="danger"
+              size="small"
+              (onClick)="deleteType(mt.id)"
+            />
           } @else {
             <span class="text-xs text-slate-400">Read-only</span>
           }

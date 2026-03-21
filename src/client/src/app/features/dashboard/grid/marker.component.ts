@@ -11,10 +11,7 @@ const TOP_OFFSET = 4;
 @Component({
   selector: 'app-marker',
   standalone: true,
-  imports: [
-    BarIconComponent,
-    MarkerTooltipComponent,
-  ],
+  imports: [BarIconComponent, MarkerTooltipComponent],
   templateUrl: './marker.component.html',
 })
 export class MarkerComponent {
@@ -35,12 +32,15 @@ export class MarkerComponent {
   markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
 
   markerX = computed(() =>
-    Math.max(0, this.timeline.dateToX(
-      this.marker().event_date,
-      this.startYear(),
-      this.endYear(),
-      this.totalWidth(),
-    )),
+    Math.max(
+      0,
+      this.timeline.dateToX(
+        this.marker().event_date,
+        this.startYear(),
+        this.endYear(),
+        this.totalWidth()
+      )
+    )
   );
 
   isRange = computed(() => !!this.marker().end_date);
@@ -52,7 +52,7 @@ export class MarkerComponent {
       endDate,
       this.startYear(),
       this.endYear(),
-      this.totalWidth(),
+      this.totalWidth()
     );
     return Math.max(0, endX - this.markerX());
   });
@@ -82,7 +82,20 @@ export class MarkerComponent {
 
   shortDate = computed(() => {
     const d = new Date(this.marker().event_date);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
   });
 

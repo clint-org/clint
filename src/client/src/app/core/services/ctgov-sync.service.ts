@@ -61,7 +61,11 @@ export class CtgovSyncService {
       // clinical context
       conditions: conds.conditions ?? [],
       intervention_type: firstIntervention.type ?? undefined,
-      intervention_name: interventions.map((i: any) => i.name).filter(Boolean).join(', ') || undefined,
+      intervention_name:
+        interventions
+          .map((i: any) => i.name)
+          .filter(Boolean)
+          .join(', ') || undefined,
       primary_outcome_measures: (outcomes.primaryOutcomes ?? []).map((o: any) => o.measure),
       secondary_outcome_measures: (outcomes.secondaryOutcomes ?? []).map((o: any) => o.measure),
 
@@ -100,9 +104,13 @@ export class CtgovSyncService {
 
   private mapPhase(phases: string[] | undefined): string | undefined {
     if (!phases || phases.length === 0) return undefined;
-    return phases.join('/').replace('EARLY_PHASE1', 'Early Phase 1')
-      .replace('PHASE1', 'Phase 1').replace('PHASE2', 'Phase 2')
-      .replace('PHASE3', 'Phase 3').replace('PHASE4', 'Phase 4')
+    return phases
+      .join('/')
+      .replace('EARLY_PHASE1', 'Early Phase 1')
+      .replace('PHASE1', 'Phase 1')
+      .replace('PHASE2', 'Phase 2')
+      .replace('PHASE3', 'Phase 3')
+      .replace('PHASE4', 'Phase 4')
       .replace('NA', 'N/A');
   }
 
@@ -141,13 +149,29 @@ export class CtgovSyncService {
 
   private inferRegions(countries: string[]): string[] {
     const regionMap: Record<string, string> = {
-      'United States': 'North America', 'Canada': 'North America', 'Mexico': 'North America',
-      'Germany': 'Europe', 'France': 'Europe', 'United Kingdom': 'Europe', 'Spain': 'Europe',
-      'Italy': 'Europe', 'Netherlands': 'Europe', 'Belgium': 'Europe', 'Sweden': 'Europe',
-      'Poland': 'Europe', 'Switzerland': 'Europe', 'Austria': 'Europe',
-      'Japan': 'Asia Pacific', 'China': 'Asia Pacific', 'South Korea': 'Asia Pacific',
-      'Australia': 'Asia Pacific', 'India': 'Asia Pacific', 'Taiwan': 'Asia Pacific',
-      'Brazil': 'Latin America', 'Argentina': 'Latin America', 'Colombia': 'Latin America',
+      'United States': 'North America',
+      Canada: 'North America',
+      Mexico: 'North America',
+      Germany: 'Europe',
+      France: 'Europe',
+      'United Kingdom': 'Europe',
+      Spain: 'Europe',
+      Italy: 'Europe',
+      Netherlands: 'Europe',
+      Belgium: 'Europe',
+      Sweden: 'Europe',
+      Poland: 'Europe',
+      Switzerland: 'Europe',
+      Austria: 'Europe',
+      Japan: 'Asia Pacific',
+      China: 'Asia Pacific',
+      'South Korea': 'Asia Pacific',
+      Australia: 'Asia Pacific',
+      India: 'Asia Pacific',
+      Taiwan: 'Asia Pacific',
+      Brazil: 'Latin America',
+      Argentina: 'Latin America',
+      Colombia: 'Latin America',
     };
     const regions = new Set<string>();
     for (const c of countries) {

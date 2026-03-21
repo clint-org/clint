@@ -27,8 +27,20 @@ import { TenantService } from '../../core/services/tenant.service';
             <p class="text-sm text-slate-500">Select a workspace</p>
           </div>
           <div class="flex gap-2">
-            <p-button label="Settings" icon="fa-solid fa-gear" severity="secondary" [outlined]="true" size="small" (onClick)="goToSettings()" />
-            <p-button label="New Space" icon="fa-solid fa-plus" size="small" (onClick)="createDialogOpen.set(true)" />
+            <p-button
+              label="Settings"
+              icon="fa-solid fa-gear"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              (onClick)="goToSettings()"
+            />
+            <p-button
+              label="New Space"
+              icon="fa-solid fa-plus"
+              size="small"
+              (onClick)="createDialogOpen.set(true)"
+            />
           </div>
         </div>
       </div>
@@ -39,8 +51,14 @@ import { TenantService } from '../../core/services/tenant.service';
         } @else if (spaces().length === 0) {
           <div class="text-center py-16">
             <p class="text-lg text-slate-600 mb-2">No spaces yet</p>
-            <p class="text-sm text-slate-400 mb-6">Create your first workspace to start tracking clinical trials</p>
-            <p-button label="Create Space" icon="fa-solid fa-plus" (onClick)="createDialogOpen.set(true)" />
+            <p class="text-sm text-slate-400 mb-6">
+              Create your first workspace to start tracking clinical trials
+            </p>
+            <p-button
+              label="Create Space"
+              icon="fa-solid fa-plus"
+              (onClick)="createDialogOpen.set(true)"
+            />
           </div>
         } @else {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -61,22 +79,50 @@ import { TenantService } from '../../core/services/tenant.service';
       </div>
     </div>
 
-    <p-dialog header="Create Space" [(visible)]="createDialogOpen" [modal]="true" [style]="{ width: '28rem' }">
+    <p-dialog
+      header="Create Space"
+      [(visible)]="createDialogOpen"
+      [modal]="true"
+      [style]="{ width: '28rem' }"
+    >
       <form (ngSubmit)="createSpace()" class="space-y-4">
         <div>
           <label for="space-name" class="block text-sm font-medium text-slate-700 mb-1">Name</label>
-          <input pInputText id="space-name" class="w-full" [(ngModel)]="newSpaceName" name="spaceName" placeholder="e.g. SGLT2 Pipeline" required />
+          <input
+            pInputText
+            id="space-name"
+            class="w-full"
+            [(ngModel)]="newSpaceName"
+            name="spaceName"
+            placeholder="e.g. SGLT2 Pipeline"
+            required
+          />
         </div>
         <div>
-          <label for="space-desc" class="block text-sm font-medium text-slate-700 mb-1">Description</label>
-          <textarea pTextarea id="space-desc" class="w-full" [(ngModel)]="newSpaceDesc" name="spaceDesc" rows="2" placeholder="Optional description"></textarea>
+          <label for="space-desc" class="block text-sm font-medium text-slate-700 mb-1"
+            >Description</label
+          >
+          <textarea
+            pTextarea
+            id="space-desc"
+            class="w-full"
+            [(ngModel)]="newSpaceDesc"
+            name="spaceDesc"
+            rows="2"
+            placeholder="Optional description"
+          ></textarea>
         </div>
         @if (createError()) {
           <p-message severity="error" [closable]="false">{{ createError() }}</p-message>
         }
       </form>
       <ng-template #footer>
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="createDialogOpen.set(false)" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="createDialogOpen.set(false)"
+        />
         <p-button label="Create" (onClick)="createSpace()" [loading]="creating()" />
       </ng-template>
     </p-dialog>
@@ -100,7 +146,7 @@ export class SpaceListComponent implements OnInit {
   private tenantId = '';
 
   async ngOnInit(): Promise<void> {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       const id = params.get('tenantId');
       if (id && id !== this.tenantId) {
         this.tenantId = id;
@@ -142,7 +188,11 @@ export class SpaceListComponent implements OnInit {
     this.createError.set(null);
 
     try {
-      const space = await this.spaceService.createSpace(this.tenantId, this.newSpaceName.trim(), this.newSpaceDesc.trim() || undefined);
+      const space = await this.spaceService.createSpace(
+        this.tenantId,
+        this.newSpaceName.trim(),
+        this.newSpaceDesc.trim() || undefined
+      );
       this.createDialogOpen.set(false);
       this.newSpaceName = '';
       this.newSpaceDesc = '';

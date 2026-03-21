@@ -14,14 +14,30 @@ import { TenantService } from '../../core/services/tenant.service';
 @Component({
   selector: 'app-tenant-settings',
   standalone: true,
-  imports: [RouterLink, FormsModule, TableModule, ButtonModule, Dialog, InputText, Select, MessageModule],
+  imports: [
+    RouterLink,
+    FormsModule,
+    TableModule,
+    ButtonModule,
+    Dialog,
+    InputText,
+    Select,
+    MessageModule,
+  ],
   template: `
     <div class="min-h-screen bg-slate-50">
       <div class="bg-white border-b border-slate-200">
         <div class="h-0.5 bg-teal-500"></div>
         <div class="mx-auto max-w-4xl flex items-center justify-between px-6 py-4">
           <h1 class="text-xl font-bold text-slate-900">{{ tenant()?.name }} -- Settings</h1>
-          <p-button label="Back to Spaces" icon="fa-solid fa-arrow-left" severity="secondary" [outlined]="true" size="small" [routerLink]="['/t', tenantId, 'spaces']" />
+          <p-button
+            label="Back to Spaces"
+            icon="fa-solid fa-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            [routerLink]="['/t', tenantId, 'spaces']"
+          />
         </div>
       </div>
 
@@ -30,7 +46,12 @@ import { TenantService } from '../../core/services/tenant.service';
         <section>
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-slate-900">Members</h2>
-            <p-button label="Invite Member" icon="fa-solid fa-plus" size="small" (onClick)="inviteDialogOpen.set(true)" />
+            <p-button
+              label="Invite Member"
+              icon="fa-solid fa-plus"
+              size="small"
+              (onClick)="inviteDialogOpen.set(true)"
+            />
           </div>
 
           <p-table [value]="members()" [loading]="loading()">
@@ -48,7 +69,13 @@ import { TenantService } from '../../core/services/tenant.service';
                 <td class="text-sm text-slate-500">{{ member.email }}</td>
                 <td class="text-sm capitalize">{{ member.role }}</td>
                 <td class="text-right">
-                  <p-button label="Remove" [text]="true" severity="danger" size="small" (onClick)="removeMember(member)" />
+                  <p-button
+                    label="Remove"
+                    [text]="true"
+                    severity="danger"
+                    size="small"
+                    (onClick)="removeMember(member)"
+                  />
                 </td>
               </tr>
             </ng-template>
@@ -84,22 +111,52 @@ import { TenantService } from '../../core/services/tenant.service';
       </div>
     </div>
 
-    <p-dialog header="Invite Member" [(visible)]="inviteDialogOpen" [modal]="true" [style]="{ width: '24rem' }">
+    <p-dialog
+      header="Invite Member"
+      [(visible)]="inviteDialogOpen"
+      [modal]="true"
+      [style]="{ width: '24rem' }"
+    >
       <form (ngSubmit)="sendInvite()" class="space-y-4">
         <div>
-          <label for="invite-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-          <input pInputText id="invite-email" class="w-full" [(ngModel)]="inviteEmail" name="email" type="email" required />
+          <label for="invite-email" class="block text-sm font-medium text-slate-700 mb-1"
+            >Email</label
+          >
+          <input
+            pInputText
+            id="invite-email"
+            class="w-full"
+            [(ngModel)]="inviteEmail"
+            name="email"
+            type="email"
+            required
+          />
         </div>
         <div>
-          <label for="invite-role" class="block text-sm font-medium text-slate-700 mb-1">Role</label>
-          <p-select inputId="invite-role" [options]="roleOptions" [(ngModel)]="inviteRole" name="role" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+          <label for="invite-role" class="block text-sm font-medium text-slate-700 mb-1"
+            >Role</label
+          >
+          <p-select
+            inputId="invite-role"
+            [options]="roleOptions"
+            [(ngModel)]="inviteRole"
+            name="role"
+            optionLabel="label"
+            optionValue="value"
+            [style]="{ width: '100%' }"
+          />
         </div>
         @if (inviteError()) {
           <p-message severity="error" [closable]="false">{{ inviteError() }}</p-message>
         }
       </form>
       <ng-template #footer>
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="inviteDialogOpen.set(false)" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="inviteDialogOpen.set(false)"
+        />
         <p-button label="Send Invite" (onClick)="sendInvite()" [loading]="inviting()" />
       </ng-template>
     </p-dialog>
@@ -136,7 +193,11 @@ export class TenantSettingsComponent implements OnInit {
     this.inviteError.set(null);
 
     try {
-      await this.tenantService.createInvite(this.tenantId, this.inviteEmail.trim(), this.inviteRole);
+      await this.tenantService.createInvite(
+        this.tenantId,
+        this.inviteEmail.trim(),
+        this.inviteRole
+      );
       this.inviteDialogOpen.set(false);
       this.inviteEmail = '';
       await this.loadData();

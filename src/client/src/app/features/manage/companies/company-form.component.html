@@ -5,8 +5,12 @@
     </p-message>
   }
 
-  <div class="mb-4">
-    <label for="company-name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+  <app-form-field
+    label="Name"
+    fieldId="company-name"
+    [required]="true"
+    [error]="nameInvalid ? 'Name is required.' : null"
+  >
     <input
       pInputText
       id="company-name"
@@ -18,13 +22,9 @@
       [attr.aria-invalid]="nameInvalid"
       [attr.aria-describedby]="nameInvalid ? 'company-name-error' : null"
     />
-    @if (nameInvalid) {
-      <p id="company-name-error" class="mt-1 text-sm text-red-600">Name is required.</p>
-    }
-  </div>
+  </app-form-field>
 
-  <div class="mb-4">
-    <label for="company-logo-url" class="mb-1 block text-sm font-medium text-slate-700">Logo URL</label>
+  <app-form-field label="Logo URL" fieldId="company-logo-url">
     <input
       pInputText
       id="company-logo-url"
@@ -32,20 +32,20 @@
       [ngModel]="logoUrl()"
       (ngModelChange)="logoUrl.set($event)"
     />
-  </div>
+  </app-form-field>
 
-  <div class="mb-6">
-    <label for="company-display-order" class="mb-1 block text-sm font-medium text-slate-700">Display Order</label>
+  <app-form-field label="Display Order" fieldId="company-display-order" spacing="mb-6">
     <p-inputnumber
       inputId="company-display-order"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
       [style]="{ width: '100%' }"
     />
-  </div>
+  </app-form-field>
 
-  <div class="flex justify-end gap-3">
-    <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
-    <p-button [label]="isEdit ? 'Update' : 'Create'" type="submit" [loading]="submitting()" />
-  </div>
+  <app-form-actions
+    [submitLabel]="isEdit ? 'Update' : 'Create'"
+    [loading]="submitting()"
+    (cancelled)="cancelled.emit()"
+  />
 </form>

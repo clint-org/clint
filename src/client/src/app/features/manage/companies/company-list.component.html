@@ -1,7 +1,12 @@
 <div class="p-4">
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-semibold text-slate-900">Companies</h1>
-    <p-button label="Add Company" icon="fa-solid fa-plus" size="small" (onClick)="openCreateModal()" />
+    <p-button
+      label="Add Company"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
   </div>
 
   <p-table [value]="companies()" [loading]="loading()" [tableStyle]="{ 'min-width': '40rem' }">
@@ -19,8 +24,20 @@
         <td class="max-w-[200px] truncate text-slate-500">{{ company.logo_url ?? '-' }}</td>
         <td class="text-slate-500">{{ company.display_order }}</td>
         <td class="text-right">
-          <p-button label="Edit" [text]="true" size="small" (onClick)="openEditModal(company)" class="mr-1" />
-          <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="confirmDelete(company)" />
+          <p-button
+            label="Edit"
+            [text]="true"
+            size="small"
+            (onClick)="openEditModal(company)"
+            class="mr-1"
+          />
+          <p-button
+            label="Delete"
+            [text]="true"
+            severity="danger"
+            size="small"
+            (onClick)="confirmDelete(company)"
+          />
         </td>
       </tr>
     </ng-template>
@@ -47,9 +64,5 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-company-form
-    [company]="editingCompany()"
-    (saved)="onSaved()"
-    (cancelled)="closeModal()"
-  />
+  <app-company-form [company]="editingCompany()" (saved)="onSaved()" (cancelled)="closeModal()" />
 </p-dialog>

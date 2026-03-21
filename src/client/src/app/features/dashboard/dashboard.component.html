@@ -1,10 +1,7 @@
 <div class="flex flex-col h-full">
   <!-- Top bar: zoom control + filters -->
   <div class="flex items-center gap-4 p-4 bg-slate-50">
-    <app-zoom-control
-      [zoomLevel]="zoomLevel()"
-      (zoomChange)="onZoomChange($event)"
-    />
+    <app-zoom-control [zoomLevel]="zoomLevel()" (zoomChange)="onZoomChange($event)" />
     <app-filter-panel [spaceId]="spaceId()" (filtersChange)="onFiltersChange($event)" />
     <p-button
       label="Export"
@@ -36,12 +33,7 @@
           <p-message severity="error" [closable]="false">
             Failed to load dashboard data: {{ dashboardData.error() }}
           </p-message>
-          <p-button
-            label="Retry"
-            severity="primary"
-            size="small"
-            (onClick)="retry()"
-          />
+          <p-button label="Retry" severity="primary" size="small" (onClick)="retry()" />
         </div>
       </div>
     } @else if (companies().length > 0) {
@@ -53,14 +45,15 @@
         (phaseClick)="onPhaseClick($event)"
         (markerClick)="onMarkerClick($event)"
         (trialClick)="onTrialClick($event)"
-        (companyClick)="onCompanyClick($event)"
-        (productClick)="onProductClick($event)"
+        (companyClick)="onCompanyClick()"
+        (productClick)="onProductClick()"
       />
     } @else {
       <div class="flex items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3 text-center">
           <p-message severity="info" [closable]="false">
-            No clinical trial data to display. Add companies, products, and trials to see them on the dashboard.
+            No clinical trial data to display. Add companies, products, and trials to see them on
+            the dashboard.
           </p-message>
         </div>
       </div>

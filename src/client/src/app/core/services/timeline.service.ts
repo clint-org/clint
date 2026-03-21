@@ -18,8 +18,18 @@ const YEAR_WIDTH: Record<ZoomLevel, number> = {
 
 const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4'];
 const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 @Injectable({ providedIn: 'root' })

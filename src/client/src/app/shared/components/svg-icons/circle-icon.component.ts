@@ -19,7 +19,13 @@ import { Component, input } from '@angular/core';
     }
     @if (fillStyle() === 'gradient') {
       <svg:defs>
-        <svg:linearGradient [attr.id]="'grad-circle-' + patternId" x1="0%" y1="0%" x2="100%" y2="100%">
+        <svg:linearGradient
+          [attr.id]="'grad-circle-' + patternId"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
           <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
         </svg:linearGradient>

@@ -40,10 +40,7 @@ export class TherapeuticAreaService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('therapeutic_areas')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('therapeutic_areas').delete().eq('id', id);
     if (error) throw error;
   }
 }

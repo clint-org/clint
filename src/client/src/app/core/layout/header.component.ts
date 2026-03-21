@@ -1,5 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  ActivatedRoute,
+} from '@angular/router';
 import { filter } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
@@ -19,7 +25,10 @@ import { Tenant } from '../models/tenant.model';
       <div class="h-0.5 bg-teal-500"></div>
       <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div class="flex items-center gap-3">
-          <a [routerLink]="['/t', tenantId(), 'spaces']" class="text-base font-semibold text-slate-900 tracking-tight">
+          <a
+            [routerLink]="['/t', tenantId(), 'spaces']"
+            class="text-base font-semibold text-slate-900 tracking-tight"
+          >
             Clint
           </a>
 
@@ -131,7 +140,9 @@ export class HeaderComponent implements OnInit {
   tenants = signal<Tenant[]>([]);
 
   async ngOnInit(): Promise<void> {
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => this.extractRouteParams());
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => this.extractRouteParams());
     this.extractRouteParams();
 
     try {

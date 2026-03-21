@@ -8,12 +8,8 @@ import { SupabaseService } from '../../core/services/supabase.service';
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 class="mb-2 text-center text-3xl font-bold text-slate-900">
-          Clinical Trial Dashboard
-        </h1>
-        <p class="mb-8 text-center text-slate-600">
-          Sign in to continue
-        </p>
+        <h1 class="mb-2 text-center text-3xl font-bold text-slate-900">Clinical Trial Dashboard</h1>
+        <p class="mb-8 text-center text-slate-600">Sign in to continue</p>
 
         @if (error()) {
           <div class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">
@@ -35,8 +31,19 @@ import { SupabaseService } from '../../core/services/supabase.service';
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              ></path>
             </svg>
             <span>Signing in...</span>
           } @else {

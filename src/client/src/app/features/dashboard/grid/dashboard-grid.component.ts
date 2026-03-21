@@ -1,4 +1,14 @@
-import { Component, computed, ElementRef, inject, input, output, signal, AfterViewInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  AfterViewInit,
+  OnDestroy,
+} from '@angular/core';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
@@ -105,7 +115,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   }
 
   hasSubColumns(): boolean {
-    return this.columns().some(c => c.subColumns && c.subColumns.length > 0);
+    return this.columns().some((c) => c.subColumns && c.subColumns.length > 0);
   }
 
   onPhaseClick(phase: TrialPhase): void {

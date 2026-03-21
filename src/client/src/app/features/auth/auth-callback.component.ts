@@ -25,7 +25,9 @@ export class AuthCallbackComponent implements OnInit {
   ngOnInit() {
     // Supabase JS client auto-processes the hash fragment tokens.
     // We just need to wait for onAuthStateChange to fire.
-    const { data: { subscription } } = this.supabase.client.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = this.supabase.client.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         subscription.unsubscribe();
         this.router.navigate(['/']);

@@ -31,12 +31,15 @@ export class PhaseBarComponent {
   phaseClick = output<TrialPhase>();
 
   protected barX = computed(() =>
-    Math.max(0, this.timeline.dateToX(
-      this.phase().start_date,
-      this.startYear(),
-      this.endYear(),
-      this.totalWidth(),
-    )),
+    Math.max(
+      0,
+      this.timeline.dateToX(
+        this.phase().start_date,
+        this.startYear(),
+        this.endYear(),
+        this.totalWidth()
+      )
+    )
   );
 
   protected barWidth = computed(() => {
@@ -48,14 +51,12 @@ export class PhaseBarComponent {
       this.phase().start_date,
       this.startYear(),
       this.endYear(),
-      this.totalWidth(),
+      this.totalWidth()
     );
-    const endX = Math.min(this.totalWidth(), this.timeline.dateToX(
-      endDate,
-      this.startYear(),
-      this.endYear(),
+    const endX = Math.min(
       this.totalWidth(),
-    ));
+      this.timeline.dateToX(endDate, this.startYear(), this.endYear(), this.totalWidth())
+    );
     const clampedStart = Math.max(0, rawStart);
     return Math.max(0, endX - clampedStart);
   });

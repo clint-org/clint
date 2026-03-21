@@ -11,11 +11,22 @@ import { Product } from '../../../core/models/product.model';
 import { Company } from '../../../core/models/company.model';
 import { ProductService } from '../../../core/services/product.service';
 import { CompanyService } from '../../../core/services/company.service';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
-  imports: [FormsModule, InputText, InputNumber, Select, ButtonModule, MessageModule],
+  imports: [
+    FormsModule,
+    InputText,
+    InputNumber,
+    Select,
+    ButtonModule,
+    MessageModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './product-form.component.html',
 })
 export class ProductFormComponent implements OnInit {

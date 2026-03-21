@@ -20,11 +20,25 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
 
       <div>
         <label for="note-content" class="block text-sm font-medium text-slate-700">Content</label>
-        <textarea pTextarea id="note-content" [(ngModel)]="content" name="content" rows="4" required class="w-full mt-1" placeholder="Enter note content"></textarea>
+        <textarea
+          pTextarea
+          id="note-content"
+          [(ngModel)]="content"
+          name="content"
+          rows="4"
+          required
+          class="w-full mt-1"
+          placeholder="Enter note content"
+        ></textarea>
       </div>
 
       <div class="flex justify-end gap-2">
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelled.emit()"
+        />
         <p-button label="Save" type="submit" [loading]="saving()" />
       </div>
     </form>

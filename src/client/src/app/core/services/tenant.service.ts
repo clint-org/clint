@@ -65,7 +65,11 @@ export class TenantService {
     if (error) throw error;
   }
 
-  async createInvite(tenantId: string, email: string, role: 'owner' | 'member'): Promise<TenantInvite> {
+  async createInvite(
+    tenantId: string,
+    email: string,
+    role: 'owner' | 'member'
+  ): Promise<TenantInvite> {
     const code = this.generateCode();
     const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client

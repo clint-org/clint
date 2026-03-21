@@ -96,20 +96,43 @@ export class PptxExportService {
 
   private renderTitle(slide: PptxGenJS.Slide): void {
     slide.addText('Clinical Trial Dashboard', {
-      x: 0.2, y: 0, w: SLIDE_W - 0.4, h: TITLE_H,
-      fontSize: 12, fontFace: 'Arial', bold: true, color: '1e293b',
+      x: 0.2,
+      y: 0,
+      w: SLIDE_W - 0.4,
+      h: TITLE_H,
+      fontSize: 12,
+      fontFace: 'Arial',
+      bold: true,
+      color: '1e293b',
     });
-    slide.addText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), {
-      x: SLIDE_W - 2.5, y: 0, w: 2.3, h: TITLE_H,
-      fontSize: 8, fontFace: 'Arial', color: '64748b', align: 'right',
-    });
+    slide.addText(
+      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      {
+        x: SLIDE_W - 2.5,
+        y: 0,
+        w: 2.3,
+        h: TITLE_H,
+        fontSize: 8,
+        fontFace: 'Arial',
+        color: '64748b',
+        align: 'right',
+      }
+    );
     slide.addShape('line', {
-      x: 0, y: TITLE_H - 0.02, w: SLIDE_W, h: 0,
+      x: 0,
+      y: TITLE_H - 0.02,
+      w: SLIDE_W,
+      h: 0,
       line: { color: '14b8a6', width: 1.5 },
     });
   }
 
-  private renderHeader(slide: PptxGenJS.Slide, startYear: number, endYear: number, zoom: ZoomLevel): void {
+  private renderHeader(
+    slide: PptxGenJS.Slide,
+    startYear: number,
+    endYear: number,
+    zoom: ZoomLevel
+  ): void {
     const headerY = TITLE_H;
     const hStyle = { fontSize: 6, fontFace: 'Arial' as const, bold: true, color: '64748b' };
     slide.addText('Company', { x: COMPANY_X, y: headerY, w: COMPANY_W, h: HEADER_H, ...hStyle });
@@ -123,20 +146,34 @@ export class PptxExportService {
       const x = TIMELINE_X + (col.startX / totalPx) * TIMELINE_W;
       const w = (col.width / totalPx) * TIMELINE_W;
       slide.addText(col.label, {
-        x, y: headerY, w, h: HEADER_H,
-        fontSize: 7, fontFace: 'Consolas', color: '475569', align: 'center', valign: 'middle',
+        x,
+        y: headerY,
+        w,
+        h: HEADER_H,
+        fontSize: 7,
+        fontFace: 'Consolas',
+        color: '475569',
+        align: 'center',
+        valign: 'middle',
       });
     }
 
     slide.addShape('line', {
-      x: 0, y: headerY + HEADER_H, w: SLIDE_W, h: 0,
+      x: 0,
+      y: headerY + HEADER_H,
+      w: SLIDE_W,
+      h: 0,
       line: { color: 'cbd5e1', width: 0.5 },
     });
   }
 
   private renderGridLines(
-    slide: PptxGenJS.Slide, startYear: number, endYear: number,
-    zoom: ZoomLevel, rowCount: number, rowH: number
+    slide: PptxGenJS.Slide,
+    startYear: number,
+    endYear: number,
+    zoom: ZoomLevel,
+    rowCount: number,
+    rowH: number
   ): void {
     const columns = this.timeline.getColumns(startYear, endYear, zoom);
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, zoom);
@@ -145,15 +182,21 @@ export class PptxExportService {
     for (const col of columns) {
       const x = TIMELINE_X + (col.startX / totalPx) * TIMELINE_W;
       slide.addShape('line', {
-        x, y: DATA_Y, w: 0, h: gridBottom - DATA_Y,
+        x,
+        y: DATA_Y,
+        w: 0,
+        h: gridBottom - DATA_Y,
         line: { color: 'e2e8f0', width: 0.25 },
       });
     }
   }
 
   private renderRows(
-    slide: PptxGenJS.Slide, rows: FlatRow[], rowH: number,
-    startYear: number, endYear: number
+    slide: PptxGenJS.Slide,
+    rows: FlatRow[],
+    rowH: number,
+    startYear: number,
+    endYear: number
   ): void {
     const fontSize = Math.max(5, Math.min(7, rowH * 28));
 
@@ -163,30 +206,52 @@ export class PptxExportService {
 
       if (i % 2 !== 0) {
         slide.addShape('rect', {
-          x: 0, y, w: SLIDE_W, h: rowH,
+          x: 0,
+          y,
+          w: SLIDE_W,
+          h: rowH,
           fill: { color: 'f8fafc' },
         });
       }
 
       if (row.isFirstInCompany) {
         slide.addText(row.companyName.toUpperCase(), {
-          x: COMPANY_X, y, w: COMPANY_W, h: rowH,
-          fontSize: Math.max(4, fontSize - 1), fontFace: 'Arial', bold: true,
-          color: '94a3b8', valign: 'middle', shrinkText: true,
+          x: COMPANY_X,
+          y,
+          w: COMPANY_W,
+          h: rowH,
+          fontSize: Math.max(4, fontSize - 1),
+          fontFace: 'Arial',
+          bold: true,
+          color: '94a3b8',
+          valign: 'middle',
+          shrinkText: true,
         });
       }
 
       if (row.isFirstInProduct) {
         slide.addText(row.productName, {
-          x: PRODUCT_X, y, w: PRODUCT_W, h: rowH,
-          fontSize, fontFace: 'Arial', bold: true,
-          color: '475569', valign: 'middle',
+          x: PRODUCT_X,
+          y,
+          w: PRODUCT_W,
+          h: rowH,
+          fontSize,
+          fontFace: 'Arial',
+          bold: true,
+          color: '475569',
+          valign: 'middle',
         });
       }
 
       slide.addText(row.trialName, {
-        x: TRIAL_X, y, w: TRIAL_W, h: rowH,
-        fontSize, fontFace: 'Arial', color: '334155', valign: 'middle',
+        x: TRIAL_X,
+        y,
+        w: TRIAL_W,
+        h: rowH,
+        fontSize,
+        fontFace: 'Arial',
+        color: '334155',
+        valign: 'middle',
         shrinkText: true,
       });
 
@@ -196,8 +261,13 @@ export class PptxExportService {
   }
 
   private renderPhaseBars(
-    slide: PptxGenJS.Slide, trial: Trial, rowY: number, rowH: number,
-    startYear: number, endYear: number, fontSize: number
+    slide: PptxGenJS.Slide,
+    trial: Trial,
+    rowY: number,
+    rowH: number,
+    startYear: number,
+    endYear: number,
+    fontSize: number
   ): void {
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, 'yearly');
     const barH = rowH * 0.45;
@@ -215,7 +285,10 @@ export class PptxExportService {
       const color = (phase.color ?? PHASE_COLORS[phase.phase_type] ?? '94a3b8').replace('#', '');
 
       slide.addShape('roundRect', {
-        x: barX, y: barY, w: barW, h: barH,
+        x: barX,
+        y: barY,
+        w: barW,
+        h: barH,
         rectRadius: 0.02,
         fill: { color, transparency: 25 },
         line: { color, width: 0.5, transparency: 60 },
@@ -223,17 +296,29 @@ export class PptxExportService {
 
       if (barW > 0.4) {
         slide.addText(phase.label ?? phase.phase_type, {
-          x: barX, y: barY, w: barW, h: barH,
-          fontSize: Math.max(4, fontSize - 2), fontFace: 'Arial',
-          color: 'ffffff', bold: true, align: 'center', valign: 'middle',
+          x: barX,
+          y: barY,
+          w: barW,
+          h: barH,
+          fontSize: Math.max(4, fontSize - 2),
+          fontFace: 'Arial',
+          color: 'ffffff',
+          bold: true,
+          align: 'center',
+          valign: 'middle',
         });
       }
     }
   }
 
   private renderMarkers(
-    slide: PptxGenJS.Slide, trial: Trial, rowY: number, rowH: number,
-    startYear: number, endYear: number, fontSize: number
+    slide: PptxGenJS.Slide,
+    trial: Trial,
+    rowY: number,
+    rowH: number,
+    startYear: number,
+    endYear: number,
+    fontSize: number
   ): void {
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, 'yearly');
     const markerSize = Math.min(0.12, rowH * 0.35);
@@ -241,7 +326,7 @@ export class PptxExportService {
 
     // Sort markers by date for overlap detection
     const sorted = [...markers]
-      .filter(m => m.event_date && m.marker_types)
+      .filter((m) => m.event_date && m.marker_types)
       .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     let lastLabelX = -Infinity;
@@ -256,15 +341,32 @@ export class PptxExportService {
       const fill = marker.marker_types!.fill_style;
       const isFilled = fill === 'filled' || fill === 'gradient';
 
-      this.renderMarkerShape(slide, shape, isFilled, x, y, markerSize, color, marker.end_date, startYear, endYear, totalPx);
+      this.renderMarkerShape(
+        slide,
+        shape,
+        isFilled,
+        x,
+        y,
+        markerSize,
+        color,
+        marker.end_date,
+        startYear,
+        endYear,
+        totalPx
+      );
 
       // Only show date label if far enough from previous label
       if (centerX - lastLabelX > 0.3) {
         const dateLabel = this.formatDateShort(marker.event_date);
         slide.addText(dateLabel, {
-          x: centerX - 0.15, y: y + markerSize + 0.01, w: 0.3, h: 0.1,
-          fontSize: Math.max(3, fontSize - 3), fontFace: 'Consolas',
-          color, align: 'center',
+          x: centerX - 0.15,
+          y: y + markerSize + 0.01,
+          w: 0.3,
+          h: 0.1,
+          fontSize: Math.max(3, fontSize - 3),
+          fontFace: 'Consolas',
+          color,
+          align: 'center',
         });
         lastLabelX = centerX;
       }
@@ -272,37 +374,60 @@ export class PptxExportService {
   }
 
   private renderMarkerShape(
-    slide: PptxGenJS.Slide, shape: string, isFilled: boolean,
-    x: number, y: number, size: number, color: string,
-    endDate: string | null, startYear: number, endYear: number, totalPx: number
+    slide: PptxGenJS.Slide,
+    shape: string,
+    isFilled: boolean,
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    endDate: string | null,
+    startYear: number,
+    endYear: number,
+    totalPx: number
   ): void {
     if (shape === 'circle') {
       slide.addShape('ellipse', {
-        x, y, w: size, h: size,
+        x,
+        y,
+        w: size,
+        h: size,
         fill: isFilled ? { color } : undefined,
         line: { color, width: 1 },
       });
     } else if (shape === 'diamond') {
       slide.addShape('diamond', {
-        x, y, w: size, h: size,
+        x,
+        y,
+        w: size,
+        h: size,
         fill: isFilled ? { color } : undefined,
         line: { color, width: 1 },
       });
     } else if (shape === 'flag') {
       const flagX = x + size * 0.3;
       slide.addShape('line', {
-        x: flagX, y, w: 0, h: size,
+        x: flagX,
+        y,
+        w: 0,
+        h: size,
         line: { color, width: 1 },
       });
       slide.addShape('rect', {
-        x: flagX, y, w: size * 0.7, h: size * 0.5,
+        x: flagX,
+        y,
+        w: size * 0.7,
+        h: size * 0.5,
         fill: isFilled ? { color } : undefined,
         line: { color, width: 0.5 },
       });
     } else if (shape === 'arrow') {
       // Render as a simple up-pointing triangle
       slide.addShape('triangle', {
-        x, y, w: size, h: size,
+        x,
+        y,
+        w: size,
+        h: size,
         fill: isFilled ? { color } : undefined,
         line: { color, width: 1 },
       });
@@ -310,22 +435,37 @@ export class PptxExportService {
       // Two diagonal lines forming an X
       const pad = size * 0.15;
       slide.addShape('rect', {
-        x: x + pad, y: y + pad, w: size - pad * 2, h: size - pad * 2,
+        x: x + pad,
+        y: y + pad,
+        w: size - pad * 2,
+        h: size - pad * 2,
         fill: isFilled ? { color } : undefined,
         line: { color, width: 1.5 },
       });
       // Draw X lines on top
       slide.addText('X', {
-        x, y, w: size, h: size,
-        fontSize: Math.round(size * 50), fontFace: 'Arial', bold: true,
-        color, align: 'center', valign: 'middle',
+        x,
+        y,
+        w: size,
+        h: size,
+        fontSize: Math.round(size * 50),
+        fontFace: 'Arial',
+        bold: true,
+        color,
+        align: 'center',
+        valign: 'middle',
       });
     } else if (shape === 'bar' && endDate) {
       const startPx = x + size / 2;
-      const endPx = TIMELINE_X + (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * TIMELINE_W;
+      const endPx =
+        TIMELINE_X +
+        (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * TIMELINE_W;
       const barW = Math.max(0.1, endPx - startPx);
       slide.addShape('roundRect', {
-        x: startPx, y: y + size * 0.2, w: barW, h: size * 0.6,
+        x: startPx,
+        y: y + size * 0.2,
+        w: barW,
+        h: size * 0.6,
         rectRadius: 0.01,
         fill: { color, transparency: 50 },
         line: { color, width: 0.5 },
@@ -337,13 +477,19 @@ export class PptxExportService {
     const legendY = SLIDE_H - LEGEND_H;
 
     slide.addShape('rect', {
-      x: 0, y: legendY, w: SLIDE_W, h: LEGEND_H,
+      x: 0,
+      y: legendY,
+      w: SLIDE_W,
+      h: LEGEND_H,
       fill: { color: 'f8fafc' },
       line: { color: 'e2e8f0', width: 0.5 },
     });
 
     // Collect unique marker types preserving display order
-    const markerTypes = new Map<string, { name: string; color: string; shape: string; fill_style: string; display_order: number }>();
+    const markerTypes = new Map<
+      string,
+      { name: string; color: string; shape: string; fill_style: string; display_order: number }
+    >();
     for (const company of companies) {
       for (const product of company.products ?? []) {
         for (const trial of product.trials ?? []) {
@@ -380,27 +526,42 @@ export class PptxExportService {
 
       if (mt.shape === 'circle') {
         slide.addShape('ellipse', {
-          x, y: itemY, w: dotSize, h: dotSize,
+          x,
+          y: itemY,
+          w: dotSize,
+          h: dotSize,
           fill: isFilled ? { color } : undefined,
           line: { color, width: 0.5 },
         });
       } else if (mt.shape === 'diamond') {
         slide.addShape('diamond', {
-          x, y: itemY, w: dotSize, h: dotSize,
+          x,
+          y: itemY,
+          w: dotSize,
+          h: dotSize,
           fill: isFilled ? { color } : undefined,
           line: { color, width: 0.5 },
         });
       } else {
         slide.addShape('rect', {
-          x, y: itemY, w: dotSize, h: dotSize,
+          x,
+          y: itemY,
+          w: dotSize,
+          h: dotSize,
           fill: isFilled ? { color } : undefined,
           line: { color, width: 0.5 },
         });
       }
 
       slide.addText(mt.name, {
-        x: x + dotSize + 0.04, y: itemY - 0.03, w: itemW - dotSize - 0.15, h: 0.14,
-        fontSize: 5, fontFace: 'Arial', color: '64748b', valign: 'middle',
+        x: x + dotSize + 0.04,
+        y: itemY - 0.03,
+        w: itemW - dotSize - 0.15,
+        h: 0.14,
+        fontSize: 5,
+        fontFace: 'Arial',
+        color: '64748b',
+        valign: 'middle',
         shrinkText: true,
       });
     }
@@ -408,7 +569,20 @@ export class PptxExportService {
 
   private formatDateShort(dateStr: string): string {
     const d = new Date(dateStr);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
   }
 }

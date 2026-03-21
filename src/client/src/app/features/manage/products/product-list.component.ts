@@ -17,7 +17,14 @@ import { TrialFormComponent } from '../trials/trial-form.component';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [TableModule, ButtonModule, Dialog, MessageModule, ProductFormComponent, TrialFormComponent],
+  imports: [
+    TableModule,
+    ButtonModule,
+    Dialog,
+    MessageModule,
+    ProductFormComponent,
+    TrialFormComponent,
+  ],
   templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnInit {

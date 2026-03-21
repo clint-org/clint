@@ -7,15 +7,13 @@
     <div class="flex flex-wrap items-start gap-x-8 gap-y-2">
       @for (group of groupedMarkerTypes(); track group.label) {
         <div class="flex items-center gap-x-3">
-          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ group.label }}</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{
+            group.label
+          }}</span>
           <div class="flex items-center gap-x-3">
             @for (mt of group.types; track mt.id) {
               <div class="flex items-center gap-1.5 text-[11px] text-slate-500" role="listitem">
-                <i
-                  [class]="faIcon(mt)"
-                  [style.color]="mt.color"
-                  style="font-size: 11px;"
-                ></i>
+                <i [class]="faIcon(mt)" [style.color]="mt.color" style="font-size: 11px"></i>
                 <span>{{ mt.name }}</span>
               </div>
             }

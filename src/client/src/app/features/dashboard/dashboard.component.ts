@@ -119,22 +119,46 @@ export class DashboardComponent {
   }
 
   onPhaseClick(phase: TrialPhase): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', phase.trial_id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      phase.trial_id,
+    ]);
   }
 
   onMarkerClick(marker: TrialMarker): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', marker.trial_id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      marker.trial_id,
+    ]);
   }
 
   onTrialClick(trial: Trial): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      trial.id,
+    ]);
   }
 
-  onCompanyClick(_companyId: string): void {
+  onCompanyClick(): void {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'companies']);
   }
 
-  onProductClick(_productId: string): void {
+  onProductClick(): void {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'products']);
   }
 

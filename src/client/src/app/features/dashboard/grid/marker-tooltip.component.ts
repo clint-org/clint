@@ -56,11 +56,7 @@ import {
 
         <!-- Image -->
         @if (imageUrl()) {
-          <img
-            [src]="imageUrl()"
-            [alt]="text()"
-            class="mt-2 h-20 w-full rounded object-cover"
-          />
+          <img [src]="imageUrl()" [alt]="text()" class="mt-2 h-20 w-full rounded object-cover" />
         }
       </div>
     </div>

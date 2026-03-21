@@ -23,38 +23,93 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="marker-type" class="block text-sm font-medium text-slate-700">Marker Type</label>
-          <p-select inputId="marker-type" [options]="markerTypes()" [(ngModel)]="markerTypeId" name="markerTypeId" optionLabel="name" optionValue="id" placeholder="Select marker type" [style]="{ width: '100%' }" class="mt-1" />
+          <label for="marker-type" class="block text-sm font-medium text-slate-700"
+            >Marker Type</label
+          >
+          <p-select
+            inputId="marker-type"
+            [options]="markerTypes()"
+            [(ngModel)]="markerTypeId"
+            name="markerTypeId"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select marker type"
+            [style]="{ width: '100%' }"
+            class="mt-1"
+          />
         </div>
 
         <div>
-          <label for="marker-event-date" class="block text-sm font-medium text-slate-700">Event Date</label>
-          <input type="date" id="marker-event-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="eventDate" name="eventDate" required />
+          <label for="marker-event-date" class="block text-sm font-medium text-slate-700"
+            >Event Date</label
+          >
+          <input
+            type="date"
+            id="marker-event-date"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="eventDate"
+            name="eventDate"
+            required
+          />
         </div>
 
         <div>
-          <label for="marker-end-date" class="block text-sm font-medium text-slate-700">End Date</label>
-          <input type="date" id="marker-end-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="endDate" name="endDate" />
+          <label for="marker-end-date" class="block text-sm font-medium text-slate-700"
+            >End Date</label
+          >
+          <input
+            type="date"
+            id="marker-end-date"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="endDate"
+            name="endDate"
+          />
         </div>
 
         <div>
-          <label for="marker-tooltip" class="block text-sm font-medium text-slate-700">Tooltip Text</label>
-          <input pInputText id="marker-tooltip" class="w-full mt-1" [(ngModel)]="tooltipText" name="tooltipText" />
+          <label for="marker-tooltip" class="block text-sm font-medium text-slate-700"
+            >Tooltip Text</label
+          >
+          <input
+            pInputText
+            id="marker-tooltip"
+            class="w-full mt-1"
+            [(ngModel)]="tooltipText"
+            name="tooltipText"
+          />
         </div>
 
         <div>
-          <label for="marker-tooltip-image" class="block text-sm font-medium text-slate-700">Tooltip Image URL</label>
-          <input pInputText id="marker-tooltip-image" class="w-full mt-1" [(ngModel)]="tooltipImageUrl" name="tooltipImageUrl" />
+          <label for="marker-tooltip-image" class="block text-sm font-medium text-slate-700"
+            >Tooltip Image URL</label
+          >
+          <input
+            pInputText
+            id="marker-tooltip-image"
+            class="w-full mt-1"
+            [(ngModel)]="tooltipImageUrl"
+            name="tooltipImageUrl"
+          />
         </div>
 
         <div class="flex items-center pt-6">
-          <p-checkbox [(ngModel)]="isProjected" name="isProjected" [binary]="true" inputId="marker-projected" />
+          <p-checkbox
+            [(ngModel)]="isProjected"
+            name="isProjected"
+            [binary]="true"
+            inputId="marker-projected"
+          />
           <label for="marker-projected" class="ml-2 text-sm text-slate-700">Is Projected</label>
         </div>
       </div>
 
       <div class="flex justify-end gap-2">
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelled.emit()"
+        />
         <p-button label="Save" type="submit" [loading]="saving()" />
       </div>
     </form>

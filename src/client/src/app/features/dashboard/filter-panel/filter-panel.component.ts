@@ -89,15 +89,9 @@ export class FilterPanelComponent implements OnInit {
         this.therapeuticAreaService.list(sid),
       ]);
 
-      this.companyOptions.set(
-        companies.map((c) => ({ label: c.name, value: c.id })),
-      );
-      this.productOptions.set(
-        products.map((p) => ({ label: p.name, value: p.id })),
-      );
-      this.taOptions.set(
-        areas.map((a) => ({ label: a.name, value: a.id })),
-      );
+      this.companyOptions.set(companies.map((c) => ({ label: c.name, value: c.id })));
+      this.productOptions.set(products.map((p) => ({ label: p.name, value: p.id })));
+      this.taOptions.set(areas.map((a) => ({ label: a.name, value: a.id })));
     } finally {
       this.loading.set(false);
     }

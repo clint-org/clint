@@ -16,10 +16,10 @@ export const appConfig: ApplicationConfig = {
         options: {
           prefix: 'p',
           darkModeSelector: false,
-          cssLayer: false
-        }
+          cssLayer: false,
+        },
       },
-      ripple: false
-    })
-  ]
+      ripple: false,
+    }),
+  ],
 };

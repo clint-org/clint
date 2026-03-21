@@ -19,11 +19,27 @@ import { TrialService } from '../../../core/services/trial.service';
 import { ProductService } from '../../../core/services/product.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
 import { CtgovSyncService } from '../../../core/services/ctgov-sync.service';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 @Component({
   selector: 'app-trial-form',
   standalone: true,
-  imports: [DatePipe, FormsModule, InputText, InputNumber, Select, MultiSelect, Textarea, Checkbox, ButtonModule, MessageModule, Fieldset],
+  imports: [
+    DatePipe,
+    FormsModule,
+    InputText,
+    InputNumber,
+    Select,
+    MultiSelect,
+    Textarea,
+    Checkbox,
+    ButtonModule,
+    MessageModule,
+    Fieldset,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './trial-form.component.html',
 })
 export class TrialFormComponent implements OnInit {
@@ -192,13 +208,17 @@ export class TrialFormComponent implements OnInit {
       if (mapped.eligibility_sex) this.eligibilitySex = mapped.eligibility_sex;
       if (mapped.eligibility_min_age) this.eligibilityMinAge = mapped.eligibility_min_age;
       if (mapped.eligibility_max_age) this.eligibilityMaxAge = mapped.eligibility_max_age;
-      if (mapped.accepts_healthy_volunteers != null) this.acceptsHealthyVolunteers = mapped.accepts_healthy_volunteers;
+      if (mapped.accepts_healthy_volunteers != null)
+        this.acceptsHealthyVolunteers = mapped.accepts_healthy_volunteers;
       if (mapped.has_dmc != null) this.hasDmc = mapped.has_dmc;
-      if (mapped.is_fda_regulated_drug != null) this.isFdaRegulatedDrug = mapped.is_fda_regulated_drug;
-      if (mapped.is_fda_regulated_device != null) this.isFdaRegulatedDevice = mapped.is_fda_regulated_device;
+      if (mapped.is_fda_regulated_drug != null)
+        this.isFdaRegulatedDrug = mapped.is_fda_regulated_drug;
+      if (mapped.is_fda_regulated_device != null)
+        this.isFdaRegulatedDevice = mapped.is_fda_regulated_device;
       if (mapped.lead_sponsor) this.leadSponsor = mapped.lead_sponsor;
       if (mapped.start_date) this.startDateStr = mapped.start_date;
-      if (mapped.primary_completion_date) this.primaryCompletionDateStr = mapped.primary_completion_date;
+      if (mapped.primary_completion_date)
+        this.primaryCompletionDateStr = mapped.primary_completion_date;
       this.ctgovLastSyncedAt = new Date().toISOString();
       this.syncSuccess.set('Synced successfully from ClinicalTrials.gov');
     } catch (e) {

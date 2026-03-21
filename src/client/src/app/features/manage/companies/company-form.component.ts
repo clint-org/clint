@@ -8,11 +8,21 @@ import { MessageModule } from 'primeng/message';
 
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../../core/services/company.service';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 @Component({
   selector: 'app-company-form',
   standalone: true,
-  imports: [FormsModule, InputText, InputNumber, ButtonModule, MessageModule],
+  imports: [
+    FormsModule,
+    InputText,
+    InputNumber,
+    ButtonModule,
+    MessageModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './company-form.component.html',
 })
 export class CompanyFormComponent implements OnInit {

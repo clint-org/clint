@@ -62,6 +62,6 @@ export class GridHeaderComponent {
   totalWidth = input.required<number>();
 
   hasSubColumns(): boolean {
-    return this.columns().some(c => c.subColumns && c.subColumns.length > 0);
+    return this.columns().some((c) => c.subColumns && c.subColumns.length > 0);
   }
 }

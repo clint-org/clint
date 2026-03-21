@@ -8,10 +8,7 @@ export class MarkerTypeService {
   private supabase = inject(SupabaseService);
 
   async list(spaceId?: string): Promise<MarkerType[]> {
-    let query = this.supabase.client
-      .from('marker_types')
-      .select('*')
-      .order('display_order');
+    let query = this.supabase.client.from('marker_types').select('*').order('display_order');
 
     if (spaceId) {
       query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
@@ -45,10 +42,7 @@ export class MarkerTypeService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('marker_types')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('marker_types').delete().eq('id', id);
     if (error) throw error;
   }
 }

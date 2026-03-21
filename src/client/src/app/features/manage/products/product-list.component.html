@@ -1,7 +1,12 @@
 <div class="p-4">
   <div class="mb-4 flex items-center justify-between">
     <h1 class="text-xl font-semibold text-slate-900">Products</h1>
-    <p-button label="Add Product" icon="fa-solid fa-plus" size="small" (onClick)="openCreateModal()" />
+    <p-button
+      label="Add Product"
+      icon="fa-solid fa-plus"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
   </div>
 
   <p-table [value]="products()" [loading]="loading()" [tableStyle]="{ 'min-width': '50rem' }">
@@ -19,12 +24,18 @@
       <tr>
         <td>
           <p-button
-            [icon]="expandedProductId() === product.id ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-right'"
+            [icon]="
+              expandedProductId() === product.id
+                ? 'fa-solid fa-chevron-down'
+                : 'fa-solid fa-chevron-right'
+            "
             [text]="true"
             [rounded]="true"
             size="small"
             (onClick)="toggleTrials(product)"
-            [attr.aria-label]="expandedProductId() === product.id ? 'Collapse trials' : 'Expand trials'"
+            [attr.aria-label]="
+              expandedProductId() === product.id ? 'Collapse trials' : 'Expand trials'
+            "
           />
         </td>
         <td class="font-medium">{{ product.name }}</td>
@@ -32,8 +43,20 @@
         <td class="text-slate-500">{{ getCompanyName(product.company_id) }}</td>
         <td class="text-slate-500">{{ product.display_order }}</td>
         <td class="text-right">
-          <p-button label="Edit" [text]="true" size="small" (onClick)="openEditModal(product)" class="mr-1" />
-          <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="confirmDelete(product)" />
+          <p-button
+            label="Edit"
+            [text]="true"
+            size="small"
+            (onClick)="openEditModal(product)"
+            class="mr-1"
+          />
+          <p-button
+            label="Delete"
+            [text]="true"
+            severity="danger"
+            size="small"
+            (onClick)="confirmDelete(product)"
+          />
         </td>
       </tr>
       @if (expandedProductId() === product.id) {
@@ -42,7 +65,13 @@
             <div class="bg-slate-50 border-t border-slate-200 px-6 py-4">
               <div class="mb-3 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-slate-700">Trials for {{ product.name }}</h3>
-                <p-button label="Add Trial" icon="fa-solid fa-plus" size="small" severity="success" (onClick)="openAddTrialModal(product.id)" />
+                <p-button
+                  label="Add Trial"
+                  icon="fa-solid fa-plus"
+                  size="small"
+                  severity="success"
+                  (onClick)="openAddTrialModal(product.id)"
+                />
               </div>
 
               @if (trialsLoading()) {
@@ -51,7 +80,9 @@
                 <p class="text-sm text-slate-500 py-2">No trials for this product yet.</p>
               } @else {
                 @if (trialDeleteError()) {
-                  <p-message severity="error" [closable]="false" class="mb-3">{{ trialDeleteError() }}</p-message>
+                  <p-message severity="error" [closable]="false" class="mb-3">{{
+                    trialDeleteError()
+                  }}</p-message>
                 }
                 <p-table [value]="productTrials()" [tableStyle]="{ 'min-width': '40rem' }">
                   <ng-template #header>
@@ -72,9 +103,27 @@
                       <td class="text-slate-500">{{ trial.trial_phases?.length ?? 0 }}</td>
                       <td class="text-slate-500">{{ trial.trial_markers?.length ?? 0 }}</td>
                       <td class="text-right" (click)="$event.stopPropagation()">
-                        <p-button label="Edit" [text]="true" size="small" (onClick)="openEditTrialModal(trial)" class="mr-1" />
-                        <p-button label="Detail" [text]="true" size="small" (onClick)="navigateToTrial(trial)" class="mr-1" />
-                        <p-button label="Delete" [text]="true" severity="danger" size="small" (onClick)="confirmDeleteTrial(trial)" />
+                        <p-button
+                          label="Edit"
+                          [text]="true"
+                          size="small"
+                          (onClick)="openEditTrialModal(trial)"
+                          class="mr-1"
+                        />
+                        <p-button
+                          label="Detail"
+                          [text]="true"
+                          size="small"
+                          (onClick)="navigateToTrial(trial)"
+                          class="mr-1"
+                        />
+                        <p-button
+                          label="Delete"
+                          [text]="true"
+                          severity="danger"
+                          size="small"
+                          (onClick)="confirmDeleteTrial(trial)"
+                        />
                       </td>
                     </tr>
                   </ng-template>
@@ -106,11 +155,7 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-product-form
-    [product]="editingProduct()"
-    (saved)="onSaved()"
-    (cancelled)="closeModal()"
-  />
+  <app-product-form [product]="editingProduct()" (saved)="onSaved()" (cancelled)="closeModal()" />
 </p-dialog>
 
 <p-dialog

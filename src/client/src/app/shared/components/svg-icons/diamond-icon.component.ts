@@ -19,7 +19,13 @@ import { Component, computed, input } from '@angular/core';
     }
     @if (fillStyle() === 'gradient') {
       <svg:defs>
-        <svg:linearGradient [attr.id]="'grad-diamond-' + patternId" x1="0%" y1="0%" x2="100%" y2="100%">
+        <svg:linearGradient
+          [attr.id]="'grad-diamond-' + patternId"
+          x1="0%"
+          y1="0%"
+          x2="100%"
+          y2="100%"
+        >
           <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
           <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
         </svg:linearGradient>
@@ -33,11 +39,7 @@ import { Component, computed, input } from '@angular/core';
       stroke-linejoin="round"
     />
     @if (fillStyle() === 'filled') {
-      <svg:path
-        [attr.d]="highlightPath()"
-        fill="white"
-        opacity="0.2"
-      />
+      <svg:path [attr.d]="highlightPath()" fill="white" opacity="0.2" />
     }
   `,
 })
@@ -52,8 +54,8 @@ export class DiamondIconComponent {
     const s = this.size();
     const cx = s / 2;
     const cy = s / 2;
-    const hw = s * 0.42;  // half-width (slightly narrower)
-    const hh = s * 0.48;  // half-height (slightly taller)
+    const hw = s * 0.42; // half-width (slightly narrower)
+    const hh = s * 0.48; // half-height (slightly taller)
     return `M ${cx},${cy - hh} L ${cx + hw},${cy} L ${cx},${cy + hh} L ${cx - hw},${cy} Z`;
   });
 

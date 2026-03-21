@@ -10,11 +10,23 @@ import { MessageModule } from 'primeng/message';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 @Component({
   selector: 'app-marker-type-form',
   standalone: true,
-  imports: [FormsModule, InputText, InputNumber, Select, ColorPicker, ButtonModule, MessageModule],
+  imports: [
+    FormsModule,
+    InputText,
+    InputNumber,
+    Select,
+    ColorPicker,
+    ButtonModule,
+    MessageModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './marker-type-form.component.html',
 })
 export class MarkerTypeFormComponent implements OnInit {

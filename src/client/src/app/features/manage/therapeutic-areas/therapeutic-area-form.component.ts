@@ -7,11 +7,20 @@ import { MessageModule } from 'primeng/message';
 
 import { TherapeuticArea } from '../../../core/models/trial.model';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 @Component({
   selector: 'app-therapeutic-area-form',
   standalone: true,
-  imports: [FormsModule, InputText, ButtonModule, MessageModule],
+  imports: [
+    FormsModule,
+    InputText,
+    ButtonModule,
+    MessageModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './therapeutic-area-form.component.html',
 })
 export class TherapeuticAreaFormComponent implements OnInit {

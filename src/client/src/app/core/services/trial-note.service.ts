@@ -30,10 +30,7 @@ export class TrialNoteService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('trial_notes')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('trial_notes').delete().eq('id', id);
     if (error) throw error;
   }
 }

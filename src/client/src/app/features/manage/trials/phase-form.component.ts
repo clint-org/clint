@@ -23,8 +23,20 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="phase-type" class="block text-sm font-medium text-slate-700">Phase Type</label>
-          <p-select inputId="phase-type" [options]="phaseTypeOptions" [(ngModel)]="phaseType" name="phaseType" optionLabel="label" optionValue="value" placeholder="Select phase type" [style]="{ width: '100%' }" class="mt-1" />
+          <label for="phase-type" class="block text-sm font-medium text-slate-700"
+            >Phase Type</label
+          >
+          <p-select
+            inputId="phase-type"
+            [options]="phaseTypeOptions"
+            [(ngModel)]="phaseType"
+            name="phaseType"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select phase type"
+            [style]="{ width: '100%' }"
+            class="mt-1"
+          />
         </div>
 
         <div>
@@ -33,23 +45,47 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
         </div>
 
         <div>
-          <label for="phase-start-date" class="block text-sm font-medium text-slate-700">Start Date</label>
-          <input type="date" id="phase-start-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="startDate" name="startDate" required />
+          <label for="phase-start-date" class="block text-sm font-medium text-slate-700"
+            >Start Date</label
+          >
+          <input
+            type="date"
+            id="phase-start-date"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="startDate"
+            name="startDate"
+            required
+          />
         </div>
 
         <div>
-          <label for="phase-end-date" class="block text-sm font-medium text-slate-700">End Date</label>
-          <input type="date" id="phase-end-date" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500" [(ngModel)]="endDate" name="endDate" />
+          <label for="phase-end-date" class="block text-sm font-medium text-slate-700"
+            >End Date</label
+          >
+          <input
+            type="date"
+            id="phase-end-date"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="endDate"
+            name="endDate"
+          />
         </div>
 
         <div>
-          <label for="phase-color" class="block text-sm font-medium text-slate-700 mb-1">Color</label>
+          <label for="phase-color" class="block text-sm font-medium text-slate-700 mb-1"
+            >Color</label
+          >
           <p-colorpicker [(ngModel)]="color" name="color" inputId="phase-color" />
         </div>
       </div>
 
       <div class="flex justify-end gap-2">
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelled.emit()"
+        />
         <p-button label="Save" type="submit" [loading]="saving()" />
       </div>
     </form>

@@ -4,23 +4,18 @@ import { authGuard, onboardingRedirectGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: 'login',
-    loadComponent: () =>
-      import('./features/auth/login.component').then((m) => m.LoginComponent),
+    loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'auth/callback',
     loadComponent: () =>
-      import('./features/auth/auth-callback.component').then(
-        (m) => m.AuthCallbackComponent
-      ),
+      import('./features/auth/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
     path: 'onboarding',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/onboarding/onboarding.component').then(
-        (m) => m.OnboardingComponent
-      ),
+      import('./features/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
   },
   {
     path: 't/:tenantId',
@@ -29,9 +24,7 @@ export const routes: Routes = [
       {
         path: 'spaces',
         loadComponent: () =>
-          import('./features/spaces/space-list.component').then(
-            (m) => m.SpaceListComponent
-          ),
+          import('./features/spaces/space-list.component').then((m) => m.SpaceListComponent),
       },
       {
         path: 'settings',
@@ -46,9 +39,7 @@ export const routes: Routes = [
           {
             path: '',
             loadComponent: () =>
-              import('./features/dashboard/dashboard.component').then(
-                (m) => m.DashboardComponent
-              ),
+              import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
           },
           {
             path: 'manage/companies',

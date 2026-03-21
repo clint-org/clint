@@ -1,6 +1,10 @@
 @if (loading()) {
   <div class="flex items-center gap-2 px-2 py-1.5">
-    <p-progressspinner strokeWidth="4" [style]="{ width: '1rem', height: '1rem' }" aria-hidden="true" />
+    <p-progressspinner
+      strokeWidth="4"
+      [style]="{ width: '1rem', height: '1rem' }"
+      aria-hidden="true"
+    />
     <span class="text-sm text-slate-500">Loading filters...</span>
   </div>
 } @else {
