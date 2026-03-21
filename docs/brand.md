@@ -1,10 +1,21 @@
 # Clinical Trial Dashboard -- Brand Guide
 
 ## Personality
-**Clinical Precision** -- Clean, structured, data-dense. Inspired by medical journals and regulatory documents. Feels like a serious analytical tool built by people who understand clinical data.
+**Precise. Authoritative. Premium.**
+Clean, structured, data-dense. Inspired by medical journals, regulatory documents, and financial terminals. Feels like a serious analytical tool built by people who understand clinical data. Should convey institutional credibility -- users make high-stakes investment and partnership decisions based on what they see.
 
 ## Target Audience
-Pharma executives and BD teams making investment and partnership decisions. They need to quickly scan the competitive landscape. Prioritize instant visual parsing over decoration.
+Pharma executives and BD teams scanning competitive landscapes under time pressure, often reviewing dozens of trials across multiple companies. Prioritize instant visual parsing over decoration -- every pixel should earn its place.
+
+## Emotional Goals
+- **Confidence:** Users trust the data and feel certain in their reads
+- **Authority:** The tool feels premium and institutionally credible
+- **Efficiency:** Dense without being cluttered -- meaning is extracted in seconds, not minutes
+
+## References
+- **Bloomberg Terminal:** Data density, professional gravity, information-first
+- **Evaluate Pharma / Citeline:** Pharma-domain familiarity, audience expectations
+- **Linear / Notion:** Modern craft, interaction polish, typographic discipline
 
 ## Color Palette
 
@@ -56,6 +67,13 @@ Each clinical phase has a distinct, meaningful color:
 - Icons: **FontAwesome** (`@fortawesome/fontawesome-free`) for custom icons
 - Theme config: `src/client/src/app/config/primeng-theme.ts`
 
+## Design Principles
+1. **Data density over decoration** -- maximize information per screen. White space is for grouping, not aesthetics.
+2. **Instant visual parsing** -- markers pop, phase bars recede, structure guides the eye.
+3. **Tinted neutrals, not flat grays** -- slate palette gives warmth and depth without color noise.
+4. **Authority through restraint** -- premium feel comes from precision alignment, consistent spacing, and typographic discipline, not from effects or animation.
+5. **Accessibility as baseline** -- WCAG 2.1 AA compliance. Keyboard navigable, screen reader friendly, sufficient contrast on all interactive and data elements.
+
 ## Anti-Patterns (Avoid)
 - Generic indigo-600 as accent (use teal)
 - Pure gray palette (use slate-tinted)
@@ -63,3 +81,5 @@ Each clinical phase has a distinct, meaningful color:
 - Overly rounded corners on data elements
 - Phase bars dominating the visual space
 - Flat, ungrouped legends
+- Consumer dashboard aesthetics, playful SaaS patterns
+- Pastel gradients, rounded-everything
