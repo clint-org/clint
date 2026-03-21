@@ -1,7 +1,7 @@
 {
   "specId": "spec-2026-007",
-  "status": "draft",
-  "branch": null,
+  "status": "in-progress",
+  "branch": "spec/e2e-testing",
   "tasks": {
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
