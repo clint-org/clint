@@ -7,8 +7,9 @@
     "start": "ng serve",
     "build": "ng build",
     "test": "ng test",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e": "./e2e/run.sh",
+    "test:e2e:ui": "./e2e/run.sh --ui",
+    "test:e2e:fast": "./e2e/run.sh --reporter=list",
     "lint": "ng lint"
   },
   "dependencies": {
