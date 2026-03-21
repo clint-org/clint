@@ -64,7 +64,9 @@ test.describe('Dashboard', () => {
   });
 
   test('clicking a trial navigates to trial detail', async () => {
-    const trialButton = page.locator('app-dashboard-grid div[role="button"]').first();
+    const trialButton = page
+      .locator('app-dashboard-grid div[role="button"]', { hasText: 'Dashboard Trial' })
+      .first();
 
     if (await trialButton.isVisible()) {
       await trialButton.click();

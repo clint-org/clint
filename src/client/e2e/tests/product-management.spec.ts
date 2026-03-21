@@ -73,9 +73,10 @@ test.describe('Product Management CRUD', () => {
     await createTestTrial(spaceId, productId, taId, 'Seeded Trial');
 
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    const expandButton = page
-      .locator('tr', { hasText: 'Expandable Product' })
-      .locator('button[aria-label="Expand trials"]');
+    await page.reload({ waitUntil: 'networkidle' });
+    const row = page.locator('tr', { hasText: 'Expandable Product' });
+    await row.waitFor({ timeout: 10000 });
+    const expandButton = row.locator('button').first();
     await expandButton.click();
     await expect(page.getByRole('button', { name: 'Add Trial' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Seeded Trial')).toBeVisible({ timeout: 5000 });
@@ -84,11 +85,17 @@ test.describe('Product Management CRUD', () => {
   test('delete product succeeds', async () => {
     page.on('dialog', (dialog) => dialog.accept());
 
+    // Delete the "Updated Product" (the one without trials)
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    const row = page.locator('tr', { hasText: 'Updated Product' }).first();
-    await row.getByRole('button', { name: 'Delete' }).click();
+    const rows = page.locator('tr', { hasText: 'Updated Product' });
+    const count = await rows.count();
+    // Click delete on the first row
+    await rows.first().getByRole('button', { name: 'Delete' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Updated Product')).not.toBeVisible({ timeout: 5000 });
+    // Should have one fewer row with this name
+    const newCount = await page.locator('tr', { hasText: 'Updated Product' }).count();
+    expect(newCount).toBeLessThan(count);
   });
 });

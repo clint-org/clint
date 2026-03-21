@@ -30,6 +30,7 @@ test.describe('Trial Management CRUD', () => {
     trialId = await createTestTrial(spaceId, productId, taId, 'Test Trial');
 
     page = await authenticatedPage(browser);
+    page.on('dialog', (dialog) => dialog.accept());
   });
 
   test.afterAll(async () => {
@@ -49,10 +50,8 @@ test.describe('Trial Management CRUD', () => {
     await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#trial-name', 'Updated Trial');
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'PATCH'),
-      page.getByRole('button', { name: 'Update Trial' }).click(),
-    ]);
+    await page.getByRole('button', { name: 'Update Trial' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Trial')).toBeVisible({ timeout: 10000 });
@@ -62,22 +61,26 @@ test.describe('Trial Management CRUD', () => {
     await page.getByRole('button', { name: 'Add Phase' }).click();
     await expect(page.locator('#phase-start-date')).toBeVisible({ timeout: 5000 });
 
-    await page.fill('#phase-start-date', '2025-01-01');
-    await page.fill('#phase-end-date', '2025-06-30');
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
-      page.locator('form').getByRole('button', { name: 'Add Phase' }).click(),
-    ]);
+    // Select phase type first (required field)
+    await page.locator('#phase-type').click();
+    await page.getByText('P1', { exact: true }).click();
+    await page.waitForTimeout(300);
+
+    await fillInput(page, '#phase-start-date', '2025-01-01');
+    await page.waitForTimeout(300);
+    await fillInput(page, '#phase-end-date', '2025-06-30');
+    await page.waitForTimeout(300);
+    await page.locator('form').getByRole('button', { name: 'Add Phase' }).click();
+    await page.waitForTimeout(3000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('2025-01-01')).toBeVisible({ timeout: 5000 });
   });
 
   test('delete a trial phase', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     const phaseRow = page.locator('tr', { hasText: '2025-01-01' });
     await phaseRow.getByRole('button', { name: 'Delete' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('2025-01-01')).not.toBeVisible({ timeout: 5000 });
@@ -87,22 +90,26 @@ test.describe('Trial Management CRUD', () => {
     await page.getByRole('button', { name: 'Add Marker' }).click();
     await expect(page.locator('#marker-event-date')).toBeVisible({ timeout: 5000 });
 
-    await page.fill('#marker-event-date', '2025-03-15');
+    // Select a marker type (required)
+    await page.locator('#marker-type').click();
+    await page.locator('.p-select-option, .p-listbox-option, [role="option"]').first().click();
+    await page.waitForTimeout(300);
+
+    await fillInput(page, '#marker-event-date', '2025-03-15');
+    await page.waitForTimeout(300);
     await fillInput(page, '#marker-tooltip', 'Test marker tooltip');
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
-      page.locator('form').getByRole('button', { name: 'Add Marker' }).click(),
-    ]);
+    await page.waitForTimeout(300);
+    await page.locator('form').getByRole('button', { name: 'Add Marker' }).click();
+    await page.waitForTimeout(3000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('2025-03-15')).toBeVisible({ timeout: 5000 });
   });
 
   test('delete a trial marker', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     const markerRow = page.locator('tr', { hasText: '2025-03-15' });
     await markerRow.getByRole('button', { name: 'Delete' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('2025-03-15')).not.toBeVisible({ timeout: 5000 });
@@ -113,10 +120,8 @@ test.describe('Trial Management CRUD', () => {
     await expect(page.locator('#note-content')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#note-content', 'This is a test note for the trial.');
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
-      page.locator('form').getByRole('button', { name: 'Add Note' }).click(),
-    ]);
+    await page.locator('form').getByRole('button', { name: 'Add Note' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('This is a test note for the trial.')).toBeVisible({
@@ -125,12 +130,11 @@ test.describe('Trial Management CRUD', () => {
   });
 
   test('delete a trial note', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     const noteContainer = page.locator('div', {
       hasText: 'This is a test note for the trial.',
     });
     await noteContainer.getByRole('button', { name: 'Delete' }).first().click();
+    await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('This is a test note for the trial.')).not.toBeVisible({

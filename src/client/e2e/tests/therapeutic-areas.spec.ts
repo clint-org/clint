@@ -33,12 +33,11 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#ta-name', 'Oncology');
+    await page.waitForTimeout(300);
     await fillInput(page, '#ta-abbreviation', 'ONC');
-    await page.waitForTimeout(200);
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
-      page.getByRole('button', { name: 'Create' }).click(),
-    ]);
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Create' }).click();
+    await page.waitForTimeout(3000);
 
     await page.goto(taUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Oncology')).toBeVisible({ timeout: 10000 });
@@ -51,10 +50,8 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
     await clearAndFill(page, '#ta-name', 'Immunology');
     await clearAndFill(page, '#ta-abbreviation', 'IMM');
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'PATCH'),
-      page.getByRole('button', { name: 'Update' }).click(),
-    ]);
+    await page.getByRole('button', { name: 'Update' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(taUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Immunology')).toBeVisible({ timeout: 10000 });
@@ -65,6 +62,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
     const row = page.locator('tr', { hasText: 'Immunology' });
     await row.getByRole('button', { name: 'Delete' }).click();
+    await page.waitForTimeout(2000);
 
     await page.goto(taUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Immunology')).not.toBeVisible({ timeout: 5000 });

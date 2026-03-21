@@ -22,6 +22,10 @@ test.describe('Company Management CRUD', () => {
     await page.close();
   });
 
+  test.beforeAll(async () => {
+    page.on('dialog', (dialog) => dialog.accept());
+  });
+
   test('company list loads', async () => {
     await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Companies' })).toBeVisible();
@@ -58,10 +62,9 @@ test.describe('Company Management CRUD', () => {
   });
 
   test('delete company succeeds', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     const row = page.locator('tr', { hasText: 'Updated Company' });
     await row.getByRole('button', { name: 'Delete' }).click();
+    await page.waitForTimeout(1000);
 
     await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Company')).not.toBeVisible({ timeout: 5000 });
