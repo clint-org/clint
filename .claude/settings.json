@@ -7,5 +7,43 @@
     "skill-creator@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
     "impeccable@impeccable": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-file.sh\"",
+            "timeout": 30,
+            "statusMessage": "Linting..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/prettier-on-commit.sh\"",
+            "timeout": 30,
+            "statusMessage": "Formatting staged files..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review what code changes were made in this turn. If any features, components, services, routes, models, or database schema were added or modified, update the relevant docs/runbook/ files to keep the documentation current. Only update if there are meaningful changes to document -- skip for formatting, typo fixes, or minor refactors."
+          }
+        ]
+      }
+    ]
   }
 }
