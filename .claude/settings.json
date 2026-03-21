@@ -43,6 +43,16 @@
             "prompt": "Review what code changes were made in this turn. If any features, components, services, routes, models, or database schema were added or modified, update the relevant docs/runbook/ files to keep the documentation current. Only update if there are meaningful changes to document -- skip for formatting, typo fixes, or minor refactors."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/run-e2e-tests.sh\"",
+            "timeout": 120000,
+            "statusMessage": "Running E2E tests..."
+          }
+        ]
       }
     ]
   }
