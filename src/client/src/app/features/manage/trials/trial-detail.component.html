@@ -14,16 +14,16 @@
     <p-message severity="error" [closable]="false">{{ error() }}</p-message>
   } @else if (trial()) {
     <!-- Header -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between">
       <div>
         <h1 class="text-xl font-semibold text-slate-800">{{ trial()!.name }}</h1>
         @if (trial()!.identifier) {
-          <p class="text-sm text-slate-500">{{ trial()!.identifier }}</p>
+          <p class="text-xs font-mono text-slate-400 mt-0.5">{{ trial()!.identifier }}</p>
         }
       </div>
       <div class="flex gap-2">
-        <p-button label="Edit Trial" (onClick)="editingTrial.set(true)" />
-        <p-button label="Back" severity="secondary" [outlined]="true" (onClick)="goBack()" />
+        <p-button label="Edit Trial" size="small" (onClick)="editingTrial.set(true)" />
+        <p-button label="Back" severity="secondary" [outlined]="true" size="small" (onClick)="goBack()" />
       </div>
     </div>
 
@@ -40,34 +40,45 @@
 
     <!-- Basic Info -->
     <app-section-card title="Basic Info">
-      <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2">
         <div>
-          <dt class="text-sm font-medium text-slate-500">Status</dt>
-          <dd class="mt-1 text-sm text-slate-900">{{ trial()!.status || 'Not set' }}</dd>
-        </div>
-        <div>
-          <dt class="text-sm font-medium text-slate-500">Therapeutic Area</dt>
-          <dd class="mt-1 text-sm text-slate-900">
-            {{ trial()!.therapeutic_areas?.name || 'Not set' }}
+          <dt class="text-xs text-slate-400">Status</dt>
+          <dd class="text-sm font-medium text-slate-800">
+            @if (trial()!.status) {
+              <span class="inline-flex items-center gap-1.5">
+                <span class="h-1.5 w-1.5 rounded-full"
+                  [class.bg-emerald-500]="trial()!.status === 'Recruiting' || trial()!.status === 'Active, not recruiting'"
+                  [class.bg-amber-500]="trial()!.status === 'Not yet recruiting' || trial()!.status === 'Suspended'"
+                  [class.bg-slate-400]="trial()!.status === 'Completed' || trial()!.status === 'Terminated' || trial()!.status === 'Withdrawn'"
+                ></span>
+                {{ trial()!.status }}
+              </span>
+            } @else {
+              <span class="text-slate-400">--</span>
+            }
           </dd>
         </div>
         <div>
-          <dt class="text-sm font-medium text-slate-500">Sample Size</dt>
-          <dd class="mt-1 text-sm text-slate-900">
-            {{ trial()!.sample_size !== null ? trial()!.sample_size : 'Not set' }}
+          <dt class="text-xs text-slate-400">Therapeutic Area</dt>
+          <dd class="text-sm font-medium text-slate-800">{{ trial()!.therapeutic_areas?.name || '--' }}</dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-400">Sample Size</dt>
+          <dd class="text-sm font-medium text-slate-800 font-mono tabular-nums">
+            {{ trial()!.sample_size !== null ? trial()!.sample_size : '--' }}
           </dd>
         </div>
         <div>
-          <dt class="text-sm font-medium text-slate-500">Display Order</dt>
-          <dd class="mt-1 text-sm text-slate-900">{{ trial()!.display_order }}</dd>
+          <dt class="text-xs text-slate-400">Display Order</dt>
+          <dd class="text-sm font-medium text-slate-800 font-mono tabular-nums">{{ trial()!.display_order }}</dd>
         </div>
-        @if (trial()!.notes) {
-          <div class="sm:col-span-2">
-            <dt class="text-sm font-medium text-slate-500">Notes</dt>
-            <dd class="mt-1 text-sm text-slate-900">{{ trial()!.notes }}</dd>
-          </div>
-        }
       </dl>
+      @if (trial()!.notes) {
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <dt class="text-xs text-slate-400">Notes</dt>
+          <dd class="mt-0.5 text-sm text-slate-700">{{ trial()!.notes }}</dd>
+        </div>
+      }
     </app-section-card>
 
     <!-- Phases Section -->
@@ -76,13 +87,12 @@
         actions
         label="Add Phase"
         icon="fa-solid fa-plus"
-        severity="success"
         size="small"
         (onClick)="addingPhase.set(true); editingPhase.set(null)"
       />
 
       @if (addingPhase() || editingPhase()) {
-        <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+        <div class="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
           <app-phase-form
             [phase]="editingPhase()"
             [trialId]="trialId()"
@@ -110,10 +120,10 @@
         </ng-template>
         <ng-template #body let-phase>
           <tr>
-            <td>{{ phase.phase_type }}</td>
+            <td class="font-medium">{{ phase.phase_type }}</td>
             <td>{{ phase.label || '-' }}</td>
-            <td class="font-mono tabular-nums">{{ phase.start_date }}</td>
-            <td class="font-mono tabular-nums">{{ phase.end_date || '-' }}</td>
+            <td class="font-mono tabular-nums text-slate-500">{{ phase.start_date }}</td>
+            <td class="font-mono tabular-nums text-slate-500">{{ phase.end_date || '-' }}</td>
             <td>
               @if (phase.color) {
                 <app-color-swatch [color]="phase.color" />
@@ -141,7 +151,7 @@
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="text-center text-sm text-slate-500 py-8">
+            <td colspan="6" class="text-center text-sm text-slate-500 py-6">
               No phases yet. Add one to get started.
             </td>
           </tr>
@@ -155,13 +165,12 @@
         actions
         label="Add Marker"
         icon="fa-solid fa-plus"
-        severity="success"
         size="small"
         (onClick)="addingMarker.set(true); editingMarker.set(null)"
       />
 
       @if (addingMarker() || editingMarker()) {
-        <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+        <div class="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
           <app-marker-form
             [marker]="editingMarker()"
             [trialId]="trialId()"
@@ -189,11 +198,20 @@
         </ng-template>
         <ng-template #body let-marker>
           <tr>
-            <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
-            <td class="font-mono tabular-nums">{{ marker.event_date }}</td>
-            <td class="font-mono tabular-nums">{{ marker.end_date || '-' }}</td>
-            <td class="max-w-xs truncate">{{ marker.tooltip_text || '-' }}</td>
-            <td>{{ marker.is_projected ? 'Yes' : 'No' }}</td>
+            <td class="font-medium">{{ marker.marker_types?.name || 'Unknown' }}</td>
+            <td class="font-mono tabular-nums text-slate-500">{{ marker.event_date }}</td>
+            <td class="font-mono tabular-nums text-slate-500">{{ marker.end_date || '-' }}</td>
+            <td class="max-w-xs truncate text-slate-500">{{ marker.tooltip_text || '-' }}</td>
+            <td>
+              @if (marker.is_projected) {
+                <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                  <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                  Projected
+                </span>
+              } @else {
+                <span class="text-slate-400">--</span>
+              }
+            </td>
             <td class="text-right">
               <p-button
                 label="Edit"
@@ -214,7 +232,7 @@
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="text-center text-sm text-slate-500 py-8">
+            <td colspan="6" class="text-center text-sm text-slate-500 py-6">
               No markers yet. Add one to get started.
             </td>
           </tr>
@@ -228,13 +246,12 @@
         actions
         label="Add Note"
         icon="fa-solid fa-plus"
-        severity="success"
         size="small"
         (onClick)="addingNote.set(true); editingNote.set(null)"
       />
 
       @if (addingNote() || editingNote()) {
-        <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+        <div class="mb-3 rounded-md border border-slate-200 bg-slate-50 p-3">
           <app-note-form
             [note]="editingNote()"
             [trialId]="trialId()"
@@ -245,12 +262,12 @@
       }
 
       @if (trial()!.trial_notes && trial()!.trial_notes!.length > 0) {
-        <div class="space-y-3">
+        <div class="space-y-2">
           @for (note of trial()!.trial_notes; track note.id) {
-            <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
-              <div class="flex items-start justify-between">
-                <p class="text-sm text-slate-900 whitespace-pre-wrap">{{ note.content }}</p>
-                <div class="ml-4 flex shrink-0 gap-2">
+            <div class="rounded border border-slate-200 bg-slate-50/50 px-3 py-2">
+              <div class="flex items-start justify-between gap-3">
+                <p class="text-sm text-slate-700 whitespace-pre-wrap flex-1">{{ note.content }}</p>
+                <div class="flex shrink-0 gap-1">
                   <p-button
                     label="Edit"
                     [text]="true"
@@ -266,7 +283,7 @@
                   />
                 </div>
               </div>
-              <p class="mt-2 text-xs text-slate-400 font-mono tabular-nums">
+              <p class="mt-1 text-xs text-slate-400 font-mono tabular-nums">
                 {{ note.updated_at }}
               </p>
             </div>
