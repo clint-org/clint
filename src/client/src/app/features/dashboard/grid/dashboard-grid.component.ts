@@ -12,8 +12,10 @@ import { RowNotesComponent } from './row-notes.component';
 
 export interface FlattenedTrial {
   companyName: string;
+  companyId: string;
   companyLogoUrl: string | null;
   productName: string;
+  productId: string;
   productLogoUrl: string | null;
   trial: Trial;
   isFirstInCompany: boolean;
@@ -40,6 +42,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   phaseClick = output<TrialPhase>();
   markerClick = output<TrialMarker>();
   trialClick = output<Trial>();
+  companyClick = output<string>();
+  productClick = output<string>();
 
   isScrolled = signal(false);
 
@@ -62,8 +66,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
         for (const trial of trials) {
           rows.push({
             companyName: company.name,
+            companyId: company.id,
             companyLogoUrl: company.logo_url ?? null,
             productName: product.name,
+            productId: product.id,
             productLogoUrl: product.logo_url ?? null,
             trial,
             isFirstInCompany,
@@ -112,5 +118,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   onTrialClick(trial: Trial): void {
     this.trialClick.emit(trial);
+  }
+
+  onCompanyClick(companyId: string): void {
+    this.companyClick.emit(companyId);
+  }
+
+  onProductClick(productId: string): void {
+    this.productClick.emit(productId);
   }
 }
