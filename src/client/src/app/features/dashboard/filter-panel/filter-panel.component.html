@@ -1,14 +1,14 @@
 @if (loading()) {
-  <div class="flex items-center gap-2 px-2 py-1.5">
+  <div class="flex items-center gap-2">
     <p-progressspinner
       strokeWidth="4"
-      [style]="{ width: '1rem', height: '1rem' }"
+      [style]="{ width: '0.875rem', height: '0.875rem' }"
       aria-hidden="true"
     />
-    <span class="text-sm text-slate-500" aria-live="polite">Loading filters...</span>
+    <span class="text-xs text-slate-400" aria-live="polite">Loading...</span>
   </div>
 } @else {
-  <div class="flex flex-wrap items-center gap-2 md:gap-3 px-2 py-1.5">
+  <div class="flex flex-wrap items-center gap-1.5">
     <p-multiselect
       [options]="companyOptions()"
       [ngModel]="selectedCompanyIds()"
@@ -20,7 +20,8 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-full sm:w-36 md:w-44"
+      styleClass="w-32"
+      size="small"
     />
 
     <p-multiselect
@@ -34,7 +35,8 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-full sm:w-36 md:w-44"
+      styleClass="w-32"
+      size="small"
     />
 
     <p-multiselect
@@ -48,7 +50,8 @@
       display="comma"
       [filter]="true"
       [showClear]="true"
-      styleClass="w-full sm:w-40 md:w-52"
+      styleClass="w-40"
+      size="small"
     />
 
     <p-multiselect
@@ -61,7 +64,8 @@
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-full sm:w-32 md:w-40"
+      styleClass="w-28"
+      size="small"
     />
 
     <p-multiselect
@@ -74,7 +78,8 @@
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-full sm:w-28 md:w-36"
+      styleClass="w-24"
+      size="small"
     />
 
     <p-multiselect
@@ -87,7 +92,8 @@
       optionValue="value"
       display="comma"
       [showClear]="true"
-      styleClass="w-full sm:w-32 md:w-40"
+      styleClass="w-28"
+      size="small"
     />
   </div>
 }

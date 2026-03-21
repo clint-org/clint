@@ -8,6 +8,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Tooltip } from 'primeng/tooltip';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { DashboardGridComponent } from './grid/dashboard-grid.component';
 import { FilterPanelComponent } from './filter-panel/filter-panel.component';
@@ -26,6 +27,7 @@ import { ZoomControlComponent } from './zoom-control/zoom-control.component';
     ButtonModule,
     MessageModule,
     ProgressSpinner,
+    Tooltip,
   ],
   templateUrl: './dashboard.component.html',
 })

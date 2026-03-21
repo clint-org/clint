@@ -14,9 +14,9 @@
         class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
       >
         <!-- Header row -->
-        <div class="flex border-b border-slate-200 bg-slate-50 h-8 items-center">
+        <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
           <div
-            class="hidden lg:block px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 transition-all duration-200"
+            class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
             [class.w-36]="!isScrolled()"
             [class.w-10]="isScrolled()"
           >
@@ -25,18 +25,18 @@
             }
           </div>
           <div
-            class="w-28 md:w-32 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 lg:border-l border-slate-200"
+            class="w-28 md:w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 lg:border-l border-slate-700"
           >
             Product
           </div>
           <div
-            class="w-36 md:w-48 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 border-l border-slate-200"
+            class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
           >
             Trial
           </div>
         </div>
         @if (hasSubColumns()) {
-          <div class="flex border-b border-slate-200 bg-slate-50/50">
+          <div class="flex border-b border-slate-200 bg-slate-100">
             <div
               class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"
@@ -64,6 +64,8 @@
             [class.border-slate-300]="row.isLastInCompany"
             [class.bg-white]="idx % 2 === 0"
             [class.bg-slate-50]="idx % 2 !== 0"
+            [class.border-l-2]="row.isFirstInCompany"
+            [class.border-l-teal-500]="row.isFirstInCompany"
             [style.height.px]="36"
           >
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
@@ -92,7 +94,7 @@
                 }
                 @if (!isScrolled()) {
                   <span
-                    class="font-semibold text-xs uppercase tracking-wide text-slate-400 truncate"
+                    class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
                     >{{ row.companyName }}</span
                   >
                 }
@@ -205,13 +207,13 @@
       @if (flattenedTrials().length > 0) {
         <div class="hidden lg:block flex-none w-48 bg-white border-l border-slate-200">
           <div
-            class="border-b border-slate-200 bg-slate-50 px-3 h-8 flex items-center text-xs font-semibold uppercase tracking-wider text-slate-500"
+            class="border-b border-slate-300 bg-slate-800 px-3 h-8 flex items-center text-[10px] font-bold uppercase tracking-widest text-slate-400"
           >
             Notes
           </div>
           @if (hasSubColumns()) {
             <div
-              class="border-b border-slate-200 bg-slate-50/50 px-3 py-0.5 text-xs text-slate-400"
+              class="border-b border-slate-200 bg-slate-100 px-3 py-0.5 text-xs text-slate-400"
             >
               &nbsp;
             </div>
