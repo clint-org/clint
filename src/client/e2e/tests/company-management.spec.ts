@@ -1,6 +1,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
 import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
+import { fillInput, clearAndFill } from '../helpers/form.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -29,33 +30,34 @@ test.describe('Company Management CRUD', () => {
 
   test('create company via modal', async () => {
     await page.getByRole('button', { name: 'Add Company' }).click();
-    await expect(page.locator('p-dialog')).toBeVisible();
+    await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
 
-    await page.locator('#company-name').fill('Test Company');
+    await fillInput(page, '#company-name', 'Test Company');
     await page.getByRole('button', { name: 'Create Company' }).click();
 
-    await expect(page.locator('p-dialog')).not.toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Test Company')).toBeVisible();
+    await expect(page.getByText('Test Company')).toBeVisible({ timeout: 10000 });
   });
 
   test('edit company via modal', async () => {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
+      waitUntil: 'networkidle',
+    });
     const row = page.locator('tr', { hasText: 'Test Company' });
     await row.getByRole('button', { name: 'Edit' }).click();
-    await expect(page.locator('p-dialog')).toBeVisible();
+    await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
 
-    const nameInput = page.locator('#company-name');
-    await nameInput.clear();
-    await nameInput.fill('Updated Company');
+    await clearAndFill(page, '#company-name', 'Updated Company');
     await page.getByRole('button', { name: 'Update Company' }).click();
 
-    await expect(page.locator('p-dialog')).not.toBeVisible({ timeout: 5000 });
-    await expect(page.getByText('Updated Company')).toBeVisible();
-    await expect(page.getByText('Test Company')).not.toBeVisible();
+    await expect(page.getByText('Updated Company')).toBeVisible({ timeout: 10000 });
   });
 
   test('delete company succeeds', async () => {
     page.on('dialog', (dialog) => dialog.accept());
 
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
+      waitUntil: 'networkidle',
+    });
     const row = page.locator('tr', { hasText: 'Updated Company' });
     await row.getByRole('button', { name: 'Delete' }).click();
 

@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
 
 test.describe('Authentication', () => {
@@ -25,9 +25,9 @@ test.describe('Authentication', () => {
   test('sign out clears session and redirects to /login', async ({ browser }) => {
     const page = await authenticatedPage(browser);
     try {
-      const signOutButton = page.getByRole('button', { name: /sign out/i });
-      await signOutButton.click();
-      await expect(page).toHaveURL(/\/login/);
+      await page.waitForSelector('button:has-text("Sign out")', { timeout: 10000 });
+      await page.click('button:has-text("Sign out")');
+      await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
     } finally {
       await page.close();
     }

@@ -19,7 +19,14 @@ async function globalSetup() {
   const email = 'e2e-test@clint.local';
   const password = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  let userId: string;
+  // Clean up any existing test user first
+  const { data: users } = await supabase.auth.admin.listUsers();
+  const existing = users?.users.find((u) => u.email === email);
+  if (existing) {
+    await supabase.from('tenant_members').delete().eq('user_id', existing.id);
+    await supabase.from('space_members').delete().eq('user_id', existing.id);
+    await supabase.auth.admin.deleteUser(existing.id);
+  }
 
   const { data: createData, error: createError } = await supabase.auth.admin.createUser({
     email,
@@ -27,26 +34,7 @@ async function globalSetup() {
     email_confirm: true,
   });
 
-  if (createError) {
-    if (createError.message.includes('already been registered')) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const existing = users?.users.find((u) => u.email === email);
-      if (existing) {
-        await supabase.auth.admin.deleteUser(existing.id);
-      }
-      const { data: retryData, error: retryError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
-      if (retryError) throw retryError;
-      userId = retryData.user.id;
-    } else {
-      throw createError;
-    }
-  } else {
-    userId = createData.user.id;
-  }
+  if (createError) throw createError;
 
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] || 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
