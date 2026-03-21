@@ -9,11 +9,13 @@ test.describe('Marker Type Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
+  const markerTypesUrl = () => `/t/${tenantId}/s/${spaceId}/manage/marker-types`;
 
   test.beforeAll(async ({ browser }) => {
+    tenantId = await createTestTenant('Marker Type Org');
+    spaceId = await createTestSpace(tenantId, 'Marker Type Space');
+
     page = await authenticatedPage(browser);
-    tenantId = await createTestTenant(page, 'Marker Type Org');
-    spaceId = await createTestSpace(page, tenantId, 'Marker Type Space');
   });
 
   test.afterAll(async () => {
@@ -21,9 +23,7 @@ test.describe('Marker Type Management CRUD', () => {
   });
 
   test('marker type list loads', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/marker-types`, {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Marker Types' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add Marker Type' })).toBeVisible();
   });
@@ -33,34 +33,40 @@ test.describe('Marker Type Management CRUD', () => {
     await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#mt-name', 'Test Approval');
-    await page.getByRole('button', { name: 'Create Marker Type' }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
+      page.getByRole('button', { name: 'Create Marker Type' }).click(),
+    ]);
 
+    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Test Approval')).toBeVisible({ timeout: 10000 });
   });
 
   test('edit marker type via modal', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/marker-types`, {
-      waitUntil: 'networkidle',
-    });
     const row = page.locator('tr', { hasText: 'Test Approval' });
     await row.getByRole('button', { name: 'Edit' }).click();
     await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#mt-name', 'Updated Approval');
-    await page.getByRole('button', { name: 'Update Marker Type' }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'PATCH'),
+      page.getByRole('button', { name: 'Update Marker Type' }).click(),
+    ]);
 
+    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Approval')).toBeVisible({ timeout: 10000 });
   });
 
   test('delete marker type succeeds', async () => {
     page.on('dialog', (dialog) => dialog.accept());
 
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/marker-types`, {
-      waitUntil: 'networkidle',
-    });
     const row = page.locator('tr', { hasText: 'Updated Approval' });
-    await row.getByRole('button', { name: 'Delete' }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'DELETE'),
+      row.getByRole('button', { name: 'Delete' }).click(),
+    ]);
 
+    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Approval')).not.toBeVisible({ timeout: 5000 });
   });
 });

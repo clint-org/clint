@@ -1,6 +1,5 @@
 import { Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { fillInput } from './form.helper';
 import { getAuthStorage } from './auth.helper';
 
 let adminClient: SupabaseClient | null = null;
@@ -16,54 +15,141 @@ export function getAdminClient(): SupabaseClient {
   return adminClient;
 }
 
-export async function createTestTenant(page: Page, name: string): Promise<string> {
-  // Create tenant via Supabase admin API for reliability
-  const admin = getAdminClient();
-  const auth = getAuthStorage();
-  const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-  const { data: tenant, error: tenantError } = await admin
-    .from('tenants')
-    .insert({ name, slug })
-    .select()
-    .single();
-
-  if (tenantError) throw new Error(`Failed to create tenant: ${tenantError.message}`);
-
-  // Add user as owner
-  const { error: memberError } = await admin
-    .from('tenant_members')
-    .insert({ tenant_id: tenant.id, user_id: auth.userId, role: 'owner' });
-
-  if (memberError) throw new Error(`Failed to add tenant member: ${memberError.message}`);
-
-  return tenant.id;
+function getUserId(): string {
+  return getAuthStorage().userId;
 }
 
-export async function createTestSpace(
-  _page: Page,
-  tenantId: string,
+export async function createTestTenant(name: string): Promise<string> {
+  const admin = getAdminClient();
+  const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+
+  const { data, error } = await admin
+    .from('tenants')
+    .insert({ name, slug })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create tenant: ${error.message}`);
+
+  await admin
+    .from('tenant_members')
+    .insert({ tenant_id: data.id, user_id: getUserId(), role: 'owner' });
+
+  return data.id;
+}
+
+export async function createTestSpace(tenantId: string, name: string): Promise<string> {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin
+    .from('spaces')
+    .insert({ tenant_id: tenantId, name, created_by: getUserId() })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create space: ${error.message}`);
+
+  await admin
+    .from('space_members')
+    .insert({ space_id: data.id, user_id: getUserId(), role: 'owner' });
+
+  return data.id;
+}
+
+export async function createTestCompany(
+  spaceId: string,
   name: string,
 ): Promise<string> {
   const admin = getAdminClient();
-  const auth = getAuthStorage();
 
-  const { data: space, error: spaceError } = await admin
-    .from('spaces')
-    .insert({ tenant_id: tenantId, name, created_by: auth.userId })
-    .select()
+  const { data, error } = await admin
+    .from('companies')
+    .insert({ space_id: spaceId, created_by: getUserId(), name })
+    .select('id')
     .single();
+  if (error) throw new Error(`Failed to create company: ${error.message}`);
 
-  if (spaceError) throw new Error(`Failed to create space: ${spaceError.message}`);
+  return data.id;
+}
 
-  // Add user as space member
-  const { error: memberError } = await admin
-    .from('space_members')
-    .insert({ space_id: space.id, user_id: auth.userId, role: 'owner' });
+export async function createTestProduct(
+  spaceId: string,
+  companyId: string,
+  name: string,
+): Promise<string> {
+  const admin = getAdminClient();
 
-  if (memberError) throw new Error(`Failed to add space member: ${memberError.message}`);
+  const { data, error } = await admin
+    .from('products')
+    .insert({ space_id: spaceId, created_by: getUserId(), company_id: companyId, name })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create product: ${error.message}`);
 
-  return space.id;
+  return data.id;
+}
+
+export async function createTestTherapeuticArea(
+  spaceId: string,
+  name: string,
+  abbreviation?: string,
+): Promise<string> {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin
+    .from('therapeutic_areas')
+    .insert({ space_id: spaceId, created_by: getUserId(), name, abbreviation })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create therapeutic area: ${error.message}`);
+
+  return data.id;
+}
+
+export async function createTestTrial(
+  spaceId: string,
+  productId: string,
+  therapeuticAreaId: string,
+  name: string,
+): Promise<string> {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin
+    .from('trials')
+    .insert({
+      space_id: spaceId,
+      created_by: getUserId(),
+      product_id: productId,
+      therapeutic_area_id: therapeuticAreaId,
+      name,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create trial: ${error.message}`);
+
+  return data.id;
+}
+
+export async function createTestMarkerType(
+  spaceId: string,
+  name: string,
+  opts?: { shape?: string; fill_style?: string; color?: string },
+): Promise<string> {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin
+    .from('marker_types')
+    .insert({
+      space_id: spaceId,
+      created_by: getUserId(),
+      name,
+      shape: opts?.shape || 'circle',
+      fill_style: opts?.fill_style || 'filled',
+      color: opts?.color || '#14b8a6',
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create marker type: ${error.message}`);
+
+  return data.id;
 }
 
 export async function navigateToSpace(

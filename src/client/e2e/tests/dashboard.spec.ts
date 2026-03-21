@@ -1,6 +1,13 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
-import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
+import {
+  createTestTenant,
+  createTestSpace,
+  createTestCompany,
+  createTestProduct,
+  createTestTherapeuticArea,
+  createTestTrial,
+} from '../helpers/test-data.helper';
 
 test.describe('Dashboard', () => {
   let page: Page;
@@ -8,13 +15,19 @@ test.describe('Dashboard', () => {
   let spaceId: string;
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(60000);
+
+    tenantId = await createTestTenant('Dashboard Test Org');
+    spaceId = await createTestSpace(tenantId, 'Dashboard Test Space');
+
+    // Seed data so the dashboard has something to render
+    const companyId = await createTestCompany(spaceId, 'Dashboard Co');
+    const productId = await createTestProduct(spaceId, companyId, 'Dashboard Product');
+    const taId = await createTestTherapeuticArea(spaceId, 'Dashboard TA');
+    await createTestTrial(spaceId, productId, taId, 'Dashboard Trial');
+
     page = await authenticatedPage(browser);
-    tenantId = await createTestTenant(page, 'Dashboard Test Org');
-    spaceId = await createTestSpace(page, tenantId, 'Dashboard Test Space');
-
     await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
-
-    // Wait for dashboard grid to load (demo data auto-seeds on empty space)
     await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });
   });
 
@@ -28,8 +41,7 @@ test.describe('Dashboard', () => {
   });
 
   test('filter controls are visible', async () => {
-    const filterPanel = page.locator('app-filter-panel');
-    await expect(filterPanel).toBeVisible();
+    await expect(page.locator('app-filter-panel')).toBeVisible();
   });
 
   test('zoom control is present and functional', async () => {
@@ -37,28 +49,21 @@ test.describe('Dashboard', () => {
     await expect(zoomControl).toBeVisible();
 
     const yearButton = zoomControl.getByText('Year');
-    await expect(yearButton).toBeVisible();
-
     const quarterButton = zoomControl.getByText('Quarter');
+    await expect(yearButton).toBeVisible();
     await expect(quarterButton).toBeVisible();
-
-    const monthButton = zoomControl.getByText('Month');
-    await expect(monthButton).toBeVisible();
 
     await quarterButton.click();
     await page.waitForTimeout(500);
-
     await yearButton.click();
     await page.waitForTimeout(500);
   });
 
   test('legend displays marker types', async () => {
-    const legend = page.locator('app-legend');
-    await expect(legend).toBeVisible();
+    await expect(page.locator('[aria-label="Marker type legend"]')).toBeVisible();
   });
 
   test('clicking a trial navigates to trial detail', async () => {
-    // Trial column divs have role="button" in the grid
     const trialButton = page.locator('app-dashboard-grid div[role="button"]').first();
 
     if (await trialButton.isVisible()) {

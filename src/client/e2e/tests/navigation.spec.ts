@@ -12,9 +12,10 @@ test.describe('Navigation', () => {
   let spaceId: string;
 
   test.beforeAll(async ({ browser }) => {
+    tenantId = await createTestTenant('Nav Test Org');
+    spaceId = await createTestSpace(tenantId, 'Nav Test Space');
+
     page = await authenticatedPage(browser);
-    tenantId = await createTestTenant(page, 'Nav Test Org');
-    spaceId = await createTestSpace(page, tenantId, 'Nav Test Space');
     await navigateToSpace(page, tenantId, spaceId);
   });
 

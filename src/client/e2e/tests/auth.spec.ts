@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
+import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
 
 test.describe('Authentication', () => {
   test('unauthenticated user visiting / is redirected to /login', async ({ page }) => {
@@ -23,10 +24,15 @@ test.describe('Authentication', () => {
   });
 
   test('sign out clears session and redirects to /login', async ({ browser }) => {
+    const tenantId = await createTestTenant('Sign Out Org');
+    await createTestSpace(tenantId, 'Sign Out Space');
+
     const page = await authenticatedPage(browser);
     try {
-      await page.waitForSelector('button:has-text("Sign out")', { timeout: 10000 });
-      await page.click('button:has-text("Sign out")');
+      // Navigate to spaces page where header is fully rendered
+      await page.goto(`/t/${tenantId}/spaces`, { waitUntil: 'networkidle' });
+      await page.locator('button:text("Sign out")').waitFor({ timeout: 10000 });
+      await page.locator('button:text("Sign out")').click();
       await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
     } finally {
       await page.close();

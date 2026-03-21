@@ -9,11 +9,13 @@ test.describe('Company Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
+  const companiesUrl = () => `/t/${tenantId}/s/${spaceId}/manage/companies`;
 
   test.beforeAll(async ({ browser }) => {
+    tenantId = await createTestTenant('Company CRUD Org');
+    spaceId = await createTestSpace(tenantId, 'Company Test Space');
+
     page = await authenticatedPage(browser);
-    tenantId = await createTestTenant(page, 'Company CRUD Org');
-    spaceId = await createTestSpace(page, tenantId, 'Company Test Space');
   });
 
   test.afterAll(async () => {
@@ -21,9 +23,7 @@ test.describe('Company Management CRUD', () => {
   });
 
   test('company list loads', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
-      waitUntil: 'networkidle',
-    });
+    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'Companies' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add Company' })).toBeVisible();
   });
@@ -33,34 +33,37 @@ test.describe('Company Management CRUD', () => {
     await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#company-name', 'Test Company');
-    await page.getByRole('button', { name: 'Create Company' }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
+      page.getByRole('button', { name: 'Create Company' }).click(),
+    ]);
 
+    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Test Company')).toBeVisible({ timeout: 10000 });
   });
 
   test('edit company via modal', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
-      waitUntil: 'networkidle',
-    });
     const row = page.locator('tr', { hasText: 'Test Company' });
     await row.getByRole('button', { name: 'Edit' }).click();
     await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#company-name', 'Updated Company');
-    await page.getByRole('button', { name: 'Update Company' }).click();
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'PATCH'),
+      page.getByRole('button', { name: 'Update Company' }).click(),
+    ]);
 
+    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Company')).toBeVisible({ timeout: 10000 });
   });
 
   test('delete company succeeds', async () => {
     page.on('dialog', (dialog) => dialog.accept());
 
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
-      waitUntil: 'networkidle',
-    });
     const row = page.locator('tr', { hasText: 'Updated Company' });
     await row.getByRole('button', { name: 'Delete' }).click();
 
+    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Updated Company')).not.toBeVisible({ timeout: 5000 });
   });
 });
