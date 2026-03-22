@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "outDir": "../dist/e2e",
+    "sourceMap": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

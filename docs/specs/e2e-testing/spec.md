@@ -2,7 +2,7 @@
 id: spec-2026-007
 title: E2E Testing with Playwright + GitHub Actions CI
 slug: e2e-testing
-status: approved
+status: completed
 created: 2026-03-21
 updated: 2026-03-21
 ---

@@ -1,15 +1,15 @@
 {
   "specId": "spec-2026-007",
-  "status": "draft",
-  "branch": null,
+  "status": "completed",
+  "branch": "spec/e2e-testing",
   "tasks": {
-    "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T3": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T4": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T5": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T6": { "status": "pending", "agent": null, "attempts": 0, "error": null },
-    "T7": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+    "T1": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T2": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T3": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T4": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T5": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T7": { "status": "completed", "agent": null, "attempts": 1, "error": null }
   },
-  "updatedAt": "2026-03-21T00:00:00.000Z"
+  "updatedAt": "2026-03-21T12:00:00.000Z"
 }

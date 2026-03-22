@@ -14,7 +14,7 @@ import { TrialPhaseService } from '../../../core/services/trial-phase.service';
 @Component({
   selector: 'app-phase-form',
   standalone: true,
-  imports: [FormsModule, InputText, Select, DatePicker, ColorPicker, ButtonModule, MessageModule],
+  imports: [FormsModule, InputText, Select, ColorPicker, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4">
       @if (error()) {
