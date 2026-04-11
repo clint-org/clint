@@ -75,6 +75,8 @@ export class FilterPanelComponent implements OnInit {
         recruitmentStatuses: this.selectedStatuses().length > 0 ? this.selectedStatuses() : null,
         studyTypes: this.selectedStudyTypes().length > 0 ? this.selectedStudyTypes() : null,
         phases: this.selectedPhases().length > 0 ? this.selectedPhases() : null,
+        mechanismOfActionIds: null,
+        routeOfAdministrationIds: null,
       };
       this.filtersChange.emit(filters);
     });

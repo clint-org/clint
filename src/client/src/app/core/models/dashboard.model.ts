@@ -13,6 +13,8 @@ export interface DashboardFilters {
   recruitmentStatuses: string[] | null;
   studyTypes: string[] | null;
   phases: string[] | null;
+  mechanismOfActionIds: string[] | null;
+  routeOfAdministrationIds: string[] | null;
 }
 
 export type ZoomLevel = 'yearly' | 'quarterly' | 'monthly' | 'daily';
