@@ -11,7 +11,9 @@ import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.
 import { TherapeuticAreaFormComponent } from './therapeutic-area-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { createGridState } from '../../../shared/grids';
 
 @Component({
   selector: 'app-therapeutic-area-list',
@@ -24,6 +26,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
     TherapeuticAreaFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    GridToolbarComponent,
   ],
   templateUrl: './therapeutic-area-list.component.html',
 })
@@ -41,6 +44,17 @@ export class TherapeuticAreaListComponent implements OnInit {
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
+
+  readonly grid = createGridState<TherapeuticArea>({
+    columns: [
+      { field: 'name', header: 'Name', filter: { kind: 'text' } },
+      { field: 'abbreviation', header: 'Abbreviation', filter: { kind: 'text' } },
+    ],
+    globalSearchFields: ['name', 'abbreviation'],
+    defaultSort: { field: 'name', order: 1 },
+  });
+
+  readonly visibleAreas = this.grid.filteredRows(this.areas);
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
