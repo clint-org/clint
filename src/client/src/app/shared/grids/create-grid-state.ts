@@ -153,8 +153,8 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
 
   // --- event handlers wired to p-table [lazy] -------------------------------
   function onLazyLoad(event: {
-    first?: number;
-    rows?: number;
+    first?: number | null;
+    rows?: number | null;
     sortField?: string | null;
     sortOrder?: number | null;
     filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }>;

@@ -1,24 +1,10 @@
 <app-manage-page-shell
   eyebrow="Manage"
   title="Products"
-  [count]="rows().length"
-  [subtitle]="
-    companyLabel()
-      ? 'Filtered to ' + companyLabel()
-      : 'Drug programs being tracked. Click a product to drill into its trials.'
-  "
+  [count]="grid.totalRecords()"
+  subtitle="Drug programs being tracked. Click a product to drill into its trials."
 >
   <div actions>
-    @if (companyLabel()) {
-      <p-button
-        label="Clear filter"
-        icon="fa-solid fa-xmark"
-        severity="secondary"
-        [text]="true"
-        size="small"
-        (onClick)="clearFilter()"
-      />
-    }
     <p-button
       label="Add product"
       icon="fa-solid fa-plus"
@@ -29,19 +15,56 @@
     />
   </div>
 
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search products..." />
+
   <p-table
     styleClass="manage-table"
-    [value]="rows()"
+    [value]="visibleRows()"
     [loading]="loading()"
     [tableStyle]="{ 'min-width': '56rem' }"
+    [lazy]="true"
+    (onLazyLoad)="grid.onLazyLoad($any($event))"
+    [paginator]="true"
+    [rows]="grid.page().rows"
+    [first]="grid.page().first"
+    [totalRecords]="grid.totalRecords()"
+    [rowsPerPageOptions]="[10, 25, 50, 100]"
+    [filters]="grid.primengFilters()"
   >
     <ng-template #header>
       <tr>
-        <th>Name</th>
-        <th>Generic</th>
-        <th>Company</th>
-        <th class="col-num">Trials</th>
-        <th class="col-num">Order</th>
+        <th pSortableColumn="product.name">
+          Name <p-sortIcon field="product.name" />
+          <p-columnFilter type="text" field="product.name" display="menu" />
+        </th>
+        <th pSortableColumn="product.generic_name">
+          Generic <p-sortIcon field="product.generic_name" />
+          <p-columnFilter type="text" field="product.generic_name" display="menu" />
+        </th>
+        <th pSortableColumn="companyName">
+          Company <p-sortIcon field="companyName" />
+          <p-columnFilter field="product.company_id" display="menu" matchMode="in">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <select
+                class="w-full border border-slate-300 px-2 py-1 text-sm"
+                [value]="value ?? ''"
+                (change)="filter($any($event.target).value || null)"
+              >
+                <option value="">All companies</option>
+                @for (c of companies(); track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th class="col-num" pSortableColumn="trialCount">
+          Trials <p-sortIcon field="trialCount" />
+          <p-columnFilter type="numeric" field="trialCount" display="menu" />
+        </th>
+        <th class="col-num" pSortableColumn="product.display_order">
+          Order <p-sortIcon field="product.display_order" />
+        </th>
         <th class="col-actions"></th>
       </tr>
     </ng-template>
@@ -74,15 +97,18 @@
         </td>
         <td class="col-num">{{ row.product.display_order }}</td>
         <td class="col-actions">
-          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.product.name" />
+          <app-row-actions
+            [items]="rowMenu(row)"
+            [ariaLabel]="'Actions for ' + row.product.name"
+          />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
         <td colspan="6">
-          @if (companyLabel()) {
-            No products for {{ companyLabel() }} yet.
+          @if (grid.isFiltered()) {
+            No products match your filters.
           } @else {
             No products yet. Add one to get started.
           }

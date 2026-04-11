@@ -78,7 +78,7 @@ export interface GridState<T> {
 
   filteredRows: (raw: Signal<T[]>) => Signal<T[]>;
 
-  onLazyLoad: (e: { first?: number; rows?: number; sortField?: string | null; sortOrder?: number | null; filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }> }) => void;
+  onLazyLoad: (e: { first?: number | null; rows?: number | null; sortField?: string | null; sortOrder?: number | null; filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }> }) => void;
   onGlobalSearchInput: (value: string) => void;
 
   /** PrimeNG filter-metadata shape derived from the unified state, for two-way binding to `<p-table [filters]>`. */
