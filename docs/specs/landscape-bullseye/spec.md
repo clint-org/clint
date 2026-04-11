@@ -161,7 +161,11 @@ as $$
   --   }
   -- ]
   --
-  -- Returned sorted alphabetically by therapeutic_area.name.
+  -- Returns every TA in the space, including TAs with zero products
+  -- (product_count = 0, company_count = 0, highest_phase_present = null).
+  -- The index grid renders all of them so users can see the full set
+  -- of tracked TAs, including empty ones. Sorted alphabetically by
+  -- therapeutic_area.name.
 $$;
 ```
 
@@ -503,7 +507,7 @@ PRECLIN         0
 
 Clicking a ring row in this histogram highlights that ring in the chart (pulses the ring stroke to `primary-500` for 1.5s, dims dots not on that ring).
 
-**Selected:** full detail, as the page layout sketch above shows.
+**Selected:** full detail, as the page layout sketch above shows. The trials list in the panel shows up to 8 trials by default; if the product has more, the list truncates with a "Show all N trials" toggle that expands the list in place. Recent markers are capped at 3 (enforced by the RPC).
 
 **No data (zero companies in TA):**
 
