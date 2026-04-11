@@ -97,3 +97,7 @@ yarn-error.log*
 # Local Netlify folder
 .netlify
 supabase/.env
+
+# Claude Code hook session markers
+.claude/.runbook-dirty
+.claude/.e2e-dirty
