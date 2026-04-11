@@ -6,13 +6,31 @@
 - **Database:** PostgreSQL via Supabase
 - **Auth:** Google OAuth via Supabase Auth
 
-## Brand & Design
+## Design Context
 
-Follow `docs/brand.md` for all visual decisions. Key points:
-- **Personality:** Clinical precision -- serious analytical tool for pharma executives
-- **Palette:** Teal accent, slate neutrals (not generic gray or indigo)
-- **Visual hierarchy:** Markers pop > phase bars are subtle backdrop > company/product grouping structures the left
-- **Anti-patterns:** No indigo-600, no pure grays, no dark mode, no glassmorphism, no gradient text
+`docs/brand.md` is the authoritative brand guide. This section is the short form that should shape every design decision.
+
+### Users
+Pharma executives and BD teams scanning competitive landscapes under time pressure. They review dozens of trials across multiple companies and make high-stakes investment, licensing, and partnership calls based on what they see. Context is dense, adversarial, and institutional -- the tool sits alongside Bloomberg Terminal, Evaluate Pharma, and Citeline in their workflow. Job to be done: extract the competitive read on a drug program in seconds, with enough certainty to act on it.
+
+### Brand Personality
+**Precise. Authoritative. Premium.** The interface should feel like a serious analytical instrument built by people who understand clinical data -- closer to a medical journal or a regulatory document than a consumer SaaS product. Emotional goals: confidence in the data, institutional authority, efficiency without clutter. Voice is terse and factual; there is no playfulness, no cheerleading, no emoji.
+
+### Aesthetic Direction
+- **Visual tone:** Minimal, data-dense, structured. Every pixel earns its place. White space is used for grouping, not decoration.
+- **Palette:** Teal primary (hero accent, active states), slate neutrals (never pure gray), phase bars use a muted slate -> cyan -> teal -> violet -> amber progression so P3 pivotal trials read as the hero color. Markers are the visual foreground: green (data), red (regulatory), blue (approval/launch), orange (change). See `docs/brand.md` for exact role-to-color mapping.
+- **Typography:** Mono/tabular for timeline headers (data-instrument feel). Company names uppercase and tracked as structural labels. No display typography, no hero fonts.
+- **Theme:** Light mode only. Dark mode is explicitly disabled in the PrimeNG preset (`src/client/src/app/config/primeng-theme.ts`).
+- **References (aim for):** Bloomberg Terminal (data density, gravity), Evaluate Pharma / Citeline (domain familiarity), Linear / Notion (modern craft, interaction polish, typographic discipline).
+- **Anti-references (never look like):** Consumer SaaS dashboards, playful startup aesthetics, generic indigo-600 accents, pure grays, dark mode, glassmorphism, gradient text, pastel gradients, rounded-everything, decorative illustrations.
+- **Accessibility baseline:** WCAG 2.1 AA. Keyboard navigable with visible focus, semantic HTML, ARIA labels, aria-live for dynamic content, modal focus trapping and Escape-to-close. Contrast must hold on both interactive elements and data marks.
+
+### Design Principles
+1. **Data density over decoration.** Maximize information per screen. If a pixel doesn't carry meaning or grouping, remove it.
+2. **Instant visual parsing.** Markers pop, phase bars recede into the backdrop, company/product grouping structures the left rail. The eye should land on the answer, not hunt for it.
+3. **Tinted neutrals, not flat grays.** Slate gives warmth and depth without introducing color noise. Never reach for generic gray-* or indigo-* utilities.
+4. **Authority through restraint.** Premium feel comes from precision alignment, consistent spacing, and typographic discipline -- not from effects, gradients, or animation. Motion is purposeful and small.
+5. **Accessibility as baseline, not polish.** WCAG AA is a hard floor; it is checked during the feature, not after.
 
 ## Angular Conventions
 

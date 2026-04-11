@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --port 8000",
     "build": "ng build",
     "test": "ng test",
     "test:e2e": "./e2e/run.sh",
