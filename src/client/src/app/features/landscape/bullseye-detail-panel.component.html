@@ -1,0 +1,139 @@
+<aside
+  class="landscape-detail-panel"
+  aria-live="polite"
+  [attr.data-state]="selectedProduct() ? 'selected' : 'empty'"
+>
+  @if (loading()) {
+    <div class="landscape-detail-skeleton">
+      <div class="skeleton-line skeleton-line--lg"></div>
+      <div class="skeleton-line skeleton-line--sm"></div>
+      <div class="skeleton-block"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+      <div class="skeleton-line"></div>
+    </div>
+  } @else if (selectedProduct()) {
+    @let product = selectedProduct()!;
+    <div class="landscape-detail-header">
+      <div class="landscape-detail-label">SELECTED</div>
+      <button
+        type="button"
+        class="landscape-detail-clear"
+        (click)="onClearSelection()"
+        aria-label="Clear selection"
+      >
+        ×
+      </button>
+    </div>
+
+    <h2 class="landscape-detail-name">{{ product.name }}</h2>
+    @if (product.generic_name) {
+      <p class="landscape-detail-generic">{{ product.generic_name }}</p>
+    }
+
+    <section class="landscape-detail-section">
+      <div class="landscape-detail-label">COMPANY</div>
+      <button type="button" class="landscape-detail-company-link" (click)="onCompanyClick()">
+        {{ product.company_name }} →
+      </button>
+    </section>
+
+    <section class="landscape-detail-section">
+      <div class="landscape-detail-label">HIGHEST PHASE IN {{ therapeuticAreaName().toUpperCase() }}</div>
+      <div class="landscape-detail-phase">
+        <span class="landscape-phase-chip" aria-hidden="true"></span>
+        <span class="landscape-phase-name">{{ highestPhaseLabel() }}</span>
+      </div>
+    </section>
+
+    <section class="landscape-detail-section">
+      <div class="landscape-detail-label">
+        TRIALS IN THIS TA ({{ product.trials.length }})
+      </div>
+      @if (product.trials.length === 0) {
+        <p class="landscape-detail-empty-text">No trials tracked in this TA.</p>
+      } @else {
+        <ul class="landscape-detail-trial-list">
+          @for (trial of visibleTrials(); track trial.id) {
+            <li class="landscape-detail-trial-row">
+              <button type="button" class="landscape-detail-trial-link" (click)="onTrialClick(trial.id)">
+                <span class="landscape-detail-trial-name">{{ trial.name }}</span>
+                <span class="landscape-detail-trial-meta">
+                  @if (trial.identifier) {
+                    <span class="landscape-detail-trial-id">{{ trial.identifier }}</span>
+                  }
+                  @if (trial.sample_size) {
+                    <span class="landscape-detail-trial-size">n={{ trial.sample_size }}</span>
+                  }
+                  @if (trial.phase) {
+                    <span class="landscape-detail-trial-phase">{{ trial.phase }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+        @if (hasMoreTrials()) {
+          <button
+            type="button"
+            class="landscape-detail-show-all"
+            (click)="onShowAllTrials()"
+          >
+            Show all {{ product.trials.length }} trials
+          </button>
+        }
+      }
+    </section>
+
+    @if (product.recent_markers.length > 0) {
+      <section class="landscape-detail-section">
+        <div class="landscape-detail-label">RECENT MARKERS</div>
+        <ul class="landscape-detail-marker-list">
+          @for (marker of product.recent_markers; track marker.id) {
+            <li class="landscape-detail-marker-row">
+              <span
+                class="landscape-marker-dot"
+                [style.background-color]="marker.color"
+                [attr.aria-hidden]="true"
+              ></span>
+              <span class="landscape-detail-marker-date">{{ marker.event_date }}</span>
+              <span class="landscape-detail-marker-name">{{ marker.marker_type_name }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <div class="landscape-detail-actions">
+      <p-button
+        label="Open in timeline →"
+        severity="secondary"
+        styleClass="w-full"
+        (onClick)="onOpenTimeline()"
+      />
+    </div>
+  } @else {
+    <div class="landscape-detail-empty">
+      <div class="landscape-detail-label">CLICK A DRUG TO SEE DETAILS</div>
+      <p class="landscape-detail-summary">
+        {{ totalProducts() }} {{ totalProducts() === 1 ? 'product' : 'products' }} across
+        {{ totalCompanies() }} {{ totalCompanies() === 1 ? 'company' : 'companies' }}
+      </p>
+      <ul class="landscape-ring-histogram" role="list">
+        @for (entry of ringHistogram(); track entry.phase) {
+          <li>
+            <button
+              type="button"
+              class="landscape-ring-row"
+              (click)="onRingRowClick(entry.phase)"
+              [attr.aria-label]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
+            >
+              <span class="landscape-ring-phase">{{ entry.phase }}</span>
+              <span class="landscape-ring-count">{{ entry.count }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</aside>

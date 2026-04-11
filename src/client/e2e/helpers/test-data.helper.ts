@@ -128,6 +128,32 @@ export async function createTestTrial(
   return data.id;
 }
 
+export async function createTestTrialPhase(
+  spaceId: string,
+  trialId: string,
+  phaseType: string,
+  startDate: string,
+  endDate?: string,
+): Promise<string> {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin
+    .from('trial_phases')
+    .insert({
+      space_id: spaceId,
+      created_by: getUserId(),
+      trial_id: trialId,
+      phase_type: phaseType,
+      start_date: startDate,
+      end_date: endDate ?? null,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create trial phase: ${error.message}`);
+
+  return data.id;
+}
+
 export async function createTestMarkerType(
   spaceId: string,
   name: string,

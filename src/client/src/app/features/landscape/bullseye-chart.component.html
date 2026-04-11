@@ -1,0 +1,140 @@
+<svg
+  viewBox="0 0 1000 1000"
+  preserveAspectRatio="xMidYMid meet"
+  role="img"
+  [attr.aria-label]="ariaLabel()"
+  class="bullseye-svg"
+  (click)="onBackgroundClick()"
+  (keydown.escape)="onBackgroundClick()"
+>
+  <desc>
+    Concentric rings represent development phases from Launched at the center to
+    Preclinical at the outer edge. Companies are arranged clockwise from the top.
+  </desc>
+
+  <!-- rings -->
+  @for (ring of rings(); track ring.devRank) {
+    <circle
+      [attr.cx]="cx"
+      [attr.cy]="cy"
+      [attr.r]="ring.radius"
+      fill="none"
+      [attr.stroke]="ring.isOuter ? '#94a3b8' : '#cbd5e1'"
+      [attr.stroke-width]="ring.isOuter ? 2 : 1.5"
+      [class.bullseye-ring-highlighted]="highlightedRing() === ring.phase"
+    />
+  }
+
+  <!-- spokes -->
+  @for (spoke of spokes(); track spoke.companyId) {
+    <line
+      [attr.x1]="cx"
+      [attr.y1]="cy"
+      [attr.x2]="spoke.x2"
+      [attr.y2]="spoke.y2"
+      stroke="#e2e8f0"
+      stroke-width="0.8"
+    />
+  }
+
+  <!-- center disc (drawn before the inner ring label so the label sits on top) -->
+  <circle
+    [attr.cx]="cx"
+    [attr.cy]="cy"
+    [attr.r]="innerRadius - 4"
+    fill="white"
+  />
+  <text
+    [attr.x]="cx"
+    [attr.y]="cy - 6"
+    text-anchor="middle"
+    fill="#0f172a"
+    font-size="18"
+    font-weight="700"
+    letter-spacing="0.5"
+  >
+    {{ taName() }}
+  </text>
+  <text
+    [attr.x]="cx"
+    [attr.y]="cy + 16"
+    text-anchor="middle"
+    fill="#64748b"
+    font-size="12"
+  >
+    {{ productCountSummary() }}
+  </text>
+
+  <!-- ring labels at 12 o'clock gutter. LAUNCHED is omitted — the center
+       disc with the TA name is a clearer visual anchor for the innermost
+       position than a redundant ring label. -->
+  @for (ring of rings(); track 'label-' + ring.devRank) {
+    @if (ring.phase !== 'LAUNCHED') {
+      <text
+        [attr.x]="cx + 8"
+        [attr.y]="ringLabelY(ring.radius)"
+        fill="#64748b"
+        font-size="13"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        letter-spacing="1.2"
+      >
+        {{ ring.phase }}
+      </text>
+    }
+  }
+
+  <!-- company labels outside outer rim -->
+  @for (label of companyLabels(); track label.id) {
+    <text
+      [attr.x]="label.x"
+      [attr.y]="label.y"
+      [attr.text-anchor]="label.anchor"
+      [attr.transform]="'rotate(' + label.rotate + ' ' + label.x + ' ' + label.y + ')'"
+      fill="#334155"
+      font-size="16"
+      font-weight="600"
+      letter-spacing="1.4"
+      dominant-baseline="middle"
+    >
+      {{ label.name }}
+    </text>
+  }
+
+  <!-- dots -->
+  @for (dot of dots(); track dot.product.id) {
+    <g class="bullseye-dot-group">
+      @if (selectedProductId() === dot.product.id) {
+        <circle
+          [attr.cx]="dot.x"
+          [attr.cy]="dot.y"
+          [attr.r]="dotRadius(dot) + 6"
+          fill="none"
+          stroke="#0d9488"
+          stroke-width="2"
+          pointer-events="none"
+        />
+      }
+      <circle
+        [attr.cx]="dot.x"
+        [attr.cy]="dot.y"
+        [attr.r]="dotRadius(dot)"
+        [attr.fill]="dotFill(dot)"
+        [attr.opacity]="dotOpacity(dot)"
+        stroke="white"
+        stroke-width="1.5"
+        tabindex="0"
+        role="button"
+        class="bullseye-dot"
+        [attr.aria-label]="dotAriaLabel(dot)"
+        [pTooltip]="dotTooltip(dot)"
+        tooltipPosition="top"
+        (click)="onDotClick($event, dot.product.id)"
+        (mouseenter)="onHoverStart(dot.product.id)"
+        (mouseleave)="onHoverEnd()"
+        (focus)="onHoverStart(dot.product.id)"
+        (blur)="onHoverEnd()"
+        (keydown)="onDotKeydown($event, dot.product.id)"
+      />
+    </g>
+  }
+</svg>

@@ -78,6 +78,20 @@ export class DashboardComponent {
     this.tenantId.set(params.get('tenantId') ?? '');
     this.spaceId.set(params.get('spaceId') ?? '');
 
+    // Seed filters from URL query params so deep links from the landscape
+    // bullseye ("Open in timeline") arrive pre-filtered. Accepts
+    // ?productIds=id1,id2 and ?therapeuticAreaIds=id1,id2 (comma-separated).
+    const queryParams = this.route.snapshot.queryParamMap;
+    const productIds = parseIdList(queryParams.get('productIds'));
+    const therapeuticAreaIds = parseIdList(queryParams.get('therapeuticAreaIds'));
+    if (productIds || therapeuticAreaIds) {
+      this.filters.update((f) => ({
+        ...f,
+        productIds: productIds ?? f.productIds,
+        therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
+      }));
+    }
+
     effect(() => {
       const data = this.dashboardData.value();
       if (!data || !data.companies.length) return;
@@ -167,4 +181,17 @@ export class DashboardComponent {
   retry(): void {
     this.dashboardData.reload();
   }
+}
+
+/**
+ * Parse a comma-separated list of UUIDs from a URL query parameter.
+ * Returns null if the input is empty/absent, or an array of IDs otherwise.
+ */
+function parseIdList(value: string | null): string[] | null {
+  if (!value) return null;
+  const ids = value
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return ids.length > 0 ? ids : null;
 }

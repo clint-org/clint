@@ -104,10 +104,13 @@ export class PhaseFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   readonly phaseTypeOptions = [
+    { label: 'Preclinical', value: 'PRECLIN' },
     { label: 'P1', value: 'P1' },
     { label: 'P2', value: 'P2' },
     { label: 'P3', value: 'P3' },
     { label: 'P4', value: 'P4' },
+    { label: 'Approved', value: 'APPROVED' },
+    { label: 'Launched', value: 'LAUNCHED' },
     { label: 'OBS', value: 'OBS' },
   ];
 

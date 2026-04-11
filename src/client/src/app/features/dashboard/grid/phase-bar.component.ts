@@ -4,10 +4,13 @@ import { TrialPhase } from '../../../core/models/trial.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 
 const DEFAULT_COLORS: Record<string, string> = {
+  PRECLIN: '#cbd5e1', // slate-300 — before first-in-human, dimmer than P1
   P1: '#94a3b8',
   P2: '#67e8f9',
   P3: '#2dd4bf',
   P4: '#a78bfa',
+  APPROVED: '#8b5cf6', // violet-500 — darker than P4 violet to differentiate
+  LAUNCHED: '#0d9488', // teal-600 — hero color for the strongest state
   OBS: '#fbbf24',
 };
 

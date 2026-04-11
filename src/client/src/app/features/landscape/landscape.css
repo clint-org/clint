@@ -1,0 +1,463 @@
+/* Landscape bullseye — component styles
+ * Tailwind handles most layout; this file holds styles that don't map
+ * cleanly to utility classes (SVG chart states, histogram rows, etc).
+ */
+
+/* =============================================================================
+ * Page layout — chart + detail panel grid
+ * ============================================================================= */
+
+.landscape-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 1.25rem;
+  height: 100%;
+  min-height: 0;
+  padding: 1rem 1.5rem 1.5rem;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .landscape-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+}
+
+/* Chart container uses CSS container queries so the square frame inside
+ * grows to fill the smaller of its two dimensions. This guarantees the
+ * bullseye reads as large as the viewport allows regardless of aspect
+ * ratio. */
+.landscape-chart-wrap {
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bullseye-chart-frame {
+  aspect-ratio: 1 / 1;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+}
+
+/* The Angular host element for app-bullseye-chart is inline by default and
+ * must be explicitly sized, otherwise the SVG inside falls back to its
+ * 300x150 intrinsic size regardless of CSS on the SVG itself. */
+.bullseye-chart-frame app-bullseye-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bullseye-chart-frame svg.bullseye-svg {
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  display: block;
+}
+
+.landscape-panel-wrap {
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* =============================================================================
+ * Bullseye chart — dot and ring states
+ * ============================================================================= */
+
+.bullseye-dot {
+  cursor: pointer;
+  transition: r 120ms ease-out, opacity 120ms ease-out;
+  outline: none;
+}
+
+.bullseye-dot:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bullseye-dot {
+    transition: none;
+  }
+}
+
+.bullseye-ring-highlighted {
+  stroke: #0d9488 !important;
+  stroke-width: 2.5 !important;
+}
+
+/* =============================================================================
+ * Detail panel
+ * ============================================================================= */
+
+.landscape-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.landscape-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.landscape-detail-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.landscape-detail-clear {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.landscape-detail-clear:hover {
+  color: #0f172a;
+}
+
+.landscape-detail-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.landscape-detail-generic {
+  margin: -0.125rem 0 0 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.landscape-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.landscape-detail-company-link {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.landscape-detail-company-link:hover {
+  color: #0d9488;
+}
+
+.landscape-detail-phase {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.landscape-phase-chip {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: #0d9488;
+  border-radius: 50%;
+}
+
+.landscape-phase-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0d9488;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+.landscape-detail-trial-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.landscape-detail-trial-row {
+  padding: 0;
+}
+
+.landscape-detail-trial-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.landscape-detail-trial-link:hover {
+  background: #f1f5f9;
+}
+
+.landscape-detail-trial-name {
+  font-size: 0.8125rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.landscape-detail-trial-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.landscape-detail-show-all {
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.landscape-detail-show-all:hover {
+  border-color: #0d9488;
+  color: #0d9488;
+}
+
+.landscape-detail-marker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.landscape-detail-marker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #334155;
+}
+
+.landscape-marker-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.landscape-detail-marker-date {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #64748b;
+  font-size: 0.6875rem;
+}
+
+.landscape-detail-actions {
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.landscape-detail-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.landscape-detail-empty-text {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.landscape-detail-summary {
+  font-size: 0.8125rem;
+  color: #334155;
+  margin: 0;
+}
+
+.landscape-ring-histogram {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.landscape-ring-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #334155;
+}
+
+.landscape-ring-row:hover {
+  background: #f1f5f9;
+}
+
+.landscape-ring-phase {
+  font-weight: 600;
+}
+
+.landscape-ring-count {
+  color: #64748b;
+}
+
+/* =============================================================================
+ * Loading skeleton
+ * ============================================================================= */
+
+.landscape-detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-line {
+  height: 0.75rem;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-line--lg {
+  height: 1.25rem;
+  width: 60%;
+}
+
+.skeleton-line--sm {
+  height: 0.625rem;
+  width: 40%;
+}
+
+.skeleton-block {
+  height: 3rem;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* =============================================================================
+ * Index page — TA card grid
+ * ============================================================================= */
+
+.landscape-index-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease-out;
+}
+
+.landscape-index-card:hover {
+  border-color: #0d9488;
+}
+
+.landscape-index-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.landscape-index-card-abbr {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.landscape-index-card-stats {
+  display: flex;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: #475569;
+  margin-top: 0.25rem;
+}
+
+.landscape-index-card-sep {
+  color: #cbd5e1;
+}
+
+.landscape-index-card-phase {
+  font-size: 0.75rem;
+  color: #0f172a;
+}
+
+.landscape-index-card-phase strong {
+  color: #0d9488;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.landscape-index-card-phase--empty {
+  color: #94a3b8;
+}
+
+.landscape-index-card-warning {
+  font-size: 0.6875rem;
+  color: #b45309;
+  margin-top: 0.125rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.375rem;
+}
