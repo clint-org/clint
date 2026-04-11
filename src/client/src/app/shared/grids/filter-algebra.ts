@@ -67,6 +67,7 @@ function matchFilter(raw: unknown, filter: FilterValue): boolean {
         case 'lt':
           return raw < filter.value;
       }
+      break;
     }
     case 'date': {
       if (raw == null) return false;
