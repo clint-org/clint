@@ -58,7 +58,7 @@ export class MarkerTypeFormComponent implements OnInit {
   fillStyle: MarkerType['fill_style'] = 'filled';
   color = '#14b8a6';
   icon = '';
-  displayOrder = 0;
+  displayOrder: number | null = 0;
   saving = signal(false);
   error = signal<string | null>(null);
   nameBlurred = signal(false);
@@ -92,7 +92,7 @@ export class MarkerTypeFormComponent implements OnInit {
         fill_style: this.fillStyle,
         color: this.color,
         icon: this.icon || null,
-        display_order: this.displayOrder,
+        display_order: this.displayOrder ?? 0,
       };
 
       const existing = this.markerType();
@@ -104,11 +104,11 @@ export class MarkerTypeFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      this.error.set(
-        e instanceof Error
+      const message =
+        e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
           ? e.message
-          : 'Could not save marker type. Check your connection and try again.'
-      );
+          : 'Could not save marker type. Check your connection and try again.';
+      this.error.set(message);
     } finally {
       this.saving.set(false);
     }
