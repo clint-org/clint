@@ -10,7 +10,6 @@ import { Textarea } from 'primeng/textarea';
 import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { Fieldset } from 'primeng/fieldset';
 
 import { Trial } from '../../../core/models/trial.model';
 import { Product } from '../../../core/models/product.model';
@@ -21,6 +20,7 @@ import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.
 import { CtgovSyncService } from '../../../core/services/ctgov-sync.service';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { SectionCardComponent } from '../../../shared/components/section-card.component';
 
 @Component({
   selector: 'app-trial-form',
@@ -36,9 +36,9 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     Checkbox,
     ButtonModule,
     MessageModule,
-    Fieldset,
     FormFieldComponent,
     FormActionsComponent,
+    SectionCardComponent,
   ],
   templateUrl: './trial-form.component.html',
 })

@@ -6,14 +6,21 @@ import { ButtonModule } from 'primeng/button';
   standalone: true,
   imports: [ButtonModule],
   template: `
-    <div class="flex justify-end gap-3">
+    <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
       <p-button
         label="Cancel"
         severity="secondary"
         [outlined]="true"
+        size="small"
         (onClick)="cancelled.emit()"
       />
-      <p-button [label]="submitLabel()" type="submit" [loading]="loading()" />
+      <p-button
+        [label]="submitLabel()"
+        type="submit"
+        [outlined]="true"
+        size="small"
+        [loading]="loading()"
+      />
     </div>
   `,
 })

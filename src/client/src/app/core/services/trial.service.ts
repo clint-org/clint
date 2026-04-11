@@ -25,6 +25,16 @@ export class TrialService {
     return data as Trial[];
   }
 
+  async listBySpace(spaceId: string): Promise<Trial[]> {
+    const { data, error } = await this.supabase.client
+      .from('trials')
+      .select(TRIAL_SELECT)
+      .eq('space_id', spaceId)
+      .order('display_order');
+    if (error) throw error;
+    return data as Trial[];
+  }
+
   async getById(id: string): Promise<Trial> {
     const { data, error } = await this.supabase.client
       .from('trials')

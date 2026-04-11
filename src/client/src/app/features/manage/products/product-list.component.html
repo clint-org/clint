@@ -1,187 +1,109 @@
-<div class="mx-auto max-w-4xl p-6">
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-800">Products</h1>
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Products"
+  [count]="rows().length"
+  [subtitle]="
+    companyLabel()
+      ? 'Filtered to ' + companyLabel()
+      : 'Drug programs being tracked. Click a product to drill into its trials.'
+  "
+>
+  <div actions>
+    @if (companyLabel()) {
+      <p-button
+        label="Clear filter"
+        icon="fa-solid fa-xmark"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        (onClick)="clearFilter()"
+      />
+    }
     <p-button
-      label="Add Product"
+      label="Add product"
       icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
       size="small"
       (onClick)="openCreateModal()"
     />
   </div>
 
   <p-table
-    [value]="products()"
+    styleClass="manage-table"
+    [value]="rows()"
     [loading]="loading()"
-    [scrollable]="true"
-    [tableStyle]="{ 'min-width': '50rem' }"
+    [tableStyle]="{ 'min-width': '56rem' }"
   >
     <ng-template #header>
       <tr>
-        <th style="width: 3rem"></th>
         <th>Name</th>
-        <th>Generic Name</th>
+        <th>Generic</th>
         <th>Company</th>
-        <th>Order</th>
-        <th class="text-right">Actions</th>
+        <th class="col-num">Trials</th>
+        <th class="col-num">Order</th>
+        <th class="col-actions"></th>
       </tr>
     </ng-template>
-    <ng-template #body let-product>
+    <ng-template #body let-row>
       <tr>
         <td>
-          <p-button
-            [icon]="
-              expandedProductId() === product.id
-                ? 'fa-solid fa-chevron-down'
-                : 'fa-solid fa-chevron-right'
-            "
-            [text]="true"
-            [rounded]="true"
-            size="small"
-            (onClick)="toggleTrials(product)"
-            [attr.aria-label]="
-              expandedProductId() === product.id ? 'Collapse trials' : 'Expand trials'
-            "
-          />
+          <button
+            type="button"
+            class="text-left text-teal-700 hover:text-teal-800 hover:underline focus:outline-none focus:ring-1 focus:ring-teal-500"
+            (click)="openTrials(row.product.id)"
+          >
+            {{ row.product.name }}
+          </button>
         </td>
-        <td class="font-medium">{{ product.name }}</td>
-        <td class="text-slate-500">{{ product.generic_name ?? '-' }}</td>
-        <td class="text-slate-500">{{ getCompanyName(product.company_id) }}</td>
-        <td class="text-slate-500 tabular-nums">{{ product.display_order }}</td>
-        <td class="text-right">
-          <p-button
-            label="Edit"
-            [text]="true"
-            size="small"
-            (onClick)="openEditModal(product)"
-            class="mr-1"
-          />
-          <p-button
-            label="Delete"
-            [text]="true"
-            severity="danger"
-            size="small"
-            (onClick)="confirmDelete(product)"
-          />
+        <td class="col-identifier">{{ row.product.generic_name ?? '--' }}</td>
+        <td class="col-secondary">{{ row.companyName }}</td>
+        <td class="col-num">
+          @if (row.trialCount > 0) {
+            <button
+              type="button"
+              class="tabular-nums text-teal-700 hover:text-teal-800 hover:underline focus:outline-none focus:ring-1 focus:ring-teal-500"
+              (click)="openTrials(row.product.id)"
+            >
+              {{ row.trialCount }}
+              <i class="fa-solid fa-arrow-right text-[9px] ml-0.5 opacity-60"></i>
+            </button>
+          } @else {
+            <span class="tabular-nums text-slate-300">0</span>
+          }
+        </td>
+        <td class="col-num">{{ row.product.display_order }}</td>
+        <td class="col-actions">
+          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.product.name" />
         </td>
       </tr>
-      @if (expandedProductId() === product.id) {
-        <tr>
-          <td colspan="6" class="!p-0">
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4">
-              <div class="mb-3 flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-slate-700">Trials for {{ product.name }}</h3>
-                <p-button
-                  label="Add Trial"
-                  icon="fa-solid fa-plus"
-                  size="small"
-                  severity="primary"
-                  (onClick)="openAddTrialModal(product.id)"
-                />
-              </div>
-
-              @if (trialsLoading()) {
-                <p class="text-sm text-slate-500 py-2">Loading trials...</p>
-              } @else if (productTrials().length === 0) {
-                <p class="text-sm text-slate-500 py-2">No trials for this product yet.</p>
-              } @else {
-                @if (trialDeleteError()) {
-                  <p-message severity="error" [closable]="false" class="mb-3">{{
-                    trialDeleteError()
-                  }}</p-message>
-                }
-                <p-table
-                  [value]="productTrials()"
-                  [scrollable]="true"
-                  [tableStyle]="{ 'min-width': '40rem' }"
-                >
-                  <ng-template #header>
-                    <tr>
-                      <th>Name</th>
-                      <th>Identifier</th>
-                      <th>Status</th>
-                      <th>Phases</th>
-                      <th>Markers</th>
-                      <th class="text-right">Actions</th>
-                    </tr>
-                  </ng-template>
-                  <ng-template #body let-trial>
-                    <tr class="cursor-pointer hover:bg-teal-50/50" (click)="navigateToTrial(trial)">
-                      <td class="font-medium text-teal-700">{{ trial.name }}</td>
-                      <td class="text-slate-500">{{ trial.identifier ?? '-' }}</td>
-                      <td class="text-slate-500">{{ trial.status ?? '-' }}</td>
-                      <td class="text-slate-500 tabular-nums">
-                        {{ trial.trial_phases?.length ?? 0 }}
-                      </td>
-                      <td class="text-slate-500 tabular-nums">
-                        {{ trial.trial_markers?.length ?? 0 }}
-                      </td>
-                      <td class="text-right" (click)="$event.stopPropagation()">
-                        <p-button
-                          label="Edit"
-                          [text]="true"
-                          size="small"
-                          (onClick)="openEditTrialModal(trial)"
-                          class="mr-1"
-                        />
-                        <p-button
-                          label="Detail"
-                          [text]="true"
-                          size="small"
-                          (onClick)="navigateToTrial(trial)"
-                          class="mr-1"
-                        />
-                        <p-button
-                          label="Delete"
-                          [text]="true"
-                          severity="danger"
-                          size="small"
-                          (onClick)="confirmDeleteTrial(trial)"
-                        />
-                      </td>
-                    </tr>
-                  </ng-template>
-                </p-table>
-              }
-            </div>
-          </td>
-        </tr>
-      }
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="text-center text-sm text-slate-500 py-8">
-          No products found. Add one to get started.
+        <td colspan="6">
+          @if (companyLabel()) {
+            No products for {{ companyLabel() }} yet.
+          } @else {
+            No products yet. Add one to get started.
+          }
         </td>
       </tr>
     </ng-template>
   </p-table>
 
   @if (deleteError()) {
-    <p-message severity="error" [closable]="false" class="mt-4">{{ deleteError() }}</p-message>
+    <p-message severity="error" [closable]="false" styleClass="mt-4">
+      {{ deleteError() }}
+    </p-message>
   }
-</div>
+</app-manage-page-shell>
 
 <p-dialog
-  [header]="editingProduct() ? 'Edit Product' : 'Add Product'"
+  [header]="editingProduct() ? 'Edit product' : 'Add product'"
   [(visible)]="modalOpen"
   [modal]="true"
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
   <app-product-form [product]="editingProduct()" (saved)="onSaved()" (cancelled)="closeModal()" />
-</p-dialog>
-
-<p-dialog
-  [header]="editingTrial() ? 'Edit Trial' : 'Add Trial'"
-  [(visible)]="trialModalOpen"
-  [modal]="true"
-  [style]="{ width: '40rem' }"
-  (onHide)="closeTrialModal()"
->
-  <app-trial-form
-    [trial]="editingTrial()"
-    [preselectedProductId]="addingTrialForProductId()"
-    (saved)="onTrialSaved()"
-    (cancelled)="closeTrialModal()"
-  />
 </p-dialog>

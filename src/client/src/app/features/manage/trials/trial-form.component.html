@@ -6,131 +6,128 @@
     <p-message severity="success" [closable]="true">{{ syncSuccess() }}</p-message>
   }
 
-  <!-- Basic Info -->
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-    <app-form-field label="Name" fieldId="trial-name" [required]="true" spacing="sm:col-span-2">
-      <input
-        pInputText
-        id="trial-name"
-        class="w-full mt-1"
-        [(ngModel)]="name"
-        name="name"
-        required
-        placeholder="e.g. KEYNOTE-522"
-      />
-    </app-form-field>
-
-    <app-form-field label="NCT Identifier" fieldId="trial-identifier" spacing="">
-      <div class="flex gap-2 mt-1">
+  <app-section-card title="Basic info">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+      <app-form-field label="Name" fieldId="trial-name" [required]="true" spacing="sm:col-span-2">
         <input
           pInputText
-          id="trial-identifier"
-          class="flex-1"
-          [(ngModel)]="identifier"
-          name="identifier"
-          placeholder="e.g. NCT12345678"
+          id="trial-name"
+          class="w-full"
+          [(ngModel)]="name"
+          name="name"
+          required
+          placeholder="e.g. KEYNOTE-522"
         />
-        @if (isNctId) {
-          <p-button
-            label="Sync from CT.gov"
-            icon="fa-solid fa-rotate"
-            size="small"
-            [loading]="syncing()"
-            (onClick)="syncFromCtgov()"
+      </app-form-field>
+
+      <app-form-field label="NCT identifier" fieldId="trial-identifier" spacing="">
+        <div class="flex gap-2">
+          <input
+            pInputText
+            id="trial-identifier"
+            class="flex-1"
+            [(ngModel)]="identifier"
+            name="identifier"
+            placeholder="NCT12345678"
           />
+          @if (isNctId) {
+            <p-button
+              label="Sync from CT.gov"
+              icon="fa-solid fa-rotate"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              [loading]="syncing()"
+              (onClick)="syncFromCtgov()"
+            />
+          }
+        </div>
+        @if (ctgovLastSyncedAt) {
+          <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+            Last synced {{ ctgovLastSyncedAt | date: 'medium' }}
+          </p>
         }
-      </div>
-      @if (ctgovLastSyncedAt) {
-        <p class="mt-1 text-xs text-slate-400">
-          Last synced: {{ ctgovLastSyncedAt | date: 'medium' }}
-        </p>
-      }
-    </app-form-field>
+      </app-form-field>
 
-    <app-form-field label="Status" fieldId="trial-status" spacing="">
-      <p-select
-        inputId="trial-status"
-        [options]="statusOptions"
-        [(ngModel)]="status"
-        name="status"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Select status"
-        [showClear]="true"
-        [style]="{ width: '100%' }"
-        class="mt-1"
-      />
-    </app-form-field>
+      <app-form-field label="Status" fieldId="trial-status" spacing="">
+        <p-select
+          inputId="trial-status"
+          [options]="statusOptions"
+          [(ngModel)]="status"
+          name="status"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status"
+          [showClear]="true"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
 
-    <app-form-field label="Product" fieldId="trial-product" spacing="">
-      <p-select
-        inputId="trial-product"
-        [options]="products()"
-        [(ngModel)]="productId"
-        name="productId"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Select product"
-        [showClear]="true"
-        [style]="{ width: '100%' }"
-        class="mt-1"
-      />
-    </app-form-field>
+      <app-form-field label="Product" fieldId="trial-product" spacing="">
+        <p-select
+          inputId="trial-product"
+          [options]="products()"
+          [(ngModel)]="productId"
+          name="productId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Select product"
+          [showClear]="true"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
 
-    <app-form-field label="Therapeutic Area" fieldId="trial-ta" spacing="">
-      <p-select
-        inputId="trial-ta"
-        [options]="therapeuticAreas()"
-        [(ngModel)]="therapeuticAreaId"
-        name="therapeuticAreaId"
-        optionLabel="name"
-        optionValue="id"
-        placeholder="Select therapeutic area"
-        [showClear]="true"
-        [style]="{ width: '100%' }"
-        class="mt-1"
-      />
-    </app-form-field>
+      <app-form-field label="Therapeutic area" fieldId="trial-ta" spacing="">
+        <p-select
+          inputId="trial-ta"
+          [options]="therapeuticAreas()"
+          [(ngModel)]="therapeuticAreaId"
+          name="therapeuticAreaId"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Select therapeutic area"
+          [showClear]="true"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
 
-    <app-form-field label="Sample Size" fieldId="trial-sample-size" spacing="">
-      <p-inputnumber
-        inputId="trial-sample-size"
-        [(ngModel)]="sampleSize"
-        name="sampleSize"
-        [min]="0"
-        [style]="{ width: '100%' }"
-        class="mt-1"
-      />
-    </app-form-field>
+      <app-form-field label="Sample size" fieldId="trial-sample-size" spacing="">
+        <p-inputnumber
+          inputId="trial-sample-size"
+          [(ngModel)]="sampleSize"
+          name="sampleSize"
+          [min]="0"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
 
-    <app-form-field label="Display Order" fieldId="trial-display-order" spacing="">
-      <p-inputnumber
-        inputId="trial-display-order"
-        [(ngModel)]="displayOrder"
-        name="displayOrder"
-        [min]="0"
-        [style]="{ width: '100%' }"
-        class="mt-1"
-      />
-    </app-form-field>
+      <app-form-field label="Display order" fieldId="trial-display-order" spacing="">
+        <p-inputnumber
+          inputId="trial-display-order"
+          [(ngModel)]="displayOrder"
+          name="displayOrder"
+          [min]="0"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
 
-    <app-form-field label="Notes" fieldId="trial-notes" spacing="sm:col-span-2">
-      <textarea
-        pTextarea
-        id="trial-notes"
-        [(ngModel)]="notes"
-        name="notes"
-        rows="2"
-        class="w-full mt-1"
-        placeholder="Additional notes"
-      ></textarea>
-    </app-form-field>
-  </div>
+      <app-form-field label="Notes" fieldId="trial-notes" spacing="sm:col-span-2">
+        <textarea
+          pTextarea
+          id="trial-notes"
+          [(ngModel)]="notes"
+          name="notes"
+          rows="2"
+          class="w-full"
+          placeholder="Additional notes"
+        ></textarea>
+      </app-form-field>
+    </div>
+  </app-section-card>
 
-  <!-- Study Design -->
-  <p-fieldset legend="Study Design" [toggleable]="true" [collapsed]="true">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <app-form-field label="Study Type" fieldId="trial-study-type" spacing="">
+  <app-section-card title="Study design">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+      <app-form-field label="Study type" fieldId="trial-study-type" spacing="">
         <p-select
           inputId="trial-study-type"
           [options]="studyTypeOptions"
@@ -141,7 +138,6 @@
           placeholder="Select study type"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
       <app-form-field label="Phase" fieldId="trial-phase" spacing="">
@@ -155,7 +151,6 @@
           placeholder="Select phase"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
       <app-form-field label="Masking" fieldId="trial-masking" spacing="">
@@ -169,10 +164,9 @@
           placeholder="Select masking"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
-      <app-form-field label="Primary Purpose" fieldId="trial-purpose" spacing="">
+      <app-form-field label="Primary purpose" fieldId="trial-purpose" spacing="">
         <p-select
           inputId="trial-purpose"
           [options]="purposeOptions"
@@ -183,35 +177,33 @@
           placeholder="Select purpose"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
-      <app-form-field label="Intervention Type" fieldId="trial-intervention-type" spacing="">
+      <app-form-field label="Intervention type" fieldId="trial-intervention-type" spacing="">
         <input
           pInputText
           id="trial-intervention-type"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="interventionType"
           name="interventionType"
           placeholder="e.g. Drug, Biologic, Device"
         />
       </app-form-field>
-      <app-form-field label="Intervention Name" fieldId="trial-intervention-name" spacing="">
+      <app-form-field label="Intervention name" fieldId="trial-intervention-name" spacing="">
         <input
           pInputText
           id="trial-intervention-name"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="interventionName"
           name="interventionName"
           placeholder="Drug/device name"
         />
       </app-form-field>
     </div>
-  </p-fieldset>
+  </app-section-card>
 
-  <!-- Eligibility -->
-  <p-fieldset legend="Eligibility" [toggleable]="true" [collapsed]="true">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  <app-section-card title="Eligibility">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       <app-form-field label="Sex" fieldId="trial-sex" spacing="">
         <p-select
           inputId="trial-sex"
@@ -223,91 +215,93 @@
           placeholder="Select sex"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
-      <app-form-field label="Min Age" fieldId="trial-min-age" spacing="">
+      <app-form-field label="Min age" fieldId="trial-min-age" spacing="">
         <input
           pInputText
           id="trial-min-age"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="eligibilityMinAge"
           name="eligibilityMinAge"
           placeholder="e.g. 18 Years"
         />
       </app-form-field>
-      <app-form-field label="Max Age" fieldId="trial-max-age" spacing="">
+      <app-form-field label="Max age" fieldId="trial-max-age" spacing="">
         <input
           pInputText
           id="trial-max-age"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="eligibilityMaxAge"
           name="eligibilityMaxAge"
           placeholder="e.g. 65 Years"
         />
       </app-form-field>
-      <div class="flex items-center pt-6">
+      <div class="flex items-end pb-1">
         <p-checkbox
           [(ngModel)]="acceptsHealthyVolunteers"
           name="acceptsHealthyVolunteers"
           [binary]="true"
           inputId="trial-healthy"
         />
-        <label for="trial-healthy" class="ml-2 text-sm text-slate-700"
-          >Accepts Healthy Volunteers</label
+        <label
+          for="trial-healthy"
+          class="ml-2 text-[11px] font-medium uppercase tracking-wider text-slate-600"
         >
+          Accepts healthy volunteers
+        </label>
       </div>
     </div>
-  </p-fieldset>
+  </app-section-card>
 
-  <!-- Timeline -->
-  <p-fieldset legend="Timeline" [toggleable]="true" [collapsed]="true">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <app-form-field label="Start Date" fieldId="trial-start-date" spacing="">
+  <app-section-card title="Timeline">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+      <app-form-field label="Start date" fieldId="trial-start-date" spacing="">
         <input
+          pInputText
           type="date"
           id="trial-start-date"
-          class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          class="w-full"
           [(ngModel)]="startDateStr"
           name="startDateStr"
         />
       </app-form-field>
-      <app-form-field label="Primary Completion Date" fieldId="trial-pcd" spacing="">
+      <app-form-field label="Primary completion date" fieldId="trial-pcd" spacing="">
         <input
+          pInputText
           type="date"
           id="trial-pcd"
-          class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          class="w-full"
           [(ngModel)]="primaryCompletionDateStr"
           name="primaryCompletionDateStr"
         />
       </app-form-field>
-      <app-form-field label="Lead Sponsor" fieldId="trial-lead-sponsor" spacing="">
+      <app-form-field label="Lead sponsor" fieldId="trial-lead-sponsor" spacing="">
         <input
           pInputText
           id="trial-lead-sponsor"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="leadSponsor"
           name="leadSponsor"
         />
       </app-form-field>
-      <app-form-field label="Recruitment Status" fieldId="trial-recruitment" spacing="">
+      <app-form-field label="Recruitment status" fieldId="trial-recruitment" spacing="">
         <input
           pInputText
           id="trial-recruitment"
-          class="w-full mt-1"
+          class="w-full"
           [(ngModel)]="recruitmentStatus"
           name="recruitmentStatus"
           placeholder="e.g. Recruiting, Completed"
         />
       </app-form-field>
     </div>
-  </p-fieldset>
+  </app-section-card>
 
-  <!-- Regulatory -->
-  <p-fieldset legend="Regulatory" [toggleable]="true" [collapsed]="true">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  <app-section-card title="Regulatory">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       <app-form-field
-        label="FDA Designations"
+        label="FDA designations"
         fieldId="trial-fda-designations"
         spacing="sm:col-span-2"
       >
@@ -321,13 +315,17 @@
           placeholder="Select designations"
           [showClear]="true"
           [style]="{ width: '100%' }"
-          class="mt-1"
         />
       </app-form-field>
-      <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 sm:col-span-2">
         <div class="flex items-center">
           <p-checkbox [(ngModel)]="hasDmc" name="hasDmc" [binary]="true" inputId="trial-dmc" />
-          <label for="trial-dmc" class="ml-2 text-sm text-slate-700">Has DMC</label>
+          <label
+            for="trial-dmc"
+            class="ml-2 text-[11px] font-medium uppercase tracking-wider text-slate-600"
+          >
+            Has DMC
+          </label>
         </div>
         <div class="flex items-center">
           <p-checkbox
@@ -336,7 +334,12 @@
             [binary]="true"
             inputId="trial-fda-drug"
           />
-          <label for="trial-fda-drug" class="ml-2 text-sm text-slate-700">FDA Regulated Drug</label>
+          <label
+            for="trial-fda-drug"
+            class="ml-2 text-[11px] font-medium uppercase tracking-wider text-slate-600"
+          >
+            FDA regulated drug
+          </label>
         </div>
         <div class="flex items-center">
           <p-checkbox
@@ -345,16 +348,19 @@
             [binary]="true"
             inputId="trial-fda-device"
           />
-          <label for="trial-fda-device" class="ml-2 text-sm text-slate-700"
-            >FDA Regulated Device</label
+          <label
+            for="trial-fda-device"
+            class="ml-2 text-[11px] font-medium uppercase tracking-wider text-slate-600"
           >
+            FDA regulated device
+          </label>
         </div>
       </div>
     </div>
-  </p-fieldset>
+  </app-section-card>
 
   <app-form-actions
-    [submitLabel]="trial() ? 'Update Trial' : 'Create Trial'"
+    [submitLabel]="trial() ? 'Update trial' : 'Create trial'"
     [loading]="saving()"
     (cancelled)="cancelled.emit()"
   />

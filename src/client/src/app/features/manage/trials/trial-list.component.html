@@ -1,0 +1,103 @@
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Trials"
+  [count]="rows().length"
+  [subtitle]="
+    productLabel() ? 'Filtered to ' + productLabel() : 'Every trial tracked in this space.'
+  "
+>
+  <div actions>
+    @if (productLabel()) {
+      <p-button
+        label="Clear filter"
+        icon="fa-solid fa-xmark"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        (onClick)="clearFilter()"
+      />
+    }
+    <p-button
+      label="Add trial"
+      icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
+  </div>
+
+  @if (error()) {
+    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
+  }
+
+  <p-table
+    styleClass="manage-table"
+    [value]="rows()"
+    [loading]="loading()"
+    [tableStyle]="{ 'min-width': '72rem' }"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Trial</th>
+        <th>NCT ID</th>
+        <th>Product</th>
+        <th>Company</th>
+        <th>Status</th>
+        <th class="col-num">Phases</th>
+        <th class="col-num">Markers</th>
+        <th class="col-actions"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-row>
+      <tr>
+        <td>
+          <button
+            type="button"
+            class="text-left text-teal-700 hover:text-teal-800 hover:underline focus:outline-none focus:ring-1 focus:ring-teal-500"
+            (click)="openDetail(row.trial)"
+          >
+            {{ row.trial.name }}
+          </button>
+        </td>
+        <td class="col-identifier">{{ row.trial.identifier ?? '--' }}</td>
+        <td class="col-secondary">{{ row.productName }}</td>
+        <td class="col-secondary">{{ row.companyName }}</td>
+        <td>
+          <app-status-tag [label]="row.trial.status" />
+        </td>
+        <td class="col-num">{{ row.phaseCount }}</td>
+        <td class="col-num">{{ row.markerCount }}</td>
+        <td class="col-actions">
+          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.trial.name" />
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="8">
+          @if (productLabel()) {
+            No trials for {{ productLabel() }} yet.
+          } @else {
+            No trials tracked yet. Add one to get started.
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</app-manage-page-shell>
+
+<p-dialog
+  [header]="editingTrial() ? 'Edit trial' : 'Add trial'"
+  [(visible)]="modalOpen"
+  [modal]="true"
+  [style]="{ width: '40rem' }"
+  (onHide)="closeModal()"
+>
+  <app-trial-form
+    [trial]="editingTrial()"
+    [preselectedProductId]="productFilter()"
+    (saved)="onSaved()"
+    (cancelled)="closeModal()"
+  />
+</p-dialog>

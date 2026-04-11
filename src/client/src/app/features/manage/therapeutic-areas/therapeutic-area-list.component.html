@@ -1,65 +1,58 @@
-<div class="mx-auto max-w-4xl p-6">
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-800">Therapeutic Areas</h1>
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Therapeutic areas"
+  [count]="areas().length"
+  subtitle="Indication taxonomy used to classify trials in this space."
+>
+  <div actions>
     <p-button
-      label="Add Therapeutic Area"
+      label="Add area"
       icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
       size="small"
       (onClick)="openCreateModal()"
     />
   </div>
 
   <p-table
+    styleClass="manage-table"
     [value]="areas()"
     [loading]="loading()"
-    [scrollable]="true"
-    [tableStyle]="{ 'min-width': '30rem' }"
+    [tableStyle]="{ 'min-width': '36rem' }"
   >
     <ng-template #header>
       <tr>
         <th>Name</th>
         <th>Abbreviation</th>
-        <th class="text-right">Actions</th>
+        <th class="col-actions"></th>
       </tr>
     </ng-template>
     <ng-template #body let-area>
       <tr>
-        <td class="font-medium">{{ area.name }}</td>
-        <td class="text-slate-500">{{ area.abbreviation ?? '-' }}</td>
-        <td class="text-right">
-          <p-button
-            label="Edit"
-            [text]="true"
-            size="small"
-            (onClick)="openEditModal(area)"
-            class="mr-1"
-          />
-          <p-button
-            label="Delete"
-            [text]="true"
-            severity="danger"
-            size="small"
-            (onClick)="confirmDelete(area)"
-          />
+        <td>{{ area.name }}</td>
+        <td class="col-identifier">{{ area.abbreviation ?? '--' }}</td>
+        <td class="col-actions">
+          <app-row-actions [items]="rowMenu(area)" [ariaLabel]="'Actions for ' + area.name" />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="3" class="text-center text-sm text-slate-500 py-8">
-          No therapeutic areas found. Add one to get started.
-        </td>
+        <td colspan="3">No therapeutic areas yet. Add one to get started.</td>
       </tr>
     </ng-template>
   </p-table>
 
   @if (deleteError()) {
-    <p-message severity="error" [closable]="false" class="mt-4">{{ deleteError() }}</p-message>
+    <p-message severity="error" [closable]="false" styleClass="mt-4">
+      {{ deleteError() }}
+    </p-message>
   }
-</div>
+</app-manage-page-shell>
 
 <p-dialog
-  [header]="editingArea() ? 'Edit Therapeutic Area' : 'Add Therapeutic Area'"
+  [header]="editingArea() ? 'Edit therapeutic area' : 'Add therapeutic area'"
   [(visible)]="modalOpen"
   [modal]="true"
   [style]="{ width: '32rem' }"

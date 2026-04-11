@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -9,6 +10,10 @@ import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerTypeFormComponent } from './marker-type-form.component';
 import { ColorSwatchComponent } from '../../../shared/components/color-swatch.component';
+import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { StatusTagComponent } from '../../../shared/components/status-tag.component';
+import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 @Component({
   selector: 'app-marker-type-list',
@@ -20,12 +25,16 @@ import { ColorSwatchComponent } from '../../../shared/components/color-swatch.co
     MessageModule,
     MarkerTypeFormComponent,
     ColorSwatchComponent,
+    ManagePageShellComponent,
+    RowActionsComponent,
+    StatusTagComponent,
   ],
   templateUrl: './marker-type-list.component.html',
 })
 export class MarkerTypeListComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);
   private route = inject(ActivatedRoute);
+  private confirmation = inject(ConfirmationService);
   spaceId = '';
 
   markerTypes = signal<MarkerType[]>([]);
@@ -34,9 +43,33 @@ export class MarkerTypeListComponent implements OnInit {
   modalOpen = signal(false);
   editingType = signal<MarkerType | null>(null);
 
+  // Stable menu-item references per row id (see CompanyListComponent comment).
+  private readonly menuCache = new Map<string, MenuItem[]>();
+
   ngOnInit(): void {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.loadMarkerTypes();
+  }
+
+  rowMenu(mt: MarkerType): MenuItem[] {
+    const cached = this.menuCache.get(mt.id);
+    if (cached) return cached;
+    const items: MenuItem[] = [
+      {
+        label: 'Edit',
+        icon: 'fa-solid fa-pen',
+        command: () => this.openEditModal(mt),
+      },
+      { separator: true },
+      {
+        label: 'Delete',
+        icon: 'fa-solid fa-trash',
+        styleClass: 'row-actions-danger',
+        command: () => this.deleteType(mt.id),
+      },
+    ];
+    this.menuCache.set(mt.id, items);
+    return items;
   }
 
   openCreateModal(): void {
@@ -61,6 +94,7 @@ export class MarkerTypeListComponent implements OnInit {
     try {
       const types = await this.markerTypeService.list(this.spaceId);
       this.markerTypes.set(types);
+      this.menuCache.clear();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load marker types');
     } finally {
@@ -74,12 +108,11 @@ export class MarkerTypeListComponent implements OnInit {
   }
 
   async deleteType(id: string): Promise<void> {
-    if (
-      !confirm(
-        'Delete this marker type? Any markers using it will lose their type. This cannot be undone.'
-      )
-    )
-      return;
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete marker type',
+      message: 'Any existing markers using this type will lose their type. This cannot be undone.',
+    });
+    if (!ok) return;
     try {
       await this.markerTypeService.delete(id);
       await this.loadMarkerTypes();

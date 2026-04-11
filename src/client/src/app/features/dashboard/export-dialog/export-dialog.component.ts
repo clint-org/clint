@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { SelectButton } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { Company } from '../../../core/models/company.model';
@@ -12,7 +13,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
 @Component({
   selector: 'app-export-dialog',
   standalone: true,
-  imports: [FormsModule, Dialog, SelectButton, ButtonModule, ProgressSpinner],
+  imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, ProgressSpinner],
   template: `
     <p-dialog
       header="Export to PowerPoint"
@@ -23,7 +24,11 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
     >
       <div class="flex flex-col gap-4">
         <div>
-          <span class="block text-sm font-medium text-slate-700 mb-2">Zoom Level</span>
+          <span
+            class="mb-2 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500"
+          >
+            Zoom level
+          </span>
           <p-selectbutton
             [options]="zoomOptions"
             [(ngModel)]="selectedZoom"
@@ -37,23 +42,33 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
           <div class="flex items-center justify-center gap-2 py-2">
             <p-progressspinner
               strokeWidth="4"
-              [style]="{ width: '1.5rem', height: '1.5rem' }"
+              [style]="{ width: '1.25rem', height: '1.25rem' }"
               aria-label="Exporting to PowerPoint"
             />
-            <span class="text-sm text-slate-500">Generating PowerPoint...</span>
+            <span class="text-[11px] uppercase tracking-wider text-slate-400">
+              Generating PowerPoint
+            </span>
           </div>
         }
 
         @if (error()) {
-          <p class="text-sm text-red-600">{{ error() }}</p>
+          <p-message severity="error" [closable]="false">{{ error() }}</p-message>
         }
       </div>
 
       <ng-template #footer>
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closed.emit()" />
         <p-button
-          label="Export to PowerPoint"
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="closed.emit()"
+        />
+        <p-button
+          label="Export"
           icon="fa-solid fa-file-powerpoint"
+          [outlined]="true"
+          size="small"
           (onClick)="doExport()"
           [loading]="exporting()"
         />

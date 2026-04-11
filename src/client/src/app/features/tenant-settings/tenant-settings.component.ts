@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -10,12 +11,15 @@ import { MessageModule } from 'primeng/message';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { TenantService } from '../../core/services/tenant.service';
+import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { RowActionsComponent } from '../../shared/components/row-actions.component';
+import { StatusTagComponent } from '../../shared/components/status-tag.component';
+import { confirmDelete } from '../../shared/utils/confirm-delete';
 
 @Component({
   selector: 'app-tenant-settings',
   standalone: true,
   imports: [
-    RouterLink,
     FormsModule,
     TableModule,
     ButtonModule,
@@ -23,112 +27,146 @@ import { TenantService } from '../../core/services/tenant.service';
     InputText,
     Select,
     MessageModule,
+    ManagePageShellComponent,
+    RowActionsComponent,
+    StatusTagComponent,
   ],
   template: `
-    <div class="min-h-screen bg-slate-50">
-      <div class="bg-white border-b border-slate-200">
-        <div class="h-0.5 bg-teal-500"></div>
-        <div class="mx-auto max-w-4xl flex items-center justify-between px-6 py-4">
-          <h1 class="text-xl font-semibold text-slate-800">{{ tenant()?.name }} -- Settings</h1>
-          <p-button
-            label="Back to Spaces"
-            icon="fa-solid fa-arrow-left"
-            severity="secondary"
-            [outlined]="true"
-            size="small"
-            [routerLink]="['/t', tenantId, 'spaces']"
-          />
-        </div>
+    <app-manage-page-shell
+      eyebrow="Organization"
+      [title]="(tenant()?.name ?? '') + ' settings'"
+      subtitle="Members, roles, and outstanding invites."
+    >
+      <div actions>
+        <p-button
+          label="Back to spaces"
+          icon="fa-solid fa-arrow-left"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="goBack()"
+        />
+        <p-button
+          label="Invite member"
+          icon="fa-solid fa-plus"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="inviteDialogOpen.set(true)"
+        />
       </div>
 
-      <div class="mx-auto max-w-4xl px-6 py-8 space-y-8">
-        @if (removeError()) {
-          <p-message severity="error" [closable]="true" (onClose)="removeError.set(null)">{{
-            removeError()
-          }}</p-message>
-        }
+      @if (removeError()) {
+        <p-message
+          severity="error"
+          [closable]="true"
+          (onClose)="removeError.set(null)"
+          styleClass="mb-4"
+        >
+          {{ removeError() }}
+        </p-message>
+      }
 
-        <!-- Members -->
-        <section>
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-slate-700">Members</h2>
-            <p-button
-              label="Invite Member"
-              icon="fa-solid fa-plus"
-              size="small"
-              (onClick)="inviteDialogOpen.set(true)"
-            />
-          </div>
-
-          <p-table [value]="members()" [loading]="loading()" aria-label="Organization members">
-            <ng-template #header>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th class="text-right">Actions</th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-member>
-              <tr>
-                <td class="text-sm font-medium">{{ member.display_name }}</td>
-                <td class="text-sm text-slate-500">{{ member.email }}</td>
-                <td class="text-sm capitalize">{{ member.role }}</td>
-                <td class="text-right">
-                  <p-button
-                    label="Remove"
-                    [attr.aria-label]="'Remove member ' + member.display_name"
-                    [text]="true"
-                    severity="danger"
-                    size="small"
-                    (onClick)="removeMember(member)"
-                  />
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </section>
-
-        <!-- Pending Invites -->
-        <section>
-          <h2 class="text-lg font-semibold text-slate-700 mb-4">Pending Invites</h2>
-          @if (invites().length === 0) {
-            <p class="text-sm text-slate-500">No pending invites.</p>
-          } @else {
-            <p-table [value]="invites()" aria-label="Pending invites">
-              <ng-template #header>
-                <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Code</th>
-                  <th>Expires</th>
-                </tr>
-              </ng-template>
-              <ng-template #body let-invite>
-                <tr>
-                  <td class="text-sm">{{ invite.email }}</td>
-                  <td class="text-sm capitalize">{{ invite.role }}</td>
-                  <td class="text-sm font-mono">{{ invite.invite_code }}</td>
-                  <td class="text-sm font-mono tabular-nums">{{ invite.expires_at }}</td>
-                </tr>
-              </ng-template>
-            </p-table>
-          }
-        </section>
+      <!-- Members -->
+      <div class="mb-3 flex items-baseline justify-between">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Members
+        </h2>
+        <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
       </div>
-    </div>
+      <p-table
+        styleClass="manage-table"
+        [value]="members()"
+        [loading]="loading()"
+        [tableStyle]="{ 'min-width': '48rem' }"
+        aria-label="Organization members"
+      >
+        <ng-template #header>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th class="col-actions"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-member>
+          <tr>
+            <td>{{ member.display_name }}</td>
+            <td class="col-identifier">{{ member.email }}</td>
+            <td>
+              <app-status-tag
+                [label]="member.role"
+                [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+              />
+            </td>
+            <td class="col-actions">
+              <app-row-actions
+                [items]="memberMenu(member)"
+                [ariaLabel]="'Actions for ' + member.display_name"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4">No members.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <!-- Invites -->
+      <div class="mt-10 mb-3 flex items-baseline justify-between">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Pending invites
+        </h2>
+        <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
+      </div>
+      <p-table
+        styleClass="manage-table"
+        [value]="invites()"
+        [tableStyle]="{ 'min-width': '48rem' }"
+        aria-label="Pending invites"
+      >
+        <ng-template #header>
+          <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Code</th>
+            <th>Expires</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-invite>
+          <tr>
+            <td>{{ invite.email }}</td>
+            <td>
+              <app-status-tag
+                [label]="invite.role"
+                [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
+              />
+            </td>
+            <td class="col-identifier">{{ invite.invite_code }}</td>
+            <td class="col-identifier">{{ invite.expires_at }}</td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4">No pending invites.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </app-manage-page-shell>
 
     <p-dialog
-      header="Invite Member"
+      header="Invite member"
       [(visible)]="inviteDialogOpen"
       [modal]="true"
       [style]="{ width: '32rem' }"
     >
       <form (ngSubmit)="sendInvite()" class="space-y-4">
         <div>
-          <label for="invite-email" class="block text-sm font-medium text-slate-700 mb-1"
-            >Email</label
-          >
+          <label for="invite-email" class="mb-1 block text-sm font-medium text-slate-700">
+            Email
+          </label>
           <input
             pInputText
             id="invite-email"
@@ -140,9 +178,9 @@ import { TenantService } from '../../core/services/tenant.service';
           />
         </div>
         <div>
-          <label for="invite-role" class="block text-sm font-medium text-slate-700 mb-1"
-            >Role</label
-          >
+          <label for="invite-role" class="mb-1 block text-sm font-medium text-slate-700">
+            Role
+          </label>
           <p-select
             inputId="invite-role"
             [options]="roleOptions"
@@ -164,14 +202,19 @@ import { TenantService } from '../../core/services/tenant.service';
           [outlined]="true"
           (onClick)="inviteDialogOpen.set(false)"
         />
-        <p-button label="Send Invite" (onClick)="sendInvite()" [loading]="inviting()" />
+        <p-button label="Send invite" (onClick)="sendInvite()" [loading]="inviting()" />
       </ng-template>
     </p-dialog>
   `,
 })
 export class TenantSettingsComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private tenantService = inject(TenantService);
+  private confirmation = inject(ConfirmationService);
+
+  // Stable menu-item references per member id (see CompanyListComponent comment).
+  private readonly menuCache = new Map<string, MenuItem[]>();
 
   tenantId = '';
   tenant = signal<Tenant | null>(null);
@@ -193,6 +236,25 @@ export class TenantSettingsComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     await this.loadData();
+  }
+
+  memberMenu(member: TenantMember): MenuItem[] {
+    const cached = this.menuCache.get(member.user_id);
+    if (cached) return cached;
+    const items: MenuItem[] = [
+      {
+        label: 'Remove member',
+        icon: 'fa-solid fa-user-minus',
+        styleClass: 'row-actions-danger',
+        command: () => this.removeMember(member),
+      },
+    ];
+    this.menuCache.set(member.user_id, items);
+    return items;
+  }
+
+  goBack(): void {
+    this.router.navigate(['/t', this.tenantId, 'spaces']);
   }
 
   async sendInvite(): Promise<void> {
@@ -217,7 +279,12 @@ export class TenantSettingsComponent implements OnInit {
   }
 
   async removeMember(member: TenantMember): Promise<void> {
-    if (!window.confirm('Remove this member?')) return;
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Remove member',
+      message: `Remove ${member.display_name} from this organization? They will lose access immediately.`,
+      acceptLabel: 'Remove',
+    });
+    if (!ok) return;
     try {
       await this.tenantService.removeMember(this.tenantId, member.user_id);
       await this.loadData();
@@ -237,6 +304,7 @@ export class TenantSettingsComponent implements OnInit {
       this.tenant.set(tenant);
       this.members.set(members);
       this.invites.set(invites);
+      this.menuCache.clear();
     } finally {
       this.loading.set(false);
     }

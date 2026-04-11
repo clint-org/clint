@@ -5,15 +5,18 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div [class]="spacing()">
-      <label [attr.for]="fieldId()" class="mb-1 block text-sm font-medium text-slate-700">
+      <label
+        [attr.for]="fieldId()"
+        class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500"
+      >
         {{ label() }}
         @if (required()) {
-          <span class="text-red-500">*</span>
+          <span class="ml-0.5 text-red-600">*</span>
         }
       </label>
       <ng-content />
       @if (error()) {
-        <p [id]="fieldId() + '-error'" class="mt-1 text-sm text-red-600">{{ error() }}</p>
+        <p [id]="fieldId() + '-error'" class="mt-1 text-[11px] text-red-700">{{ error() }}</p>
       }
     </div>
   `,

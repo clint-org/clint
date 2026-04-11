@@ -1,77 +1,72 @@
-<div class="mx-auto max-w-4xl p-6">
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-800">Marker Types</h1>
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Marker types"
+  [count]="markerTypes().length"
+  subtitle="Event symbols rendered on the timeline. System types are read-only."
+>
+  <div actions>
     <p-button
-      label="Add Marker Type"
+      label="Add marker type"
       icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
       size="small"
       (onClick)="openCreateModal()"
     />
   </div>
 
   @if (error()) {
-    <p-message severity="error" [closable]="false" class="mb-4">{{ error() }}</p-message>
+    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
 
   <p-table
+    styleClass="manage-table"
     [value]="markerTypes()"
     [loading]="loading()"
-    [scrollable]="true"
-    [tableStyle]="{ 'min-width': '40rem' }"
+    [tableStyle]="{ 'min-width': '48rem' }"
   >
     <ng-template #header>
       <tr>
         <th>Name</th>
         <th>Shape</th>
-        <th>Fill Style</th>
+        <th>Fill</th>
         <th>Color</th>
-        <th>System?</th>
-        <th class="text-right">Actions</th>
+        <th>Origin</th>
+        <th class="col-actions"></th>
       </tr>
     </ng-template>
     <ng-template #body let-mt>
-      <tr [class.opacity-60]="mt.is_system">
+      <tr>
         <td>{{ mt.name }}</td>
-        <td>{{ mt.shape }}</td>
-        <td>{{ mt.fill_style }}</td>
+        <td class="col-secondary">{{ mt.shape }}</td>
+        <td class="col-secondary">{{ mt.fill_style }}</td>
         <td>
           <app-color-swatch [color]="mt.color" />
         </td>
-        <td>{{ mt.is_system ? 'Yes' : 'No' }}</td>
-        <td class="text-right">
-          @if (!mt.is_system) {
-            <p-button
-              label="Edit"
-              [text]="true"
-              size="small"
-              (onClick)="openEditModal(mt)"
-              class="mr-1"
-            />
-            <p-button
-              label="Delete"
-              [text]="true"
-              severity="danger"
-              size="small"
-              (onClick)="deleteType(mt.id)"
-            />
+        <td>
+          @if (mt.is_system) {
+            <app-status-tag label="System" tone="slate" />
           } @else {
-            <span class="text-xs text-slate-400">Read-only</span>
+            <app-status-tag label="Custom" tone="teal" />
+          }
+        </td>
+        <td class="col-actions">
+          @if (!mt.is_system) {
+            <app-row-actions [items]="rowMenu(mt)" [ariaLabel]="'Actions for ' + mt.name" />
           }
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="text-center text-sm text-slate-500 py-8">
-          No marker types found. Add one to get started.
-        </td>
+        <td colspan="6">No marker types yet. Add one to get started.</td>
       </tr>
     </ng-template>
   </p-table>
-</div>
+</app-manage-page-shell>
 
 <p-dialog
-  [header]="editingType() ? 'Edit Marker Type' : 'Add Marker Type'"
+  [header]="editingType() ? 'Edit marker type' : 'Add marker type'"
   [(visible)]="modalOpen"
   [modal]="true"
   [style]="{ width: '32rem' }"

@@ -56,6 +56,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'manage/trials',
+            loadComponent: () =>
+              import('./features/manage/trials/trial-list.component').then(
+                (m) => m.TrialListComponent
+              ),
+          },
+          {
             path: 'manage/trials/:id',
             loadComponent: () =>
               import('./features/manage/trials/trial-detail.component').then(

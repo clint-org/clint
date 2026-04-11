@@ -3,7 +3,6 @@ import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
-import { DatePicker } from 'primeng/datepicker';
 import { ColorPicker } from 'primeng/colorpicker';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';

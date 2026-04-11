@@ -1,69 +1,80 @@
-<div class="mx-auto max-w-4xl p-6">
-  <div class="mb-6 flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-slate-800">Companies</h1>
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Companies"
+  [count]="companies().length"
+  subtitle="Drug program sponsors tracked in this space."
+>
+  <div actions>
     <p-button
-      label="Add Company"
+      label="Add company"
       icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
       size="small"
       (onClick)="openCreateModal()"
     />
   </div>
 
   <p-table
+    styleClass="manage-table"
     [value]="companies()"
     [loading]="loading()"
-    [scrollable]="true"
-    [tableStyle]="{ 'min-width': '40rem' }"
+    [tableStyle]="{ 'min-width': '48rem' }"
   >
     <ng-template #header>
       <tr>
         <th>Name</th>
-        <th>Logo URL</th>
-        <th>Order</th>
-        <th class="text-right">Actions</th>
+        <th style="width: 10rem">Logo</th>
+        <th class="col-num">Order</th>
+        <th class="col-actions"></th>
       </tr>
     </ng-template>
     <ng-template #body let-company>
       <tr>
-        <td class="font-medium">{{ company.name }}</td>
-        <td class="max-w-[200px] truncate text-slate-500">{{ company.logo_url ?? '-' }}</td>
-        <td class="text-slate-500 tabular-nums">{{ company.display_order }}</td>
-        <td class="text-right">
-          <p-button
-            label="Edit"
-            [text]="true"
-            size="small"
-            (onClick)="openEditModal(company)"
-            class="mr-1"
-          />
-          <p-button
-            label="Delete"
-            [text]="true"
-            severity="danger"
-            size="small"
-            (onClick)="confirmDelete(company)"
-          />
+        <td>
+          <button
+            type="button"
+            class="text-left text-teal-700 hover:text-teal-800 hover:underline focus:outline-none focus:ring-1 focus:ring-teal-500"
+            (click)="openProducts(company.id)"
+          >
+            {{ company.name }}
+          </button>
+        </td>
+        <td>
+          @if (company.logo_url && !brokenLogos().has(company.id)) {
+            <img
+              [src]="company.logo_url"
+              [alt]="company.name + ' logo'"
+              class="h-5 w-auto max-w-[8rem] object-contain"
+              loading="lazy"
+              (error)="onLogoError(company.id)"
+            />
+          } @else {
+            <span class="text-slate-300">--</span>
+          }
+        </td>
+        <td class="col-num">{{ company.display_order }}</td>
+        <td class="col-actions">
+          <app-row-actions [items]="rowMenu(company)" [ariaLabel]="'Actions for ' + company.name" />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="4" class="text-center text-sm text-slate-500 py-8">
-          No companies found. Add one to get started.
-        </td>
+        <td colspan="4">No companies yet. Add one to get started.</td>
       </tr>
     </ng-template>
   </p-table>
 
   @if (deleteError()) {
-    <p-message severity="error" [closable]="false" class="mt-4">
+    <p-message severity="error" [closable]="false" styleClass="mt-4">
       {{ deleteError() }}
     </p-message>
   }
-</div>
+</app-manage-page-shell>
 
 <p-dialog
-  [header]="editingCompany() ? 'Edit Company' : 'Add Company'"
+  [header]="editingCompany() ? 'Edit company' : 'Add company'"
   [(visible)]="modalOpen"
   [modal]="true"
   [style]="{ width: '32rem' }"

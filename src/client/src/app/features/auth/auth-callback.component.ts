@@ -7,24 +7,24 @@ import { SupabaseService } from '../../core/services/supabase.service';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-slate-50">
+    <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="text-center">
         @if (error()) {
-          <i class="fa-solid fa-circle-exclamation text-3xl text-red-400 mb-4"></i>
-          <p class="mt-4 text-slate-700 font-medium">{{ error() }}</p>
+          <i class="fa-solid fa-circle-exclamation mb-3 text-2xl text-red-500"></i>
+          <p class="text-sm font-medium text-slate-900">{{ error() }}</p>
           <a
             routerLink="/login"
-            class="mt-4 inline-block text-sm text-teal-600 hover:text-teal-700 underline"
+            class="mt-3 inline-block text-xs text-teal-700 hover:text-teal-800 hover:underline"
           >
-            Return to login
+            Return to sign in
           </a>
         } @else {
           <div
-            class="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-teal-200 border-t-teal-600"
+            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600"
             role="status"
             aria-label="Completing sign in"
           ></div>
-          <p class="mt-4 text-slate-600">Completing sign in...</p>
+          <p class="mt-4 text-xs uppercase tracking-wider text-slate-400">Completing sign in</p>
         }
       </div>
     </div>

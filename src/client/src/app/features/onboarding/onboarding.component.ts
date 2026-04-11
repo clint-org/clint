@@ -13,93 +13,103 @@ import { TenantService } from '../../core/services/tenant.service';
   standalone: true,
   imports: [FormsModule, InputText, ButtonModule, MessageModule, TabsModule],
   template: `
-    <div class="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="w-full max-w-md">
-        <div class="text-center mb-8">
-          <h1 class="text-2xl font-semibold text-slate-800">Welcome to Clint</h1>
-          <p class="mt-2 text-sm text-slate-500">Create an organization or join an existing one</p>
+        <div class="mb-6 text-center">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Welcome
+          </p>
+          <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
+            Set up your organization
+          </h1>
+          <p class="mt-1 text-xs text-slate-500">
+            Create a new organization, or join an existing one with an invite code.
+          </p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <p-tabs value="0">
-            <p-tablist>
-              <p-tab value="0">Create Organization</p-tab>
-              <p-tab value="1">Join with Code</p-tab>
-            </p-tablist>
-            <p-tabpanels>
-              <p-tabpanel value="0">
-                <form (ngSubmit)="createTenant()" class="space-y-4 pt-4">
-                  <p class="text-xs text-slate-500">
-                    An organization groups your team's clinical trial workspaces and controls member
-                    access.
-                  </p>
-                  <div>
-                    <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
-                      >Organization Name</label
-                    >
-                    <input
-                      pInputText
-                      id="org-name"
-                      class="w-full"
-                      [(ngModel)]="tenantName"
-                      name="tenantName"
-                      placeholder="e.g. Acme Pharma"
-                      required
-                      aria-required="true"
-                      [attr.aria-invalid]="createError() ? true : null"
-                      aria-describedby="org-name-error"
+        <div class="border border-slate-200 bg-white">
+          <div class="h-0.5 bg-teal-500"></div>
+          <div class="p-6">
+            <p-tabs value="0">
+              <p-tablist>
+                <p-tab value="0">Create Organization</p-tab>
+                <p-tab value="1">Join with Code</p-tab>
+              </p-tablist>
+              <p-tabpanels>
+                <p-tabpanel value="0">
+                  <form (ngSubmit)="createTenant()" class="space-y-4 pt-4">
+                    <p class="text-xs text-slate-500">
+                      An organization groups your team's clinical trial workspaces and controls
+                      member access.
+                    </p>
+                    <div>
+                      <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
+                        >Organization Name</label
+                      >
+                      <input
+                        pInputText
+                        id="org-name"
+                        class="w-full"
+                        [(ngModel)]="tenantName"
+                        name="tenantName"
+                        placeholder="e.g. Acme Pharma"
+                        required
+                        aria-required="true"
+                        [attr.aria-invalid]="createError() ? true : null"
+                        aria-describedby="org-name-error"
+                      />
+                    </div>
+                    @if (createError()) {
+                      <p-message id="org-name-error" severity="error" [closable]="false">{{
+                        createError()
+                      }}</p-message>
+                    }
+                    <p-button
+                      label="Create Organization"
+                      type="submit"
+                      [loading]="creating()"
+                      [style]="{ width: '100%' }"
                     />
-                  </div>
-                  @if (createError()) {
-                    <p-message id="org-name-error" severity="error" [closable]="false">{{
-                      createError()
-                    }}</p-message>
-                  }
-                  <p-button
-                    label="Create Organization"
-                    type="submit"
-                    [loading]="creating()"
-                    [style]="{ width: '100%' }"
-                  />
-                </form>
-              </p-tabpanel>
-              <p-tabpanel value="1">
-                <form (ngSubmit)="joinTenant()" class="space-y-4 pt-4">
-                  <p class="text-xs text-slate-500">
-                    Ask your organization admin for an invite code to join an existing team.
-                  </p>
-                  <div>
-                    <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1"
-                      >Invite Code</label
-                    >
-                    <input
-                      pInputText
-                      id="invite-code"
-                      class="w-full"
-                      [(ngModel)]="inviteCode"
-                      name="inviteCode"
-                      placeholder="e.g. AB3K9X2M"
-                      required
-                      aria-required="true"
-                      [attr.aria-invalid]="joinError() ? true : null"
-                      aria-describedby="invite-code-error"
+                  </form>
+                </p-tabpanel>
+                <p-tabpanel value="1">
+                  <form (ngSubmit)="joinTenant()" class="space-y-4 pt-4">
+                    <p class="text-xs text-slate-500">
+                      Ask your organization admin for an invite code to join an existing team.
+                    </p>
+                    <div>
+                      <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1"
+                        >Invite Code</label
+                      >
+                      <input
+                        pInputText
+                        id="invite-code"
+                        class="w-full"
+                        [(ngModel)]="inviteCode"
+                        name="inviteCode"
+                        placeholder="e.g. AB3K9X2M"
+                        required
+                        aria-required="true"
+                        [attr.aria-invalid]="joinError() ? true : null"
+                        aria-describedby="invite-code-error"
+                      />
+                    </div>
+                    @if (joinError()) {
+                      <p-message id="invite-code-error" severity="error" [closable]="false">{{
+                        joinError()
+                      }}</p-message>
+                    }
+                    <p-button
+                      label="Join Organization"
+                      type="submit"
+                      [loading]="joining()"
+                      [style]="{ width: '100%' }"
                     />
-                  </div>
-                  @if (joinError()) {
-                    <p-message id="invite-code-error" severity="error" [closable]="false">{{
-                      joinError()
-                    }}</p-message>
-                  }
-                  <p-button
-                    label="Join Organization"
-                    type="submit"
-                    [loading]="joining()"
-                    [style]="{ width: '100%' }"
-                  />
-                </form>
-              </p-tabpanel>
-            </p-tabpanels>
-          </p-tabs>
+                  </form>
+                </p-tabpanel>
+              </p-tabpanels>
+            </p-tabs>
+          </div>
         </div>
       </div>
     </div>

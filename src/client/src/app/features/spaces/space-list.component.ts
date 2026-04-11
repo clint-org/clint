@@ -12,77 +12,97 @@ import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
 import { SpaceService } from '../../core/services/space.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
 @Component({
   selector: 'app-space-list',
   standalone: true,
-  imports: [DatePipe, FormsModule, ButtonModule, Dialog, InputText, Textarea, MessageModule],
+  imports: [
+    DatePipe,
+    FormsModule,
+    ButtonModule,
+    Dialog,
+    InputText,
+    Textarea,
+    MessageModule,
+    ManagePageShellComponent,
+  ],
   template: `
-    <div class="min-h-screen bg-slate-50">
-      <div class="bg-white border-b border-slate-200">
-        <div class="h-0.5 bg-teal-500"></div>
-        <div class="mx-auto max-w-4xl flex items-center justify-between px-6 py-4">
-          <div>
-            <h1 class="text-xl font-semibold text-slate-800">{{ tenant()?.name }}</h1>
-            <p class="text-sm text-slate-500">Select a workspace</p>
-          </div>
-          <div class="flex gap-2">
+    <app-manage-page-shell
+      eyebrow="Organization"
+      [title]="tenant()?.name ?? 'Workspaces'"
+      subtitle="Select a space to work in, or create a new one."
+      [count]="spaces().length"
+    >
+      <div actions>
+        <p-button
+          label="Settings"
+          icon="fa-solid fa-gear"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="goToSettings()"
+        />
+        <p-button
+          label="New space"
+          icon="fa-solid fa-plus"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="createDialogOpen.set(true)"
+        />
+      </div>
+
+      @if (loading()) {
+        <p class="text-sm text-slate-400">Loading spaces...</p>
+      } @else if (spaces().length === 0) {
+        <div class="border border-slate-200 bg-white px-8 py-16 text-center">
+          <p class="text-base font-medium text-slate-700">No spaces yet</p>
+          <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
+            Spaces are dedicated workspaces for tracking clinical trial pipelines. Create your first
+            one to get started.
+          </p>
+          <div class="mt-6 inline-block">
             <p-button
-              label="Settings"
-              icon="fa-solid fa-gear"
+              label="Create space"
+              icon="fa-solid fa-plus"
               severity="secondary"
               [outlined]="true"
-              size="small"
-              (onClick)="goToSettings()"
-            />
-            <p-button
-              label="New Space"
-              icon="fa-solid fa-plus"
               size="small"
               (onClick)="createDialogOpen.set(true)"
             />
           </div>
         </div>
-      </div>
-
-      <div class="mx-auto max-w-4xl px-6 py-8">
-        @if (loading()) {
-          <p class="text-slate-500">Loading spaces...</p>
-        } @else if (spaces().length === 0) {
-          <div class="text-center py-16">
-            <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-4"></i>
-            <p class="text-lg text-slate-600 mb-2">Welcome to your organization</p>
-            <p class="text-sm text-slate-400 mb-6">
-              Spaces are dedicated workspaces for tracking clinical trial pipelines. Create your
-              first one to get started.
-            </p>
-            <p-button
-              label="Create Space"
-              icon="fa-solid fa-plus"
-              (onClick)="createDialogOpen.set(true)"
-            />
-          </div>
-        } @else {
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            @for (space of spaces(); track space.id) {
-              <button
-                class="bg-white rounded-lg border border-slate-200 p-5 text-left hover:border-teal-300 hover:shadow-sm transition cursor-pointer"
-                (click)="openSpace(space)"
-              >
-                <h3 class="font-semibold text-slate-900">{{ space.name }}</h3>
-                @if (space.description) {
-                  <p class="mt-1 text-sm text-slate-500 line-clamp-2">{{ space.description }}</p>
-                }
-                <p class="mt-3 text-xs text-slate-400">Created {{ space.created_at | date }}</p>
-              </button>
-            }
-          </div>
-        }
-      </div>
-    </div>
+      } @else {
+        <div
+          class="grid grid-cols-1 gap-px bg-slate-200 border border-slate-200 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          @for (space of spaces(); track space.id) {
+            <button
+              type="button"
+              class="group bg-white p-5 text-left transition-colors hover:bg-teal-50/40 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-teal-500"
+              (click)="openSpace(space)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <h3 class="text-sm font-semibold text-slate-900">{{ space.name }}</h3>
+                <i
+                  class="fa-solid fa-arrow-right text-[11px] text-slate-300 transition-colors group-hover:text-teal-600"
+                ></i>
+              </div>
+              @if (space.description) {
+                <p class="mt-2 line-clamp-2 text-xs text-slate-500">{{ space.description }}</p>
+              }
+              <p class="mt-4 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                Created {{ space.created_at | date: 'MMM d, y' }}
+              </p>
+            </button>
+          }
+        </div>
+      }
+    </app-manage-page-shell>
 
     <p-dialog
-      header="Create Space"
+      header="Create space"
       [(visible)]="createDialogOpen"
       [modal]="true"
       [style]="{ width: '32rem' }"
@@ -94,7 +114,9 @@ import { TenantService } from '../../core/services/tenant.service';
           example, by therapeutic area or competitive landscape.
         </p>
         <div>
-          <label for="space-name" class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+          <label for="space-name" class="mb-1 block text-sm font-medium text-slate-700">
+            Name
+          </label>
           <input
             pInputText
             id="space-name"
@@ -106,9 +128,9 @@ import { TenantService } from '../../core/services/tenant.service';
           />
         </div>
         <div>
-          <label for="space-desc" class="block text-sm font-medium text-slate-700 mb-1"
-            >Description</label
-          >
+          <label for="space-desc" class="mb-1 block text-sm font-medium text-slate-700">
+            Description
+          </label>
           <textarea
             pTextarea
             id="space-desc"
@@ -130,7 +152,7 @@ import { TenantService } from '../../core/services/tenant.service';
           [outlined]="true"
           (onClick)="createDialogOpen.set(false)"
         />
-        <p-button label="Create Space" (onClick)="createSpace()" [loading]="creating()" />
+        <p-button label="Create space" (onClick)="createSpace()" [loading]="creating()" />
       </ng-template>
     </p-dialog>
   `,

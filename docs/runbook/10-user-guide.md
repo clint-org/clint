@@ -42,7 +42,7 @@ The dashboard is the main view. It shows a timeline grid with your trials.
 
 ### Navigation
 
-The header shows your current **Organization** and **Space** as dropdowns. Click either to switch. Navigation links in the center (Dashboard, Companies, Products, Markers, Therapeutic Areas) are visible when inside a space.
+The header shows your current **Organization** and **Space** as dropdowns. Click either to switch. Navigation links in the center (Dashboard, Companies, Products, Trials, Markers, Areas) are visible when inside a space. The signed-in account email and Sign out are available under the initials avatar button on the right.
 
 ### Timeline Grid
 
@@ -102,22 +102,27 @@ Access the management screens via the header navigation links.
 
 **Navigate:** Companies link in header
 
-- **Add Company** -- Enter name, optional logo URL and display color
-- **Edit Company** -- Click the edit icon on any row
-- **Delete Company** -- Click the delete icon (cascading: deletes all linked products and trials)
-- Companies are ordered by `display_order`
+- **Add Company** -- Enter name, optional logo URL and display order
+- **Logo column** -- When a company has a `logo_url` set, the Logo column renders the image as a small preview (lazy-loaded, 20px tall, max 128px wide). Broken / missing URLs fall back to a muted placeholder.
+- **Click a company name** -- Drills into the Products list filtered to that company (`?company=<id>`). A "Clear filter" button in the Products header pops back to the unfiltered view.
+- **Edit / Delete / View products** -- Use the row overflow (`...`) menu. Delete is destructive and cascades to all linked products and trials.
+- Companies are ordered by `display_order`.
 
 ### Products
 
 **Navigate:** Products link in header
 
 - **Add Product** -- Enter name, optional generic name, select parent company
-- **Edit / Delete** -- Use the action icons on each row
-- Products are ordered by `display_order` within their company
+- **Click a product name or its trial count** -- Drills into the Trials list filtered to that product (`?product=<id>`).
+- **Company filter** -- Products list supports a `?company=<id>` query parameter (set automatically when drilling in from Companies) with a "Clear filter" button in the header to return to the unfiltered view.
+- **Edit / Delete / View trials** -- Use the row overflow (`...`) menu.
+- Products are ordered by `display_order` within their company.
 
 ### Trials
 
-**Navigate:** Click a trial name on the dashboard, or navigate from Products
+**Navigate:** Trials link in header (dense list of every trial in the space), or click a trial name on the dashboard
+
+The Trials list supports a `?product=<id>` query filter (set automatically when you click a product's trial count) with a "Clear filter" button to return to the unfiltered view. Each row deep-links to the Trial Detail page via the overflow menu's **Open detail** action, or by clicking the trial name.
 
 The Trial Detail page provides a comprehensive form with sections:
 

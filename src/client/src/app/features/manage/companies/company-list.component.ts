@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -8,11 +9,22 @@ import { MessageModule } from 'primeng/message';
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../../core/services/company.service';
 import { CompanyFormComponent } from './company-form.component';
+import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 @Component({
   selector: 'app-company-list',
   standalone: true,
-  imports: [TableModule, ButtonModule, Dialog, MessageModule, CompanyFormComponent],
+  imports: [
+    TableModule,
+    ButtonModule,
+    Dialog,
+    MessageModule,
+    CompanyFormComponent,
+    ManagePageShellComponent,
+    RowActionsComponent,
+  ],
   templateUrl: './company-list.component.html',
 })
 export class CompanyListComponent implements OnInit {
@@ -24,11 +36,67 @@ export class CompanyListComponent implements OnInit {
 
   private companyService = inject(CompanyService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private confirmation = inject(ConfirmationService);
   spaceId = '';
+  tenantId = '';
+
+  // Track company ids whose logo_url failed to load so we can fall back to a
+  // muted placeholder instead of rendering a broken image icon.
+  readonly brokenLogos = signal<ReadonlySet<string>>(new Set());
+
+  // Menu items are memoized per row-id so p-menu gets a stable reference on
+  // every change-detection cycle. Without this, PrimeNG's popup menu swallows
+  // the first click because the MenuItem[] is a new array every render.
+  private readonly menuCache = new Map<string, MenuItem[]>();
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+    this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     await this.loadCompanies();
+  }
+
+  openProducts(companyId: string): void {
+    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'products'], {
+      queryParams: { company: companyId },
+    });
+  }
+
+  onLogoError(companyId: string): void {
+    this.brokenLogos.update((set) => {
+      if (set.has(companyId)) return set;
+      const next = new Set(set);
+      next.add(companyId);
+      return next;
+    });
+  }
+
+  rowMenu(company: Company): MenuItem[] {
+    const cached = this.menuCache.get(company.id);
+    if (cached) return cached;
+    const items: MenuItem[] = [
+      {
+        label: 'View products',
+        icon: 'fa-solid fa-box',
+        command: () => this.openProducts(company.id),
+      },
+      {
+        label: 'Edit',
+        icon: 'fa-solid fa-pen',
+        command: () => this.openEditModal(company),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Delete',
+        icon: 'fa-solid fa-trash',
+        styleClass: 'row-actions-danger',
+        command: () => this.confirmDelete(company),
+      },
+    ];
+    this.menuCache.set(company.id, items);
+    return items;
   }
 
   openCreateModal(): void {
@@ -52,8 +120,11 @@ export class CompanyListComponent implements OnInit {
   }
 
   async confirmDelete(company: Company): Promise<void> {
-    const confirmed = window.confirm(`Delete "${company.name}"? This action cannot be undone.`);
-    if (!confirmed) return;
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete company',
+      message: `Delete "${company.name}"? This cannot be undone.`,
+    });
+    if (!ok) return;
 
     this.deleteError.set(null);
     try {
@@ -73,6 +144,8 @@ export class CompanyListComponent implements OnInit {
     try {
       const data = await this.companyService.list(this.spaceId);
       this.companies.set(data);
+      this.menuCache.clear();
+      this.brokenLogos.set(new Set());
     } catch {
       // Silently handle - empty list shown
     } finally {
