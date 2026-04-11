@@ -2,7 +2,7 @@
 
 **Status:** Draft — awaiting review before implementation plan
 **Date:** 2026-04-11
-**Scope:** Add in-place column filtering, multi-column sorting, and pagination to every tabular grid in the manage section (five grids: companies, products, trials, therapeutic-areas, marker-types). Replace the existing one-way deep-link filter pattern (`?company=<id>`, `?product=<id>`) with a unified, URL-synced filter model. Keep the existing PrimeNG `p-table` baseline; do not introduce a new data-grid library.
+**Scope:** Add in-place column filtering, multi-column sorting, and pagination to every tabular grid in the manage section (five grids: companies, products, trials, therapeutic-areas, marker-types). Replace the existing one-way deep-link filter pattern (`?company=<id>`, `?product=<id>`) with a unified, URL-synced filter model. The two in-app navigation callsites that currently emit those legacy query params (`company-list.component.ts::openProducts()` and `product-list.component.ts::openTrials()`) are updated to emit the unified shape via a shared `buildFilterQueryParams` helper — the grid itself carries no legacy-param parsing. Keep the existing PrimeNG `p-table` baseline; do not introduce a new data-grid library.
 
 **Explicitly excluded:** `space-list` is a responsive card grid (clickable cards in a CSS grid), not a tabular `p-table`. Cards have at most 5–30 entries per tenant and serve a workspace-picker role, not a data-exploration role. Building a card-grid variant of the toolbar would add infrastructure for a use case nobody asked for. Out of scope for this design.
 
@@ -22,7 +22,7 @@ This is a missing floor, not a missing ceiling. BD analysts need to be able to e
 - A slim top toolbar per grid with global search input + active-filters chip row + clear-all button
 - Pagination (PrimeNG paginator, 25 rows default, options [10, 25, 50, 100])
 - All filter/sort/page state URL-synced as query params — shareable links, back-button-safe, refresh-preserving
-- Legacy `?company=<id>` / `?product=<id>` deep-links recognized on load and rewritten to the unified schema
+- Updated outbound navigation from the two callsites (`openProducts`, `openTrials`) so clicking a company lands on a pre-filtered products grid using the unified URL shape
 - One shared pattern used by all five grids
 
 **Out of scope (explicitly deferred):**
@@ -81,7 +81,6 @@ interface GridConfig<T> {
   defaultSort?: { field: string; order: 1 | -1 };
   defaultPageSize?: number;            // default 25
   pageSizeOptions?: number[];          // default [10, 25, 50, 100]
-  legacyQueryParamAdapter?: (params: ParamMap) => Partial<FilterState>;
 }
 
 interface ColumnDef<T> {
@@ -126,12 +125,25 @@ interface GridState<T> {
 
 ### Internal behavior
 
-- **URL decode** runs once in the factory from the current `ActivatedRoute` snapshot. If a `legacyQueryParamAdapter` is provided and the current params match a legacy shape, it runs first and the URL is rewritten to the unified shape via `router.navigate([], { queryParams, replaceUrl: true })`. `replaceUrl: true` prevents a back-button trap on the legacy migration step.
+- **URL decode** runs once in the factory from the current `ActivatedRoute` snapshot. Unknown query params are silently ignored, so stale bookmarks using old shapes load the grid unfiltered rather than crashing.
 - **URL encode** runs inside an Angular `effect()` that reads all four signals and produces a normalized query-param map. If the encoded map equals the current URL's query-param map, nothing happens — this avoids echo loops when decode-then-encode is identity. Otherwise `router.navigate([], { queryParams, replaceUrl: true })` updates the URL. `replaceUrl` means filter toggles don't pollute history; top-level route changes still create history entries.
 - **Filter algebra** applies in order: (1) debounced global search across `globalSearchFields`, contains, case-insensitive; (2) per-column filters — text contains, select `in`, numeric with operator, date range; (3) sort via `Intl.Collator('en', { numeric: true, sensitivity: 'base' })` for text and numeric compare for numbers; (4) page slice. Pure function over the raw rows signal, no side effects.
 - **Debounce** for global search is a second signal that updates after 200 ms of idle. The filter algebra reads the debounced signal, not the raw input, so typing is responsive but filtering doesn't thrash.
 - **Page reset:** any filter or global-search change resets `page` to `{ first: 0, rows: page().rows }`. Sort changes do NOT reset page — matches spreadsheet muscle memory.
 - **Stale select values:** if a select filter contains a value that no longer matches any live option (e.g., deleted company UUID in URL), the filter stays active with a fallback chip label `<Header>: <unknown>`. The table renders its "no matches" empty state. User can click `×` to clear. This surfaces stale deep-links rather than silently un-filtering.
+
+### Deep-linking from callsites
+
+Consumers that want to navigate *into* a filtered grid (e.g., `company-list::openProducts(companyId)` navigating into a pre-filtered products page) do not hand-roll query params. They call a small helper exported from `shared/grids`:
+
+```ts
+export function buildFilterQueryParams(
+  filters: Record<string, FilterValue>,
+  pageSize?: number
+): Record<string, string>;
+```
+
+It's a thin wrapper over `encodeFilterState` that fills in empty global search, null sort, and page 0 defaults. The grid's URL schema is therefore encapsulated in one place — if the schema ever changes, consumers keep working as long as they pass `FilterValue` objects. Each target grid's filterable field names (e.g., `product.company_id`, `trial.product_id`) are still public because consumers have to reference them, but the encoding rules aren't.
 
 ## 6. `<app-grid-toolbar>` component
 
@@ -193,16 +205,24 @@ readonly grid = createGridState<ProductRow>({
   ],
   globalSearchFields: ['product.name', 'product.generic_name', 'companyName'],
   defaultSort: { field: 'product.display_order', order: 1 },
-  legacyQueryParamAdapter: (params) => {
-    const company = params.get('company');
-    return company
-      ? { filters: { 'product.company_id': { kind: 'select', values: [company] } } }
-      : {};
-  },
 });
 
 readonly visibleRows = this.grid.filteredRows(this.rows);
 ```
+
+Additionally, the outbound callsite in `product-list.component.ts::openTrials(productId)` is updated to emit the unified URL shape instead of the legacy `?product=<id>` shape:
+
+```ts
+openTrials(productId: string): void {
+  this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
+    queryParams: buildFilterQueryParams({
+      'trial.product_id': { kind: 'select', values: [productId] },
+    }),
+  });
+}
+```
+
+The equivalent change in `company-list.component.ts::openProducts(companyId)` lands in the company-list migration task.
 
 **Removed from the component:**
 - `companyFilter` signal, `companyLabel` computed, `clearFilter()` method
@@ -272,13 +292,13 @@ The same pattern applies to the other four grids with their own column configs.
 
 ### Per-grid column and filter summary
 
-Columns are listed in display order. "Sortable only" columns have a click-to-sort header but no filter popover. Logo, Color, and actions columns are neither sortable nor filterable.
+Columns are listed in display order. "Sortable only" columns have a click-to-sort header but no filter popover. Logo, Color, and actions columns are neither sortable nor filterable. "Inbound deep-link field" names the field a consumer passes to `buildFilterQueryParams` when navigating into a pre-filtered view of this grid.
 
-| Grid | Columns filterable / sortable | Legacy deep-link |
+| Grid | Columns filterable / sortable | Inbound deep-link field |
 |---|---|---|
 | `company-list` | name (text), display_order (numeric, sortable only) | — |
-| `product-list` | name (text), generic_name (text), company_id (select from companies), trialCount (numeric), display_order (numeric, sortable only) | `?company=<id>` |
-| `trial-list` | name (text), identifier (text), product_id (select from products), companyName (select from companies, via product join), status (select from trial status enum), phaseCount (numeric), markerCount (numeric) | `?product=<id>` |
+| `product-list` | name (text), generic_name (text), company_id (select from companies), trialCount (numeric), display_order (numeric, sortable only) | `product.company_id` |
+| `trial-list` | name (text), identifier (text), product_id (select from products), companyName (select from companies, via product join), status (select from trial status enum), phaseCount (numeric), markerCount (numeric) | `trial.product_id` |
 | `therapeutic-area-list` | name (text), abbreviation (text) | — |
 | `marker-type-list` | name (text), shape (select from enum), fill_style (select from enum), origin (select from enum) | — |
 
@@ -304,18 +324,17 @@ Every default is omitted. Unfiltered grids have clean URLs.
 - Commas in select values are assumed not to occur (all select filters filter by UUIDs, enums, or phase names). If a future column needs comma-safe multi-select, it switches to repeated params (`filter.x=a&filter.x=b`) — `createGridState` recognizes both forms.
 - Numeric operators: `eq` (default, bare — `filter.trialCount=5` means equals 5), `gte`, `lte`, `gt`, `lt`.
 - Round-trip identity: parsing URL → state → re-encoding produces the same query-param set (order-insensitive). Unit-tested explicitly.
-- Legacy adapters run before anything else and rewrite the URL via `replaceUrl: true`. After that, only the unified schema is emitted.
+- Unknown query params (including any leftover `?company=<id>` / `?product=<id>` from stale bookmarks) are silently ignored during decode, so the grid loads unfiltered rather than crashing.
 
 ## 9. Error handling and edge cases
 
 - **Malformed filter param** (e.g., `?filter.trialCount=banana`): catch parse error, single `console.warn` with offending key, drop filter, rewrite URL via `replaceUrl`. Do not crash, do not surface user-facing error.
-- **Unknown field** (`?filter.fooBar=x` where no column matches): drop silently, rewrite URL.
+- **Unknown field or unknown top-level param** (`?filter.fooBar=x`, or leftover legacy `?company=<id>` from a stale bookmark): drop silently, rewrite URL.
 - **Stale select value** (`?filter.product.company_id=<deleted-uuid>`): keep the filter active, show chip with fallback label `Company: <unknown>`, table renders "no matches" empty state. Surfaces the stale state; user clicks `×` to clear.
 - **Empty filtered result:** `<ng-template #emptymessage>` conditioned on `grid.isFiltered()` to distinguish "no data yet" ("Add one to get started") from "no matches for your filters."
 - **Page out of range:** if URL says `?page=9` but filtered set has 3 pages, clamp to last non-empty page during decode, rewrite URL.
 - **Filter changes reset page to first:** `page` signal resets to `{ first: 0, rows: page().rows }`. Sort changes do NOT reset page.
 - **CRUD modal close:** `loadData()` refreshes raw rows; filter/sort/page state preserved. If current page is now out of range after a delete, clamp.
-- **Race between legacy adapter and manual URL edits:** adapter runs only on initial snapshot. Manual legacy URL edits after that won't parse; acceptable because no supported flow does this.
 - **Query-param encoding of special characters:** delegated to Angular Router. Global search with `&`, `=`, `%` round-trips safely.
 - **`manage-page-shell`'s `count` input** now reads `grid.totalRecords()` (post-filter) rather than `rows().length` (raw). Semantic change: header shows "Products (7)" when filtered to 7, not "Products (122)". Matches what users expect from a filtered view and what chip count implies. Total unfiltered count is no longer displayed; defer adding it until asked.
 
@@ -324,7 +343,7 @@ Every default is omitted. Unfiltered grids have clean URLs.
 **Unit — `createGridState`** (plain TS, signal-aware via `TestBed.runInInjectionContext`):
 
 - URL encode/decode round-trip for every filter kind (text, select single, select multi, numeric each operator, date range)
-- Legacy query-param adapter: `?company=<id>` on products translates correctly and rewrites URL
+- `buildFilterQueryParams` helper produces the correct query-param shape for a given filter set
 - Filter algebra: text contains case-insensitive, select `in`, numeric operators, date range bounds, global search across multiple fields
 - Sort stability: equal keys preserve insertion order; text sort uses `Intl.Collator` numeric+base-sensitivity
 - Page slicing, reset-on-filter-change, clamp-out-of-range
@@ -339,7 +358,7 @@ Every default is omitted. Unfiltered grids have clean URLs.
 - Search input two-way binds with 200 ms debounce (fake timers)
 - Accessibility: search input has `aria-label`, chips have descriptive `aria-label` on remove
 
-**Integration / Playwright — product-list** (covers legacy deep-link, select filter, text filter, sort, paginate):
+**Integration / Playwright — product-list** (covers select filter, text filter, sort, paginate, inbound deep-link):
 
 - Open products page, verify default state
 - Type in global search, verify URL updates and row count drops
@@ -347,10 +366,8 @@ Every default is omitted. Unfiltered grids have clean URLs.
 - Click sortable column header, verify sort indicator + URL
 - Click paginator page 2, verify `?page=2` in URL
 - Browser back, verify previous state restored
-- Navigate via legacy dashboard → company → products deep-link, verify URL rewritten to unified shape and chip shows company name
+- Navigate from companies page → click company → lands on products with `filter.product.company_id=<id>` applied via `buildFilterQueryParams` (proves the in-app callsite change works)
 - Clear all, verify URL returns to clean shape
-
-**Regression — dashboard deep-link to products page** stays one test in the existing dashboard spec.
 
 ## 11. Rollout
 
@@ -363,14 +380,13 @@ Single PR. All five grids migrate together. Reasons:
 Implementation order inside the PR:
 1. `createGridState` helper + unit tests
 2. `GridToolbarComponent` + component test
-3. `product-list` migration (hardest — has legacy deep-link, select filter, richest columns) — validates the pattern end-to-end
-4. Remaining four grids, in any order
+3. `product-list` migration (hardest — select filter against related collection, richest columns, outbound `openTrials` callsite update) — validates the pattern end-to-end
+4. Remaining four grids, in any order (`company-list` also updates its `openProducts` callsite)
 5. Playwright integration test
 6. `docs/runbook/05-frontend-architecture.md` update documenting the pattern
 
 ## 12. Open questions / follow-ups
 
 - Should the `manage-page-shell` `count` show "7 of 122" when filtered, or just "7"? Deferred — start with just "7", revisit after usage.
-- Should legacy `?company=<id>` URLs remain valid indefinitely, or can they be removed once the dashboard's click-through is updated to emit the new shape? Safe answer: support both forever (cost is tiny — one small adapter function).
 - Global search debounce is 200 ms by default. Adjust after usage if it feels wrong.
 - Default page size is 25. Adjust per grid if any grid has obviously different ideal density.
