@@ -1,7 +1,7 @@
 <app-manage-page-shell
   eyebrow="Manage"
   title="Marker types"
-  [count]="markerTypes().length"
+  [count]="grid.totalRecords()"
   subtitle="Event symbols rendered on the timeline. System types are read-only."
 >
   <div actions>
@@ -15,23 +15,75 @@
     />
   </div>
 
-  @if (error()) {
-    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
-  }
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search marker types..." />
 
   <p-table
     styleClass="manage-table"
-    [value]="markerTypes()"
+    [value]="visibleTypes()"
     [loading]="loading()"
     [tableStyle]="{ 'min-width': '48rem' }"
+    [lazy]="true"
+    (onLazyLoad)="grid.onLazyLoad($any($event))"
+    [paginator]="true"
+    [rows]="grid.page().rows"
+    [first]="grid.page().first"
+    [totalRecords]="grid.totalRecords()"
+    [rowsPerPageOptions]="[10, 25, 50, 100]"
+    [filters]="grid.primengFilters()"
   >
     <ng-template #header>
       <tr>
-        <th>Name</th>
-        <th>Shape</th>
-        <th>Fill</th>
+        <th pSortableColumn="name">
+          Name <p-sortIcon field="name" />
+          <p-columnFilter type="text" field="name" display="menu" />
+        </th>
+        <th pSortableColumn="shape">
+          Shape <p-sortIcon field="shape" />
+          <p-columnFilter field="shape" display="menu" matchMode="in">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <input
+                pInputText
+                type="text"
+                class="w-full"
+                [value]="value ?? ''"
+                (input)="filter($any($event.target).value || null)"
+                placeholder="Shape..."
+              />
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th pSortableColumn="fill_style">
+          Fill <p-sortIcon field="fill_style" />
+          <p-columnFilter field="fill_style" display="menu" matchMode="in">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <input
+                pInputText
+                type="text"
+                class="w-full"
+                [value]="value ?? ''"
+                (input)="filter($any($event.target).value || null)"
+                placeholder="Fill..."
+              />
+            </ng-template>
+          </p-columnFilter>
+        </th>
         <th>Color</th>
-        <th>Origin</th>
+        <th pSortableColumn="is_system">
+          Origin <p-sortIcon field="is_system" />
+          <p-columnFilter field="is_system" display="menu" matchMode="in">
+            <ng-template #filter let-value let-filter="filterCallback">
+              <select
+                class="w-full border border-slate-300 px-2 py-1 text-sm"
+                [value]="value ?? ''"
+                (change)="filter($any($event.target).value || null)"
+              >
+                <option value="">All</option>
+                <option value="system">System</option>
+                <option value="custom">Custom</option>
+              </select>
+            </ng-template>
+          </p-columnFilter>
+        </th>
         <th class="col-actions"></th>
       </tr>
     </ng-template>
@@ -59,10 +111,20 @@
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6">No marker types yet. Add one to get started.</td>
+        <td colspan="6">
+          @if (grid.isFiltered()) {
+            No marker types match your filters.
+          } @else {
+            No marker types yet. Add one to get started.
+          }
+        </td>
       </tr>
     </ng-template>
   </p-table>
+
+  @if (error()) {
+    <p-message severity="error" [closable]="false" styleClass="mt-4">{{ error() }}</p-message>
+  }
 </app-manage-page-shell>
 
 <p-dialog

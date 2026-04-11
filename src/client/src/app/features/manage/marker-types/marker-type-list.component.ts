@@ -13,6 +13,8 @@ import { ColorSwatchComponent } from '../../../shared/components/color-swatch.co
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
+import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 @Component({
@@ -28,6 +30,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    GridToolbarComponent,
   ],
   templateUrl: './marker-type-list.component.html',
 })
@@ -45,6 +48,52 @@ export class MarkerTypeListComponent implements OnInit {
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
+
+  readonly grid = createGridState<MarkerType>({
+    columns: [
+      { field: 'name', header: 'Name', filter: { kind: 'text' } },
+      {
+        field: 'shape',
+        header: 'Shape',
+        filter: {
+          kind: 'select',
+          options: () => {
+            const seen = new Set<string>();
+            for (const mt of this.markerTypes()) if (mt.shape) seen.add(mt.shape);
+            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
+          },
+        },
+      },
+      {
+        field: 'fill_style',
+        header: 'Fill',
+        filter: {
+          kind: 'select',
+          options: () => {
+            const seen = new Set<string>();
+            for (const mt of this.markerTypes()) if (mt.fill_style) seen.add(mt.fill_style);
+            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
+          },
+        },
+      },
+      {
+        field: 'is_system',
+        header: 'Origin',
+        filter: {
+          kind: 'select',
+          options: () => [
+            { label: 'System', value: 'system' },
+            { label: 'Custom', value: 'custom' },
+          ],
+        },
+        getValue: (mt) => (mt.is_system ? 'system' : 'custom'),
+      },
+    ],
+    globalSearchFields: ['name', 'shape', 'fill_style'],
+    defaultSort: { field: 'name', order: 1 },
+  });
+
+  readonly visibleTypes = this.grid.filteredRows(this.markerTypes);
 
   ngOnInit(): void {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
