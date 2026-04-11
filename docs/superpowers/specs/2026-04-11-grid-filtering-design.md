@@ -272,13 +272,15 @@ The same pattern applies to the other four grids with their own column configs.
 
 ### Per-grid column and filter summary
 
+Columns are listed in display order. "Sortable only" columns have a click-to-sort header but no filter popover. Logo, Color, and actions columns are neither sortable nor filterable.
+
 | Grid | Columns filterable / sortable | Legacy deep-link |
 |---|---|---|
-| `company-list` | name (text), display_order (numeric) | — |
-| `product-list` | name (text), generic_name (text), company_id (select from companies), trialCount (numeric), display_order (numeric) | `?company=<id>` |
-| `trial-list` | name (text), identifier (text), product_id (select), companyName (select), status (select), phaseCount (numeric), markerCount (numeric) | `?product=<id>` |
-| `therapeutic-area-list` | name (text), display_order (numeric) | — |
-| `marker-type-list` | name (text), display_order (numeric) | — |
+| `company-list` | name (text), display_order (numeric, sortable only) | — |
+| `product-list` | name (text), generic_name (text), company_id (select from companies), trialCount (numeric), display_order (numeric, sortable only) | `?company=<id>` |
+| `trial-list` | name (text), identifier (text), product_id (select from products), companyName (select from companies, via product join), status (select from trial status enum), phaseCount (numeric), markerCount (numeric) | `?product=<id>` |
+| `therapeutic-area-list` | name (text), abbreviation (text) | — |
+| `marker-type-list` | name (text), shape (select from enum), fill_style (select from enum), origin (select from enum) | — |
 
 ## 8. URL schema
 
