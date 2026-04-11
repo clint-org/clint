@@ -1,12 +1,12 @@
 <app-manage-page-shell
   eyebrow="Manage"
   title="Therapeutic areas"
-  [count]="areas().length"
-  subtitle="Indication taxonomy used to classify trials in this space."
+  [count]="grid.totalRecords()"
+  subtitle="Disease areas used to tag trials and products."
 >
   <div actions>
     <p-button
-      label="Add area"
+      label="Add therapeutic area"
       icon="fa-solid fa-plus"
       severity="secondary"
       [outlined]="true"
@@ -15,16 +15,32 @@
     />
   </div>
 
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search therapeutic areas..." />
+
   <p-table
     styleClass="manage-table"
-    [value]="areas()"
+    [value]="visibleAreas()"
     [loading]="loading()"
-    [tableStyle]="{ 'min-width': '36rem' }"
+    [tableStyle]="{ 'min-width': '40rem' }"
+    [lazy]="true"
+    (onLazyLoad)="grid.onLazyLoad($any($event))"
+    [paginator]="true"
+    [rows]="grid.page().rows"
+    [first]="grid.page().first"
+    [totalRecords]="grid.totalRecords()"
+    [rowsPerPageOptions]="[10, 25, 50, 100]"
+    [filters]="grid.primengFilters()"
   >
     <ng-template #header>
       <tr>
-        <th>Name</th>
-        <th>Abbreviation</th>
+        <th pSortableColumn="name">
+          Name <p-sortIcon field="name" />
+          <p-columnFilter type="text" field="name" display="menu" />
+        </th>
+        <th pSortableColumn="abbreviation">
+          Abbreviation <p-sortIcon field="abbreviation" />
+          <p-columnFilter type="text" field="abbreviation" display="menu" />
+        </th>
         <th class="col-actions"></th>
       </tr>
     </ng-template>
@@ -33,13 +49,22 @@
         <td>{{ area.name }}</td>
         <td class="col-identifier">{{ area.abbreviation ?? '--' }}</td>
         <td class="col-actions">
-          <app-row-actions [items]="rowMenu(area)" [ariaLabel]="'Actions for ' + area.name" />
+          <app-row-actions
+            [items]="rowMenu(area)"
+            [ariaLabel]="'Actions for ' + area.name"
+          />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="3">No therapeutic areas yet. Add one to get started.</td>
+        <td colspan="3">
+          @if (grid.isFiltered()) {
+            No therapeutic areas match your filters.
+          } @else {
+            No therapeutic areas yet. Add one to get started.
+          }
+        </td>
       </tr>
     </ng-template>
   </p-table>

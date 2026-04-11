@@ -1,7 +1,7 @@
 <app-manage-page-shell
   eyebrow="Manage"
   title="Companies"
-  [count]="companies().length"
+  [count]="grid.totalRecords()"
   subtitle="Drug program sponsors tracked in this space."
 >
   <div actions>
@@ -15,17 +15,32 @@
     />
   </div>
 
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search companies..." />
+
   <p-table
     styleClass="manage-table"
-    [value]="companies()"
+    [value]="visibleCompanies()"
     [loading]="loading()"
     [tableStyle]="{ 'min-width': '48rem' }"
+    [lazy]="true"
+    (onLazyLoad)="grid.onLazyLoad($any($event))"
+    [paginator]="true"
+    [rows]="grid.page().rows"
+    [first]="grid.page().first"
+    [totalRecords]="grid.totalRecords()"
+    [rowsPerPageOptions]="[10, 25, 50, 100]"
+    [filters]="grid.primengFilters()"
   >
     <ng-template #header>
       <tr>
-        <th>Name</th>
+        <th pSortableColumn="name">
+          Name <p-sortIcon field="name" />
+          <p-columnFilter type="text" field="name" display="menu" />
+        </th>
         <th style="width: 10rem">Logo</th>
-        <th class="col-num">Order</th>
+        <th class="col-num" pSortableColumn="display_order">
+          Order <p-sortIcon field="display_order" />
+        </th>
         <th class="col-actions"></th>
       </tr>
     </ng-template>
@@ -55,13 +70,22 @@
         </td>
         <td class="col-num">{{ company.display_order }}</td>
         <td class="col-actions">
-          <app-row-actions [items]="rowMenu(company)" [ariaLabel]="'Actions for ' + company.name" />
+          <app-row-actions
+            [items]="rowMenu(company)"
+            [ariaLabel]="'Actions for ' + company.name"
+          />
         </td>
       </tr>
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="4">No companies yet. Add one to get started.</td>
+        <td colspan="4">
+          @if (grid.isFiltered()) {
+            No companies match your filters.
+          } @else {
+            No companies yet. Add one to get started.
+          }
+        </td>
       </tr>
     </ng-template>
   </p-table>

@@ -14,6 +14,8 @@ import { TrialService } from '../../../core/services/trial.service';
 import { ProductFormComponent } from './product-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 interface ProductRow {
@@ -33,6 +35,7 @@ interface ProductRow {
     ProductFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    GridToolbarComponent,
   ],
   templateUrl: './product-list.component.html',
 })
@@ -55,37 +58,42 @@ export class ProductListComponent implements OnInit {
   spaceId = '';
   tenantId = '';
 
-  // Optional company filter from ?company=<id> query param.
-  companyFilter = signal<string | null>(null);
-
-  // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
-
-  readonly companyLabel = computed(() => {
-    const id = this.companyFilter();
-    if (!id) return null;
-    return this.companies().find((c) => c.id === id)?.name ?? null;
-  });
 
   readonly rows = computed<ProductRow[]>(() => {
     const companyMap = new Map(this.companies().map((c) => [c.id, c]));
     const counts = this.trialCounts();
-    const filter = this.companyFilter();
-    return this.products()
-      .filter((p) => !filter || p.company_id === filter)
-      .map((product) => ({
-        product,
-        companyName: companyMap.get(product.company_id)?.name ?? '--',
-        trialCount: counts[product.id] ?? 0,
-      }));
+    return this.products().map((product) => ({
+      product,
+      companyName: companyMap.get(product.company_id)?.name ?? '--',
+      trialCount: counts[product.id] ?? 0,
+    }));
   });
+
+  readonly grid = createGridState<ProductRow>({
+    columns: [
+      { field: 'product.name', header: 'Name', filter: { kind: 'text' } },
+      { field: 'product.generic_name', header: 'Generic', filter: { kind: 'text' } },
+      {
+        field: 'product.company_id',
+        header: 'Company',
+        filter: {
+          kind: 'select',
+          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
+        },
+      },
+      { field: 'trialCount', header: 'Trials', filter: { kind: 'numeric' } },
+      { field: 'product.display_order', header: 'Order' },
+    ],
+    globalSearchFields: ['product.name', 'product.generic_name', 'companyName'],
+    defaultSort: { field: 'product.display_order', order: 1 },
+  });
+
+  readonly visibleRows = this.grid.filteredRows(this.rows);
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
-    this.route.queryParamMap.subscribe((params) => {
-      this.companyFilter.set(params.get('company'));
-    });
     await this.loadData();
   }
 
@@ -137,15 +145,9 @@ export class ProductListComponent implements OnInit {
 
   openTrials(productId: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
-      queryParams: { product: productId },
-    });
-  }
-
-  clearFilter(): void {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { company: null },
-      queryParamsHandling: 'merge',
+      queryParams: buildFilterQueryParams({
+        'trial.product_id': { kind: 'select', values: [productId] },
+      }),
     });
   }
 
