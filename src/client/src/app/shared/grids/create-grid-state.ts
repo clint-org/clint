@@ -48,6 +48,7 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
   const page: WritableSignal<{ first: number; rows: number }> = signal(initial.page);
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let isFirstLazyLoad = true;
 
   function onGlobalSearchInput(value: string): void {
     globalSearch.set(value);
@@ -159,6 +160,14 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     sortOrder?: number | null;
     filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }>;
   }): void {
+    // Skip the initial onLazyLoad call: PrimeNG fires it on table init with
+    // stale defaults (first=0) regardless of what [first] is bound to. We
+    // already have the correct state from URL decoding. Subsequent calls are
+    // real user actions and we honor them fully.
+    if (isFirstLazyLoad) {
+      isFirstLazyLoad = false;
+      return;
+    }
     if (typeof event.first === 'number' && typeof event.rows === 'number') {
       page.set({ first: event.first, rows: event.rows });
     }
@@ -177,9 +186,17 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
         const parsed = primengToFilterValue(col.filter.kind, metaArr);
         if (parsed) next[field] = parsed;
       }
-      filters.set(next);
-      // Any filter change resets page.
-      page.update((p) => ({ first: 0, rows: p.rows }));
+      // Only update filters + reset page when filters actually changed.
+      // PrimeNG includes the full filter state on every lazy event (including
+      // page/sort changes), so we must not reset page on a no-op filter pass.
+      const current = filters();
+      const filtersChanged =
+        JSON.stringify(Object.keys(next).sort()) !== JSON.stringify(Object.keys(current).sort()) ||
+        JSON.stringify(next) !== JSON.stringify(current);
+      if (filtersChanged) {
+        filters.set(next);
+        page.update((p) => ({ first: 0, rows: p.rows }));
+      }
     }
   }
 

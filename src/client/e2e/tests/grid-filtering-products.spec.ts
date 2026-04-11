@@ -69,16 +69,24 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
     expect(firstRowName).toMatch(/^Merck|^Pfizer/);
   });
 
-  test('paginator renders with correct page count for 20 products', async () => {
+  test('paginator click updates URL with page number', async () => {
     // Navigate fresh with pageSize=10 so 20 products span 2 pages.
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    // Wait for product rows and paginator to be fully loaded.
+    // Wait for rows to render — this ensures totalRecords is populated so the
+    // paginator enables the Next Page button before we click it.
     await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 5000 });
-    // Verify the paginator exists with multiple pages.
-    await expect(page.locator('.p-paginator')).toBeVisible();
-    // Verify the page count (20 products / 10 per page = 2 pages).
-    await expect(page.locator('.p-paginator').getByRole('button', { name: '1', exact: true })).toBeVisible();
-    await expect(page.locator('.p-paginator').getByRole('button', { name: '2', exact: true })).toBeVisible();
+    await expect(page.locator('.p-paginator-next')).toBeEnabled({ timeout: 3000 });
+
+    // Click the "next page" button (PrimeNG renders it with .p-paginator-next).
+    await page.locator('.p-paginator-next').click();
+    await expect(page).toHaveURL(/page=2/, { timeout: 2000 });
+  });
+
+  test('deep-link to page 2 lands on page 2', async () => {
+    await page.goto(`${productsUrl()}&page=2`, { waitUntil: 'networkidle' });
+    await expect(page).toHaveURL(/page=2/, { timeout: 2000 });
+    // Verify the paginator shows page 2 as active.
+    await expect(page.locator('.p-paginator .p-paginator-page.p-paginator-page-selected')).toContainText('2');
   });
 
   test('browser back navigates away from products page', async () => {

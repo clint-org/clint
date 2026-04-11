@@ -16,8 +16,10 @@ echo "Resetting database..."
 supabase db reset
 
 KEYS=$(supabase status 2>&1)
-ANON_KEY=$(echo "$KEYS" | grep "Publishable" | awk '{print $NF}')
-SERVICE_KEY=$(echo "$KEYS" | grep "Secret" | awk '{print $NF}')
+# Use sed to extract keys: supabase status uses box-drawing chars (│) which
+# break awk's $NF and corrupt the Authorization header in HTTP requests.
+ANON_KEY=$(echo "$KEYS" | grep "Publishable" | sed 's/.*│ *\([^ ]*\) *│ *$/\1/')
+SERVICE_KEY=$(echo "$KEYS" | grep "│ Secret " | grep -v "Key" | sed 's/.*│ *\([^ ]*\) *│ *$/\1/')
 
 if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ]; then
   echo "Failed to get Supabase keys"
