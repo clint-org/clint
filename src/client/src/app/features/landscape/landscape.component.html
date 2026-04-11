@@ -1,0 +1,86 @@
+<div class="flex flex-col h-full">
+  <!-- Breadcrumb / TA selector bar -->
+  <div class="flex items-center gap-3 px-4 py-2 border-b border-slate-200 bg-white">
+    <a
+      class="text-xs uppercase tracking-wider text-slate-500 hover:text-slate-900"
+      [routerLink]="['/t', tenantId(), 's', spaceId(), 'landscape']"
+    >
+      Landscape
+    </a>
+    <span class="text-slate-300">/</span>
+    <app-ta-selector
+      [therapeuticAreas]="therapeuticAreas()"
+      [selectedId]="taId()"
+      (selectionChange)="onTaSelect($event)"
+    />
+  </div>
+
+  <!-- Main area: chart + detail panel -->
+  <div class="flex-1 overflow-hidden">
+    @if (bullseyeData.isLoading()) {
+      <div class="flex items-center justify-center h-full">
+        <div class="flex flex-col items-center gap-3">
+          <p-progressspinner
+            strokeWidth="4"
+            [style]="{ width: '2rem', height: '2rem' }"
+            aria-label="Loading landscape data"
+          />
+          <span class="text-sm text-slate-500">Loading landscape data...</span>
+        </div>
+      </div>
+    } @else if (bullseyeData.error()) {
+      <div class="flex items-center justify-center h-full">
+        <div class="flex flex-col items-center gap-3 text-center max-w-md">
+          <p-message severity="error" [closable]="false">
+            Failed to load landscape data: {{ bullseyeData.error() }}
+          </p-message>
+          <p-button label="Retry" severity="primary" size="small" (onClick)="retry()" />
+        </div>
+      </div>
+    } @else {
+      @if (bullseyeData.value(); as ld) {
+        @if (ld.companies.length === 0) {
+          <div class="flex items-center justify-center h-full">
+            <div class="flex flex-col items-center gap-3 text-center max-w-md">
+              <p-message severity="info" [closable]="false">
+                No products tracked in {{ ld.therapeutic_area?.name }} yet.
+                Add products and trials to see them here.
+              </p-message>
+              <p-button
+                label="Manage products →"
+                severity="secondary"
+                size="small"
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'products']"
+              />
+            </div>
+          </div>
+        } @else {
+          <div class="landscape-layout">
+            <div class="landscape-chart-wrap">
+              <app-bullseye-chart
+                [data]="ld"
+                [selectedProductId]="selectedProductId()"
+                [hoveredProductId]="hoveredProductId()"
+                [highlightedRing]="highlightedRing()"
+                (productHover)="onProductHover($event)"
+                (productClick)="onProductClick($event)"
+                (backgroundClick)="onBackgroundClick()"
+              />
+            </div>
+            <div class="landscape-panel-wrap">
+              <app-bullseye-detail-panel
+                [data]="ld"
+                [selectedProduct]="selectedProduct()"
+                (openTrial)="onOpenTrial($event)"
+                (openCompany)="onOpenCompany()"
+                (openInTimeline)="onOpenInTimeline($event)"
+                (ringHighlightToggle)="onRingHighlightToggle($event)"
+                (clearSelection)="onClearSelection()"
+              />
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

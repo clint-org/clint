@@ -1,0 +1,83 @@
+<div class="flex flex-col h-full">
+  <div class="flex items-center gap-3 px-4 py-2 border-b border-slate-200 bg-white">
+    <span class="text-xs uppercase tracking-wider text-slate-500">Landscape</span>
+    <span class="text-slate-300">/</span>
+    <span class="text-sm text-slate-700">All therapeutic areas</span>
+  </div>
+
+  <div class="flex-1 overflow-auto p-6">
+    @if (indexData.isLoading()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="flex flex-col items-center gap-3">
+          <p-progressspinner
+            strokeWidth="4"
+            [style]="{ width: '2rem', height: '2rem' }"
+            aria-label="Loading therapeutic areas"
+          />
+          <span class="text-sm text-slate-500">Loading therapeutic areas...</span>
+        </div>
+      </div>
+    } @else if (indexData.error()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="flex flex-col items-center gap-3 text-center max-w-md">
+          <p-message severity="error" [closable]="false">
+            Failed to load landscape index: {{ indexData.error() }}
+          </p-message>
+          <p-button label="Retry" severity="primary" size="small" (onClick)="retry()" />
+        </div>
+      </div>
+    } @else if (indexData.value()) {
+      @let entries = indexData.value()!;
+      @if (entries.length === 0) {
+        <div class="flex items-center justify-center py-20">
+          <div class="flex flex-col items-center gap-3 text-center max-w-md">
+            <p-message severity="info" [closable]="false">
+              No therapeutic areas tracked yet. Add one to start building a landscape view.
+            </p-message>
+            <p-button
+              label="Add therapeutic area →"
+              severity="secondary"
+              size="small"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'therapeutic-areas']"
+            />
+          </div>
+        </div>
+      } @else {
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          @for (entry of entries; track entry.therapeutic_area.id) {
+            <a
+              class="landscape-index-card"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'landscape', entry.therapeutic_area.id]"
+            >
+              <div class="landscape-index-card-title">{{ entry.therapeutic_area.name }}</div>
+              @if (entry.therapeutic_area.abbreviation) {
+                <div class="landscape-index-card-abbr">{{ entry.therapeutic_area.abbreviation }}</div>
+              }
+              <div class="landscape-index-card-stats">
+                <span>{{ entry.product_count }} {{ entry.product_count === 1 ? 'product' : 'products' }}</span>
+                <span class="landscape-index-card-sep">·</span>
+                <span>{{ entry.company_count }} {{ entry.company_count === 1 ? 'company' : 'companies' }}</span>
+              </div>
+              @if (entry.highest_phase_present) {
+                <div class="landscape-index-card-phase">
+                  Highest phase: <strong>{{ entry.highest_phase_present }}</strong>
+                </div>
+              } @else {
+                <div class="landscape-index-card-phase landscape-index-card-phase--empty">
+                  No phase data
+                </div>
+              }
+              @if (entry.products_missing_phase > 0) {
+                <div class="landscape-index-card-warning">
+                  {{ entry.products_missing_phase }}
+                  {{ entry.products_missing_phase === 1 ? 'product' : 'products' }}
+                  missing phase data
+                </div>
+              }
+            </a>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

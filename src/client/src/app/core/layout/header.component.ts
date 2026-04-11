@@ -86,6 +86,13 @@ import { Tenant } from '../models/tenant.model';
               Dashboard
             </a>
             <a
+              [routerLink]="spaceBase().concat('landscape')"
+              routerLinkActive="nav-active"
+              class="nav-link"
+            >
+              Landscape
+            </a>
+            <a
               [routerLink]="spaceBase().concat('manage', 'companies')"
               routerLinkActive="nav-active"
               class="nav-link"

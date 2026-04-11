@@ -42,6 +42,20 @@ export const routes: Routes = [
               import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
           },
           {
+            path: 'landscape',
+            loadComponent: () =>
+              import('./features/landscape/landscape-index.component').then(
+                (m) => m.LandscapeIndexComponent
+              ),
+          },
+          {
+            path: 'landscape/:therapeuticAreaId',
+            loadComponent: () =>
+              import('./features/landscape/landscape.component').then(
+                (m) => m.LandscapeComponent
+              ),
+          },
+          {
             path: 'manage/companies',
             loadComponent: () =>
               import('./features/manage/companies/company-list.component').then(
