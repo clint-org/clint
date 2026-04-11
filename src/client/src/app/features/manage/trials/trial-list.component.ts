@@ -16,12 +16,15 @@ import { TrialFormComponent } from './trial-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
+import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 interface TrialRow {
   readonly trial: Trial;
   readonly productName: string;
   readonly companyName: string;
+  readonly companyId: string;
   readonly phaseCount: number;
   readonly markerCount: number;
 }
@@ -38,6 +41,7 @@ interface TrialRow {
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    GridToolbarComponent,
   ],
   templateUrl: './trial-list.component.html',
 })
@@ -52,7 +56,6 @@ export class TrialListComponent implements OnInit {
   spaceId = '';
   tenantId = '';
 
-  // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
   trials = signal<Trial[]>([]);
@@ -61,43 +64,90 @@ export class TrialListComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  // Optional product filter coming from ?product=<id> query param.
-  productFilter = signal<string | null>(null);
-
   modalOpen = signal(false);
   editingTrial = signal<Trial | null>(null);
-
-  readonly productLabel = computed(() => {
-    const id = this.productFilter();
-    if (!id) return null;
-    return this.products().find((p) => p.id === id)?.name ?? null;
-  });
 
   readonly rows = computed<TrialRow[]>(() => {
     const productMap = new Map(this.products().map((p) => [p.id, p]));
     const companyMap = new Map(this.companies().map((c) => [c.id, c]));
-    const filter = this.productFilter();
-    return this.trials()
-      .filter((t) => !filter || t.product_id === filter)
-      .map((trial) => {
-        const product = productMap.get(trial.product_id);
-        const company = product ? companyMap.get(product.company_id) : undefined;
-        return {
-          trial,
-          productName: product?.name ?? '--',
-          companyName: company?.name ?? '--',
-          phaseCount: trial.trial_phases?.length ?? 0,
-          markerCount: trial.trial_markers?.length ?? 0,
-        };
-      });
+    return this.trials().map((trial) => {
+      const product = productMap.get(trial.product_id);
+      const company = product ? companyMap.get(product.company_id) : undefined;
+      return {
+        trial,
+        productName: product?.name ?? '--',
+        companyName: company?.name ?? '--',
+        companyId: company?.id ?? '',
+        phaseCount: trial.trial_phases?.length ?? 0,
+        markerCount: trial.trial_markers?.length ?? 0,
+      };
+    });
+  });
+
+  readonly grid = createGridState<TrialRow>({
+    columns: [
+      { field: 'trial.name', header: 'Trial', filter: { kind: 'text' } },
+      { field: 'trial.identifier', header: 'NCT ID', filter: { kind: 'text' } },
+      {
+        field: 'trial.product_id',
+        header: 'Product',
+        filter: {
+          kind: 'select',
+          options: () => this.products().map((p) => ({ label: p.name, value: p.id })),
+        },
+      },
+      {
+        field: 'companyId',
+        header: 'Company',
+        filter: {
+          kind: 'select',
+          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
+        },
+      },
+      {
+        field: 'trial.status',
+        header: 'Status',
+        filter: {
+          kind: 'select',
+          options: () => {
+            const seen = new Set<string>();
+            for (const t of this.trials()) if (t.status) seen.add(t.status);
+            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
+          },
+        },
+      },
+      { field: 'phaseCount', header: 'Phases', filter: { kind: 'numeric' } },
+      { field: 'markerCount', header: 'Markers', filter: { kind: 'numeric' } },
+    ],
+    globalSearchFields: [
+      'trial.name',
+      'trial.identifier',
+      'productName',
+      'companyName',
+      'trial.status',
+    ],
+    defaultSort: { field: 'trial.name', order: 1 },
+  });
+
+  readonly visibleRows = this.grid.filteredRows(this.rows);
+
+  /**
+   * If the user arrived via a deep-link with the product filter pre-applied
+   * (e.g., from product-list "View trials"), the trial-form modal can pre-select
+   * that product when opened. Reads the current product_id filter value out of
+   * the grid state.
+   */
+  readonly preselectedProductId = computed<string | null>(() => {
+    const filter = this.grid.filters()['trial.product_id'];
+    if (filter?.kind === 'select' && filter.values.length > 0) {
+      return String(filter.values[0]);
+    }
+    return null;
   });
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
-    this.route.queryParamMap.subscribe((params) => {
-      this.productFilter.set(params.get('product'));
-    });
     await this.loadData();
   }
 
@@ -149,14 +199,6 @@ export class TrialListComponent implements OnInit {
 
   openDetail(trial: Trial): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trial.id]);
-  }
-
-  clearFilter(): void {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { product: null },
-      queryParamsHandling: 'merge',
-    });
   }
 
   async confirmDelete(trial: Trial): Promise<void> {
