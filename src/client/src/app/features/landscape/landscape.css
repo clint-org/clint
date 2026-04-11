@@ -9,11 +9,11 @@
 
 .landscape-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 1.25rem;
   height: 100%;
   min-height: 0;
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem 1.5rem;
   overflow: hidden;
 }
 
@@ -24,7 +24,12 @@
   }
 }
 
+/* Chart container uses CSS container queries so the square frame inside
+ * grows to fill the smaller of its two dimensions. This guarantees the
+ * bullseye reads as large as the viewport allows regardless of aspect
+ * ratio. */
 .landscape-chart-wrap {
+  container-type: size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,13 +38,26 @@
   overflow: hidden;
 }
 
-.landscape-chart-wrap .bullseye-svg {
+.bullseye-chart-frame {
+  aspect-ratio: 1 / 1;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+}
+
+/* The Angular host element for app-bullseye-chart is inline by default and
+ * must be explicitly sized, otherwise the SVG inside falls back to its
+ * 300x150 intrinsic size regardless of CSS on the SVG itself. */
+.bullseye-chart-frame app-bullseye-chart {
+  display: block;
   width: 100%;
   height: 100%;
-  max-width: 720px;
-  max-height: 720px;
-  aspect-ratio: 1 / 1;
+}
+
+.bullseye-chart-frame svg.bullseye-svg {
+  width: 100%;
+  height: 100%;
   cursor: default;
+  display: block;
 }
 
 .landscape-panel-wrap {

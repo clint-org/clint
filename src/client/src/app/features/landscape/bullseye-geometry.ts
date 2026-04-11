@@ -14,8 +14,8 @@
 
 export const CX = 500;
 export const CY = 500;
-export const INNER_RADIUS = 60;
-export const OUTER_RADIUS = 420;
+export const INNER_RADIUS = 95;
+export const OUTER_RADIUS = 335;
 export const LABEL_MARGIN = 40;
 export const RINGS = 7;
 
@@ -101,7 +101,7 @@ export interface CompanyLabelTransform {
   anchor: 'start' | 'end';
 }
 
-export function companyLabelTransform(angleRad: number, offset = 24): CompanyLabelTransform {
+export function companyLabelTransform(angleRad: number, offset = 28): CompanyLabelTransform {
   const x = CX + (OUTER_RADIUS + offset) * Math.cos(angleRad);
   const y = CY + (OUTER_RADIUS + offset) * Math.sin(angleRad);
   const deg = (angleRad * 180) / Math.PI;

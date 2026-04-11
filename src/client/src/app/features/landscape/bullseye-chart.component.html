@@ -37,38 +37,7 @@
     />
   }
 
-  <!-- ring labels at 12 o'clock gutter -->
-  @for (ring of rings(); track 'label-' + ring.devRank) {
-    <text
-      [attr.x]="cx + 8"
-      [attr.y]="ringLabelY(ring.radius)"
-      fill="#64748b"
-      font-size="13"
-      font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
-      letter-spacing="1.2"
-    >
-      {{ ring.phase }}
-    </text>
-  }
-
-  <!-- company labels outside outer rim -->
-  @for (label of companyLabels(); track label.id) {
-    <text
-      [attr.x]="label.x"
-      [attr.y]="label.y"
-      [attr.text-anchor]="label.anchor"
-      [attr.transform]="'rotate(' + label.rotate + ' ' + label.x + ' ' + label.y + ')'"
-      fill="#334155"
-      font-size="16"
-      font-weight="600"
-      letter-spacing="1.4"
-      dominant-baseline="middle"
-    >
-      {{ label.name }}
-    </text>
-  }
-
-  <!-- center disc -->
+  <!-- center disc (drawn before the inner ring label so the label sits on top) -->
   <circle
     [attr.cx]="cx"
     [attr.cy]="cy"
@@ -95,6 +64,41 @@
   >
     {{ productCountSummary() }}
   </text>
+
+  <!-- ring labels at 12 o'clock gutter. LAUNCHED is omitted — the center
+       disc with the TA name is a clearer visual anchor for the innermost
+       position than a redundant ring label. -->
+  @for (ring of rings(); track 'label-' + ring.devRank) {
+    @if (ring.phase !== 'LAUNCHED') {
+      <text
+        [attr.x]="cx + 8"
+        [attr.y]="ringLabelY(ring.radius)"
+        fill="#64748b"
+        font-size="13"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        letter-spacing="1.2"
+      >
+        {{ ring.phase }}
+      </text>
+    }
+  }
+
+  <!-- company labels outside outer rim -->
+  @for (label of companyLabels(); track label.id) {
+    <text
+      [attr.x]="label.x"
+      [attr.y]="label.y"
+      [attr.text-anchor]="label.anchor"
+      [attr.transform]="'rotate(' + label.rotate + ' ' + label.x + ' ' + label.y + ')'"
+      fill="#334155"
+      font-size="16"
+      font-weight="600"
+      letter-spacing="1.4"
+      dominant-baseline="middle"
+    >
+      {{ label.name }}
+    </text>
+  }
 
   <!-- dots -->
   @for (dot of dots(); track dot.product.id) {

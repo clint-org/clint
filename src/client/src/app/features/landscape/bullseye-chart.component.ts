@@ -42,7 +42,8 @@ interface DotSpec {
 }
 
 const LABEL_SHRINK_THRESHOLD = 12;
-const ABBREVIATION_MAX_LENGTH = 12;
+const ABBREVIATION_MAX_LENGTH = 14;
+const LONG_NAME_THRESHOLD = 14;
 const HOVER_RADIUS = 11;
 const DEFAULT_RADIUS = 8;
 const SELECTED_RADIUS = 12;
@@ -100,10 +101,13 @@ export class BullseyeChartComponent {
   protected readonly companyLabels = computed<CompanyLabelSpec[]>(() => {
     const companies = this.companies();
     const total = companies.length;
-    const shrink = total > LABEL_SHRINK_THRESHOLD;
+    const forceShrink = total > LABEL_SHRINK_THRESHOLD;
     return companies.map((c, i) => {
       const transform = companyLabelTransform(companyAngle(i, total));
-      const displayName = shrink ? abbreviateCompanyName(c.name) : c.name.toUpperCase();
+      const needsAbbreviation = forceShrink || c.name.length > LONG_NAME_THRESHOLD;
+      const displayName = needsAbbreviation
+        ? abbreviateCompanyName(c.name)
+        : c.name.toUpperCase();
       return {
         id: c.id,
         name: displayName,

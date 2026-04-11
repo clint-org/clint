@@ -57,6 +57,7 @@
         } @else {
           <div class="landscape-layout">
             <div class="landscape-chart-wrap">
+              <div class="bullseye-chart-frame">
               <app-bullseye-chart
                 [data]="ld"
                 [selectedProductId]="selectedProductId()"
@@ -66,6 +67,7 @@
                 (productClick)="onProductClick($event)"
                 (backgroundClick)="onBackgroundClick()"
               />
+              </div>
             </div>
             <div class="landscape-panel-wrap">
               <app-bullseye-detail-panel
