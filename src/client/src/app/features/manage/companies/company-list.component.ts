@@ -11,6 +11,8 @@ import { CompanyService } from '../../../core/services/company.service';
 import { CompanyFormComponent } from './company-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 @Component({
@@ -24,6 +26,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
     CompanyFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    GridToolbarComponent,
   ],
   templateUrl: './company-list.component.html',
 })
@@ -45,6 +48,17 @@ export class CompanyListComponent implements OnInit {
   // muted placeholder instead of rendering a broken image icon.
   readonly brokenLogos = signal<ReadonlySet<string>>(new Set());
 
+  readonly grid = createGridState<Company>({
+    columns: [
+      { field: 'name', header: 'Name', filter: { kind: 'text' } },
+      { field: 'display_order', header: 'Order' },
+    ],
+    globalSearchFields: ['name'],
+    defaultSort: { field: 'display_order', order: 1 },
+  });
+
+  readonly visibleCompanies = this.grid.filteredRows(this.companies);
+
   // Menu items are memoized per row-id so p-menu gets a stable reference on
   // every change-detection cycle. Without this, PrimeNG's popup menu swallows
   // the first click because the MenuItem[] is a new array every render.
@@ -58,7 +72,9 @@ export class CompanyListComponent implements OnInit {
 
   openProducts(companyId: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'products'], {
-      queryParams: { company: companyId },
+      queryParams: buildFilterQueryParams({
+        'product.company_id': { kind: 'select', values: [companyId] },
+      }),
     });
   }
 
