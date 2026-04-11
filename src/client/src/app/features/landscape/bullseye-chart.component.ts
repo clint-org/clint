@@ -1,18 +1,25 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 
-import { BullseyeData, BullseyeProduct, RingPhase } from '../../core/models/landscape.model';
+import {
+  BullseyeData,
+  BullseyeProduct,
+  PHASE_COLOR,
+  RingPhase,
+} from '../../core/models/landscape.model';
 import {
   CompanyLabelTransform,
   CX,
   CY,
   INNER_RADIUS,
   OUTER_RADIUS,
+  annularBandPath,
   companyAngle,
   companyLabelTransform,
   jitterAngles,
   polarToCartesian,
   ringRadius,
+  sectorAnnularPath,
   sectorWidth,
 } from './bullseye-geometry';
 
@@ -27,6 +34,18 @@ interface SpokeSpec {
   companyId: string;
   x2: number;
   y2: number;
+}
+
+interface SectorSpec {
+  companyId: string;
+  path: string;
+  fill: string;
+}
+
+interface BandSpec {
+  phase: RingPhase;
+  path: string;
+  fill: string;
 }
 
 interface CompanyLabelSpec extends CompanyLabelTransform {
@@ -47,8 +66,6 @@ const LONG_NAME_THRESHOLD = 14;
 const HOVER_RADIUS = 11;
 const DEFAULT_RADIUS = 8;
 const SELECTED_RADIUS = 12;
-const FILL_BASE = '#0d9488';
-const FILL_SELECTED = '#0f766e';
 const DIMMED_OPACITY = 0.55;
 
 @Component({
@@ -98,6 +115,44 @@ export class BullseyeChartComponent {
     });
   });
 
+  protected readonly bands = computed<BandSpec[]>(() => {
+    // Six annular bands: each one fills the area between two consecutive
+    // ring radii. Drawn between sectors and rings; uses an additive slate
+    // tint at low alpha so it darkens whatever sector tint sits below
+    // without obscuring it.
+    const ringSpecs = this.rings();
+    // sort outer (PRECLIN) -> inner (LAUNCHED) by descending devRank distance
+    const sorted = [...ringSpecs].sort((a, b) => b.radius - a.radius);
+    const result: BandSpec[] = [];
+    for (let i = 0; i < sorted.length - 1; i += 1) {
+      const outer = sorted[i];
+      const inner = sorted[i + 1];
+      result.push({
+        phase: outer.phase,
+        path: annularBandPath(outer.radius, inner.radius),
+        // Alternate between a faint slate darkener and transparent so
+        // every other phase band reads slightly heavier.
+        fill: i % 2 === 0 ? 'rgba(100, 116, 139, 0.10)' : 'rgba(100, 116, 139, 0)',
+      });
+    }
+    return result;
+  });
+
+  protected readonly sectors = computed<SectorSpec[]>(() => {
+    const companies = this.companies();
+    const total = companies.length;
+    // For even company counts, alternate two shades. For odd counts we
+    // rotate through three shades so we never get two adjacent wedges
+    // with the same fill at the wrap-around (which would look like one
+    // big wedge instead of two distinct companies).
+    const tints = total % 2 === 0 ? ['#e2e8f0', '#ffffff'] : ['#e2e8f0', '#ffffff', '#f1f5f9'];
+    return companies.map((c, i) => ({
+      companyId: c.id,
+      path: sectorAnnularPath(i, total),
+      fill: tints[i % tints.length],
+    }));
+  });
+
   protected readonly companyLabels = computed<CompanyLabelSpec[]>(() => {
     const companies = this.companies();
     const total = companies.length;
@@ -105,9 +160,7 @@ export class BullseyeChartComponent {
     return companies.map((c, i) => {
       const transform = companyLabelTransform(companyAngle(i, total));
       const needsAbbreviation = forceShrink || c.name.length > LONG_NAME_THRESHOLD;
-      const displayName = needsAbbreviation
-        ? abbreviateCompanyName(c.name)
-        : c.name.toUpperCase();
+      const displayName = needsAbbreviation ? abbreviateCompanyName(c.name) : c.name.toUpperCase();
       return {
         id: c.id,
         name: displayName,
@@ -169,7 +222,11 @@ export class BullseyeChartComponent {
   }
 
   protected dotFill(dot: DotSpec): string {
-    return this.selectedProductId() === dot.product.id ? FILL_SELECTED : FILL_BASE;
+    return PHASE_COLOR[dot.product.highest_phase] ?? '#0d9488';
+  }
+
+  protected ringLabelFill(phase: RingPhase): string {
+    return PHASE_COLOR[phase] ?? '#64748b';
   }
 
   protected dotOpacity(dot: DotSpec): number {

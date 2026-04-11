@@ -8,9 +8,20 @@
   (keydown.escape)="onBackgroundClick()"
 >
   <desc>
-    Concentric rings represent development phases from Launched at the center to
-    Preclinical at the outer edge. Companies are arranged clockwise from the top.
+    Concentric rings represent development phases from Launched at the center to Preclinical at the
+    outer edge. Companies are arranged clockwise from the top, each owning a wedge-shaped sector of
+    the chart.
   </desc>
+
+  <!-- alternating company sector wedges (drawn first so rings/spokes/dots layer on top) -->
+  @for (sector of sectors(); track sector.companyId) {
+    <path [attr.d]="sector.path" [attr.fill]="sector.fill" stroke="none" />
+  }
+
+  <!-- alternating phase bands layered on top of sectors (additive slate tint) -->
+  @for (band of bands(); track band.phase) {
+    <path [attr.d]="band.path" [attr.fill]="band.fill" fill-rule="evenodd" stroke="none" />
+  }
 
   <!-- rings -->
   @for (ring of rings(); track ring.devRank) {
@@ -38,12 +49,7 @@
   }
 
   <!-- center disc (drawn before the inner ring label so the label sits on top) -->
-  <circle
-    [attr.cx]="cx"
-    [attr.cy]="cy"
-    [attr.r]="innerRadius - 4"
-    fill="white"
-  />
+  <circle [attr.cx]="cx" [attr.cy]="cy" [attr.r]="innerRadius - 4" fill="white" />
   <text
     [attr.x]="cx"
     [attr.y]="cy - 6"
@@ -55,26 +61,22 @@
   >
     {{ taName() }}
   </text>
-  <text
-    [attr.x]="cx"
-    [attr.y]="cy + 16"
-    text-anchor="middle"
-    fill="#64748b"
-    font-size="12"
-  >
+  <text [attr.x]="cx" [attr.y]="cy + 16" text-anchor="middle" fill="#64748b" font-size="12">
     {{ productCountSummary() }}
   </text>
 
   <!-- ring labels at 12 o'clock gutter. LAUNCHED is omitted — the center
        disc with the TA name is a clearer visual anchor for the innermost
-       position than a redundant ring label. -->
+       position than a redundant ring label. Each label is colored by its
+       phase so the legend matches the dot color. -->
   @for (ring of rings(); track 'label-' + ring.devRank) {
     @if (ring.phase !== 'LAUNCHED') {
       <text
         [attr.x]="cx + 8"
         [attr.y]="ringLabelY(ring.radius)"
-        fill="#64748b"
+        [attr.fill]="ringLabelFill(ring.phase)"
         font-size="13"
+        font-weight="600"
         font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
         letter-spacing="1.2"
       >
@@ -109,7 +111,7 @@
           [attr.cy]="dot.y"
           [attr.r]="dotRadius(dot) + 6"
           fill="none"
-          stroke="#0d9488"
+          [attr.stroke]="dotFill(dot)"
           stroke-width="2"
           pointer-events="none"
         />

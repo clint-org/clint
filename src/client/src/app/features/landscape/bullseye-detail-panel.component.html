@@ -39,7 +39,9 @@
     </section>
 
     <section class="landscape-detail-section">
-      <div class="landscape-detail-label">HIGHEST PHASE IN {{ therapeuticAreaName().toUpperCase() }}</div>
+      <div class="landscape-detail-label">
+        HIGHEST PHASE IN {{ therapeuticAreaName().toUpperCase() }}
+      </div>
       <div class="landscape-detail-phase">
         <span class="landscape-phase-chip" aria-hidden="true"></span>
         <span class="landscape-phase-name">{{ highestPhaseLabel() }}</span>
@@ -47,16 +49,18 @@
     </section>
 
     <section class="landscape-detail-section">
-      <div class="landscape-detail-label">
-        TRIALS IN THIS TA ({{ product.trials.length }})
-      </div>
+      <div class="landscape-detail-label">TRIALS IN THIS TA ({{ product.trials.length }})</div>
       @if (product.trials.length === 0) {
         <p class="landscape-detail-empty-text">No trials tracked in this TA.</p>
       } @else {
         <ul class="landscape-detail-trial-list">
           @for (trial of visibleTrials(); track trial.id) {
             <li class="landscape-detail-trial-row">
-              <button type="button" class="landscape-detail-trial-link" (click)="onTrialClick(trial.id)">
+              <button
+                type="button"
+                class="landscape-detail-trial-link"
+                (click)="onTrialClick(trial.id)"
+              >
                 <span class="landscape-detail-trial-name">{{ trial.name }}</span>
                 <span class="landscape-detail-trial-meta">
                   @if (trial.identifier) {
@@ -74,11 +78,7 @@
           }
         </ul>
         @if (hasMoreTrials()) {
-          <button
-            type="button"
-            class="landscape-detail-show-all"
-            (click)="onShowAllTrials()"
-          >
+          <button type="button" class="landscape-detail-show-all" (click)="onShowAllTrials()">
             Show all {{ product.trials.length }} trials
           </button>
         }
@@ -128,8 +128,14 @@
               (click)="onRingRowClick(entry.phase)"
               [attr.aria-label]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
             >
-              <span class="landscape-ring-phase">{{ entry.phase }}</span>
-              <span class="landscape-ring-count">{{ entry.count }}</span>
+              <span class="landscape-ring-phase" [style.color]="phaseColor(entry.phase)">{{
+                entry.phase
+              }}</span>
+              <span
+                class="landscape-ring-count"
+                [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
+                >{{ entry.count }}</span
+              >
             </button>
           </li>
         }

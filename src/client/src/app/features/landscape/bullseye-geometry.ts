@@ -90,6 +90,56 @@ export function jitterAngles(centerAngle: number, sectorWidthRad: number, k: num
 }
 
 /**
+ * SVG path string for a full annular ring band (between two concentric
+ * radii, full 360 degrees). Uses fill-rule="evenodd" so the inner circle
+ * cuts a hole. Used for tinted phase-band backgrounds.
+ */
+export function annularBandPath(outerRadius: number, innerRadius: number): string {
+  // Two complete circles drawn in opposite directions; with fill-rule
+  // evenodd this produces an annulus (donut) shape.
+  return [
+    `M ${CX - outerRadius},${CY}`,
+    `A ${outerRadius},${outerRadius} 0 1 0 ${CX + outerRadius},${CY}`,
+    `A ${outerRadius},${outerRadius} 0 1 0 ${CX - outerRadius},${CY}`,
+    'Z',
+    `M ${CX - innerRadius},${CY}`,
+    `A ${innerRadius},${innerRadius} 0 1 1 ${CX + innerRadius},${CY}`,
+    `A ${innerRadius},${innerRadius} 0 1 1 ${CX - innerRadius},${CY}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * SVG path string for one company's annular wedge — the pie-slice between
+ * INNER_RADIUS and OUTER_RADIUS that visually represents the company's
+ * angular territory. Used for the alternating-tint sector backgrounds so
+ * each company "owns" a clearly visible wedge of the chart.
+ */
+export function sectorAnnularPath(companyIndex: number, total: number): string {
+  if (total <= 0) return '';
+  const stepRad = (2 * Math.PI) / total;
+  const base = companyAngle(companyIndex, total);
+  const startAngle = base - stepRad / 2;
+  const endAngle = base + stepRad / 2;
+
+  const innerStart = polarToCartesian(startAngle, INNER_RADIUS);
+  const outerStart = polarToCartesian(startAngle, OUTER_RADIUS);
+  const innerEnd = polarToCartesian(endAngle, INNER_RADIUS);
+  const outerEnd = polarToCartesian(endAngle, OUTER_RADIUS);
+
+  const largeArc = stepRad > Math.PI ? 1 : 0;
+
+  return [
+    `M ${innerStart.x},${innerStart.y}`,
+    `L ${outerStart.x},${outerStart.y}`,
+    `A ${OUTER_RADIUS},${OUTER_RADIUS} 0 ${largeArc} 1 ${outerEnd.x},${outerEnd.y}`,
+    `L ${innerEnd.x},${innerEnd.y}`,
+    `A ${INNER_RADIUS},${INNER_RADIUS} 0 ${largeArc} 0 ${innerStart.x},${innerStart.y}`,
+    'Z',
+  ].join(' ');
+}
+
+/**
  * Positioning info for a company label: the text anchor point and a
  * rotation angle that keeps the text upright (text in the bottom
  * hemisphere is flipped 180 degrees so it still reads left-to-right).

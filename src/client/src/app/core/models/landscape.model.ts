@@ -6,14 +6,7 @@
  * the selected TA. Companies sit on spokes around the perimeter.
  */
 
-export type RingPhase =
-  | 'PRECLIN'
-  | 'P1'
-  | 'P2'
-  | 'P3'
-  | 'P4'
-  | 'APPROVED'
-  | 'LAUNCHED';
+export type RingPhase = 'PRECLIN' | 'P1' | 'P2' | 'P3' | 'P4' | 'APPROVED' | 'LAUNCHED';
 
 /**
  * Phases in development order: PRECLIN (earliest research) through
@@ -43,6 +36,22 @@ export const RING_DEV_RANK: Record<RingPhase, number> = {
   P4: 4,
   APPROVED: 5,
   LAUNCHED: 6,
+};
+
+/**
+ * Phase color palette used by both the bullseye chart (dots, ring labels)
+ * and the side detail panel (ring histogram). Steps in saturation from
+ * slate (early) through teal/violet (mid) to emerald (launched) so a
+ * single glance encodes the phase by hue as well as position.
+ */
+export const PHASE_COLOR: Record<RingPhase, string> = {
+  PRECLIN: '#94a3b8', // slate-400
+  P1: '#64748b', // slate-500
+  P2: '#0891b2', // cyan-600
+  P3: '#0d9488', // teal-600 (brand hero color, pivotal phase)
+  P4: '#7c3aed', // violet-600
+  APPROVED: '#6d28d9', // violet-700
+  LAUNCHED: '#059669', // emerald-600 (distinct hue for "the goal")
 };
 
 export interface BullseyeTherapeuticArea {

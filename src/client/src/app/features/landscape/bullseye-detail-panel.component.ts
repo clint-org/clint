@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import {
   BullseyeData,
   BullseyeProduct,
+  PHASE_COLOR,
   RING_ORDER,
   RingPhase,
 } from '../../core/models/landscape.model';
@@ -74,9 +75,7 @@ export class BullseyeDetailPanelComponent {
       counts.set(product.highest_phase, (counts.get(product.highest_phase) ?? 0) + 1);
     }
     // Present in descending development order (launched at the top)
-    return [...RING_ORDER]
-      .reverse()
-      .map((phase) => ({ phase, count: counts.get(phase) ?? 0 }));
+    return [...RING_ORDER].reverse().map((phase) => ({ phase, count: counts.get(phase) ?? 0 }));
   });
 
   protected readonly totalProducts = computed(() => this.allProducts().length);
@@ -117,5 +116,9 @@ export class BullseyeDetailPanelComponent {
 
   protected onClearSelection(): void {
     this.clearSelection.emit();
+  }
+
+  protected phaseColor(phase: RingPhase): string {
+    return PHASE_COLOR[phase] ?? '#64748b';
   }
 }
