@@ -1,15 +1,34 @@
 import { inject, Injectable } from '@angular/core';
 
+import { Marker } from '../models/marker.model';
 import { Trial } from '../models/trial.model';
 import { SupabaseService } from './supabase.service';
 
 const TRIAL_SELECT = `
   *,
   therapeutic_areas(*),
-  trial_phases(*),
-  trial_markers(*, marker_types(*)),
+  marker_assignments(
+    id,
+    marker_id,
+    trial_id,
+    created_at,
+    markers(
+      *,
+      marker_types(*, marker_categories(*))
+    )
+  ),
   trial_notes(*)
 `;
+
+/** Flatten marker_assignments[].markers into trial.markers[] */
+function normalizeTrial(raw: Record<string, unknown>): Trial {
+  const assignments = (raw['marker_assignments'] as Array<{ markers: Marker }> | null) ?? [];
+  const markers: Marker[] = assignments
+    .map(a => a.markers)
+    .filter((m): m is Marker => !!m);
+  const { marker_assignments: _ma, ...rest } = raw;
+  return { ...rest, markers } as unknown as Trial;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TrialService {
@@ -22,7 +41,7 @@ export class TrialService {
       .eq('product_id', productId)
       .order('display_order');
     if (error) throw error;
-    return data as Trial[];
+    return (data as Record<string, unknown>[]).map(normalizeTrial);
   }
 
   async listBySpace(spaceId: string): Promise<Trial[]> {
@@ -32,7 +51,7 @@ export class TrialService {
       .eq('space_id', spaceId)
       .order('display_order');
     if (error) throw error;
-    return data as Trial[];
+    return (data as Record<string, unknown>[]).map(normalizeTrial);
   }
 
   async getById(id: string): Promise<Trial> {
@@ -42,7 +61,7 @@ export class TrialService {
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data as Trial;
+    return normalizeTrial(data as Record<string, unknown>);
   }
 
   async create(spaceId: string, trial: Partial<Trial>): Promise<Trial> {

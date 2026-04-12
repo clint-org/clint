@@ -89,73 +89,35 @@
         }
       </app-section-card>
 
-      <!-- Phases -->
-      <app-section-card title="Phases">
-        <p-button
-          actions
-          label="Add phase"
-          icon="fa-solid fa-plus"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          (onClick)="addingPhase.set(true); editingPhase.set(null)"
-        />
-
-        @if (addingPhase() || editingPhase()) {
-          <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
-            <app-phase-form
-              [phase]="editingPhase()"
-              [trialId]="trialId()"
-              (saved)="onPhaseSaved()"
-              (cancelled)="addingPhase.set(false); editingPhase.set(null)"
-            />
-          </div>
-        }
-
-        <p-table
-          styleClass="manage-table"
-          [value]="t.trial_phases ?? []"
-          [tableStyle]="{ 'min-width': '48rem' }"
-          aria-label="Trial phases"
-        >
-          <ng-template #header>
-            <tr>
-              <th>Type</th>
-              <th>Label</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Color</th>
-              <th class="col-actions"></th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-phase>
-            <tr>
-              <td>{{ phase.phase_type }}</td>
-              <td class="col-secondary">{{ phase.label || '--' }}</td>
-              <td class="col-identifier">{{ phase.start_date }}</td>
-              <td class="col-identifier">{{ phase.end_date || '--' }}</td>
-              <td>
-                @if (phase.color) {
-                  <app-color-swatch [color]="phase.color" size="h-4 w-4" />
-                } @else {
-                  <span class="text-slate-300">--</span>
-                }
-              </td>
-              <td class="col-actions">
-                <app-row-actions
-                  [items]="phaseMenu(phase)"
-                  [ariaLabel]="'Actions for phase ' + phase.phase_type"
-                />
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template #emptymessage>
-            <tr>
-              <td colspan="6">No phases yet. Add one to get started.</td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </app-section-card>
+      <!-- Phase info (read-only) -->
+      @if (t.phase_type) {
+        <app-section-card title="Phase">
+          <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Phase type
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900">{{ t.phase_type }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Start date
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                {{ t.phase_start_date || '--' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                End date
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                {{ t.phase_end_date || '--' }}
+              </dd>
+            </div>
+          </dl>
+        </app-section-card>
+      }
 
       <!-- Markers -->
       <app-section-card title="Markers">
@@ -182,37 +144,39 @@
 
         <p-table
           styleClass="manage-table"
-          [value]="t.trial_markers ?? []"
+          [value]="t.markers ?? []"
           [tableStyle]="{ 'min-width': '56rem' }"
           aria-label="Trial markers"
         >
           <ng-template #header>
             <tr>
+              <th>Category</th>
               <th>Type</th>
+              <th>Title</th>
               <th>Event date</th>
-              <th>End</th>
-              <th>Tooltip</th>
-              <th>Projected</th>
+              <th>Projection</th>
               <th class="col-actions"></th>
             </tr>
           </ng-template>
           <ng-template #body let-marker>
             <tr>
+              <td class="col-secondary">
+                {{ marker.marker_types?.marker_categories?.name || '--' }}
+              </td>
               <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
+              <td class="col-secondary max-w-xs truncate">{{ marker.title }}</td>
               <td class="col-identifier">{{ marker.event_date }}</td>
-              <td class="col-identifier">{{ marker.end_date || '--' }}</td>
-              <td class="col-secondary max-w-xs truncate">{{ marker.tooltip_text || '--' }}</td>
               <td>
-                @if (marker.is_projected) {
-                  <app-status-tag label="Projected" tone="amber" />
+                @if (marker.projection && marker.projection !== 'actual') {
+                  <app-status-tag [label]="marker.projection" tone="amber" />
                 } @else {
-                  <span class="text-slate-300">--</span>
+                  <span class="font-mono text-xs text-slate-400">actual</span>
                 }
               </td>
               <td class="col-actions">
                 <app-row-actions
                   [items]="markerMenu(marker)"
-                  [ariaLabel]="'Actions for marker ' + (marker.marker_types?.name ?? '')"
+                  [ariaLabel]="'Actions for marker ' + marker.title"
                 />
               </td>
             </tr>
