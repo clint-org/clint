@@ -91,6 +91,20 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'manage/mechanisms-of-action',
+            loadComponent: () =>
+              import(
+                './features/manage/mechanisms-of-action/mechanism-of-action-list.component'
+              ).then((m) => m.MechanismOfActionListComponent),
+          },
+          {
+            path: 'manage/routes-of-administration',
+            loadComponent: () =>
+              import(
+                './features/manage/routes-of-administration/route-of-administration-list.component'
+              ).then((m) => m.RouteOfAdministrationListComponent),
+          },
+          {
             path: 'manage/therapeutic-areas',
             loadComponent: () =>
               import('./features/manage/therapeutic-areas/therapeutic-area-list.component').then(

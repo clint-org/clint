@@ -55,6 +55,12 @@
             </div>
           </div>
         } @else {
+          <app-landscape-filter-bar
+            [spaceId]="spaceId()"
+            [products]="allProducts()"
+            [filters]="landscapeFilters()"
+            (filtersChange)="onLandscapeFiltersChange($event)"
+          />
           <div class="landscape-layout">
             <div class="landscape-chart-wrap">
               <div class="bullseye-chart-frame">
@@ -63,6 +69,7 @@
                 [selectedProductId]="selectedProductId()"
                 [hoveredProductId]="hoveredProductId()"
                 [highlightedRing]="highlightedRing()"
+                [matchedProductIds]="matchedProductIds()"
                 (productHover)="onProductHover($event)"
                 (productClick)="onProductClick($event)"
                 (backgroundClick)="onBackgroundClick()"

@@ -20,6 +20,8 @@ export class DashboardService {
       p_recruitment_statuses: filters.recruitmentStatuses,
       p_study_types: filters.studyTypes,
       p_phases: filters.phases,
+      p_mechanism_of_action_ids: filters.mechanismOfActionIds,
+      p_route_of_administration_ids: filters.routeOfAdministrationIds,
     });
 
     if (error) throw error;

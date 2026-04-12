@@ -1,0 +1,66 @@
+<app-manage-page-shell
+  eyebrow="Manage"
+  title="Mechanisms of action"
+  [count]="items().length"
+  subtitle="Ways a drug produces its therapeutic effect; used to classify programs and filter the landscape."
+>
+  <div actions>
+    <p-button
+      label="Add mechanism"
+      icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
+  </div>
+
+  <p-table
+    styleClass="manage-table"
+    [value]="items()"
+    [loading]="loading()"
+    [tableStyle]="{ 'min-width': '36rem' }"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th class="col-actions"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-item>
+      <tr>
+        <td>{{ item.name }}</td>
+        <td class="col-identifier">{{ item.description ?? '--' }}</td>
+        <td class="col-actions">
+          <app-row-actions [items]="rowMenu(item)" [ariaLabel]="'Actions for ' + item.name" />
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="3">No mechanisms of action yet. Add one to get started.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (deleteError()) {
+    <p-message severity="error" [closable]="false" styleClass="mt-4">
+      {{ deleteError() }}
+    </p-message>
+  }
+</app-manage-page-shell>
+
+<p-dialog
+  [header]="editingItem() ? 'Edit mechanism of action' : 'Add mechanism of action'"
+  [(visible)]="modalOpen"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  (onHide)="closeModal()"
+>
+  <app-mechanism-of-action-form
+    [item]="editingItem()"
+    (saved)="onSaved()"
+    (cancelled)="closeModal()"
+  />
+</p-dialog>

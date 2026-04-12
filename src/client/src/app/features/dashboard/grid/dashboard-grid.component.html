@@ -6,6 +6,43 @@
     Scroll horizontally to view the full timeline
   </div>
 
+  <!-- Toolbar -->
+  <div class="flex items-center justify-end px-3 py-1.5 border-b border-slate-200 bg-white">
+    <p-button
+      icon="pi pi-sliders-h"
+      severity="secondary"
+      [rounded]="true"
+      [text]="true"
+      size="small"
+      ariaLabel="Toggle columns"
+      aria-haspopup="dialog"
+      (onClick)="columnsPopover.toggle($event)"
+    />
+    <p-popover #columnsPopover>
+      <div class="flex flex-col gap-2 p-1 min-w-[200px]">
+        <div class="text-[10px] uppercase tracking-wider text-slate-500 pb-1 border-b border-slate-200">Columns</div>
+        <label for="toggle-moa" class="flex items-center gap-2 cursor-pointer">
+          <p-checkbox
+            [ngModel]="showMoaColumn()"
+            (ngModelChange)="toggleMoaColumn($event)"
+            [binary]="true"
+            inputId="toggle-moa"
+          />
+          <span class="text-sm">Mechanism of action</span>
+        </label>
+        <label for="toggle-roa" class="flex items-center gap-2 cursor-pointer">
+          <p-checkbox
+            [ngModel]="showRoaColumn()"
+            (ngModelChange)="toggleRoaColumn($event)"
+            [binary]="true"
+            inputId="toggle-roa"
+          />
+          <span class="text-sm">Route of administration</span>
+        </label>
+      </div>
+    </p-popover>
+  </div>
+
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
     <div class="flex">
@@ -29,6 +66,20 @@
           >
             Product
           </div>
+          @if (showMoaColumn()) {
+            <div
+              class="w-28 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
+            >
+              MOA
+            </div>
+          }
+          @if (showRoaColumn()) {
+            <div
+              class="w-24 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
+            >
+              ROA
+            </div>
+          }
           <div
             class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
           >
@@ -49,6 +100,12 @@
             >
               &nbsp;
             </div>
+            @if (showMoaColumn()) {
+              <div class="w-28 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+            }
+            @if (showRoaColumn()) {
+              <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+            }
             <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
               &nbsp;
             </div>
@@ -116,6 +173,50 @@
                 }}</span>
               }
             </div>
+            <!-- MOA column -->
+            @if (showMoaColumn()) {
+              <div
+                class="w-28 px-2 flex items-center border-l border-slate-200 overflow-hidden"
+                [title]="row.isFirstInProduct ? moaTooltipText(row.productMoas) : ''"
+              >
+                @if (row.isFirstInProduct) {
+                  @if (row.productMoas.length > 0) {
+                    <div class="flex flex-col gap-0.5 min-w-0">
+                      @for (moa of row.productMoas.slice(0, 2); track moa.id) {
+                        <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate">{{ moa.name }}</span>
+                      }
+                      @if (row.productMoas.length > 2) {
+                        <span class="text-[10px] text-slate-500">+{{ row.productMoas.length - 2 }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-slate-400 text-[10px]">&mdash;</span>
+                  }
+                }
+              </div>
+            }
+            <!-- ROA column -->
+            @if (showRoaColumn()) {
+              <div
+                class="w-24 px-2 flex items-center border-l border-slate-200 overflow-hidden"
+                [title]="row.isFirstInProduct ? roaTooltipText(row.productRoas) : ''"
+              >
+                @if (row.isFirstInProduct) {
+                  @if (row.productRoas.length > 0) {
+                    <div class="flex flex-col gap-0.5 min-w-0">
+                      @for (roa of row.productRoas.slice(0, 2); track roa.id) {
+                        <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate">{{ roa.abbreviation ?? roa.name }}</span>
+                      }
+                      @if (row.productRoas.length > 2) {
+                        <span class="text-[10px] text-slate-500">+{{ row.productRoas.length - 2 }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-slate-400 text-[10px]">&mdash;</span>
+                  }
+                }
+              </div>
+            }
             <!-- Trial column -->
             <div
               class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700 text-slate-700 transition-colors"

@@ -48,6 +48,8 @@ export class DashboardComponent {
     recruitmentStatuses: null,
     studyTypes: null,
     phases: null,
+    mechanismOfActionIds: null,
+    routeOfAdministrationIds: null,
   });
 
   zoomLevel = signal<ZoomLevel>('yearly');

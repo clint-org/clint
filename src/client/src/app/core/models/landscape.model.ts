@@ -66,6 +66,8 @@ export interface BullseyeTrial {
   identifier: string | null;
   sample_size: number | null;
   status: string | null;
+  recruitment_status: string | null;
+  study_type: string | null;
   /** The trial's own highest phase (may be OBS if that's all the trial has). */
   phase: RingPhase | 'OBS' | null;
 }
@@ -90,6 +92,8 @@ export interface BullseyeProduct {
   highest_phase_rank: number;
   trials: BullseyeTrial[];
   recent_markers: BullseyeMarker[];
+  moas: { id: string; name: string }[];
+  roas: { id: string; name: string; abbreviation: string | null }[];
 }
 
 export interface BullseyeCompany {
@@ -105,6 +109,26 @@ export interface BullseyeData {
   ring_order: RingPhase[];
   companies: BullseyeCompany[];
 }
+
+export interface LandscapeFilters {
+  mechanismOfActionIds: string[];
+  routeOfAdministrationIds: string[];
+  companyIds: string[];
+  productIds: string[];
+  phases: RingPhase[];
+  recruitmentStatuses: string[];
+  studyTypes: string[];
+}
+
+export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
+  mechanismOfActionIds: [],
+  routeOfAdministrationIds: [],
+  companyIds: [],
+  productIds: [],
+  phases: [],
+  recruitmentStatuses: [],
+  studyTypes: [],
+};
 
 export interface LandscapeIndexEntry {
   therapeutic_area: BullseyeTherapeuticArea;

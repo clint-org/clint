@@ -5,7 +5,9 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { DashboardFilters } from '../../../core/models/dashboard.model';
 import { CompanyService } from '../../../core/services/company.service';
+import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { ProductService } from '../../../core/services/product.service';
+import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
 
 interface SelectOption {
@@ -21,7 +23,9 @@ interface SelectOption {
 })
 export class FilterPanelComponent implements OnInit {
   private companyService = inject(CompanyService);
+  private moaService = inject(MechanismOfActionService);
   private productService = inject(ProductService);
+  private roaService = inject(RouteOfAdministrationService);
   private therapeuticAreaService = inject(TherapeuticAreaService);
 
   spaceId = input.required<string>();
@@ -32,9 +36,14 @@ export class FilterPanelComponent implements OnInit {
   productOptions = signal<SelectOption[]>([]);
   taOptions = signal<SelectOption[]>([]);
 
+  moaOptions = signal<SelectOption[]>([]);
+  roaOptions = signal<SelectOption[]>([]);
+
   selectedCompanyIds = signal<string[]>([]);
   selectedProductIds = signal<string[]>([]);
   selectedTAIds = signal<string[]>([]);
+  selectedMoaIds = signal<string[]>([]);
+  selectedRoaIds = signal<string[]>([]);
   selectedStatuses = signal<string[]>([]);
   selectedStudyTypes = signal<string[]>([]);
   selectedPhases = signal<string[]>([]);
@@ -75,6 +84,8 @@ export class FilterPanelComponent implements OnInit {
         recruitmentStatuses: this.selectedStatuses().length > 0 ? this.selectedStatuses() : null,
         studyTypes: this.selectedStudyTypes().length > 0 ? this.selectedStudyTypes() : null,
         phases: this.selectedPhases().length > 0 ? this.selectedPhases() : null,
+        mechanismOfActionIds: this.selectedMoaIds().length > 0 ? this.selectedMoaIds() : null,
+        routeOfAdministrationIds: this.selectedRoaIds().length > 0 ? this.selectedRoaIds() : null,
       };
       this.filtersChange.emit(filters);
     });
@@ -83,15 +94,19 @@ export class FilterPanelComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       const sid = this.spaceId();
-      const [companies, products, areas] = await Promise.all([
+      const [companies, products, areas, moas, roas] = await Promise.all([
         this.companyService.list(sid),
         this.productService.list(sid),
         this.therapeuticAreaService.list(sid),
+        this.moaService.list(sid),
+        this.roaService.list(sid),
       ]);
 
       this.companyOptions.set(companies.map((c) => ({ label: c.name, value: c.id })));
       this.productOptions.set(products.map((p) => ({ label: p.name, value: p.id })));
       this.taOptions.set(areas.map((a) => ({ label: a.name, value: a.id })));
+      this.moaOptions.set(moas.map((m) => ({ label: m.name, value: m.id })));
+      this.roaOptions.set(roas.map((r) => ({ label: r.name, value: r.id })));
     } finally {
       this.loading.set(false);
     }

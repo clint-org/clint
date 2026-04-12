@@ -1,0 +1,52 @@
+<form (ngSubmit)="onSubmit()" novalidate>
+  @if (error()) {
+    <p-message severity="error" [closable]="false" class="mb-4">
+      {{ error() }}
+    </p-message>
+  }
+
+  <app-form-field
+    label="Name"
+    fieldId="roa-name"
+    [required]="true"
+    [error]="nameInvalid ? 'Name is required.' : null"
+  >
+    <input
+      pInputText
+      id="roa-name"
+      class="w-full"
+      [ngModel]="name()"
+      (ngModelChange)="name.set($event)"
+      (blur)="nameBlurred.set(true)"
+      [attr.aria-required]="true"
+      [attr.aria-invalid]="nameInvalid"
+      [attr.aria-describedby]="nameInvalid ? 'roa-name-error' : null"
+    />
+  </app-form-field>
+
+  <app-form-field label="Abbreviation" fieldId="roa-abbreviation">
+    <input
+      pInputText
+      id="roa-abbreviation"
+      class="w-full"
+      [ngModel]="abbreviation()"
+      (ngModelChange)="abbreviation.set($event)"
+      placeholder="e.g. IV, PO, SC"
+    />
+  </app-form-field>
+
+  <app-form-field label="Display Order" fieldId="roa-display-order" spacing="mb-6">
+    <p-inputnumber
+      inputId="roa-display-order"
+      [ngModel]="displayOrder()"
+      (ngModelChange)="displayOrder.set($event)"
+      [style]="{ width: '100%' }"
+    />
+  </app-form-field>
+
+  <app-form-actions
+    [submitLabel]="isEdit ? 'Update Route' : 'Create Route'"
+    [loading]="submitting()"
+    (cancelled)="cancelled.emit()"
+  />
+</form>
