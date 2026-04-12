@@ -12,7 +12,7 @@
     <p-multiselect
       [options]="companyOptions()"
       [ngModel]="selectedCompanyIds()"
-      (ngModelChange)="selectedCompanyIds.set($event)"
+      (ngModelChange)="selectedCompanyIds.set($event ?? [])"
       placeholder="Company"
       ariaLabel="Filter by company"
       optionLabel="label"
@@ -27,7 +27,7 @@
     <p-multiselect
       [options]="productOptions()"
       [ngModel]="selectedProductIds()"
-      (ngModelChange)="selectedProductIds.set($event)"
+      (ngModelChange)="selectedProductIds.set($event ?? [])"
       placeholder="Product"
       ariaLabel="Filter by product"
       optionLabel="label"
@@ -42,7 +42,7 @@
     <p-multiselect
       [options]="taOptions()"
       [ngModel]="selectedTAIds()"
-      (ngModelChange)="selectedTAIds.set($event)"
+      (ngModelChange)="selectedTAIds.set($event ?? [])"
       placeholder="Therapeutic Area"
       ariaLabel="Filter by therapeutic area"
       optionLabel="label"
@@ -57,7 +57,7 @@
     <p-multiselect
       [options]="moaOptions()"
       [ngModel]="selectedMoaIds()"
-      (ngModelChange)="selectedMoaIds.set($event)"
+      (ngModelChange)="selectedMoaIds.set($event ?? [])"
       placeholder="MOA"
       ariaLabel="Filter by mechanism of action"
       optionLabel="label"
@@ -72,7 +72,7 @@
     <p-multiselect
       [options]="roaOptions()"
       [ngModel]="selectedRoaIds()"
-      (ngModelChange)="selectedRoaIds.set($event)"
+      (ngModelChange)="selectedRoaIds.set($event ?? [])"
       placeholder="ROA"
       ariaLabel="Filter by route of administration"
       optionLabel="label"
@@ -87,7 +87,7 @@
     <p-multiselect
       [options]="statusOptions"
       [ngModel]="selectedStatuses()"
-      (ngModelChange)="selectedStatuses.set($event)"
+      (ngModelChange)="selectedStatuses.set($event ?? [])"
       placeholder="Status"
       ariaLabel="Filter by recruitment status"
       optionLabel="label"
@@ -101,7 +101,7 @@
     <p-multiselect
       [options]="phaseOptions"
       [ngModel]="selectedPhases()"
-      (ngModelChange)="selectedPhases.set($event)"
+      (ngModelChange)="selectedPhases.set($event ?? [])"
       placeholder="Phase"
       ariaLabel="Filter by trial phase"
       optionLabel="label"
@@ -115,7 +115,7 @@
     <p-multiselect
       [options]="studyTypeOptions"
       [ngModel]="selectedStudyTypes()"
-      (ngModelChange)="selectedStudyTypes.set($event)"
+      (ngModelChange)="selectedStudyTypes.set($event ?? [])"
       placeholder="Study Type"
       ariaLabel="Filter by study type"
       optionLabel="label"

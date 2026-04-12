@@ -47,7 +47,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   });
 
   readonly productOptions = computed(() =>
-    this.products().map((p) => ({ label: p.name, value: p.id })),
+    this.products().map((p) => ({ label: p.name, value: p.id }))
   );
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
@@ -64,7 +64,9 @@ export class LandscapeFilterBarComponent implements OnInit {
         if (t.recruitment_status) seen.add(t.recruitment_status);
       }
     }
-    return Array.from(seen).sort().map((v) => ({ label: v, value: v }));
+    return Array.from(seen)
+      .sort()
+      .map((v) => ({ label: v, value: v }));
   });
 
   readonly studyTypeOptions = computed(() => {
@@ -74,7 +76,9 @@ export class LandscapeFilterBarComponent implements OnInit {
         if (t.study_type) seen.add(t.study_type);
       }
     }
-    return Array.from(seen).sort().map((v) => ({ label: v, value: v }));
+    return Array.from(seen)
+      .sort()
+      .map((v) => ({ label: v, value: v }));
   });
 
   async ngOnInit(): Promise<void> {
@@ -89,7 +93,10 @@ export class LandscapeFilterBarComponent implements OnInit {
   }
 
   update<K extends keyof LandscapeFilters>(key: K, value: LandscapeFilters[K]): void {
-    this.filtersChange.emit({ ...this.filters(), [key]: value });
+    // PrimeNG MultiSelect clear() emits null; coalesce to empty array so
+    // downstream .length checks never crash on null.
+    const safe = value ?? ([] as unknown as LandscapeFilters[K]);
+    this.filtersChange.emit({ ...this.filters(), [key]: safe });
   }
 
   clearAll(): void {

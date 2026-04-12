@@ -308,7 +308,8 @@
         <p-multiselect
           inputId="trial-fda-designations"
           [options]="fdaDesignationOptions"
-          [(ngModel)]="fdaDesignations"
+          [ngModel]="fdaDesignations"
+          (ngModelChange)="fdaDesignations = $event ?? []"
           name="fdaDesignations"
           optionLabel="label"
           optionValue="value"
