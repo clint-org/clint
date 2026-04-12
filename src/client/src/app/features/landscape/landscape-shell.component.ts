@@ -14,9 +14,11 @@ import { Tooltip } from 'primeng/tooltip';
 
 import {
   BullseyeDimension,
+  COUNT_UNIT_OPTIONS,
   DIMENSION_OPTIONS,
   dimensionToSegment,
   LandscapeIndexEntry,
+  POSITIONING_GROUPING_OPTIONS,
   segmentToDimension,
   ViewMode,
   VIEW_MODE_OPTIONS,
@@ -80,6 +82,28 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
           />
         }
 
+        @if (viewMode() === 'positioning') {
+          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+          <p-select
+            [options]="groupingOptions"
+            [ngModel]="state.positioningGrouping()"
+            (ngModelChange)="state.positioningGrouping.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            [style]="{ minWidth: '14rem' }"
+            size="small"
+          />
+          <p-selectbutton
+            [options]="countUnitOptions"
+            [ngModel]="state.countUnit()"
+            (ngModelChange)="state.countUnit.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            size="small"
+          />
+        }
+
         <div class="flex-1"></div>
 
         @if (viewMode() === 'timeline') {
@@ -117,6 +141,8 @@ export class LandscapeShellComponent implements OnInit {
 
   readonly viewModeOptions = VIEW_MODE_OPTIONS;
   readonly dimensionOptions = DIMENSION_OPTIONS;
+  readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
+  readonly countUnitOptions = COUNT_UNIT_OPTIONS;
 
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('therapeutic-area');
@@ -171,6 +197,8 @@ export class LandscapeShellComponent implements OnInit {
   onViewModeChange(mode: ViewMode): void {
     if (mode === 'timeline') {
       this.router.navigate(this.spaceBase());
+    } else if (mode === 'positioning') {
+      this.router.navigate([...this.spaceBase(), 'positioning']);
     } else {
       this.router.navigate([...this.spaceBase(), 'bullseye']);
     }
@@ -232,7 +260,10 @@ export class LandscapeShellComponent implements OnInit {
       ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s),
     );
 
-    if (dimSegment) {
+    if (allSegments.includes('positioning')) {
+      this.viewMode.set('positioning');
+      this.entityId.set(null);
+    } else if (dimSegment) {
       this.viewMode.set('bullseye');
       this.dimension.set(segmentToDimension(dimSegment));
       this.entityId.set(child.snapshot.paramMap.get('entityId'));

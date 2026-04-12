@@ -116,6 +116,13 @@ export const routes: Routes = [
                   },
                 ],
               },
+              {
+                path: 'positioning',
+                loadComponent: () =>
+                  import('./features/landscape/positioning-view.component').then(
+                    (m) => m.PositioningViewComponent,
+                  ),
+              },
             ],
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
