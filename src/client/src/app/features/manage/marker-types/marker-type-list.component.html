@@ -39,7 +39,7 @@
         </th>
         <th pSortableColumn="shape">
           Shape <p-sortIcon field="shape" />
-          <p-columnFilter field="shape" display="menu" matchMode="in">
+          <p-columnFilter field="shape" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
             <ng-template #filter let-value let-filter="filterCallback">
               <input
                 pInputText
@@ -54,7 +54,7 @@
         </th>
         <th pSortableColumn="fill_style">
           Fill <p-sortIcon field="fill_style" />
-          <p-columnFilter field="fill_style" display="menu" matchMode="in">
+          <p-columnFilter field="fill_style" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
             <ng-template #filter let-value let-filter="filterCallback">
               <input
                 pInputText
@@ -70,7 +70,7 @@
         <th>Color</th>
         <th pSortableColumn="is_system">
           Origin <p-sortIcon field="is_system" />
-          <p-columnFilter field="is_system" display="menu" matchMode="in">
+          <p-columnFilter field="is_system" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
             <ng-template #filter let-value let-filter="filterCallback">
               <select
                 class="w-full border border-slate-300 px-2 py-1 text-sm"

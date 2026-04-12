@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
 import type { GridState } from '../grids/filter-types';
@@ -14,25 +16,22 @@ import type { GridState } from '../grids/filter-types';
   selector: 'app-grid-toolbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, InputTextModule],
+  imports: [FormsModule, ButtonModule, IconFieldModule, InputIconModule, InputTextModule],
   template: `
     <div class="grid-toolbar mb-3">
       <div class="flex items-center justify-between gap-3">
-        <span class="relative">
-          <i
-            class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400"
-            aria-hidden="true"
-          ></i>
+        <p-iconfield iconPosition="left">
+          <p-inputicon><i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400"></i></p-inputicon>
           <input
             pInputText
             type="text"
-            class="w-72 pl-8"
+            class="w-72"
             [attr.aria-label]="searchPlaceholder()"
             [placeholder]="searchPlaceholder()"
             [ngModel]="state().globalSearch()"
             (ngModelChange)="onSearchInput($event)"
           />
-        </span>
+        </p-iconfield>
 
         <p-button
           label="Clear all"

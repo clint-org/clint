@@ -43,7 +43,7 @@
         </th>
         <th pSortableColumn="companyName">
           Company <p-sortIcon field="companyName" />
-          <p-columnFilter field="product.company_id" display="menu" matchMode="in">
+          <p-columnFilter field="product.company_id" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
             <ng-template #filter let-value let-filter="filterCallback">
               <select
                 class="w-full border border-slate-300 px-2 py-1 text-sm"
