@@ -8,29 +8,27 @@ const PHASE_Y_RANK: Record<RingPhase, number> = {
   PRECLIN: 0, P1: 1, P2: 2, P3: 3, P4: 4, APPROVED: 5, LAUNCHED: 6,
 };
 
+/** Minimum and maximum bubble radius (scales with unit_count). */
+const MIN_RADIUS = 24;
+const MAX_RADIUS = 56;
+
 /**
- * 2D color gradient encoding competitive positioning.
- * Bottom-left (few competitors, early phase) = teal (brand blue-ocean).
- * Top-right (many competitors, late phase) = red (red-ocean).
- * Uses direct RGB interpolation through a 3-stop ramp (teal -> amber -> red)
- * to avoid the muddy greens that HSL interpolation produces.
+ * 2D color gradient: teal (blue-ocean) -> amber -> red (red-ocean).
+ * Uses RGB interpolation through a 3-stop ramp.
  */
 function bubbleColor(competitorCount: number, phaseRank: number, maxCompetitors: number): string {
   const xNorm = maxCompetitors > 1 ? (competitorCount - 1) / (maxCompetitors - 1) : 0;
   const yNorm = phaseRank / 6;
   const t = Math.min(1, Math.max(0, (xNorm + yNorm) / 2));
 
-  // 3-stop ramp: teal (0) -> amber (0.5) -> red (1)
   let r: number, g: number, b: number;
   if (t < 0.5) {
     const s = t / 0.5;
-    // teal #0d9488 (13,148,136) -> amber #d97706 (217,119,6)
     r = 13 + s * (217 - 13);
     g = 148 + s * (119 - 148);
     b = 136 + s * (6 - 136);
   } else {
     const s = (t - 0.5) / 0.5;
-    // amber #d97706 (217,119,6) -> red #dc2626 (220,38,38)
     r = 217 + s * (220 - 217);
     g = 119 + s * (38 - 119);
     b = 6 + s * (38 - 6);
@@ -39,12 +37,33 @@ function bubbleColor(competitorCount: number, phaseRank: number, maxCompetitors:
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
+/** Split a label like "PD-1 Inhibitors + NSCLC" into two lines. */
+function splitLabel(label: string, maxChars: number): string[] {
+  // For composite labels (MOA + TA), split on " + "
+  const plusIdx = label.indexOf(' + ');
+  if (plusIdx > 0) {
+    const line1 = label.slice(0, plusIdx);
+    const line2 = label.slice(plusIdx + 3);
+    return [
+      line1.length > maxChars ? line1.slice(0, maxChars - 1) + '\u2026' : line1,
+      line2.length > maxChars ? line2.slice(0, maxChars - 1) + '\u2026' : line2,
+    ];
+  }
+  // Single-dimension label
+  if (label.length > maxChars) {
+    return [label.slice(0, maxChars - 1) + '\u2026'];
+  }
+  return [label];
+}
+
 interface PlottedBubble {
   bubble: PositioningBubble;
   cx: number;
   cy: number;
+  radius: number;
   color: string;
-  truncatedLabel: string;
+  labelLines: string[];
+  fontSize: number;
 }
 
 @Component({
@@ -67,6 +86,25 @@ interface PlottedBubble {
       (click)="onBackgroundClick($event)"
       (keydown.escape)="onBackgroundClick($event)"
     >
+      <!-- Quadrant shading: blue-ocean (bottom-left) -->
+      <rect
+        [attr.x]="margin.left"
+        [attr.y]="quadrantMidY()"
+        [attr.width]="quadrantMidX() - margin.left"
+        [attr.height]="height() - margin.bottom - quadrantMidY()"
+        fill="#0d9488"
+        opacity="0.04"
+      />
+      <!-- Quadrant shading: red-ocean (top-right) -->
+      <rect
+        [attr.x]="quadrantMidX()"
+        [attr.y]="margin.top"
+        [attr.width]="width() - margin.right - quadrantMidX()"
+        [attr.height]="quadrantMidY() - margin.top"
+        fill="#dc2626"
+        opacity="0.04"
+      />
+
       <!-- Y-axis line -->
       <line
         [attr.x1]="margin.left"
@@ -123,7 +161,7 @@ interface PlottedBubble {
         text-anchor="middle"
         fill="#64748b"
         style="font-size: 15px; font-weight: 600;"
-      >Competitors</text>
+      >{{ xLabel() }}</text>
 
       <!-- Y-axis title -->
       <text
@@ -153,19 +191,42 @@ interface PlottedBubble {
           <circle
             [attr.cx]="pb.cx"
             [attr.cy]="pb.cy"
-            [attr.r]="bubbleRadius"
+            [attr.r]="pb.radius"
             [attr.fill]="pb.color"
             [attr.stroke]="selectedBubble() === pb.bubble ? '#0f172a' : 'white'"
             [attr.stroke-width]="selectedBubble() === pb.bubble ? 3 : 2"
             opacity="0.85"
           />
-          <text
-            [attr.x]="pb.cx"
-            [attr.y]="pb.cy + 5"
-            text-anchor="middle"
-            fill="white"
-            style="font-size: 13px; font-weight: 600; pointer-events: none;"
-          >{{ pb.truncatedLabel }}</text>
+          <!-- Single-line label -->
+          @if (pb.labelLines.length === 1) {
+            <text
+              [attr.x]="pb.cx"
+              [attr.y]="pb.cy + pb.fontSize * 0.35"
+              text-anchor="middle"
+              fill="white"
+              [style.font-size.px]="pb.fontSize"
+              style="font-weight: 600; pointer-events: none;"
+            >{{ pb.labelLines[0] }}</text>
+          }
+          <!-- Two-line label -->
+          @if (pb.labelLines.length === 2) {
+            <text
+              [attr.x]="pb.cx"
+              [attr.y]="pb.cy - pb.fontSize * 0.3"
+              text-anchor="middle"
+              fill="white"
+              [style.font-size.px]="pb.fontSize"
+              style="font-weight: 600; pointer-events: none;"
+            >{{ pb.labelLines[0] }}</text>
+            <text
+              [attr.x]="pb.cx"
+              [attr.y]="pb.cy + pb.fontSize * 0.95"
+              text-anchor="middle"
+              fill="rgba(255,255,255,0.85)"
+              [style.font-size.px]="pb.fontSize - 1"
+              style="font-weight: 500; pointer-events: none;"
+            >{{ pb.labelLines[1] }}</text>
+          }
         </g>
       }
 
@@ -187,19 +248,34 @@ export class PositioningChartComponent {
   readonly width = input<number>(1200);
   readonly height = input<number>(700);
   readonly countUnit = input<string>('products');
+  readonly xLabel = input<string>('Competitors');
   readonly selectedBubble = input<PositioningBubble | null>(null);
 
   readonly bubbleHover = output<PositioningBubble | null>();
   readonly bubbleClick = output<PositioningBubble>();
 
   readonly yPhases = Y_PHASES;
-  readonly bubbleRadius = 32;
 
   readonly margin = { top: 40, right: 50, bottom: 55, left: 120 };
 
   readonly maxCompetitors = computed(() => {
     const max = Math.max(...this.bubbles().map((b) => b.competitor_count), 1);
     return Math.max(max, 2);
+  });
+
+  readonly maxUnitCount = computed(() =>
+    Math.max(...this.bubbles().map((b) => b.unit_count), 1),
+  );
+
+  /** Quadrant boundary: midpoint of the X plot area. */
+  readonly quadrantMidX = computed(() => {
+    const plotW = this.width() - this.margin.left - this.margin.right;
+    return this.margin.left + plotW * 0.45;
+  });
+
+  /** Quadrant boundary: midpoint of the Y plot area (between P3 and P4). */
+  readonly quadrantMidY = computed(() => {
+    return this.phaseY('P3' as RingPhase);
   });
 
   readonly xTicks = computed(() => {
@@ -212,27 +288,40 @@ export class PositioningChartComponent {
   readonly plottedBubbles = computed<PlottedBubble[]>(() => {
     const bubbles = this.bubbles();
     const maxComp = this.maxCompetitors();
+    const maxUnit = this.maxUnitCount();
 
-    const raw = bubbles.map((b) => ({
-      bubble: b,
-      cx: this.competitorX(b.competitor_count),
-      cy: this.phaseY(b.highest_phase),
-      color: bubbleColor(b.competitor_count, b.highest_phase_rank, maxComp),
-      truncatedLabel: b.label.length > 12 ? b.label.slice(0, 11) + '\u2026' : b.label,
-    }));
+    const raw = bubbles.map((b) => {
+      // Scale radius by unit_count (sqrt scale so area is proportional)
+      const unitNorm = maxUnit > 1 ? b.unit_count / maxUnit : 0.5;
+      const radius = MIN_RADIUS + Math.sqrt(unitNorm) * (MAX_RADIUS - MIN_RADIUS);
 
-    const radius = this.bubbleRadius;
-    const minX = this.margin.left + radius;
-    const maxX = this.width() - this.margin.right - radius;
-    const minY = this.margin.top + radius;
-    const maxY = this.height() - this.margin.bottom - radius;
+      // Scale font and label chars to bubble size
+      const fontSize = Math.max(10, Math.min(14, radius * 0.3));
+      const maxChars = Math.max(6, Math.floor(radius * 0.28));
+
+      return {
+        bubble: b,
+        cx: this.competitorX(b.competitor_count),
+        cy: this.phaseY(b.highest_phase),
+        radius,
+        color: bubbleColor(b.competitor_count, b.highest_phase_rank, maxComp),
+        labelLines: splitLabel(b.label, maxChars),
+        fontSize,
+      };
+    });
+
+    // Jitter pass: nudge overlapping bubbles
+    const minX = this.margin.left + MIN_RADIUS;
+    const maxX = this.width() - this.margin.right - MIN_RADIUS;
+    const minY = this.margin.top + MIN_RADIUS;
+    const maxY = this.height() - this.margin.bottom - MIN_RADIUS;
 
     for (let i = 0; i < raw.length; i++) {
       for (let j = i + 1; j < raw.length; j++) {
         const dx = raw[j].cx - raw[i].cx;
         const dy = raw[j].cy - raw[i].cy;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const minDist = radius * 2.4;
+        const minDist = (raw[i].radius + raw[j].radius) * 1.1;
         if (dist < minDist) {
           const nudge = (minDist - dist) / 2 + 1;
           const angle = dist > 0 ? Math.atan2(dy, dx) : (j * Math.PI) / 4;

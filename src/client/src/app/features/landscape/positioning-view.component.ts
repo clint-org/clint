@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
@@ -45,14 +45,15 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       </div>
     } @else {
       @let data = positioningData.value();
-      @if (data && data.bubbles.length > 0) {
+      @if (data && chartBubbles().length > 0) {
         <div class="landscape-layout">
           <div style="min-width: 0; min-height: 0; overflow: hidden;">
             <app-positioning-chart
-              [bubbles]="data.bubbles"
+              [bubbles]="chartBubbles()"
               [width]="1200"
               [height]="700"
               [countUnit]="state.countUnit()"
+              [xLabel]="xAxisLabel()"
               [selectedBubble]="selectedBubble()"
               (bubbleHover)="onBubbleHover($event)"
               (bubbleClick)="onBubbleClick($event)"
@@ -121,6 +122,28 @@ export class PositioningViewComponent implements OnInit {
         request.filters,
       );
     },
+  });
+
+  /** X-axis label changes based on grouping type. */
+  readonly xAxisLabel = computed(() => {
+    const g = this.state.positioningGrouping();
+    return g === 'company' ? 'Products' : 'Competitors';
+  });
+
+  /**
+   * Transform bubbles for chart display. For company grouping, replace
+   * competitor_count (always 1) with product count so bubbles spread
+   * across the X-axis meaningfully.
+   */
+  readonly chartBubbles = computed<PositioningBubble[]>(() => {
+    const data = this.positioningData.value();
+    if (!data) return [];
+    const grouping = this.state.positioningGrouping();
+    if (grouping !== 'company') return data.bubbles;
+    return data.bubbles.map((b) => ({
+      ...b,
+      competitor_count: b.products.length,
+    }));
   });
 
   ngOnInit(): void {
