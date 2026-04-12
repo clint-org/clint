@@ -56,10 +56,24 @@ export class MarkerComponent {
     return Math.max(0, endX - this.markerX());
   });
 
+  effectiveFillStyle = computed(() => {
+    const projection = this.marker().projection;
+    switch (projection) {
+      case 'actual':
+        return 'filled';
+      case 'stout':
+        return 'striped';
+      case 'company':
+      case 'primary':
+      default:
+        return 'outline';
+    }
+  });
+
   faIcon = computed(() => {
     const mt = this.markerType();
     if (!mt) return 'fa-solid fa-circle';
-    return getMarkerIcon(mt.shape, mt.fill_style);
+    return getMarkerIcon(mt.shape, this.effectiveFillStyle() as MarkerType['fill_style']);
   });
 
   shortDate = computed(() => {
@@ -98,9 +112,9 @@ export class MarkerComponent {
     return abbrevs[name] ?? name.slice(0, 4);
   });
 
-  tooltipText = computed(() => {
+  ariaLabel = computed(() => {
     const m = this.marker();
-    return m.description ?? this.markerType()?.name ?? '';
+    return m.title || this.markerType()?.name || '';
   });
 
   onMarkerClick(): void {
