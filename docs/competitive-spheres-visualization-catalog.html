@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitive Spheres - Visualization Catalog</title>
+<style>
+  :root {
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --teal-500: #14b8a6; --teal-600: #0d9488; --teal-700: #0f766e;
+    --violet-500: #8b5cf6; --violet-600: #7c3aed;
+    --amber-500: #f59e0b; --amber-600: #d97706; --amber-700: #b45309;
+    --blue-500: #3b82f6; --blue-600: #2563eb;
+    --pink-500: #ec4899; --pink-600: #db2777;
+    --cyan-500: #06b6d4;
+    --green-500: #22c55e; --green-600: #16a34a;
+    --red-500: #ef4444;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-700);
+    line-height: 1.5; padding: 40px 24px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 24px; font-weight: 700; color: var(--slate-800); margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--slate-500); margin-bottom: 32px; max-width: 800px; }
+  .accent-bar { width: 100%; height: 3px; background: var(--teal-600); margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 24px; }
+  .card {
+    background: white; border: 1px solid var(--slate-200); border-radius: 8px;
+    overflow: hidden; transition: box-shadow 0.15s;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .card-image { padding: 24px; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
+  .card-body { padding: 20px; }
+  .card-body h3 { font-size: 16px; font-weight: 700; color: var(--slate-800); margin-bottom: 6px; }
+  .card-body p { font-size: 13px; color: var(--slate-600); margin-bottom: 8px; }
+  .meta { font-size: 12px; color: var(--slate-400); margin-top: 8px; }
+  .meta strong { color: var(--slate-600); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    background: var(--slate-100); color: var(--slate-600); font-weight: 500;
+  }
+  .tag.pro { background: #ecfdf5; color: #065f46; }
+  .tag.con { background: #fef2f2; color: #991b1b; }
+  .tag.scale { background: #eff6ff; color: #1e40af; }
+  .section-note {
+    margin-top: 32px; padding: 20px; background: white; border: 1px solid var(--slate-200);
+    border-radius: 8px; font-size: 13px; color: var(--slate-600);
+  }
+  .section-note h3 { font-size: 14px; font-weight: 700; color: var(--slate-800); margin-bottom: 8px; }
+  .section-note ul { padding-left: 20px; }
+  .section-note li { margin-bottom: 4px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="accent-bar"></div>
+<h1>Competitive Spheres -- Visualization Catalog</h1>
+<p class="subtitle">10 visualization approaches for showing how dimension values (MOA, indication, phase, company, ROA, etc.) overlap and intersect across clinical trial products. Reference document for feature planning.</p>
+
+<div class="grid">
+
+  <!-- A: Classic Venn -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <circle cx="190" cy="150" r="110" fill="rgba(13,148,136,0.12)" stroke="#0d9488" stroke-width="2"/>
+        <circle cx="310" cy="150" r="110" fill="rgba(139,92,246,0.12)" stroke="#8b5cf6" stroke-width="2"/>
+        <circle cx="250" cy="240" r="110" fill="rgba(251,191,36,0.12)" stroke="#f59e0b" stroke-width="2"/>
+        <text x="140" y="100" font-size="13" font-weight="600" fill="#0d9488" text-anchor="middle">PD-1 Inhibitors</text>
+        <text x="360" y="100" font-size="13" font-weight="600" fill="#8b5cf6" text-anchor="middle">NSCLC</text>
+        <text x="250" y="310" font-size="13" font-weight="600" fill="#d97706" text-anchor="middle">Phase 3</text>
+        <text x="135" y="160" font-size="22" font-weight="700" fill="#334155" text-anchor="middle">12</text>
+        <text x="135" y="176" font-size="10" fill="#64748b" text-anchor="middle">products</text>
+        <text x="365" y="160" font-size="22" font-weight="700" fill="#334155" text-anchor="middle">8</text>
+        <text x="365" y="176" font-size="10" fill="#64748b" text-anchor="middle">products</text>
+        <text x="250" y="280" font-size="22" font-weight="700" fill="#334155" text-anchor="middle">15</text>
+        <text x="250" y="296" font-size="10" fill="#64748b" text-anchor="middle">products</text>
+        <text x="250" y="120" font-size="18" font-weight="700" fill="#334155" text-anchor="middle">5</text>
+        <text x="195" y="220" font-size="18" font-weight="700" fill="#334155" text-anchor="middle">4</text>
+        <text x="305" y="220" font-size="18" font-weight="700" fill="#334155" text-anchor="middle">6</text>
+        <rect x="232" y="168" width="36" height="28" rx="4" fill="#0d9488"/>
+        <text x="250" y="188" font-size="16" font-weight="700" fill="white" text-anchor="middle">3</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A. Classic Venn (2-3 circles)</h3>
+      <p>Pick 2-3 dimension values. Overlaps are geometric and intuitive. The center intersection is the "money zone" -- products matching ALL criteria. Click any region to drill in.</p>
+      <div class="tags">
+        <span class="tag pro">Instantly readable</span>
+        <span class="tag pro">Familiar to everyone</span>
+        <span class="tag pro">Clickable regions</span>
+        <span class="tag con">Max 3 dimensions</span>
+        <span class="tag scale">2-3 sets</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Euler Diagram -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <ellipse cx="220" cy="140" rx="130" ry="70" fill="rgba(13,148,136,0.10)" stroke="#0d9488" stroke-width="1.5" transform="rotate(-20,220,140)"/>
+        <ellipse cx="280" cy="140" rx="130" ry="70" fill="rgba(139,92,246,0.10)" stroke="#8b5cf6" stroke-width="1.5" transform="rotate(20,280,140)"/>
+        <ellipse cx="220" cy="200" rx="130" ry="70" fill="rgba(251,191,36,0.10)" stroke="#f59e0b" stroke-width="1.5" transform="rotate(20,220,200)"/>
+        <ellipse cx="280" cy="200" rx="130" ry="70" fill="rgba(59,130,246,0.10)" stroke="#3b82f6" stroke-width="1.5" transform="rotate(-20,280,200)"/>
+        <text x="110" y="90" font-size="11" font-weight="600" fill="#0d9488">PD-1 Inhibitors</text>
+        <text x="340" y="90" font-size="11" font-weight="600" fill="#8b5cf6">NSCLC</text>
+        <text x="90" y="270" font-size="11" font-weight="600" fill="#d97706">Phase 3</text>
+        <text x="345" y="270" font-size="11" font-weight="600" fill="#3b82f6">Oral Route</text>
+        <text x="155" y="135" font-size="14" font-weight="600" fill="#64748b">8</text>
+        <text x="345" y="135" font-size="14" font-weight="600" fill="#64748b">5</text>
+        <text x="250" y="120" font-size="14" font-weight="600" fill="#64748b">3</text>
+        <text x="250" y="170" font-size="15" font-weight="700" fill="#334155">2</text>
+        <text x="200" y="195" font-size="14" font-weight="600" fill="#64748b">4</text>
+        <text x="300" y="195" font-size="14" font-weight="600" fill="#64748b">3</text>
+        <text x="155" y="225" font-size="14" font-weight="600" fill="#64748b">11</text>
+        <text x="345" y="225" font-size="14" font-weight="600" fill="#64748b">6</text>
+        <text x="250" y="240" font-size="14" font-weight="600" fill="#64748b">2</text>
+        <rect x="237" y="173" width="26" height="22" rx="3" fill="#0d9488"/>
+        <text x="250" y="189" font-size="12" font-weight="700" fill="white" text-anchor="middle">1</text>
+        <text x="250" y="310" font-size="10" fill="#94a3b8" text-anchor="middle">4 sets = up to 15 intersection regions</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B. Euler Diagram (4-5 ellipses)</h3>
+      <p>Stretches Venn to 4-5 ellipses. More dimensions visible, but intersections become harder to parse and regions are irregularly shaped. Works when some pairs don't overlap.</p>
+      <div class="tags">
+        <span class="tag pro">More dimensions</span>
+        <span class="tag pro">Still spatial</span>
+        <span class="tag con">Hard to read past 4</span>
+        <span class="tag con">Can't size proportionally</span>
+        <span class="tag scale">4-5 sets</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: UpSet Plot -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 340" style="width:100%; height:auto;">
+        <text x="250" y="20" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">Intersection Size (products)</text>
+        <rect x="60" y="35" width="28" height="90" rx="2" fill="#0d9488"/>
+        <text x="74" y="30" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">12</text>
+        <rect x="105" y="55" width="28" height="70" rx="2" fill="#0d9488"/>
+        <text x="119" y="50" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">8</text>
+        <rect x="150" y="65" width="28" height="60" rx="2" fill="#0d9488"/>
+        <text x="164" y="60" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">6</text>
+        <rect x="195" y="75" width="28" height="50" rx="2" fill="#0d9488"/>
+        <text x="209" y="70" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">5</text>
+        <rect x="240" y="85" width="28" height="40" rx="2" fill="#0d9488"/>
+        <text x="254" y="80" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">4</text>
+        <rect x="285" y="90" width="28" height="35" rx="2" fill="#0d9488" opacity="0.8"/>
+        <text x="299" y="85" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <rect x="330" y="95" width="28" height="30" rx="2" fill="#0d9488" opacity="0.7"/>
+        <text x="344" y="90" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <rect x="375" y="105" width="28" height="20" rx="2" fill="#f59e0b"/>
+        <text x="389" y="100" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">2</text>
+        <rect x="420" y="110" width="28" height="15" rx="2" fill="#ef4444"/>
+        <text x="434" y="105" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">1</text>
+        <line x1="40" y1="135" x2="470" y2="135" stroke="#e2e8f0" stroke-width="1"/>
+        <text x="35" y="165" font-size="10" font-weight="500" fill="#64748b" text-anchor="end">PD-1</text>
+        <text x="35" y="190" font-size="10" font-weight="500" fill="#64748b" text-anchor="end">NSCLC</text>
+        <text x="35" y="215" font-size="10" font-weight="500" fill="#64748b" text-anchor="end">Phase 3</text>
+        <text x="35" y="240" font-size="10" font-weight="500" fill="#64748b" text-anchor="end">Oral Route</text>
+        <text x="35" y="265" font-size="10" font-weight="500" fill="#64748b" text-anchor="end">Pfizer</text>
+        <circle cx="74" cy="162" r="6" fill="#0d9488"/><circle cx="74" cy="187" r="6" fill="#e2e8f0"/><circle cx="74" cy="212" r="6" fill="#e2e8f0"/><circle cx="74" cy="237" r="6" fill="#e2e8f0"/><circle cx="74" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="119" cy="162" r="6" fill="#e2e8f0"/><circle cx="119" cy="187" r="6" fill="#0d9488"/><circle cx="119" cy="212" r="6" fill="#e2e8f0"/><circle cx="119" cy="237" r="6" fill="#e2e8f0"/><circle cx="119" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="164" cy="162" r="6" fill="#0d9488"/><circle cx="164" cy="187" r="6" fill="#0d9488"/><line x1="164" y1="162" x2="164" y2="187" stroke="#0d9488" stroke-width="2"/><circle cx="164" cy="212" r="6" fill="#e2e8f0"/><circle cx="164" cy="237" r="6" fill="#e2e8f0"/><circle cx="164" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="209" cy="162" r="6" fill="#0d9488"/><circle cx="209" cy="187" r="6" fill="#e2e8f0"/><circle cx="209" cy="212" r="6" fill="#0d9488"/><line x1="209" y1="162" x2="209" y2="212" stroke="#0d9488" stroke-width="2"/><circle cx="209" cy="237" r="6" fill="#e2e8f0"/><circle cx="209" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="254" cy="162" r="6" fill="#e2e8f0"/><circle cx="254" cy="187" r="6" fill="#0d9488"/><circle cx="254" cy="212" r="6" fill="#0d9488"/><line x1="254" y1="187" x2="254" y2="212" stroke="#0d9488" stroke-width="2"/><circle cx="254" cy="237" r="6" fill="#e2e8f0"/><circle cx="254" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="299" cy="162" r="6" fill="#0d9488"/><circle cx="299" cy="187" r="6" fill="#0d9488"/><circle cx="299" cy="212" r="6" fill="#0d9488"/><line x1="299" y1="162" x2="299" y2="212" stroke="#0d9488" stroke-width="2"/><circle cx="299" cy="237" r="6" fill="#e2e8f0"/><circle cx="299" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="344" cy="162" r="6" fill="#0d9488"/><circle cx="344" cy="187" r="6" fill="#0d9488"/><circle cx="344" cy="212" r="6" fill="#e2e8f0"/><circle cx="344" cy="237" r="6" fill="#0d9488"/><line x1="344" y1="162" x2="344" y2="237" stroke="#0d9488" stroke-width="2"/><circle cx="344" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="389" cy="162" r="6" fill="#f59e0b"/><circle cx="389" cy="187" r="6" fill="#f59e0b"/><circle cx="389" cy="212" r="6" fill="#f59e0b"/><circle cx="389" cy="237" r="6" fill="#f59e0b"/><line x1="389" y1="162" x2="389" y2="237" stroke="#f59e0b" stroke-width="2"/><circle cx="389" cy="262" r="6" fill="#e2e8f0"/>
+        <circle cx="434" cy="162" r="6" fill="#ef4444"/><circle cx="434" cy="187" r="6" fill="#ef4444"/><circle cx="434" cy="212" r="6" fill="#ef4444"/><circle cx="434" cy="237" r="6" fill="#ef4444"/><circle cx="434" cy="262" r="6" fill="#ef4444"/><line x1="434" y1="162" x2="434" y2="262" stroke="#ef4444" stroke-width="2"/>
+        <circle cx="80" cy="300" r="5" fill="#0d9488"/><text x="90" y="304" font-size="9" fill="#64748b">Common</text>
+        <circle cx="150" cy="300" r="5" fill="#f59e0b"/><text x="160" y="304" font-size="9" fill="#64748b">Rare (2-3)</text>
+        <circle cx="230" cy="300" r="5" fill="#ef4444"/><text x="240" y="304" font-size="9" fill="#64748b">Unique (1)</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C. UpSet Plot</h3>
+      <p>Bar chart where each bar is an intersection. Dot matrix below shows which sets combine. Bars sorted by size -- biggest overlaps and rarest positions are immediately visible. Scales to 10+ dimensions. Common in pharma/biotech research.</p>
+      <div class="tags">
+        <span class="tag pro">Scales massively</span>
+        <span class="tag pro">Precise counts</span>
+        <span class="tag pro">Shows ALL intersections ranked</span>
+        <span class="tag pro">Familiar to pharma analysts</span>
+        <span class="tag con">Less visually intuitive</span>
+        <span class="tag scale">5-15+ sets</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- D: Intersection Matrix -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <text x="180" y="30" font-size="10" font-weight="600" fill="#0d9488" text-anchor="middle">PD-1</text>
+        <text x="240" y="30" font-size="10" font-weight="600" fill="#8b5cf6" text-anchor="middle">EGFR</text>
+        <text x="300" y="30" font-size="10" font-weight="600" fill="#d97706" text-anchor="middle">PD-L1</text>
+        <text x="360" y="30" font-size="10" font-weight="600" fill="#3b82f6" text-anchor="middle">VEGF</text>
+        <text x="420" y="30" font-size="10" font-weight="600" fill="#64748b" text-anchor="middle">HER2</text>
+        <text x="105" y="70" font-size="10" font-weight="600" fill="#0d9488" text-anchor="end">PD-1</text>
+        <text x="105" y="120" font-size="10" font-weight="600" fill="#8b5cf6" text-anchor="end">EGFR</text>
+        <text x="105" y="170" font-size="10" font-weight="600" fill="#d97706" text-anchor="end">PD-L1</text>
+        <text x="105" y="220" font-size="10" font-weight="600" fill="#3b82f6" text-anchor="end">VEGF</text>
+        <text x="105" y="270" font-size="10" font-weight="600" fill="#64748b" text-anchor="end">HER2</text>
+        <rect x="155" y="48" width="50" height="40" rx="4" fill="#0d9488" opacity="0.15"/><text x="180" y="72" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">24</text>
+        <rect x="215" y="98" width="50" height="40" rx="4" fill="#8b5cf6" opacity="0.15"/><text x="240" y="122" font-size="16" font-weight="700" fill="#8b5cf6" text-anchor="middle">18</text>
+        <rect x="275" y="148" width="50" height="40" rx="4" fill="#d97706" opacity="0.15"/><text x="300" y="172" font-size="16" font-weight="700" fill="#d97706" text-anchor="middle">15</text>
+        <rect x="335" y="198" width="50" height="40" rx="4" fill="#3b82f6" opacity="0.15"/><text x="360" y="222" font-size="16" font-weight="700" fill="#3b82f6" text-anchor="middle">12</text>
+        <rect x="395" y="248" width="50" height="40" rx="4" fill="#64748b" opacity="0.15"/><text x="420" y="272" font-size="16" font-weight="700" fill="#64748b" text-anchor="middle">9</text>
+        <rect x="275" y="48" width="50" height="40" rx="4" fill="#0d9488" opacity="0.25"/><text x="300" y="72" font-size="14" font-weight="700" fill="#0d9488" text-anchor="middle">11</text>
+        <rect x="215" y="48" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="240" y="72" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">6</text>
+        <rect x="335" y="48" width="50" height="40" rx="4" fill="#0d9488" opacity="0.1"/><text x="360" y="72" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <rect x="395" y="48" width="50" height="40" rx="4" fill="#f8fafc"/><text x="420" y="72" font-size="14" font-weight="600" fill="#cbd5e1" text-anchor="middle">0</text>
+        <rect x="155" y="98" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="180" y="122" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">6</text>
+        <rect x="275" y="98" width="50" height="40" rx="4" fill="#0d9488" opacity="0.06"/><text x="300" y="122" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">2</text>
+        <rect x="335" y="98" width="50" height="40" rx="4" fill="#0d9488" opacity="0.12"/><text x="360" y="122" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">5</text>
+        <rect x="395" y="98" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="420" y="122" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">4</text>
+        <rect x="155" y="148" width="50" height="40" rx="4" fill="#0d9488" opacity="0.25"/><text x="180" y="172" font-size="14" font-weight="700" fill="#0d9488" text-anchor="middle">11</text>
+        <rect x="215" y="148" width="50" height="40" rx="4" fill="#0d9488" opacity="0.06"/><text x="240" y="172" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">2</text>
+        <rect x="335" y="148" width="50" height="40" rx="4" fill="#0d9488" opacity="0.06"/><text x="360" y="172" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">2</text>
+        <rect x="395" y="148" width="50" height="40" rx="4" fill="#f8fafc"/><text x="420" y="172" font-size="14" font-weight="600" fill="#cbd5e1" text-anchor="middle">0</text>
+        <rect x="155" y="198" width="50" height="40" rx="4" fill="#0d9488" opacity="0.1"/><text x="180" y="222" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <rect x="215" y="198" width="50" height="40" rx="4" fill="#0d9488" opacity="0.12"/><text x="240" y="222" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">5</text>
+        <rect x="275" y="198" width="50" height="40" rx="4" fill="#0d9488" opacity="0.06"/><text x="300" y="222" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">2</text>
+        <rect x="395" y="198" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="420" y="222" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <rect x="155" y="248" width="50" height="40" rx="4" fill="#f8fafc"/><text x="180" y="272" font-size="14" font-weight="600" fill="#cbd5e1" text-anchor="middle">0</text>
+        <rect x="215" y="248" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="240" y="272" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">4</text>
+        <rect x="275" y="248" width="50" height="40" rx="4" fill="#f8fafc"/><text x="300" y="272" font-size="14" font-weight="600" fill="#cbd5e1" text-anchor="middle">0</text>
+        <rect x="335" y="248" width="50" height="40" rx="4" fill="#0d9488" opacity="0.08"/><text x="360" y="272" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">3</text>
+        <text x="250" y="310" font-size="9" fill="#94a3b8" text-anchor="middle">Diagonal = total per set | Off-diagonal = pairwise overlap | Heat = count | 0 = white space</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>D. Intersection Matrix (Heatmap)</h3>
+      <p>Pairwise grid. Diagonal = totals, off-diagonal = shared products. Color intensity = count. Zeros are instant white-space signals. Can mix dimensions (MOA rows, indication columns).</p>
+      <div class="tags">
+        <span class="tag pro">Scales to 10+</span>
+        <span class="tag pro">White space jumps out</span>
+        <span class="tag pro">Familiar grid</span>
+        <span class="tag pro">Mix dimension types</span>
+        <span class="tag con">Only pairwise overlaps</span>
+        <span class="tag scale">5-20 values</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- E: Network Graph -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <line x1="150" y1="100" x2="300" y2="80" stroke="#0d9488" stroke-width="6" opacity="0.3"/>
+        <line x1="150" y1="100" x2="250" y2="200" stroke="#0d9488" stroke-width="3" opacity="0.2"/>
+        <line x1="150" y1="100" x2="380" y2="180" stroke="#0d9488" stroke-width="1" opacity="0.15"/>
+        <line x1="300" y1="80" x2="250" y2="200" stroke="#0d9488" stroke-width="4" opacity="0.25"/>
+        <line x1="300" y1="80" x2="420" y2="260" stroke="#0d9488" stroke-width="5" opacity="0.3"/>
+        <line x1="250" y1="200" x2="380" y2="180" stroke="#0d9488" stroke-width="2" opacity="0.2"/>
+        <line x1="250" y1="200" x2="120" y2="250" stroke="#0d9488" stroke-width="3" opacity="0.2"/>
+        <line x1="380" y1="180" x2="420" y2="260" stroke="#0d9488" stroke-width="4" opacity="0.25"/>
+        <circle cx="150" cy="100" r="28" fill="#0d9488" opacity="0.85"/>
+        <text x="150" y="95" font-size="9" font-weight="600" fill="white" text-anchor="middle">PD-1</text>
+        <text x="150" y="110" font-size="12" font-weight="700" fill="white" text-anchor="middle">24</text>
+        <circle cx="300" cy="80" r="24" fill="#8b5cf6" opacity="0.85"/>
+        <text x="300" y="75" font-size="9" font-weight="600" fill="white" text-anchor="middle">NSCLC</text>
+        <text x="300" y="90" font-size="12" font-weight="700" fill="white" text-anchor="middle">18</text>
+        <circle cx="250" cy="200" r="22" fill="#d97706" opacity="0.85"/>
+        <text x="250" y="195" font-size="9" font-weight="600" fill="white" text-anchor="middle">Phase 3</text>
+        <text x="250" y="210" font-size="12" font-weight="700" fill="white" text-anchor="middle">15</text>
+        <circle cx="380" cy="180" r="18" fill="#3b82f6" opacity="0.85"/>
+        <text x="380" y="175" font-size="9" font-weight="600" fill="white" text-anchor="middle">Oral</text>
+        <text x="380" y="190" font-size="12" font-weight="700" fill="white" text-anchor="middle">12</text>
+        <circle cx="420" cy="260" r="16" fill="#64748b" opacity="0.85"/>
+        <text x="420" y="255" font-size="9" font-weight="600" fill="white" text-anchor="middle">HER2</text>
+        <text x="420" y="270" font-size="12" font-weight="700" fill="white" text-anchor="middle">9</text>
+        <circle cx="120" cy="250" r="14" fill="#ec4899" opacity="0.85"/>
+        <text x="120" y="245" font-size="8" font-weight="600" fill="white" text-anchor="middle">BRCA</text>
+        <text x="120" y="258" font-size="11" font-weight="700" fill="white" text-anchor="middle">7</text>
+        <circle cx="250" cy="280" r="12" fill="#06b6d4" opacity="0.85"/>
+        <text x="250" y="277" font-size="8" font-weight="600" fill="white" text-anchor="middle">IV</text>
+        <text x="250" y="290" font-size="11" font-weight="700" fill="white" text-anchor="middle">5</text>
+        <rect x="210" y="82" width="22" height="16" rx="3" fill="white" stroke="#e2e8f0" stroke-width="0.5"/>
+        <text x="221" y="94" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">11</text>
+        <text x="250" y="315" font-size="9" fill="#94a3b8" text-anchor="middle">Node size = total products | Edge thickness = shared products | Click to expand</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>E. Network Graph</h3>
+      <p>Nodes = dimension values (sized by count). Edges = shared products (thickness = overlap). Clusters emerge naturally -- tightly connected = saturated, isolated = differentiated. Force-directed layout.</p>
+      <div class="tags">
+        <span class="tag pro">Scales well</span>
+        <span class="tag pro">Clusters reveal neighborhoods</span>
+        <span class="tag pro">Visually striking</span>
+        <span class="tag pro">Mix dimension types</span>
+        <span class="tag con">Non-deterministic layout</span>
+        <span class="tag con">Multi-way needs drill-down</span>
+        <span class="tag scale">5-30+ nodes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- F: Chord Diagram -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 360" style="width:100%; height:auto;">
+        <path d="M 180 60 A 160 160 0 0 1 280 48" fill="none" stroke="#0d9488" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+        <text x="220" y="38" font-size="10" font-weight="600" fill="#0d9488" text-anchor="middle">PD-1 (24)</text>
+        <path d="M 310 55 A 160 160 0 0 1 395 130" fill="none" stroke="#8b5cf6" stroke-width="11" stroke-linecap="round" opacity="0.8"/>
+        <text x="370" y="72" font-size="10" font-weight="600" fill="#8b5cf6" text-anchor="middle">NSCLC (18)</text>
+        <path d="M 405 165 A 160 160 0 0 1 380 280" fill="none" stroke="#d97706" stroke-width="10" stroke-linecap="round" opacity="0.8"/>
+        <text x="420" y="220" font-size="10" font-weight="600" fill="#d97706" text-anchor="middle">Phase 3 (15)</text>
+        <path d="M 350 305 A 160 160 0 0 1 200 315" fill="none" stroke="#3b82f6" stroke-width="11" stroke-linecap="round" opacity="0.8"/>
+        <text x="270" y="340" font-size="10" font-weight="600" fill="#3b82f6" text-anchor="middle">EGFR (18)</text>
+        <path d="M 165 295 A 160 160 0 0 1 115 195" fill="none" stroke="#ec4899" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+        <text x="110" y="255" font-size="10" font-weight="600" fill="#ec4899" text-anchor="middle">Oral (12)</text>
+        <path d="M 118 165 A 160 160 0 0 1 150 88" fill="none" stroke="#64748b" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+        <text x="105" y="125" font-size="10" font-weight="600" fill="#64748b" text-anchor="middle">HER2 (9)</text>
+        <path d="M 265 52 Q 250 160 330 65" fill="#0d9488" opacity="0.15" stroke="#0d9488" stroke-width="0.5"/>
+        <path d="M 258 55 Q 250 170 320 70" fill="#0d9488" opacity="0.15"/>
+        <text x="285" y="95" font-size="9" font-weight="600" fill="#0d9488" text-anchor="middle">11</text>
+        <path d="M 240 58 Q 280 180 400 180" fill="#0d9488" opacity="0.1"/>
+        <text x="330" y="140" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">8</text>
+        <path d="M 385 140 Q 350 200 395 200" fill="#8b5cf6" opacity="0.1"/>
+        <text x="400" y="165" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">6</text>
+        <path d="M 370 120 Q 330 220 320 300" fill="#8b5cf6" opacity="0.1"/>
+        <text x="360" y="230" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">7</text>
+        <path d="M 215 310 Q 180 220 130 175" fill="#3b82f6" opacity="0.1"/>
+        <text x="160" y="250" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">4</text>
+        <text x="250" y="185" font-size="9" fill="#94a3b8" text-anchor="middle">Ribbon thickness =</text>
+        <text x="250" y="197" font-size="9" fill="#94a3b8" text-anchor="middle">shared products</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>F. Chord Diagram</h3>
+      <p>Arcs around a ring = dimension values (sized by total). Ribbons connect values sharing products -- thicker = more overlap. Missing ribbons = white space. Hover to isolate one arc's connections.</p>
+      <div class="tags">
+        <span class="tag pro">Beautiful and compact</span>
+        <span class="tag pro">All pairwise at once</span>
+        <span class="tag pro">Missing ribbons = gaps</span>
+        <span class="tag con">Only pairwise</span>
+        <span class="tag con">Ribbons can tangle</span>
+        <span class="tag scale">4-12 arcs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- G: Sankey -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 520 340" style="width:100%; height:auto;">
+        <text x="60" y="20" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">Company</text>
+        <text x="200" y="20" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">MOA</text>
+        <text x="340" y="20" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">Indication</text>
+        <text x="470" y="20" font-size="11" font-weight="700" fill="#334155" text-anchor="middle">Phase</text>
+        <rect x="30" y="35" width="60" height="70" rx="3" fill="#0d9488" opacity="0.8"/><text x="60" y="65" font-size="9" font-weight="600" fill="white" text-anchor="middle">Pfizer</text><text x="60" y="78" font-size="8" fill="white" text-anchor="middle" opacity="0.8">14 products</text>
+        <rect x="30" y="115" width="60" height="55" rx="3" fill="#0d9488" opacity="0.65"/><text x="60" y="140" font-size="9" font-weight="600" fill="white" text-anchor="middle">Merck</text>
+        <rect x="30" y="180" width="60" height="45" rx="3" fill="#0d9488" opacity="0.5"/><text x="60" y="200" font-size="9" font-weight="600" fill="white" text-anchor="middle">Roche</text>
+        <rect x="30" y="235" width="60" height="35" rx="3" fill="#0d9488" opacity="0.4"/><text x="60" y="255" font-size="9" font-weight="600" fill="white" text-anchor="middle">AZ</text>
+        <rect x="30" y="280" width="60" height="30" rx="3" fill="#0d9488" opacity="0.3"/><text x="60" y="298" font-size="9" font-weight="600" fill="white" text-anchor="middle">BMS</text>
+        <rect x="170" y="35" width="60" height="65" rx="3" fill="#8b5cf6" opacity="0.8"/><text x="200" y="62" font-size="9" font-weight="600" fill="white" text-anchor="middle">PD-1</text><text x="200" y="75" font-size="8" fill="white" text-anchor="middle" opacity="0.8">24</text>
+        <rect x="170" y="110" width="60" height="50" rx="3" fill="#8b5cf6" opacity="0.65"/><text x="200" y="132" font-size="9" font-weight="600" fill="white" text-anchor="middle">EGFR</text>
+        <rect x="170" y="170" width="60" height="40" rx="3" fill="#8b5cf6" opacity="0.5"/><text x="200" y="192" font-size="9" font-weight="600" fill="white" text-anchor="middle">VEGF</text>
+        <rect x="170" y="220" width="60" height="35" rx="3" fill="#8b5cf6" opacity="0.4"/><text x="200" y="240" font-size="9" font-weight="600" fill="white" text-anchor="middle">HER2</text>
+        <rect x="170" y="265" width="60" height="30" rx="3" fill="#8b5cf6" opacity="0.3"/><text x="200" y="283" font-size="9" font-weight="600" fill="white" text-anchor="middle">CDK4/6</text>
+        <rect x="310" y="35" width="60" height="60" rx="3" fill="#d97706" opacity="0.8"/><text x="340" y="62" font-size="9" font-weight="600" fill="white" text-anchor="middle">NSCLC</text>
+        <rect x="310" y="105" width="60" height="45" rx="3" fill="#d97706" opacity="0.65"/><text x="340" y="130" font-size="9" font-weight="600" fill="white" text-anchor="middle">Breast</text>
+        <rect x="310" y="160" width="60" height="40" rx="3" fill="#d97706" opacity="0.5"/><text x="340" y="183" font-size="9" font-weight="600" fill="white" text-anchor="middle">CRC</text>
+        <rect x="310" y="210" width="60" height="35" rx="3" fill="#d97706" opacity="0.4"/><text x="340" y="230" font-size="9" font-weight="600" fill="white" text-anchor="middle">Melanoma</text>
+        <rect x="310" y="255" width="60" height="30" rx="3" fill="#d97706" opacity="0.3"/><text x="340" y="273" font-size="9" font-weight="600" fill="white" text-anchor="middle">RCC</text>
+        <rect x="440" y="35" width="60" height="30" rx="3" fill="#64748b" opacity="0.4"/><text x="470" y="53" font-size="9" font-weight="600" fill="white" text-anchor="middle">P1</text>
+        <rect x="440" y="75" width="60" height="45" rx="3" fill="#64748b" opacity="0.5"/><text x="470" y="100" font-size="9" font-weight="600" fill="white" text-anchor="middle">P2</text>
+        <rect x="440" y="130" width="60" height="60" rx="3" fill="#64748b" opacity="0.7"/><text x="470" y="160" font-size="9" font-weight="600" fill="white" text-anchor="middle">P3</text>
+        <rect x="440" y="200" width="60" height="40" rx="3" fill="#64748b" opacity="0.85"/><text x="470" y="222" font-size="9" font-weight="600" fill="white" text-anchor="middle">Approved</text>
+        <rect x="440" y="250" width="60" height="35" rx="3" fill="#64748b" opacity="0.95"/><text x="470" y="270" font-size="9" font-weight="600" fill="white" text-anchor="middle">Launched</text>
+        <path d="M 90 50 C 130 50 130 45 170 45" fill="#0d9488" opacity="0.12"/><path d="M 90 65 C 130 65 130 60 170 58" fill="#0d9488" opacity="0.12"/>
+        <path d="M 230 42 C 270 42 270 42 310 42" fill="#8b5cf6" opacity="0.15"/><path d="M 230 62 C 270 62 270 58 310 55" fill="#8b5cf6" opacity="0.15"/>
+        <path d="M 370 45 C 405 50 405 138 440 140" fill="#d97706" opacity="0.12"/><path d="M 370 60 C 405 65 405 155 440 158" fill="#d97706" opacity="0.12"/>
+        <path d="M 90 120 C 130 110 130 55 170 55" fill="#0d9488" opacity="0.1"/><path d="M 90 130 C 130 120 130 65 170 65" fill="#0d9488" opacity="0.1"/>
+        <text x="260" y="330" font-size="9" fill="#94a3b8" text-anchor="middle">Each column = a dimension | Block height = count | Ribbon width = flow volume</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>G. Sankey / Alluvial Flow</h3>
+      <p>Products flow left-to-right through dimension columns (Company -> MOA -> Indication -> Phase). Ribbon width = how many products take each path. Thick flows = crowded lanes, thin = niche. User picks column order.</p>
+      <div class="tags">
+        <span class="tag pro">Full multi-dim paths</span>
+        <span class="tag pro">Dominant vs. niche flows</span>
+        <span class="tag pro">User controls columns</span>
+        <span class="tag con">Tangles with many values</span>
+        <span class="tag con">Hard to trace specifics</span>
+        <span class="tag scale">3-5 columns, 5-8 values each</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- H: Bubble Scatter -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 340" style="width:100%; height:auto;">
+        <line x1="70" y1="290" x2="470" y2="290" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="70" y1="290" x2="70" y2="30" stroke="#cbd5e1" stroke-width="1"/>
+        <text x="270" y="325" font-size="11" font-weight="600" fill="#334155" text-anchor="middle">Number of Competitors</text>
+        <text x="20" y="160" font-size="11" font-weight="600" fill="#334155" text-anchor="middle" transform="rotate(-90,20,160)">Highest Phase Reached</text>
+        <text x="65" y="270" font-size="9" fill="#94a3b8" text-anchor="end">P1</text>
+        <text x="65" y="220" font-size="9" fill="#94a3b8" text-anchor="end">P2</text>
+        <text x="65" y="165" font-size="9" fill="#94a3b8" text-anchor="end">P3</text>
+        <text x="65" y="110" font-size="9" fill="#94a3b8" text-anchor="end">Approved</text>
+        <text x="65" y="60" font-size="9" fill="#94a3b8" text-anchor="end">Launched</text>
+        <text x="120" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">1</text>
+        <text x="195" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">3</text>
+        <text x="270" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">5</text>
+        <text x="345" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">7</text>
+        <text x="420" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">9+</text>
+        <rect x="270" y="30" width="200" height="132" fill="#ef4444" opacity="0.04"/>
+        <text x="370" y="48" font-size="8" fill="#ef4444" text-anchor="middle" font-weight="600">RED OCEAN</text>
+        <rect x="70" y="162" width="200" height="128" fill="#22c55e" opacity="0.04"/>
+        <text x="170" y="180" font-size="8" fill="#22c55e" text-anchor="middle" font-weight="600">BLUE OCEAN</text>
+        <circle cx="420" cy="80" r="32" fill="#0d9488" opacity="0.25" stroke="#0d9488" stroke-width="1.5"/><text x="420" y="76" font-size="8" font-weight="600" fill="#0f766e" text-anchor="middle">PD-1</text><text x="420" y="88" font-size="7" fill="#0f766e" text-anchor="middle">NSCLC</text>
+        <circle cx="370" cy="107" r="24" fill="#8b5cf6" opacity="0.25" stroke="#8b5cf6" stroke-width="1.5"/><text x="370" y="104" font-size="8" font-weight="600" fill="#7c3aed" text-anchor="middle">EGFR</text><text x="370" y="115" font-size="7" fill="#7c3aed" text-anchor="middle">NSCLC</text>
+        <circle cx="310" cy="80" r="20" fill="#d97706" opacity="0.25" stroke="#d97706" stroke-width="1.5"/><text x="310" y="77" font-size="8" font-weight="600" fill="#b45309" text-anchor="middle">CDK4/6</text><text x="310" y="88" font-size="7" fill="#b45309" text-anchor="middle">Breast</text>
+        <circle cx="270" cy="162" r="18" fill="#3b82f6" opacity="0.25" stroke="#3b82f6" stroke-width="1.5"/><text x="270" y="159" font-size="8" font-weight="600" fill="#2563eb" text-anchor="middle">VEGF</text><text x="270" y="170" font-size="7" fill="#2563eb" text-anchor="middle">CRC</text>
+        <circle cx="120" cy="220" r="10" fill="#22c55e" opacity="0.3" stroke="#22c55e" stroke-width="1.5"/><text x="120" y="218" font-size="7" font-weight="600" fill="#16a34a" text-anchor="middle">KRAS</text><text x="120" y="228" font-size="7" fill="#16a34a" text-anchor="middle">Pancr.</text>
+        <circle cx="155" cy="267" r="8" fill="#22c55e" opacity="0.3" stroke="#22c55e" stroke-width="1.5"/><text x="155" y="265" font-size="7" font-weight="600" fill="#16a34a" text-anchor="middle">TIGIT</text><text x="155" y="275" font-size="7" fill="#16a34a" text-anchor="middle">NSCLC</text>
+        <circle cx="230" cy="162" r="15" fill="#64748b" opacity="0.25" stroke="#64748b" stroke-width="1.5"/><text x="230" y="160" font-size="7" font-weight="600" fill="#475569" text-anchor="middle">HER2</text><text x="230" y="170" font-size="7" fill="#475569" text-anchor="middle">Gastric</text>
+        <circle cx="195" cy="107" r="13" fill="#ec4899" opacity="0.25" stroke="#ec4899" stroke-width="1.5"/><text x="195" y="105" font-size="7" font-weight="600" fill="#db2777" text-anchor="middle">BRCA</text><text x="195" y="115" font-size="7" fill="#db2777" text-anchor="middle">Ovarian</text>
+        <text x="270" y="340" font-size="9" fill="#94a3b8" text-anchor="middle">X = competitors | Y = maturity | Bubble size = trial volume | Color = MOA</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>H. Competitive Positioning Scatter</h3>
+      <p>Each bubble = MOA+Indication pair. X = competitor count. Y = highest phase reached. Size = trial volume. Top-right = red ocean (crowded, mature). Bottom-left = blue ocean (early, uncrowded). Built-in strategic narrative.</p>
+      <div class="tags">
+        <span class="tag pro">Instant red/blue ocean read</span>
+        <span class="tag pro">4 dimensions at once</span>
+        <span class="tag pro">Familiar to BD teams</span>
+        <span class="tag con">Fixed pairs, not arbitrary sets</span>
+        <span class="tag con">Bubbles can overlap</span>
+        <span class="tag scale">10-50 bubbles</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- I: Parallel Coordinates -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <line x1="80" y1="40" x2="80" y2="280" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="200" y1="40" x2="200" y2="280" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="320" y1="40" x2="320" y2="280" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="440" y1="40" x2="440" y2="280" stroke="#cbd5e1" stroke-width="1"/>
+        <text x="80" y="30" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">MOA</text>
+        <text x="200" y="30" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">Indication</text>
+        <text x="320" y="30" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">Phase</text>
+        <text x="440" y="30" font-size="10" font-weight="700" fill="#334155" text-anchor="middle">Company</text>
+        <rect x="60" y="45" width="40" height="50" rx="3" fill="#0d9488" opacity="0.15"/><text x="80" y="73" font-size="9" font-weight="600" fill="#0d9488" text-anchor="middle">PD-1</text>
+        <rect x="60" y="105" width="40" height="40" rx="3" fill="#8b5cf6" opacity="0.15"/><text x="80" y="128" font-size="9" font-weight="600" fill="#8b5cf6" text-anchor="middle">EGFR</text>
+        <rect x="60" y="155" width="40" height="30" rx="3" fill="#d97706" opacity="0.15"/><text x="80" y="173" font-size="9" font-weight="600" fill="#d97706" text-anchor="middle">VEGF</text>
+        <rect x="60" y="195" width="40" height="28" rx="3" fill="#3b82f6" opacity="0.15"/><text x="80" y="213" font-size="9" font-weight="600" fill="#3b82f6" text-anchor="middle">HER2</text>
+        <rect x="180" y="45" width="40" height="45" rx="3" fill="#0d9488" opacity="0.1"/><text x="200" y="71" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">NSCLC</text>
+        <rect x="180" y="100" width="40" height="38" rx="3" fill="#0d9488" opacity="0.1"/><text x="200" y="123" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Breast</text>
+        <rect x="180" y="148" width="40" height="30" rx="3" fill="#0d9488" opacity="0.1"/><text x="200" y="167" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">CRC</text>
+        <rect x="180" y="188" width="40" height="28" rx="3" fill="#0d9488" opacity="0.1"/><text x="200" y="206" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Melanoma</text>
+        <rect x="300" y="50" width="40" height="25" rx="3" fill="#0d9488" opacity="0.1"/><text x="320" y="66" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">P1</text>
+        <rect x="300" y="85" width="40" height="35" rx="3" fill="#0d9488" opacity="0.1"/><text x="320" y="106" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">P2</text>
+        <rect x="300" y="130" width="40" height="45" rx="3" fill="#0d9488" opacity="0.1"/><text x="320" y="156" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">P3</text>
+        <rect x="300" y="185" width="40" height="35" rx="3" fill="#0d9488" opacity="0.1"/><text x="320" y="206" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Appr.</text>
+        <rect x="420" y="45" width="40" height="40" rx="3" fill="#0d9488" opacity="0.1"/><text x="440" y="69" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Pfizer</text>
+        <rect x="420" y="95" width="40" height="35" rx="3" fill="#0d9488" opacity="0.1"/><text x="440" y="116" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Merck</text>
+        <rect x="420" y="140" width="40" height="30" rx="3" fill="#0d9488" opacity="0.1"/><text x="440" y="159" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">Roche</text>
+        <rect x="420" y="180" width="40" height="28" rx="3" fill="#0d9488" opacity="0.1"/><text x="440" y="198" font-size="9" font-weight="600" fill="#334155" text-anchor="middle">AZ</text>
+        <path d="M 100 60 C 140 60 160 55 180 55" fill="none" stroke="#0d9488" stroke-width="2.5" opacity="0.6"/>
+        <path d="M 220 58 C 260 60 280 148 300 148" fill="none" stroke="#0d9488" stroke-width="2.5" opacity="0.6"/>
+        <path d="M 340 150 C 380 148 400 108 420 108" fill="none" stroke="#0d9488" stroke-width="2.5" opacity="0.6"/>
+        <path d="M 100 65 C 140 70 160 60 180 60" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 220 63 C 260 80 280 95 300 95" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 340 98 C 380 95 400 60 420 60" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 100 55 C 140 55 160 195 180 195" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 100 120 C 140 115 160 55 180 58" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 220 62 C 260 65 280 140 300 142" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 340 145 C 380 142 400 58 420 58" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.2"/>
+        <path d="M 100 115 C 140 110 160 108 180 108" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.15"/>
+        <path d="M 100 170 C 140 165 160 155 180 155" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.15"/>
+        <text x="260" y="305" font-size="9" fill="#94a3b8" text-anchor="middle">Each thread = one product | Click any value to highlight all products through it</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>I. Parallel Coordinates</h3>
+      <p>Each vertical axis = a dimension. Each thread = one product tracing through all dimensions. Click any value to highlight all threads passing through it. Bundles of threads reveal competitive corridors.</p>
+      <div class="tags">
+        <span class="tag pro">Full product profiles</span>
+        <span class="tag pro">Brushing filters everything</span>
+        <span class="tag pro">Reveals corridors</span>
+        <span class="tag con">Cluttered at 100+ products</span>
+        <span class="tag con">Unfamiliar to some</span>
+        <span class="tag scale">5-8 axes, up to ~80 threads</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- J: Treemap -->
+  <div class="card">
+    <div class="card-image">
+      <svg viewBox="0 0 500 320" style="width:100%; height:auto;">
+        <rect x="20" y="20" width="460" height="280" rx="4" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+        <rect x="22" y="22" width="230" height="276" rx="3" fill="#0d9488" opacity="0.08" stroke="#0d9488" stroke-width="1"/>
+        <text x="32" y="40" font-size="12" font-weight="700" fill="#0d9488">PD-1 Inhibitors (24)</text>
+        <rect x="28" y="48" width="140" height="120" rx="2" fill="#0d9488" opacity="0.12" stroke="#0d9488" stroke-width="0.5"/>
+        <text x="36" y="65" font-size="9" font-weight="600" fill="#0f766e">NSCLC (11)</text>
+        <rect x="34" y="72" width="80" height="50" rx="2" fill="#0d9488" opacity="0.2"/>
+        <text x="42" y="88" font-size="8" font-weight="600" fill="#0f766e">Phase 3</text>
+        <text x="42" y="100" font-size="7" fill="#0f766e">Merck, BMS, Roche</text>
+        <text x="72" y="115" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">5</text>
+        <rect x="118" y="72" width="44" height="50" rx="2" fill="#8b5cf6" opacity="0.15"/>
+        <text x="124" y="88" font-size="8" font-weight="600" fill="#7c3aed">Approved</text>
+        <text x="140" y="110" font-size="14" font-weight="700" fill="#8b5cf6" text-anchor="middle">3</text>
+        <rect x="34" y="126" width="60" height="36" rx="2" fill="#64748b" opacity="0.1"/>
+        <text x="40" y="140" font-size="8" font-weight="500" fill="#64748b">P2</text>
+        <text x="64" y="155" font-size="12" font-weight="600" fill="#64748b" text-anchor="middle">2</text>
+        <rect x="98" y="126" width="64" height="36" rx="2" fill="#64748b" opacity="0.06"/>
+        <text x="104" y="140" font-size="8" font-weight="500" fill="#94a3b8">P1</text>
+        <text x="130" y="155" font-size="12" font-weight="600" fill="#94a3b8" text-anchor="middle">1</text>
+        <rect x="28" y="174" width="100" height="60" rx="2" fill="#d97706" opacity="0.1" stroke="#d97706" stroke-width="0.5"/>
+        <text x="36" y="191" font-size="9" font-weight="600" fill="#b45309">Melanoma (6)</text>
+        <rect x="34" y="198" width="55" height="30" rx="2" fill="#d97706" opacity="0.15"/>
+        <text x="40" y="213" font-size="8" fill="#b45309">Launched: 3</text>
+        <rect x="134" y="174" width="60" height="60" rx="2" fill="#3b82f6" opacity="0.1" stroke="#3b82f6" stroke-width="0.5"/>
+        <text x="142" y="191" font-size="9" font-weight="600" fill="#2563eb">RCC (4)</text>
+        <rect x="28" y="240" width="218" height="52" rx="2" fill="#64748b" opacity="0.05"/>
+        <text x="36" y="257" font-size="9" fill="#94a3b8">Other indications (3)</text>
+        <rect x="256" y="22" width="222" height="150" rx="3" fill="#8b5cf6" opacity="0.08" stroke="#8b5cf6" stroke-width="1"/>
+        <text x="266" y="40" font-size="12" font-weight="700" fill="#8b5cf6">EGFR (18)</text>
+        <rect x="262" y="48" width="120" height="60" rx="2" fill="#8b5cf6" opacity="0.1"/>
+        <text x="270" y="65" font-size="9" font-weight="600" fill="#7c3aed">NSCLC (7)</text>
+        <rect x="268" y="72" width="50" height="30" rx="2" fill="#8b5cf6" opacity="0.15"/>
+        <text x="274" y="88" font-size="8" fill="#7c3aed">P3: 3</text>
+        <rect x="322" y="72" width="54" height="30" rx="2" fill="#8b5cf6" opacity="0.12"/>
+        <text x="328" y="88" font-size="8" fill="#7c3aed">Appr: 2</text>
+        <rect x="386" y="48" width="86" height="60" rx="2" fill="#8b5cf6" opacity="0.07"/>
+        <text x="394" y="65" font-size="9" font-weight="600" fill="#7c3aed">Breast (5)</text>
+        <rect x="262" y="114" width="210" height="52" rx="2" fill="#64748b" opacity="0.05"/>
+        <text x="270" y="133" font-size="9" fill="#94a3b8">CRC (3), Gastric (2), Other (1)</text>
+        <rect x="256" y="178" width="110" height="118" rx="3" fill="#d97706" opacity="0.08" stroke="#d97706" stroke-width="1"/>
+        <text x="266" y="196" font-size="11" font-weight="700" fill="#d97706">HER2 (9)</text>
+        <rect x="262" y="204" width="98" height="40" rx="2" fill="#d97706" opacity="0.1"/>
+        <text x="270" y="221" font-size="9" fill="#b45309">Breast (5)</text>
+        <rect x="262" y="250" width="98" height="40" rx="2" fill="#d97706" opacity="0.06"/>
+        <text x="270" y="267" font-size="9" fill="#94a3b8">Gastric (3), CRC (1)</text>
+        <rect x="370" y="178" width="108" height="118" rx="3" fill="#3b82f6" opacity="0.08" stroke="#3b82f6" stroke-width="1"/>
+        <text x="380" y="196" font-size="11" font-weight="700" fill="#3b82f6">VEGF (7)</text>
+        <rect x="376" y="204" width="96" height="35" rx="2" fill="#3b82f6" opacity="0.1"/>
+        <text x="384" y="221" font-size="9" fill="#2563eb">CRC (3)</text>
+        <rect x="376" y="245" width="96" height="45" rx="2" fill="#3b82f6" opacity="0.06"/>
+        <text x="384" y="262" font-size="9" fill="#94a3b8">RCC (2), HCC (2)</text>
+        <text x="250" y="315" font-size="9" fill="#94a3b8" text-anchor="middle">Area = product count | Nesting = drill-down (MOA > Indication > Phase) | Click to zoom</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>J. Nested Treemap</h3>
+      <p>Rectangle area = product count. Outer blocks = MOA, nested = indication, innermost = phase. Click to zoom into any block. Biggest rectangles = most crowded spaces. Tiny/missing = white space. Bloomberg-adjacent data density.</p>
+      <div class="tags">
+        <span class="tag pro">Extreme data density</span>
+        <span class="tag pro">Area makes sizes obvious</span>
+        <span class="tag pro">Zoom-to-drill is natural</span>
+        <span class="tag con">Fixed hierarchy</span>
+        <span class="tag con">Hard to compare non-adjacent</span>
+        <span class="tag scale">3 nesting levels, many values</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section-note" style="margin-top: 32px;">
+  <h3>Combination Ideas</h3>
+  <ul>
+    <li><strong>Network (E) + Venn (A):</strong> Network as the overview, click a cluster to see a Venn of 2-3 nodes within it</li>
+    <li><strong>Treemap (J) + UpSet (C):</strong> Treemap as the landing view, click a block to see UpSet for that subset</li>
+    <li><strong>Scatter (H) + Matrix (D):</strong> Scatter for strategic positioning, matrix for detailed pairwise analysis</li>
+    <li><strong>Sankey (G) + Venn (A):</strong> Sankey for the flow overview, Venn to drill into specific intersection</li>
+    <li><strong>Network (E) + Matrix (D):</strong> Network for visual discovery, matrix for precise pairwise counts</li>
+  </ul>
+</div>
+
+<div class="section-note">
+  <h3>Available Data Dimensions</h3>
+  <ul>
+    <li><strong>Core entities:</strong> Company, Product, Trial, Therapeutic Area</li>
+    <li><strong>Classification:</strong> Mechanism of Action (MOA), Route of Administration (ROA)</li>
+    <li><strong>Development:</strong> Phase (PRECLIN, P1-P4, APPROVED, LAUNCHED), Recruitment Status</li>
+    <li><strong>ClinicalTrials.gov:</strong> Study Type, Sponsor Type, Countries/Regions, Conditions, Intervention Type, FDA Designations, Design (allocation, masking, purpose)</li>
+    <li><strong>Counting units (user-selectable):</strong> Products (default), Trials, Companies</li>
+  </ul>
+</div>
+
+<div class="section-note">
+  <h3>Design Constraints</h3>
+  <ul>
+    <li>Pure SVG rendering (no charting libraries) -- consistent with existing timeline and bullseye views</li>
+    <li>Teal primary accent, slate neutrals, phase-based color progression</li>
+    <li>WCAG 2.1 AA compliant, keyboard navigable</li>
+    <li>Light mode only, data-dense, Bloomberg Terminal aesthetic</li>
+    <li>Angular 19 signals + Supabase RPC for data aggregation</li>
+  </ul>
+</div>
+
+<p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:32px; padding-bottom:24px;">Clinical Trial Dashboard -- Competitive Spheres Visualization Catalog -- Reference Document</p>
+
+</div>
+</body>
+</html>
