@@ -31,19 +31,28 @@
       <p class="landscape-detail-generic">{{ product.generic_name }}</p>
     }
 
-    <section class="landscape-detail-section">
-      <div class="landscape-detail-label">COMPANY</div>
-      <button type="button" class="landscape-detail-company-link" (click)="onCompanyClick()">
-        {{ product.company_name }} →
-      </button>
-    </section>
+    @if (dimension() !== 'company') {
+      <section class="landscape-detail-section">
+        <div class="landscape-detail-label">COMPANY</div>
+        <button type="button" class="landscape-detail-company-link" (click)="onCompanyClick()">
+          {{ product.company_name }} →
+        </button>
+      </section>
+    }
 
     @if (product.moas.length > 0) {
       <section class="landscape-detail-section">
         <div class="landscape-detail-label">MECHANISM OF ACTION</div>
         <div class="flex flex-wrap gap-1">
           @for (moa of product.moas; track moa.id) {
-            <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5">{{ moa.name }}</span>
+            <span
+              class="inline-block rounded-sm text-[11px] px-2 py-0.5"
+              [class.bg-teal-100]="isScopedMoa(moa.id)"
+              [class.text-teal-800]="isScopedMoa(moa.id)"
+              [class.font-semibold]="isScopedMoa(moa.id)"
+              [class.bg-slate-100]="!isScopedMoa(moa.id)"
+              [class.text-slate-700]="!isScopedMoa(moa.id)"
+            >{{ moa.name }}</span>
           }
         </div>
       </section>
@@ -53,7 +62,15 @@
         <div class="landscape-detail-label">ROUTE OF ADMINISTRATION</div>
         <div class="flex flex-wrap gap-1">
           @for (roa of product.roas; track roa.id) {
-            <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5" [attr.title]="roa.name">{{ roa.abbreviation ?? roa.name }}</span>
+            <span
+              class="inline-block rounded-sm text-[11px] px-2 py-0.5"
+              [class.bg-teal-100]="isScopedRoa(roa.id)"
+              [class.text-teal-800]="isScopedRoa(roa.id)"
+              [class.font-semibold]="isScopedRoa(roa.id)"
+              [class.bg-slate-100]="!isScopedRoa(roa.id)"
+              [class.text-slate-700]="!isScopedRoa(roa.id)"
+              [attr.title]="roa.name"
+            >{{ roa.abbreviation ?? roa.name }}</span>
           }
         </div>
       </section>
@@ -61,7 +78,7 @@
 
     <section class="landscape-detail-section">
       <div class="landscape-detail-label">
-        HIGHEST PHASE IN {{ therapeuticAreaName().toUpperCase() }}
+        HIGHEST PHASE IN {{ scopeName().toUpperCase() }}
       </div>
       <div class="landscape-detail-phase">
         <span class="landscape-phase-chip" aria-hidden="true"></span>
@@ -70,9 +87,9 @@
     </section>
 
     <section class="landscape-detail-section">
-      <div class="landscape-detail-label">TRIALS IN THIS TA ({{ product.trials.length }})</div>
+      <div class="landscape-detail-label">TRIALS ({{ product.trials.length }})</div>
       @if (product.trials.length === 0) {
-        <p class="landscape-detail-empty-text">No trials tracked in this TA.</p>
+        <p class="landscape-detail-empty-text">No trials tracked.</p>
       } @else {
         <ul class="landscape-detail-trial-list">
           @for (trial of visibleTrials(); track trial.id) {
@@ -138,7 +155,7 @@
       <div class="landscape-detail-label">CLICK A DRUG TO SEE DETAILS</div>
       <p class="landscape-detail-summary">
         {{ totalProducts() }} {{ totalProducts() === 1 ? 'product' : 'products' }} across
-        {{ totalCompanies() }} {{ totalCompanies() === 1 ? 'company' : 'companies' }}
+        {{ totalSpokes() }} {{ spokeLabel().toLowerCase() }}
       </p>
       <ul class="landscape-ring-histogram" role="list">
         @for (entry of ringHistogram(); track entry.phase) {

@@ -3,6 +3,7 @@ import { ButtonModule } from 'primeng/button';
 
 import {
   BullseyeData,
+  BullseyeDimension,
   BullseyeProduct,
   PHASE_COLOR,
   RING_ORDER,
@@ -25,6 +26,7 @@ export class BullseyeDetailPanelComponent {
   readonly selectedProduct = input<BullseyeProduct | null>(null);
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
+  readonly dimension = input<BullseyeDimension>('therapeutic-area');
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
@@ -64,7 +66,7 @@ export class BullseyeDetailPanelComponent {
   });
 
   protected readonly allProducts = computed(() => {
-    return this.data()?.companies.flatMap((c) => c.products) ?? [];
+    return this.data()?.spokes.flatMap((s) => s.products) ?? [];
   });
 
   protected readonly ringHistogram = computed<RingHistogramEntry[]>(() => {
@@ -79,15 +81,26 @@ export class BullseyeDetailPanelComponent {
   });
 
   protected readonly totalProducts = computed(() => this.allProducts().length);
-  protected readonly totalCompanies = computed(() => this.data()?.companies.length ?? 0);
-  protected readonly therapeuticAreaName = computed(
-    () => this.data()?.therapeutic_area?.name ?? ''
+  protected readonly totalSpokes = computed(() => this.data()?.spokes.length ?? 0);
+  protected readonly scopeName = computed(
+    () => this.data()?.scope?.name ?? ''
   );
+  protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
 
   protected readonly highestPhaseLabel = computed(() => {
     const p = this.selectedProduct();
     return p ? p.highest_phase : '';
   });
+
+  protected isScopedMoa(moaId: string): boolean {
+    const d = this.data();
+    return d?.dimension === 'moa' && d.scope.id === moaId;
+  }
+
+  protected isScopedRoa(roaId: string): boolean {
+    const d = this.data();
+    return d?.dimension === 'roa' && d.scope.id === roaId;
+  }
 
   protected onTrialClick(trialId: string): void {
     this.openTrial.emit(trialId);
@@ -100,9 +113,9 @@ export class BullseyeDetailPanelComponent {
 
   protected onOpenTimeline(): void {
     const p = this.selectedProduct();
-    const ta = this.data()?.therapeutic_area;
-    if (p && ta) {
-      this.openInTimeline.emit({ productId: p.id, therapeuticAreaId: ta.id });
+    const d = this.data();
+    if (p && d?.scope) {
+      this.openInTimeline.emit({ productId: p.id, therapeuticAreaId: d.scope.id });
     }
   }
 
