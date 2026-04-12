@@ -13,7 +13,7 @@
     (keydown.space)="onMarkerClick()"
     tabindex="0"
     role="button"
-    [attr.aria-label]="tooltipText()"
+    [attr.aria-label]="ariaLabel()"
   >
     @if (isRange()) {
       <svg [attr.width]="rangeWidth()" [attr.height]="iconSize" class="overflow-visible">
@@ -22,7 +22,7 @@
           [width]="rangeWidth()"
           [height]="iconSize"
           [color]="mt.color"
-          [fillStyle]="mt.fill_style"
+          [fillStyle]="effectiveFillStyle()"
         />
       </svg>
     } @else {
@@ -50,14 +50,16 @@
       {{ shortDate() }}
     </div>
 
-    @if (showTooltip() && tooltipText()) {
+    @if (showTooltip()) {
       <app-marker-tooltip
-        [text]="tooltipText()!"
+        [title]="marker().title"
         [typeName]="markerType()?.name ?? ''"
         [typeColor]="markerType()?.color ?? '#64748b'"
         [date]="marker().event_date"
-        [isProjected]="marker().is_projected"
-        [imageUrl]="marker().tooltip_image_url"
+        [projection]="marker().projection"
+        [categoryName]="markerType()?.marker_categories?.name ?? ''"
+        [description]="marker().description"
+        [sourceUrl]="marker().source_url"
       />
     }
   </div>

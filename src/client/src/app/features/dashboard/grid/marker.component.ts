@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 
-import { MarkerType, TrialMarker } from '../../../core/models/marker.model';
+import { Marker, MarkerType } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { BarIconComponent } from '../../../shared/components/svg-icons/bar-icon.component';
 import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
@@ -16,12 +16,12 @@ import { MarkerTooltipComponent } from './marker-tooltip.component';
 export class MarkerComponent {
   private readonly timeline = inject(TimelineService);
 
-  marker = input.required<TrialMarker>();
+  marker = input.required<Marker>();
   startYear = input.required<number>();
   endYear = input.required<number>();
   totalWidth = input.required<number>();
 
-  markerClick = output<TrialMarker>();
+  markerClick = output<Marker>();
 
   showTooltip = signal(false);
 
@@ -56,10 +56,24 @@ export class MarkerComponent {
     return Math.max(0, endX - this.markerX());
   });
 
+  effectiveFillStyle = computed(() => {
+    const projection = this.marker().projection;
+    switch (projection) {
+      case 'actual':
+        return 'filled';
+      case 'stout':
+        return 'striped';
+      case 'company':
+      case 'primary':
+      default:
+        return 'outline';
+    }
+  });
+
   faIcon = computed(() => {
     const mt = this.markerType();
     if (!mt) return 'fa-solid fa-circle';
-    return getMarkerIcon(mt.shape, mt.fill_style);
+    return getMarkerIcon(mt.shape, this.effectiveFillStyle() as MarkerType['fill_style']);
   });
 
   shortDate = computed(() => {
@@ -98,9 +112,9 @@ export class MarkerComponent {
     return abbrevs[name] ?? name.slice(0, 4);
   });
 
-  tooltipText = computed(() => {
+  ariaLabel = computed(() => {
     const m = this.marker();
-    return m.tooltip_text ?? this.markerType()?.name ?? '';
+    return m.title || this.markerType()?.name || '';
   });
 
   onMarkerClick(): void {

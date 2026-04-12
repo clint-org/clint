@@ -372,6 +372,26 @@
   font-size: 0.6875rem;
 }
 
+.landscape-detail-marker-category {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.landscape-detail-marker-projection {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
 .landscape-detail-actions {
   margin-top: auto;
   padding-top: 0.75rem;

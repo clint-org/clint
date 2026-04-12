@@ -89,6 +89,8 @@ export interface BullseyeMarker {
   icon: string | null;
   shape: string;
   color: string;
+  projection: string;
+  category_name: string;
 }
 
 export interface BullseyeProduct {

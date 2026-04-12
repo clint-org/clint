@@ -202,6 +202,47 @@
     </div>
   </app-section-card>
 
+  <app-section-card title="Phase">
+    <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+      <app-form-field label="Phase type" fieldId="trial-phase-type" spacing="">
+        <p-select
+          inputId="trial-phase-type"
+          [options]="phaseTypeOptions"
+          [ngModel]="phaseType()"
+          (ngModelChange)="phaseType.set($event)"
+          name="phaseType"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select phase type"
+          [showClear]="true"
+          [style]="{ width: '100%' }"
+        />
+      </app-form-field>
+      <app-form-field label="Phase start date" fieldId="trial-phase-start-date" spacing="">
+        <input
+          pInputText
+          type="date"
+          id="trial-phase-start-date"
+          class="w-full"
+          [ngModel]="phaseStartDate()"
+          (ngModelChange)="phaseStartDate.set($event)"
+          name="phaseStartDate"
+        />
+      </app-form-field>
+      <app-form-field label="Phase end date" fieldId="trial-phase-end-date" spacing="">
+        <input
+          pInputText
+          type="date"
+          id="trial-phase-end-date"
+          class="w-full"
+          [ngModel]="phaseEndDate()"
+          (ngModelChange)="phaseEndDate.set($event)"
+          name="phaseEndDate"
+        />
+      </app-form-field>
+    </div>
+  </app-section-card>
+
   <app-section-card title="Eligibility">
     <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       <app-form-field label="Sex" fieldId="trial-sex" spacing="">

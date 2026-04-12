@@ -23,11 +23,12 @@ import { SpaceService } from '../services/space.service';
 import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
+import { NotificationBellComponent } from './notification-bell.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, FormsModule, Select, ButtonModule],
+  imports: [RouterLink, RouterLinkActive, FormsModule, Select, ButtonModule, NotificationBellComponent],
   template: `
     <header class="border-b border-slate-200 bg-white">
       <div class="h-0.5 bg-teal-500"></div>
@@ -132,6 +133,9 @@ import { Tenant } from '../models/tenant.model';
             >
               <i class="fa-solid fa-gear text-xs"></i>
             </a>
+          }
+          @if (spaceId()) {
+            <app-notification-bell [spaceId]="spaceId()" />
           }
           @if (user()) {
             <div class="relative">

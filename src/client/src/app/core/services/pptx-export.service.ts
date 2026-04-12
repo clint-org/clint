@@ -273,16 +273,16 @@ export class PptxExportService {
     const barH = rowH * 0.45;
     const barY = rowY + (rowH - barH) / 2;
 
-    for (const phase of trial.trial_phases ?? []) {
-      if (!phase.start_date) continue;
-      const endDate = phase.end_date ?? phase.start_date;
+    if (trial.phase_type && trial.phase_start_date) {
+      const startDate = trial.phase_start_date;
+      const endDate = trial.phase_end_date ?? startDate;
 
-      const sx = this.timeline.dateToX(phase.start_date, startYear, endYear, totalPx);
+      const sx = this.timeline.dateToX(startDate, startYear, endYear, totalPx);
       const ex = this.timeline.dateToX(endDate, startYear, endYear, totalPx);
       const barX = TIMELINE_X + (sx / totalPx) * TIMELINE_W;
       const barW = Math.max(0.05, ((ex - sx) / totalPx) * TIMELINE_W);
 
-      const color = (phase.color ?? PHASE_COLORS[phase.phase_type] ?? '94a3b8').replace('#', '');
+      const color = (PHASE_COLORS[trial.phase_type] ?? '94a3b8').replace('#', '');
 
       slide.addShape('roundRect', {
         x: barX,
@@ -295,7 +295,7 @@ export class PptxExportService {
       });
 
       if (barW > 0.4) {
-        slide.addText(phase.label ?? phase.phase_type, {
+        slide.addText(trial.phase_type, {
           x: barX,
           y: barY,
           w: barW,
@@ -322,7 +322,7 @@ export class PptxExportService {
   ): void {
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, 'yearly');
     const markerSize = Math.min(0.12, rowH * 0.35);
-    const markers = trial.trial_markers ?? [];
+    const markers = trial.markers ?? [];
 
     // Sort markers by date for overlap detection
     const sorted = [...markers]
@@ -493,7 +493,7 @@ export class PptxExportService {
     for (const company of companies) {
       for (const product of company.products ?? []) {
         for (const trial of product.trials ?? []) {
-          for (const marker of trial.trial_markers ?? []) {
+          for (const marker of trial.markers ?? []) {
             if (marker.marker_types && !markerTypes.has(marker.marker_types.id)) {
               markerTypes.set(marker.marker_types.id, {
                 name: marker.marker_types.name,

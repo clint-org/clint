@@ -5,8 +5,8 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { DashboardFilters } from '../../core/models/dashboard.model';
-import { TrialMarker } from '../../core/models/marker.model';
-import { Trial, TrialPhase } from '../../core/models/trial.model';
+import { Marker } from '../../core/models/marker.model';
+import { Trial } from '../../core/models/trial.model';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
@@ -109,15 +109,15 @@ export class TimelineViewComponent {
       for (const company of data.companies) {
         for (const product of company.products ?? []) {
           for (const trial of product.trials ?? []) {
-            for (const phase of trial.trial_phases ?? []) {
-              const sy = new Date(phase.start_date).getFullYear();
+            if (trial.phase_start_date) {
+              const sy = new Date(trial.phase_start_date).getFullYear();
               if (sy < minYear) minYear = sy;
-              if (phase.end_date) {
-                const ey = new Date(phase.end_date).getFullYear();
-                if (ey > maxYear) maxYear = ey;
-              }
             }
-            for (const marker of trial.trial_markers ?? []) {
+            if (trial.phase_end_date) {
+              const ey = new Date(trial.phase_end_date).getFullYear();
+              if (ey > maxYear) maxYear = ey;
+            }
+            for (const marker of trial.markers ?? []) {
               const my = new Date(marker.event_date).getFullYear();
               if (my < minYear) minYear = my;
               if (my > maxYear) maxYear = my;
@@ -133,12 +133,15 @@ export class TimelineViewComponent {
     });
   }
 
-  onPhaseClick(phase: TrialPhase): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', phase.trial_id]);
+  onPhaseClick(trial: Trial): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
   }
 
-  onMarkerClick(marker: TrialMarker): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', marker.trial_id]);
+  onMarkerClick(marker: Marker): void {
+    const trialId = marker.marker_assignments?.[0]?.trial_id;
+    if (trialId) {
+      this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
+    }
   }
 
   onTrialClick(trial: Trial): void {

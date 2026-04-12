@@ -191,6 +191,9 @@
               (keydown.space)="onTrialClick(row.trial)"
             >
               {{ row.trial.name }}
+              @if (row.trial.identifier) {
+                <span class="text-[10px] text-slate-400 font-mono ml-1">{{ row.trial.identifier }}</span>
+              }
             </div>
           </div>
         }
@@ -229,30 +232,30 @@
                 }
               }
 
-              <!-- Phase bars (SVG overlay) -->
-              @if (row.trial.trial_phases && row.trial.trial_phases.length > 0) {
+              <!-- Phase bar (SVG overlay) -->
+              @if (row.trial.phase_type && row.trial.phase_start_date) {
                 <svg
                   class="absolute top-0 left-0"
                   [attr.width]="totalWidth()"
                   [attr.height]="36"
                   aria-hidden="true"
                 >
-                  @for (phase of row.trial.trial_phases; track phase.id) {
-                    <g
-                      app-phase-bar
-                      [phase]="phase"
-                      [startYear]="startYear()"
-                      [endYear]="endYear()"
-                      [totalWidth]="totalWidth()"
-                      (phaseClick)="onPhaseClick($event)"
-                    />
-                  }
+                  <g
+                    app-phase-bar
+                    [phaseType]="row.trial.phase_type"
+                    [startDate]="row.trial.phase_start_date"
+                    [endDate]="row.trial.phase_end_date"
+                    [startYear]="startYear()"
+                    [endYear]="endYear()"
+                    [totalWidth]="totalWidth()"
+                    (phaseClick)="onPhaseClick(row.trial)"
+                  />
                 </svg>
               }
 
               <!-- Markers (absolute positioned) -->
-              @if (row.trial.trial_markers && row.trial.trial_markers.length > 0) {
-                @for (marker of row.trial.trial_markers; track marker.id) {
+              @if (row.trial.markers && row.trial.markers.length > 0) {
+                @for (marker of row.trial.markers; track marker.id) {
                   <app-marker
                     [marker]="marker"
                     [startYear]="startYear()"

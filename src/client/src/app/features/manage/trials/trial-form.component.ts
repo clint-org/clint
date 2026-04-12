@@ -108,12 +108,26 @@ export class TrialFormComponent implements OnInit {
     { label: 'Accelerated Approval', value: 'Accelerated Approval' },
   ];
 
+  readonly phaseTypeOptions = [
+    { label: 'Phase 1', value: 'P1' },
+    { label: 'Phase 2', value: 'P2' },
+    { label: 'Phase 3', value: 'P3' },
+    { label: 'Phase 4', value: 'P4' },
+    { label: 'Phase 1/2', value: 'P1_2' },
+    { label: 'Phase 2/3', value: 'P2_3' },
+    { label: 'Observational', value: 'OBS' },
+  ];
+
   products = signal<Product[]>([]);
   therapeuticAreas = signal<TherapeuticArea[]>([]);
   saving = signal(false);
   syncing = signal(false);
   syncSuccess = signal<string | null>(null);
   error = signal<string | null>(null);
+
+  phaseType = signal<string | null>(null);
+  phaseStartDate = signal<string | null>(null);
+  phaseEndDate = signal<string | null>(null);
 
   // basic fields
   name = '';
@@ -185,6 +199,9 @@ export class TrialFormComponent implements OnInit {
       this.startDateStr = existing.start_date ?? '';
       this.primaryCompletionDateStr = existing.primary_completion_date ?? '';
       this.ctgovLastSyncedAt = existing.ctgov_last_synced_at ?? '';
+      this.phaseType.set(existing.phase_type ?? null);
+      this.phaseStartDate.set(existing.phase_start_date ?? null);
+      this.phaseEndDate.set(existing.phase_end_date ?? null);
     }
   }
 
@@ -283,6 +300,9 @@ export class TrialFormComponent implements OnInit {
         start_date: this.startDateStr || null,
         primary_completion_date: this.primaryCompletionDateStr || null,
         ctgov_last_synced_at: this.ctgovLastSyncedAt || null,
+        phase_type: this.phaseType() || null,
+        phase_start_date: this.phaseStartDate() || null,
+        phase_end_date: this.phaseEndDate() || null,
       };
 
       const existing = this.trial();

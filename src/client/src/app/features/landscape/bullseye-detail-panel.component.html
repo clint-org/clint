@@ -136,6 +136,12 @@
               ></span>
               <span class="landscape-detail-marker-date">{{ marker.event_date }}</span>
               <span class="landscape-detail-marker-name">{{ marker.marker_type_name }}</span>
+              @if (marker.category_name) {
+                <span class="landscape-detail-marker-category">{{ marker.category_name }}</span>
+              }
+              @if (marker.projection && marker.projection !== 'actual') {
+                <span class="landscape-detail-marker-projection">{{ marker.projection }}</span>
+              }
             </li>
           }
         </ul>

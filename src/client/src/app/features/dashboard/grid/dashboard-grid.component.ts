@@ -12,12 +12,9 @@ import {
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
-import { TrialMarker } from '../../../core/models/marker.model';
-import { Trial, TrialPhase } from '../../../core/models/trial.model';
+import { Marker } from '../../../core/models/marker.model';
+import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
-import { FormsModule } from '@angular/forms';
-import { Checkbox } from 'primeng/checkbox';
-import { Popover } from 'primeng/popover';
 import { ButtonModule } from 'primeng/button';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
@@ -43,9 +40,6 @@ export interface FlattenedTrial {
   selector: 'app-dashboard-grid',
   standalone: true,
   imports: [
-    FormsModule,
-    Checkbox,
-    Popover,
     ButtonModule,
     GridHeaderComponent,
     PhaseBarComponent,
@@ -65,8 +59,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   startYear = input.required<number>();
   endYear = input.required<number>();
 
-  phaseClick = output<TrialPhase>();
-  markerClick = output<TrialMarker>();
+  phaseClick = output<Trial>();
+  markerClick = output<Marker>();
   trialClick = output<Trial>();
   companyClick = output<string>();
   productClick = output<string>();
@@ -145,11 +139,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     return this.columns().some((c) => c.subColumns && c.subColumns.length > 0);
   }
 
-  onPhaseClick(phase: TrialPhase): void {
-    this.phaseClick.emit(phase);
+  onPhaseClick(trial: Trial): void {
+    this.phaseClick.emit(trial);
   }
 
-  onMarkerClick(marker: TrialMarker): void {
+  onMarkerClick(marker: Marker): void {
     this.markerClick.emit(marker);
   }
 
