@@ -104,3 +104,5 @@ supabase/.env
 
 # Git worktrees
 .worktrees/
+.playwright-mcp/
+.superpowers/
