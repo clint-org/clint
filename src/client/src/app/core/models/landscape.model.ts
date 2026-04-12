@@ -123,20 +123,22 @@ export interface BullseyeData {
 }
 
 export interface LandscapeFilters {
-  mechanismOfActionIds: string[];
-  routeOfAdministrationIds: string[];
   companyIds: string[];
   productIds: string[];
+  therapeuticAreaIds: string[];
+  mechanismOfActionIds: string[];
+  routeOfAdministrationIds: string[];
   phases: RingPhase[];
   recruitmentStatuses: string[];
   studyTypes: string[];
 }
 
 export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
-  mechanismOfActionIds: [],
-  routeOfAdministrationIds: [],
   companyIds: [],
   productIds: [],
+  therapeuticAreaIds: [],
+  mechanismOfActionIds: [],
+  routeOfAdministrationIds: [],
   phases: [],
   recruitmentStatuses: [],
   studyTypes: [],
@@ -149,4 +151,38 @@ export interface LandscapeIndexEntry {
   secondary_label: string;
   highest_phase_present: RingPhase | null;
   products_missing_phase: number;
+}
+
+export type ViewMode = 'timeline' | 'bullseye';
+
+export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
+  { label: 'Timeline', value: 'timeline' },
+  { label: 'Bullseye', value: 'bullseye' },
+];
+
+export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [
+  { label: 'Therapy Area', value: 'therapeutic-area' },
+  { label: 'Company', value: 'company' },
+  { label: 'Mechanism of Action', value: 'moa' },
+  { label: 'Route of Administration', value: 'roa' },
+];
+
+export function dimensionToSegment(dim: BullseyeDimension): string {
+  const map: Record<BullseyeDimension, string> = {
+    'therapeutic-area': 'by-therapy-area',
+    company: 'by-company',
+    moa: 'by-moa',
+    roa: 'by-roa',
+  };
+  return map[dim];
+}
+
+export function segmentToDimension(segment: string): BullseyeDimension {
+  const map: Record<string, BullseyeDimension> = {
+    'by-therapy-area': 'therapeutic-area',
+    'by-company': 'company',
+    'by-moa': 'moa',
+    'by-roa': 'roa',
+  };
+  return map[segment] ?? 'therapeutic-area';
 }
