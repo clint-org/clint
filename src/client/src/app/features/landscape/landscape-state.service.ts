@@ -1,8 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 
 import {
+  CountUnit,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
+  PositioningGrouping,
   SpokeMode,
 } from '../../core/models/landscape.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
@@ -21,4 +23,10 @@ export class LandscapeStateService {
 
   /** Bullseye-specific: spoke grouping mode. */
   readonly spokeMode = signal<SpokeMode>('grouped');
+
+  /** Positioning-specific: bubble grouping dimension. */
+  readonly positioningGrouping = signal<PositioningGrouping>('moa+therapeutic-area');
+
+  /** Positioning-specific: counting unit (products/trials/companies). */
+  readonly countUnit = signal<CountUnit>('products');
 }

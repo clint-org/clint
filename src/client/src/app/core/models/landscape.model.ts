@@ -153,11 +153,12 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye';
+export type ViewMode = 'timeline' | 'bullseye' | 'positioning';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
+  { label: 'Positioning', value: 'positioning' },
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [
@@ -186,3 +187,54 @@ export function segmentToDimension(segment: string): BullseyeDimension {
   };
   return map[segment] ?? 'therapeutic-area';
 }
+
+// --- Competitive Positioning types ---
+
+export type PositioningGrouping =
+  | 'moa'
+  | 'therapeutic-area'
+  | 'moa+therapeutic-area'
+  | 'company'
+  | 'roa';
+
+export type CountUnit = 'products' | 'trials' | 'companies';
+
+export interface PositioningProduct {
+  id: string;
+  name: string;
+  company_id: string;
+  company_name: string;
+  highest_phase: RingPhase;
+  highest_phase_rank: number;
+  trial_count: number;
+}
+
+export interface PositioningBubble {
+  label: string;
+  group_keys: Record<string, string>;
+  competitor_count: number;
+  highest_phase: RingPhase;
+  highest_phase_rank: number;
+  unit_count: number;
+  products: PositioningProduct[];
+}
+
+export interface PositioningData {
+  grouping: PositioningGrouping;
+  count_unit: CountUnit;
+  bubbles: PositioningBubble[];
+}
+
+export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGrouping }[] = [
+  { label: 'Mechanism of Action', value: 'moa' },
+  { label: 'Therapy Area', value: 'therapeutic-area' },
+  { label: 'MOA + Therapy Area', value: 'moa+therapeutic-area' },
+  { label: 'Company', value: 'company' },
+  { label: 'Route of Administration', value: 'roa' },
+];
+
+export const COUNT_UNIT_OPTIONS: { label: string; value: CountUnit }[] = [
+  { label: 'Products', value: 'products' },
+  { label: 'Trials', value: 'trials' },
+  { label: 'Companies', value: 'companies' },
+];
