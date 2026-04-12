@@ -56,6 +56,38 @@
     />
   </app-form-field>
 
+  <app-form-field label="Mechanisms of Action" fieldId="product-moas">
+    <p-multiselect
+      inputId="product-moas"
+      [options]="moaOptions()"
+      [ngModel]="selectedMoaIds()"
+      (ngModelChange)="selectedMoaIds.set($event)"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Select mechanisms"
+      display="comma"
+      [filter]="true"
+      [showClear]="true"
+      [style]="{ width: '100%' }"
+    />
+  </app-form-field>
+
+  <app-form-field label="Routes of Administration" fieldId="product-roas">
+    <p-multiselect
+      inputId="product-roas"
+      [options]="roaOptions()"
+      [ngModel]="selectedRoaIds()"
+      (ngModelChange)="selectedRoaIds.set($event)"
+      optionLabel="name"
+      optionValue="id"
+      placeholder="Select routes"
+      display="comma"
+      [filter]="true"
+      [showClear]="true"
+      [style]="{ width: '100%' }"
+    />
+  </app-form-field>
+
   <app-form-field label="Display Order" fieldId="product-display-order" spacing="mb-6">
     <p-inputnumber
       inputId="product-display-order"
