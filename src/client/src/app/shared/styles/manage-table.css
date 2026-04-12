@@ -331,6 +331,13 @@
     box-shadow 120ms ease-out;
 }
 
+/* Restore left padding for inputs inside icon fields so the icon doesn't
+   overlap the text. The global .p-inputtext padding above stomps on
+   PrimeNG's icon-field-specific padding. */
+.p-iconfield .p-inputtext {
+  padding-left: 2rem !important;
+}
+
 .p-inputtext::placeholder,
 .p-textarea::placeholder,
 .p-inputnumber-input::placeholder {
