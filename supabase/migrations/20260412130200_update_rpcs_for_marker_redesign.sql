@@ -29,6 +29,12 @@
 -- 1. get_dashboard_data
 -- =============================================================================
 
+-- Drop all legacy overloads to avoid ambiguous function name
+drop function if exists public.get_dashboard_data(uuid[], uuid[], uuid[], int, int);
+drop function if exists public.get_dashboard_data(uuid, uuid[], uuid[], uuid[], int, int);
+drop function if exists public.get_dashboard_data(uuid, uuid[], uuid[], uuid[], int, int, text[], text[], text[]);
+drop function if exists public.get_dashboard_data(uuid, uuid[], uuid[], uuid[], int, int, text[], text[], text[], uuid[], uuid[]);
+
 create or replace function public.get_dashboard_data(
   p_space_id uuid,
   p_company_ids uuid[] default null,
@@ -214,10 +220,6 @@ begin
 end;
 $$;
 
-comment on function public.get_dashboard_data is
-  'Returns hierarchical dashboard data (companies > products > trials) with optional filtering. '
-  'Phase data comes from trials.phase_type/phase_start_date/phase_end_date as a single phase_data object. '
-  'Markers come from the markers table via marker_assignments. security invoker so rls applies.';
 
 -- =============================================================================
 -- 2. get_bullseye_data  (therapeutic-area dimension)
@@ -409,10 +411,6 @@ begin
 end;
 $$;
 
-comment on function public.get_bullseye_data is
-  'Returns the full jsonb document needed to render the landscape bullseye for a single '
-  'therapeutic area. Phase rank comes from trials.phase_type. Recent markers come from '
-  'markers via marker_assignments. security invoker so RLS applies.';
 
 -- =============================================================================
 -- 3. get_bullseye_by_company
@@ -581,9 +579,6 @@ begin
 end;
 $$;
 
-comment on function public.get_bullseye_by_company is
-  'Returns bullseye data scoped to a single company; spokes are therapeutic areas. '
-  'Phase ranking uses trials.phase_type. Recent markers via marker_assignments.';
 
 -- =============================================================================
 -- 4. get_bullseye_by_moa
@@ -749,9 +744,6 @@ begin
 end;
 $$;
 
-comment on function public.get_bullseye_by_moa is
-  'Returns bullseye data scoped to a single mechanism of action; spokes are companies. '
-  'Phase ranking uses trials.phase_type. Recent markers via marker_assignments.';
 
 -- =============================================================================
 -- 5. get_bullseye_by_roa
@@ -917,9 +909,6 @@ begin
 end;
 $$;
 
-comment on function public.get_bullseye_by_roa is
-  'Returns bullseye data scoped to a single route of administration; spokes are companies. '
-  'Phase ranking uses trials.phase_type. Recent markers via marker_assignments.';
 
 -- =============================================================================
 -- 6. get_landscape_index
@@ -1003,10 +992,6 @@ begin
 end;
 $$;
 
-comment on function public.get_landscape_index is
-  'Returns one entry per therapeutic area with product/company counts, highest phase, '
-  'and count of products missing phase data. Phase comes from trials.phase_type. '
-  'security invoker ensures RLS constrains rows to the caller.';
 
 -- =============================================================================
 -- 7. get_landscape_index_by_company
@@ -1382,10 +1367,6 @@ begin
 end;
 $$;
 
-comment on function public.get_positioning_data is
-  'Returns aggregated bubble data for the competitive positioning scatter view. '
-  'Phase ranking uses trials.phase_type directly (no trial_phases join). '
-  'security invoker so RLS applies.';
 
 -- =============================================================================
 -- 11. get_notifications  (new)
@@ -1468,10 +1449,6 @@ begin
 end;
 $$;
 
-comment on function public.get_notifications is
-  'Returns all notifications for the given space ordered newest-first, each enriched with '
-  'marker details (including type and category), assigned trials, and a per-calling-user '
-  'is_read flag. security invoker so RLS on marker_notifications and notification_reads applies.';
 
 -- =============================================================================
 -- 12. get_unread_notification_count  (new)
@@ -1506,7 +1483,3 @@ begin
 end;
 $$;
 
-comment on function public.get_unread_notification_count is
-  'Returns the count of unread notifications for the calling user in the given space. '
-  'A notification is unread when there is no matching row in notification_reads for auth.uid(). '
-  'security invoker so RLS applies.';
