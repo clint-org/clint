@@ -5,6 +5,7 @@ import { MultiSelect } from 'primeng/multiselect';
 import { SelectButton } from 'primeng/selectbutton';
 
 import {
+  BullseyeDimension,
   BullseyeProduct,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
@@ -31,6 +32,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly spaceId = input.required<string>();
   readonly products = input.required<BullseyeProduct[]>();
   readonly filters = input.required<LandscapeFilters>();
+  readonly dimension = input<BullseyeDimension>('therapeutic-area');
   readonly filtersChange = output<LandscapeFilters>();
 
   readonly moaOptions = signal<SelectOption[]>([]);
