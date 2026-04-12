@@ -1,8 +1,4 @@
 <div class="flex flex-col h-full">
-  <div class="flex items-center gap-3 px-4 py-2 border-b border-slate-200 bg-white">
-    <span class="text-sm text-slate-700">{{ dimensionLabel() }}</span>
-  </div>
-
   <div class="flex-1 overflow-auto p-6">
     @if (indexData.isLoading()) {
       <div class="flex items-center justify-center py-20">
@@ -39,7 +35,7 @@
           @for (entry of entries; track entry.entity.id) {
             <a
               class="landscape-index-card"
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'landscape', routeSegment(), entry.entity.id]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'bullseye', routeSegment(), entry.entity.id]"
             >
               <div class="landscape-index-card-title">{{ entry.entity.name }}</div>
               @if (entry.entity.abbreviation) {

@@ -1,18 +1,24 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
 import { SelectButton } from 'primeng/selectbutton';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 import {
   BullseyeDimension,
-  BullseyeProduct,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
   RingPhase,
+  ViewMode,
 } from '../../core/models/landscape.model';
+import { ZoomLevel } from '../../core/models/dashboard.model';
+import { CompanyService } from '../../core/services/company.service';
 import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
+import { ProductService } from '../../core/services/product.service';
 import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
+import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
+import { LandscapeStateService } from './landscape-state.service';
 
 interface SelectOption {
   label: string;
@@ -22,33 +28,39 @@ interface SelectOption {
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
-  imports: [FormsModule, MultiSelect, ButtonModule, SelectButton],
+  imports: [FormsModule, MultiSelect, ButtonModule, SelectButton, ProgressSpinner],
   templateUrl: './landscape-filter-bar.component.html',
 })
 export class LandscapeFilterBarComponent implements OnInit {
+  private readonly companyService = inject(CompanyService);
+  private readonly productService = inject(ProductService);
+  private readonly taService = inject(TherapeuticAreaService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
+  readonly state = inject(LandscapeStateService);
 
   readonly spaceId = input.required<string>();
-  readonly products = input.required<BullseyeProduct[]>();
-  readonly filters = input.required<LandscapeFilters>();
+  readonly viewMode = input<ViewMode>('timeline');
   readonly dimension = input<BullseyeDimension>('therapeutic-area');
-  readonly filtersChange = output<LandscapeFilters>();
 
+  readonly loading = signal(true);
+  readonly companyOptions = signal<SelectOption[]>([]);
+  readonly productOptions = signal<SelectOption[]>([]);
+  readonly taOptions = signal<SelectOption[]>([]);
   readonly moaOptions = signal<SelectOption[]>([]);
   readonly roaOptions = signal<SelectOption[]>([]);
 
-  readonly companyOptions = computed(() => {
-    const seen = new Map<string, string>();
-    for (const p of this.products()) {
-      if (!seen.has(p.company_id)) seen.set(p.company_id, p.company_name);
-    }
-    return Array.from(seen, ([value, label]) => ({ label, value }));
-  });
+  readonly zoomOptions: { label: string; value: ZoomLevel }[] = [
+    { label: 'Y', value: 'yearly' },
+    { label: 'Q', value: 'quarterly' },
+    { label: 'M', value: 'monthly' },
+    { label: 'D', value: 'daily' },
+  ];
 
-  readonly productOptions = computed(() =>
-    this.products().map((p) => ({ label: p.name, value: p.id }))
-  );
+  readonly spokeModeOptions: { label: string; value: string }[] = [
+    { label: 'Grouped', value: 'grouped' },
+    { label: 'Products', value: 'products' },
+  ];
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
     { label: 'P1', value: 'P1' },
@@ -57,62 +69,66 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Appr', value: 'APPROVED' },
   ];
 
-  readonly statusOptions = computed(() => {
-    const seen = new Set<string>();
-    for (const p of this.products()) {
-      for (const t of p.trials ?? []) {
-        if (t.recruitment_status) seen.add(t.recruitment_status);
-      }
-    }
-    return Array.from(seen)
-      .sort()
-      .map((v) => ({ label: v, value: v }));
-  });
+  readonly statusOptions: SelectOption[] = [
+    { label: 'Not yet recruiting', value: 'Not yet recruiting' },
+    { label: 'Recruiting', value: 'Recruiting' },
+    { label: 'Active, not recruiting', value: 'Active, not recruiting' },
+    { label: 'Completed', value: 'Completed' },
+    { label: 'Suspended', value: 'Suspended' },
+    { label: 'Terminated', value: 'Terminated' },
+    { label: 'Withdrawn', value: 'Withdrawn' },
+  ];
 
-  readonly studyTypeOptions = computed(() => {
-    const seen = new Set<string>();
-    for (const p of this.products()) {
-      for (const t of p.trials ?? []) {
-        if (t.study_type) seen.add(t.study_type);
-      }
-    }
-    return Array.from(seen)
-      .sort()
-      .map((v) => ({ label: v, value: v }));
-  });
+  readonly studyTypeOptions: SelectOption[] = [
+    { label: 'Interventional', value: 'Interventional' },
+    { label: 'Observational', value: 'Observational' },
+    { label: 'Expanded Access', value: 'Expanded Access' },
+  ];
 
-  async ngOnInit(): Promise<void> {
-    const spaceId = this.spaceId();
-    if (!spaceId) return;
-    const [moas, roas] = await Promise.all([
-      this.moaService.list(spaceId),
-      this.roaService.list(spaceId),
-    ]);
-    this.moaOptions.set(moas.map((m) => ({ label: m.name, value: m.id })));
-    this.roaOptions.set(roas.map((r) => ({ label: r.name, value: r.id })));
-  }
-
-  update<K extends keyof LandscapeFilters>(key: K, value: LandscapeFilters[K]): void {
-    // PrimeNG MultiSelect clear() emits null; coalesce to empty array so
-    // downstream .length checks never crash on null.
-    const safe = value ?? ([] as unknown as LandscapeFilters[K]);
-    this.filtersChange.emit({ ...this.filters(), [key]: safe });
-  }
-
-  clearAll(): void {
-    this.filtersChange.emit({ ...EMPTY_LANDSCAPE_FILTERS });
-  }
-
-  get hasAnyActive(): boolean {
-    const f = this.filters();
+  readonly hasAnyActive = computed(() => {
+    const f = this.state.filters();
     return (
-      f.mechanismOfActionIds.length > 0 ||
-      f.routeOfAdministrationIds.length > 0 ||
       f.companyIds.length > 0 ||
       f.productIds.length > 0 ||
+      f.therapeuticAreaIds.length > 0 ||
+      f.mechanismOfActionIds.length > 0 ||
+      f.routeOfAdministrationIds.length > 0 ||
       f.phases.length > 0 ||
       f.recruitmentStatuses.length > 0 ||
       f.studyTypes.length > 0
     );
+  });
+
+  async ngOnInit(): Promise<void> {
+    const sid = this.spaceId();
+    if (!sid) {
+      this.loading.set(false);
+      return;
+    }
+    try {
+      const [companies, products, areas, moas, roas] = await Promise.all([
+        this.companyService.list(sid),
+        this.productService.list(sid),
+        this.taService.list(sid),
+        this.moaService.list(sid),
+        this.roaService.list(sid),
+      ]);
+      this.companyOptions.set(companies.map((c) => ({ label: c.name, value: c.id })));
+      this.productOptions.set(products.map((p) => ({ label: p.name, value: p.id })));
+      this.taOptions.set(areas.map((a) => ({ label: a.name, value: a.id })));
+      this.moaOptions.set(moas.map((m) => ({ label: m.name, value: m.id })));
+      this.roaOptions.set(roas.map((r) => ({ label: r.name, value: r.id })));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  update<K extends keyof LandscapeFilters>(key: K, value: LandscapeFilters[K]): void {
+    const safe = value ?? ([] as unknown as LandscapeFilters[K]);
+    this.state.filters.update((f) => ({ ...f, [key]: safe }));
+  }
+
+  clearAll(): void {
+    this.state.filters.set({ ...EMPTY_LANDSCAPE_FILTERS });
   }
 }

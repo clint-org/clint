@@ -80,14 +80,6 @@ import { Tenant } from '../models/tenant.model';
             <a
               [routerLink]="spaceBase()"
               routerLinkActive="nav-active"
-              [routerLinkActiveOptions]="{ exact: true }"
-              class="nav-link"
-            >
-              Dashboard
-            </a>
-            <a
-              [routerLink]="spaceBase().concat('landscape')"
-              routerLinkActive="nav-active"
               class="nav-link"
             >
               Landscape
