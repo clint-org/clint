@@ -3,7 +3,6 @@ import {
   ActivatedRoute,
   NavigationEnd,
   Router,
-  RouterLink,
   RouterOutlet,
 } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -31,7 +30,6 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
   standalone: true,
   imports: [
     RouterOutlet,
-    RouterLink,
     FormsModule,
     SelectButton,
     Select,

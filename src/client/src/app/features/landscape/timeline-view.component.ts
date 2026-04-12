@@ -1,9 +1,8 @@
-import { Component, computed, effect, inject, resource, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { Tooltip } from 'primeng/tooltip';
 
 import { DashboardFilters } from '../../core/models/dashboard.model';
 import { TrialMarker } from '../../core/models/marker.model';
@@ -24,7 +23,6 @@ import { LandscapeStateService } from './landscape-state.service';
     ButtonModule,
     MessageModule,
     ProgressSpinner,
-    Tooltip,
   ],
   templateUrl: './timeline-view.component.html',
 })
@@ -82,6 +80,16 @@ export class TimelineViewComponent {
   readonly companies = computed(() => this.dashboardData.value()?.companies ?? []);
 
   constructor() {
+    // Listen for export trigger from shell
+    const destroyRef = inject(DestroyRef);
+    const exportHandler = () => {
+      if (this.companies().length > 0) {
+        this.exportDialogOpen.set(true);
+      }
+    };
+    document.addEventListener('landscape:export', exportHandler);
+    destroyRef.onDestroy(() => document.removeEventListener('landscape:export', exportHandler));
+
     // Extract route params from ancestor routes
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
     while (snap) {
