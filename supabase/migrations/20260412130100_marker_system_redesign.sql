@@ -349,7 +349,7 @@ create table public.marker_notifications (
   marker_id  uuid not null references public.markers (id) on delete cascade,
   priority   text not null default 'low' check (priority in ('low', 'high')),
   summary    text not null,
-  created_by uuid references auth.users (id),
+  created_by uuid not null references auth.users (id),
   created_at timestamptz not null default now()
 );
 
@@ -375,6 +375,12 @@ on public.marker_notifications
 for insert
 to authenticated
 with check ( public.has_space_access(space_id, array['owner', 'editor']) );
+
+create policy "space editors can delete marker notifications"
+on public.marker_notifications
+for delete
+to authenticated
+using ( public.has_space_access(space_id, array['owner', 'editor']) );
 
 -- =============================================================================
 -- 8. notification_reads table
@@ -410,6 +416,12 @@ on public.notification_reads
 for insert
 to authenticated
 with check ( auth.uid() = user_id );
+
+create policy "users can delete own notification_reads"
+on public.notification_reads
+for delete
+to authenticated
+using ( auth.uid() = user_id );
 
 -- =============================================================================
 -- 9. migrate trial_markers -> markers + marker_assignments
@@ -498,6 +510,10 @@ from (
   order by trial_id, start_date desc, phase_type
 ) as subq
 where t.id = subq.trial_id;
+
+alter table public.trials
+  add constraint trials_phase_type_check
+  check (phase_type is null or phase_type in ('PRECLIN', 'P1', 'P2', 'P3', 'P4', 'P1_2', 'P2_3', 'APPROVED', 'LAUNCHED', 'OBS'));
 
 -- =============================================================================
 -- 11. drop trial_markers (data now in markers + marker_assignments)
