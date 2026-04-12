@@ -26,8 +26,8 @@
           <div class="flex items-center justify-center h-full">
             <div class="flex flex-col items-center gap-3 text-center max-w-md">
               <p-message severity="info" [closable]="false">
-                No products tracked for {{ bullseyeData.value()?.scope?.name }} yet.
-                Add products and trials to see them here.
+                No products tracked for {{ bullseyeData.value()?.scope?.name }} yet. Add products
+                and trials to see them here.
               </p-message>
               <p-button
                 label="Manage products"
@@ -41,16 +41,16 @@
           <div class="landscape-layout">
             <div class="landscape-chart-wrap">
               <div class="bullseye-chart-frame">
-              <app-bullseye-chart
-                [data]="cd"
-                [selectedProductId]="selectedProductId()"
-                [hoveredProductId]="hoveredProductId()"
-                [highlightedRing]="highlightedRing()"
-                [matchedProductIds]="matchedProductIds()"
-                (productHover)="onProductHover($event)"
-                (productClick)="onProductClick($event)"
-                (backgroundClick)="onBackgroundClick()"
-              />
+                <app-bullseye-chart
+                  [data]="cd"
+                  [selectedProductId]="selectedProductId()"
+                  [hoveredProductId]="hoveredProductId()"
+                  [highlightedRing]="highlightedRing()"
+                  [matchedProductIds]="matchedProductIds()"
+                  (productHover)="onProductHover($event)"
+                  (productClick)="onProductClick($event)"
+                  (backgroundClick)="onBackgroundClick()"
+                />
               </div>
             </div>
             <div class="landscape-panel-wrap">
@@ -71,3 +71,5 @@
     }
   </div>
 </div>
+
+<app-bullseye-tooltip [product]="hoveredProduct()" [x]="tooltipX()" [y]="tooltipY()" />

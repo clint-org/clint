@@ -9,8 +9,8 @@
 >
   <desc>
     Concentric rings represent development phases from Launched at the center to Preclinical at the
-    outer edge. Spokes are arranged clockwise from the top, each owning a wedge-shaped sector of
-    the chart.
+    outer edge. Spokes are arranged clockwise from the top, each owning a wedge-shaped sector of the
+    chart.
   </desc>
 
   <!-- alternating spoke sector wedges (drawn first so rings/spokes/dots layer on top) -->
@@ -129,8 +129,6 @@
         class="bullseye-dot"
         [class.bullseye-dot-faded]="!isProductMatched(dot.product.id)"
         [attr.aria-label]="dotAriaLabel(dot)"
-        [pTooltip]="isProductMatched(dot.product.id) ? dotTooltip(dot) : ''"
-        tooltipPosition="top"
         (click)="isProductMatched(dot.product.id) && onDotClick($event, dot.product.id)"
         (mouseenter)="isProductMatched(dot.product.id) && onHoverStart(dot.product.id)"
         (mouseleave)="isProductMatched(dot.product.id) && onHoverEnd()"

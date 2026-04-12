@@ -1,4 +1,13 @@
-import { Component, computed, effect, HostListener, inject, OnInit, resource, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  HostListener,
+  inject,
+  OnInit,
+  resource,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -15,6 +24,7 @@ import {
 import { LandscapeService } from '../../core/services/landscape.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
+import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
@@ -23,6 +33,7 @@ import { LandscapeStateService } from './landscape-state.service';
   imports: [
     BullseyeChartComponent,
     BullseyeDetailPanelComponent,
+    BullseyeTooltipComponent,
     RouterLink,
     ButtonModule,
     MessageModule,
@@ -44,6 +55,8 @@ export class LandscapeComponent implements OnInit {
   readonly selectedProductId = signal<string | null>(null);
   readonly hoveredProductId = signal<string | null>(null);
   readonly highlightedRing = signal<RingPhase | null>(null);
+  readonly tooltipX = signal(0);
+  readonly tooltipY = signal(0);
 
   readonly bullseyeData = resource({
     request: () => ({
@@ -56,13 +69,13 @@ export class LandscapeComponent implements OnInit {
       return this.landscapeService.getBullseyeData(
         request.spaceId,
         request.dimension,
-        request.entityId,
+        request.entityId
       );
     },
   });
 
-  readonly allProducts = computed<BullseyeProduct[]>(() =>
-    this.bullseyeData.value()?.spokes.flatMap((s) => s.products) ?? [],
+  readonly allProducts = computed<BullseyeProduct[]>(
+    () => this.bullseyeData.value()?.spokes.flatMap((s) => s.products) ?? []
   );
 
   readonly chartData = computed(() => {
@@ -107,6 +120,12 @@ export class LandscapeComponent implements OnInit {
     return matched;
   });
 
+  readonly hoveredProduct = computed<BullseyeProduct | null>(() => {
+    const id = this.hoveredProductId();
+    if (!id) return null;
+    return this.allProducts().find((p) => p.id === id) ?? null;
+  });
+
   constructor() {
     effect(() => {
       const data = this.bullseyeData.value();
@@ -138,7 +157,7 @@ export class LandscapeComponent implements OnInit {
 
     const urlSegments = this.route.snapshot.url;
     const dimensionSegment = urlSegments.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path),
+      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
     );
     if (dimensionSegment) {
       this.dimension.set(segmentToDimension(dimensionSegment.path));
@@ -156,6 +175,14 @@ export class LandscapeComponent implements OnInit {
 
   onProductHover(productId: string | null): void {
     this.hoveredProductId.set(productId);
+    if (productId) {
+      const handler = (e: MouseEvent) => {
+        this.tooltipX.set(e.clientX);
+        this.tooltipY.set(e.clientY);
+        document.removeEventListener('mousemove', handler);
+      };
+      document.addEventListener('mousemove', handler);
+    }
   }
 
   onProductClick(productId: string): void {
@@ -219,13 +246,13 @@ export class LandscapeComponent implements OnInit {
     if (f.phases.length > 0 && !f.phases.includes(product.highest_phase)) return false;
     if (f.recruitmentStatuses.length > 0) {
       const ok = (product.trials ?? []).some(
-        (t) => t.recruitment_status != null && f.recruitmentStatuses.includes(t.recruitment_status),
+        (t) => t.recruitment_status != null && f.recruitmentStatuses.includes(t.recruitment_status)
       );
       if (!ok) return false;
     }
     if (f.studyTypes.length > 0) {
       const ok = (product.trials ?? []).some(
-        (t) => t.study_type != null && f.studyTypes.includes(t.study_type),
+        (t) => t.study_type != null && f.studyTypes.includes(t.study_type)
       );
       if (!ok) return false;
     }

@@ -1,5 +1,4 @@
 import { Component, computed, input, output } from '@angular/core';
-import { Tooltip } from 'primeng/tooltip';
 
 import {
   BullseyeData,
@@ -71,7 +70,7 @@ const DIMMED_OPACITY = 0.55;
 @Component({
   selector: 'app-bullseye-chart',
   standalone: true,
-  imports: [Tooltip],
+  imports: [],
   templateUrl: './bullseye-chart.component.html',
 })
 export class BullseyeChartComponent {
@@ -241,11 +240,6 @@ export class BullseyeChartComponent {
     if (selected && selected !== dot.product.id) return DIMMED_OPACITY;
     if (highlightRing && dot.product.highest_phase !== highlightRing) return DIMMED_OPACITY;
     return 1;
-  }
-
-  protected dotTooltip(dot: DotSpec): string {
-    const generic = dot.product.generic_name ? ` (${dot.product.generic_name})` : '';
-    return `${dot.product.name}${generic} — ${dot.product.highest_phase}`;
   }
 
   protected dotAriaLabel(dot: DotSpec): string {

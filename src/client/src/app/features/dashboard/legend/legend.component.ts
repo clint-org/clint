@@ -18,27 +18,22 @@ export class LegendComponent implements OnInit {
 
   groupedMarkerTypes = computed(() => {
     const types = this.markerTypes();
-    return [
-      {
-        label: 'Data',
-        types: types.filter((t) => t.name.includes('Data') || t.name.includes('Completion')),
-      },
-      {
-        label: 'Regulatory',
-        types: types.filter((t) => t.name.includes('Regulatory') || t.name.includes('Filing')),
-      },
-      {
-        label: 'Approval',
-        types: types.filter(
-          (t) =>
-            t.name.includes('Approval') || t.name.includes('Launch') || t.name.includes('Label')
-        ),
-      },
-      {
-        label: 'Other',
-        types: types.filter((t) => t.name.includes('Change') || t.name.includes('No Longer')),
-      },
-    ].filter((g) => g.types.length > 0);
+    const groupMap = new Map<string, { label: string; order: number; types: MarkerType[] }>();
+
+    for (const t of types) {
+      const cat = t.marker_categories;
+      const label = cat?.name ?? 'Other';
+      const order = cat?.display_order ?? 999;
+
+      let group = groupMap.get(label);
+      if (!group) {
+        group = { label, order, types: [] };
+        groupMap.set(label, group);
+      }
+      group.types.push(t);
+    }
+
+    return Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
   });
 
   faIcon(mt: MarkerType): string {

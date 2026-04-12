@@ -132,7 +132,7 @@ The service receives the same `DashboardCompany[]` data that the grid component 
 
 **Legend Rendering:**
 - Positioned at bottom of slide
-- Groups: Data | Regulatory | Approval | Other
+- Groups: Clinical Trial | Data | Regulatory | Approval | Loss of Exclusivity
 - Each entry: colored shape + label text
 - Horizontal layout with even spacing
 

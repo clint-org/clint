@@ -815,9 +815,9 @@ space_members (
 | 5 | Label Projected Approval/Launch | Flag | Outline | Blue | Approval |
 | 6 | Label Update | Flag | Striped | Blue | Approval |
 | 7 | Est. Range of Potential Launch | Bar | Gradient | Blue | Approval |
-| 8 | Primary Completion Date (PCD) | Circle | Filled | Gray | Other |
-| 9 | Change from Prior Update | Arrow | Filled | Orange | Change |
-| 10 | Event No Longer Expected | X | Filled | Red | Change |
+| 8 | Primary Completion Date (PCD) | Circle | Filled | Gray | Clinical Trial |
+| 9 | Change from Prior Update | Arrow | Filled | Orange | Data |
+| 10 | Event No Longer Expected | X | Filled | Red | Clinical Trial |
 
 ### Database Indexes
 
