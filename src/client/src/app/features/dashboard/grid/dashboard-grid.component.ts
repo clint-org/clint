@@ -15,6 +15,10 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { TrialMarker } from '../../../core/models/marker.model';
 import { Trial, TrialPhase } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
+import { FormsModule } from '@angular/forms';
+import { Checkbox } from 'primeng/checkbox';
+import { Popover } from 'primeng/popover';
+import { ButtonModule } from 'primeng/button';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
@@ -27,6 +31,8 @@ export interface FlattenedTrial {
   productName: string;
   productId: string;
   productLogoUrl: string | null;
+  productMoas: { id: string; name: string }[];
+  productRoas: { id: string; name: string; abbreviation: string | null }[];
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInProduct: boolean;
@@ -36,7 +42,16 @@ export interface FlattenedTrial {
 @Component({
   selector: 'app-dashboard-grid',
   standalone: true,
-  imports: [GridHeaderComponent, PhaseBarComponent, MarkerComponent, RowNotesComponent],
+  imports: [
+    FormsModule,
+    Checkbox,
+    Popover,
+    ButtonModule,
+    GridHeaderComponent,
+    PhaseBarComponent,
+    MarkerComponent,
+    RowNotesComponent,
+  ],
   templateUrl: './dashboard-grid.component.html',
 })
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
@@ -57,6 +72,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   productClick = output<string>();
 
   isScrolled = signal(false);
+  showMoaColumn = signal(true);
+  showRoaColumn = signal(true);
 
   columns = computed<TimelineColumn[]>(() =>
     this.timeline.getColumns(this.startYear(), this.endYear(), this.zoomLevel())
@@ -82,6 +99,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
             productName: product.name,
             productId: product.id,
             productLogoUrl: product.logo_url ?? null,
+            productMoas: product.mechanisms_of_action ?? [],
+            productRoas: product.routes_of_administration ?? [],
             trial,
             isFirstInCompany,
             isFirstInProduct,
@@ -144,5 +163,21 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   onProductClick(productId: string): void {
     this.productClick.emit(productId);
+  }
+
+  toggleMoaColumn(value: boolean): void {
+    this.showMoaColumn.set(value);
+  }
+
+  toggleRoaColumn(value: boolean): void {
+    this.showRoaColumn.set(value);
+  }
+
+  moaTooltipText(moas: { id: string; name: string }[]): string {
+    return moas.map((m) => m.name).join(' \u00B7 ');
+  }
+
+  roaTooltipText(roas: { id: string; name: string; abbreviation: string | null }[]): string {
+    return roas.map((r) => r.name).join(' \u00B7 ');
   }
 }
