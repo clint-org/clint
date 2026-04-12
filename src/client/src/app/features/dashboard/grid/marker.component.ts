@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 
-import { MarkerType, TrialMarker } from '../../../core/models/marker.model';
+import { Marker, MarkerType } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { BarIconComponent } from '../../../shared/components/svg-icons/bar-icon.component';
 import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
@@ -16,12 +16,12 @@ import { MarkerTooltipComponent } from './marker-tooltip.component';
 export class MarkerComponent {
   private readonly timeline = inject(TimelineService);
 
-  marker = input.required<TrialMarker>();
+  marker = input.required<Marker>();
   startYear = input.required<number>();
   endYear = input.required<number>();
   totalWidth = input.required<number>();
 
-  markerClick = output<TrialMarker>();
+  markerClick = output<Marker>();
 
   showTooltip = signal(false);
 
@@ -100,7 +100,7 @@ export class MarkerComponent {
 
   tooltipText = computed(() => {
     const m = this.marker();
-    return m.tooltip_text ?? this.markerType()?.name ?? '';
+    return m.description ?? this.markerType()?.name ?? '';
   });
 
   onMarkerClick(): void {

@@ -78,8 +78,8 @@ export class TrialListComponent implements OnInit {
         productName: product?.name ?? '--',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
-        phaseCount: trial.trial_phases?.length ?? 0,
-        markerCount: trial.trial_markers?.length ?? 0,
+        phaseCount: trial.phase_type ? 1 : 0,
+        markerCount: trial.markers?.length ?? 0,
       };
     });
   });

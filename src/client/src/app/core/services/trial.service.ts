@@ -22,11 +22,12 @@ const TRIAL_SELECT = `
 
 /** Flatten marker_assignments[].markers into trial.markers[] */
 function normalizeTrial(raw: Record<string, unknown>): Trial {
-  const assignments = (raw['marker_assignments'] as Array<{ markers: Marker }> | null) ?? [];
+  const assignments = (raw['marker_assignments'] as { markers: Marker }[] | null) ?? [];
   const markers: Marker[] = assignments
     .map(a => a.markers)
     .filter((m): m is Marker => !!m);
-  const { marker_assignments: _ma, ...rest } = raw;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { marker_assignments: _unused, ...rest } = raw;
   return { ...rest, markers } as unknown as Trial;
 }
 

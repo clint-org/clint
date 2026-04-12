@@ -1,6 +1,5 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 
-import { TrialPhase } from '../../../core/models/trial.model';
 import { TimelineService } from '../../../core/services/timeline.service';
 
 const DEFAULT_COLORS: Record<string, string> = {
@@ -26,18 +25,20 @@ const MIN_LABEL_WIDTH = 40;
 export class PhaseBarComponent {
   private readonly timeline = inject(TimelineService);
 
-  phase = input.required<TrialPhase>();
+  phaseType = input.required<string>();
+  startDate = input.required<string>();
+  endDate = input<string | null>(null);
   startYear = input.required<number>();
   endYear = input.required<number>();
   totalWidth = input.required<number>();
 
-  phaseClick = output<TrialPhase>();
+  phaseClick = output<void>();
 
   protected barX = computed(() =>
     Math.max(
       0,
       this.timeline.dateToX(
-        this.phase().start_date,
+        this.startDate(),
         this.startYear(),
         this.endYear(),
         this.totalWidth()
@@ -46,12 +47,12 @@ export class PhaseBarComponent {
   );
 
   protected barWidth = computed(() => {
-    const endDate = this.phase().end_date;
+    const endDate = this.endDate();
     if (!endDate) {
       return 0;
     }
     const rawStart = this.timeline.dateToX(
-      this.phase().start_date,
+      this.startDate(),
       this.startYear(),
       this.endYear(),
       this.totalWidth()
@@ -64,12 +65,9 @@ export class PhaseBarComponent {
     return Math.max(0, endX - clampedStart);
   });
 
-  protected barColor = computed(() => {
-    const phase = this.phase();
-    return phase.color ?? DEFAULT_COLORS[phase.phase_type] ?? '#64748b';
-  });
+  protected barColor = computed(() => DEFAULT_COLORS[this.phaseType()] ?? '#64748b');
 
-  protected labelText = computed(() => this.phase().phase_type);
+  protected labelText = computed(() => this.phaseType());
 
   protected showLabelInside = computed(() => this.barWidth() >= MIN_LABEL_WIDTH);
 
@@ -96,6 +94,6 @@ export class PhaseBarComponent {
   protected cornerRadius = CORNER_RADIUS;
 
   onClick(): void {
-    this.phaseClick.emit(this.phase());
+    this.phaseClick.emit();
   }
 }
