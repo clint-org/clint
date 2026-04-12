@@ -1,0 +1,109 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Clint" [ref=e9] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/spaces
+          - generic [ref=e10]: /
+          - generic [ref=e11]: Aadityamadala's Workspace
+          - generic [ref=e45]: /
+          - generic [ref=e46] [cursor=pointer]:
+            - combobox "Default Space" [ref=e47]
+            - button "dropdown trigger" [ref=e48]:
+              - img [ref=e50]
+        - navigation [ref=e52]:
+          - link "Dashboard" [ref=e53] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a
+          - link "Landscape" [ref=e54] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/landscape
+          - link "Companies" [ref=e55] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/companies
+          - link "Products" [ref=e56] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/products
+          - link "Trials" [ref=e57] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/trials
+          - link "Markers" [ref=e58] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/marker-types
+          - link "Areas" [ref=e59] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/therapeutic-areas
+        - generic [ref=e12]:
+          - link "Organization settings" [ref=e13] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/settings
+          - button "aadityamadala@gmail.com" [ref=e16]: A
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - group [ref=e64]:
+          - generic [ref=e67] [cursor=pointer]: Year
+          - generic [ref=e70] [cursor=pointer]: Quarter
+          - generic [ref=e73] [cursor=pointer]: Month
+          - generic [ref=e76] [cursor=pointer]: Day
+        - generic [ref=e79]:
+          - generic [ref=e80] [cursor=pointer]:
+            - generic [ref=e81]:
+              - combobox "Filter by company": Company
+            - generic [ref=e83]: Company
+            - img [ref=e86]
+          - generic [ref=e88] [cursor=pointer]:
+            - generic [ref=e89]:
+              - combobox "Filter by product": Product
+            - generic [ref=e91]: Product
+            - img [ref=e94]
+          - generic [ref=e96] [cursor=pointer]:
+            - generic [ref=e97]:
+              - combobox "Filter by therapeutic area": Therapeutic Area
+            - generic [ref=e99]: Therapeutic Area
+            - img [ref=e102]
+          - generic [ref=e104] [cursor=pointer]:
+            - generic [ref=e105]:
+              - combobox "Filter by recruitment status": Status
+            - generic [ref=e107]: Status
+            - img [ref=e110]
+          - generic [ref=e112] [cursor=pointer]:
+            - generic [ref=e113]:
+              - combobox "Filter by trial phase": Phase
+            - generic [ref=e115]: Phase
+            - img [ref=e118]
+          - generic [ref=e120] [cursor=pointer]:
+            - generic [ref=e121]:
+              - combobox "Filter by study type": Study Type
+            - generic [ref=e123]: Study Type
+            - img [ref=e126]
+        - button [disabled] [ref=e130]
+      - generic [ref=e134]:
+        - alert [ref=e136]:
+          - generic [ref=e138]: "Failed to load dashboard data: [object Object]"
+        - button "Retry" [ref=e140] [cursor=pointer]:
+          - generic [ref=e141]: Retry
+      - list "Marker type legend" [ref=e144]:
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - generic [ref=e147]: Data
+            - listitem [ref=e148]:
+              - generic [ref=e150]: Projected Data Reported
+            - listitem [ref=e151]:
+              - generic [ref=e153]: Data Reported
+            - listitem [ref=e154]:
+              - generic [ref=e156]: Primary Completion Date (PCD)
+          - generic [ref=e158]:
+            - generic [ref=e159]: Regulatory
+            - listitem [ref=e160]:
+              - generic [ref=e162]: Projected Regulatory Filing
+            - listitem [ref=e163]:
+              - generic [ref=e165]: Submitted Regulatory Filing
+          - generic [ref=e167]:
+            - generic [ref=e168]: Approval
+            - listitem [ref=e169]:
+              - generic [ref=e171]: Label Projected Approval/Launch
+            - listitem [ref=e172]:
+              - generic [ref=e174]: Label Update
+            - listitem [ref=e175]:
+              - generic [ref=e177]: Est. Range of Potential Launch
+          - generic [ref=e179]:
+            - generic [ref=e180]: Other
+            - listitem [ref=e181]:
+              - generic [ref=e183]: Change from Prior Update
+            - listitem [ref=e184]:
+              - generic [ref=e186]: Event No Longer Expected
+  - generic:
+    - alertdialog

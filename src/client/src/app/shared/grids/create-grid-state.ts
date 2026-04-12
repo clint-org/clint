@@ -187,7 +187,16 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
       page.set({ first: event.first, rows: event.rows });
     }
     if (typeof event.sortField === 'string' && event.sortOrder != null) {
-      sort.set({ field: event.sortField, order: event.sortOrder >= 0 ? 1 : -1 });
+      const currentSort = sort();
+      const newOrder: 1 | -1 = event.sortOrder >= 0 ? 1 : -1;
+      // Three-click unsort: asc → desc → unsort. When PrimeNG cycles back
+      // to ascending on the same field we were descending, treat it as the
+      // third click and clear the sort entirely.
+      if (currentSort && currentSort.field === event.sortField && currentSort.order === -1 && newOrder === 1) {
+        sort.set(null);
+      } else {
+        sort.set({ field: event.sortField, order: newOrder });
+      }
     } else if (event.sortField === null) {
       sort.set(null);
     }

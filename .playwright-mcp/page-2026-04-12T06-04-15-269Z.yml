@@ -1,0 +1,10 @@
+- generic [ref=e2]:
+  - generic [ref=e9]:
+    - paragraph [ref=e10]: Clint
+    - heading "Clinical trial intelligence" [level=1] [ref=e11]
+    - paragraph [ref=e12]: Sign in with your Google account to continue.
+    - button "Sign in with Google" [ref=e13]:
+      - img [ref=e14]
+      - generic [ref=e19]: Sign in with Google
+  - generic:
+    - alertdialog

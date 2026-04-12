@@ -155,18 +155,9 @@ using ( public.has_space_access(space_id, array['owner', 'editor']) )
 with check ( public.has_space_access(space_id, array['owner', 'editor']) );
 create policy "space editors can delete routes_of_administration" on public.routes_of_administration for delete to authenticated
 using ( public.has_space_access(space_id, array['owner', 'editor']) );
-
--- updated_at triggers (matches pattern used for companies etc.)
-create trigger set_mechanisms_of_action_updated_at
-  before update on public.mechanisms_of_action
-  for each row execute function public.handle_updated_at();
-
-create trigger set_routes_of_administration_updated_at
-  before update on public.routes_of_administration
-  for each row execute function public.handle_updated_at();
 ```
 
-> **If `handle_updated_at()` has a different name in this repo** (grep `supabase/migrations` for `updated_at` triggers on `companies` to confirm), use that name instead.
+> **Note:** This codebase does not use `updated_at` triggers — existing tables have `updated_at timestamptz default now()` set on INSERT but no automatic UPDATE trigger. Match that pattern. Do not add a trigger.
 
 - [ ] **Step 2: Apply the migration and verify**
 

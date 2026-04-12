@@ -1,0 +1,92 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Clint" [ref=e9] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/spaces
+          - generic [ref=e10]: /
+          - generic [ref=e11]: Aadityamadala's Workspace
+        - navigation [ref=e12]:
+          - link "Dashboard" [ref=e13] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a
+          - link "Landscape" [ref=e14] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/landscape
+          - link "Companies" [ref=e15] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/companies
+          - link "Products" [ref=e16] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/products
+          - link "Trials" [ref=e17] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/trials
+          - link "Markers" [ref=e18] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/marker-types
+          - link "Areas" [ref=e19] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/therapeutic-areas
+        - generic [ref=e20]:
+          - link "Organization settings" [ref=e21] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/settings
+          - button "aadityamadala@gmail.com" [ref=e24]: A
+    - generic "Marker types" [ref=e27]:
+      - generic [ref=e28]:
+        - generic [ref=e29]: Manage
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "Marker types 0" [level=1] [ref=e32]:
+              - generic [ref=e33]: Marker types
+              - generic [ref=e34]: "0"
+            - paragraph [ref=e35]: Event symbols rendered on the timeline. System types are read-only.
+          - button "Add marker type" [ref=e39] [cursor=pointer]:
+            - generic [ref=e41]: Add marker type
+        - generic [ref=e44]:
+          - textbox "Search marker types..." [ref=e48]
+          - generic "Clear all filters" [ref=e49]:
+            - button "Clear all" [disabled] [ref=e50]:
+              - generic [ref=e51]: Clear all
+        - generic [ref=e53]:
+          - img [ref=e56]
+          - table [ref=e60]:
+            - rowgroup [ref=e61]:
+              - row "Name Show Filter Menu Shape Show Filter Menu Fill Show Filter Menu Color Origin Show Filter Menu" [ref=e62]:
+                - columnheader "Name Show Filter Menu" [ref=e63] [cursor=pointer]:
+                  - text: Name
+                  - img [ref=e66]
+                  - button "Show Filter Menu" [ref=e75]:
+                    - img [ref=e77]
+                - columnheader "Shape Show Filter Menu" [ref=e80] [cursor=pointer]:
+                  - text: Shape
+                  - img [ref=e83]
+                  - button "Show Filter Menu" [ref=e92]:
+                    - img [ref=e94]
+                - columnheader "Fill Show Filter Menu" [ref=e97] [cursor=pointer]:
+                  - text: Fill
+                  - img [ref=e100]
+                  - button "Show Filter Menu" [ref=e109]:
+                    - img [ref=e111]
+                - columnheader "Color" [ref=e114]
+                - columnheader "Origin Show Filter Menu" [ref=e115] [cursor=pointer]:
+                  - text: Origin
+                  - img [ref=e118]
+                  - button "Show Filter Menu" [ref=e127]:
+                    - img [ref=e129]
+                - columnheader [ref=e132]
+            - rowgroup
+          - generic [ref=e134]:
+            - button "First Page" [disabled]:
+              - generic:
+                - img
+            - button "Previous Page" [disabled]:
+              - generic:
+                - img
+            - button "Next Page" [disabled]:
+              - generic:
+                - img
+            - button "Last Page" [disabled]:
+              - generic:
+                - img
+            - generic:
+              - combobox "Rows per page" [disabled]: "25"
+              - button "dropdown trigger":
+                - generic:
+                  - img
+  - generic:
+    - alertdialog

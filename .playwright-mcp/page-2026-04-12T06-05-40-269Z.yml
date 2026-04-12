@@ -1,0 +1,186 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Clint" [ref=e9] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/spaces
+          - generic [ref=e10]: /
+          - generic [ref=e11]: Aadityamadala's Workspace
+          - generic [ref=e16]: /
+          - generic [ref=e17] [cursor=pointer]:
+            - combobox "Default Space" [ref=e18]
+            - button "dropdown trigger" [ref=e19]:
+              - img [ref=e21]
+        - navigation [ref=e23]:
+          - link "Dashboard" [ref=e24] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a
+          - link "Landscape" [ref=e25] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/landscape
+          - link "Companies" [ref=e26] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/companies
+          - link "Products" [ref=e27] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/products
+          - link "Trials" [ref=e28] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/trials
+          - link "Markers" [ref=e29] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/marker-types
+          - link "Areas" [ref=e30] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/s/89b41323-176a-4e5a-b2cb-bc631b22260a/manage/therapeutic-areas
+        - generic [ref=e12]:
+          - link "Organization settings" [ref=e31] [cursor=pointer]:
+            - /url: /t/2fb63d5d-e03d-4ded-9285-994419f302fc/settings
+          - button "aadityamadala@gmail.com" [ref=e14]: A
+    - generic "Marker types" [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]: Manage
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - heading "Marker types 10" [level=1] [ref=e262]:
+              - generic [ref=e40]: Marker types
+              - generic [ref=e41]: "10"
+            - paragraph [ref=e42]: Event symbols rendered on the timeline. System types are read-only.
+          - button "Add marker type" [ref=e46] [cursor=pointer]:
+            - generic [ref=e48]: Add marker type
+        - generic [ref=e51]:
+          - textbox "Search marker types..." [ref=e54]
+          - generic "Clear all filters" [ref=e55]:
+            - button "Clear all" [disabled] [ref=e56]:
+              - generic [ref=e57]: Clear all
+        - generic [ref=e59]:
+          - table [ref=e61]:
+            - rowgroup [ref=e62]:
+              - row "Name Show Filter Menu Shape Show Filter Menu Fill Show Filter Menu Color Origin Show Filter Menu" [ref=e63]:
+                - columnheader "Name Show Filter Menu" [ref=e64] [cursor=pointer]:
+                  - text: Name
+                  - img [ref=e67]
+                  - button "Show Filter Menu" [ref=e76]:
+                    - img [ref=e78]
+                - columnheader "Shape Show Filter Menu" [ref=e81] [cursor=pointer]:
+                  - text: Shape
+                  - img [ref=e84]
+                  - button "Show Filter Menu" [ref=e93]:
+                    - img [ref=e95]
+                - columnheader "Fill Show Filter Menu" [ref=e98] [cursor=pointer]:
+                  - text: Fill
+                  - img [ref=e101]
+                  - button "Show Filter Menu" [ref=e110]:
+                    - img [ref=e112]
+                - columnheader "Color" [ref=e115]
+                - columnheader "Origin Show Filter Menu" [ref=e116] [cursor=pointer]:
+                  - text: Origin
+                  - img [ref=e119]
+                  - button "Show Filter Menu" [ref=e128]:
+                    - img [ref=e130]
+                - columnheader [ref=e133]
+            - rowgroup [ref=e134]:
+              - 'row "Change from Prior Update arrow filled Color: #f97316 System" [ref=e263]':
+                - cell "Change from Prior Update" [ref=e264]
+                - cell "arrow" [ref=e265]
+                - cell "filled" [ref=e266]
+                - 'cell "Color: #f97316" [ref=e267]':
+                  - 'img "Color: #f97316" [ref=e269]'
+                - cell "System" [ref=e270]:
+                  - generic [ref=e272]: System
+                - cell [ref=e273]
+              - 'row "Data Reported circle filled Color: #22c55e System" [ref=e146]':
+                - cell "Data Reported" [ref=e147]
+                - cell "circle" [ref=e148]
+                - cell "filled" [ref=e149]
+                - 'cell "Color: #22c55e" [ref=e150]':
+                  - 'img "Color: #22c55e" [ref=e152]'
+                - cell "System" [ref=e153]:
+                  - generic [ref=e155]: System
+                - cell [ref=e156]
+              - 'row "Est. Range of Potential Launch bar gradient Color: #3b82f6 System" [ref=e274]':
+                - cell "Est. Range of Potential Launch" [ref=e275]
+                - cell "bar" [ref=e276]
+                - cell "gradient" [ref=e277]
+                - 'cell "Color: #3b82f6" [ref=e278]':
+                  - 'img "Color: #3b82f6" [ref=e280]'
+                - cell "System" [ref=e281]:
+                  - generic [ref=e283]: System
+                - cell [ref=e284]
+              - 'row "Event No Longer Expected x filled Color: #ef4444 System" [ref=e285]':
+                - cell "Event No Longer Expected" [ref=e286]
+                - cell "x" [ref=e287]
+                - cell "filled" [ref=e288]
+                - 'cell "Color: #ef4444" [ref=e289]':
+                  - 'img "Color: #ef4444" [ref=e291]'
+                - cell "System" [ref=e292]:
+                  - generic [ref=e294]: System
+                - cell [ref=e295]
+              - 'row "Label Projected Approval/Launch flag outline Color: #3b82f6 System" [ref=e296]':
+                - cell "Label Projected Approval/Launch" [ref=e297]
+                - cell "flag" [ref=e298]
+                - cell "outline" [ref=e299]
+                - 'cell "Color: #3b82f6" [ref=e300]':
+                  - 'img "Color: #3b82f6" [ref=e302]'
+                - cell "System" [ref=e303]:
+                  - generic [ref=e305]: System
+                - cell [ref=e306]
+              - 'row "Label Update flag striped Color: #3b82f6 System" [ref=e307]':
+                - cell "Label Update" [ref=e308]
+                - cell "flag" [ref=e309]
+                - cell "striped" [ref=e310]
+                - 'cell "Color: #3b82f6" [ref=e311]':
+                  - 'img "Color: #3b82f6" [ref=e313]'
+                - cell "System" [ref=e314]:
+                  - generic [ref=e316]: System
+                - cell [ref=e317]
+              - 'row "Primary Completion Date (PCD) circle filled Color: #374151 System" [ref=e201]':
+                - cell "Primary Completion Date (PCD)" [ref=e202]
+                - cell "circle" [ref=e203]
+                - cell "filled" [ref=e204]
+                - 'cell "Color: #374151" [ref=e205]':
+                  - 'img "Color: #374151" [ref=e207]'
+                - cell "System" [ref=e208]:
+                  - generic [ref=e210]: System
+                - cell [ref=e211]
+              - 'row "Projected Data Reported circle outline Color: #22c55e System" [ref=e212]':
+                - cell "Projected Data Reported" [ref=e213]
+                - cell "circle" [ref=e214]
+                - cell "outline" [ref=e215]
+                - 'cell "Color: #22c55e" [ref=e216]':
+                  - 'img "Color: #22c55e" [ref=e218]'
+                - cell "System" [ref=e219]:
+                  - generic [ref=e221]: System
+                - cell [ref=e222]
+              - 'row "Projected Regulatory Filing diamond outline Color: #ef4444 System" [ref=e318]':
+                - cell "Projected Regulatory Filing" [ref=e319]
+                - cell "diamond" [ref=e320]
+                - cell "outline" [ref=e321]
+                - 'cell "Color: #ef4444" [ref=e322]':
+                  - 'img "Color: #ef4444" [ref=e324]'
+                - cell "System" [ref=e325]:
+                  - generic [ref=e327]: System
+                - cell [ref=e328]
+              - 'row "Submitted Regulatory Filing diamond filled Color: #ef4444 System" [ref=e329]':
+                - cell "Submitted Regulatory Filing" [ref=e330]
+                - cell "diamond" [ref=e331]
+                - cell "filled" [ref=e332]
+                - 'cell "Color: #ef4444" [ref=e333]':
+                  - 'img "Color: #ef4444" [ref=e335]'
+                - cell "System" [ref=e336]:
+                  - generic [ref=e338]: System
+                - cell [ref=e339]
+          - generic [ref=e246]:
+            - button "First Page" [disabled]:
+              - generic:
+                - img
+            - button "Previous Page" [disabled]:
+              - generic:
+                - img
+            - button "1" [ref=e248] [cursor=pointer]
+            - button "Next Page" [disabled]:
+              - generic:
+                - img
+            - button "Last Page" [disabled]:
+              - generic:
+                - img
+            - generic [ref=e249] [cursor=pointer]:
+              - combobox "Rows per page" [ref=e250]: "25"
+              - button "dropdown trigger" [ref=e251]:
+                - img [ref=e253]
+  - generic:
+    - alertdialog
