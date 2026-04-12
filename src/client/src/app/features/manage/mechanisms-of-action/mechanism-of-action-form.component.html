@@ -1,0 +1,52 @@
+<form (ngSubmit)="onSubmit()" novalidate>
+  @if (error()) {
+    <p-message severity="error" [closable]="false" class="mb-4">
+      {{ error() }}
+    </p-message>
+  }
+
+  <app-form-field
+    label="Name"
+    fieldId="moa-name"
+    [required]="true"
+    [error]="nameInvalid ? 'Name is required.' : null"
+  >
+    <input
+      pInputText
+      id="moa-name"
+      class="w-full"
+      [ngModel]="name()"
+      (ngModelChange)="name.set($event)"
+      (blur)="nameBlurred.set(true)"
+      [attr.aria-required]="true"
+      [attr.aria-invalid]="nameInvalid"
+      [attr.aria-describedby]="nameInvalid ? 'moa-name-error' : null"
+    />
+  </app-form-field>
+
+  <app-form-field label="Description" fieldId="moa-description">
+    <textarea
+      pTextarea
+      id="moa-description"
+      class="w-full"
+      rows="3"
+      [ngModel]="description()"
+      (ngModelChange)="description.set($event)"
+    ></textarea>
+  </app-form-field>
+
+  <app-form-field label="Display Order" fieldId="moa-display-order" spacing="mb-6">
+    <p-inputnumber
+      inputId="moa-display-order"
+      [ngModel]="displayOrder()"
+      (ngModelChange)="displayOrder.set($event)"
+      [style]="{ width: '100%' }"
+    />
+  </app-form-field>
+
+  <app-form-actions
+    [submitLabel]="isEdit ? 'Update Mechanism' : 'Create Mechanism'"
+    [loading]="submitting()"
+    (cancelled)="cancelled.emit()"
+  />
+</form>
