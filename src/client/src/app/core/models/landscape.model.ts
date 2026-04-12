@@ -110,6 +110,26 @@ export interface BullseyeData {
   companies: BullseyeCompany[];
 }
 
+export interface LandscapeFilters {
+  mechanismOfActionIds: string[];
+  routeOfAdministrationIds: string[];
+  companyIds: string[];
+  productIds: string[];
+  phases: RingPhase[];
+  recruitmentStatuses: string[];
+  studyTypes: string[];
+}
+
+export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
+  mechanismOfActionIds: [],
+  routeOfAdministrationIds: [],
+  companyIds: [],
+  productIds: [],
+  phases: [],
+  recruitmentStatuses: [],
+  studyTypes: [],
+};
+
 export interface LandscapeIndexEntry {
   therapeutic_area: BullseyeTherapeuticArea;
   product_count: number;

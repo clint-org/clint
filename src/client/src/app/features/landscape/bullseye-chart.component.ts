@@ -79,6 +79,7 @@ export class BullseyeChartComponent {
   readonly selectedProductId = input<string | null>(null);
   readonly hoveredProductId = input<string | null>(null);
   readonly highlightedRing = input<RingPhase | null>(null);
+  readonly matchedProductIds = input<Set<string> | null>(null);
 
   readonly productHover = output<string | null>();
   readonly productClick = output<string>();
@@ -229,7 +230,13 @@ export class BullseyeChartComponent {
     return PHASE_COLOR[phase] ?? '#64748b';
   }
 
+  protected isProductMatched(productId: string): boolean {
+    const set = this.matchedProductIds();
+    return set === null || set.has(productId);
+  }
+
   protected dotOpacity(dot: DotSpec): number {
+    if (!this.isProductMatched(dot.product.id)) return 0.15;
     const selected = this.selectedProductId();
     const highlightRing = this.highlightedRing();
     if (selected && selected !== dot.product.id) return DIMMED_OPACITY;

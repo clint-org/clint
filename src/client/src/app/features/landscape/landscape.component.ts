@@ -4,12 +4,18 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-import { BullseyeProduct, RingPhase } from '../../core/models/landscape.model';
+import {
+  BullseyeProduct,
+  EMPTY_LANDSCAPE_FILTERS,
+  LandscapeFilters,
+  RingPhase,
+} from '../../core/models/landscape.model';
 import { TherapeuticArea } from '../../core/models/trial.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
+import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { TaSelectorComponent } from './ta-selector.component';
 
 @Component({
@@ -18,6 +24,7 @@ import { TaSelectorComponent } from './ta-selector.component';
   imports: [
     BullseyeChartComponent,
     BullseyeDetailPanelComponent,
+    LandscapeFilterBarComponent,
     TaSelectorComponent,
     RouterLink,
     ButtonModule,
@@ -41,6 +48,7 @@ export class LandscapeComponent implements OnInit {
   readonly highlightedRing = signal<RingPhase | null>(null);
 
   readonly therapeuticAreas = signal<TherapeuticArea[]>([]);
+  readonly landscapeFilters = signal<LandscapeFilters>({ ...EMPTY_LANDSCAPE_FILTERS });
 
   readonly bullseyeData = resource({
     request: () => ({ spaceId: this.spaceId(), taId: this.taId() }),
@@ -58,6 +66,25 @@ export class LandscapeComponent implements OnInit {
     const id = this.selectedProductId();
     if (!id) return null;
     return this.allProducts().find((p) => p.id === id) ?? null;
+  });
+
+  readonly matchedProductIds = computed<Set<string> | null>(() => {
+    const f = this.landscapeFilters();
+    const noneActive =
+      f.mechanismOfActionIds.length === 0 &&
+      f.routeOfAdministrationIds.length === 0 &&
+      f.companyIds.length === 0 &&
+      f.productIds.length === 0 &&
+      f.phases.length === 0 &&
+      f.recruitmentStatuses.length === 0 &&
+      f.studyTypes.length === 0;
+    if (noneActive) return null;
+
+    const matched = new Set<string>();
+    for (const product of this.allProducts()) {
+      if (this.productMatches(product, f)) matched.add(product.id);
+    }
+    return matched;
   });
 
   constructor() {
@@ -177,8 +204,39 @@ export class LandscapeComponent implements OnInit {
     });
   }
 
+  onLandscapeFiltersChange(filters: LandscapeFilters): void {
+    this.landscapeFilters.set(filters);
+  }
+
   retry(): void {
     this.bullseyeData.reload();
+  }
+
+  private productMatches(product: BullseyeProduct, f: LandscapeFilters): boolean {
+    if (f.mechanismOfActionIds.length > 0) {
+      const ok = (product.moas ?? []).some((m) => f.mechanismOfActionIds.includes(m.id));
+      if (!ok) return false;
+    }
+    if (f.routeOfAdministrationIds.length > 0) {
+      const ok = (product.roas ?? []).some((r) => f.routeOfAdministrationIds.includes(r.id));
+      if (!ok) return false;
+    }
+    if (f.companyIds.length > 0 && !f.companyIds.includes(product.company_id)) return false;
+    if (f.productIds.length > 0 && !f.productIds.includes(product.id)) return false;
+    if (f.phases.length > 0 && !f.phases.includes(product.highest_phase)) return false;
+    if (f.recruitmentStatuses.length > 0) {
+      const ok = (product.trials ?? []).some(
+        (t) => t.recruitment_status != null && f.recruitmentStatuses.includes(t.recruitment_status),
+      );
+      if (!ok) return false;
+    }
+    if (f.studyTypes.length > 0) {
+      const ok = (product.trials ?? []).some(
+        (t) => t.study_type != null && f.studyTypes.includes(t.study_type),
+      );
+      if (!ok) return false;
+    }
+    return true;
   }
 
   @HostListener('document:keydown.escape')

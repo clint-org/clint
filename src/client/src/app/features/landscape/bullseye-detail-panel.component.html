@@ -38,6 +38,27 @@
       </button>
     </section>
 
+    @if (product.moas.length > 0) {
+      <section class="landscape-detail-section">
+        <div class="landscape-detail-label">MECHANISM OF ACTION</div>
+        <div class="flex flex-wrap gap-1">
+          @for (moa of product.moas; track moa.id) {
+            <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5">{{ moa.name }}</span>
+          }
+        </div>
+      </section>
+    }
+    @if (product.roas.length > 0) {
+      <section class="landscape-detail-section">
+        <div class="landscape-detail-label">ROUTE OF ADMINISTRATION</div>
+        <div class="flex flex-wrap gap-1">
+          @for (roa of product.roas; track roa.id) {
+            <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5" [attr.title]="roa.name">{{ roa.abbreviation ?? roa.name }}</span>
+          }
+        </div>
+      </section>
+    }
+
     <section class="landscape-detail-section">
       <div class="landscape-detail-label">
         HIGHEST PHASE IN {{ therapeuticAreaName().toUpperCase() }}
