@@ -118,30 +118,32 @@
 
 /* --------------------------------------------------------------------- */
 /* Grid column header: shrink PrimeNG sort/filter icons for data-dense   */
-/* feel and vertically align header content                               */
+/* feel and vertically align header content.                              */
+/* PrimeNG 19 class names: .p-sortable-column-icon (sort SVG),            */
+/* .p-datatable-column-filter-button (filter button).                     */
 /* --------------------------------------------------------------------- */
 
-.manage-table .p-datatable-column-header-content {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.manage-table .p-datatable-thead > tr > th > * {
+  vertical-align: middle;
 }
 
-.manage-table .p-datatable-sort-icon {
-  font-size: 0.75rem;
-  width: 0.875rem;
-  height: 0.875rem;
+.manage-table svg.p-sortable-column-icon {
+  width: 10px !important;
+  height: 10px !important;
+  vertical-align: middle;
+  margin-top: -1px;
 }
 
-.manage-table .p-datatable-column-filter .p-datatable-column-filter-button {
-  width: 1.25rem;
-  height: 1.25rem;
-  padding: 0;
+.manage-table .p-datatable-column-filter-button {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  padding: 0 !important;
+  vertical-align: middle;
 }
 
-.manage-table .p-datatable-column-filter .p-datatable-column-filter-button .p-icon {
-  width: 0.75rem;
-  height: 0.75rem;
+.manage-table .p-datatable-column-filter-button svg.p-icon {
+  width: 0.65rem !important;
+  height: 0.65rem !important;
 }
 
 /* --------------------------------------------------------------------- */
