@@ -98,7 +98,22 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
 
   const primengFilters: Signal<Record<string, { value: unknown; matchMode: string }[]>> = computed(() => {
     const out: Record<string, { value: unknown; matchMode: string }[]> = {};
-    for (const [field, value] of Object.entries(filters())) {
+    const activeFiltersMap = filters();
+
+    // Seed every filterable column with a null default so PrimeNG renders
+    // the first filter rule in the popover even when no filter is active.
+    for (const col of config.columns) {
+      if (!col.filter) continue;
+      const defaultMatchMode =
+        col.filter.kind === 'text' ? 'contains' :
+        col.filter.kind === 'select' ? 'in' :
+        col.filter.kind === 'numeric' ? 'equals' :
+        'contains';
+      out[col.field] = [{ value: null, matchMode: defaultMatchMode }];
+    }
+
+    // Overwrite defaults with actual active filter values.
+    for (const [field, value] of Object.entries(activeFiltersMap)) {
       switch (value.kind) {
         case 'text':
           out[field] = [{ value: value.contains, matchMode: 'contains' }];
