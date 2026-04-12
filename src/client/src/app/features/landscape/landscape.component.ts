@@ -135,15 +135,6 @@ export class LandscapeComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const params = this.route.snapshot.paramMap;
-      this.tenantId.set(params.get('tenantId') ?? '');
-      this.spaceId.set(params.get('spaceId') ?? '');
-      this.entityId.set(params.get('entityId') ?? '');
-      const queryProduct = this.route.snapshot.queryParamMap.get('product');
-      this.selectedProductId.set(queryProduct);
-    });
-
-    effect(() => {
       const data = this.bullseyeData.value();
       const currentSelected = this.selectedProductId();
       if (!data || !currentSelected) return;
@@ -155,16 +146,26 @@ export class LandscapeComponent implements OnInit {
     });
   }
 
+  /** Walk up the route tree to find a param that may live on an ancestor. */
+  private collectParam(name: string): string {
+    let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snap) {
+      const val = snap.paramMap.get(name);
+      if (val) return val;
+      snap = snap.parent;
+    }
+    return '';
+  }
+
   async ngOnInit(): Promise<void> {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId') ?? '';
-    const spaceId = this.route.snapshot.paramMap.get('spaceId') ?? '';
-    this.tenantId.set(tenantId);
-    this.spaceId.set(spaceId);
-    this.entityId.set(this.route.snapshot.paramMap.get('entityId') ?? '');
+    this.tenantId.set(this.collectParam('tenantId'));
+    this.spaceId.set(this.collectParam('spaceId'));
+    this.entityId.set(this.collectParam('entityId'));
     this.selectedProductId.set(this.route.snapshot.queryParamMap.get('product'));
 
-    // Parse dimension from the parent route segment
-    const urlSegments = this.route.parent?.snapshot.url ?? [];
+    // Parse dimension from this route's URL segments (e.g. "by-company/:entityId"
+    // means the first segment is "by-company")
+    const urlSegments = this.route.snapshot.url;
     const dimensionSegment = urlSegments.find((s) =>
       ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
     );
@@ -172,10 +173,10 @@ export class LandscapeComponent implements OnInit {
       this.dimension.set(LandscapeComponent.parseDimension(dimensionSegment.path));
     }
 
-    this.route.paramMap.subscribe((params) => {
-      this.tenantId.set(params.get('tenantId') ?? '');
-      this.spaceId.set(params.get('spaceId') ?? '');
-      this.entityId.set(params.get('entityId') ?? '');
+    this.route.paramMap.subscribe(() => {
+      this.tenantId.set(this.collectParam('tenantId'));
+      this.spaceId.set(this.collectParam('spaceId'));
+      this.entityId.set(this.collectParam('entityId'));
     });
     this.route.queryParamMap.subscribe((qp) => {
       this.selectedProductId.set(qp.get('product'));

@@ -43,10 +43,15 @@ export class LandscapeIndexComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.tenantId.set(this.route.snapshot.paramMap.get('tenantId') ?? '');
-    this.spaceId.set(this.route.snapshot.paramMap.get('spaceId') ?? '');
+    // tenantId and spaceId live on ancestor routes, so walk up the tree
+    let snap = this.route.snapshot;
+    while (snap) {
+      if (snap.paramMap.has('tenantId')) this.tenantId.set(snap.paramMap.get('tenantId')!);
+      if (snap.paramMap.has('spaceId')) this.spaceId.set(snap.paramMap.get('spaceId')!);
+      snap = snap.parent!;
+    }
 
-    // Parse dimension from current URL segment
+    // Parse dimension from this component's own URL segment (e.g. "by-company")
     const url = this.route.snapshot.url;
     const dimSegment = url.find((s) =>
       ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
