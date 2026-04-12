@@ -1,4 +1,4 @@
-import { TrialMarker } from './marker.model';
+import { Marker } from './marker.model';
 
 export interface Trial {
   id: string;
@@ -14,9 +14,11 @@ export interface Trial {
   display_order: number;
   created_at: string;
   updated_at: string;
+  phase_type: string | null;
+  phase_start_date: string | null;
+  phase_end_date: string | null;
   therapeutic_areas?: TherapeuticArea;
-  trial_phases?: TrialPhase[];
-  trial_markers?: TrialMarker[];
+  markers?: Marker[];
   trial_notes?: TrialNote[];
 
   // CT.gov dimensions - logistics
@@ -72,19 +74,6 @@ export interface Trial {
 
   // sync tracking
   ctgov_last_synced_at?: string | null;
-}
-
-export interface TrialPhase {
-  id: string;
-  space_id: string;
-  created_by: string;
-  trial_id: string;
-  phase_type: string;
-  start_date: string;
-  end_date: string | null;
-  color: string | null;
-  label: string | null;
-  created_at: string;
 }
 
 export interface TrialNote {
