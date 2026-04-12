@@ -52,40 +52,12 @@ export class MarkerTypeListComponent implements OnInit {
   readonly grid = createGridState<MarkerType>({
     columns: [
       { field: 'name', header: 'Name', filter: { kind: 'text' } },
-      {
-        field: 'shape',
-        header: 'Shape',
-        filter: {
-          kind: 'select',
-          options: () => {
-            const seen = new Set<string>();
-            for (const mt of this.markerTypes()) if (mt.shape) seen.add(mt.shape);
-            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
-          },
-        },
-      },
-      {
-        field: 'fill_style',
-        header: 'Fill',
-        filter: {
-          kind: 'select',
-          options: () => {
-            const seen = new Set<string>();
-            for (const mt of this.markerTypes()) if (mt.fill_style) seen.add(mt.fill_style);
-            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
-          },
-        },
-      },
+      { field: 'shape', header: 'Shape', filter: { kind: 'text' } },
+      { field: 'fill_style', header: 'Fill', filter: { kind: 'text' } },
       {
         field: 'is_system',
         header: 'Origin',
-        filter: {
-          kind: 'select',
-          options: () => [
-            { label: 'System', value: 'system' },
-            { label: 'Custom', value: 'custom' },
-          ],
-        },
+        filter: { kind: 'text' },
         getValue: (mt) => (mt.is_system ? 'system' : 'custom'),
       },
     ],
