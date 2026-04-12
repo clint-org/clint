@@ -54,6 +54,16 @@ export const PHASE_COLOR: Record<RingPhase, string> = {
   LAUNCHED: '#059669', // emerald-600 (distinct hue for "the goal")
 };
 
+export type BullseyeDimension = 'therapeutic-area' | 'company' | 'moa' | 'roa';
+
+export type SpokeMode = 'grouped' | 'products';
+
+export interface BullseyeScope {
+  id: string;
+  name: string;
+  abbreviation?: string | null;
+}
+
 export interface BullseyeTherapeuticArea {
   id: string;
   name: string;
@@ -96,7 +106,7 @@ export interface BullseyeProduct {
   roas: { id: string; name: string; abbreviation: string | null }[];
 }
 
-export interface BullseyeCompany {
+export interface BullseyeSpoke {
   id: string;
   name: string;
   display_order: number;
@@ -105,9 +115,11 @@ export interface BullseyeCompany {
 }
 
 export interface BullseyeData {
-  therapeutic_area: BullseyeTherapeuticArea | null;
+  dimension: BullseyeDimension;
+  scope: BullseyeScope;
   ring_order: RingPhase[];
-  companies: BullseyeCompany[];
+  spokes: BullseyeSpoke[];
+  spoke_label: string;
 }
 
 export interface LandscapeFilters {
@@ -131,9 +143,10 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
 };
 
 export interface LandscapeIndexEntry {
-  therapeutic_area: BullseyeTherapeuticArea;
+  entity: BullseyeScope;
   product_count: number;
-  company_count: number;
+  secondary_count: number;
+  secondary_label: string;
   highest_phase_present: RingPhase | null;
   products_missing_phase: number;
 }
