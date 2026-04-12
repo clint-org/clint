@@ -26,7 +26,7 @@ import {
           >&times;</button>
         </div>
 
-        <h2 class="landscape-detail-name">{{ b.label }}</h2>
+        <h2 class="landscape-detail-name">{{ fullLabel() }}</h2>
 
         <section class="landscape-detail-section">
           <div class="flex items-center gap-3 text-sm text-slate-600">
@@ -82,6 +82,19 @@ export class PositioningDetailPanelComponent {
   readonly totalBubbles = input<number>(0);
 
   readonly clearSelection = output<void>();
+
+  readonly fullLabel = computed(() => {
+    const b = this.bubble();
+    if (!b) return '';
+    const k = b.group_keys;
+    const parts = [
+      k['moa_name'],
+      k['therapeutic_area_name'],
+      k['company_name'],
+      k['roa_name'],
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(' + ') : b.label;
+  });
 
   readonly sortedProducts = computed<PositioningProduct[]>(() => {
     const b = this.bubble();
