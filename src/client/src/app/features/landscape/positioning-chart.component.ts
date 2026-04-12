@@ -8,14 +8,35 @@ const PHASE_Y_RANK: Record<RingPhase, number> = {
   PRECLIN: 0, P1: 1, P2: 2, P3: 3, P4: 4, APPROVED: 5, LAUNCHED: 6,
 };
 
+/**
+ * 2D color gradient encoding competitive positioning.
+ * Bottom-left (few competitors, early phase) = teal (brand blue-ocean).
+ * Top-right (many competitors, late phase) = red (red-ocean).
+ * Uses direct RGB interpolation through a 3-stop ramp (teal -> amber -> red)
+ * to avoid the muddy greens that HSL interpolation produces.
+ */
 function bubbleColor(competitorCount: number, phaseRank: number, maxCompetitors: number): string {
   const xNorm = maxCompetitors > 1 ? (competitorCount - 1) / (maxCompetitors - 1) : 0;
   const yNorm = phaseRank / 6;
-  const intensity = (xNorm + yNorm) / 2;
-  const hue = 168 - intensity * 168;
-  const saturation = 60 + intensity * 15;
-  const lightness = 45 - intensity * 10;
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const t = Math.min(1, Math.max(0, (xNorm + yNorm) / 2));
+
+  // 3-stop ramp: teal (0) -> amber (0.5) -> red (1)
+  let r: number, g: number, b: number;
+  if (t < 0.5) {
+    const s = t / 0.5;
+    // teal #0d9488 (13,148,136) -> amber #d97706 (217,119,6)
+    r = 13 + s * (217 - 13);
+    g = 148 + s * (119 - 148);
+    b = 136 + s * (6 - 136);
+  } else {
+    const s = (t - 0.5) / 0.5;
+    // amber #d97706 (217,119,6) -> red #dc2626 (220,38,38)
+    r = 217 + s * (220 - 217);
+    g = 119 + s * (38 - 119);
+    b = 6 + s * (38 - 6);
+  }
+
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
 interface PlottedBubble {
@@ -29,69 +50,92 @@ interface PlottedBubble {
 @Component({
   selector: 'app-positioning-chart',
   standalone: true,
+  styles: `
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  `,
   template: `
     <svg
       [attr.viewBox]="'0 0 ' + width() + ' ' + height()"
-      class="w-full h-full"
+      preserveAspectRatio="xMidYMid meet"
+      style="width: 100%; height: 100%; display: block;"
       role="img"
       [attr.aria-label]="'Competitive positioning scatter chart with ' + bubbles().length + ' bubbles'"
       (click)="onBackgroundClick($event)"
       (keydown.escape)="onBackgroundClick($event)"
     >
+      <!-- Y-axis line -->
       <line
         [attr.x1]="margin.left"
         [attr.y1]="margin.top"
         [attr.x2]="margin.left"
         [attr.y2]="height() - margin.bottom"
         stroke="#e2e8f0"
-        stroke-width="1"
+        stroke-width="1.5"
       />
+      <!-- X-axis line -->
       <line
         [attr.x1]="margin.left"
         [attr.y1]="height() - margin.bottom"
         [attr.x2]="width() - margin.right"
         [attr.y2]="height() - margin.bottom"
         stroke="#e2e8f0"
-        stroke-width="1"
+        stroke-width="1.5"
       />
 
+      <!-- Y-axis phase tick lines and labels -->
       @for (phase of yPhases; track phase) {
+        <line
+          [attr.x1]="margin.left"
+          [attr.y1]="phaseY(phase)"
+          [attr.x2]="width() - margin.right"
+          [attr.y2]="phaseY(phase)"
+          stroke="#f1f5f9"
+          stroke-width="1"
+        />
         <text
-          [attr.x]="margin.left - 8"
-          [attr.y]="phaseY(phase) + 4"
+          [attr.x]="margin.left - 12"
+          [attr.y]="phaseY(phase) + 5"
           text-anchor="end"
-          class="fill-slate-400"
-          style="font-size: 11px; font-family: ui-monospace, monospace;"
+          fill="#94a3b8"
+          style="font-size: 14px; font-family: ui-monospace, monospace;"
         >{{ phase }}</text>
       }
 
+      <!-- X-axis tick labels -->
       @for (tick of xTicks(); track tick) {
         <text
           [attr.x]="competitorX(tick)"
-          [attr.y]="height() - margin.bottom + 18"
+          [attr.y]="height() - margin.bottom + 24"
           text-anchor="middle"
-          class="fill-slate-400"
-          style="font-size: 11px; font-family: ui-monospace, monospace;"
+          fill="#94a3b8"
+          style="font-size: 14px; font-family: ui-monospace, monospace;"
         >{{ tick }}</text>
       }
 
+      <!-- X-axis title -->
       <text
         [attr.x]="(margin.left + width() - margin.right) / 2"
-        [attr.y]="height() - 4"
+        [attr.y]="height() - 8"
         text-anchor="middle"
-        class="fill-slate-500"
-        style="font-size: 12px; font-weight: 600;"
+        fill="#64748b"
+        style="font-size: 15px; font-weight: 600;"
       >Competitors</text>
 
+      <!-- Y-axis title -->
       <text
-        [attr.x]="14"
+        x="24"
         [attr.y]="(margin.top + height() - margin.bottom) / 2"
         text-anchor="middle"
-        class="fill-slate-500"
-        style="font-size: 12px; font-weight: 600;"
-        [attr.transform]="'rotate(-90, 14, ' + ((margin.top + height() - margin.bottom) / 2) + ')'"
+        fill="#64748b"
+        style="font-size: 15px; font-weight: 600;"
+        [attr.transform]="'rotate(-90, 24, ' + ((margin.top + height() - margin.bottom) / 2) + ')'"
       >Highest Phase</text>
 
+      <!-- Bubbles -->
       @for (pb of plottedBubbles(); track pb.bubble.label) {
         <g
           class="cursor-pointer outline-none"
@@ -112,26 +156,27 @@ interface PlottedBubble {
             [attr.r]="bubbleRadius"
             [attr.fill]="pb.color"
             [attr.stroke]="selectedBubble() === pb.bubble ? '#0f172a' : 'white'"
-            [attr.stroke-width]="selectedBubble() === pb.bubble ? 2.5 : 1.5"
+            [attr.stroke-width]="selectedBubble() === pb.bubble ? 3 : 2"
             opacity="0.85"
           />
           <text
             [attr.x]="pb.cx"
-            [attr.y]="pb.cy + 4"
+            [attr.y]="pb.cy + 5"
             text-anchor="middle"
             fill="white"
-            style="font-size: 10px; font-weight: 600; pointer-events: none;"
+            style="font-size: 13px; font-weight: 600; pointer-events: none;"
           >{{ pb.truncatedLabel }}</text>
         </g>
       }
 
+      <!-- Empty state -->
       @if (bubbles().length === 0) {
         <text
           [attr.x]="width() / 2"
           [attr.y]="height() / 2"
           text-anchor="middle"
-          class="fill-slate-400"
-          style="font-size: 14px;"
+          fill="#94a3b8"
+          style="font-size: 18px;"
         >No data matches current filters</text>
       }
     </svg>
@@ -139,8 +184,8 @@ interface PlottedBubble {
 })
 export class PositioningChartComponent {
   readonly bubbles = input.required<PositioningBubble[]>();
-  readonly width = input<number>(900);
-  readonly height = input<number>(600);
+  readonly width = input<number>(1200);
+  readonly height = input<number>(700);
   readonly countUnit = input<string>('products');
   readonly selectedBubble = input<PositioningBubble | null>(null);
 
@@ -148,9 +193,9 @@ export class PositioningChartComponent {
   readonly bubbleClick = output<PositioningBubble>();
 
   readonly yPhases = Y_PHASES;
-  readonly bubbleRadius = 22;
+  readonly bubbleRadius = 32;
 
-  readonly margin = { top: 30, right: 30, bottom: 40, left: 80 };
+  readonly margin = { top: 40, right: 50, bottom: 55, left: 120 };
 
   readonly maxCompetitors = computed(() => {
     const max = Math.max(...this.bubbles().map((b) => b.competitor_count), 1);
@@ -173,16 +218,21 @@ export class PositioningChartComponent {
       cx: this.competitorX(b.competitor_count),
       cy: this.phaseY(b.highest_phase),
       color: bubbleColor(b.competitor_count, b.highest_phase_rank, maxComp),
-      truncatedLabel: b.label.length > 6 ? b.label.slice(0, 5) + '\u2026' : b.label,
+      truncatedLabel: b.label.length > 12 ? b.label.slice(0, 11) + '\u2026' : b.label,
     }));
 
     const radius = this.bubbleRadius;
+    const minX = this.margin.left + radius;
+    const maxX = this.width() - this.margin.right - radius;
+    const minY = this.margin.top + radius;
+    const maxY = this.height() - this.margin.bottom - radius;
+
     for (let i = 0; i < raw.length; i++) {
       for (let j = i + 1; j < raw.length; j++) {
         const dx = raw[j].cx - raw[i].cx;
         const dy = raw[j].cy - raw[i].cy;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const minDist = radius * 2.2;
+        const minDist = radius * 2.4;
         if (dist < minDist) {
           const nudge = (minDist - dist) / 2 + 1;
           const angle = dist > 0 ? Math.atan2(dy, dx) : (j * Math.PI) / 4;
@@ -192,6 +242,12 @@ export class PositioningChartComponent {
           raw[j].cy += Math.sin(angle) * nudge;
         }
       }
+    }
+
+    // Clamp positions to stay within the plot area
+    for (const b of raw) {
+      b.cx = Math.max(minX, Math.min(maxX, b.cx));
+      b.cy = Math.max(minY, Math.min(maxY, b.cy));
     }
 
     return raw;

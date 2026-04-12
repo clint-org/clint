@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, resource, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
@@ -47,11 +47,11 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       @let data = positioningData.value();
       @if (data && data.bubbles.length > 0) {
         <div class="landscape-layout">
-          <div class="landscape-chart-wrap">
+          <div style="min-width: 0; min-height: 0; overflow: hidden;">
             <app-positioning-chart
               [bubbles]="data.bubbles"
-              [width]="900"
-              [height]="600"
+              [width]="1200"
+              [height]="700"
               [countUnit]="state.countUnit()"
               [selectedBubble]="selectedBubble()"
               (bubbleHover)="onBubbleHover($event)"
@@ -94,6 +94,16 @@ export class PositioningViewComponent implements OnInit {
   readonly hoveredBubble = signal<PositioningBubble | null>(null);
   readonly tooltipX = signal(0);
   readonly tooltipY = signal(0);
+
+  constructor() {
+    // Clear selection when grouping, count unit, or filters change
+    effect(() => {
+      this.state.positioningGrouping();
+      this.state.countUnit();
+      this.state.filters();
+      this.selectedBubble.set(null);
+    });
+  }
 
   readonly positioningData = resource({
     request: () => ({
