@@ -8,7 +8,26 @@ export class MarkerTypeService {
   private supabase = inject(SupabaseService);
 
   async list(spaceId?: string): Promise<MarkerType[]> {
-    let query = this.supabase.client.from('marker_types').select('*').order('display_order');
+    let query = this.supabase.client
+      .from('marker_types')
+      .select('*, marker_categories(*)')
+      .order('display_order');
+
+    if (spaceId) {
+      query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data as MarkerType[];
+  }
+
+  async listByCategory(categoryId: string, spaceId?: string): Promise<MarkerType[]> {
+    let query = this.supabase.client
+      .from('marker_types')
+      .select('*, marker_categories(*)')
+      .eq('category_id', categoryId)
+      .order('display_order');
 
     if (spaceId) {
       query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);

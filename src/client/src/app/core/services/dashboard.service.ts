@@ -32,11 +32,14 @@ export class DashboardService {
         ...p,
         trials: (p.trials ?? []).map((t: any) => ({
           ...t,
+          identifier: t.identifier ?? null,
           therapeutic_areas: t.therapeutic_area ?? null,
-          trial_phases: t.phases ?? [],
-          trial_markers: (t.markers ?? []).map((m: any) => ({
-            ...m,
-            marker_types: m.marker_type ?? null,
+          phase_type: t.phase_data?.phase_type ?? null,
+          phase_start_date: t.phase_data?.phase_start_date ?? null,
+          phase_end_date: t.phase_data?.phase_end_date ?? null,
+          markers: (t.marker_assignments ?? []).map((ma: any) => ({
+            ...ma.marker,
+            marker_types: ma.marker?.marker_type ?? null,
           })),
           trial_notes: t.trial_notes ?? [],
         })),
