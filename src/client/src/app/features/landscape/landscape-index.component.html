@@ -46,15 +46,6 @@
                 <span class="landscape-index-card-sep">&middot;</span>
                 <span>{{ entry.secondary_count }} {{ entry.secondary_label }}</span>
               </div>
-              @if (entry.highest_phase_present) {
-                <div class="landscape-index-card-phase">
-                  Highest phase: <strong>{{ entry.highest_phase_present }}</strong>
-                </div>
-              } @else {
-                <div class="landscape-index-card-phase landscape-index-card-phase--empty">
-                  No phase data
-                </div>
-              }
               @if (entry.products_missing_phase > 0) {
                 <div class="landscape-index-card-warning">
                   {{ entry.products_missing_phase }}
