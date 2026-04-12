@@ -9,12 +9,12 @@
 >
   <desc>
     Concentric rings represent development phases from Launched at the center to Preclinical at the
-    outer edge. Companies are arranged clockwise from the top, each owning a wedge-shaped sector of
+    outer edge. Spokes are arranged clockwise from the top, each owning a wedge-shaped sector of
     the chart.
   </desc>
 
-  <!-- alternating company sector wedges (drawn first so rings/spokes/dots layer on top) -->
-  @for (sector of sectors(); track sector.companyId) {
+  <!-- alternating spoke sector wedges (drawn first so rings/spokes/dots layer on top) -->
+  @for (sector of sectors(); track sector.spokeId) {
     <path [attr.d]="sector.path" [attr.fill]="sector.fill" stroke="none" />
   }
 
@@ -37,7 +37,7 @@
   }
 
   <!-- spokes -->
-  @for (spoke of spokes(); track spoke.companyId) {
+  @for (spoke of spokeLines(); track spoke.spokeId) {
     <line
       [attr.x1]="cx"
       [attr.y1]="cy"
@@ -59,14 +59,14 @@
     font-weight="700"
     letter-spacing="0.5"
   >
-    {{ taName() }}
+    {{ scopeName() }}
   </text>
   <text [attr.x]="cx" [attr.y]="cy + 16" text-anchor="middle" fill="#64748b" font-size="12">
     {{ productCountSummary() }}
   </text>
 
   <!-- ring labels at 12 o'clock gutter. LAUNCHED is omitted — the center
-       disc with the TA name is a clearer visual anchor for the innermost
+       disc with the scope name is a clearer visual anchor for the innermost
        position than a redundant ring label. Each label is colored by its
        phase so the legend matches the dot color. -->
   @for (ring of rings(); track 'label-' + ring.devRank) {
@@ -85,8 +85,8 @@
     }
   }
 
-  <!-- company labels outside outer rim -->
-  @for (label of companyLabels(); track label.id) {
+  <!-- spoke labels outside outer rim -->
+  @for (label of spokeLabels(); track label.id) {
     <text
       [attr.x]="label.x"
       [attr.y]="label.y"

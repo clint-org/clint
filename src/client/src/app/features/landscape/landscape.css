@@ -4,6 +4,85 @@
  */
 
 /* =============================================================================
+ * Shell — sidebar + main content layout
+ * ============================================================================= */
+
+.landscape-shell {
+  display: flex;
+  height: 100%;
+}
+
+.landscape-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 0.75rem 0;
+}
+
+.landscape-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  color: #475569;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.landscape-sidebar-item:hover {
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.landscape-sidebar-item.active {
+  color: #0d9488;
+  border-left-color: #0d9488;
+  font-weight: 600;
+  background: #f0fdfa;
+}
+
+.landscape-sidebar-item i {
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.landscape-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .landscape-shell {
+    flex-direction: column;
+  }
+  .landscape-sidebar {
+    width: 100%;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0;
+    overflow-x: auto;
+  }
+  .landscape-sidebar-item {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+  }
+  .landscape-sidebar-item.active {
+    border-bottom-color: #0d9488;
+    border-left-color: transparent;
+  }
+}
+
+/* =============================================================================
  * Page layout — chart + detail panel grid
  * ============================================================================= */
 

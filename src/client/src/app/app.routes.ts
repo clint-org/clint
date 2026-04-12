@@ -44,16 +44,76 @@ export const routes: Routes = [
           {
             path: 'landscape',
             loadComponent: () =>
-              import('./features/landscape/landscape-index.component').then(
-                (m) => m.LandscapeIndexComponent
+              import('./features/landscape/landscape-shell.component').then(
+                (m) => m.LandscapeShellComponent
               ),
-          },
-          {
-            path: 'landscape/:therapeuticAreaId',
-            loadComponent: () =>
-              import('./features/landscape/landscape.component').then(
-                (m) => m.LandscapeComponent
-              ),
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                redirectTo: 'by-therapy-area',
+              },
+              {
+                path: 'by-therapy-area',
+                loadComponent: () =>
+                  import('./features/landscape/landscape-index.component').then(
+                    (m) => m.LandscapeIndexComponent
+                  ),
+              },
+              {
+                path: 'by-therapy-area/:entityId',
+                loadComponent: () =>
+                  import('./features/landscape/landscape.component').then(
+                    (m) => m.LandscapeComponent
+                  ),
+              },
+              {
+                path: 'by-company',
+                loadComponent: () =>
+                  import('./features/landscape/landscape-index.component').then(
+                    (m) => m.LandscapeIndexComponent
+                  ),
+              },
+              {
+                path: 'by-company/:entityId',
+                loadComponent: () =>
+                  import('./features/landscape/landscape.component').then(
+                    (m) => m.LandscapeComponent
+                  ),
+              },
+              {
+                path: 'by-moa',
+                loadComponent: () =>
+                  import('./features/landscape/landscape-index.component').then(
+                    (m) => m.LandscapeIndexComponent
+                  ),
+              },
+              {
+                path: 'by-moa/:entityId',
+                loadComponent: () =>
+                  import('./features/landscape/landscape.component').then(
+                    (m) => m.LandscapeComponent
+                  ),
+              },
+              {
+                path: 'by-roa',
+                loadComponent: () =>
+                  import('./features/landscape/landscape-index.component').then(
+                    (m) => m.LandscapeIndexComponent
+                  ),
+              },
+              {
+                path: 'by-roa/:entityId',
+                loadComponent: () =>
+                  import('./features/landscape/landscape.component').then(
+                    (m) => m.LandscapeComponent
+                  ),
+              },
+              {
+                path: ':therapeuticAreaId',
+                redirectTo: 'by-therapy-area/:therapeuticAreaId',
+              },
+            ],
           },
           {
             path: 'manage/companies',

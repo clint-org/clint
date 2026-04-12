@@ -1,22 +1,24 @@
 import { Component, computed, effect, HostListener, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { SelectButton } from 'primeng/selectbutton';
 
 import {
+  BullseyeDimension,
   BullseyeProduct,
+  BullseyeSpoke,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
   RingPhase,
+  SpokeMode,
 } from '../../core/models/landscape.model';
-import { TherapeuticArea } from '../../core/models/trial.model';
 import { LandscapeService } from '../../core/services/landscape.service';
-import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
-import { TaSelectorComponent } from './ta-selector.component';
 
 @Component({
   selector: 'app-landscape',
@@ -25,41 +27,85 @@ import { TaSelectorComponent } from './ta-selector.component';
     BullseyeChartComponent,
     BullseyeDetailPanelComponent,
     LandscapeFilterBarComponent,
-    TaSelectorComponent,
     RouterLink,
+    FormsModule,
     ButtonModule,
     MessageModule,
     ProgressSpinner,
+    SelectButton,
   ],
   templateUrl: './landscape.component.html',
 })
 export class LandscapeComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
-  private readonly therapeuticAreaService = inject(TherapeuticAreaService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
-  readonly taId = signal('');
+  readonly entityId = signal('');
+  readonly dimension = signal<BullseyeDimension>('therapeutic-area');
 
   readonly selectedProductId = signal<string | null>(null);
   readonly hoveredProductId = signal<string | null>(null);
   readonly highlightedRing = signal<RingPhase | null>(null);
 
-  readonly therapeuticAreas = signal<TherapeuticArea[]>([]);
   readonly landscapeFilters = signal<LandscapeFilters>({ ...EMPTY_LANDSCAPE_FILTERS });
+  readonly spokeMode = signal<SpokeMode>('grouped');
+
+  private static parseDimension(segment: string): BullseyeDimension {
+    const map: Record<string, BullseyeDimension> = {
+      'by-therapy-area': 'therapeutic-area',
+      'by-company': 'company',
+      'by-moa': 'moa',
+      'by-roa': 'roa',
+    };
+    return map[segment] ?? 'therapeutic-area';
+  }
+
+  readonly spokeModeOptions = computed(() => {
+    const label = this.bullseyeData.value()?.spoke_label ?? 'Groups';
+    return [
+      { label, value: 'grouped' as SpokeMode },
+      { label: 'Products', value: 'products' as SpokeMode },
+    ];
+  });
 
   readonly bullseyeData = resource({
-    request: () => ({ spaceId: this.spaceId(), taId: this.taId() }),
+    request: () => ({
+      spaceId: this.spaceId(),
+      dimension: this.dimension(),
+      entityId: this.entityId(),
+    }),
     loader: async ({ request }) => {
-      if (!request.spaceId || !request.taId) return null;
-      return this.landscapeService.getBullseyeData(request.spaceId, request.taId);
+      if (!request.spaceId || !request.entityId) return null;
+      return this.landscapeService.getBullseyeData(
+        request.spaceId,
+        request.dimension,
+        request.entityId
+      );
     },
   });
 
   readonly allProducts = computed<BullseyeProduct[]>(() => {
-    return this.bullseyeData.value()?.companies.flatMap((c) => c.products) ?? [];
+    return this.bullseyeData.value()?.spokes.flatMap((s) => s.products) ?? [];
+  });
+
+  readonly chartData = computed(() => {
+    const data = this.bullseyeData.value();
+    if (!data) return null;
+    if (this.spokeMode() === 'grouped') return data;
+
+    // Products mode: flatten all products into individual spokes
+    const allProducts = data.spokes.flatMap((s) => s.products);
+    const productSpokes: BullseyeSpoke[] = allProducts.map((p) => ({
+      id: p.id,
+      name: p.name,
+      display_order: 0,
+      highest_phase_rank: p.highest_phase_rank,
+      products: [p],
+    }));
+    return { ...data, spokes: productSpokes, spoke_label: 'Products' };
   });
 
   readonly selectedProduct = computed<BullseyeProduct | null>(() => {
@@ -88,25 +134,20 @@ export class LandscapeComponent implements OnInit {
   });
 
   constructor() {
-    // Sync route params (path + query) into local signals so the resource
-    // refetches automatically when the TA changes and the selection
-    // survives deep links.
     effect(() => {
       const params = this.route.snapshot.paramMap;
       this.tenantId.set(params.get('tenantId') ?? '');
       this.spaceId.set(params.get('spaceId') ?? '');
-      this.taId.set(params.get('therapeuticAreaId') ?? '');
+      this.entityId.set(params.get('entityId') ?? '');
       const queryProduct = this.route.snapshot.queryParamMap.get('product');
       this.selectedProductId.set(queryProduct);
     });
 
-    // When the loaded data changes, drop the selection if the product is no
-    // longer present (e.g. after a TA switch); otherwise keep it.
     effect(() => {
       const data = this.bullseyeData.value();
       const currentSelected = this.selectedProductId();
       if (!data || !currentSelected) return;
-      const exists = data.companies.some((c) => c.products.some((p) => p.id === currentSelected));
+      const exists = data.spokes.some((s) => s.products.some((p) => p.id === currentSelected));
       if (!exists) {
         this.selectedProductId.set(null);
         this.updateQueryParam(null);
@@ -115,38 +156,30 @@ export class LandscapeComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    // Load the TA list for the selector dropdown
     const tenantId = this.route.snapshot.paramMap.get('tenantId') ?? '';
     const spaceId = this.route.snapshot.paramMap.get('spaceId') ?? '';
     this.tenantId.set(tenantId);
     this.spaceId.set(spaceId);
-    try {
-      const tas = await this.therapeuticAreaService.list(spaceId);
-      this.therapeuticAreas.set(tas);
-    } catch {
-      this.therapeuticAreas.set([]);
-    }
-    // Seed the current route param into the signal on first load
-    this.taId.set(this.route.snapshot.paramMap.get('therapeuticAreaId') ?? '');
+    this.entityId.set(this.route.snapshot.paramMap.get('entityId') ?? '');
     this.selectedProductId.set(this.route.snapshot.queryParamMap.get('product'));
 
-    // Subscribe to param + query param changes so the effects above re-fire
+    // Parse dimension from the parent route segment
+    const urlSegments = this.route.parent?.snapshot.url ?? [];
+    const dimensionSegment = urlSegments.find((s) =>
+      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
+    );
+    if (dimensionSegment) {
+      this.dimension.set(LandscapeComponent.parseDimension(dimensionSegment.path));
+    }
+
     this.route.paramMap.subscribe((params) => {
       this.tenantId.set(params.get('tenantId') ?? '');
       this.spaceId.set(params.get('spaceId') ?? '');
-      this.taId.set(params.get('therapeuticAreaId') ?? '');
+      this.entityId.set(params.get('entityId') ?? '');
     });
     this.route.queryParamMap.subscribe((qp) => {
       this.selectedProductId.set(qp.get('product'));
     });
-  }
-
-  onTaSelect(newTaId: string): void {
-    if (newTaId === this.taId()) return;
-    this.router.navigate(
-      ['/t', this.tenantId(), 's', this.spaceId(), 'landscape', newTaId],
-      { queryParamsHandling: '' }
-    );
   }
 
   onProductHover(productId: string | null): void {

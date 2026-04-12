@@ -38,10 +38,10 @@ export function ringRadius(devRank: number): number {
 }
 
 /**
- * Angle (radians) for a company's spoke, clockwise from 12 o'clock.
+ * Angle (radians) for a spoke, clockwise from 12 o'clock.
  * Index 0 is at 12 o'clock; angles increase clockwise.
  */
-export function companyAngle(index: number, total: number): number {
+export function spokeAngle(index: number, total: number): number {
   if (total <= 0) return -Math.PI / 2;
   const deg = -90 + (360 / total) * index;
   return (deg * Math.PI) / 180;
@@ -63,14 +63,14 @@ export function polarToCartesian(angle: number, radius: number): { x: number; y:
 }
 
 /**
- * Cartesian position of a single dot on a company spoke at a given dev rank.
+ * Cartesian position of a single dot on a spoke at a given dev rank.
  */
 export function dotXY(
   companyIndex: number,
   totalCompanies: number,
   devRank: number
 ): { x: number; y: number } {
-  return polarToCartesian(companyAngle(companyIndex, totalCompanies), ringRadius(devRank));
+  return polarToCartesian(spokeAngle(companyIndex, totalCompanies), ringRadius(devRank));
 }
 
 /**
@@ -118,7 +118,7 @@ export function annularBandPath(outerRadius: number, innerRadius: number): strin
 export function sectorAnnularPath(companyIndex: number, total: number): string {
   if (total <= 0) return '';
   const stepRad = (2 * Math.PI) / total;
-  const base = companyAngle(companyIndex, total);
+  const base = spokeAngle(companyIndex, total);
   const startAngle = base - stepRad / 2;
   const endAngle = base + stepRad / 2;
 
@@ -140,18 +140,18 @@ export function sectorAnnularPath(companyIndex: number, total: number): string {
 }
 
 /**
- * Positioning info for a company label: the text anchor point and a
+ * Positioning info for a spoke label: the text anchor point and a
  * rotation angle that keeps the text upright (text in the bottom
  * hemisphere is flipped 180 degrees so it still reads left-to-right).
  */
-export interface CompanyLabelTransform {
+export interface SpokeLabelTransform {
   x: number;
   y: number;
   rotate: number;
   anchor: 'start' | 'end';
 }
 
-export function companyLabelTransform(angleRad: number, offset = 28): CompanyLabelTransform {
+export function spokeLabelTransform(angleRad: number, offset = 28): SpokeLabelTransform {
   const x = CX + (OUTER_RADIUS + offset) * Math.cos(angleRad);
   const y = CY + (OUTER_RADIUS + offset) * Math.sin(angleRad);
   const deg = (angleRad * 180) / Math.PI;
