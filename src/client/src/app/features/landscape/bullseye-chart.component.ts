@@ -8,14 +8,14 @@ import {
   RingPhase,
 } from '../../core/models/landscape.model';
 import {
-  CompanyLabelTransform,
+  SpokeLabelTransform,
   CX,
   CY,
   INNER_RADIUS,
   OUTER_RADIUS,
   annularBandPath,
-  companyAngle,
-  companyLabelTransform,
+  spokeAngle,
+  spokeLabelTransform,
   jitterAngles,
   polarToCartesian,
   ringRadius,
@@ -30,14 +30,14 @@ interface RingSpec {
   isOuter: boolean;
 }
 
-interface SpokeSpec {
-  companyId: string;
+interface SpokeLineSpec {
+  spokeId: string;
   x2: number;
   y2: number;
 }
 
 interface SectorSpec {
-  companyId: string;
+  spokeId: string;
   path: string;
   fill: string;
 }
@@ -48,7 +48,7 @@ interface BandSpec {
   fill: string;
 }
 
-interface CompanyLabelSpec extends CompanyLabelTransform {
+interface SpokeLabelSpec extends SpokeLabelTransform {
   id: string;
   name: string;
   abbreviation: string;
@@ -91,9 +91,9 @@ export class BullseyeChartComponent {
   protected readonly innerRadius = INNER_RADIUS;
   protected readonly outerRadius = OUTER_RADIUS;
 
-  protected readonly companies = computed(() => this.data()?.companies ?? []);
+  protected readonly spokes = computed(() => this.data()?.spokes ?? []);
 
-  protected readonly totalCompanies = computed(() => this.companies().length);
+  protected readonly totalSpokes = computed(() => this.spokes().length);
 
   protected readonly rings = computed<RingSpec[]>(() => {
     const phases: RingPhase[] = ['LAUNCHED', 'APPROVED', 'P4', 'P3', 'P2', 'P1', 'PRECLIN'];
@@ -106,13 +106,13 @@ export class BullseyeChartComponent {
     }));
   });
 
-  protected readonly spokes = computed<SpokeSpec[]>(() => {
-    const companies = this.companies();
-    const total = companies.length;
-    return companies.map((c, i) => {
-      const angle = companyAngle(i, total);
+  protected readonly spokeLines = computed<SpokeLineSpec[]>(() => {
+    const spokes = this.spokes();
+    const total = spokes.length;
+    return spokes.map((s, i) => {
+      const angle = spokeAngle(i, total);
       const endpoint = polarToCartesian(angle, OUTER_RADIUS);
-      return { companyId: c.id, x2: endpoint.x, y2: endpoint.y };
+      return { spokeId: s.id, x2: endpoint.x, y2: endpoint.y };
     });
   });
 
@@ -140,53 +140,53 @@ export class BullseyeChartComponent {
   });
 
   protected readonly sectors = computed<SectorSpec[]>(() => {
-    const companies = this.companies();
-    const total = companies.length;
-    // For even company counts, alternate two shades. For odd counts we
+    const spokes = this.spokes();
+    const total = spokes.length;
+    // For even spoke counts, alternate two shades. For odd counts we
     // rotate through three shades so we never get two adjacent wedges
     // with the same fill at the wrap-around (which would look like one
-    // big wedge instead of two distinct companies).
+    // big wedge instead of two distinct spokes).
     const tints = total % 2 === 0 ? ['#e2e8f0', '#ffffff'] : ['#e2e8f0', '#ffffff', '#f1f5f9'];
-    return companies.map((c, i) => ({
-      companyId: c.id,
+    return spokes.map((s, i) => ({
+      spokeId: s.id,
       path: sectorAnnularPath(i, total),
       fill: tints[i % tints.length],
     }));
   });
 
-  protected readonly companyLabels = computed<CompanyLabelSpec[]>(() => {
-    const companies = this.companies();
-    const total = companies.length;
+  protected readonly spokeLabels = computed<SpokeLabelSpec[]>(() => {
+    const spokes = this.spokes();
+    const total = spokes.length;
     const forceShrink = total > LABEL_SHRINK_THRESHOLD;
-    return companies.map((c, i) => {
-      const transform = companyLabelTransform(companyAngle(i, total));
-      const needsAbbreviation = forceShrink || c.name.length > LONG_NAME_THRESHOLD;
-      const displayName = needsAbbreviation ? abbreviateCompanyName(c.name) : c.name.toUpperCase();
+    return spokes.map((s, i) => {
+      const transform = spokeLabelTransform(spokeAngle(i, total));
+      const needsAbbreviation = forceShrink || s.name.length > LONG_NAME_THRESHOLD;
+      const displayName = needsAbbreviation ? abbreviateSpokeName(s.name) : s.name.toUpperCase();
       return {
-        id: c.id,
+        id: s.id,
         name: displayName,
-        abbreviation: c.name,
+        abbreviation: s.name,
         ...transform,
       };
     });
   });
 
   protected readonly dots = computed<DotSpec[]>(() => {
-    const companies = this.companies();
-    const total = companies.length;
+    const spokes = this.spokes();
+    const total = spokes.length;
     const sectorW = sectorWidth(total);
     const out: DotSpec[] = [];
 
-    companies.forEach((company, companyIndex) => {
+    spokes.forEach((spoke, spokeIndex) => {
       // Group products by dev rank so we can jitter overlapping dots
       const byRank = new Map<number, BullseyeProduct[]>();
-      for (const product of company.products) {
+      for (const product of spoke.products) {
         const list = byRank.get(product.highest_phase_rank) ?? [];
         list.push(product);
         byRank.set(product.highest_phase_rank, list);
       }
 
-      const baseAngle = companyAngle(companyIndex, total);
+      const baseAngle = spokeAngle(spokeIndex, total);
 
       for (const [devRank, products] of byRank) {
         const angles = jitterAngles(baseAngle, sectorW, products.length);
@@ -201,19 +201,18 @@ export class BullseyeChartComponent {
   });
 
   protected readonly ariaLabel = computed(() => {
-    const ta = this.data()?.therapeutic_area;
+    const scope = this.data()?.scope;
     const productCount = this.dots().length;
-    const companyCount = this.totalCompanies();
-    if (!ta) return 'Competitive landscape bullseye chart';
-    return `Competitive landscape bullseye for ${ta.name}. ${productCount} products across ${companyCount} companies.`;
+    const spokeCount = this.totalSpokes();
+    if (!scope) return 'Competitive landscape bullseye chart';
+    return `Competitive landscape bullseye for ${scope.name}. ${productCount} products across ${spokeCount} spokes.`;
   });
 
   protected readonly productCountSummary = computed(() => {
+    const d = this.data();
+    if (!d) return '';
     const productCount = this.dots().length;
-    const companyCount = this.totalCompanies();
-    const productNoun = productCount === 1 ? 'product' : 'products';
-    const companyNoun = companyCount === 1 ? 'company' : 'companies';
-    return `${productCount} ${productNoun} across ${companyCount} ${companyNoun}`;
+    return `${productCount} ${productCount === 1 ? 'product' : 'products'}`;
   });
 
   protected dotRadius(dot: DotSpec): number {
@@ -282,11 +281,11 @@ export class BullseyeChartComponent {
     return CY - radius + 14;
   }
 
-  protected taName = computed(() => this.data()?.therapeutic_area?.name ?? '');
-  protected taAbbreviation = computed(() => this.data()?.therapeutic_area?.abbreviation ?? '');
+  protected scopeName = computed(() => this.data()?.scope?.name ?? '');
+  protected scopeAbbreviation = computed(() => this.data()?.scope?.abbreviation ?? '');
 }
 
-function abbreviateCompanyName(name: string): string {
+function abbreviateSpokeName(name: string): string {
   const firstWord = name.split(/\s+/)[0] ?? name;
   return firstWord.slice(0, ABBREVIATION_MAX_LENGTH).toUpperCase();
 }
