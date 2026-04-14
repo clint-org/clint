@@ -154,15 +154,15 @@ begin
   -- Companies
   -- ==========================================================================
   insert into public.companies (id, space_id, created_by, name, logo_url, display_order) values
-    (c_az,     p_space_id, uid, 'AstraZeneca',           'https://companieslogo.com/img/orig/AZN-e22c80ac.png',    1),
-    (c_lilly,  p_space_id, uid, 'Eli Lilly',             'https://companieslogo.com/img/orig/LLY-8c523530.png',    2),
-    (c_novo,   p_space_id, uid, 'Novo Nordisk',          'https://companieslogo.com/img/orig/NVO-073a8258.png',    3),
-    (c_merck,  p_space_id, uid, 'Merck',                 'https://companieslogo.com/img/orig/MRK-0e4b5967.png',    4),
-    (c_pfizer, p_space_id, uid, 'Pfizer',                'https://companieslogo.com/img/orig/PFE-5e21087f.png',    5),
-    (c_bayer,  p_space_id, uid, 'Bayer',                 'https://companieslogo.com/img/orig/BAYN.DE-73c01a26.png', 6),
-    (c_bi,     p_space_id, uid, 'Boehringer Ingelheim',  null,                                                     7),
-    (c_sanofi, p_space_id, uid, 'Sanofi',                'https://companieslogo.com/img/orig/SNY-d3e53e39.png',    8),
-    (c_gsk,    p_space_id, uid, 'GSK',                   'https://companieslogo.com/img/orig/GSK-8bceb4f9.png',    9);
+    (c_az,     p_space_id, uid, 'AstraZeneca',           'https://cdn.brandfetch.io/domain/astrazeneca.com?c=1id4n6IGbus8ot9Eo0N',          1),
+    (c_lilly,  p_space_id, uid, 'Eli Lilly',             'https://cdn.brandfetch.io/domain/lilly.com?c=1id4n6IGbus8ot9Eo0N',                2),
+    (c_novo,   p_space_id, uid, 'Novo Nordisk',          'https://cdn.brandfetch.io/domain/novonordisk.com?c=1id4n6IGbus8ot9Eo0N',          3),
+    (c_merck,  p_space_id, uid, 'Merck',                 'https://cdn.brandfetch.io/domain/merck.com?c=1id4n6IGbus8ot9Eo0N',                4),
+    (c_pfizer, p_space_id, uid, 'Pfizer',                'https://cdn.brandfetch.io/domain/pfizer.com?c=1id4n6IGbus8ot9Eo0N',               5),
+    (c_bayer,  p_space_id, uid, 'Bayer',                 'https://cdn.brandfetch.io/domain/bayer.com?c=1id4n6IGbus8ot9Eo0N',                6),
+    (c_bi,     p_space_id, uid, 'Boehringer Ingelheim',  'https://cdn.brandfetch.io/domain/boehringer-ingelheim.com?c=1id4n6IGbus8ot9Eo0N', 7),
+    (c_sanofi, p_space_id, uid, 'Sanofi',                'https://cdn.brandfetch.io/domain/sanofi.com?c=1id4n6IGbus8ot9Eo0N',               8),
+    (c_gsk,    p_space_id, uid, 'GSK',                   'https://cdn.brandfetch.io/domain/gsk.com?c=1id4n6IGbus8ot9Eo0N',                  9);
 
   -- ==========================================================================
   -- Therapeutic areas
