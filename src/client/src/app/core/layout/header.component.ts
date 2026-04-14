@@ -127,6 +127,13 @@ import { NotificationBellComponent } from './notification-bell.component';
             >
               Events
             </a>
+            <a
+              [routerLink]="spaceBase().concat('catalysts')"
+              routerLinkActive="nav-active"
+              class="nav-link"
+            >
+              Catalysts
+            </a>
           </nav>
         }
 

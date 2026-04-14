@@ -231,6 +231,13 @@ export const routes: Routes = [
                 (m) => m.EventsPageComponent,
               ),
           },
+          {
+            path: 'catalysts',
+            loadComponent: () =>
+              import('./features/catalysts/catalysts-page.component').then(
+                (m) => m.CatalystsPageComponent,
+              ),
+          },
         ],
       },
     ],
