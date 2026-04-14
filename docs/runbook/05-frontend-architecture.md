@@ -23,6 +23,7 @@ src/client/
           company.model.ts      # Company
           product.model.ts      # Product
           marker.model.ts       # MarkerType, TrialMarker
+          event.model.ts        # AppEvent, FeedItem, EventDetail, EventsPageFilters
           dashboard.model.ts    # DashboardData, DashboardFilters, ZoomLevel
           tenant.model.ts       # Tenant, TenantMember, TenantInvite
           space.model.ts        # Space, SpaceMember
@@ -36,6 +37,10 @@ src/client/
           trials/               # trial-detail, trial-form, phase-form, marker-form, note-form
           marker-types/         # marker-type-list, marker-type-form
           therapeutic-areas/    # therapeutic-area-list, therapeutic-area-form
+        events/                 # Intelligence feed: table + detail panel
+          events-page.component  # p-table with createGridState, detail panel toggle
+          event-detail-panel.component # Right-side panel: description, sources, tags, thread, links
+          event-form.component   # Create/edit event modal (p-dialog)
         spaces/                 # Space list and creation
         onboarding/             # Create org / join with invite code
         tenant-settings/        # Tenant management and member invites

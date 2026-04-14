@@ -75,6 +75,25 @@ A full CRUD interface for managing all data within a space:
 | Marker Types | Custom marker types beyond the 10 system defaults |
 | Therapeutic Areas | Medical indication categories (name, abbreviation) |
 
+## Events (Intelligence Feed)
+
+A unified chronological feed showing analyst-created events and timeline markers together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial.
+
+**Layout:** Data table (p-table) with sortable/filterable columns + a right-side detail panel that opens on row click.
+
+| Column | Content |
+|---|---|
+| Date | Event date, sorted descending by default |
+| Source | Badge: "EVENT" (green) or "MARKER" (slate) |
+| Title | Event title with thread indicator if applicable |
+| Category | 6 system categories: Leadership, Regulatory, Financial, Strategic, Clinical, Commercial |
+| Entity | Company / Product / Trial name, or "Industry" for space-level |
+| Priority | Red dot for high, empty for low |
+
+**Detail panel (380px right):** Description, source URLs, tags, thread context (ordered list of events in the narrative), related events (ad-hoc links), and created timestamp.
+
+**Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority.
+
 ## PowerPoint Export
 
 The `PptxExportService` generates a `.pptx` file replicating the dashboard view using `pptxgenjs`. Users can configure:
