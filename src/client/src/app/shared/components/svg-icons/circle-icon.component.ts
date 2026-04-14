@@ -1,52 +1,35 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
+import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
 @Component({
   selector: 'g[app-circle-icon]',
   standalone: true,
   template: `
-    @if (fillStyle() === 'striped') {
-      <svg:defs>
-        <svg:pattern
-          [attr.id]="'stripe-circle-' + patternId"
-          patternUnits="userSpaceOnUse"
-          width="4"
-          height="4"
-          patternTransform="rotate(45)"
-        >
-          <svg:line x1="0" y1="0" x2="0" y2="4" [attr.stroke]="color()" stroke-width="1" />
-        </svg:pattern>
-      </svg:defs>
-    }
-    @if (fillStyle() === 'gradient') {
-      <svg:defs>
-        <svg:linearGradient
-          [attr.id]="'grad-circle-' + patternId"
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
-          <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
-        </svg:linearGradient>
-      </svg:defs>
-    }
     <svg:circle
       [attr.cx]="size() / 2"
       [attr.cy]="size() / 2"
       [attr.r]="size() / 2 - 1"
-      [attr.fill]="computedFill()"
-      [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : fillStyle() === 'filled' ? 0.5 : 0"
-      [attr.stroke-linecap]="fillStyle() === 'outline' ? 'round' : null"
+      [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
+      [attr.stroke]="color()"
+      [attr.stroke-width]="1.5"
     />
-    @if (fillStyle() === 'filled') {
+    @if (innerMark() === 'dot') {
       <svg:circle
-        [attr.cx]="size() / 2 - 1"
-        [attr.cy]="size() / 2 - 1"
-        [attr.r]="size() / 4"
-        fill="white"
-        opacity="0.2"
+        [attr.cx]="size() / 2"
+        [attr.cy]="size() / 2"
+        [attr.r]="size() * 0.15"
+        [attr.fill]="markColor()"
+      />
+    }
+    @if (innerMark() === 'dash') {
+      <svg:line
+        [attr.x1]="size() * 0.28"
+        [attr.y1]="size() / 2"
+        [attr.x2]="size() * 0.72"
+        [attr.y2]="size() / 2"
+        [attr.stroke]="markColor()"
+        stroke-width="2.5"
+        stroke-linecap="round"
       />
     }
   `,
@@ -54,20 +37,8 @@ import { Component, input } from '@angular/core';
 export class CircleIconComponent {
   size = input<number>(16);
   color = input<string>('#000000');
-  fillStyle = input<'outline' | 'filled' | 'striped' | 'gradient'>('filled');
+  fillStyle = input<FillStyle>('filled');
+  innerMark = input<InnerMark>('none');
 
-  readonly patternId = Math.random().toString(36).substring(2, 8);
-
-  computedFill(): string {
-    switch (this.fillStyle()) {
-      case 'outline':
-        return 'none';
-      case 'filled':
-        return this.color();
-      case 'striped':
-        return `url(#stripe-circle-${this.patternId})`;
-      case 'gradient':
-        return `url(#grad-circle-${this.patternId})`;
-    }
-  }
+  markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
 }

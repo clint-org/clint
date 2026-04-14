@@ -1,87 +1,62 @@
 import { Component, computed, input } from '@angular/core';
+import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
 @Component({
   selector: 'g[app-diamond-icon]',
   standalone: true,
   template: `
-    @if (fillStyle() === 'striped') {
-      <svg:defs>
-        <svg:pattern
-          [attr.id]="'stripe-diamond-' + patternId"
-          patternUnits="userSpaceOnUse"
-          width="4"
-          height="4"
-          patternTransform="rotate(45)"
-        >
-          <svg:line x1="0" y1="0" x2="0" y2="4" [attr.stroke]="color()" stroke-width="1" />
-        </svg:pattern>
-      </svg:defs>
-    }
-    @if (fillStyle() === 'gradient') {
-      <svg:defs>
-        <svg:linearGradient
-          [attr.id]="'grad-diamond-' + patternId"
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <svg:stop offset="0%" [attr.stop-color]="color()" stop-opacity="1" />
-          <svg:stop offset="100%" [attr.stop-color]="color()" stop-opacity="0.3" />
-        </svg:linearGradient>
-      </svg:defs>
-    }
-    <svg:path
-      [attr.d]="diamondPath()"
-      [attr.fill]="computedFill()"
-      [attr.stroke]="fillStyle() === 'filled' ? 'white' : color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : fillStyle() === 'filled' ? 0.5 : 0"
+    <svg:polygon
+      [attr.points]="diamondPoints()"
+      [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
+      [attr.stroke]="color()"
+      [attr.stroke-width]="1.5"
       stroke-linejoin="round"
     />
-    @if (fillStyle() === 'filled') {
-      <svg:path [attr.d]="highlightPath()" fill="white" opacity="0.2" />
+    @if (innerMark() === 'dot') {
+      <svg:circle
+        [attr.cx]="size() / 2"
+        [attr.cy]="size() / 2"
+        [attr.r]="size() * 0.15"
+        [attr.fill]="markColor()"
+      />
+    }
+    @if (innerMark() === 'check') {
+      <svg:polyline
+        [attr.points]="checkPoints()"
+        fill="none"
+        [attr.stroke]="markColor()"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
     }
   `,
 })
 export class DiamondIconComponent {
   size = input<number>(16);
   color = input<string>('#000000');
-  fillStyle = input<'outline' | 'filled' | 'striped' | 'gradient'>('filled');
+  fillStyle = input<FillStyle>('filled');
+  innerMark = input<InnerMark>('none');
 
-  readonly patternId = Math.random().toString(36).substring(2, 8);
+  markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
 
-  diamondPath = computed(() => {
-    const s = this.size();
-    const cx = s / 2;
-    const cy = s / 2;
-    const hw = s * 0.42; // half-width (slightly narrower)
-    const hh = s * 0.48; // half-height (slightly taller)
-    return `M ${cx},${cy - hh} L ${cx + hw},${cy} L ${cx},${cy + hh} L ${cx - hw},${cy} Z`;
-  });
-
-  highlightPath = computed(() => {
+  diamondPoints = computed(() => {
     const s = this.size();
     const cx = s / 2;
     const cy = s / 2;
     const hw = s * 0.42;
     const hh = s * 0.48;
-    // Small highlight in upper-left quadrant
-    const scale = 0.4;
-    const ox = -1; // offset left
-    const oy = -1; // offset up
-    return `M ${cx + ox},${cy - hh * scale + oy} L ${cx + hw * scale + ox},${cy + oy} L ${cx + ox},${cy + hh * scale + oy} L ${cx - hw * scale + ox},${cy + oy} Z`;
+    return `${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`;
   });
 
-  computedFill(): string {
-    switch (this.fillStyle()) {
-      case 'outline':
-        return 'none';
-      case 'filled':
-        return this.color();
-      case 'striped':
-        return `url(#stripe-diamond-${this.patternId})`;
-      case 'gradient':
-        return `url(#grad-diamond-${this.patternId})`;
-    }
-  }
+  checkPoints = computed(() => {
+    const s = this.size();
+    const x1 = s * 0.32;
+    const y1 = s * 0.5;
+    const x2 = s * 0.45;
+    const y2 = s * 0.65;
+    const x3 = s * 0.68;
+    const y3 = s * 0.38;
+    return `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
+  });
 }
