@@ -354,3 +354,233 @@ begin
     (p_znh0092,   roa_intrathecal);
 end;
 $$;
+
+-- =============================================================================
+-- 7. helper: _seed_demo_trials
+-- =============================================================================
+
+create or replace function public._seed_demo_trials(p_space_id uuid, p_uid uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  p_zelvox    uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_zelvox');
+  p_restivon  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_restivon');
+  p_mrd4471   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_mrd4471');
+  p_cardivant uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_cardivant');
+  p_renoquil  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_renoquil');
+  p_hls2289   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_hls2289');
+  p_glytara   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_glytara');
+  p_oxavance  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_oxavance');
+  p_vbx7803   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_vbx7803');
+  p_thyravex  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_thyravex');
+  p_apx1150   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_apx1150');
+  p_venatris  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_venatris');
+  p_crd3300   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_crd3300');
+  p_ketavora  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_ketavora');
+  p_lumivex   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_lumivex');
+  p_slr8820   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_slr8820');
+  p_pravicel  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_pravicel');
+  p_csc6610   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_csc6610');
+  p_znh1140   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_znh1140');
+  p_znh0092   uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_znh0092');
+
+  ta_hf      uuid := (select id from _seed_ids where entity_type = 'ta' and key = 'ta_hf');
+  ta_ckd     uuid := (select id from _seed_ids where entity_type = 'ta' and key = 'ta_ckd');
+  ta_t2d     uuid := (select id from _seed_ids where entity_type = 'ta' and key = 'ta_t2d');
+  ta_obesity uuid := (select id from _seed_ids where entity_type = 'ta' and key = 'ta_obesity');
+
+  t_cardio_shield  uuid := gen_random_uuid();
+  t_renal_guard    uuid := gen_random_uuid();
+  t_fortify_hf     uuid := gen_random_uuid();
+  t_heart_preserve uuid := gen_random_uuid();
+  t_myocard_1      uuid := gen_random_uuid();
+  t_nephro_clear   uuid := gen_random_uuid();
+  t_glyco_advance  uuid := gen_random_uuid();
+  t_trim_1         uuid := gen_random_uuid();
+
+  t_mrd_preclin    uuid := gen_random_uuid();
+  t_hls_early      uuid := gen_random_uuid();
+  t_pulse_hf       uuid := gen_random_uuid();
+  t_vbx_scout      uuid := gen_random_uuid();
+  t_atlas_hf       uuid := gen_random_uuid();
+  t_apx_scout      uuid := gen_random_uuid();
+  t_valor_hf       uuid := gen_random_uuid();
+  t_crd_probe      uuid := gen_random_uuid();
+  t_minerva_hf     uuid := gen_random_uuid();
+  t_renal_nova     uuid := gen_random_uuid();
+  t_echo_hf        uuid := gen_random_uuid();
+  t_csc_preclin    uuid := gen_random_uuid();
+  t_slr_mid        uuid := gen_random_uuid();
+  t_znh_scout      uuid := gen_random_uuid();
+  t_znh_neuro      uuid := gen_random_uuid();
+  t_restivon_step  uuid := gen_random_uuid();
+  t_glytara_meta   uuid := gen_random_uuid();
+  t_lumivex_renal  uuid := gen_random_uuid();
+begin
+  -- Timeline trials (8, completed, historical)
+  insert into public.trials (id, space_id, created_by, product_id, therapeutic_area_id,
+    name, identifier, sample_size, status, display_order,
+    phase_type, phase_start_date, phase_end_date) values
+    (t_cardio_shield,  p_space_id, p_uid, p_zelvox,    ta_hf,      'CARDIO-SHIELD',   'NCT05001001', 4744, 'Completed', 1, 'LAUNCHED',  '2020-05-05', null),
+    (t_renal_guard,    p_space_id, p_uid, p_zelvox,    ta_ckd,     'RENAL-GUARD',     'NCT05001002', 4304, 'Completed', 2, 'P4',        '2021-06-01', '2024-12-31'),
+    (t_fortify_hf,     p_space_id, p_uid, p_zelvox,    ta_hf,      'FORTIFY-HF',      'NCT05001003', 6263, 'Completed', 3, 'P3',        '2018-08-01', '2022-05-31'),
+    (t_heart_preserve, p_space_id, p_uid, p_cardivant, ta_hf,      'HEART-PRESERVE',  'NCT05002001', 5988, 'Completed', 1, 'APPROVED',  '2022-02-24', null),
+    (t_myocard_1,      p_space_id, p_uid, p_cardivant, ta_hf,      'MYOCARD-1',       'NCT05002002', 3730, 'Completed', 2, 'P3',        '2017-03-01', '2020-06-30'),
+    (t_nephro_clear,   p_space_id, p_uid, p_renoquil,  ta_ckd,     'NEPHRO-CLEAR',    'NCT05003001', 6609, 'Completed', 1, 'P3',        '2019-05-01', '2022-11-30'),
+    (t_glyco_advance,  p_space_id, p_uid, p_glytara,   ta_t2d,     'GLYCO-ADVANCE',   'NCT05004001',  478, 'Completed', 1, 'P3',        '2019-06-01', '2021-05-31'),
+    (t_trim_1,         p_space_id, p_uid, p_restivon,  ta_obesity, 'TRIM-1',           'NCT05005001', 1961, 'Completed', 1, 'P3',        '2018-06-01', '2021-03-31');
+
+  -- Landscape trials (18)
+  insert into public.trials (id, space_id, created_by, product_id, therapeutic_area_id,
+    name, identifier, sample_size, status, display_order,
+    phase_type, phase_start_date, phase_end_date) values
+    (t_mrd_preclin,   p_space_id, p_uid, p_mrd4471,   ta_hf,      'MRD-PRECLIN',     null,           120,  'Active',     1, 'PRECLIN',  '2025-06-01', null),
+    (t_csc_preclin,   p_space_id, p_uid, p_csc6610,   ta_hf,      'CSC-PRECLIN',     null,            40,  'Active',     1, 'PRECLIN',  '2025-02-01', null),
+    (t_znh_neuro,     p_space_id, p_uid, p_znh0092,   ta_ckd,     'ZNH-RENAL-EARLY', null,            30,  'Active',     1, 'PRECLIN',  '2025-09-01', null),
+    (t_hls_early,     p_space_id, p_uid, p_hls2289,   ta_hf,      'HLS-EARLY-HF',    null,            80,  'Recruiting', 1, 'P1',       '2024-02-01', null),
+    (t_vbx_scout,     p_space_id, p_uid, p_vbx7803,   ta_hf,      'VBX-SCOUT',       null,           150,  'Recruiting', 1, 'P1',       '2024-01-01', null),
+    (t_znh_scout,     p_space_id, p_uid, p_znh1140,   ta_hf,      'ZNH-SCOUT-HF',    null,           180,  'Recruiting', 1, 'P1',       '2024-03-01', null),
+    (t_apx_scout,     p_space_id, p_uid, p_apx1150,   ta_hf,      'APX-PROBE-HF',    'NCT05006001',  300,  'Active',     1, 'P2',       '2023-10-01', null),
+    (t_crd_probe,     p_space_id, p_uid, p_crd3300,   ta_hf,      'CRD-PROBE-HF',    'NCT05007001',  600,  'Active',     1, 'P2',       '2023-06-01', null),
+    (t_slr_mid,       p_space_id, p_uid, p_slr8820,   ta_ckd,     'SLR-RENAL-MID',   'NCT05008001',  900,  'Active',     1, 'P2',       '2023-04-01', null),
+    (t_pulse_hf,      p_space_id, p_uid, p_oxavance,  ta_hf,      'PULSE-HF',        'NCT05009001', 4500,  'Active',     1, 'P3',       '2022-01-01', null),
+    (t_echo_hf,       p_space_id, p_uid, p_pravicel,  ta_hf,      'ECHO-HF',         'NCT05010001', 3200,  'Active',     1, 'P3',       '2021-06-01', null),
+    (t_lumivex_renal, p_space_id, p_uid, p_lumivex,   ta_ckd,     'RENAL-NOVA',      'NCT05011001', 4200,  'Active',     1, 'P3',       '2022-03-01', null),
+    (t_restivon_step, p_space_id, p_uid, p_restivon,  ta_obesity, 'RESTIVON-STEP',   'NCT05012001', 2800,  'Active',     2, 'P3',       '2023-01-01', null),
+    (t_glytara_meta,  p_space_id, p_uid, p_glytara,   ta_t2d,     'GLYTARA-META',    'NCT05013001', 1500,  'Active',     2, 'P2',       '2024-06-01', null),
+    (t_renal_nova,    p_space_id, p_uid, p_renoquil,  ta_hf,      'RENOQUIL-HF',     'NCT05014001', 2400,  'Active',     2, 'P3',       '2023-02-01', null),
+    (t_valor_hf,      p_space_id, p_uid, p_venatris,  ta_hf,      'VALOR-HF',        'NCT05015001', 5050,  'Completed',  1, 'APPROVED', '2021-01-19', null),
+    (t_minerva_hf,    p_space_id, p_uid, p_ketavora,  ta_hf,      'MINERVA-HF',      'NCT05016001', 6016,  'Completed',  1, 'APPROVED', '2021-07-09', null),
+    (t_atlas_hf,      p_space_id, p_uid, p_thyravex,  ta_hf,      'ATLAS-HF',        'NCT05017001',  441,  'Completed',  1, 'LAUNCHED', '2019-06-01', null);
+
+  -- CT.gov dimension enrichment (10 trials)
+  update public.trials set
+    recruitment_status = 'Completed', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_intervention_model = 'Parallel Assignment',
+    design_masking = 'Double', design_primary_purpose = 'Treatment',
+    conditions = array['Heart Failure with Reduced Ejection Fraction'],
+    intervention_type = 'Drug', intervention_name = 'cortagliflozin 10mg',
+    primary_outcome_measures = array['Time to first occurrence of CV death or HF hospitalization'],
+    secondary_outcome_measures = array['Change in KCCQ-TSS from baseline', 'All-cause mortality'],
+    eligibility_sex = 'All', eligibility_min_age = '18 Years', eligibility_max_age = '85 Years',
+    start_date = '2017-04-11', start_date_type = 'Actual',
+    primary_completion_date = '2019-09-30', primary_completion_date_type = 'Actual',
+    has_dmc = true, is_fda_regulated_drug = true, is_fda_regulated_device = false
+  where id = t_cardio_shield;
+
+  update public.trials set
+    recruitment_status = 'Completed', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Chronic Kidney Disease'],
+    intervention_type = 'Drug', intervention_name = 'cortagliflozin 10mg',
+    primary_outcome_measures = array['Composite of sustained eGFR decline, ESKD, or renal/CV death'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_renal_guard;
+
+  update public.trials set
+    recruitment_status = 'Active, not recruiting', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Heart Failure'],
+    intervention_type = 'Drug', intervention_name = 'trebariguat 5mg',
+    primary_outcome_measures = array['Composite of CV death or HF hospitalization'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_pulse_hf;
+
+  update public.trials set
+    recruitment_status = 'Recruiting', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Heart Failure with Preserved Ejection Fraction'],
+    intervention_type = 'Drug', intervention_name = 'cascamyosin 20mg',
+    primary_outcome_measures = array['Change in NT-proBNP from baseline at 12 months'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_echo_hf;
+
+  update public.trials set
+    recruitment_status = 'Active, not recruiting', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Chronic Kidney Disease'],
+    intervention_type = 'Drug', intervention_name = 'solagliflozin 400mg',
+    primary_outcome_measures = array['Composite of sustained eGFR decline, ESKD, or death'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_lumivex_renal;
+
+  update public.trials set
+    recruitment_status = 'Recruiting', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Triple',
+    conditions = array['Obesity'],
+    intervention_type = 'Drug', intervention_name = 'duralutide 2.4mg SC weekly',
+    primary_outcome_measures = array['Percent change in body weight from baseline at 68 weeks'],
+    secondary_outcome_measures = array['Proportion achieving >= 5% weight loss', 'Change in waist circumference'],
+    eligibility_sex = 'All', eligibility_min_age = '18 Years', eligibility_max_age = '75 Years',
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_restivon_step;
+
+  update public.trials set
+    recruitment_status = 'Completed', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Type 2 Diabetes Mellitus'],
+    intervention_type = 'Drug', intervention_name = 'vantizepatide 15mg SC weekly',
+    primary_outcome_measures = array['Change in HbA1c from baseline at 40 weeks'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_glyco_advance;
+
+  update public.trials set
+    recruitment_status = 'Completed', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Heart Failure with Preserved Ejection Fraction'],
+    intervention_type = 'Drug', intervention_name = 'emparivat 5mg',
+    primary_outcome_measures = array['Composite of CV death or HF hospitalization'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_heart_preserve;
+
+  update public.trials set
+    recruitment_status = 'Recruiting', study_type = 'Interventional', phase = 'Phase 1',
+    design_allocation = 'Non-Randomized', design_masking = 'None (Open Label)',
+    conditions = array['Heart Failure'],
+    intervention_type = 'Drug', intervention_name = 'HLS-2289 escalating doses IV',
+    primary_outcome_measures = array['Incidence of dose-limiting toxicities', 'Maximum tolerated dose'],
+    has_dmc = false, is_fda_regulated_drug = true
+  where id = t_hls_early;
+
+  update public.trials set
+    recruitment_status = 'Completed', study_type = 'Interventional', phase = 'Phase 3',
+    design_allocation = 'Randomized', design_masking = 'Double',
+    conditions = array['Chronic Kidney Disease', 'Type 2 Diabetes'],
+    intervention_type = 'Drug', intervention_name = 'benafinerone 20mg',
+    primary_outcome_measures = array['Time to kidney failure, sustained eGFR decline, or renal death'],
+    has_dmc = true, is_fda_regulated_drug = true
+  where id = t_nephro_clear;
+
+  -- Register trial IDs
+  insert into _seed_ids (entity_type, key, id) values
+    ('trial', 't_cardio_shield',  t_cardio_shield),
+    ('trial', 't_renal_guard',    t_renal_guard),
+    ('trial', 't_fortify_hf',     t_fortify_hf),
+    ('trial', 't_heart_preserve', t_heart_preserve),
+    ('trial', 't_myocard_1',      t_myocard_1),
+    ('trial', 't_nephro_clear',   t_nephro_clear),
+    ('trial', 't_glyco_advance',  t_glyco_advance),
+    ('trial', 't_trim_1',         t_trim_1),
+    ('trial', 't_mrd_preclin',    t_mrd_preclin),
+    ('trial', 't_hls_early',      t_hls_early),
+    ('trial', 't_pulse_hf',       t_pulse_hf),
+    ('trial', 't_vbx_scout',      t_vbx_scout),
+    ('trial', 't_atlas_hf',       t_atlas_hf),
+    ('trial', 't_apx_scout',      t_apx_scout),
+    ('trial', 't_valor_hf',       t_valor_hf),
+    ('trial', 't_crd_probe',      t_crd_probe),
+    ('trial', 't_minerva_hf',     t_minerva_hf),
+    ('trial', 't_renal_nova',     t_renal_nova),
+    ('trial', 't_echo_hf',        t_echo_hf),
+    ('trial', 't_csc_preclin',    t_csc_preclin),
+    ('trial', 't_slr_mid',        t_slr_mid),
+    ('trial', 't_znh_scout',      t_znh_scout),
+    ('trial', 't_znh_neuro',      t_znh_neuro),
+    ('trial', 't_restivon_step',  t_restivon_step),
+    ('trial', 't_glytara_meta',   t_glytara_meta),
+    ('trial', 't_lumivex_renal',  t_lumivex_renal);
+end;
+$$;
