@@ -641,10 +641,10 @@ begin
       'FDA approval for HFrEF', 'Zelvox US launch for HFrEF', 'CARDIO-SHIELD primary completion');
 
   -- RENAL-GUARD (P4) -- 3 markers
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RENAL-GUARD topline results announced',                'actual',  '2020-09-24', 'Met primary endpoint: 39% reduction in composite renal endpoint.'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for CKD',                               'actual',  '2021-02-15', null),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'RENAL-GUARD primary completion',                       'actual',  '2020-06-30', null);
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RENAL-GUARD topline results announced',                'actual',  '2020-09-24', 'Met primary endpoint: 39% reduction in composite renal endpoint.', 'https://example.com/renal-guard-topline'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for CKD',                               'actual',  '2021-02-15', null, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'RENAL-GUARD primary completion',                       'actual',  '2020-06-30', null, null);
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_renal_guard from public.markers where space_id = p_space_id and title in (
       'RENAL-GUARD topline results announced', 'sNDA submitted for CKD', 'RENAL-GUARD primary completion');
@@ -712,16 +712,16 @@ begin
     select id, t_atlas_hf from public.markers where space_id = p_space_id and title in ('ATLAS-HF topline data reported', 'Thyravex US launch');
 
   -- VALOR-HF (APPROVED)
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'VALOR-HF data reported',          'actual', '2019-11-10', 'Modest but significant benefit in worsening HF events.'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Venatris NDA submitted',          'actual', '2020-08-15', null);
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'VALOR-HF data reported',          'actual', '2019-11-10', 'Modest but significant benefit in worsening HF events.', 'https://example.com/valor-hf-nejm'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Venatris NDA submitted',          'actual', '2020-08-15', null, 'https://example.com/venatris-nda-filing');
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_valor_hf from public.markers where space_id = p_space_id and title in ('VALOR-HF data reported', 'Venatris NDA submitted');
 
   -- MINERVA-HF (APPROVED)
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MINERVA-HF topline data',         'actual', '2024-05-13'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Ketavora sNDA submitted for HFmrEF/HFpEF', 'actual', '2024-09-20');
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MINERVA-HF topline data',         'actual', '2024-05-13', 'https://example.com/minerva-hf-data'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Ketavora sNDA submitted for HFmrEF/HFpEF', 'actual', '2024-09-20', 'https://example.com/ketavora-snda');
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_minerva_hf from public.markers where space_id = p_space_id and title in ('MINERVA-HF topline data', 'Ketavora sNDA submitted for HFmrEF/HFpEF');
 
@@ -755,16 +755,16 @@ begin
   -- PULSE-HF
   insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
     (m_pulse_topline, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'PULSE-HF topline data readout',       'company', '2026-06-15', 'Primary endpoint readout expected at ESC 2026.', 'https://example.com/pulse-hf-timeline'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Oxavance HF sNDA filing projected', 'company', '2026-12-01', 'Contingent on positive PULSE-HF results.', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Oxavance HF sNDA filing projected', 'company', '2026-12-01', 'Contingent on positive PULSE-HF results.', 'https://example.com/oxavance-regulatory-plan'),
     (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'PULSE-HF primary completion projected', 'company', '2026-08-01', null, null);
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_pulse_hf from public.markers where space_id = p_space_id and title in (
       'PULSE-HF topline data readout', 'Oxavance HF sNDA filing projected', 'PULSE-HF primary completion projected');
 
   -- ECHO-HF
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
-    (m_echo_interim, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000030', 'ECHO-HF interim analysis at AHA 2026', 'company', '2026-05-10', 'Pre-specified interim look by independent DSMB.'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ECHO-HF topline results projected', 'company', '2026-11-01', null);
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (m_echo_interim, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000030', 'ECHO-HF interim analysis at AHA 2026', 'company', '2026-05-10', 'Pre-specified interim look by independent DSMB.', 'https://example.com/echo-hf-dsmb-plan'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ECHO-HF topline results projected', 'company', '2026-11-01', null, null);
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_echo_hf from public.markers where space_id = p_space_id and title in (
       'ECHO-HF interim analysis at AHA 2026', 'ECHO-HF topline results projected');
@@ -783,20 +783,21 @@ begin
     select id, t_renal_nova from public.markers where space_id = p_space_id and title in (
       'RENOQUIL-HF topline results', 'Renoquil HF regulatory filing projected');
 
-  -- RESTIVON-STEP
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RESTIVON-STEP topline data projected', 'company', '2026-08-01', '68-week primary endpoint readout.');
+  -- RESTIVON-STEP (includes range marker with end_date for readout window)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, end_date, description, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RESTIVON-STEP topline data projected', 'company', '2026-08-01', '2026-10-31', '68-week primary endpoint readout. Window reflects potential delay due to enrollment pace.', 'https://example.com/restivon-step-timeline');
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_restivon_step from public.markers where space_id = p_space_id and title = 'RESTIVON-STEP topline data projected';
 
-  -- CRD-PROBE-HF regulatory pathway
-  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'CRD-PROBE NDA submission projected',  'company', '2026-05-20'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000034', 'CRD-PROBE FDA acceptance projected',  'company', '2026-08-01'),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'CRD-PROBE PDUFA date projected',      'company', '2027-03-01');
+  -- CRD-PROBE-HF regulatory pathway (includes range marker with end_date)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, end_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'CRD-PROBE NDA submission projected',  'company', '2026-05-20', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000034', 'CRD-PROBE FDA acceptance projected',  'company', '2026-08-01', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'CRD-PROBE PDUFA date projected',      'company', '2027-03-01', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'CRD-PROBE estimated launch window',   'company', '2027-06-01', '2027-12-31');
   insert into public.marker_assignments (marker_id, trial_id)
     select id, t_crd_probe from public.markers where space_id = p_space_id and title in (
-      'CRD-PROBE NDA submission projected', 'CRD-PROBE FDA acceptance projected', 'CRD-PROBE PDUFA date projected');
+      'CRD-PROBE NDA submission projected', 'CRD-PROBE FDA acceptance projected', 'CRD-PROBE PDUFA date projected', 'CRD-PROBE estimated launch window');
 
   -- SLR-RENAL-MID
   insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
