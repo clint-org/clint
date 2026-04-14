@@ -228,7 +228,7 @@ begin
   -- ==========================================================================
   -- Product ↔ MOA mappings
   -- ==========================================================================
-  insert into public.product_mechanisms_of_action (product_id, mechanism_of_action_id) values
+  insert into public.product_mechanisms_of_action (product_id, moa_id) values
     (p_farxiga,        moa_sglt2),
     (p_jardiance,      moa_sglt2),
     (p_mounjaro,       moa_glp1_gip),
@@ -244,7 +244,7 @@ begin
   -- ==========================================================================
   -- Product ↔ ROA mappings
   -- ==========================================================================
-  insert into public.product_routes_of_administration (product_id, route_of_administration_id) values
+  insert into public.product_routes_of_administration (product_id, roa_id) values
     (p_farxiga,        roa_oral),
     (p_jardiance,      roa_oral),
     (p_mounjaro,       roa_sc),
