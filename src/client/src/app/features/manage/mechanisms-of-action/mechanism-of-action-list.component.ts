@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -12,6 +12,7 @@ import { MechanismOfActionFormComponent } from './mechanism-of-action-form.compo
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-mechanism-of-action-list',
@@ -27,7 +28,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   ],
   templateUrl: './mechanism-of-action-list.component.html',
 })
-export class MechanismOfActionListComponent implements OnInit {
+export class MechanismOfActionListComponent implements OnInit, OnDestroy {
   items = signal<MechanismOfAction[]>([]);
   loading = signal(false);
   modalOpen = signal(false);
@@ -37,14 +38,26 @@ export class MechanismOfActionListComponent implements OnInit {
   private moaService = inject(MechanismOfActionService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.items().length || ''));
+  });
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+    this.topbarState.actions.set([
+      { label: 'Add mechanism', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadItems();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(item: MechanismOfAction): MenuItem[] {

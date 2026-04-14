@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -21,6 +21,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-trial-detail',
@@ -40,17 +41,31 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   ],
   templateUrl: './trial-detail.component.html',
 })
-export class TrialDetailComponent implements OnInit {
+export class TrialDetailComponent implements OnInit, OnDestroy {
   private location = inject(Location);
   private route = inject(ActivatedRoute);
   private trialService = inject(TrialService);
   private markerService = inject(MarkerService);
   private noteService = inject(TrialNoteService);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   // Stable menu-item references per row id, keyed with a prefix so markers
   // and notes don't collide (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
+
+  private readonly trialEffect = effect(() => {
+    const t = this.trial();
+    this.topbarState.entityTitle.set(t?.name ?? '');
+    this.topbarState.entityContext.set(t?.identifier ?? '');
+  });
+
+  constructor() {
+    this.topbarState.actions.set([
+      { label: 'Back', icon: 'fa-solid fa-arrow-left', text: true, callback: () => this.goBack() },
+      { label: 'Edit trial', icon: 'fa-solid fa-pen', callback: () => this.editingTrial.set(true) },
+    ]);
+  }
 
   trial = signal<Trial | null>(null);
   trialId = signal('');
@@ -190,6 +205,10 @@ export class TrialDetailComponent implements OnInit {
           : 'Could not delete note. Check your connection and try again.'
       );
     }
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   goBack(): void {

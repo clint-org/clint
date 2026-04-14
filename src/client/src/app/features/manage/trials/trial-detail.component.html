@@ -15,31 +15,7 @@
   </div>
 } @else {
   @if (trial(); as t) {
-    <app-manage-page-shell
-      eyebrow="Trial"
-      [title]="t.name"
-      [subtitle]="t.identifier ?? ''"
-      [narrow]="true"
-    >
-      <div actions>
-        <p-button
-          label="Back"
-          icon="fa-solid fa-arrow-left"
-          severity="secondary"
-          [text]="true"
-          size="small"
-          (onClick)="goBack()"
-        />
-        <p-button
-          label="Edit trial"
-          icon="fa-solid fa-pen"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          (onClick)="editingTrial.set(true)"
-        />
-      </div>
-
+    <app-manage-page-shell [narrow]="true">
       <!-- Trial Form (edit mode) - renders its own section cards -->
       @if (editingTrial()) {
         <app-trial-form

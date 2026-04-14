@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -12,6 +12,7 @@ import { RouteOfAdministrationFormComponent } from './route-of-administration-fo
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-route-of-administration-list',
@@ -27,7 +28,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   ],
   templateUrl: './route-of-administration-list.component.html',
 })
-export class RouteOfAdministrationListComponent implements OnInit {
+export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   items = signal<RouteOfAdministration[]>([]);
   loading = signal(false);
   modalOpen = signal(false);
@@ -37,11 +38,23 @@ export class RouteOfAdministrationListComponent implements OnInit {
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.items().length || ''));
+  });
+
   async ngOnInit(): Promise<void> {
+    this.topbarState.actions.set([
+      { label: 'Add route', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadItems();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(item: RouteOfAdministration): MenuItem[] {

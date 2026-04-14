@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -14,6 +14,7 @@ import { RowActionsComponent } from '../../../shared/components/row-actions.comp
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-company-list',
@@ -30,7 +31,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   ],
   templateUrl: './company-list.component.html',
 })
-export class CompanyListComponent implements OnInit {
+export class CompanyListComponent implements OnInit, OnDestroy {
   companies = signal<Company[]>([]);
   loading = signal(false);
   modalOpen = signal(false);
@@ -41,6 +42,7 @@ export class CompanyListComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
   tenantId = '';
 
@@ -59,6 +61,10 @@ export class CompanyListComponent implements OnInit {
 
   readonly visibleCompanies = this.grid.filteredRows(this.companies);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   // Menu items are memoized per row-id so p-menu gets a stable reference on
   // every change-detection cycle. Without this, PrimeNG's popup menu swallows
   // the first click because the MenuItem[] is a new array every render.
@@ -67,7 +73,14 @@ export class CompanyListComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    this.topbarState.actions.set([
+      { label: 'Add company', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadCompanies();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   openProducts(companyId: string): void {

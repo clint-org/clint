@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Routes of administration"
-  [count]="items().length"
-  subtitle="Administration routes used to classify drug programs and filter the landscape."
->
-  <div actions>
-    <p-button
-      label="Add route"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <p-table
     styleClass="data-table"
     [value]="items()"

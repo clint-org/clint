@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -17,6 +17,7 @@ import { RowActionsComponent } from '../../../shared/components/row-actions.comp
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 interface ProductRow {
   readonly product: Product;
@@ -39,7 +40,7 @@ interface ProductRow {
   ],
   templateUrl: './product-list.component.html',
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, OnDestroy {
   products = signal<Product[]>([]);
   companies = signal<Company[]>([]);
   trialCounts = signal<Record<string, number>>({});
@@ -54,6 +55,7 @@ export class ProductListComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
   tenantId = '';
@@ -91,10 +93,21 @@ export class ProductListComponent implements OnInit {
 
   readonly visibleRows = this.grid.filteredRows(this.rows);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    this.topbarState.actions.set([
+      { label: 'Add product', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(row: ProductRow): MenuItem[] {

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem } from 'primeng/api';
@@ -20,6 +20,7 @@ import { RouteOfAdministrationFormComponent } from '../routes-of-administration/
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
 
@@ -40,23 +41,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
     RowActionsComponent,
   ],
   template: `
-    <app-manage-page-shell
-      eyebrow="Manage"
-      [title]="pageTitle()"
-      [count]="activeCount()"
-      [subtitle]="pageSubtitle()"
-    >
-      <div actions>
-        <p-button
-          [label]="addButtonLabel()"
-          icon="fa-solid fa-plus"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          (onClick)="openCreateModal()"
-        />
-      </div>
-
+    <app-manage-page-shell>
       <div class="mb-4">
         <p-selectbutton
           [options]="tabOptions"
@@ -228,7 +213,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
     </p-dialog>
   `,
 })
-export class TaxonomiesPageComponent implements OnInit {
+export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   // Tab state
   readonly tabOptions: { label: string; value: TabValue }[] = [
     { label: 'Therapeutic Areas', value: 'therapeutic-areas' },
@@ -269,8 +254,20 @@ export class TaxonomiesPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   private spaceId = '';
+
+  private readonly actionEffect = effect(() => {
+    this.topbarState.actions.set([
+      {
+        label: this.addButtonLabel(),
+        icon: 'fa-solid fa-plus',
+        callback: () => this.openCreateModal(),
+      },
+    ]);
+    this.topbarState.recordCount.set(String(this.activeCount() || ''));
+  });
 
   constructor() {
     const tabParam = this.route.snapshot.queryParamMap.get('tab') as TabValue | null;
@@ -285,37 +282,53 @@ export class TaxonomiesPageComponent implements OnInit {
     await this.loadActiveTab();
   }
 
+  ngOnDestroy(): void {
+    this.topbarState.clear();
+  }
+
   // --- Computed display helpers ---
 
   pageTitle(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas': return 'Therapeutic areas';
-      case 'moa': return 'Mechanisms of action';
-      case 'roa': return 'Routes of administration';
+      case 'therapeutic-areas':
+        return 'Therapeutic areas';
+      case 'moa':
+        return 'Mechanisms of action';
+      case 'roa':
+        return 'Routes of administration';
     }
   }
 
   pageSubtitle(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas': return 'Disease areas used to tag trials and products.';
-      case 'moa': return 'Ways a drug produces its therapeutic effect; used to classify programs and filter the landscape.';
-      case 'roa': return 'Administration routes used to classify drug programs and filter the landscape.';
+      case 'therapeutic-areas':
+        return 'Disease areas used to tag trials and products.';
+      case 'moa':
+        return 'Ways a drug produces its therapeutic effect; used to classify programs and filter the landscape.';
+      case 'roa':
+        return 'Administration routes used to classify drug programs and filter the landscape.';
     }
   }
 
   addButtonLabel(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas': return 'Add therapeutic area';
-      case 'moa': return 'Add mechanism';
-      case 'roa': return 'Add route';
+      case 'therapeutic-areas':
+        return 'Add therapeutic area';
+      case 'moa':
+        return 'Add mechanism';
+      case 'roa':
+        return 'Add route';
     }
   }
 
   activeCount(): number {
     switch (this.activeTab()) {
-      case 'therapeutic-areas': return this.areas().length;
-      case 'moa': return this.moas().length;
-      case 'roa': return this.roas().length;
+      case 'therapeutic-areas':
+        return this.areas().length;
+      case 'moa':
+        return this.moas().length;
+      case 'roa':
+        return this.roas().length;
     }
   }
 
@@ -524,9 +537,15 @@ export class TaxonomiesPageComponent implements OnInit {
 
   private async loadActiveTab(): Promise<void> {
     switch (this.activeTab()) {
-      case 'therapeutic-areas': await this.loadAreas(); break;
-      case 'moa': await this.loadMoas(); break;
-      case 'roa': await this.loadRoas(); break;
+      case 'therapeutic-areas':
+        await this.loadAreas();
+        break;
+      case 'moa':
+        await this.loadMoas();
+        break;
+      case 'roa':
+        await this.loadRoas();
+        break;
     }
   }
 
