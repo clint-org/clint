@@ -17,10 +17,10 @@ src/client/
         guards/
           auth.guard.ts         # authGuard + onboardingRedirectGuard
         layout/
-          app-shell.component.ts        # Layout wrapper: icon rail + sidebar + topbar + router-outlet
-          icon-rail.component.ts        # 48px dark icon rail with section icons
-          sidebar.component.ts          # 220px expandable sidebar (hover-to-peek, click-to-pin)
+          app-shell.component.ts        # Layout wrapper: sidebar + topbar + router-outlet
+          sidebar.component.ts          # Unified nav: 48px collapsed (icons) / 220px expanded (hover/pin)
           contextual-topbar.component.ts # Topbar that adapts per page type (tabs, title, back nav)
+          icon-rail.component.ts        # (Unused) standalone icon rail -- absorbed into sidebar
           header.component.ts           # (Legacy) flat horizontal nav -- replaced by app-shell
           notification-bell.component.ts # Bell icon with unread count badge
           notification-panel.component.ts # Notification dropdown panel
