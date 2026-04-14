@@ -68,6 +68,15 @@
   background: rgb(240 253 250 / 0.55); /* teal-50 @ 55% */
 }
 
+/* Selected row: teal left border + subtle teal wash. */
+.manage-table .p-datatable-tbody > tr.selected-row > td {
+  background: rgb(240 253 250 / 0.6); /* teal-50 @ 60% */
+}
+.manage-table .p-datatable-tbody > tr.selected-row > td:first-child {
+  border-left: 2px solid rgb(20 184 166); /* teal-500 */
+  padding-left: calc(0.75rem - 2px); /* compensate for the border so content stays aligned */
+}
+
 /* Empty state row — muted, not a callout. */
 .manage-table .p-datatable-emptymessage td {
   text-align: center;
@@ -99,6 +108,28 @@
 /* Subdued secondary-text column (descriptors). */
 .manage-table .col-secondary {
   color: rgb(100 116 139); /* slate-500 */
+}
+
+/* Date column: narrow tabular mono width. */
+.manage-table th.col-date,
+.manage-table td.col-date {
+  width: 7.5rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Source type badge column: narrow. */
+.manage-table th.col-source,
+.manage-table td.col-source {
+  width: 5.5rem;
+  white-space: nowrap;
+}
+
+/* Priority indicator column: narrow, centered. */
+.manage-table th.col-priority,
+.manage-table td.col-priority {
+  width: 4rem;
+  text-align: center;
 }
 
 /* Actions column: narrow, right-aligned. */

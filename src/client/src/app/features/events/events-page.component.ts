@@ -1,23 +1,26 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { TableModule } from 'primeng/table';
 
 import {
   EventCategory,
   EventDetail,
-  EventsPageFilters,
   FeedItem,
 } from '../../core/models/event.model';
 import { MarkerCategory } from '../../core/models/marker.model';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
-import { EventFilterBarComponent } from './event-filter-bar.component';
-import { EventFeedItemComponent } from './event-feed-item.component';
+import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
+import { createGridState } from '../../shared/grids';
+import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 
@@ -25,12 +28,15 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
   selector: 'app-events-page',
   standalone: true,
   imports: [
+    DatePipe,
     ButtonModule,
     Dialog,
     MessageModule,
     ProgressSpinner,
-    EventFilterBarComponent,
-    EventFeedItemComponent,
+    TableModule,
+    ManagePageShellComponent,
+    GridToolbarComponent,
+    EventDetailPanelComponent,
     EventFormComponent,
   ],
   templateUrl: './events-page.component.html',
@@ -48,75 +54,134 @@ export class EventsPageComponent implements OnInit {
   feedItems = signal<FeedItem[]>([]);
   eventCategories = signal<EventCategory[]>([]);
   markerCategories = signal<MarkerCategory[]>([]);
-  spaceTags = signal<string[]>([]);
-  selectedDetail = signal<EventDetail | null>(null);
 
   // UI state
   loading = signal(false);
   error = signal<string | null>(null);
   modalOpen = signal(false);
   editingEventId = signal<string | null>(null);
-  hasMore = signal(true);
 
-  // Filters
-  filters = signal<EventsPageFilters>({
-    dateFrom: null,
-    dateTo: null,
-    entityLevel: null,
-    entityId: null,
-    categoryIds: [],
-    tags: [],
-    priority: null,
-    sourceType: null,
-  });
+  // Detail panel
+  selectedItem = signal<FeedItem | null>(null);
+  selectedDetail = signal<EventDetail | null>(null);
+  detailLoading = signal(false);
 
-  readonly allCategories = computed(() => {
+  // All categories combined for the category filter
+  readonly allCategoryOptions = computed(() => {
     const eCats = this.eventCategories().map((c) => ({
-      id: c.id,
-      name: c.name,
-      group: 'Events',
+      label: c.name,
+      value: c.id,
     }));
     const mCats = this.markerCategories().map((c) => ({
-      id: c.id,
-      name: c.name,
-      group: 'Markers',
+      label: c.name,
+      value: c.id,
     }));
     return [...eCats, ...mCats];
   });
 
   private readonly PAGE_SIZE = 50;
 
+  // Grid state -- must be initialized in field initializer (injection context)
+  readonly grid = createGridState<FeedItem>({
+    columns: [
+      {
+        field: 'event_date',
+        header: 'Date',
+        filter: { kind: 'date' },
+      },
+      {
+        field: 'source_type',
+        header: 'Source',
+        filter: {
+          kind: 'select',
+          options: () => [
+            { label: 'Event', value: 'event' },
+            { label: 'Marker', value: 'marker' },
+          ],
+        },
+      },
+      {
+        field: 'title',
+        header: 'Title',
+        filter: { kind: 'text' },
+      },
+      {
+        field: 'category_name',
+        header: 'Category',
+        filter: { kind: 'text' },
+      },
+      {
+        field: 'entity_display',
+        header: 'Entity',
+        filter: { kind: 'text' },
+        getValue: (row) => this.getEntityDisplay(row),
+      },
+      {
+        field: 'priority',
+        header: 'Priority',
+        filter: {
+          kind: 'select',
+          options: () => [
+            { label: 'High', value: 'high' },
+            { label: 'Low', value: 'low' },
+          ],
+        },
+      },
+    ],
+    globalSearchFields: ['title', 'category_name', 'entity_name', 'company_name'],
+    defaultSort: { field: 'event_date', order: -1 },
+    defaultPageSize: 25,
+  });
+
+  readonly visibleRows = this.grid.filteredRows(this.feedItems);
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
     await this.loadInitialData();
   }
 
-  async onFiltersChanged(newFilters: EventsPageFilters): Promise<void> {
-    this.filters.set(newFilters);
-    await this.loadFeed();
+  /** Compute entity display string for a feed item. */
+  getEntityDisplay(item: FeedItem): string {
+    if (item.entity_level === 'space') return 'Industry';
+    if (item.entity_level === 'company' && item.company_name) return item.company_name;
+    if (item.company_name && item.entity_name) return `${item.company_name} / ${item.entity_name}`;
+    if (item.entity_name) return item.entity_name;
+    return '--';
   }
 
-  async loadMore(): Promise<void> {
-    const currentItems = this.feedItems();
-    this.loading.set(true);
-    try {
-      const moreItems = await this.eventService.getEventsPageData(
-        this.spaceId,
-        this.filters(),
-        this.PAGE_SIZE,
-        currentItems.length,
-      );
-      if (moreItems.length < this.PAGE_SIZE) {
-        this.hasMore.set(false);
-      }
-      this.feedItems.set([...currentItems, ...moreItems]);
-    } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to load more events.',
-      );
-    } finally {
-      this.loading.set(false);
+  async onRowClick(item: FeedItem): Promise<void> {
+    // Toggle: clicking the same row closes the panel
+    if (this.selectedItem()?.id === item.id) {
+      this.selectedItem.set(null);
+      this.selectedDetail.set(null);
+      return;
     }
+
+    this.selectedItem.set(item);
+    this.selectedDetail.set(null);
+
+    if (item.source_type === 'event') {
+      this.detailLoading.set(true);
+      try {
+        const detail = await this.eventService.getEventDetail(item.id);
+        // Only apply if the same item is still selected
+        if (this.selectedItem()?.id === item.id) {
+          this.selectedDetail.set(detail);
+        }
+      } catch (err) {
+        this.error.set(
+          err instanceof Error ? err.message : 'Could not load event detail.',
+        );
+      } finally {
+        this.detailLoading.set(false);
+      }
+    }
+    // Markers: no detail fetch needed -- panel uses the FeedItem directly
+  }
+
+  closePanel(): void {
+    this.selectedItem.set(null);
+    this.selectedDetail.set(null);
   }
 
   openCreateModal(): void {
@@ -137,8 +202,6 @@ export class EventsPageComponent implements OnInit {
   async onSaved(): Promise<void> {
     this.closeModal();
     await this.loadFeed();
-    // Refresh tags in case new ones were added
-    this.spaceTags.set(await this.eventService.getSpaceTags(this.spaceId));
   }
 
   async onDeleteEvent(eventId: string): Promise<void> {
@@ -150,6 +213,10 @@ export class EventsPageComponent implements OnInit {
     this.error.set(null);
     try {
       await this.eventService.delete(eventId);
+      // Close detail panel if the deleted event was selected
+      if (this.selectedItem()?.id === eventId) {
+        this.closePanel();
+      }
       await this.loadFeed();
     } catch (err) {
       this.error.set(
@@ -158,42 +225,20 @@ export class EventsPageComponent implements OnInit {
     }
   }
 
-  async onSelectItem(item: FeedItem): Promise<void> {
-    if (item.source_type !== 'event') {
-      // Markers don't have expandable detail in events page
-      return;
-    }
-    // Toggle: if already selected, deselect
-    if (this.selectedDetail()?.id === item.id) {
-      this.selectedDetail.set(null);
-      return;
-    }
-    try {
-      const detail = await this.eventService.getEventDetail(item.id);
-      this.selectedDetail.set(detail);
-    } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Could not load event detail.',
-      );
-    }
-  }
-
   private async loadInitialData(): Promise<void> {
     this.loading.set(true);
     try {
-      const [feed, eCats, mCats, tags] = await Promise.all([
-        this.eventService.getEventsPageData(this.spaceId, this.filters(), this.PAGE_SIZE, 0),
+      const [feed, eCats, mCats] = await Promise.all([
+        this.eventService.getEventsPageData(this.spaceId, {
+          dateFrom: null, dateTo: null, entityLevel: null, entityId: null,
+          categoryIds: [], tags: [], priority: null, sourceType: null,
+        }, this.PAGE_SIZE, 0),
         this.eventCategoryService.list(this.spaceId),
         this.markerCategoryService.list(this.spaceId),
-        this.eventService.getSpaceTags(this.spaceId),
       ]);
       this.feedItems.set(feed);
       this.eventCategories.set(eCats);
       this.markerCategories.set(mCats);
-      this.spaceTags.set(tags);
-      if (feed.length < this.PAGE_SIZE) {
-        this.hasMore.set(false);
-      }
     } catch (err) {
       this.error.set(
         err instanceof Error ? err.message : 'Failed to load events.',
@@ -205,18 +250,17 @@ export class EventsPageComponent implements OnInit {
 
   private async loadFeed(): Promise<void> {
     this.loading.set(true);
-    this.hasMore.set(true);
     try {
       const feed = await this.eventService.getEventsPageData(
         this.spaceId,
-        this.filters(),
+        {
+          dateFrom: null, dateTo: null, entityLevel: null, entityId: null,
+          categoryIds: [], tags: [], priority: null, sourceType: null,
+        },
         this.PAGE_SIZE,
         0,
       );
       this.feedItems.set(feed);
-      if (feed.length < this.PAGE_SIZE) {
-        this.hasMore.set(false);
-      }
     } catch (err) {
       this.error.set(
         err instanceof Error ? err.message : 'Failed to load events.',

@@ -1,9 +1,9 @@
-<div class="mx-auto max-w-5xl px-6 py-8">
-  <div class="mb-6 flex items-center justify-between">
-    <div>
-      <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Intelligence</p>
-      <h1 class="text-xl font-semibold text-slate-900">Events</h1>
-    </div>
+<app-manage-page-shell
+  eyebrow="Intelligence"
+  title="Events"
+  [count]="grid.totalRecords()"
+>
+  <div actions>
     <p-button
       label="New Event"
       icon="fa-solid fa-plus"
@@ -18,48 +18,160 @@
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
 
-  <app-event-filter-bar
-    [filters]="filters()"
-    [categories]="allCategories()"
-    [tags]="spaceTags()"
-    (filtersChange)="onFiltersChanged($event)"
-  />
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search events..." />
 
-  @if (loading() && feedItems().length === 0) {
-    <div class="flex justify-center py-16">
-      <p-progressSpinner strokeWidth="3" />
-    </div>
-  } @else if (feedItems().length === 0) {
-    <div class="py-16 text-center text-sm text-slate-400">
-      No events yet. Events capture competitive intelligence -- leadership changes, strategic moves, regulatory shifts -- at any level of your landscape.
-    </div>
-  } @else {
-    <div class="mt-4 space-y-2">
-      @for (item of feedItems(); track item.id) {
-        <app-event-feed-item
-          [item]="item"
-          [detail]="selectedDetail()?.id === item.id ? selectedDetail() : null"
-          (itemSelect)="onSelectItem(item)"
-          (edit)="openEditModal(item.id)"
-          (deleteItem)="onDeleteEvent(item.id)"
-        />
-      }
+  <div class="flex gap-0" [class.divide-x]="selectedItem()">
+    <!-- Table area -->
+    <div class="min-w-0 flex-1 overflow-x-auto">
+      <p-table
+        styleClass="manage-table"
+        [value]="visibleRows()"
+        [loading]="loading()"
+        [lazy]="true"
+        (onLazyLoad)="grid.onLazyLoad($any($event))"
+        [paginator]="true"
+        [rows]="grid.page().rows"
+        [first]="grid.page().first"
+        [totalRecords]="grid.totalRecords()"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [filters]="grid.primengFilters()"
+        selectionMode="single"
+        [selection]="selectedItem()"
+        dataKey="id"
+      >
+        <ng-template #header>
+          <tr>
+            <th pSortableColumn="event_date" class="col-date">
+              Date <p-sortIcon field="event_date" />
+              <p-columnFilter type="date" field="event_date" display="menu" />
+            </th>
+            <th pSortableColumn="source_type" class="col-source">
+              Source <p-sortIcon field="source_type" />
+              <p-columnFilter field="source_type" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <select
+                    class="w-full border border-slate-300 px-2 py-1 text-sm"
+                    [value]="value ?? ''"
+                    (change)="filter($any($event.target).value || null)"
+                  >
+                    <option value="">All</option>
+                    <option value="event">Event</option>
+                    <option value="marker">Marker</option>
+                  </select>
+                </ng-template>
+              </p-columnFilter>
+            </th>
+            <th pSortableColumn="title">
+              Title <p-sortIcon field="title" />
+              <p-columnFilter type="text" field="title" display="menu" />
+            </th>
+            <th pSortableColumn="category_name" class="col-secondary">
+              Category <p-sortIcon field="category_name" />
+              <p-columnFilter type="text" field="category_name" display="menu" />
+            </th>
+            <th pSortableColumn="entity_display" class="col-secondary">
+              Entity <p-sortIcon field="entity_display" />
+              <p-columnFilter type="text" field="entity_display" display="menu" />
+            </th>
+            <th pSortableColumn="priority" class="col-priority">
+              Priority <p-sortIcon field="priority" />
+              <p-columnFilter field="priority" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <select
+                    class="w-full border border-slate-300 px-2 py-1 text-sm"
+                    [value]="value ?? ''"
+                    (change)="filter($any($event.target).value || null)"
+                  >
+                    <option value="">All</option>
+                    <option value="high">High</option>
+                    <option value="low">Low</option>
+                  </select>
+                </ng-template>
+              </p-columnFilter>
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-item>
+          <tr
+            class="cursor-pointer transition-colors hover:bg-slate-50"
+            [class.selected-row]="selectedItem()?.id === item.id"
+            (click)="onRowClick(item)"
+            (keydown.enter)="onRowClick(item)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'View details for ' + item.title"
+            [attr.aria-pressed]="selectedItem()?.id === item.id"
+          >
+            <td class="col-date text-xs tabular-nums text-slate-500">
+              {{ item.event_date | date:'MMM d, y' }}
+            </td>
+            <td class="col-source">
+              <span
+                class="inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                [class.bg-teal-50]="item.source_type === 'event'"
+                [class.text-teal-700]="item.source_type === 'event'"
+                [class.bg-slate-100]="item.source_type === 'marker'"
+                [class.text-slate-500]="item.source_type === 'marker'"
+              >
+                {{ item.source_type }}
+              </span>
+            </td>
+            <td class="max-w-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="truncate text-sm font-medium text-slate-900">{{ item.title }}</span>
+                @if (item.has_thread) {
+                  <i class="fa-solid fa-link shrink-0 text-[9px] text-slate-300" title="Part of a thread"></i>
+                }
+              </div>
+            </td>
+            <td class="col-secondary text-xs text-slate-500">{{ item.category_name }}</td>
+            <td class="col-secondary text-xs text-slate-500">{{ getEntityDisplay(item) }}</td>
+            <td class="col-priority text-center">
+              @if (item.priority === 'high') {
+                <span
+                  class="inline-block h-2 w-2 rounded-full bg-red-500"
+                  title="High priority"
+                  aria-label="High priority"
+                ></span>
+              }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              @if (grid.isFiltered()) {
+                No events match your filters.
+              } @else {
+                No events yet. Events capture competitive intelligence -- leadership changes, strategic moves, regulatory shifts -- at any level of your landscape.
+              }
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
 
-    @if (hasMore()) {
-      <div class="mt-4 flex justify-center">
-        <p-button
-          label="Load more"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          [loading]="loading()"
-          (onClick)="loadMore()"
-        />
+    <!-- Detail panel (380px, shown when a row is selected) -->
+    @if (selectedItem()) {
+      <div class="w-[380px] shrink-0">
+        @if (detailLoading()) {
+          <div class="flex h-full items-center justify-center py-12">
+            <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+          </div>
+        } @else {
+          <app-event-detail-panel
+            [detail]="selectedDetail()"
+            [marker]="selectedItem()?.source_type === 'marker' ? selectedItem() : null"
+            (edit)="openEditModal(selectedItem()!.id)"
+            (close)="closePanel()"
+          />
+        }
       </div>
     }
-  }
-</div>
+  </div>
+</app-manage-page-shell>
 
 <p-dialog
   [header]="editingEventId() ? 'Edit event' : 'New event'"
