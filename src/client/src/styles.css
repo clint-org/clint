@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
-@import './app/shared/styles/manage-table.css';
-@import './app/features/catalysts/catalyst-table.css';
+@import './app/shared/styles/primeng-overrides.css';
+@import './app/shared/styles/data-table.css';
+@import './app/shared/styles/page-shell.css';
 @import './app/features/landscape/landscape.css';
 @plugin "tailwindcss-primeui";
