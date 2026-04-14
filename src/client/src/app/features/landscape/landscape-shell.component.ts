@@ -15,13 +15,11 @@ import { Tooltip } from 'primeng/tooltip';
 import {
   BullseyeDimension,
   COUNT_UNIT_OPTIONS,
-  DIMENSION_OPTIONS,
-  dimensionToSegment,
   LandscapeIndexEntry,
   POSITIONING_GROUPING_OPTIONS,
+  dimensionToSegment,
   segmentToDimension,
   ViewMode,
-  VIEW_MODE_OPTIONS,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
@@ -42,84 +40,61 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
   providers: [LandscapeStateService],
   template: `
     <div class="flex flex-col h-full">
-      <!-- Row 1: View controls -->
-      <div class="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 bg-white">
-        <p-selectbutton
-          [options]="viewModeOptions"
-          [ngModel]="viewMode()"
-          (ngModelChange)="onViewModeChange($event)"
-          optionLabel="label"
-          optionValue="value"
-          [allowEmpty]="false"
-          size="small"
-        />
+      <!-- View-specific controls (only shown when needed) -->
+      @if (viewMode() === 'bullseye' && entityId() || viewMode() === 'positioning' || viewMode() === 'timeline') {
+        <div class="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 bg-white">
+          @if (viewMode() === 'bullseye' && entityId()) {
+            <p-select
+              [options]="entityOptions()"
+              [ngModel]="entityId()"
+              (ngModelChange)="onEntityChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="true"
+              [style]="{ minWidth: '12rem' }"
+              size="small"
+              placeholder="Select entity"
+            />
+          }
 
-        @if (viewMode() === 'bullseye') {
-          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-          <p-select
-            [options]="dimensionOptions"
-            [ngModel]="dimension()"
-            (ngModelChange)="onDimensionChange($event)"
-            optionLabel="label"
-            optionValue="value"
-            [style]="{ minWidth: '12rem' }"
-            size="small"
-          />
-        }
+          @if (viewMode() === 'positioning') {
+            <p-select
+              [options]="groupingOptions"
+              [ngModel]="state.positioningGrouping()"
+              (ngModelChange)="state.positioningGrouping.set($event)"
+              optionLabel="label"
+              optionValue="value"
+              [style]="{ minWidth: '14rem' }"
+              size="small"
+            />
+            <p-selectbutton
+              [options]="countUnitOptions"
+              [ngModel]="state.countUnit()"
+              (ngModelChange)="state.countUnit.set($event)"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              size="small"
+            />
+          }
 
-        @if (viewMode() === 'bullseye' && entityId()) {
-          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-          <p-select
-            [options]="entityOptions()"
-            [ngModel]="entityId()"
-            (ngModelChange)="onEntityChange($event)"
-            optionLabel="label"
-            optionValue="value"
-            [showClear]="true"
-            [style]="{ minWidth: '12rem' }"
-            size="small"
-            placeholder="Select entity"
-          />
-        }
+          <div class="flex-1"></div>
 
-        @if (viewMode() === 'positioning') {
-          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-          <p-select
-            [options]="groupingOptions"
-            [ngModel]="state.positioningGrouping()"
-            (ngModelChange)="state.positioningGrouping.set($event)"
-            optionLabel="label"
-            optionValue="value"
-            [style]="{ minWidth: '14rem' }"
-            size="small"
-          />
-          <p-selectbutton
-            [options]="countUnitOptions"
-            [ngModel]="state.countUnit()"
-            (ngModelChange)="state.countUnit.set($event)"
-            optionLabel="label"
-            optionValue="value"
-            [allowEmpty]="false"
-            size="small"
-          />
-        }
+          @if (viewMode() === 'timeline') {
+            <p-button
+              icon="fa-solid fa-file-powerpoint"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              (onClick)="onExportClick()"
+              pTooltip="Export to PowerPoint"
+              tooltipPosition="bottom"
+            />
+          }
+        </div>
+      }
 
-        <div class="flex-1"></div>
-
-        @if (viewMode() === 'timeline') {
-          <p-button
-            icon="fa-solid fa-file-powerpoint"
-            severity="secondary"
-            [text]="true"
-            size="small"
-            (onClick)="onExportClick()"
-            pTooltip="Export to PowerPoint"
-            tooltipPosition="bottom"
-          />
-        }
-      </div>
-
-      <!-- Row 2: Filters -->
+      <!-- Filters -->
       <app-landscape-filter-bar
         [spaceId]="spaceId()"
         [viewMode]="viewMode()"
@@ -139,8 +114,6 @@ export class LandscapeShellComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
   readonly state = inject(LandscapeStateService);
 
-  readonly viewModeOptions = VIEW_MODE_OPTIONS;
-  readonly dimensionOptions = DIMENSION_OPTIONS;
   readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
   readonly countUnitOptions = COUNT_UNIT_OPTIONS;
 
@@ -192,20 +165,6 @@ export class LandscapeShellComponent implements OnInit {
         therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
       }));
     }
-  }
-
-  onViewModeChange(mode: ViewMode): void {
-    if (mode === 'timeline') {
-      this.router.navigate(this.spaceBase());
-    } else if (mode === 'positioning') {
-      this.router.navigate([...this.spaceBase(), 'positioning']);
-    } else {
-      this.router.navigate([...this.spaceBase(), 'bullseye']);
-    }
-  }
-
-  onDimensionChange(dim: BullseyeDimension): void {
-    this.router.navigate([...this.spaceBase(), 'bullseye', dimensionToSegment(dim)]);
   }
 
   onEntityChange(entityId: string | null): void {

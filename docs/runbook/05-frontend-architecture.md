@@ -17,7 +17,13 @@ src/client/
         guards/
           auth.guard.ts         # authGuard + onboardingRedirectGuard
         layout/
-          header.component.ts   # Navigation: logo, tenant/space switcher, user menu
+          app-shell.component.ts        # Layout wrapper: icon rail + sidebar + topbar + router-outlet
+          icon-rail.component.ts        # 48px dark icon rail with section icons
+          sidebar.component.ts          # 220px expandable sidebar (hover-to-peek, click-to-pin)
+          contextual-topbar.component.ts # Topbar that adapts per page type (tabs, title, back nav)
+          header.component.ts           # (Legacy) flat horizontal nav -- replaced by app-shell
+          notification-bell.component.ts # Bell icon with unread count badge
+          notification-panel.component.ts # Notification dropdown panel
         models/                 # TypeScript interfaces for all domain entities
           trial.model.ts        # Trial, TrialPhase, TrialNote, TherapeuticArea
           company.model.ts      # Company
@@ -38,6 +44,7 @@ src/client/
           trials/               # trial-detail, trial-form, phase-form, marker-form, note-form
           marker-types/         # marker-type-list, marker-type-form
           therapeutic-areas/    # therapeutic-area-list, therapeutic-area-form
+          taxonomies/           # Consolidated page: Therapeutic Areas, MOA, ROA with segmented control
         events/                 # Intelligence feed: table + detail panel
           events-page.component  # p-table with createGridState, detail panel toggle
           event-detail-panel.component # Right-side panel: description, sources, tags, thread, links
@@ -113,23 +120,32 @@ Key decisions:
 
 ## Routing
 
-All routes are lazy-loaded. The route hierarchy:
+All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` as a layout wrapper (icon rail + sidebar + topbar), and all tenant/space routes render inside its `<router-outlet>`.
 
 ```
 /login                              -> LoginComponent
 /auth/callback                      -> AuthCallbackComponent
 /onboarding                         -> OnboardingComponent (authGuard)
-/t/:tenantId/
+/t/:tenantId/                       -> AppShellComponent (layout wrapper)
   spaces                            -> SpaceListComponent
   settings                          -> TenantSettingsComponent
   s/:spaceId/
-    (empty)                         -> DashboardComponent
+    (empty)                         -> LandscapeShellComponent -> TimelineViewComponent
+    bullseye/by-therapy-area        -> LandscapeIndexComponent
+    bullseye/by-therapy-area/:id    -> LandscapeComponent
+    bullseye/by-company             -> LandscapeIndexComponent
+    bullseye/by-company/:id         -> LandscapeComponent
+    bullseye/by-moa                 -> LandscapeIndexComponent
+    bullseye/by-moa/:id             -> LandscapeComponent
+    bullseye/by-roa                 -> LandscapeIndexComponent
+    bullseye/by-roa/:id             -> LandscapeComponent
+    positioning                     -> PositioningViewComponent
     manage/companies                -> CompanyListComponent
     manage/products                 -> ProductListComponent
     manage/trials                   -> TrialListComponent  (supports ?product=<id> filter)
     manage/trials/:id               -> TrialDetailComponent
-    manage/marker-types             -> MarkerTypeListComponent
-    manage/therapeutic-areas        -> TherapeuticAreaListComponent
+    settings/marker-types           -> MarkerTypeListComponent
+    settings/taxonomies             -> TaxonomiesPageComponent (Therapeutic Areas, MOA, ROA)
     events                          -> EventsPageComponent
     catalysts                       -> CatalystsPageComponent
 /                                   -> onboardingRedirectGuard (auto-redirect)

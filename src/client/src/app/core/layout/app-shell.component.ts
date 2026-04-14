@@ -40,7 +40,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [userInitials]="initials()"
         (sectionClick)="onSectionClick($event)"
         (logoClick)="onLogoClick()"
-        (avatarClick)="toggleAccount($event)"
+        (avatarClick)="toggleAccount()"
         (hoverStart)="onRailHoverStart()"
         (hoverEnd)="onRailHoverEnd()"
       />
