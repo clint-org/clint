@@ -41,16 +41,14 @@ export class MarkerTypeFormComponent implements OnInit {
     { label: 'Circle', value: 'circle' },
     { label: 'Diamond', value: 'diamond' },
     { label: 'Flag', value: 'flag' },
-    { label: 'Arrow', value: 'arrow' },
-    { label: 'X', value: 'x' },
-    { label: 'Bar', value: 'bar' },
+    { label: 'Triangle', value: 'triangle' },
+    { label: 'Square', value: 'square' },
+    { label: 'Dashed Line', value: 'dashed-line' },
   ];
 
   readonly fillStyleOptions = [
-    { label: 'Outline', value: 'outline' },
     { label: 'Filled', value: 'filled' },
-    { label: 'Striped', value: 'striped' },
-    { label: 'Gradient', value: 'gradient' },
+    { label: 'Outline', value: 'outline' },
   ];
 
   name = '';

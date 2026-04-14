@@ -339,7 +339,7 @@ export class PptxExportService {
       const color = (marker.marker_types!.color ?? '3b82f6').replace('#', '');
       const shape = marker.marker_types!.shape;
       const fill = marker.marker_types!.fill_style;
-      const isFilled = fill === 'filled' || fill === 'gradient';
+      const isFilled = fill === 'filled';
 
       this.renderMarkerShape(
         slide,
@@ -522,7 +522,7 @@ export class PptxExportService {
       const itemY = legendY + 0.08 + row * rowH;
 
       const color = mt.color.replace('#', '');
-      const isFilled = mt.fill_style === 'filled' || mt.fill_style === 'gradient';
+      const isFilled = mt.fill_style === 'filled';
 
       if (mt.shape === 'circle') {
         slide.addShape('ellipse', {

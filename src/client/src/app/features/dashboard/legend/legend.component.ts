@@ -2,11 +2,22 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
-import { getMarkerIcon } from '../../../shared/utils/marker-icon';
+import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
+import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
+import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
+import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
+import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
 
 @Component({
   selector: 'app-legend',
   standalone: true,
+  imports: [
+    CircleIconComponent,
+    DiamondIconComponent,
+    FlagIconComponent,
+    TriangleIconComponent,
+    SquareIconComponent,
+  ],
   templateUrl: './legend.component.html',
 })
 export class LegendComponent implements OnInit {
@@ -17,7 +28,7 @@ export class LegendComponent implements OnInit {
   loading = signal(true);
 
   groupedMarkerTypes = computed(() => {
-    const types = this.markerTypes();
+    const types = this.markerTypes().filter(t => t.display_order > 0);
     const groupMap = new Map<string, { label: string; order: number; types: MarkerType[] }>();
 
     for (const t of types) {
@@ -35,10 +46,6 @@ export class LegendComponent implements OnInit {
 
     return Array.from(groupMap.values()).sort((a, b) => a.order - b.order);
   });
-
-  faIcon(mt: MarkerType): string {
-    return getMarkerIcon(mt.shape, mt.fill_style);
-  }
 
   async ngOnInit(): Promise<void> {
     try {

@@ -94,55 +94,54 @@
               cx="16"
               cy="16"
               r="12"
-              [attr.fill]="fillStyle === 'filled' || fillStyle === 'gradient' ? color : 'none'"
+              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
               [attr.stroke]="color"
               stroke-width="2"
-              [attr.stroke-dasharray]="fillStyle === 'striped' ? '4 2' : 'none'"
             />
           }
           @case ('diamond') {
             <polygon
               points="16,2 30,16 16,30 2,16"
-              [attr.fill]="fillStyle === 'filled' || fillStyle === 'gradient' ? color : 'none'"
+              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
               [attr.stroke]="color"
               stroke-width="2"
-              [attr.stroke-dasharray]="fillStyle === 'striped' ? '4 2' : 'none'"
             />
           }
           @case ('flag') {
             <line [attr.stroke]="color" stroke-width="2" x1="8" y1="4" x2="8" y2="28" />
             <polygon
               points="8,4 26,10 8,16"
-              [attr.fill]="fillStyle === 'filled' || fillStyle === 'gradient' ? color : 'none'"
+              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
               [attr.stroke]="color"
               stroke-width="2"
-              [attr.stroke-dasharray]="fillStyle === 'striped' ? '4 2' : 'none'"
             />
           }
-          @case ('arrow') {
+          @case ('triangle') {
             <polygon
-              points="16,2 28,28 16,20 4,28"
-              [attr.fill]="fillStyle === 'filled' || fillStyle === 'gradient' ? color : 'none'"
+              points="6,4 28,16 6,28"
+              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
               [attr.stroke]="color"
               stroke-width="2"
-              [attr.stroke-dasharray]="fillStyle === 'striped' ? '4 2' : 'none'"
             />
           }
-          @case ('x') {
-            <line [attr.stroke]="color" stroke-width="3" x1="6" y1="6" x2="26" y2="26" />
-            <line [attr.stroke]="color" stroke-width="3" x1="26" y1="6" x2="6" y2="26" />
-          }
-          @case ('bar') {
+          @case ('square') {
             <rect
               x="4"
-              y="8"
+              y="4"
               width="24"
-              height="16"
-              rx="2"
-              [attr.fill]="fillStyle === 'filled' || fillStyle === 'gradient' ? color : 'none'"
+              height="24"
+              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
               [attr.stroke]="color"
               stroke-width="2"
-              [attr.stroke-dasharray]="fillStyle === 'striped' ? '4 2' : 'none'"
+            />
+          }
+          @case ('dashed-line') {
+            <line
+              x1="16" y1="4" x2="16" y2="28"
+              [attr.stroke]="color"
+              stroke-width="2"
+              stroke-dasharray="4,3"
+              stroke-linecap="round"
             />
           }
         }
