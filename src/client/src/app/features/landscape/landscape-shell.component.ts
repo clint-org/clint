@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, resource, signal } from '@angular/core';
 import {
   ActivatedRoute,
   NavigationEnd,
@@ -9,9 +9,6 @@ import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
 import { SelectButton } from 'primeng/selectbutton';
 import { Select } from 'primeng/select';
-import { ButtonModule } from 'primeng/button';
-import { Tooltip } from 'primeng/tooltip';
-
 import {
   BullseyeDimension,
   COUNT_UNIT_OPTIONS,
@@ -24,6 +21,7 @@ import {
 import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-landscape-shell',
@@ -33,15 +31,13 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
     FormsModule,
     SelectButton,
     Select,
-    ButtonModule,
-    Tooltip,
     LandscapeFilterBarComponent,
   ],
   providers: [LandscapeStateService],
   template: `
     <div class="flex flex-col h-full">
       <!-- View-specific controls (only shown when needed) -->
-      @if (viewMode() === 'bullseye' && entityId() || viewMode() === 'positioning' || viewMode() === 'timeline') {
+      @if (viewMode() === 'bullseye' && entityId() || viewMode() === 'positioning') {
         <div class="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 bg-white">
           @if (viewMode() === 'bullseye' && entityId()) {
             <p-select
@@ -77,20 +73,6 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
               size="small"
             />
           }
-
-          <div class="flex-1"></div>
-
-          @if (viewMode() === 'timeline') {
-            <p-button
-              icon="fa-solid fa-file-powerpoint"
-              severity="secondary"
-              [text]="true"
-              size="small"
-              (onClick)="onExportClick()"
-              pTooltip="Export to PowerPoint"
-              tooltipPosition="bottom"
-            />
-          }
         </div>
       }
 
@@ -108,11 +90,22 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
     </div>
   `,
 })
-export class LandscapeShellComponent implements OnInit {
+export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly landscapeService = inject(LandscapeService);
   readonly state = inject(LandscapeStateService);
+  private readonly topbarState = inject(TopbarStateService);
+
+  private readonly exportEffect = effect(() => {
+    if (this.viewMode() === 'timeline') {
+      this.topbarState.actions.set([
+        { label: '', icon: 'fa-solid fa-file-powerpoint', text: true, severity: 'secondary', callback: () => this.onExportClick() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
   readonly countUnitOptions = COUNT_UNIT_OPTIONS;
@@ -165,6 +158,10 @@ export class LandscapeShellComponent implements OnInit {
         therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
       }));
     }
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   onEntityChange(entityId: string | null): void {
