@@ -87,6 +87,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
 
       <!-- Account menu overlay -->
       @if (accountOpen()) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
         <div class="account-backdrop" (click)="accountOpen.set(false)"></div>
         <div class="account-menu" role="menu">
           <div class="account-menu__header">
