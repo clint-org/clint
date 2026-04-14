@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
@@ -8,11 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
 
-import {
-  EventCategory,
-  EventDetail,
-  FeedItem,
-} from '../../core/models/event.model';
+import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
 import { MarkerCategory } from '../../core/models/marker.model';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
@@ -23,6 +19,7 @@ import { createGridState } from '../../shared/grids';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-events-page',
@@ -41,12 +38,13 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
   ],
   templateUrl: './events-page.component.html',
 })
-export class EventsPageComponent implements OnInit {
+export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);
   private eventCategoryService = inject(EventCategoryService);
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
 
@@ -135,9 +133,20 @@ export class EventsPageComponent implements OnInit {
 
   readonly visibleRows = this.grid.filteredRows(this.feedItems);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
+    this.topbarState.actions.set([
+      { label: 'New Event', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadInitialData();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   /** Compute entity display string for a feed item. */
@@ -169,9 +178,7 @@ export class EventsPageComponent implements OnInit {
           this.selectedDetail.set(detail);
         }
       } catch (err) {
-        this.error.set(
-          err instanceof Error ? err.message : 'Could not load event detail.',
-        );
+        this.error.set(err instanceof Error ? err.message : 'Could not load event detail.');
       } finally {
         this.detailLoading.set(false);
       }
@@ -219,9 +226,7 @@ export class EventsPageComponent implements OnInit {
       }
       await this.loadFeed();
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Could not delete event.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Could not delete event.');
     }
   }
 
@@ -229,10 +234,21 @@ export class EventsPageComponent implements OnInit {
     this.loading.set(true);
     try {
       const [feed, eCats, mCats] = await Promise.all([
-        this.eventService.getEventsPageData(this.spaceId, {
-          dateFrom: null, dateTo: null, entityLevel: null, entityId: null,
-          categoryIds: [], tags: [], priority: null, sourceType: null,
-        }, this.PAGE_SIZE, 0),
+        this.eventService.getEventsPageData(
+          this.spaceId,
+          {
+            dateFrom: null,
+            dateTo: null,
+            entityLevel: null,
+            entityId: null,
+            categoryIds: [],
+            tags: [],
+            priority: null,
+            sourceType: null,
+          },
+          this.PAGE_SIZE,
+          0
+        ),
         this.eventCategoryService.list(this.spaceId),
         this.markerCategoryService.list(this.spaceId),
       ]);
@@ -240,9 +256,7 @@ export class EventsPageComponent implements OnInit {
       this.eventCategories.set(eCats);
       this.markerCategories.set(mCats);
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to load events.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
     } finally {
       this.loading.set(false);
     }
@@ -254,17 +268,21 @@ export class EventsPageComponent implements OnInit {
       const feed = await this.eventService.getEventsPageData(
         this.spaceId,
         {
-          dateFrom: null, dateTo: null, entityLevel: null, entityId: null,
-          categoryIds: [], tags: [], priority: null, sourceType: null,
+          dateFrom: null,
+          dateTo: null,
+          entityLevel: null,
+          entityId: null,
+          categoryIds: [],
+          tags: [],
+          priority: null,
+          sourceType: null,
         },
         this.PAGE_SIZE,
-        0,
+        0
       );
       this.feedItems.set(feed);
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to load events.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
     } finally {
       this.loading.set(false);
     }
