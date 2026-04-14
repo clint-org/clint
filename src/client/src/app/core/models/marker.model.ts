@@ -9,6 +9,10 @@ export interface MarkerCategory {
   updated_at: string;
 }
 
+export type MarkerShape = 'circle' | 'diamond' | 'flag' | 'triangle' | 'square' | 'dashed-line';
+export type FillStyle = 'outline' | 'filled';
+export type InnerMark = 'dot' | 'dash' | 'check' | 'x' | 'none';
+
 export interface MarkerType {
   id: string;
   space_id: string | null;
@@ -16,9 +20,10 @@ export interface MarkerType {
   category_id: string;
   name: string;
   icon: string | null;
-  shape: 'circle' | 'diamond' | 'flag' | 'arrow' | 'x' | 'bar';
-  fill_style: 'outline' | 'filled' | 'striped' | 'gradient';
+  shape: MarkerShape;
+  fill_style: FillStyle;
   color: string;
+  inner_mark: InnerMark;
   is_system: boolean;
   display_order: number;
   created_at: string;
@@ -40,6 +45,7 @@ export interface Marker {
   source_url: string | null;
   metadata: Record<string, unknown> | null;
   is_projected: boolean;
+  no_longer_expected: boolean;
   created_at: string;
   updated_at: string;
   marker_types?: MarkerType;
