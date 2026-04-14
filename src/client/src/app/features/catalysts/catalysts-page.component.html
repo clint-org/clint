@@ -1,0 +1,126 @@
+<app-manage-page-shell
+  eyebrow="Intelligence"
+  title="Key Catalysts"
+  [count]="totalCount()"
+>
+  @if (error()) {
+    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
+  }
+
+  <!-- Filter bar -->
+  <div class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+    <div class="flex items-center gap-2">
+      <label
+        for="catalyst-category-filter"
+        class="text-[10px] font-semibold uppercase tracking-wide text-slate-500"
+      >
+        Category
+      </label>
+      <p-multiselect
+        inputId="catalyst-category-filter"
+        [options]="categoryOptions()"
+        [ngModel]="selectedCategoryIds()"
+        (ngModelChange)="onCategoryChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Categories"
+        [showClear]="true"
+        [style]="{ minWidth: '10rem' }"
+        size="small"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label
+        for="catalyst-company-filter"
+        class="text-[10px] font-semibold uppercase tracking-wide text-slate-500"
+      >
+        Company
+      </label>
+      <p-select
+        inputId="catalyst-company-filter"
+        [options]="companyOptions()"
+        [ngModel]="selectedCompanyId()"
+        (ngModelChange)="onCompanyChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Companies"
+        [showClear]="true"
+        [filter]="true"
+        filterPlaceholder="Search..."
+        [style]="{ minWidth: '10rem' }"
+        size="small"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label
+        for="catalyst-product-filter"
+        class="text-[10px] font-semibold uppercase tracking-wide text-slate-500"
+      >
+        Product
+      </label>
+      <p-select
+        inputId="catalyst-product-filter"
+        [options]="filteredProductOptions()"
+        [ngModel]="selectedProductId()"
+        (ngModelChange)="onProductChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Products"
+        [showClear]="true"
+        [filter]="true"
+        filterPlaceholder="Search..."
+        [style]="{ minWidth: '10rem' }"
+        size="small"
+      />
+    </div>
+
+    <div class="ml-auto">
+      <input
+        pInputText
+        type="text"
+        placeholder="Search catalysts..."
+        [ngModel]="searchText()"
+        (ngModelChange)="searchText.set($event)"
+        class="text-sm"
+        aria-label="Search catalysts"
+      />
+    </div>
+  </div>
+
+  <!-- Main content: table + detail panel -->
+  <div class="flex flex-1 overflow-hidden" [class.divide-x]="selectedMarkerId()">
+    <!-- Table -->
+    <div class="min-w-0 flex-1 overflow-hidden">
+      @if (loading() && rawCatalysts().length === 0) {
+        <div class="flex items-center justify-center py-16">
+          <p-progressSpinner strokeWidth="3" [style]="{ width: '32px', height: '32px' }" />
+        </div>
+      } @else {
+        <app-catalyst-table
+          [catalysts]="flatCatalysts()"
+          [selectedId]="selectedMarkerId()"
+          (rowSelect)="onRowClick($event)"
+        />
+      }
+    </div>
+
+    <!-- Detail panel (380px) -->
+    @if (selectedMarkerId()) {
+      <div class="w-[380px] shrink-0">
+        @if (detailLoading()) {
+          <div class="flex h-full items-center justify-center py-12">
+            <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+          </div>
+        } @else {
+          <app-catalyst-detail-panel
+            [detail]="selectedDetail()"
+            (panelClose)="closePanel()"
+            (markerClick)="onRowClick($event)"
+          />
+        }
+      </div>
+    }
+  </div>
+</app-manage-page-shell>
