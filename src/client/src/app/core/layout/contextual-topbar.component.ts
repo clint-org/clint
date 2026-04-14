@@ -1,4 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
+import { TopbarAction } from '../services/topbar-state.service';
 
 export interface TopbarTab {
   label: string;
@@ -9,11 +11,95 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [],
+  imports: [ButtonModule],
   template: `
     <div class="topbar" role="banner">
+      <!-- Org/Space breadcrumb -->
+      <div class="breadcrumb">
+        <!-- Org badge + name -->
+        <div class="org-trigger" [class.interactive]="tenants().length > 1">
+          @if (tenants().length > 1) {
+            <button
+              class="org-button"
+              (click)="toggleOrgDropdown()"
+              [attr.aria-expanded]="orgDropdownOpen()"
+              aria-haspopup="listbox"
+              aria-label="Switch organization"
+            >
+              <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
+              <span class="org-name">{{ tenantName() }}</span>
+              <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
+            </button>
+            @if (orgDropdownOpen()) {
+              <div class="dropdown org-dropdown" role="listbox" aria-label="Organizations">
+                @for (t of tenants(); track t.id) {
+                  <button
+                    class="dropdown-item"
+                    role="option"
+                    [attr.aria-selected]="t.id === currentTenantId()"
+                    [class.active]="t.id === currentTenantId()"
+                    (click)="selectTenant(t.id)"
+                  >
+                    {{ t.name }}
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
+            <span class="org-name">{{ tenantName() }}</span>
+          }
+        </div>
+
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+
+        <!-- Space selector -->
+        <div class="space-trigger">
+          @if (hasSpace()) {
+            <button
+              class="space-pill"
+              (click)="toggleSpaceDropdown()"
+              [attr.aria-expanded]="spaceDropdownOpen()"
+              aria-haspopup="listbox"
+              aria-label="Switch space"
+            >
+              <span>{{ spaceName() }}</span>
+              <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
+            </button>
+          } @else {
+            <button
+              class="space-pill muted"
+              (click)="toggleSpaceDropdown()"
+              [attr.aria-expanded]="spaceDropdownOpen()"
+              aria-haspopup="listbox"
+              aria-label="Select space"
+            >
+              <span>Select space</span>
+              <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
+            </button>
+          }
+          @if (spaceDropdownOpen()) {
+            <div class="dropdown space-dropdown" role="listbox" aria-label="Spaces">
+              @for (s of spaces(); track s.id) {
+                <button
+                  class="dropdown-item"
+                  role="option"
+                  [attr.aria-selected]="s.id === currentSpaceId()"
+                  [class.active]="s.id === currentSpaceId()"
+                  (click)="selectSpace(s.id)"
+                >
+                  {{ s.name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Page-specific content -->
       @switch (pageType()) {
         @case ('landscape') {
+          <div class="topbar-divider" aria-hidden="true"></div>
           <span class="topbar-section-label">Landscape</span>
           <div class="topbar-divider" aria-hidden="true"></div>
           <div role="tablist" class="flex items-center">
@@ -30,16 +116,11 @@ export interface TopbarTab {
           </div>
         }
         @case ('list') {
-          <div class="flex flex-col justify-center">
-            @if (eyebrow()) {
-              <span class="topbar-eyebrow">{{ eyebrow() }}</span>
-            }
-            @if (title()) {
-              <span class="topbar-title">{{ title() }}</span>
-            }
-          </div>
+          <div class="topbar-divider" aria-hidden="true"></div>
+          <span class="topbar-list-title">{{ listTitle() }}</span>
         }
         @case ('detail') {
+          <div class="topbar-divider" aria-hidden="true"></div>
           <button
             class="topbar-back"
             (click)="onBackClick()"
@@ -54,155 +135,372 @@ export interface TopbarTab {
               <span class="topbar-eyebrow">{{ entityContext() }}</span>
             }
             @if (entityTitle()) {
-              <span class="topbar-title">{{ entityTitle() }}</span>
+              <span class="topbar-detail-title">{{ entityTitle() }}</span>
             }
           </div>
         }
         @default {
-          <!-- blank: bar with border only -->
+          <!-- blank: no page-specific content -->
         }
       }
 
+      <!-- Right-side actions -->
       <div class="topbar-actions">
-        @if (pageType() === 'list' && recordCount()) {
+        @if (recordCount()) {
           <span class="topbar-record-count">{{ recordCount() }}</span>
+        }
+        @for (action of actionButtons(); track action.label) {
+          <p-button
+            [label]="action.label"
+            [icon]="action.icon"
+            [severity]="action.severity ?? 'secondary'"
+            [outlined]="action.outlined ?? false"
+            [text]="action.text ?? false"
+            size="small"
+            (click)="action.callback()"
+          />
         }
         <ng-content select="[topbar-actions]"></ng-content>
       </div>
     </div>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-      }
+  styles: [`
+    :host {
+      display: block;
+    }
 
-      .topbar {
-        display: flex;
-        align-items: center;
-        height: 42px;
-        padding: 0 16px;
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-      }
+    .topbar {
+      display: flex;
+      align-items: center;
+      height: 42px;
+      padding: 0 16px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+    }
 
-      .topbar-section-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #0f172a;
-        white-space: nowrap;
-      }
+    /* ---- Breadcrumb ---- */
 
-      .topbar-divider {
-        width: 1px;
-        height: 16px;
-        background: #e2e8f0;
-        margin: 0 16px;
-        flex-shrink: 0;
-      }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
 
-      .topbar-tab {
-        font-size: 11px;
-        padding: 11px 0;
-        margin-right: 16px;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        color: #64748b;
-        background: none;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-        transition: color 120ms ease-out;
-        white-space: nowrap;
-      }
+    .breadcrumb-sep {
+      font-size: 11px;
+      color: #cbd5e1;
+      user-select: none;
+    }
 
-      .topbar-tab:hover {
-        color: #0f172a;
-      }
+    /* Org */
 
-      .topbar-tab.active {
-        color: #0d9488;
-        font-weight: 500;
-        border-bottom-color: #0d9488;
-      }
+    .org-trigger {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
 
-      .topbar-tab:focus-visible {
-        outline: 2px solid #0d9488;
-        outline-offset: 2px;
-      }
+    .org-button {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      padding: 2px 4px 2px 0;
+      cursor: pointer;
+      border-radius: 4px;
+    }
 
-      .topbar-eyebrow {
-        font-size: 9px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #94a3b8;
-        line-height: 1;
-      }
+    .org-button:hover {
+      background: #f8fafc;
+    }
 
-      .topbar-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: #0f172a;
-        line-height: 1.4;
-      }
+    .org-button:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: 2px;
+    }
 
-      .topbar-back {
-        font-size: 11px;
-        color: #94a3b8;
-        cursor: pointer;
-        background: none;
-        border: none;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        white-space: nowrap;
-        transition: color 120ms ease-out;
-      }
+    .org-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: #0d9488;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
 
-      .topbar-back:hover {
-        color: #64748b;
-      }
+    .org-name {
+      font-size: 11px;
+      color: #64748b;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-      .topbar-back:focus-visible {
-        outline: 2px solid #0d9488;
-        outline-offset: 2px;
-      }
+    .dropdown-chevron {
+      font-size: 8px;
+      color: #94a3b8;
+      line-height: 1;
+    }
 
-      .topbar-actions {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+    /* Space */
 
-      .topbar-record-count {
-        font-size: 11px;
-        color: #94a3b8;
-      }
-    `,
-  ],
+    .space-trigger {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .space-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #0f172a;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 3px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .space-pill:hover {
+      background: #f1f5f9;
+    }
+
+    .space-pill:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: 2px;
+    }
+
+    .space-pill.muted {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    /* Dropdowns */
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 180px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      z-index: 50;
+      padding: 4px 0;
+    }
+
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font-size: 12px;
+      color: #475569;
+      background: none;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .dropdown-item:hover {
+      background: #f8fafc;
+    }
+
+    .dropdown-item:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: -2px;
+    }
+
+    .dropdown-item.active {
+      color: #0d9488;
+      font-weight: 500;
+    }
+
+    /* ---- Page-specific ---- */
+
+    .topbar-divider {
+      width: 1px;
+      height: 16px;
+      background: #e2e8f0;
+      margin: 0 12px;
+      flex-shrink: 0;
+    }
+
+    .topbar-section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+
+    .topbar-tab {
+      font-size: 11px;
+      padding: 11px 0;
+      margin-right: 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: #64748b;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: color 120ms ease-out;
+      white-space: nowrap;
+    }
+
+    .topbar-tab:hover {
+      color: #0f172a;
+    }
+
+    .topbar-tab.active {
+      color: #0d9488;
+      font-weight: 500;
+      border-bottom-color: #0d9488;
+    }
+
+    .topbar-tab:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: 2px;
+    }
+
+    .topbar-list-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+
+    .topbar-back {
+      font-size: 11px;
+      color: #94a3b8;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: color 120ms ease-out;
+    }
+
+    .topbar-back:hover {
+      color: #64748b;
+    }
+
+    .topbar-back:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: 2px;
+    }
+
+    .topbar-eyebrow {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      line-height: 1;
+    }
+
+    .topbar-detail-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.4;
+    }
+
+    /* ---- Actions ---- */
+
+    .topbar-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-record-count {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  `],
 })
 export class ContextualTopbarComponent {
-  // Page type selector
+  // ---- Org/Space inputs ----
+  readonly tenantName = input<string>('');
+  readonly tenants = input<{ id: string; name: string }[]>([]);
+  readonly currentTenantId = input<string>('');
+  readonly spaceName = input<string>('');
+  readonly spaces = input<{ id: string; name: string }[]>([]);
+  readonly currentSpaceId = input<string>('');
+  readonly hasSpace = input<boolean>(false);
+
+  // ---- Page type ----
   readonly pageType = input<'landscape' | 'list' | 'detail' | 'blank'>('blank');
 
-  // Landscape mode
+  // ---- Landscape mode ----
   readonly tabs = input<TopbarTab[]>([]);
 
-  // List mode
-  readonly eyebrow = input<string>('');
-  readonly title = input<string>('');
+  // ---- List mode ----
+  readonly listTitle = input<string>('');
   readonly recordCount = input<string>('');
 
-  // Detail mode
+  // ---- Detail mode ----
   readonly backLabel = input<string>('');
   readonly entityContext = input<string>('');
   readonly entityTitle = input<string>('');
 
-  // Outputs
+  // ---- Actions ----
+  readonly actionButtons = input<TopbarAction[]>([]);
+
+  // ---- Outputs ----
   readonly tabClick = output<string>();
   readonly backClick = output<void>();
+  readonly tenantChange = output<string>();
+  readonly spaceChange = output<string>();
+
+  // ---- Internal state ----
+  readonly orgDropdownOpen = signal(false);
+  readonly spaceDropdownOpen = signal(false);
+
+  readonly orgInitial = computed(() => {
+    const name = this.tenantName();
+    return name ? name.charAt(0).toUpperCase() : '';
+  });
+
+  // ---- Methods ----
+
+  toggleOrgDropdown(): void {
+    this.spaceDropdownOpen.set(false);
+    this.orgDropdownOpen.update((v) => !v);
+  }
+
+  toggleSpaceDropdown(): void {
+    this.orgDropdownOpen.set(false);
+    this.spaceDropdownOpen.update((v) => !v);
+  }
+
+  selectTenant(id: string): void {
+    this.orgDropdownOpen.set(false);
+    this.tenantChange.emit(id);
+  }
+
+  selectSpace(id: string): void {
+    this.spaceDropdownOpen.set(false);
+    this.spaceChange.emit(id);
+  }
 
   onTabClick(value: string): void {
     this.tabClick.emit(value);
