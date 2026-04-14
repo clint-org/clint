@@ -1,27 +1,20 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
 
 import { EventDetail, FeedItem } from '../../core/models/event.model';
 
 @Component({
   selector: 'app-event-detail-panel',
   standalone: true,
-  imports: [DatePipe, ButtonModule],
+  imports: [DatePipe],
   template: `
     <div class="event-detail-panel flex h-full flex-col overflow-hidden border-l border-slate-200 bg-white">
       <!-- Panel header -->
       <div class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div class="min-w-0 flex-1">
-          @if (detail(); as d) {
-            <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              {{ d.category.name }}
-            </p>
-          } @else if (marker(); as m) {
-            <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              {{ m.category_name }}
-            </p>
-          }
+          <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            {{ categoryLabel() }}
+          </p>
         </div>
         <div class="flex shrink-0 items-center gap-1">
           @if (detail()) {
@@ -37,7 +30,7 @@ import { EventDetail, FeedItem } from '../../core/models/event.model';
           <button
             type="button"
             class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            (click)="close.emit()"
+            (click)="panelClose.emit()"
             aria-label="Close detail panel"
           >
             <i class="fa-solid fa-xmark text-xs"></i>
@@ -155,47 +148,49 @@ import { EventDetail, FeedItem } from '../../core/models/event.model';
             Created {{ d.created_at | date:'medium' }}
           </p>
 
-        } @else if (marker(); as m) {
-          <!-- Marker detail (simpler) -->
-          <h2 class="mb-3 text-sm font-semibold leading-snug text-slate-900">{{ m.title }}</h2>
+        } @else {
+          @if (marker(); as m) {
+            <!-- Marker detail (simpler) -->
+            <h2 class="mb-3 text-sm font-semibold leading-snug text-slate-900">{{ m.title }}</h2>
 
-          <!-- Meta row -->
-          <div class="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span>{{ m.event_date | date:'mediumDate' }}</span>
-            @if (m.entity_level === 'space') {
-              <span class="text-slate-400">Industry</span>
-            } @else if (m.company_name) {
-              <span class="text-slate-400">
-                {{ m.company_name }}
-                @if (m.entity_level !== 'company' && m.entity_name) {
-                  <span class="text-slate-300"> / </span>{{ m.entity_name }}
-                }
-              </span>
+            <!-- Meta row -->
+            <div class="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span>{{ m.event_date | date:'mediumDate' }}</span>
+              @if (m.entity_level === 'space') {
+                <span class="text-slate-400">Industry</span>
+              } @else if (m.company_name) {
+                <span class="text-slate-400">
+                  {{ m.company_name }}
+                  @if (m.entity_level !== 'company' && m.entity_name) {
+                    <span class="text-slate-300"> / </span>{{ m.entity_name }}
+                  }
+                </span>
+              }
+            </div>
+
+            <!-- Description -->
+            @if (m.description) {
+              <div class="mb-4">
+                <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</p>
+                <p class="text-xs leading-relaxed text-slate-600">{{ m.description }}</p>
+              </div>
             }
-          </div>
 
-          <!-- Description -->
-          @if (m.description) {
-            <div class="mb-4">
-              <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</p>
-              <p class="text-xs leading-relaxed text-slate-600">{{ m.description }}</p>
-            </div>
-          }
-
-          <!-- Source URL -->
-          @if (m.source_url) {
-            <div class="mb-4">
-              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Source</p>
-              <a
-                [href]="m.source_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
-              >
-                {{ m.source_url }}
-                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-              </a>
-            </div>
+            <!-- Source URL -->
+            @if (m.source_url) {
+              <div class="mb-4">
+                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Source</p>
+                <a
+                  [href]="m.source_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
+                >
+                  {{ m.source_url }}
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                </a>
+              </div>
+            }
           }
         }
       </div>
@@ -209,5 +204,13 @@ export class EventDetailPanelComponent {
   readonly marker = input<FeedItem | null>(null);
 
   readonly edit = output<void>();
-  readonly close = output<void>();
+  readonly panelClose = output<void>();
+
+  readonly categoryLabel = computed(() => {
+    const d = this.detail();
+    if (d) return d.category.name;
+    const m = this.marker();
+    if (m) return m.category_name;
+    return '';
+  });
 }

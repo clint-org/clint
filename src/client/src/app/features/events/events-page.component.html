@@ -165,7 +165,7 @@
             [detail]="selectedDetail()"
             [marker]="selectedItem()?.source_type === 'marker' ? selectedItem() : null"
             (edit)="openEditModal(selectedItem()!.id)"
-            (close)="closePanel()"
+            (panelClose)="closePanel()"
           />
         }
       </div>
