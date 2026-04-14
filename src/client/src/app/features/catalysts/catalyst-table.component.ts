@@ -108,29 +108,6 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
       </ng-template>
     </p-table>
   `,
-  styles: `
-    :host ::ng-deep .catalyst-table {
-      .p-datatable-thead > tr > th {
-        @apply bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200;
-        padding: 0.5rem 0.75rem;
-      }
-      .p-datatable-tbody > tr > td {
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid theme('colors.slate.100');
-      }
-      .p-datatable-tbody > tr.selected-row > td {
-        @apply bg-teal-50;
-        border-color: theme('colors.teal.200');
-      }
-      .catalyst-group-header td {
-        @apply bg-slate-50 border-b border-slate-200;
-        padding: 0.25rem 0.75rem;
-      }
-      .catalyst-group-header:first-child td {
-        @apply bg-teal-50/50 border-teal-200;
-      }
-    }
-  `,
 })
 export class CatalystTableComponent {
   readonly catalysts = input.required<FlatCatalyst[]>();
