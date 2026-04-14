@@ -584,3 +584,256 @@ begin
     ('trial', 't_lumivex_renal',  t_lumivex_renal);
 end;
 $$;
+
+-- =============================================================================
+-- 8. helper: _seed_demo_markers
+-- =============================================================================
+
+create or replace function public._seed_demo_markers(p_space_id uuid, p_uid uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  t_cardio_shield  uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_cardio_shield');
+  t_renal_guard    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_renal_guard');
+  t_fortify_hf     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_fortify_hf');
+  t_heart_preserve uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_heart_preserve');
+  t_myocard_1      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_myocard_1');
+  t_nephro_clear   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_nephro_clear');
+  t_glyco_advance  uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_glyco_advance');
+  t_trim_1         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_trim_1');
+  t_mrd_preclin    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_mrd_preclin');
+  t_hls_early      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_hls_early');
+  t_pulse_hf       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_pulse_hf');
+  t_vbx_scout      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_vbx_scout');
+  t_atlas_hf       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_atlas_hf');
+  t_apx_scout      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_apx_scout');
+  t_valor_hf       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_valor_hf');
+  t_crd_probe      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_crd_probe');
+  t_minerva_hf     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_minerva_hf');
+  t_renal_nova     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_renal_nova');
+  t_echo_hf        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_echo_hf');
+  t_csc_preclin    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_csc_preclin');
+  t_slr_mid        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_slr_mid');
+  t_znh_scout      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_znh_scout');
+  t_restivon_step  uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_restivon_step');
+  t_glytara_meta   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_glytara_meta');
+  t_lumivex_renal  uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_lumivex_renal');
+
+  m_cardio_data    uuid := gen_random_uuid();
+  m_heart_filing   uuid := gen_random_uuid();
+  m_nephro_proj    uuid := gen_random_uuid();
+  m_pulse_topline  uuid := gen_random_uuid();
+  m_echo_interim   uuid := gen_random_uuid();
+begin
+  -- CARDIO-SHIELD (LAUNCHED) -- 5 markers: full lifecycle
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (m_cardio_data,    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'CARDIO-SHIELD primary results presented at ESC 2019',   'actual',  '2019-09-19', 'Significant reduction in composite of CV death and HF hospitalization (HR 0.74, p<0.001).', 'https://example.com/cardio-shield-esc2019'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted to FDA for HFrEF',                       'actual',  '2020-01-15', 'Supplemental NDA based on CARDIO-SHIELD pivotal data.', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'FDA approval for HFrEF',                                'actual',  '2020-05-05', null, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Zelvox US launch for HFrEF',                            'actual',  '2020-07-01', null, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'CARDIO-SHIELD primary completion',                      'actual',  '2019-09-30', null, null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_cardio_shield from public.markers where space_id = p_space_id and title in (
+      'CARDIO-SHIELD primary results presented at ESC 2019', 'sNDA submitted to FDA for HFrEF',
+      'FDA approval for HFrEF', 'Zelvox US launch for HFrEF', 'CARDIO-SHIELD primary completion');
+
+  -- RENAL-GUARD (P4) -- 3 markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RENAL-GUARD topline results announced',                'actual',  '2020-09-24', 'Met primary endpoint: 39% reduction in composite renal endpoint.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for CKD',                               'actual',  '2021-02-15', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'RENAL-GUARD primary completion',                       'actual',  '2020-06-30', null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_renal_guard from public.markers where space_id = p_space_id and title in (
+      'RENAL-GUARD topline results announced', 'sNDA submitted for CKD', 'RENAL-GUARD primary completion');
+
+  -- FORTIFY-HF (P3) -- 3 markers, one projected
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'FORTIFY-HF results expected at ESC 2022',              'company', '2022-08-01'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'FORTIFY-HF full results published in NEJM',            'actual',  '2022-08-26'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'FORTIFY-HF primary completion',                        'actual',  '2022-05-31');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_fortify_hf from public.markers where space_id = p_space_id and title in (
+      'FORTIFY-HF results expected at ESC 2022', 'FORTIFY-HF full results published in NEJM', 'FORTIFY-HF primary completion');
+
+  -- HEART-PRESERVE (APPROVED) -- 4 markers incl NLE
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, no_longer_expected, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'HEART-PRESERVE results presented at ESC 2021',         'actual',  '2021-08-27', false, 'First positive outcome trial for HFpEF. Major unmet need addressed.'),
+    (m_heart_filing,    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for HFpEF',                             'actual',  '2022-02-24', false, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'FDA approval for HFpEF',                               'actual',  '2022-06-15', false, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Planned pediatric filing no longer expected',           'actual',  '2023-06-01', true,  'Sponsor discontinued pediatric development program.');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_heart_preserve from public.markers where space_id = p_space_id and title in (
+      'HEART-PRESERVE results presented at ESC 2021', 'sNDA submitted for HFpEF',
+      'FDA approval for HFpEF', 'Planned pediatric filing no longer expected');
+
+  -- MYOCARD-1 (P3) -- 3 markers incl NLE
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, no_longer_expected) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MYOCARD-1 results presented at ESC 2020',              'actual',  '2020-06-29', false),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for HFrEF (Cardivant)',                  'actual',  '2020-11-15', false),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'MYOCARD-1 extension study cancelled',                  'actual',  '2021-06-01', true);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_myocard_1 from public.markers where space_id = p_space_id and title in (
+      'MYOCARD-1 results presented at ESC 2020', 'sNDA submitted for HFrEF (Cardivant)', 'MYOCARD-1 extension study cancelled');
+
+  -- NEPHRO-CLEAR (P3) -- 3 markers incl range marker
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, end_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'NEPHRO-CLEAR results presented at ASN 2022',           'actual',  '2022-11-04', null, 'Significant reduction in composite kidney endpoint.'),
+    (m_nephro_proj,     p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'NEPHRO-CLEAR regulatory filing projected',             'company', '2023-03-01', null, null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Estimated CKD launch window',                          'company', '2023-06-01', '2024-03-31', 'Range reflects expected FDA review timeline.');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_nephro_clear from public.markers where space_id = p_space_id and title in (
+      'NEPHRO-CLEAR results presented at ASN 2022', 'NEPHRO-CLEAR regulatory filing projected', 'Estimated CKD launch window');
+
+  -- GLYCO-ADVANCE (P3) -- 2 markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'GLYCO-ADVANCE topline results announced',              'actual',  '2021-05-28'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Glytara NDA submitted to FDA',                         'actual',  '2022-05-13');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_glyco_advance from public.markers where space_id = p_space_id and title in (
+      'GLYCO-ADVANCE topline results announced', 'Glytara NDA submitted to FDA');
+
+  -- TRIM-1 (P3) -- 3 markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'TRIM-1 full results published in NEJM',                'actual',  '2021-02-10', 'https://example.com/trim1-nejm'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'sNDA submitted for obesity (Restivon)',                 'actual',  '2021-12-04', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'FDA approval for obesity projected',                   'company', '2022-06-01', null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_trim_1 from public.markers where space_id = p_space_id and title in (
+      'TRIM-1 full results published in NEJM', 'sNDA submitted for obesity (Restivon)', 'FDA approval for obesity projected');
+
+  -- ATLAS-HF (LAUNCHED)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ATLAS-HF topline data reported',  'actual', '2018-09-01'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Thyravex US launch',              'actual', '2019-06-01');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_atlas_hf from public.markers where space_id = p_space_id and title in ('ATLAS-HF topline data reported', 'Thyravex US launch');
+
+  -- VALOR-HF (APPROVED)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'VALOR-HF data reported',          'actual', '2019-11-10', 'Modest but significant benefit in worsening HF events.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Venatris NDA submitted',          'actual', '2020-08-15', null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_valor_hf from public.markers where space_id = p_space_id and title in ('VALOR-HF data reported', 'Venatris NDA submitted');
+
+  -- MINERVA-HF (APPROVED)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MINERVA-HF topline data',         'actual', '2024-05-13'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Ketavora sNDA submitted for HFmrEF/HFpEF', 'actual', '2024-09-20');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_minerva_hf from public.markers where space_id = p_space_id and title in ('MINERVA-HF topline data', 'Ketavora sNDA submitted for HFmrEF/HFpEF');
+
+  -- Trial Start markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'MRD-PRECLIN study initiated',     'actual', '2025-06-01'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'HLS-EARLY-HF first patient in',   'actual', '2024-02-15'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'VBX-SCOUT first patient in',      'actual', '2024-01-20');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select m.id, case m.title
+      when 'MRD-PRECLIN study initiated'   then t_mrd_preclin
+      when 'HLS-EARLY-HF first patient in' then t_hls_early
+      when 'VBX-SCOUT first patient in'    then t_vbx_scout
+    end
+    from public.markers m where m.space_id = p_space_id and m.title in (
+      'MRD-PRECLIN study initiated', 'HLS-EARLY-HF first patient in', 'VBX-SCOUT first patient in');
+
+  -- Trial End markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000012', 'MYOCARD-1 study completed',       'actual', '2020-06-30'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000012', 'GLYCO-ADVANCE study completed',   'actual', '2021-05-31');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select m.id, case m.title
+      when 'MYOCARD-1 study completed'     then t_myocard_1
+      when 'GLYCO-ADVANCE study completed' then t_glyco_advance
+    end
+    from public.markers m where m.space_id = p_space_id and m.title in (
+      'MYOCARD-1 study completed', 'GLYCO-ADVANCE study completed');
+
+  -- FUTURE CATALYSTS (event_date >= 2026-04-14)
+  -- PULSE-HF
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (m_pulse_topline, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'PULSE-HF topline data readout',       'company', '2026-06-15', 'Primary endpoint readout expected at ESC 2026.', 'https://example.com/pulse-hf-timeline'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Oxavance HF sNDA filing projected', 'company', '2026-12-01', 'Contingent on positive PULSE-HF results.', null),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'PULSE-HF primary completion projected', 'company', '2026-08-01', null, null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_pulse_hf from public.markers where space_id = p_space_id and title in (
+      'PULSE-HF topline data readout', 'Oxavance HF sNDA filing projected', 'PULSE-HF primary completion projected');
+
+  -- ECHO-HF
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (m_echo_interim, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000030', 'ECHO-HF interim analysis at AHA 2026', 'company', '2026-05-10', 'Pre-specified interim look by independent DSMB.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ECHO-HF topline results projected', 'company', '2026-11-01', null);
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_echo_hf from public.markers where space_id = p_space_id and title in (
+      'ECHO-HF interim analysis at AHA 2026', 'ECHO-HF topline results projected');
+
+  -- RENAL-NOVA (primary projection)
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RENAL-NOVA topline data projected', 'primary', '2026-09-01');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_lumivex_renal from public.markers where space_id = p_space_id and title = 'RENAL-NOVA topline data projected';
+
+  -- RENOQUIL-HF
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RENOQUIL-HF topline results', 'company', '2026-07-15'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Renoquil HF regulatory filing projected', 'company', '2027-01-15');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_renal_nova from public.markers where space_id = p_space_id and title in (
+      'RENOQUIL-HF topline results', 'Renoquil HF regulatory filing projected');
+
+  -- RESTIVON-STEP
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'RESTIVON-STEP topline data projected', 'company', '2026-08-01', '68-week primary endpoint readout.');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_restivon_step from public.markers where space_id = p_space_id and title = 'RESTIVON-STEP topline data projected';
+
+  -- CRD-PROBE-HF regulatory pathway
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'CRD-PROBE NDA submission projected',  'company', '2026-05-20'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000034', 'CRD-PROBE FDA acceptance projected',  'company', '2026-08-01'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'CRD-PROBE PDUFA date projected',      'company', '2027-03-01');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_crd_probe from public.markers where space_id = p_space_id and title in (
+      'CRD-PROBE NDA submission projected', 'CRD-PROBE FDA acceptance projected', 'CRD-PROBE PDUFA date projected');
+
+  -- SLR-RENAL-MID
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'SLR-RENAL-MID P2 topline data projected', 'company', '2026-06-01');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_slr_mid from public.markers where space_id = p_space_id and title = 'SLR-RENAL-MID P2 topline data projected';
+
+  -- ZNH-SCOUT-HF
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'ZNH-SCOUT P1 completion projected', 'company', '2026-09-30');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_znh_scout from public.markers where space_id = p_space_id and title = 'ZNH-SCOUT P1 completion projected';
+
+  -- LOE markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Ketavora US patent expiry',    'actual',  '2027-07-15'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Zelvox US LOE projected',      'actual',  '2027-10-01'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000021', 'Zelvox generic entry expected', 'company', '2027-12-01');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_minerva_hf from public.markers where space_id = p_space_id and title = 'Ketavora US patent expiry';
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_cardio_shield from public.markers where space_id = p_space_id and title in ('Zelvox US LOE projected', 'Zelvox generic entry expected');
+
+  -- Shared marker: many-to-many assignment
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Zelvox HF+CKD label expansion filing', 'company', '2026-04-28', 'Combined filing based on CARDIO-SHIELD and RENAL-GUARD data.');
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_cardio_shield from public.markers where space_id = p_space_id and title = 'Zelvox HF+CKD label expansion filing';
+  insert into public.marker_assignments (marker_id, trial_id)
+    select id, t_renal_guard from public.markers where space_id = p_space_id and title = 'Zelvox HF+CKD label expansion filing';
+
+  -- Register named marker IDs for notifications
+  insert into _seed_ids (entity_type, key, id) values
+    ('marker', 'm_cardio_data',   m_cardio_data),
+    ('marker', 'm_heart_filing',  m_heart_filing),
+    ('marker', 'm_nephro_proj',   m_nephro_proj),
+    ('marker', 'm_pulse_topline', m_pulse_topline),
+    ('marker', 'm_echo_interim',  m_echo_interim);
+end;
+$$;
