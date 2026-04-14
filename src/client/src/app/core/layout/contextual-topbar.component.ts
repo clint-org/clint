@@ -153,7 +153,7 @@ export interface TopbarTab {
           <p-button
             [label]="action.label"
             [icon]="action.icon"
-            [severity]="action.severity ?? 'secondary'"
+            [severity]="$any(action.severity ?? 'secondary')"
             [outlined]="action.outlined ?? false"
             [text]="action.text ?? false"
             size="small"
