@@ -84,7 +84,7 @@ Creates a new space and adds the calling user as the space owner. Verifies the c
 seed_demo_data(p_space_id uuid)
 ```
 
-Populates a space with pharmaceutical demo data -- companies (AstraZeneca, Eli Lilly, Novo Nordisk), products (Farxiga, Jardiance, Mounjaro, Ozempic), therapeutic areas, 8 trials with phases and markers. Idempotent (checks if user already has companies).
+Populates a space with pharmaceutical demo data -- companies (AstraZeneca, Eli Lilly, Novo Nordisk, etc.), products (Farxiga, Jardiance, Mounjaro, Ozempic), therapeutic areas, 8+ trials with phases and markers, and 20 events covering all entity levels, categories, threads, links, sources, and priorities. Idempotent (checks if user already has companies).
 
 ### has_space_access
 
