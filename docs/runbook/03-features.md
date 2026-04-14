@@ -94,6 +94,37 @@ A unified chronological feed showing analyst-created events and timeline markers
 
 **Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority.
 
+## Key Catalysts
+
+A standalone forward-looking page showing all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
+
+**Route:** `/t/:tenantId/s/:spaceId/catalysts`
+
+**Layout:** Dense table (p-table with `rowGroupMode="subheader"`) + a right-side 380px detail panel on row click. No summary header -- straight to data.
+
+**Grouping:** Adaptive time-bucket density based on distance from today:
+- Current ISO week -> "This Week" (with date range)
+- Next ISO week -> "Next Week" (with date range)
+- Next 2 calendar months -> monthly ("May 2026")
+- Beyond that -> quarterly ("Q3 2026")
+
+| Column | Content |
+|---|---|
+| Date | Monospace, formatted as "Apr 15" |
+| Category | Marker shape/color dot + category name (Data, Regulatory, Approval, Clinical Trial, LOE) |
+| Catalyst | Title, bold |
+| Company / Product | "COMPANY (uppercase) -- Product" |
+| Status | "CONFIRMED" (green badge) or "PROJECTED" (amber badge), derived from `is_projected` |
+
+**Filter bar:** Category (p-multiselect), Company (p-select with search), Product (p-select, cascading from company), and text search (client-side, debounced).
+
+**Detail panel (380px right):** Three tiers:
+1. Catalyst data -- category/type label, title, date, status, description, source link
+2. Trial context -- trial name, phase, recruitment status, company/product
+3. Related timeline -- upcoming markers for same trial (clickable, switches panel), related events for same trial/product/company (read-only)
+
+**Data source:** Reads from the existing `markers` table via two RPC functions (`get_key_catalysts`, `get_catalyst_detail`). No new database tables.
+
 ## PowerPoint Export
 
 The `PptxExportService` generates a `.pptx` file replicating the dashboard view using `pptxgenjs`. Users can configure:

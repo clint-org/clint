@@ -23,6 +23,7 @@ src/client/
           company.model.ts      # Company
           product.model.ts      # Product
           marker.model.ts       # MarkerType, TrialMarker
+          catalyst.model.ts     # Catalyst, CatalystDetail, CatalystFilters, CatalystGroup, FlatCatalyst
           event.model.ts        # AppEvent, FeedItem, EventDetail, EventsPageFilters
           dashboard.model.ts    # DashboardData, DashboardFilters, ZoomLevel
           tenant.model.ts       # Tenant, TenantMember, TenantInvite
@@ -41,6 +42,12 @@ src/client/
           events-page.component  # p-table with createGridState, detail panel toggle
           event-detail-panel.component # Right-side panel: description, sources, tags, thread, links
           event-form.component   # Create/edit event modal (p-dialog)
+        catalysts/              # Key Catalysts: forward-looking marker timeline
+          catalysts-page.component   # Smart component: filters, data fetching, grouping
+          catalyst-table.component   # p-table with rowGroupMode="subheader" for time buckets
+          catalyst-detail-panel.component # Right-side panel: catalyst, trial context, related
+          catalyst-table.css         # Global table chrome (imported from styles.css)
+          group-catalysts.ts         # Pure utility: adaptive time-bucket grouping
         spaces/                 # Space list and creation
         onboarding/             # Create org / join with invite code
         tenant-settings/        # Tenant management and member invites
@@ -65,7 +72,7 @@ src/client/
       environment.ts            # Supabase URL + anon key
     assets/                     # Static resources
     main.ts                     # Bootstrap file
-    styles.css                  # Global Tailwind CSS + shared/styles/manage-table.css
+    styles.css                  # Global Tailwind CSS + manage-table.css + catalyst-table.css
 ```
 
 ## Angular Conventions
@@ -123,6 +130,8 @@ All routes are lazy-loaded. The route hierarchy:
     manage/trials/:id               -> TrialDetailComponent
     manage/marker-types             -> MarkerTypeListComponent
     manage/therapeutic-areas        -> TherapeuticAreaListComponent
+    events                          -> EventsPageComponent
+    catalysts                       -> CatalystsPageComponent
 /                                   -> onboardingRedirectGuard (auto-redirect)
 /**                                 -> redirects to /
 ```
@@ -145,6 +154,7 @@ All routes are lazy-loaded. The route hierarchy:
 | `TherapeuticAreaService` | Therapeutic area CRUD (name, abbreviation) |
 | `TimelineService` | Date-to-pixel calculations, column generation, zoom config |
 | `PptxExportService` | Client-side PowerPoint generation via pptxgenjs |
+| `CatalystService` | Calls `get_key_catalysts()` and `get_catalyst_detail()` RPCs for the Key Catalysts page |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 
 ## Dashboard Component Hierarchy
@@ -182,7 +192,7 @@ Click events on phase bars, markers, and trials emit from the grid and navigate 
 The `HeaderComponent` provides global navigation:
 
 - **Left**: "Clint" logo + tenant dropdown (if multiple tenants) + space dropdown, separated by slate-200 slashes
-- **Center**: Uppercase tracked navigation links when inside a space (Dashboard, Companies, Products, Trials, Markers, Areas) with a teal-600 underline on the active link
+- **Center**: Uppercase tracked navigation links when inside a space (Landscape, Companies, Products, Trials, Markers, Areas, Events, Catalysts) with a teal-600 underline on the active link
 - **Right**: Settings gear icon + initials avatar button that opens a native popover (no PrimeNG `MenuModule` — that would be eager-loaded) with the signed-in email and a Sign out action. The popover closes on outside click, Escape, or navigation.
 - **State persistence**: Stores `lastTenantId` and `lastSpaceId` in localStorage
 - **Route sync**: Recursively extracts route params (tenantId, spaceId) from Angular route tree
