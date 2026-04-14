@@ -75,7 +75,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
         <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
       </div>
       <p-table
-        styleClass="manage-table"
+        styleClass="data-table"
         [value]="members()"
         [loading]="loading()"
         [tableStyle]="{ 'min-width': '48rem' }"
@@ -122,7 +122,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
         <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
       </div>
       <p-table
-        styleClass="manage-table"
+        styleClass="data-table"
         [value]="invites()"
         [tableStyle]="{ 'min-width': '48rem' }"
         aria-label="Pending invites"
