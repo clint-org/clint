@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 
 type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
@@ -34,7 +34,7 @@ interface NavSection {
 
       <!-- Section icons -->
       <div class="section-icons">
-        @for (section of sections; track section.id) {
+        @for (section of sections(); track section.id) {
           <button
             type="button"
             role="button"
@@ -249,6 +249,7 @@ interface NavSection {
 export class IconRailComponent {
   readonly activeSection = input<Section>('landscape');
   readonly userInitials = input<string>('');
+  readonly hasSpace = input<boolean>(false);
 
   readonly sectionClick = output<Section>();
   readonly logoClick = output<void>();
@@ -256,12 +257,18 @@ export class IconRailComponent {
   readonly hoverStart = output<void>();
   readonly hoverEnd = output<void>();
 
-  readonly sections: NavSection[] = [
+  readonly allSections: NavSection[] = [
     { id: 'landscape', label: 'Landscape' },
     { id: 'intelligence', label: 'Intelligence' },
     { id: 'manage', label: 'Manage' },
     { id: 'settings', label: 'Settings' },
   ];
+
+  readonly sections = computed(() =>
+    this.hasSpace()
+      ? this.allSections
+      : this.allSections.filter((s) => s.id === 'settings')
+  );
 
   iconColor(sectionId: Section): string {
     return this.activeSection() === sectionId ? '#0d9488' : '#64748b';

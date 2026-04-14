@@ -1,7 +1,6 @@
 import {
   Component,
   computed,
-  ElementRef,
   HostListener,
   inject,
   OnInit,
@@ -38,6 +37,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       <app-icon-rail
         [activeSection]="activeSection()"
         [userInitials]="initials()"
+        [hasSpace]="!!spaceId()"
         (sectionClick)="onSectionClick($event)"
         (logoClick)="onLogoClick()"
         (avatarClick)="toggleAccount()"
@@ -95,6 +95,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
 
       <!-- Account menu overlay -->
       @if (accountOpen()) {
+        <div class="account-backdrop" (click)="accountOpen.set(false)"></div>
         <div class="account-menu" role="menu">
           <div class="account-menu__header">
             <p class="account-menu__label">Signed in as</p>
@@ -140,11 +141,18 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         background: #f8fafc;
       }
 
+      .account-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+      }
+
       .account-menu {
         position: absolute;
         left: 8px;
         bottom: 48px;
         z-index: 60;
+        pointer-events: auto;
         width: 220px;
         background: #1e293b;
         border: 1px solid #334155;
@@ -202,8 +210,6 @@ export class AppShellComponent implements OnInit {
   private readonly tenantService = inject(TenantService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly host = inject(ElementRef<HTMLElement>);
-
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -478,15 +484,6 @@ export class AppShellComponent implements OnInit {
   toggleAccount(event?: Event): void {
     event?.stopPropagation();
     this.accountOpen.update((v) => !v);
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (!this.accountOpen()) return;
-    const target = event.target as Node;
-    if (!this.host.nativeElement.contains(target)) {
-      this.accountOpen.set(false);
-    }
   }
 
   @HostListener('document:keydown.escape')

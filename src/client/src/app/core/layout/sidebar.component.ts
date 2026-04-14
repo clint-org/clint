@@ -139,16 +139,16 @@ const NAV_SECTIONS: NavSection[] = [
             [attr.aria-pressed]="pinned()"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M9.5 2.5L13.5 6.5L10.5 9.5L11 13L8 10L5 13L5.5 9.5L2.5 6.5L6.5 2.5L9.5 2.5Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+              <path d="M10 1.5L12.5 4L11 7.5V10H5V7.5L3.5 4L6 1.5H10Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
+              <line x1="8" y1="10" x2="8" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
           </button>
         }
       </div>
 
       <!-- Nav sections -->
-      @if (hasSpace()) {
         <nav class="sidebar-nav" aria-label="Section navigation">
-          @for (section of sections; track section.label) {
+          @for (section of visibleSections(); track section.label) {
             <div
               class="nav-section"
               [class.nav-section--bottom]="section.bottom"
@@ -202,7 +202,6 @@ const NAV_SECTIONS: NavSection[] = [
             </div>
           }
         </nav>
-      }
     </div>
   `,
   styles: [
@@ -221,13 +220,6 @@ const NAV_SECTIONS: NavSection[] = [
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transition: width 200ms ease-out;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .sidebar-container {
-          transition: none;
-        }
       }
 
       .sidebar-overlay {
@@ -237,6 +229,8 @@ const NAV_SECTIONS: NavSection[] = [
         bottom: 0;
         z-index: 40;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+        transform: translateX(0);
+        transition: transform 200ms ease-out;
       }
 
       .sidebar-pinned {
@@ -244,8 +238,21 @@ const NAV_SECTIONS: NavSection[] = [
       }
 
       .sidebar-hidden {
-        width: 0;
-        min-width: 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 200ms ease-out;
+        pointer-events: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sidebar-overlay,
+        .sidebar-hidden {
+          transition: none;
+        }
       }
 
       /* Header */
@@ -556,7 +563,22 @@ export class SidebarComponent {
   readonly mouseEnter = output<void>();
   readonly mouseLeave = output<void>();
 
-  readonly sections: NavSection[] = NAV_SECTIONS;
+  private readonly allSections: NavSection[] = NAV_SECTIONS;
+
+  private readonly orgOnlySections: NavSection[] = [
+    {
+      label: 'Settings',
+      bottom: true,
+      items: [
+        { label: 'Organization', route: 'settings/organization' },
+        { label: 'Spaces', route: 'settings/spaces' },
+      ],
+    },
+  ];
+
+  readonly visibleSections = computed(() =>
+    this.hasSpace() ? this.allSections : this.orgOnlySections
+  );
 
   spacePickerOpen = false;
 
