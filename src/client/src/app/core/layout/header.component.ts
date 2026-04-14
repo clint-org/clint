@@ -290,9 +290,10 @@ export class HeaderComponent implements OnInit {
     this.router.navigate(['/t', this.tenantId(), 's', newSpaceId]);
   }
 
-  onSignOut(): void {
+  async onSignOut(): Promise<void> {
     this.accountOpen.set(false);
-    this.supabase.signOut();
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
   }
 
   private extractRouteParams(): void {
