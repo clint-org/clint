@@ -65,6 +65,12 @@ import {
             <span class="text-[10px] font-medium text-amber-300">{{ projectionLabel() }}</span>
           </div>
         }
+        @if (noLongerExpected()) {
+          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-slate-500/20 px-2 py-0.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+            <span class="text-[10px] font-medium text-slate-300">No longer expected</span>
+          </div>
+        }
 
         <!-- Description -->
         @if (description()) {
@@ -96,6 +102,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   categoryName = input<string>('');
   description = input<string | null>(null);
   sourceUrl = input<string | null>(null);
+  noLongerExpected = input<boolean>(false);
 
   tooltipX = signal(0);
   tooltipY = signal(0);
@@ -110,11 +117,11 @@ export class MarkerTooltipComponent implements AfterViewInit {
   projectionLabel = computed(() => {
     switch (this.projection()) {
       case 'stout':
-        return 'Stout';
+        return 'Stout estimate';
       case 'company':
-        return 'Company';
+        return 'Company guidance';
       case 'primary':
-        return 'Primary';
+        return 'Primary source estimate';
       case 'actual':
       default:
         return '';
