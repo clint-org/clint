@@ -3,6 +3,22 @@
 -- it populates system marker types and a small set of sample markers for local dev.
 
 -- =============================================================================
+-- system marker categories (idempotent)
+-- =============================================================================
+
+insert into public.marker_categories (id, space_id, name, display_order, is_system, created_by)
+values
+  ('c0000000-0000-0000-0000-000000000001', null, 'Clinical Trial',       1, true, null),
+  ('c0000000-0000-0000-0000-000000000002', null, 'Data',                 2, true, null),
+  ('c0000000-0000-0000-0000-000000000003', null, 'Regulatory',           3, true, null),
+  ('c0000000-0000-0000-0000-000000000004', null, 'Approval',             4, true, null),
+  ('c0000000-0000-0000-0000-000000000005', null, 'Loss of Exclusivity',  5, true, null)
+on conflict (id) do update set
+  name          = excluded.name,
+  display_order = excluded.display_order,
+  is_system     = excluded.is_system;
+
+-- =============================================================================
 -- system marker types (idempotent)
 -- category_id references the system marker_categories seeded in the redesign
 -- migration (20260412130100). category UUIDs follow the c0000000-... pattern.
@@ -38,3 +54,20 @@ on conflict (id) do update set
   is_system     = excluded.is_system,
   display_order = excluded.display_order,
   category_id   = excluded.category_id;
+
+-- =============================================================================
+-- system event categories (idempotent)
+-- =============================================================================
+
+insert into public.event_categories (id, space_id, name, display_order, is_system, created_by)
+values
+  ('e0000000-0000-0000-0000-000000000001', null, 'Leadership',  1, true, null),
+  ('e0000000-0000-0000-0000-000000000002', null, 'Regulatory',  2, true, null),
+  ('e0000000-0000-0000-0000-000000000003', null, 'Financial',   3, true, null),
+  ('e0000000-0000-0000-0000-000000000004', null, 'Strategic',   4, true, null),
+  ('e0000000-0000-0000-0000-000000000005', null, 'Clinical',    5, true, null),
+  ('e0000000-0000-0000-0000-000000000006', null, 'Commercial',  6, true, null)
+on conflict (id) do update set
+  name          = excluded.name,
+  display_order = excluded.display_order,
+  is_system     = excluded.is_system;
