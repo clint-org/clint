@@ -30,6 +30,7 @@ All schema changes are in `supabase/migrations/` as timestamped SQL files. The c
 | 29 | `20260413120000_events_system.sql` | Events tables: event_categories, event_threads, events, event_sources, event_links |
 | 30 | `20260413120100_events_rpc_functions.sql` | Events RPCs: get_events_page_data, get_event_detail, get_event_thread, get_space_tags |
 | 31 | `20260413120200_seed_events_demo_data.sql` | Updates seed_demo_data() with 20 events, threads, links, sources |
+| 32 | `20260414023709_marker_visual_redesign.sql` | Adds inner_mark to marker_types, consolidates 21 types to 12 active, adds no_longer_expected to markers |
 
 ## Core Data Tables
 
@@ -161,18 +162,19 @@ trial_notes (
   updated_at  timestamptz
 )
 
--- Marker type definitions (10 system + custom user types)
+-- Marker type definitions (12 active system types + custom user types)
 marker_types (
   id            uuid PRIMARY KEY,
   space_id      uuid,              -- null for system types
   created_by    uuid,              -- null for system types
+  category_id   uuid REFERENCES marker_categories(id),
   name          text NOT NULL,
-  icon          text,
-  shape         text,              -- 'circle'|'diamond'|'flag'|'arrow'|'bar'|'x'
+  shape         text,              -- 'circle'|'diamond'|'flag'|'triangle'|'square'|'dashed-line'
   fill_style    text,              -- 'filled'|'outline'|'striped'|'gradient'
   color         text,              -- hex color
+  inner_mark    text DEFAULT 'none', -- 'dot'|'dash'|'check'|'x'|'none'
   is_system     boolean,
-  display_order integer,
+  display_order integer,           -- -1 for archived types
   created_at    timestamptz,
   updated_at    timestamptz
 )
