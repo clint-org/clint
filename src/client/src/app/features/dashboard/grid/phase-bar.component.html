@@ -5,11 +5,10 @@
   [attr.height]="barHeight"
   [attr.rx]="cornerRadius"
   [attr.fill]="barColor()"
+  fill-opacity="0.12"
   [attr.stroke]="barColor()"
-  stroke-width="1"
-  stroke-opacity="0.4"
-  opacity="0.75"
-  class="cursor-pointer transition-opacity hover:opacity-100"
+  stroke-width="1.2"
+  class="cursor-pointer transition-opacity hover:fill-opacity-[0.25]"
   role="button"
   [attr.aria-label]="labelText() + ' phase'"
   tabindex="0"
@@ -26,7 +25,7 @@
     font-size="9"
     font-weight="600"
     class="pointer-events-none select-none"
-    [attr.fill]="showLabelInside() ? insideLabelColor() : '#64748b'"
+    [attr.fill]="labelColor()"
   >
     {{ labelText() }}
   </svg:text>
