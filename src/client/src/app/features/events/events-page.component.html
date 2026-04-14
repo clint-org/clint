@@ -39,9 +39,9 @@
         <app-event-feed-item
           [item]="item"
           [detail]="selectedDetail()?.id === item.id ? selectedDetail() : null"
-          (select)="onSelectItem(item)"
+          (itemSelect)="onSelectItem(item)"
           (edit)="openEditModal(item.id)"
-          (delete)="onDeleteEvent(item.id)"
+          (deleteItem)="onDeleteEvent(item.id)"
         />
       }
     </div>

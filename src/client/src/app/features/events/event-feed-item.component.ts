@@ -14,8 +14,8 @@ import { EventDetailComponent } from './event-detail.component';
     <div
       class="cursor-pointer rounded-md border border-slate-200 bg-white transition-colors hover:border-slate-300"
       [class.border-teal-300]="detail() !== null"
-      (click)="select.emit()"
-      (keydown.enter)="select.emit()"
+      (click)="itemSelect.emit()"
+      (keydown.enter)="itemSelect.emit()"
       tabindex="0"
       [attr.aria-label]="item().title"
       role="button"
@@ -70,11 +70,11 @@ import { EventDetailComponent } from './event-detail.component';
 
         <!-- Actions (events only) -->
         @if (item().source_type === 'event') {
-          <div class="flex gap-1" (click)="$event.stopPropagation()">
+          <div class="flex gap-1">
             <button
               type="button"
               class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              (click)="edit.emit()"
+              (click)="onEdit($event)"
               aria-label="Edit event"
             >
               <i class="fa-solid fa-pen text-xs"></i>
@@ -93,7 +93,7 @@ import { EventDetailComponent } from './event-detail.component';
 
       <!-- Expanded detail -->
       @if (detail(); as d) {
-        <div class="border-t border-slate-100 px-4 py-3" (click)="$event.stopPropagation()">
+        <div class="border-t border-slate-100 px-4 py-3">
           <app-event-detail [detail]="d" />
         </div>
       }
@@ -104,12 +104,17 @@ export class EventFeedItemComponent {
   readonly item = input.required<FeedItem>();
   readonly detail = input<EventDetail | null>(null);
 
-  readonly select = output<void>();
+  readonly itemSelect = output<void>();
   readonly edit = output<void>();
-  readonly delete = output<void>();
+  readonly deleteItem = output<void>();
+
+  onEdit(event: MouseEvent): void {
+    event.stopPropagation();
+    this.edit.emit();
+  }
 
   onDelete(event: MouseEvent): void {
     event.stopPropagation();
-    this.delete.emit();
+    this.deleteItem.emit();
   }
 }

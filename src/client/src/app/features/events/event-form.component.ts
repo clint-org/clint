@@ -12,7 +12,6 @@ import { MessageModule } from 'primeng/message';
 import {
   AppEvent,
   EventCategory,
-  EventDetail,
   EventPriority,
   EntityLevel,
   EventThread,
@@ -150,7 +149,7 @@ interface SourceRow {
 
       <!-- Sources -->
       <div>
-        <label class="mb-1 block text-xs font-medium text-slate-600">Source URLs</label>
+        <p class="mb-1 text-xs font-medium text-slate-600" id="source-urls-label">Source URLs</p>
         @for (src of sources; track $index) {
           <div class="mb-2 flex items-center gap-2">
             <input pInputText [(ngModel)]="src.url" [name]="'srcUrl' + $index" placeholder="URL" class="flex-1" />
@@ -245,9 +244,6 @@ export class EventFormComponent implements OnInit {
 
   saving = signal(false);
   error = signal<string | null>(null);
-
-  // Suppress unused variable warnings for detail type usage
-  private _detail?: EventDetail;
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.getSpaceId();
