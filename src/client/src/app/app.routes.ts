@@ -20,6 +20,8 @@ export const routes: Routes = [
   {
     path: 't/:tenantId',
     canActivate: [authGuard],
+    loadComponent: () =>
+      import('./core/layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [
       {
         path: 'spaces',
@@ -196,33 +198,37 @@ export const routes: Routes = [
                 (m) => m.TrialDetailComponent,
               ),
           },
+          // Settings routes (moved from manage)
           {
-            path: 'manage/marker-types',
+            path: 'settings/marker-types',
             loadComponent: () =>
               import('./features/manage/marker-types/marker-type-list.component').then(
                 (m) => m.MarkerTypeListComponent,
               ),
           },
           {
-            path: 'manage/mechanisms-of-action',
+            path: 'settings/taxonomies',
             loadComponent: () =>
-              import(
-                './features/manage/mechanisms-of-action/mechanism-of-action-list.component'
-              ).then((m) => m.MechanismOfActionListComponent),
+              import('./features/manage/taxonomies/taxonomies-page.component').then(
+                (m) => m.TaxonomiesPageComponent,
+              ),
           },
+          // Redirects: old manage taxonomy/marker paths -> new settings paths
           {
-            path: 'manage/routes-of-administration',
-            loadComponent: () =>
-              import(
-                './features/manage/routes-of-administration/route-of-administration-list.component'
-              ).then((m) => m.RouteOfAdministrationListComponent),
+            path: 'manage/marker-types',
+            redirectTo: 'settings/marker-types',
           },
           {
             path: 'manage/therapeutic-areas',
-            loadComponent: () =>
-              import('./features/manage/therapeutic-areas/therapeutic-area-list.component').then(
-                (m) => m.TherapeuticAreaListComponent,
-              ),
+            redirectTo: 'settings/taxonomies',
+          },
+          {
+            path: 'manage/mechanisms-of-action',
+            redirectTo: 'settings/taxonomies',
+          },
+          {
+            path: 'manage/routes-of-administration',
+            redirectTo: 'settings/taxonomies',
           },
           {
             path: 'events',
