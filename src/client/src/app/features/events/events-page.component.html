@@ -1,0 +1,76 @@
+<div class="mx-auto max-w-5xl px-6 py-8">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Intelligence</p>
+      <h1 class="text-xl font-semibold text-slate-900">Events</h1>
+    </div>
+    <p-button
+      label="New Event"
+      icon="fa-solid fa-plus"
+      severity="secondary"
+      [outlined]="true"
+      size="small"
+      (onClick)="openCreateModal()"
+    />
+  </div>
+
+  @if (error()) {
+    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
+  }
+
+  <app-event-filter-bar
+    [filters]="filters()"
+    [categories]="allCategories()"
+    [tags]="spaceTags()"
+    (filtersChange)="onFiltersChanged($event)"
+  />
+
+  @if (loading() && feedItems().length === 0) {
+    <div class="flex justify-center py-16">
+      <p-progressSpinner strokeWidth="3" />
+    </div>
+  } @else if (feedItems().length === 0) {
+    <div class="py-16 text-center text-sm text-slate-400">
+      No events yet. Events capture competitive intelligence -- leadership changes, strategic moves, regulatory shifts -- at any level of your landscape.
+    </div>
+  } @else {
+    <div class="mt-4 space-y-2">
+      @for (item of feedItems(); track item.id) {
+        <app-event-feed-item
+          [item]="item"
+          [detail]="selectedDetail()?.id === item.id ? selectedDetail() : null"
+          (select)="onSelectItem(item)"
+          (edit)="openEditModal(item.id)"
+          (delete)="onDeleteEvent(item.id)"
+        />
+      }
+    </div>
+
+    @if (hasMore()) {
+      <div class="mt-4 flex justify-center">
+        <p-button
+          label="Load more"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          [loading]="loading()"
+          (onClick)="loadMore()"
+        />
+      </div>
+    }
+  }
+</div>
+
+<p-dialog
+  [header]="editingEventId() ? 'Edit event' : 'New event'"
+  [(visible)]="modalOpen"
+  [modal]="true"
+  [style]="{ width: '42rem' }"
+  (onHide)="closeModal()"
+>
+  <app-event-form
+    [eventId]="editingEventId()"
+    (saved)="onSaved()"
+    (cancelled)="closeModal()"
+  />
+</p-dialog>
