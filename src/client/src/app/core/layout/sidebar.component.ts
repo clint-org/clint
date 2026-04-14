@@ -1,6 +1,7 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 
 interface NavItem {
   label: string;
@@ -9,6 +10,7 @@ interface NavItem {
 }
 
 interface NavSection {
+  id: string;
   label: string;
   items: NavItem[];
   bottom?: boolean;
@@ -16,6 +18,7 @@ interface NavSection {
 
 const NAV_SECTIONS: NavSection[] = [
   {
+    id: 'landscape',
     label: 'Landscape',
     items: [
       { label: 'Timeline', route: '' },
@@ -33,6 +36,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: 'intelligence',
     label: 'Intelligence',
     items: [
       { label: 'Events', route: 'events' },
@@ -40,6 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: 'manage',
     label: 'Manage',
     items: [
       { label: 'Companies', route: 'manage/companies' },
@@ -48,6 +53,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: 'settings',
     label: 'Settings',
     bottom: true,
     items: [
@@ -59,77 +65,86 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+const ORG_ONLY_SECTIONS: NavSection[] = [
+  {
+    id: 'settings',
+    label: 'Settings',
+    bottom: true,
+    items: [
+      { label: 'Organization', route: 'settings/organization' },
+      { label: 'Spaces', route: 'settings/spaces' },
+    ],
+  },
+];
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [FormsModule, Select],
+  imports: [FormsModule, Select, Tooltip],
   template: `
     <div
-      class="sidebar-container"
-      [class.sidebar-overlay]="expanded() && !pinned()"
-      [class.sidebar-pinned]="pinned()"
-      [class.sidebar-hidden]="!expanded() && !pinned()"
-      role="complementary"
-      aria-label="Navigation sidebar"
-      (mouseenter)="mouseEnter.emit()"
-      (mouseleave)="mouseLeave.emit()"
+      class="sidebar"
+      [class.sidebar--expanded]="isExpanded()"
+      [class.sidebar--collapsed]="!isExpanded()"
+      [class.sidebar--pinned]="pinned()"
+      role="navigation"
+      aria-label="Main navigation"
+      (mouseenter)="onMouseEnter()"
+      (mouseleave)="onMouseLeave()"
     >
-      <!-- Header: org/space picker + pin button -->
-      <div class="sidebar-header">
-        <div class="org-space-area">
-          @if (tenants().length >= 2) {
-            <p-select
-              [options]="tenants()"
-              [ngModel]="currentTenantId()"
-              (ngModelChange)="tenantChange.emit($event)"
-              optionLabel="name"
-              optionValue="id"
-              styleClass="sidebar-select"
-              [style]="{ width: '100%' }"
-            />
-          } @else {
-            <div class="org-name">{{ tenantName() }}</div>
-          }
+      <!-- Logo row -->
+      <div class="sidebar__logo">
+        <button
+          type="button"
+          class="logo-btn"
+          aria-label="Go to home"
+          (click)="logoClick.emit()"
+        >
+          <div class="logo-square">C</div>
+        </button>
 
-          <button
-            type="button"
-            class="space-picker-btn"
-            (click)="spacePickerOpen = !spacePickerOpen"
-            [attr.aria-expanded]="spacePickerOpen"
-            aria-label="Switch space"
-          >
-            <span class="space-name-text">{{ spaceName() || 'No space selected' }}</span>
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              aria-hidden="true"
-              class="space-chevron"
-              [class.space-chevron--open]="spacePickerOpen"
+        @if (isExpanded()) {
+          <div class="logo-text">
+            @if (tenants().length >= 2) {
+              <p-select
+                [options]="tenants()"
+                [ngModel]="currentTenantId()"
+                (ngModelChange)="tenantChange.emit($event)"
+                optionLabel="name"
+                optionValue="id"
+                styleClass="sidebar-select"
+                [style]="{ width: '100%' }"
+              />
+            } @else {
+              <div class="org-name">{{ tenantName() }}</div>
+            }
+            <button
+              type="button"
+              class="space-picker-btn"
+              (click)="spacePickerOpen = !spacePickerOpen"
+              [attr.aria-expanded]="spacePickerOpen"
+              aria-label="Switch space"
             >
-              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
+              <span class="space-name-text">{{ spaceName() || 'Select space' }}</span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
+                class="space-chevron" [class.space-chevron--open]="spacePickerOpen">
+                <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            @if (spacePickerOpen && spaces().length > 0) {
+              <div class="space-dropdown">
+                @for (space of spaces(); track space.id) {
+                  <button type="button" class="space-dropdown-item"
+                    [class.space-dropdown-item--active]="space.id === currentSpaceId()"
+                    (click)="selectSpace(space.id)">
+                    {{ space.name }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
 
-          @if (spacePickerOpen && spaces().length > 0) {
-            <div class="space-dropdown">
-              @for (space of spaces(); track space.id) {
-                <button
-                  type="button"
-                  class="space-dropdown-item"
-                  [class.space-dropdown-item--active]="space.id === currentSpaceId()"
-                  (click)="selectSpace(space.id)"
-                >
-                  {{ space.name }}
-                </button>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Pin button -->
-        @if (expanded() || pinned()) {
+          <!-- Pin button -->
           <button
             type="button"
             class="pin-btn"
@@ -138,7 +153,7 @@ const NAV_SECTIONS: NavSection[] = [
             [attr.aria-label]="pinned() ? 'Unpin sidebar' : 'Pin sidebar'"
             [attr.aria-pressed]="pinned()"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M10 1.5L12.5 4L11 7.5V10H5V7.5L3.5 4L6 1.5H10Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
               <line x1="8" y1="10" x2="8" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
@@ -146,62 +161,96 @@ const NAV_SECTIONS: NavSection[] = [
         }
       </div>
 
-      <!-- Nav sections -->
-        <nav class="sidebar-nav" aria-label="Section navigation">
-          @for (section of visibleSections(); track section.label) {
-            <div
-              class="nav-section"
-              [class.nav-section--bottom]="section.bottom"
-            >
-              <div
-                class="section-header"
-                role="heading"
-                aria-level="2"
-              >
-                {{ section.label }}
-              </div>
-
+      <!-- Section icons (collapsed) / full nav (expanded) -->
+      <div class="sidebar__nav">
+        @for (section of visibleSections(); track section.id) {
+          <div class="nav-section" [class.nav-section--bottom]="section.bottom">
+            @if (isExpanded()) {
+              <!-- Expanded: section header + nav items -->
+              <div class="section-header" role="heading" aria-level="2">{{ section.label }}</div>
               @for (item of section.items; track item.route) {
                 @if (item.children) {
-                  <!-- Expandable parent item (Bullseye) -->
-                  <button
-                    type="button"
-                    class="nav-item"
+                  <button type="button" class="nav-item"
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
-                    (click)="onNavClick(item.route)"
-                  >
+                    (click)="onNavClick(item.route)">
                     {{ item.label }}
                   </button>
-
                   @if (bullseyeExpanded()) {
                     @for (child of item.children; track child.route) {
-                      <button
-                        type="button"
-                        class="nav-item nav-item--child"
+                      <button type="button" class="nav-item nav-item--child"
                         [class.nav-item--active]="isActive(child.route)"
                         [attr.aria-current]="isActive(child.route) ? 'page' : null"
-                        (click)="onNavClick(child.route)"
-                      >
+                        (click)="onNavClick(child.route)">
                         {{ child.label }}
                       </button>
                     }
                   }
                 } @else {
-                  <button
-                    type="button"
-                    class="nav-item"
+                  <button type="button" class="nav-item"
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
-                    (click)="onNavClick(item.route)"
-                  >
+                    (click)="onNavClick(item.route)">
                     {{ item.label }}
                   </button>
                 }
               }
-            </div>
-          }
-        </nav>
+            } @else {
+              <!-- Collapsed: section icon only -->
+              <button type="button" class="icon-btn"
+                [class.icon-btn--active]="isSectionActive(section.id)"
+                [attr.aria-label]="section.label"
+                [attr.aria-current]="isSectionActive(section.id) ? 'true' : null"
+                [pTooltip]="section.label"
+                tooltipPosition="right"
+                (click)="onSectionClick(section.id)">
+                @if (isSectionActive(section.id)) {
+                  <span class="active-indicator" aria-hidden="true"></span>
+                }
+                <!-- Section icons -->
+                @if (section.id === 'landscape') {
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <rect x="2" y="4" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
+                    <rect x="2" y="9" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
+                    <rect x="2" y="14" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
+                  </svg>
+                }
+                @if (section.id === 'intelligence') {
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M10 3L12 7.5H16.5L13 10L14 14.5L10 12L6 14.5L7 10L3.5 7.5H8L10 3Z" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                  </svg>
+                }
+                @if (section.id === 'manage') {
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="14" height="14" rx="2.5" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
+                    <path d="M6 7.5h8M6 10h8M6 12.5h5" [attr.stroke]="iconColor(section.id)" stroke-width="1.2" stroke-linecap="round"/>
+                  </svg>
+                }
+                @if (section.id === 'settings') {
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="10" cy="10" r="3" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
+                    <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.93 4.93l1.41 1.41M13.66 13.66l1.41 1.41M4.93 15.07l1.41-1.41M13.66 6.34l1.41-1.41" [attr.stroke]="iconColor(section.id)" stroke-width="1.3" stroke-linecap="round"/>
+                  </svg>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- User avatar -->
+      <div class="sidebar__footer">
+        <button type="button" class="avatar-btn"
+          [attr.aria-label]="'User account: ' + userInitials()"
+          [pTooltip]="isExpanded() ? '' : 'Account'"
+          tooltipPosition="right"
+          (click)="avatarClick.emit()">
+          {{ userInitials() }}
+        </button>
+        @if (isExpanded()) {
+          <span class="avatar-email">{{ userEmail() }}</span>
+        }
+      </div>
     </div>
   `,
   styles: [
@@ -209,64 +258,94 @@ const NAV_SECTIONS: NavSection[] = [
       :host {
         display: block;
         height: 100%;
-        position: relative;
+        flex-shrink: 0;
       }
 
-      .sidebar-container {
-        width: 220px;
-        min-width: 220px;
+      .sidebar {
         height: 100%;
         background: #0f172a;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        transition: width 200ms ease-out;
       }
 
-      .sidebar-overlay {
+      @media (prefers-reduced-motion: reduce) {
+        .sidebar {
+          transition: none;
+        }
+      }
+
+      .sidebar--collapsed {
+        width: 48px;
+      }
+
+      .sidebar--expanded {
+        width: 220px;
+      }
+
+      .sidebar--expanded:not(.sidebar--pinned) {
         position: absolute;
         left: 0;
         top: 0;
         bottom: 0;
         z-index: 40;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
-        transform: translateX(0);
-        transition: transform 200ms ease-out;
       }
 
-      .sidebar-pinned {
+      .sidebar--pinned {
         position: relative;
       }
 
-      .sidebar-hidden {
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        z-index: 40;
-        transform: translateX(-100%);
-        transition: transform 200ms ease-out;
-        pointer-events: none;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .sidebar-overlay,
-        .sidebar-hidden {
-          transition: none;
-        }
-      }
-
-      /* Header */
-      .sidebar-header {
+      /* Logo row */
+      .sidebar__logo {
         display: flex;
         align-items: flex-start;
-        justify-content: space-between;
-        padding: 16px 12px 12px;
-        border-bottom: 1px solid #1e293b;
         gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid #1e293b;
         flex-shrink: 0;
       }
 
-      .org-space-area {
+      .sidebar--collapsed .sidebar__logo {
+        justify-content: center;
+        padding: 12px 0;
+      }
+
+      .logo-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        outline: none;
+      }
+
+      .logo-btn:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+        border-radius: 8px;
+      }
+
+      .logo-square {
+        width: 28px;
+        height: 28px;
+        background: #0d9488;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1;
+        user-select: none;
+      }
+
+      .logo-text {
         flex: 1;
         min-width: 0;
         position: relative;
@@ -279,7 +358,6 @@ const NAV_SECTIONS: NavSection[] = [
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-bottom: 4px;
       }
 
       .space-picker-btn {
@@ -293,13 +371,9 @@ const NAV_SECTIONS: NavSection[] = [
         color: #64748b;
         margin-top: 4px;
         outline: none;
-        max-width: 100%;
       }
 
-      .space-picker-btn:hover {
-        color: #94a3b8;
-      }
-
+      .space-picker-btn:hover { color: #94a3b8; }
       .space-picker-btn:focus-visible {
         outline: 2px solid #0d9488;
         outline-offset: 2px;
@@ -311,23 +385,14 @@ const NAV_SECTIONS: NavSection[] = [
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 140px;
+        max-width: 120px;
       }
 
       .space-chevron {
         flex-shrink: 0;
         transition: transform 150ms ease;
       }
-
-      .space-chevron--open {
-        transform: rotate(180deg);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .space-chevron {
-          transition: none;
-        }
-      }
+      .space-chevron--open { transform: rotate(180deg); }
 
       .space-dropdown {
         position: absolute;
@@ -352,103 +417,51 @@ const NAV_SECTIONS: NavSection[] = [
         background: transparent;
         border: none;
         cursor: pointer;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         outline: none;
       }
+      .space-dropdown-item:hover { color: #e2e8f0; background: #293548; }
+      .space-dropdown-item--active { color: #0d9488; }
 
-      .space-dropdown-item:hover {
-        color: #e2e8f0;
-        background: #293548;
-      }
-
-      .space-dropdown-item:focus-visible {
-        outline: 2px solid #0d9488;
-        outline-offset: -2px;
-      }
-
-      .space-dropdown-item--active {
-        color: #0d9488;
-      }
-
-      /* Pin button */
       .pin-btn {
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         background: transparent;
         border: none;
-        border-radius: 6px;
+        border-radius: 4px;
         cursor: pointer;
         color: #475569;
         padding: 0;
-        margin-top: 2px;
-        transition:
-          color 150ms ease,
-          background-color 150ms ease,
-          transform 150ms ease;
+        margin-top: 4px;
+        transition: color 150ms ease, transform 150ms ease;
         outline: none;
       }
+      .pin-btn:hover { color: #94a3b8; background: #1e293b; }
+      .pin-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+      .pin-btn--pinned { color: #0d9488; transform: rotate(45deg); }
 
-      .pin-btn:hover {
-        color: #94a3b8;
-        background: #1e293b;
-      }
-
-      .pin-btn:focus-visible {
-        outline: 2px solid #0d9488;
-        outline-offset: 2px;
-      }
-
-      .pin-btn--pinned {
-        color: #0d9488;
-        transform: rotate(45deg);
-      }
-
-      .pin-btn--pinned:hover {
-        color: #14b8a6;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .pin-btn {
-          transition: none;
-        }
-      }
-
-      /* Nav */
-      .sidebar-nav {
+      /* Nav area */
+      .sidebar__nav {
         display: flex;
         flex-direction: column;
         flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 8px 0 16px;
+        padding: 8px 0;
         scrollbar-width: thin;
         scrollbar-color: #1e293b transparent;
       }
 
-      .sidebar-nav::-webkit-scrollbar {
-        width: 4px;
+      .sidebar--collapsed .sidebar__nav {
+        align-items: center;
+        gap: 4px;
+        padding: 12px 0;
       }
 
-      .sidebar-nav::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .sidebar-nav::-webkit-scrollbar-thumb {
-        background: #1e293b;
-        border-radius: 2px;
-      }
-
-      /* Nav section */
-      .nav-section {
-        padding-bottom: 8px;
-      }
-
+      .nav-section { padding-bottom: 8px; }
       .nav-section--bottom {
         margin-top: auto;
         border-top: 1px solid #1e293b;
@@ -465,7 +478,7 @@ const NAV_SECTIONS: NavSection[] = [
         user-select: none;
       }
 
-      /* Nav items */
+      /* Nav items (expanded) */
       .nav-item {
         display: block;
         width: 100%;
@@ -481,23 +494,11 @@ const NAV_SECTIONS: NavSection[] = [
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        transition:
-          color 120ms ease,
-          background-color 120ms ease;
+        transition: color 120ms ease, background-color 120ms ease;
         outline: none;
       }
-
-      .nav-item:hover {
-        color: #e2e8f0;
-        background: #1e293b;
-      }
-
-      .nav-item:focus-visible {
-        outline: 2px solid #0d9488;
-        outline-offset: -2px;
-        border-radius: 0 5px 5px 0;
-      }
-
+      .nav-item:hover { color: #e2e8f0; background: #1e293b; }
+      .nav-item:focus-visible { outline: 2px solid #0d9488; outline-offset: -2px; border-radius: 0 5px 5px 0; }
       .nav-item--active {
         color: #0d9488;
         background: rgba(13, 148, 136, 0.15);
@@ -505,39 +506,101 @@ const NAV_SECTIONS: NavSection[] = [
         border-radius: 0 5px 5px 0;
         font-weight: 500;
       }
+      .nav-item--active:hover { color: #0d9488; background: rgba(13, 148, 136, 0.2); }
+      .nav-item--child { padding-left: 40px; font-size: 11px; }
 
-      .nav-item--active:hover {
+      /* Icon buttons (collapsed) */
+      .icon-btn {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        padding: 0;
+        transition: background-color 150ms ease;
+        outline: none;
+      }
+      .icon-btn:hover { background: #1e293b; }
+      .icon-btn--active { background: rgba(13, 148, 136, 0.15); }
+      .icon-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+
+      .active-indicator {
+        position: absolute;
+        left: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 18px;
+        background: #0d9488;
+        border-radius: 0 2px 2px 0;
+      }
+
+      /* Footer / avatar */
+      .sidebar__footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-top: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .sidebar--collapsed .sidebar__footer {
+        justify-content: center;
+        padding: 12px 0;
+      }
+
+      .avatar-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        background: rgba(13, 148, 136, 0.15);
+        border: 1.5px solid rgba(13, 148, 136, 0.4);
+        border-radius: 50%;
         color: #0d9488;
-        background: rgba(13, 148, 136, 0.2);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        padding: 0;
+        outline: none;
+        user-select: none;
       }
+      .avatar-btn:hover { background: rgba(13, 148, 136, 0.25); border-color: rgba(13, 148, 136, 0.7); }
+      .avatar-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
 
-      /* Child nav items (Bullseye sub-items) */
-      .nav-item--child {
-        padding-left: 40px;
+      .avatar-email {
         font-size: 11px;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
       }
 
-      /* PrimeNG Select override for dark background */
+      /* PrimeNG Select override */
       :host ::ng-deep .sidebar-select .p-select {
         background: transparent;
         border: 1px solid #334155;
         border-radius: 4px;
       }
-
-      :host ::ng-deep .sidebar-select .p-select:hover {
-        border-color: #475569;
-      }
-
+      :host ::ng-deep .sidebar-select .p-select:hover { border-color: #475569; }
       :host ::ng-deep .sidebar-select .p-select .p-select-label {
         font-size: 13px;
         font-weight: 700;
         color: #ffffff;
         padding: 4px 8px;
       }
-
-      :host ::ng-deep .sidebar-select .p-select .p-select-dropdown {
-        color: #64748b;
-      }
+      :host ::ng-deep .sidebar-select .p-select .p-select-dropdown { color: #64748b; }
     `,
   ],
 })
@@ -555,41 +618,62 @@ export class SidebarComponent {
   readonly currentSpaceId = input<string>('');
 
   readonly hasSpace = input<boolean>(false);
+  readonly userInitials = input<string>('');
+  readonly userEmail = input<string>('');
 
   readonly pinToggle = output<void>();
   readonly navItemClick = output<string>();
   readonly tenantChange = output<string>();
   readonly spaceChange = output<string>();
-  readonly mouseEnter = output<void>();
-  readonly mouseLeave = output<void>();
-
-  private readonly allSections: NavSection[] = NAV_SECTIONS;
-
-  private readonly orgOnlySections: NavSection[] = [
-    {
-      label: 'Settings',
-      bottom: true,
-      items: [
-        { label: 'Organization', route: 'settings/organization' },
-        { label: 'Spaces', route: 'settings/spaces' },
-      ],
-    },
-  ];
-
-  readonly visibleSections = computed(() =>
-    this.hasSpace() ? this.allSections : this.orgOnlySections
-  );
+  readonly logoClick = output<void>();
+  readonly avatarClick = output<void>();
+  readonly sectionClick = output<string>();
+  readonly hoverChange = output<boolean>();
 
   spacePickerOpen = false;
 
+  readonly isExpanded = computed(() => this.expanded() || this.pinned());
+
+  readonly visibleSections = computed(() =>
+    this.hasSpace() ? NAV_SECTIONS : ORG_ONLY_SECTIONS
+  );
+
   readonly bullseyeExpanded = computed(() => this.activeRoute().startsWith('bullseye'));
+
+  readonly activeSection = computed(() => {
+    const route = this.activeRoute();
+    if (route.startsWith('manage/')) return 'manage';
+    if (route.startsWith('settings/')) return 'settings';
+    if (route === 'events' || route === 'catalysts') return 'intelligence';
+    return 'landscape';
+  });
 
   isActive(route: string): boolean {
     return this.activeRoute() === route;
   }
 
+  isSectionActive(sectionId: string): boolean {
+    return this.activeSection() === sectionId;
+  }
+
+  iconColor(sectionId: string): string {
+    return this.isSectionActive(sectionId) ? '#0d9488' : '#64748b';
+  }
+
   onNavClick(route: string): void {
     this.navItemClick.emit(route);
+  }
+
+  onSectionClick(sectionId: string): void {
+    this.sectionClick.emit(sectionId);
+  }
+
+  onMouseEnter(): void {
+    this.hoverChange.emit(true);
+  }
+
+  onMouseLeave(): void {
+    this.hoverChange.emit(false);
   }
 
   selectSpace(spaceId: string): void {

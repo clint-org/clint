@@ -13,7 +13,6 @@ import { SpaceService } from '../services/space.service';
 import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
-import { IconRailComponent } from './icon-rail.component';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
@@ -26,28 +25,15 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
   standalone: true,
   imports: [
     RouterOutlet,
-    IconRailComponent,
     SidebarComponent,
     ContextualTopbarComponent,
     NotificationBellComponent,
   ],
   template: `
     <div class="shell">
-      <!-- Icon Rail -->
-      <app-icon-rail
-        [activeSection]="activeSection()"
-        [userInitials]="initials()"
-        [hasSpace]="!!spaceId()"
-        (sectionClick)="onSectionClick($event)"
-        (logoClick)="onLogoClick()"
-        (avatarClick)="toggleAccount()"
-        (hoverStart)="onRailHoverStart()"
-        (hoverEnd)="onRailHoverEnd()"
-      />
-
-      <!-- Sidebar -->
+      <!-- Sidebar (collapsed: 48px icons, expanded: 220px full nav) -->
       <app-sidebar
-        [expanded]="sidebarExpanded()"
+        [expanded]="sidebarHovering()"
         [pinned]="sidebarPinned()"
         [activeRoute]="activeSpaceRoute()"
         [tenantName]="currentTenantName()"
@@ -57,12 +43,16 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [spaces]="spaces()"
         [currentSpaceId]="spaceId()"
         [hasSpace]="!!spaceId()"
+        [userInitials]="initials()"
+        [userEmail]="user()?.email ?? ''"
         (pinToggle)="togglePin()"
         (navItemClick)="onNavItemClick($event)"
         (tenantChange)="switchTenant($event)"
         (spaceChange)="switchSpace($event)"
-        (mouseEnter)="onSidebarMouseEnter()"
-        (mouseLeave)="onSidebarMouseLeave()"
+        (logoClick)="onLogoClick()"
+        (avatarClick)="toggleAccount()"
+        (sectionClick)="onSectionClick($any($event))"
+        (hoverChange)="onSidebarHoverChange($event)"
       />
 
       <!-- Main content area -->
@@ -222,8 +212,6 @@ export class AppShellComponent implements OnInit {
   readonly sidebarPinned = signal(false);
   private hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly sidebarExpanded = computed(() => this.sidebarHovering() || this.sidebarPinned());
-
   // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-therapy-area')
   readonly activeSpaceRoute = signal('');
 
@@ -366,41 +354,21 @@ export class AppShellComponent implements OnInit {
 
   // --- Sidebar hover behavior ---
 
-  onRailHoverStart(): void {
+  onSidebarHoverChange(hovering: boolean): void {
     if (this.sidebarPinned()) return;
     if (this.hoverTimeout) {
       clearTimeout(this.hoverTimeout);
       this.hoverTimeout = null;
     }
-    this.sidebarHovering.set(true);
-  }
-
-  onRailHoverEnd(): void {
-    if (this.sidebarPinned()) return;
-    // Short delay before collapsing
-    this.hoverTimeout = setTimeout(() => {
-      if (!this.sidebarPinned()) {
-        this.sidebarHovering.set(false);
-      }
-    }, 200);
-  }
-
-  onSidebarMouseEnter(): void {
-    if (this.sidebarPinned()) return;
-    if (this.hoverTimeout) {
-      clearTimeout(this.hoverTimeout);
-      this.hoverTimeout = null;
+    if (hovering) {
+      this.sidebarHovering.set(true);
+    } else {
+      this.hoverTimeout = setTimeout(() => {
+        if (!this.sidebarPinned()) {
+          this.sidebarHovering.set(false);
+        }
+      }, 200);
     }
-    this.sidebarHovering.set(true);
-  }
-
-  onSidebarMouseLeave(): void {
-    if (this.sidebarPinned()) return;
-    this.hoverTimeout = setTimeout(() => {
-      if (!this.sidebarPinned()) {
-        this.sidebarHovering.set(false);
-      }
-    }, 200);
   }
 
   togglePin(): void {
