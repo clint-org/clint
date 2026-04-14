@@ -11,11 +11,11 @@ export function getMarkerIcon(
       return fillStyle === 'outline' ? 'fa-regular fa-gem' : 'fa-solid fa-gem';
     case 'flag':
       return fillStyle === 'outline' ? 'fa-regular fa-flag' : 'fa-solid fa-flag';
-    case 'arrow':
-      return 'fa-solid fa-arrow-up';
-    case 'x':
-      return 'fa-solid fa-circle-xmark';
-    case 'bar':
+    case 'triangle':
+      return 'fa-solid fa-play fa-rotate-270';
+    case 'square':
+      return fillStyle === 'outline' ? 'fa-regular fa-square' : 'fa-solid fa-square';
+    case 'dashed-line':
       return 'fa-solid fa-grip-lines';
     default:
       return 'fa-solid fa-circle';
