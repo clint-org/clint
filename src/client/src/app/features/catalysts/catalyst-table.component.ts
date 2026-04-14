@@ -16,7 +16,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
       [scrollable]="true"
       scrollHeight="flex"
       dataKey="marker_id"
-      styleClass="catalyst-table"
+      styleClass="data-table"
     >
       <ng-template #header>
         <tr>
@@ -29,7 +29,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
       </ng-template>
 
       <ng-template #groupheader let-catalyst>
-        <tr class="catalyst-group-header">
+        <tr class="data-table-group-header">
           <td colspan="5">
             <div
               class="flex items-baseline gap-2 px-1 py-1 text-[10px] font-bold uppercase tracking-widest"

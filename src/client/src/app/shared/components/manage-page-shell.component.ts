@@ -12,7 +12,7 @@ import { Component, input } from '@angular/core';
  *  - Right-aligned action slot via `<div actions>` content projection.
  *  - Content slot for the table (or whatever).
  *
- * Styling lives in shared/styles/manage-table.css as `.manage-shell*`.
+ * Styling lives in shared/styles/page-shell.css as `.page-shell*`.
  *
  * Usage:
  *   <app-manage-page-shell
@@ -23,28 +23,28 @@ import { Component, input } from '@angular/core';
  *     <div actions>
  *       <p-button label="Add product" ... />
  *     </div>
- *     <p-table styleClass="manage-table" ... />
+ *     <p-table styleClass="data-table" ... />
  *   </app-manage-page-shell>
  */
 @Component({
   selector: 'app-manage-page-shell',
   standalone: true,
   template: `
-    <div class="manage-shell" [class.manage-shell--narrow]="narrow()">
-      <div class="manage-shell__eyebrow">{{ eyebrow() }}</div>
-      <div class="manage-shell__title-row">
+    <div class="page-shell" [class.page-shell--narrow]="narrow()">
+      <div class="page-shell__eyebrow">{{ eyebrow() }}</div>
+      <div class="page-shell__title-row">
         <div>
-          <h1 class="manage-shell__title">
+          <h1 class="page-shell__title">
             <span>{{ title() }}</span>
             @if (count() !== null) {
-              <span class="manage-shell__count">{{ count() }}</span>
+              <span class="page-shell__count">{{ count() }}</span>
             }
           </h1>
           @if (subtitle()) {
-            <p class="manage-shell__subtitle">{{ subtitle() }}</p>
+            <p class="page-shell__subtitle">{{ subtitle() }}</p>
           }
         </div>
-        <div class="manage-shell__actions">
+        <div class="page-shell__actions">
           <ng-content select="[actions]" />
         </div>
       </div>

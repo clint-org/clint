@@ -1,0 +1,152 @@
+/*
+ * PrimeNG overrides for styling that design tokens cannot express.
+ * The preset (primeng-theme.ts) handles colors, radii, padding, shadows.
+ * This file handles: typography details, custom decorations, asymmetric
+ * borders, and components with no token API.
+ */
+
+/* -- Dialog ------------------------------------------------------------ */
+
+/* Thin teal accent strip at the top of every dialog. */
+.p-dialog::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: rgb(20 184 166); /* teal-500 */
+}
+
+.p-dialog-header {
+  border-bottom: 1px solid rgb(241 245 249); /* slate-100 */
+}
+
+.p-dialog-title {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.p-dialog-close-button {
+  color: rgb(148 163 184); /* slate-400 */
+  border-radius: 0;
+}
+.p-dialog-close-button:hover {
+  color: rgb(15 23 42);
+  background: rgb(241 245 249);
+}
+
+.p-dialog-footer {
+  border-top: 1px solid rgb(241 245 249);
+  background: rgb(248 250 252); /* slate-50 */
+}
+
+/* Confirm dialog icon and message. */
+.p-confirmdialog .p-confirm-dialog-icon {
+  color: rgb(185 28 28); /* red-700 */
+  font-size: 18px;
+}
+.p-confirmdialog .p-confirm-dialog-message {
+  font-size: 13px;
+  color: rgb(51 65 85); /* slate-700 */
+  line-height: 1.5;
+}
+
+/* -- Inputs ------------------------------------------------------------ */
+
+/* Restore left padding inside icon fields. */
+.p-iconfield .p-inputtext {
+  padding-left: 2rem;
+}
+
+/* Input/select/multiselect font size (no token for default font size). */
+.p-inputtext,
+.p-textarea,
+.p-inputnumber-input,
+.p-select-label,
+.p-multiselect-label {
+  font-size: 13px;
+}
+
+/* -- Tabs -------------------------------------------------------------- */
+
+.p-tab {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 0;
+}
+
+/* -- Message ----------------------------------------------------------- */
+
+/* Asymmetric left-border accent per severity. */
+.p-message {
+  border-left-width: 3px;
+}
+.p-message.p-message-error {
+  border-left-color: rgb(185 28 28); /* red-700 */
+}
+.p-message.p-message-success {
+  border-left-color: rgb(13 148 136); /* teal-600 */
+}
+.p-message.p-message-warn {
+  border-left-color: rgb(180 83 9); /* amber-700 */
+}
+.p-message.p-message-info {
+  border-left-color: rgb(71 85 105); /* slate-600 */
+}
+
+/* -- SelectButton ------------------------------------------------------ */
+
+.p-selectbutton {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 0;
+  display: inline-flex;
+}
+.p-selectbutton .p-togglebutton {
+  border: none;
+  border-right: 1px solid rgb(241 245 249);
+  border-radius: 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.375rem 0.75rem;
+  color: rgb(100 116 139);
+  background: #ffffff;
+}
+.p-selectbutton .p-togglebutton:last-child {
+  border-right: none;
+}
+.p-selectbutton .p-togglebutton:not(.p-togglebutton-checked):hover {
+  background: rgb(248 250 252);
+  color: rgb(15 23 42);
+}
+.p-selectbutton .p-togglebutton.p-togglebutton-checked {
+  background: rgb(240 253 250);
+  color: rgb(15 118 110);
+  font-weight: 500;
+}
+
+/* -- ProgressSpinner --------------------------------------------------- */
+
+.p-progressspinner-circle {
+  stroke: rgb(13 148 136); /* teal-600 */
+}
+
+/* -- Row action menu --------------------------------------------------- */
+
+.row-actions-trigger.p-button.p-button-text {
+  color: rgb(148 163 184); /* slate-400 */
+  padding: 0.125rem 0.375rem;
+  min-width: 0;
+}
+.row-actions-trigger.p-button.p-button-text:enabled:hover {
+  background: rgb(241 245 249);
+  color: rgb(15 23 42);
+}
+
+.p-menu .row-actions-danger .p-menu-item-link,
+.p-menu .row-actions-danger .p-menu-item-link .p-menu-item-label,
+.p-menu .row-actions-danger .p-menu-item-link .p-menu-item-icon {
+  color: rgb(185 28 28);
+}
+.p-menu .row-actions-danger .p-menu-item-link:hover {
+  background: rgb(254 242 242);
+}
