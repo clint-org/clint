@@ -16,6 +16,7 @@ import { Tenant } from '../models/tenant.model';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
+import { TopbarStateService } from '../services/topbar-state.service';
 
 type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
 type PageType = 'landscape' | 'list' | 'detail' | 'blank';
@@ -36,19 +37,11 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [expanded]="sidebarHovering()"
         [pinned]="sidebarPinned()"
         [activeRoute]="activeSpaceRoute()"
-        [tenantName]="currentTenantName()"
-        [tenants]="tenants()"
-        [currentTenantId]="tenantId()"
-        [spaceName]="currentSpaceName()"
-        [spaces]="spaces()"
-        [currentSpaceId]="spaceId()"
         [hasSpace]="!!spaceId()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         (pinToggle)="togglePin()"
         (navItemClick)="onNavItemClick($event)"
-        (tenantChange)="switchTenant($event)"
-        (spaceChange)="switchSpace($event)"
         (logoClick)="onLogoClick()"
         (avatarClick)="toggleAccount()"
         (sectionClick)="onSectionClick($any($event))"
@@ -60,15 +53,24 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         <!-- Contextual Topbar -->
         <app-contextual-topbar
           [pageType]="pageType()"
+          [tenantName]="currentTenantName()"
+          [tenants]="tenants()"
+          [currentTenantId]="tenantId()"
+          [spaceName]="currentSpaceName()"
+          [spaces]="spaces()"
+          [currentSpaceId]="spaceId()"
+          [hasSpace]="!!spaceId()"
           [tabs]="landscapeTabs()"
-          [eyebrow]="topbarEyebrow()"
-          [title]="topbarTitle()"
-          [recordCount]="topbarRecordCount()"
+          [listTitle]="topbarListTitle()"
+          [recordCount]="topbarState.recordCount()"
           [backLabel]="topbarBackLabel()"
-          [entityContext]="topbarEntityContext()"
-          [entityTitle]="topbarEntityTitle()"
+          [entityContext]="topbarState.entityContext()"
+          [entityTitle]="topbarState.entityTitle()"
+          [actionButtons]="topbarState.actions()"
           (tabClick)="onLandscapeTabClick($event)"
           (backClick)="onBackClick()"
+          (tenantChange)="switchTenant($event)"
+          (spaceChange)="switchSpace($event)"
         >
           <div topbar-actions class="flex items-center gap-3">
             @if (spaceId()) {
@@ -200,6 +202,7 @@ export class AppShellComponent implements OnInit {
   private readonly tenantService = inject(TenantService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  readonly topbarState = inject(TopbarStateService);
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -290,18 +293,7 @@ export class AppShellComponent implements OnInit {
   });
 
   // Topbar metadata for list pages
-  readonly topbarEyebrow = computed(() => {
-    const section = this.activeSection();
-    const map: Record<Section, string> = {
-      landscape: 'Landscape',
-      intelligence: 'Intelligence',
-      manage: 'Manage',
-      settings: 'Settings',
-    };
-    return map[section] ?? '';
-  });
-
-  readonly topbarTitle = computed(() => {
+  readonly topbarListTitle = computed(() => {
     const route = this.activeSpaceRoute();
     const titleMap: Record<string, string> = {
       'manage/companies': 'Companies',
@@ -314,10 +306,8 @@ export class AppShellComponent implements OnInit {
       'settings/organization': 'Organization',
       'settings/spaces': 'Spaces',
     };
-    return titleMap[route] ?? '';
+    return titleMap[route] ?? this.topbarState.title();
   });
-
-  readonly topbarRecordCount = signal('');
 
   // Detail page metadata
   readonly topbarBackLabel = computed(() => {
@@ -325,9 +315,6 @@ export class AppShellComponent implements OnInit {
     if (route.match(/^manage\/trials\/[^/]+$/)) return 'Trials';
     return '';
   });
-
-  readonly topbarEntityContext = signal('');
-  readonly topbarEntityTitle = signal('');
 
   async ngOnInit(): Promise<void> {
     // Restore pinned state
