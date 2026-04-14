@@ -15,37 +15,73 @@
     role="button"
     [attr.aria-label]="ariaLabel()"
   >
-    @if (isRange()) {
-      <svg [attr.width]="rangeWidth()" [attr.height]="iconSize" class="overflow-visible">
-        <g
-          app-bar-icon
-          [width]="rangeWidth()"
-          [height]="iconSize"
-          [color]="mt.color"
-          [fillStyle]="effectiveFillStyle()"
+    @if (isDashedLine()) {
+      <svg [attr.width]="6" [attr.height]="28" class="overflow-visible" [style.margin-left.px]="-3">
+        <line
+          x1="3" y1="0" x2="3" y2="28"
+          [attr.stroke]="isNle() ? mt.color : (effectiveFillStyle() === 'outline' ? '#cbd5e1' : mt.color)"
+          stroke-width="1.5"
+          stroke-dasharray="4,3"
+          stroke-linecap="round"
+          [attr.opacity]="isNle() ? 0.25 : 1"
         />
       </svg>
     } @else {
-      <div
-        class="flex items-center justify-center drop-shadow-sm"
-        [style.width.px]="iconSize"
-        [style.height.px]="iconSize"
-        [style.margin-left.px]="-iconSize / 2"
-      >
-        <i
-          [class]="faIcon()"
-          [style.color]="mt.color"
-          [style.font-size.px]="iconSize - 4"
-          style="-webkit-text-stroke: 0.5px white"
-        ></i>
-      </div>
+      <svg [attr.width]="iconSize" [attr.height]="iconSize" class="overflow-visible drop-shadow-sm"
+           [style.margin-left.px]="-iconSize / 2">
+        <g [attr.opacity]="nleOpacity()">
+          @switch (mt.shape) {
+            @case ('circle') {
+              <g app-circle-icon
+                [size]="iconSize"
+                [color]="mt.color"
+                [fillStyle]="effectiveFillStyle()"
+                [innerMark]="mt.inner_mark"
+              />
+            }
+            @case ('diamond') {
+              <g app-diamond-icon
+                [size]="iconSize"
+                [color]="mt.color"
+                [fillStyle]="effectiveFillStyle()"
+                [innerMark]="mt.inner_mark"
+              />
+            }
+            @case ('flag') {
+              <g app-flag-icon
+                [size]="iconSize"
+                [color]="mt.color"
+                [fillStyle]="effectiveFillStyle()"
+              />
+            }
+            @case ('triangle') {
+              <g app-triangle-icon
+                [size]="iconSize"
+                [color]="mt.color"
+                [fillStyle]="effectiveFillStyle()"
+              />
+            }
+            @case ('square') {
+              <g app-square-icon
+                [size]="iconSize"
+                [color]="mt.color"
+                [fillStyle]="effectiveFillStyle()"
+                [innerMark]="mt.inner_mark"
+              />
+            }
+          }
+        </g>
+        @if (isNle()) {
+          <g app-nle-overlay [size]="iconSize" />
+        }
+      </svg>
     }
 
     <div
       class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
       [style.color]="mt.color"
-      [style.margin-left.px]="-iconSize / 2"
-      [style.width.px]="iconSize * 2"
+      [style.margin-left.px]="isDashedLine() ? -12 : -iconSize / 2"
+      [style.width.px]="isDashedLine() ? 30 : iconSize * 2"
     >
       {{ shortDate() }}
     </div>
@@ -60,6 +96,7 @@
         [categoryName]="markerType()?.marker_categories?.name ?? ''"
         [description]="marker().description"
         [sourceUrl]="marker().source_url"
+        [noLongerExpected]="isNle()"
       />
     }
   </div>
