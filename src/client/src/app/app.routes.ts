@@ -224,6 +224,13 @@ export const routes: Routes = [
                 (m) => m.TherapeuticAreaListComponent,
               ),
           },
+          {
+            path: 'events',
+            loadComponent: () =>
+              import('./features/events/events-page.component').then(
+                (m) => m.EventsPageComponent,
+              ),
+          },
         ],
       },
     ],
