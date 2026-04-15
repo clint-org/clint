@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -19,6 +19,7 @@ import { StatusTagComponent } from '../../../shared/components/status-tag.compon
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -45,13 +46,14 @@ interface TrialRow {
   ],
   templateUrl: './trial-list.component.html',
 })
-export class TrialListComponent implements OnInit {
+export class TrialListComponent implements OnInit, OnDestroy {
   private trialService = inject(TrialService);
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
   tenantId = '';
@@ -112,7 +114,9 @@ export class TrialListComponent implements OnInit {
           options: () => {
             const seen = new Set<string>();
             for (const t of this.trials()) if (t.status) seen.add(t.status);
-            return Array.from(seen).sort().map((s) => ({ label: s, value: s }));
+            return Array.from(seen)
+              .sort()
+              .map((s) => ({ label: s, value: s }));
           },
         },
       },
@@ -131,6 +135,10 @@ export class TrialListComponent implements OnInit {
 
   readonly visibleRows = this.grid.filteredRows(this.rows);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   /**
    * If the user arrived via a deep-link with the product filter pre-applied
    * (e.g., from product-list "View trials"), the trial-form modal can pre-select
@@ -148,7 +156,14 @@ export class TrialListComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    this.topbarState.actions.set([
+      { label: 'Add trial', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+    ]);
     await this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(row: TrialRow): MenuItem[] {

@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Marker types"
-  [count]="grid.totalRecords()"
-  subtitle="Event symbols rendered on the timeline. System types are read-only."
->
-  <div actions>
-    <p-button
-      label="Add marker type"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search marker types..." />
 
   <p-table

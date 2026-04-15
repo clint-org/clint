@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem } from 'primeng/api';
@@ -15,6 +15,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-tenant-settings',
@@ -32,30 +33,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     StatusTagComponent,
   ],
   template: `
-    <app-manage-page-shell
-      eyebrow="Organization"
-      [title]="(tenant()?.name ?? '') + ' settings'"
-      subtitle="Members, roles, and outstanding invites."
-    >
-      <div actions>
-        <p-button
-          label="Back to spaces"
-          icon="fa-solid fa-arrow-left"
-          severity="secondary"
-          [text]="true"
-          size="small"
-          (onClick)="goBack()"
-        />
-        <p-button
-          label="Invite member"
-          icon="fa-solid fa-plus"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          (onClick)="inviteDialogOpen.set(true)"
-        />
-      </div>
-
+    <app-manage-page-shell>
       @if (removeError()) {
         <p-message
           severity="error"
@@ -207,11 +185,12 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     </p-dialog>
   `,
 })
-export class TenantSettingsComponent implements OnInit {
+export class TenantSettingsComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private tenantService = inject(TenantService);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
 
   // Stable menu-item references per member id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
@@ -235,7 +214,24 @@ export class TenantSettingsComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    this.topbarState.actions.set([
+      {
+        label: 'Back to spaces',
+        icon: 'fa-solid fa-arrow-left',
+        text: true,
+        callback: () => this.goBack(),
+      },
+      {
+        label: 'Invite member',
+        icon: 'fa-solid fa-plus',
+        callback: () => this.inviteDialogOpen.set(true),
+      },
+    ]);
     await this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   memberMenu(member: TenantMember): MenuItem[] {

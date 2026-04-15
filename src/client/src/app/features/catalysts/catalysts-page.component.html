@@ -1,8 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Intelligence"
-  title="Key Catalysts"
-  [count]="totalCount()"
->
+<app-manage-page-shell>
   @if (error()) {
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
@@ -108,7 +104,9 @@
 
     <!-- Detail panel (380px) -->
     @if (selectedMarkerId()) {
-      <div class="sticky top-0 w-[380px] shrink-0 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+      <div
+        class="sticky top-0 w-[380px] shrink-0 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+      >
         @if (detailLoading()) {
           <div class="flex h-full items-center justify-center py-12">
             <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />

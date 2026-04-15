@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Therapeutic areas"
-  [count]="grid.totalRecords()"
-  subtitle="Disease areas used to tag trials and products."
->
-  <div actions>
-    <p-button
-      label="Add therapeutic area"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search therapeutic areas..." />
 
   <p-table
@@ -49,10 +33,7 @@
         <td>{{ area.name }}</td>
         <td class="col-identifier">{{ area.abbreviation ?? '--' }}</td>
         <td class="col-actions">
-          <app-row-actions
-            [items]="rowMenu(area)"
-            [ariaLabel]="'Actions for ' + area.name"
-          />
+          <app-row-actions [items]="rowMenu(area)" [ariaLabel]="'Actions for ' + area.name" />
         </td>
       </tr>
     </ng-template>

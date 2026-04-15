@@ -18,8 +18,8 @@ src/client/
           auth.guard.ts         # authGuard + onboardingRedirectGuard
         layout/
           app-shell.component.ts        # Layout wrapper: sidebar + topbar + router-outlet
-          sidebar.component.ts          # Unified nav: 48px collapsed (icons) / 220px expanded (hover/pin)
-          contextual-topbar.component.ts # Topbar that adapts per page type (tabs, title, back nav)
+          sidebar.component.ts          # Unified nav: 48px collapsed (icons) / 220px expanded (hover/pin), always pushes content
+          contextual-topbar.component.ts # Topbar: org/space breadcrumb + page identity (tabs, title, back nav, actions)
           icon-rail.component.ts        # (Unused) standalone icon rail -- absorbed into sidebar
           header.component.ts           # (Legacy) flat horizontal nav -- replaced by app-shell
           notification-bell.component.ts # Bell icon with unread count badge
@@ -34,7 +34,8 @@ src/client/
           dashboard.model.ts    # DashboardData, DashboardFilters, ZoomLevel
           tenant.model.ts       # Tenant, TenantMember, TenantInvite
           space.model.ts        # Space, SpaceMember
-        services/               # All business logic and API calls (15 services)
+        services/               # All business logic and API calls (16 services)
+          topbar-state.service.ts # Lets pages contribute title, count, and actions to the topbar
       features/
         auth/                   # login.component, auth-callback.component
         dashboard/              # Main timeline grid + sub-components
@@ -61,7 +62,7 @@ src/client/
       shared/
         components/
           svg-icons/            # 6 SVG shape components for markers
-          manage-page-shell.component.ts  # Full-bleed page shell (eyebrow, title, count, actions)
+          manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
           row-actions.component.ts        # Overflow (ellipsis) row-action menu
           status-tag.component.ts         # Squared status tag with status→tone mapping
           section-card.component.ts       # Flat bordered section with header + actions slot
@@ -172,6 +173,7 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
 | `PptxExportService` | Client-side PowerPoint generation via pptxgenjs |
 | `CatalystService` | Calls `get_key_catalysts()` and `get_catalyst_detail()` RPCs for the Key Catalysts page |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
+| `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, and `actions` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
 
 ## Dashboard Component Hierarchy
 
@@ -203,21 +205,25 @@ The root dashboard component uses Angular signals extensively:
 
 Click events on phase bars, markers, and trials emit from the grid and navigate to trial detail pages.
 
-### HeaderComponent
+### AppShellComponent (Layout)
 
-The `HeaderComponent` provides global navigation:
+The `AppShellComponent` orchestrates the three-panel layout: sidebar + topbar + content area.
 
-- **Left**: "Clint" logo + tenant dropdown (if multiple tenants) + space dropdown, separated by slate-200 slashes
-- **Center**: Uppercase tracked navigation links when inside a space (Landscape, Companies, Products, Trials, Markers, Areas, Events, Catalysts) with a teal-600 underline on the active link
-- **Right**: Settings gear icon + initials avatar button that opens a native popover (no PrimeNG `MenuModule` — that would be eager-loaded) with the signed-in email and a Sign out action. The popover closes on outside click, Escape, or navigation.
-- **State persistence**: Stores `lastTenantId` and `lastSpaceId` in localStorage
+- **Sidebar** (`SidebarComponent`): Collapsed (48px icons) or expanded (220px labels). Both hover-expand and pin-expand use `position: relative` -- the sidebar always pushes content right, never overlays. Header contains logo + pin toggle only. Org/space selection lives in the topbar, not the sidebar.
+- **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. The right side of the divider adapts by page type:
+  - `landscape`: "Landscape" label + tab buttons (Timeline, Bullseye, Positioning)
+  - `list`: page title (e.g., "Events") + record count + action buttons
+  - `detail`: back button + entity eyebrow/title
+  - `blank`: breadcrumb only
+- **TopbarStateService**: Pages contribute their record count and action buttons to the topbar via this root-level service. Pages set signals on init and call `clear()` on destroy. The shell reads these signals and passes them to the topbar component.
+- **State persistence**: Stores `lastTenantId`, `lastSpaceId`, and `clint-sidebar-pinned` in localStorage
 - **Route sync**: Recursively extracts route params (tenantId, spaceId) from Angular route tree
 
 ## Management Pages Pattern
 
 All non-timeline management pages (Companies, Products, Trials, Marker Types, Therapeutic Areas, Tenant Settings, Spaces gallery) share a common presentation layer. The core visual principle is **zoning via background contrast**: the app root has `bg-slate-50`, and content surfaces (SectionCard, manage-table, p-dialog) are pure white with thin slate-200 borders. That 2-3% luminance shift is what separates "canvas" from "content zones" — no shadows, no gradients.
 
-- **`ManagePageShellComponent`** -- layout shell with eyebrow label, tracked title, optional record count, optional subtitle, and a right-aligned `<div actions>` content-projection slot. Defaults to full-bleed for list/table pages. Accepts a `[narrow]="true"` input that caps the shell at `max-w-6xl` (~1152px) and centers it; use for form-heavy detail pages like `TrialDetailComponent` where fields shouldn't stretch to the viewport edge.
+- **`ManagePageShellComponent`** -- padding-only layout wrapper. Provides consistent page padding (`1rem 2rem 4rem`). Accepts a `[narrow]="true"` input that caps the shell at `max-w-6xl` (~1152px) and centers it; use for form-heavy detail pages like `TrialDetailComponent` where fields shouldn't stretch to the viewport edge. Page identity (title, record count, action buttons) is handled by the topbar via `TopbarStateService`, not by this component.
 - **`SectionCardComponent`** -- flat white card with a `bg-slate-50/60` header strip (shaded zone for the uppercase tracked section label) and a white body (content zone). Used for sections on trial detail and each group inside the trial edit form. Supports `<div actions>` content projection in the header.
 - **`manage-table.css`** (imported from `styles.css`) -- a single CSS layer that applies to any `<p-table>` opted in via `styleClass="manage-table"`. Produces a white card with slate-200 border, uppercase tracked 10px thead on a subtly-shaded slate-50/60 background, 13px dense rows with slate-100 row dividers, teal-50/55% row hover, and supports column modifiers `col-identifier` (mono tabular for NCT / generic names / codes), `col-num` (right-aligned tabular-nums), `col-secondary` (slate-500), and `col-actions` (narrow, right-aligned).
 - **`RowActionsComponent`** -- `<app-row-actions [items]="...">` renders an ellipsis trigger button and an anchored PrimeNG `p-menu` popup. Destructive items set `styleClass: 'row-actions-danger'` so the shared CSS colors them red. Used on every manage-table row; replaces the bootstrap-style Edit/Delete text link pair. **Callers MUST memoize the `MenuItem[]`** — typically via a `private readonly menuCache = new Map<string, MenuItem[]>()` keyed by row id, cleared in the list's load method. Returning a fresh array from a `rowMenu(row)` template-call causes `p-menu` to re-render between `pointerdown` and `click`, which swallows the first click and forces the user to click every menu option twice. All existing list components (companies / products / trials / marker-types / therapeutic-areas / trial-detail / tenant-settings) use this pattern; copy it when adding a new list.
@@ -301,7 +307,7 @@ All five manage-section list pages (companies, products, trials, therapeutic-are
 6. Add `<app-grid-toolbar [state]="grid" searchPlaceholder="..." />` above the table inside `<app-manage-page-shell>`.
 7. On each sortable column header add `pSortableColumn="<field>"` and `<p-sortIcon field="<field>" />`; on each filterable header add `<p-columnFilter field="<field>" display="menu" type="text|numeric">`. For select filters, provide a custom `<ng-template #filter>` with a `<select>` element that calls the `filterCallback`.
 8. Update the `<ng-template #emptymessage>` to distinguish "no matches" (`grid.isFiltered()`) from "no data".
-9. Set the `<app-manage-page-shell [count]>` to `grid.totalRecords()` so the header reflects the filtered count.
+9. Inject `TopbarStateService` and use an `effect()` to sync `topbarState.recordCount.set(String(grid.totalRecords() || ''))`. Set page-specific action buttons in `ngOnInit` and call `topbarState.clear()` in `ngOnDestroy`.
 
 **URL schema:** `?q=<text>&filter.<field>=<value>&sort=[-]<field>&page=<n>&pageSize=<n>`. See the design spec at `docs/superpowers/specs/2026-04-11-grid-filtering-design.md` for the full encoding rules, numeric operator syntax, and date range syntax.
 

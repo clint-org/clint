@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Companies"
-  [count]="grid.totalRecords()"
-  subtitle="Drug program sponsors tracked in this space."
->
-  <div actions>
-    <p-button
-      label="Add company"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search companies..." />
 
   <p-table
@@ -70,10 +54,7 @@
         </td>
         <td class="col-num">{{ company.display_order }}</td>
         <td class="col-actions">
-          <app-row-actions
-            [items]="rowMenu(company)"
-            [ariaLabel]="'Actions for ' + company.name"
-          />
+          <app-row-actions [items]="rowMenu(company)" [ariaLabel]="'Actions for ' + company.name" />
         </td>
       </tr>
     </ng-template>

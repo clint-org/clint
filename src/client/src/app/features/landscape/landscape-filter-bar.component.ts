@@ -25,6 +25,13 @@ interface SelectOption {
   value: string;
 }
 
+interface FilterChip {
+  field: keyof LandscapeFilters;
+  header: string;
+  value: string;
+  id: string;
+}
+
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
@@ -85,6 +92,41 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Expanded Access', value: 'Expanded Access' },
   ];
 
+  readonly activeChips = computed<FilterChip[]>(() => {
+    const f = this.state.filters();
+    const chips: FilterChip[] = [];
+
+    const addChips = (
+      ids: string[],
+      options: SelectOption[],
+      field: keyof LandscapeFilters,
+      header: string,
+    ) => {
+      for (const id of ids) {
+        const opt = options.find((o) => o.value === id);
+        if (opt) chips.push({ field, header, value: opt.label, id });
+      }
+    };
+
+    addChips(f.companyIds, this.companyOptions(), 'companyIds', 'Company');
+    addChips(f.productIds, this.productOptions(), 'productIds', 'Product');
+    addChips(f.therapeuticAreaIds, this.taOptions(), 'therapeuticAreaIds', 'Therapy Area');
+    addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
+    addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
+
+    for (const phase of f.phases) {
+      chips.push({ field: 'phases', header: 'Phase', value: phase, id: phase });
+    }
+    for (const status of f.recruitmentStatuses) {
+      chips.push({ field: 'recruitmentStatuses', header: 'Status', value: status, id: status });
+    }
+    for (const type of f.studyTypes) {
+      chips.push({ field: 'studyTypes', header: 'Study Type', value: type, id: type });
+    }
+
+    return chips;
+  });
+
   readonly hasAnyActive = computed(() => {
     const f = this.state.filters();
     return (
@@ -126,6 +168,15 @@ export class LandscapeFilterBarComponent implements OnInit {
   update<K extends keyof LandscapeFilters>(key: K, value: LandscapeFilters[K]): void {
     const safe = value ?? ([] as unknown as LandscapeFilters[K]);
     this.state.filters.update((f) => ({ ...f, [key]: safe }));
+  }
+
+  removeChip(chip: FilterChip): void {
+    this.state.filters.update((f) => {
+      const arr = [...(f[chip.field] as string[])];
+      const idx = arr.indexOf(chip.id);
+      if (idx >= 0) arr.splice(idx, 1);
+      return { ...f, [chip.field]: arr };
+    });
   }
 
   clearAll(): void {

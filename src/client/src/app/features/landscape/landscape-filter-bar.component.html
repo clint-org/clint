@@ -1,183 +1,207 @@
-<div
-  class="flex items-center gap-1.5 px-3 py-1.5 border-b border-slate-200 bg-white overflow-x-auto"
-  role="toolbar"
-  aria-label="Landscape filters"
->
-  @if (loading()) {
-    <div class="flex items-center gap-2">
-      <p-progressspinner
-        strokeWidth="4"
-        [style]="{ width: '0.875rem', height: '0.875rem' }"
-        aria-hidden="true"
+<div class="border-b border-slate-200 bg-white">
+  <div
+    class="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto"
+    role="toolbar"
+    aria-label="Landscape filters"
+  >
+    @if (loading()) {
+      <div class="flex items-center gap-2">
+        <p-progressspinner
+          strokeWidth="4"
+          [style]="{ width: '0.875rem', height: '0.875rem' }"
+          aria-hidden="true"
+        />
+        <span class="text-xs text-slate-400" aria-live="polite">Loading filters...</span>
+      </div>
+    } @else {
+      <!-- View-specific: zoom (timeline) -->
+      @if (viewMode() === 'timeline') {
+        <p-selectbutton
+          [options]="zoomOptions"
+          [ngModel]="state.zoomLevel()"
+          (ngModelChange)="state.zoomLevel.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          size="small"
+        />
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+      }
+
+      <!-- View-specific: spoke mode (bullseye) -->
+      @if (viewMode() === 'bullseye') {
+        <p-selectbutton
+          [options]="spokeModeOptions"
+          [ngModel]="state.spokeMode()"
+          (ngModelChange)="state.spokeMode.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          size="small"
+        />
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+      }
+
+      <!-- Common filters -->
+      @if (viewMode() !== 'bullseye' || dimension() !== 'company') {
+        <p-multiselect
+          [options]="companyOptions()"
+          [ngModel]="state.filters().companyIds"
+          (ngModelChange)="update('companyIds', $event)"
+          placeholder="Company"
+          ariaLabel="Filter by company"
+          optionLabel="label"
+          optionValue="value"
+          display="comma"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          styleClass="w-32"
+          size="small"
+        />
+      }
+
+      <p-multiselect
+        [options]="productOptions()"
+        [ngModel]="state.filters().productIds"
+        (ngModelChange)="update('productIds', $event)"
+        placeholder="Product"
+        ariaLabel="Filter by product"
+        optionLabel="label"
+        optionValue="value"
+        display="comma"
+        [filter]="true"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-32"
+        size="small"
       />
-      <span class="text-xs text-slate-400" aria-live="polite">Loading filters...</span>
+
+      @if (viewMode() !== 'bullseye' || dimension() !== 'therapeutic-area') {
+        <p-multiselect
+          [options]="taOptions()"
+          [ngModel]="state.filters().therapeuticAreaIds"
+          (ngModelChange)="update('therapeuticAreaIds', $event)"
+          placeholder="Therapy Area"
+          ariaLabel="Filter by therapeutic area"
+          optionLabel="label"
+          optionValue="value"
+          display="comma"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          styleClass="w-36"
+          size="small"
+        />
+      }
+
+      @if (viewMode() !== 'bullseye' || dimension() !== 'moa') {
+        <p-multiselect
+          [options]="moaOptions()"
+          [ngModel]="state.filters().mechanismOfActionIds"
+          (ngModelChange)="update('mechanismOfActionIds', $event)"
+          placeholder="MOA"
+          ariaLabel="Filter by mechanism of action"
+          optionLabel="label"
+          optionValue="value"
+          display="comma"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          styleClass="w-32"
+          size="small"
+        />
+      }
+
+      @if (viewMode() !== 'bullseye' || dimension() !== 'roa') {
+        <p-multiselect
+          [options]="roaOptions()"
+          [ngModel]="state.filters().routeOfAdministrationIds"
+          (ngModelChange)="update('routeOfAdministrationIds', $event)"
+          placeholder="ROA"
+          ariaLabel="Filter by route of administration"
+          optionLabel="label"
+          optionValue="value"
+          display="comma"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          styleClass="w-32"
+          size="small"
+        />
+      }
+
+      <p-selectbutton
+        [options]="phaseOptions"
+        [ngModel]="state.filters().phases"
+        (ngModelChange)="update('phases', $event)"
+        [multiple]="true"
+        optionLabel="label"
+        optionValue="value"
+        size="small"
+      />
+
+      <p-multiselect
+        [options]="statusOptions"
+        [ngModel]="state.filters().recruitmentStatuses"
+        (ngModelChange)="update('recruitmentStatuses', $event)"
+        placeholder="Status"
+        ariaLabel="Filter by recruitment status"
+        optionLabel="label"
+        optionValue="value"
+        display="comma"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-28"
+        size="small"
+      />
+
+      <p-multiselect
+        [options]="studyTypeOptions"
+        [ngModel]="state.filters().studyTypes"
+        (ngModelChange)="update('studyTypes', $event)"
+        placeholder="Study type"
+        ariaLabel="Filter by study type"
+        optionLabel="label"
+        optionValue="value"
+        display="comma"
+        [showClear]="true"
+        appendTo="body"
+        styleClass="w-28"
+        size="small"
+      />
+
+      @if (hasAnyActive()) {
+        <p-button
+          label="Clear"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="clearAll()"
+        />
+      }
+    }
+  </div>
+
+  @if (activeChips().length > 0) {
+    <div class="flex flex-wrap items-center gap-1.5 px-3 pb-1.5" role="list" aria-label="Active filters">
+      @for (chip of activeChips(); track chip.field + chip.id) {
+        <span
+          role="listitem"
+          class="inline-flex items-center gap-1.5 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+        >
+          <span class="text-slate-500">{{ chip.header }}:</span>
+          <span>{{ chip.value }}</span>
+          <button
+            type="button"
+            class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [attr.aria-label]="'Remove ' + chip.header + ' ' + chip.value + ' filter'"
+            (click)="removeChip(chip)"
+          >
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        </span>
+      }
     </div>
-  } @else {
-    <!-- View-specific: zoom (timeline) -->
-    @if (viewMode() === 'timeline') {
-      <p-selectbutton
-        [options]="zoomOptions"
-        [ngModel]="state.zoomLevel()"
-        (ngModelChange)="state.zoomLevel.set($event)"
-        optionLabel="label"
-        optionValue="value"
-        [allowEmpty]="false"
-        size="small"
-      />
-      <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-    }
-
-    <!-- View-specific: spoke mode (bullseye) -->
-    @if (viewMode() === 'bullseye') {
-      <p-selectbutton
-        [options]="spokeModeOptions"
-        [ngModel]="state.spokeMode()"
-        (ngModelChange)="state.spokeMode.set($event)"
-        optionLabel="label"
-        optionValue="value"
-        [allowEmpty]="false"
-        size="small"
-      />
-      <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-    }
-
-    <!-- Common filters -->
-    @if (viewMode() !== 'bullseye' || dimension() !== 'company') {
-      <p-multiselect
-        [options]="companyOptions()"
-        [ngModel]="state.filters().companyIds"
-        (ngModelChange)="update('companyIds', $event)"
-        placeholder="Company"
-        ariaLabel="Filter by company"
-        optionLabel="label"
-        optionValue="value"
-        display="comma"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        styleClass="w-32"
-        size="small"
-      />
-    }
-
-    <p-multiselect
-      [options]="productOptions()"
-      [ngModel]="state.filters().productIds"
-      (ngModelChange)="update('productIds', $event)"
-      placeholder="Product"
-      ariaLabel="Filter by product"
-      optionLabel="label"
-      optionValue="value"
-      display="comma"
-      [filter]="true"
-      [showClear]="true"
-      appendTo="body"
-      styleClass="w-32"
-      size="small"
-    />
-
-    @if (viewMode() !== 'bullseye' || dimension() !== 'therapeutic-area') {
-      <p-multiselect
-        [options]="taOptions()"
-        [ngModel]="state.filters().therapeuticAreaIds"
-        (ngModelChange)="update('therapeuticAreaIds', $event)"
-        placeholder="Therapy Area"
-        ariaLabel="Filter by therapeutic area"
-        optionLabel="label"
-        optionValue="value"
-        display="comma"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        styleClass="w-36"
-        size="small"
-      />
-    }
-
-    @if (viewMode() !== 'bullseye' || dimension() !== 'moa') {
-      <p-multiselect
-        [options]="moaOptions()"
-        [ngModel]="state.filters().mechanismOfActionIds"
-        (ngModelChange)="update('mechanismOfActionIds', $event)"
-        placeholder="MOA"
-        ariaLabel="Filter by mechanism of action"
-        optionLabel="label"
-        optionValue="value"
-        display="comma"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        styleClass="w-32"
-        size="small"
-      />
-    }
-
-    @if (viewMode() !== 'bullseye' || dimension() !== 'roa') {
-      <p-multiselect
-        [options]="roaOptions()"
-        [ngModel]="state.filters().routeOfAdministrationIds"
-        (ngModelChange)="update('routeOfAdministrationIds', $event)"
-        placeholder="ROA"
-        ariaLabel="Filter by route of administration"
-        optionLabel="label"
-        optionValue="value"
-        display="comma"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        styleClass="w-32"
-        size="small"
-      />
-    }
-
-    <p-selectbutton
-      [options]="phaseOptions"
-      [ngModel]="state.filters().phases"
-      (ngModelChange)="update('phases', $event)"
-      [multiple]="true"
-      optionLabel="label"
-      optionValue="value"
-      size="small"
-    />
-
-    <p-multiselect
-      [options]="statusOptions"
-      [ngModel]="state.filters().recruitmentStatuses"
-      (ngModelChange)="update('recruitmentStatuses', $event)"
-      placeholder="Status"
-      ariaLabel="Filter by recruitment status"
-      optionLabel="label"
-      optionValue="value"
-      display="comma"
-      [showClear]="true"
-      appendTo="body"
-      styleClass="w-28"
-      size="small"
-    />
-
-    <p-multiselect
-      [options]="studyTypeOptions"
-      [ngModel]="state.filters().studyTypes"
-      (ngModelChange)="update('studyTypes', $event)"
-      placeholder="Study type"
-      ariaLabel="Filter by study type"
-      optionLabel="label"
-      optionValue="value"
-      display="comma"
-      [showClear]="true"
-      appendTo="body"
-      styleClass="w-28"
-      size="small"
-    />
-
-    @if (hasAnyActive()) {
-      <p-button
-        label="Clear"
-        severity="secondary"
-        [text]="true"
-        size="small"
-        (onClick)="clearAll()"
-      />
-    }
   }
 </div>

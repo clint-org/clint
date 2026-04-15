@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -13,6 +13,7 @@ import { Tenant } from '../../core/models/tenant.model';
 import { SpaceService } from '../../core/services/space.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-space-list',
@@ -28,31 +29,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
     ManagePageShellComponent,
   ],
   template: `
-    <app-manage-page-shell
-      eyebrow="Organization"
-      [title]="tenant()?.name ?? 'Workspaces'"
-      subtitle="Select a space to work in, or create a new one."
-      [count]="spaces().length"
-    >
-      <div actions>
-        <p-button
-          label="Settings"
-          icon="fa-solid fa-gear"
-          severity="secondary"
-          [text]="true"
-          size="small"
-          (onClick)="goToSettings()"
-        />
-        <p-button
-          label="New space"
-          icon="fa-solid fa-plus"
-          severity="secondary"
-          [outlined]="true"
-          size="small"
-          (onClick)="createDialogOpen.set(true)"
-        />
-      </div>
-
+    <app-manage-page-shell>
       @if (loading()) {
         <p class="text-sm text-slate-400">Loading spaces...</p>
       } @else if (spaces().length === 0) {
@@ -157,11 +134,12 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
     </p-dialog>
   `,
 })
-export class SpaceListComponent implements OnInit {
+export class SpaceListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private spaceService = inject(SpaceService);
   private tenantService = inject(TenantService);
+  private readonly topbarState = inject(TopbarStateService);
 
   tenant = signal<Tenant | null>(null);
   spaces = signal<Space[]>([]);
@@ -174,7 +152,24 @@ export class SpaceListComponent implements OnInit {
 
   private tenantId = '';
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.spaces().length || ''));
+  });
+
   async ngOnInit(): Promise<void> {
+    this.topbarState.actions.set([
+      {
+        label: 'Settings',
+        icon: 'fa-solid fa-gear',
+        text: true,
+        callback: () => this.goToSettings(),
+      },
+      {
+        label: 'New space',
+        icon: 'fa-solid fa-plus',
+        callback: () => this.createDialogOpen.set(true),
+      },
+    ]);
     this.route.paramMap.subscribe((params) => {
       const id = params.get('tenantId');
       if (id && id !== this.tenantId) {
@@ -200,6 +195,10 @@ export class SpaceListComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   openSpace(space: Space): void {

@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Products"
-  [count]="grid.totalRecords()"
-  subtitle="Drug programs being tracked. Click a product to drill into its trials."
->
-  <div actions>
-    <p-button
-      label="Add product"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search products..." />
 
   <p-table
@@ -43,7 +27,14 @@
         </th>
         <th pSortableColumn="companyName">
           Company <p-sortIcon field="companyName" />
-          <p-columnFilter field="product.company_id" display="menu" matchMode="in" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+          <p-columnFilter
+            field="product.company_id"
+            display="menu"
+            matchMode="in"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+          >
             <ng-template #filter let-value let-filter="filterCallback">
               <select
                 class="w-full border border-slate-300 px-2 py-1 text-sm"
@@ -97,10 +88,7 @@
         </td>
         <td class="col-num">{{ row.product.display_order }}</td>
         <td class="col-actions">
-          <app-row-actions
-            [items]="rowMenu(row)"
-            [ariaLabel]="'Actions for ' + row.product.name"
-          />
+          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.product.name" />
         </td>
       </tr>
     </ng-template>

@@ -1,20 +1,4 @@
-<app-manage-page-shell
-  eyebrow="Manage"
-  title="Mechanisms of action"
-  [count]="items().length"
-  subtitle="Ways a drug produces its therapeutic effect; used to classify programs and filter the landscape."
->
-  <div actions>
-    <p-button
-      label="Add mechanism"
-      icon="fa-solid fa-plus"
-      severity="secondary"
-      [outlined]="true"
-      size="small"
-      (onClick)="openCreateModal()"
-    />
-  </div>
-
+<app-manage-page-shell>
   <p-table
     styleClass="data-table"
     [value]="items()"

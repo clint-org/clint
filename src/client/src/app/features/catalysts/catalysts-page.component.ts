@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -19,10 +19,8 @@ import { ProductService } from '../../core/services/product.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { CatalystTableComponent } from './catalyst-table.component';
 import { CatalystDetailPanelComponent } from './catalyst-detail-panel.component';
-import {
-  groupCatalystsByTimePeriod,
-  flattenGroupedCatalysts,
-} from './group-catalysts';
+import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from './group-catalysts';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-catalysts-page',
@@ -41,12 +39,13 @@ import {
   ],
   templateUrl: './catalysts-page.component.html',
 })
-export class CatalystsPageComponent implements OnInit {
+export class CatalystsPageComponent implements OnInit, OnDestroy {
   private catalystService = inject(CatalystService);
   private markerCategoryService = inject(MarkerCategoryService);
   private companyService = inject(CompanyService);
   private productService = inject(ProductService);
   private route = inject(ActivatedRoute);
+  private readonly topbarState = inject(TopbarStateService);
 
   private spaceId = '';
 
@@ -75,11 +74,11 @@ export class CatalystsPageComponent implements OnInit {
 
   // Computed: filter options
   readonly categoryOptions = computed(() =>
-    this.markerCategories().map((c) => ({ label: c.name, value: c.id })),
+    this.markerCategories().map((c) => ({ label: c.name, value: c.id }))
   );
 
   readonly companyOptions = computed(() =>
-    this.companies().map((c) => ({ label: c.name, value: c.id })),
+    this.companies().map((c) => ({ label: c.name, value: c.id }))
   );
 
   readonly filteredProductOptions = computed(() => {
@@ -100,23 +99,27 @@ export class CatalystsPageComponent implements OnInit {
         (c.company_name?.toLowerCase().includes(search) ?? false) ||
         (c.product_name?.toLowerCase().includes(search) ?? false) ||
         c.marker_type_name.toLowerCase().includes(search) ||
-        c.category_name.toLowerCase().includes(search),
+        c.category_name.toLowerCase().includes(search)
     );
   });
 
-  readonly groups = computed(() =>
-    groupCatalystsByTimePeriod(this.filteredCatalysts()),
-  );
+  readonly groups = computed(() => groupCatalystsByTimePeriod(this.filteredCatalysts()));
 
-  readonly flatCatalysts = computed<FlatCatalyst[]>(() =>
-    flattenGroupedCatalysts(this.groups()),
-  );
+  readonly flatCatalysts = computed<FlatCatalyst[]>(() => flattenGroupedCatalysts(this.groups()));
 
   readonly totalCount = computed(() => this.rawCatalysts().length);
+
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.totalCount() || ''));
+  });
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
     await this.loadInitialData();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   async onCategoryChange(ids: string[] | null): Promise<void> {
@@ -155,9 +158,7 @@ export class CatalystsPageComponent implements OnInit {
         this.selectedDetail.set(detail);
       }
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Could not load catalyst detail.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Could not load catalyst detail.');
     } finally {
       this.detailLoading.set(false);
     }
@@ -190,9 +191,7 @@ export class CatalystsPageComponent implements OnInit {
       this.companies.set(companies);
       this.products.set(products);
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to load catalysts.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Failed to load catalysts.');
     } finally {
       this.loading.set(false);
     }
@@ -203,17 +202,13 @@ export class CatalystsPageComponent implements OnInit {
     this.error.set(null);
     try {
       const catalysts = await this.catalystService.getKeyCatalysts(this.spaceId, {
-        category_ids: this.selectedCategoryIds().length
-          ? this.selectedCategoryIds()
-          : undefined,
+        category_ids: this.selectedCategoryIds().length ? this.selectedCategoryIds() : undefined,
         company_id: this.selectedCompanyId() ?? undefined,
         product_id: this.selectedProductId() ?? undefined,
       });
       this.rawCatalysts.set(catalysts);
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Failed to load catalysts.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Failed to load catalysts.');
     } finally {
       this.loading.set(false);
     }

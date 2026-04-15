@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -16,6 +16,7 @@ import { StatusTagComponent } from '../../../shared/components/status-tag.compon
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-marker-type-list',
@@ -34,10 +35,11 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   ],
   templateUrl: './marker-type-list.component.html',
 })
-export class MarkerTypeListComponent implements OnInit {
+export class MarkerTypeListComponent implements OnInit, OnDestroy {
   private markerTypeService = inject(MarkerTypeService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
   markerTypes = signal<MarkerType[]>([]);
@@ -67,9 +69,24 @@ export class MarkerTypeListComponent implements OnInit {
 
   readonly visibleTypes = this.grid.filteredRows(this.markerTypes);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   ngOnInit(): void {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+    this.topbarState.actions.set([
+      {
+        label: 'Add marker type',
+        icon: 'fa-solid fa-plus',
+        callback: () => this.openCreateModal(),
+      },
+    ]);
     this.loadMarkerTypes();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(mt: MarkerType): MenuItem[] {

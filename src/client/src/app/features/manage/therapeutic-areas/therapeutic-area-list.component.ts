@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -14,6 +14,7 @@ import { RowActionsComponent } from '../../../shared/components/row-actions.comp
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { createGridState } from '../../../shared/grids';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 
 @Component({
   selector: 'app-therapeutic-area-list',
@@ -30,7 +31,7 @@ import { createGridState } from '../../../shared/grids';
   ],
   templateUrl: './therapeutic-area-list.component.html',
 })
-export class TherapeuticAreaListComponent implements OnInit {
+export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   areas = signal<TherapeuticArea[]>([]);
   loading = signal(false);
   modalOpen = signal(false);
@@ -40,6 +41,7 @@ export class TherapeuticAreaListComponent implements OnInit {
   private areaService = inject(TherapeuticAreaService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
@@ -56,9 +58,24 @@ export class TherapeuticAreaListComponent implements OnInit {
 
   readonly visibleAreas = this.grid.filteredRows(this.areas);
 
+  private readonly countEffect = effect(() => {
+    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+  });
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+    this.topbarState.actions.set([
+      {
+        label: 'Add therapeutic area',
+        icon: 'fa-solid fa-plus',
+        callback: () => this.openCreateModal(),
+      },
+    ]);
     await this.loadAreas();
+  }
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
   }
 
   rowMenu(area: TherapeuticArea): MenuItem[] {
