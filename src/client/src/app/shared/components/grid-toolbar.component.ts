@@ -49,7 +49,7 @@ import type { GridState } from '../grids/filter-types';
           @for (chip of state().activeFilters(); track chip.field) {
             <span
               role="listitem"
-              class="inline-flex items-center gap-1.5 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700"
+              class="inline-flex items-center gap-1.5 border border-slate-200 border-l-[3px] border-l-teal-600 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-800"
             >
               <span class="text-slate-500">{{ chip.header }}:</span>
               <span>{{ chip.label }}</span>
