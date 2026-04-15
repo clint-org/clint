@@ -18,6 +18,18 @@ import { Component, input } from '@angular/core';
       </div>
     </section>
   `,
+  styles: [
+    `
+      :host ::ng-deep header .p-button {
+        font-size: 11px;
+        padding: 4px 10px;
+        height: 26px;
+      }
+      :host ::ng-deep header .p-button .p-button-icon {
+        font-size: 11px;
+      }
+    `,
+  ],
 })
 export class SectionCardComponent {
   readonly title = input.required<string>();

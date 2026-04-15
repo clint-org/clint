@@ -178,7 +178,7 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
 | `PptxExportService` | Client-side PowerPoint generation via pptxgenjs |
 | `CatalystService` | Calls `get_key_catalysts()` and `get_catalyst_detail()` RPCs for the Key Catalysts page |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
-| `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, and `actions` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
+| `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
 
 ## Dashboard Component Hierarchy
 
@@ -216,12 +216,12 @@ Click events on phase bars and trials navigate to trial detail pages. Marker cli
 The `AppShellComponent` orchestrates the three-panel layout: sidebar + topbar + content area.
 
 - **Sidebar** (`SidebarComponent`): Collapsed (48px, individual item icons with section dividers) or expanded (220px, icon + label per item). Both hover-expand and pin-expand use `position: relative` -- the sidebar always pushes content right, never overlays. Header contains the Triple C logo mark (`ClintLogoComponent`, 24px dark variant) + pin toggle. All icons sourced from `NAV_ICONS` constant. Org/space selection lives in the topbar, not the sidebar.
-- **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. Icons from `NAV_ICONS` appear on landscape tabs and list page titles. The right side of the divider adapts by page type:
-  - `landscape`: "Landscape" label + icon-prefixed tab buttons (Timeline, Bullseye, Positioning)
-  - `list`: icon + page title (e.g., "Events") + record count + action buttons
+- **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. Icons from `NAV_ICONS` appear on section tabs and list page titles. The right side of the divider adapts by page type:
+  - `landscape` (used for all tab-based sections): dynamic section label (`sectionLabel` input) + icon-prefixed tab buttons. Landscape shows Timeline / Bullseye / Positioning; Intelligence shows Events / Catalysts; Manage shows Companies / Products / Trials. When Bullseye or Positioning is active, a row of smaller pill-style dimension sub-tabs appears after the main tabs (Bullseye: Therapy Area, Company, MOA, ROA; Positioning: MOA, Therapy Area, MOA + TA, Company, ROA). Sub-tab state is owned by `LandscapeShellComponent` and pushed to the topbar via `TopbarStateService.subTabs` / `onSubTabClick`.
+  - `list`: icon + page title (e.g., "Taxonomies") + record count + action buttons (used for Settings pages)
   - `detail`: back button + entity eyebrow/title
   - `blank`: breadcrumb only
-- **TopbarStateService**: Pages contribute their record count and action buttons to the topbar via this root-level service. Pages set signals on init and call `clear()` on destroy. The shell reads these signals and passes them to the topbar component.
+- **TopbarStateService**: Pages contribute their record count, action buttons, and dimension sub-tabs to the topbar via this root-level service. Pages set signals on init and call `clear()` on destroy. The shell reads these signals and passes them to the topbar component. Sub-tabs (`subTabs` signal + `onSubTabClick` callback) let feature pages like `LandscapeShellComponent` push view-specific dimension switchers without the app-shell knowing the feature details.
 - **State persistence**: Stores `lastTenantId`, `lastSpaceId`, and `clint-sidebar-pinned` in localStorage
 - **Route sync**: Recursively extracts route params (tenantId, spaceId) from Angular route tree
 

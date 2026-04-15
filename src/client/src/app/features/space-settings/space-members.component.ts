@@ -173,7 +173,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.topbarState.actions.set([
-      { label: 'Add member', icon: 'fa-solid fa-plus', callback: () => this.openAddDialog() },
+      { label: 'Add member', icon: 'fa-solid fa-plus', text: true, callback: () => this.openAddDialog() },
     ]);
     await this.loadData();
   }

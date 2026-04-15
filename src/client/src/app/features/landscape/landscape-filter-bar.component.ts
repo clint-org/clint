@@ -8,10 +8,9 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import {
   BullseyeDimension,
+  COUNT_UNIT_OPTIONS,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
-  POSITIONING_GROUPING_OPTIONS,
-  COUNT_UNIT_OPTIONS,
   RingPhase,
   ViewMode,
 } from '../../core/models/landscape.model';
@@ -56,7 +55,6 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly entityOptions = input<SelectOption[]>([]);
   readonly entityChange = output<string | null>();
 
-  readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
   readonly countUnitOptions = COUNT_UNIT_OPTIONS;
 
   readonly loading = signal(true);

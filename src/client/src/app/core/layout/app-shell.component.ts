@@ -69,7 +69,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [hasSpace]="!!spaceId()"
           [sectionLabel]="sectionLabel()"
           [tabs]="sectionTabs()"
-          [subTabs]="bullseyeSubTabs()"
+          [subTabs]="featureSubTabs()"
           [listTitle]="topbarListTitle()"
           [recordCount]="topbarState.recordCount()"
           [backLabel]="topbarBackLabel()"
@@ -78,7 +78,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [actionButtons]="topbarState.actions()"
           [tenantLogoUrl]="currentTenantLogoUrl()"
           (tabClick)="onSectionTabClick($event)"
-          (subTabClick)="onBullseyeSubTabClick($event)"
+          (subTabClick)="onSubTabClick($event)"
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
@@ -439,21 +439,8 @@ export class AppShellComponent implements OnInit {
     }
   });
 
-  // Bullseye dimension sub-tabs
-  readonly bullseyeSubTabs = computed<TopbarTab[]>(() => {
-    const route = this.activeSpaceRoute();
-    if (!route.startsWith('bullseye')) return [];
-    return [
-      {
-        label: 'Therapy Area',
-        value: 'by-therapy-area',
-        active: route.includes('by-therapy-area'),
-      },
-      { label: 'Company', value: 'by-company', active: route.includes('by-company') },
-      { label: 'MOA', value: 'by-moa', active: route.includes('by-moa') },
-      { label: 'ROA', value: 'by-roa', active: route.includes('by-roa') },
-    ];
-  });
+  // Sub-tabs pushed by feature pages (e.g., Bullseye dimensions, Positioning groupings)
+  readonly featureSubTabs = this.topbarState.subTabs;
 
   // Topbar metadata for list pages
   readonly topbarListTitle = computed(() => {
@@ -582,8 +569,8 @@ export class AppShellComponent implements OnInit {
     }
   }
 
-  onBullseyeSubTabClick(dimension: string): void {
-    this.navigateToSpaceRoute(`bullseye/${dimension}`);
+  onSubTabClick(value: string): void {
+    this.topbarState.onSubTabClick()?.call(null, value);
   }
 
   onBackClick(): void {

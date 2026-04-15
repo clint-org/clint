@@ -49,7 +49,7 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.topbarState.actions.set([
-      { label: 'Add route', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+      { label: 'Add route', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
     ]);
     await this.loadItems();
   }

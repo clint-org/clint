@@ -75,7 +75,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     this.topbarState.actions.set([
-      { label: 'Add company', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+      { label: 'Add company', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
     ]);
     await this.loadCompanies();
   }

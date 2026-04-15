@@ -13,6 +13,7 @@ import { filter } from 'rxjs';
 import {
   BullseyeDimension,
   LandscapeIndexEntry,
+  PositioningGrouping,
   dimensionToSegment,
   segmentToDimension,
   ViewMode,
@@ -69,6 +70,31 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     }
   });
 
+  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Positioning views. */
+  private readonly subTabEffect = effect(() => {
+    const mode = this.viewMode();
+    if (mode === 'bullseye') {
+      const seg = dimensionToSegment(this.dimension());
+      this.topbarState.subTabs.set([
+        { label: 'Therapy Area', value: 'by-therapy-area', active: seg === 'by-therapy-area' },
+        { label: 'Company', value: 'by-company', active: seg === 'by-company' },
+        { label: 'MOA', value: 'by-moa', active: seg === 'by-moa' },
+        { label: 'ROA', value: 'by-roa', active: seg === 'by-roa' },
+      ]);
+    } else if (mode === 'positioning') {
+      const g = this.state.positioningGrouping();
+      this.topbarState.subTabs.set([
+        { label: 'MOA', value: 'moa', active: g === 'moa' },
+        { label: 'Therapy Area', value: 'therapeutic-area', active: g === 'therapeutic-area' },
+        { label: 'MOA + TA', value: 'moa+therapeutic-area', active: g === 'moa+therapeutic-area' },
+        { label: 'Company', value: 'company', active: g === 'company' },
+        { label: 'ROA', value: 'roa', active: g === 'roa' },
+      ]);
+    } else {
+      this.topbarState.subTabs.set([]);
+    }
+  });
+
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('therapeutic-area');
   readonly entityId = signal<string | null>(null);
@@ -105,6 +131,15 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // Deep-link query params override restored session state
     // (e.g. bullseye "Open in Timeline" links).
     this.applyQueryParamFilters();
+
+    // Sub-tab click handler: navigates for Bullseye, updates signal for Positioning.
+    this.topbarState.onSubTabClick.set((value: string) => {
+      if (this.viewMode() === 'bullseye') {
+        this.router.navigate([...this.spaceBase(), 'bullseye', value]);
+      } else if (this.viewMode() === 'positioning') {
+        this.state.positioningGrouping.set(value as PositioningGrouping);
+      }
+    });
 
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
       this.extractRouteParams();

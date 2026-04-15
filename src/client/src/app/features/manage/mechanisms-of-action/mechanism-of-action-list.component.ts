@@ -52,7 +52,7 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.topbarState.actions.set([
-      { label: 'Add mechanism', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+      { label: 'Add mechanism', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
     ]);
     await this.loadItems();
   }

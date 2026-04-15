@@ -63,7 +63,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.topbarState.actions.set([
-      { label: 'Edit trial', icon: 'fa-solid fa-pen', callback: () => this.editingTrial.set(true) },
+      { label: 'Edit trial', icon: 'fa-solid fa-pen', text: true, callback: () => this.editingTrial.set(true) },
     ]);
   }
 

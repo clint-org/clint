@@ -149,7 +149,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
     this.topbarState.actions.set([
-      { label: 'New Event', icon: 'fa-solid fa-plus', callback: () => this.openCreateModal() },
+      { label: 'New Event', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
     ]);
     await this.loadInitialData();
   }

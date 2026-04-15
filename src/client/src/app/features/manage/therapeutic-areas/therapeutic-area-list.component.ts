@@ -69,6 +69,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
       {
         label: 'Add therapeutic area',
         icon: 'fa-solid fa-plus',
+        text: true,
         callback: () => this.openCreateModal(),
       },
     ]);

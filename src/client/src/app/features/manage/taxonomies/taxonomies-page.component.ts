@@ -270,6 +270,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
       {
         label: this.addButtonLabel(),
         icon: 'fa-solid fa-plus',
+        text: true,
         callback: () => this.openCreateModal(),
       },
     ]);

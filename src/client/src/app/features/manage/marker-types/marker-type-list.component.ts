@@ -80,6 +80,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
       {
         label: 'Add marker type',
         icon: 'fa-solid fa-plus',
+        text: true,
         callback: () => this.openCreateModal(),
       },
     ]);
