@@ -119,9 +119,77 @@
   color: rgb(15 23 42);
 }
 .p-selectbutton .p-togglebutton.p-togglebutton-checked {
-  background: rgb(240 253 250);
-  color: rgb(15 118 110);
+  background: rgb(13 148 136); /* teal-600 */
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* -- Active Select / MultiSelect ---------------------------------------- */
+
+/* Applied via [styleClass] binding when the control has a value. */
+.p-select.has-value,
+.p-multiselect.has-value {
+  border-color: rgb(13 148 136); /* teal-600 */
+  background: rgb(240 253 250); /* teal-50 */
+}
+.p-select.has-value .p-select-label,
+.p-multiselect.has-value .p-multiselect-label {
+  color: rgb(15 118 110); /* teal-700 */
   font-weight: 500;
+}
+.p-select.has-value .p-select-dropdown,
+.p-multiselect.has-value .p-multiselect-dropdown {
+  color: rgb(13 148 136); /* teal-600 */
+}
+
+/* Solid teal badge for multi-select count. */
+.multiselect-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgb(13 148 136); /* teal-600 */
+  color: #ffffff;
+}
+
+/* -- Search field tint --------------------------------------------------- */
+
+.search-tinted .p-inputtext {
+  background: rgb(240 253 250); /* teal-50 */
+  border-color: rgb(153 246 228); /* teal-200 */
+}
+.search-tinted .p-inputtext:focus {
+  background: #ffffff;
+}
+.search-tinted .p-inputicon i {
+  color: rgb(13 148 136); /* teal-600 */
+}
+
+/* -- Text button disabled ------------------------------------------------ */
+
+.p-button-text:disabled .p-button-label {
+  color: rgb(203 213 225); /* slate-300 */
+}
+
+/* -- Input error state --------------------------------------------------- */
+
+.p-inputtext.p-invalid,
+.p-select.p-invalid,
+.p-multiselect.p-invalid {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+/* -- Filter bar control height ------------------------------------------- */
+
+/* Normalize all filter bar controls to 28px at size="small". */
+.p-selectbutton[data-p-size="small"],
+.p-select[data-p-size="small"],
+.p-multiselect[data-p-size="small"] {
+  height: 28px;
 }
 
 /* -- ProgressSpinner --------------------------------------------------- */
