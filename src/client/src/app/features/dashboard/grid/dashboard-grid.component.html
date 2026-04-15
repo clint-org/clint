@@ -20,7 +20,7 @@
             type="button"
             class="flex-none w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 border-r border-slate-700 transition-colors"
             aria-label="Column settings"
-            [attr.aria-expanded]="columnSettingsOpen"
+            [attr.aria-expanded]="columnSettingsOpen()"
             (click)="columnSettingsPanel.toggle($event)"
           >
             <i class="pi pi-cog text-xs"></i>
@@ -59,7 +59,7 @@
             Trial
           </div>
         </div>
-        <p-popover #columnSettingsPanel ariaLabel="Column visibility settings" (onShow)="columnSettingsOpen = true" (onHide)="columnSettingsOpen = false">
+        <p-popover #columnSettingsPanel ariaLabel="Column visibility settings" (onShow)="columnSettingsOpen.set(true)" (onHide)="columnSettingsOpen.set(false)">
           <div class="flex flex-col gap-2 p-1">
             <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Columns</span>
             <div class="flex items-center gap-2">
@@ -93,7 +93,7 @@
         </p-popover>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-100">
-            <div class="w-8 flex-none">&nbsp;</div>
+            <div class="w-8 flex-none" aria-hidden="true">&nbsp;</div>
             <div
               class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"

@@ -78,7 +78,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   showMoaColumn = signal(true);
   showRoaColumn = signal(true);
   showNotesColumn = signal(true);
-  columnSettingsOpen = false;
+  columnSettingsOpen = signal(false);
 
   constructor() {
     try {
