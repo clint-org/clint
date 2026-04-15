@@ -48,7 +48,8 @@ test.describe('Company Management CRUD', () => {
 
   test('edit company via modal', async () => {
     const row = page.locator('tr', { hasText: 'Test Company' });
-    await row.getByRole('button', { name: 'Edit' }).click();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
     await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#company-name', 'Updated Company');
@@ -61,9 +62,30 @@ test.describe('Company Management CRUD', () => {
     await expect(page.getByText('Updated Company')).toBeVisible({ timeout: 10000 });
   });
 
+  test('edit company pre-populates name', async () => {
+    const row = page.locator('tr', { hasText: 'Updated Company' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
+    // Verify name pre-population
+    await expect(page.locator('#company-name')).toHaveValue('Updated Company');
+    await page.keyboard.press('Escape');
+  });
+
+  test('create company with empty name is prevented', async () => {
+    await page.getByRole('button', { name: 'Add Company' }).click();
+    await expect(page.locator('#company-name')).toBeVisible({ timeout: 5000 });
+    // Submit without filling name
+    await page.getByRole('button', { name: 'Create Company' }).click();
+    // Dialog should stay open
+    await expect(page.locator('.p-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+  });
+
   test('delete company succeeds', async () => {
     const row = page.locator('tr', { hasText: 'Updated Company' });
-    await row.getByRole('button', { name: 'Delete' }).click();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
     await page.waitForTimeout(1000);
 
     await page.goto(companiesUrl(), { waitUntil: 'networkidle' });

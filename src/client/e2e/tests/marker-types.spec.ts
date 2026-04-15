@@ -9,12 +9,11 @@ test.describe('Marker Type Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  const markerTypesUrl = () => `/t/${tenantId}/s/${spaceId}/manage/marker-types`;
+  const mtUrl = () => `/t/${tenantId}/s/${spaceId}/settings/marker-types`;
 
   test.beforeAll(async ({ browser }) => {
-    tenantId = await createTestTenant('Marker Type Org');
-    spaceId = await createTestSpace(tenantId, 'Marker Type Space');
-
+    tenantId = await createTestTenant('MT CRUD Org');
+    spaceId = await createTestSpace(tenantId, 'MT Test Space');
     page = await authenticatedPage(browser);
   });
 
@@ -22,51 +21,71 @@ test.describe('Marker Type Management CRUD', () => {
     await page.close();
   });
 
-  test('marker type list loads', async () => {
-    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Marker Types' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add Marker Type' })).toBeVisible();
+  test('marker type list loads with system types', async () => {
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: 'Add marker type' })).toBeVisible();
+    // System marker types should be visible from seed data
+    await expect(page.getByText('Topline Data')).toBeVisible({ timeout: 10000 });
   });
 
-  test('create marker type via modal', async () => {
-    await page.getByRole('button', { name: 'Add Marker Type' }).click();
+  test('create marker type with category', async () => {
+    await page.getByRole('button', { name: 'Add marker type' }).click();
     await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
 
-    await fillInput(page, '#mt-name', 'Test Approval');
+    // Select category first (required field added by bug fix)
+    await page.locator('#mt-category').click();
+    await page.locator('.p-select-overlay').getByText('Data').click();
+
+    await fillInput(page, '#mt-name', 'Biomarker Readout');
+
     await Promise.all([
       page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
       page.getByRole('button', { name: 'Create Marker Type' }).click(),
     ]);
 
-    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Test Approval')).toBeVisible({ timeout: 10000 });
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('Biomarker Readout')).toBeVisible({ timeout: 10000 });
   });
 
-  test('edit marker type via modal', async () => {
-    const row = page.locator('tr', { hasText: 'Test Approval' });
-    await row.getByRole('button', { name: 'Edit' }).click();
+  test('edit marker type pre-populates all fields', async () => {
+    const row = page.locator('tr', { hasText: 'Biomarker Readout' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
     await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
 
-    await clearAndFill(page, '#mt-name', 'Updated Approval');
+    // Verify pre-population
+    await expect(page.locator('#mt-name')).toHaveValue('Biomarker Readout');
+
+    await clearAndFill(page, '#mt-name', 'Safety Signal');
     await Promise.all([
       page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'PATCH'),
       page.getByRole('button', { name: 'Update Marker Type' }).click(),
     ]);
 
-    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Updated Approval')).toBeVisible({ timeout: 10000 });
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('Safety Signal')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete marker type succeeds', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
+  test('delete marker type', async () => {
+    page.on('dialog', (d) => d.accept());
+    const row = page.locator('tr', { hasText: 'Safety Signal' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await page.waitForTimeout(1000);
 
-    const row = page.locator('tr', { hasText: 'Updated Approval' });
-    await Promise.all([
-      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'DELETE'),
-      row.getByRole('button', { name: 'Delete' }).click(),
-    ]);
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('Safety Signal')).not.toBeVisible({ timeout: 5000 });
+  });
 
-    await page.goto(markerTypesUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Updated Approval')).not.toBeVisible({ timeout: 5000 });
+  test('create without category prevents submission', async () => {
+    await page.getByRole('button', { name: 'Add marker type' }).click();
+    await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
+
+    await fillInput(page, '#mt-name', 'No Category Type');
+    // Don't select category -- try to submit
+    await page.getByRole('button', { name: 'Create Marker Type' }).click();
+    // Dialog should stay open (validation prevents submit)
+    await expect(page.locator('.p-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
   });
 });

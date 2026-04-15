@@ -82,6 +82,23 @@ test.describe('Product Management CRUD', () => {
     await expect(page.getByText('Seeded Trial')).toBeVisible({ timeout: 5000 });
   });
 
+  test('edit product pre-populates form', async () => {
+    const row = page.locator('tr', { hasText: 'Updated Product' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await expect(page.locator('#product-name')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#product-name')).toHaveValue('Updated Product');
+    await page.keyboard.press('Escape');
+  });
+
+  test('create product with empty name is prevented', async () => {
+    await page.getByRole('button', { name: 'Add Product' }).click();
+    await expect(page.locator('#product-name')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Create Product' }).click();
+    await expect(page.locator('.p-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+  });
+
   test('delete product succeeds', async () => {
     page.on('dialog', (dialog) => dialog.accept());
 

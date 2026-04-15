@@ -148,3 +148,69 @@ test.describe('Trial Management CRUD', () => {
     await expect(page).not.toHaveURL(/\/trials\//);
   });
 });
+
+test.describe('Trial List CRUD', () => {
+  let page: Page;
+  let tenantId: string;
+  let spaceId: string;
+  let companyId: string;
+  let productId: string;
+  let taId: string;
+  const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/trials`;
+
+  test.beforeAll(async ({ browser }) => {
+    tenantId = await createTestTenant('Trial List Org');
+    spaceId = await createTestSpace(tenantId, 'Trial List Space');
+    companyId = await createTestCompany(spaceId, 'Trial Co');
+    productId = await createTestProduct(spaceId, companyId, 'Trial Product');
+    taId = await createTestTherapeuticArea(spaceId, 'Oncology');
+    page = await authenticatedPage(browser);
+  });
+
+  test.afterAll(async () => {
+    await page.close();
+  });
+
+  test('trial list loads', async () => {
+    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: 'Add trial' })).toBeVisible();
+  });
+
+  test('create trial from list', async () => {
+    await page.getByRole('button', { name: 'Add trial' }).click();
+    await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
+
+    await fillInput(page, '#trial-name', 'KEYNOTE-001');
+    await page.getByRole('button', { name: 'Create Trial' }).click();
+    await page.waitForTimeout(2000);
+
+    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('KEYNOTE-001')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('edit trial from list pre-populates form', async () => {
+    const row = page.locator('tr', { hasText: 'KEYNOTE-001' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#trial-name')).toHaveValue('KEYNOTE-001');
+
+    await clearAndFill(page, '#trial-name', 'KEYNOTE-002');
+    await page.getByRole('button', { name: 'Update Trial' }).click();
+    await page.waitForTimeout(2000);
+
+    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('KEYNOTE-002')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('delete trial from list', async () => {
+    page.on('dialog', (d) => d.accept());
+    const row = page.locator('tr', { hasText: 'KEYNOTE-002' });
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await page.waitForTimeout(2000);
+
+    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('KEYNOTE-002')).not.toBeVisible({ timeout: 5000 });
+  });
+});
