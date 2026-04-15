@@ -93,6 +93,63 @@
   border-left-color: rgb(71 85 105); /* slate-600 */
 }
 
+/* -- Toast ------------------------------------------------------------- */
+
+/* Asymmetric left-border accent per severity.
+   PrimeNG's compound selector sets border-width via shorthand, so we need
+   higher specificity (.p-toast .p-toast-message-*) to override. */
+.p-toast .p-toast-message.p-toast-message-success {
+  border-width: 1px 1px 1px 3px;
+  border-left-color: rgb(13 148 136); /* teal-600 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.p-toast .p-toast-message.p-toast-message-error {
+  border-width: 1px 1px 1px 3px;
+  border-left-color: rgb(185 28 28); /* red-700 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.p-toast .p-toast-message.p-toast-message-warn {
+  border-width: 1px 1px 1px 3px;
+  border-left-color: rgb(180 83 9); /* amber-700 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.p-toast .p-toast-message.p-toast-message-info {
+  border-width: 1px 1px 1px 3px;
+  border-left-color: rgb(71 85 105); /* slate-600 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Icon sizing inside toast. */
+.p-toast .p-toast-message-icon {
+  font-size: 14px;
+}
+
+/* The text block is a flex-column with a gap between summary and detail.
+   When detail is empty the gap still renders, causing a visible bottom pad. */
+.p-toast .p-toast-message-text {
+  margin: 0;
+  gap: 2px;
+}
+.p-toast .p-toast-detail:empty {
+  display: none;
+}
+
+/* Tighten the close button. */
+.p-toast .p-toast-close-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0;
+  color: rgb(148 163 184); /* slate-400 */
+}
+.p-toast .p-toast-close-button:hover {
+  background: rgb(241 245 249); /* slate-100 */
+  color: rgb(15 23 42);
+}
+.p-toast .p-toast-close-button:focus-visible {
+  outline: 2px solid rgb(13 148 136);
+  outline-offset: -2px;
+}
+
 /* -- SelectButton ------------------------------------------------------ */
 
 .p-selectbutton {

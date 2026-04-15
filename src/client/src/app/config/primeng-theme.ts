@@ -201,10 +201,10 @@ const ClinicalTheme = definePreset(Aura, {
     },
     toast: {
       root: {
-        borderRadius: '6px',
+        borderRadius: '0',
       },
       content: {
-        padding: '0.75rem 1rem',
+        padding: '0.625rem 1rem',
       },
       text: {
         fontSize: '13px',
@@ -221,13 +221,13 @@ const ClinicalTheme = definePreset(Aura, {
         light: {
           success: {
             background: '{surface.0}',
-            borderColor: '{teal.200}',
+            borderColor: '{slate.200}',
             color: '{teal.700}',
           },
           error: {
             background: '{surface.0}',
-            borderColor: '{red.200}',
-            color: '{red.900}',
+            borderColor: '{slate.200}',
+            color: '{red.800}',
           },
           info: {
             background: '{surface.0}',
@@ -236,7 +236,7 @@ const ClinicalTheme = definePreset(Aura, {
           },
           warn: {
             background: '{surface.0}',
-            borderColor: '{amber.200}',
+            borderColor: '{slate.200}',
             color: '{amber.800}',
           },
         },
