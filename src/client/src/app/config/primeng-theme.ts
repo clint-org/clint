@@ -25,7 +25,7 @@ const ClinicalTheme = definePreset(Aura, {
         style: 'none',
         color: 'transparent',
         offset: '0',
-        shadow: '0 0 0 1px {teal.600}',
+        shadow: '0 0 0 2px rgba(13, 148, 136, 0.15)',
       },
     },
     colorScheme: {
@@ -46,9 +46,10 @@ const ClinicalTheme = definePreset(Aura, {
         },
         formField: {
           background: '#ffffff',
-          borderColor: '{slate.200}',
-          hoverBorderColor: '{slate.400}',
+          borderColor: '{slate.300}',
+          hoverBorderColor: '{slate.500}',
           focusBorderColor: '{teal.600}',
+          invalidBorderColor: '{red.500}',
           color: '{slate.900}',
           placeholderColor: '{slate.400}',
           shadow: 'none',
@@ -100,6 +101,35 @@ const ClinicalTheme = definePreset(Aura, {
       },
       colorScheme: {
         light: {
+          root: {
+            primary: {
+              background: '{teal.600}',
+              hoverBackground: '{teal.700}',
+              activeBackground: '{teal.800}',
+              borderColor: '{teal.600}',
+              hoverBorderColor: '{teal.700}',
+              activeBorderColor: '{teal.800}',
+              color: '#ffffff',
+              hoverColor: '#ffffff',
+              activeColor: '#ffffff',
+              disabledBackground: '{slate.200}',
+              disabledBorderColor: '{slate.200}',
+              disabledColor: '{slate.400}',
+            },
+            secondary: {
+              borderColor: '{slate.300}',
+              hoverBackground: '{slate.50}',
+              activeBackground: '{slate.100}',
+              color: '{slate.700}',
+            },
+            text: {
+              primary: {
+                hoverBackground: '{teal.50}',
+                activeBackground: '{teal.100}',
+                color: '{teal.600}',
+              },
+            },
+          },
           outlined: {
             primary: {
               hoverBackground: '{teal.50}',
@@ -110,7 +140,7 @@ const ClinicalTheme = definePreset(Aura, {
             secondary: {
               hoverBackground: '{slate.50}',
               activeBackground: '{slate.100}',
-              borderColor: '{slate.200}',
+              borderColor: '{slate.300}',
               color: '{slate.700}',
             },
           },
