@@ -65,10 +65,12 @@
       optionLabel="name"
       optionValue="id"
       placeholder="Select mechanisms"
-      display="comma"
       [filter]="true"
       [showClear]="true"
       [style]="{ width: '100%' }"
+      [styleClass]="selectedMoaIds().length ? 'has-value' : ''"
+      [maxSelectedLabels]="1"
+      selectedItemsLabel="MOAs"
     />
   </app-form-field>
 
@@ -81,10 +83,12 @@
       optionLabel="name"
       optionValue="id"
       placeholder="Select routes"
-      display="comma"
       [filter]="true"
       [showClear]="true"
       [style]="{ width: '100%' }"
+      [styleClass]="selectedRoaIds().length ? 'has-value' : ''"
+      [maxSelectedLabels]="1"
+      selectedItemsLabel="ROAs"
     />
   </app-form-field>
 
