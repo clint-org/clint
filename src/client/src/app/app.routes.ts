@@ -213,6 +213,20 @@ export const routes: Routes = [
                 (m) => m.TaxonomiesPageComponent,
               ),
           },
+          {
+            path: 'settings/general',
+            loadComponent: () =>
+              import('./features/space-settings/space-general.component').then(
+                (m) => m.SpaceGeneralComponent,
+              ),
+          },
+          {
+            path: 'settings/members',
+            loadComponent: () =>
+              import('./features/space-settings/space-members.component').then(
+                (m) => m.SpaceMembersComponent,
+              ),
+          },
           // Redirects: old manage taxonomy/marker paths -> new settings paths
           {
             path: 'manage/marker-types',

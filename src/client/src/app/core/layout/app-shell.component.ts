@@ -306,6 +306,8 @@ export class AppShellComponent implements OnInit {
       'settings/marker-types': 'Marker Types',
       'settings/organization': 'Organization',
       'settings/spaces': 'Spaces',
+      'settings/general': 'General',
+      'settings/members': 'Members',
     };
     return titleMap[route] ?? this.topbarState.title();
   });
@@ -390,15 +392,6 @@ export class AppShellComponent implements OnInit {
   }
 
   onNavItemClick(route: string): void {
-    // Organization and Spaces are tenant-level routes
-    if (route === 'settings/organization') {
-      this.router.navigate(['/t', this.tenantId(), 'settings']);
-      return;
-    }
-    if (route === 'settings/spaces') {
-      this.router.navigate(['/t', this.tenantId(), 'spaces']);
-      return;
-    }
     this.navigateToSpaceRoute(route);
   }
 
