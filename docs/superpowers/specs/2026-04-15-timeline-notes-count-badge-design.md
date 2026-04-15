@@ -38,28 +38,37 @@ When the popover opens and `totalCount > 1`, add a header line:
 - Styled as `text-xs text-slate-400 mb-2`
 - Placed above the existing note list content
 
+### Remove hover tooltip
+
+The current component has both a hover tooltip (`pTooltip`) and a click popover (`p-popover`). The tooltip concatenates all notes with `|` separators, truncated at 200 chars -- it doesn't add value over either the visible cell text (1 note) or the click popover (multiple notes). Remove it:
+
+- Remove `pTooltip`, `tooltipPosition`, and `tooltipOptions` bindings from the container div
+- Remove the `Tooltip` import from PrimeNG
+- Remove the `tooltipText` computed signal
+- The click popover remains the sole interaction for viewing full note content
+
 ### What does not change
 
 - Row height (36px)
 - Column width (w-48)
 - Click/keyboard interaction to open popover
-- Tooltip behavior (still shows concatenated preview on hover)
 - Popover max-height (300px) and scroll behavior
 - Styling of individual notes inside the popover
-- Behavior when there are 0 or 1 notes (identical to current)
+- Behavior when there are 0 or 1 notes (identical to current, minus the hover tooltip)
 
 ## Component changes
 
 All changes are isolated to `row-notes.component.ts`:
 
 1. **New computed signal:** `totalCount` -- derives the combined count from both note sources
-2. **Template update:** Add conditional badge element after the truncated text span
-3. **Popover template update:** Add conditional header line above existing content
+2. **Remove:** `tooltipText` computed signal, `Tooltip` import, tooltip template bindings
+3. **Template update:** Add conditional badge element after the truncated text span
+4. **Popover template update:** Add conditional header line above existing content
 
 No new components, services, or modules needed.
 
 ## Accessibility
 
-- Badge is purely visual (decorative) -- the tooltip and popover already convey the full content
+- Badge is purely visual (decorative) -- the popover already conveys the full content
 - The existing `role="button"`, `tabindex`, and `aria-label` on the popover are unchanged
-- Badge gets `aria-hidden="true"` since the tooltip text already includes all note content
+- Badge gets `aria-hidden="true"` since the popover includes all note content
