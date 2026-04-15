@@ -47,9 +47,19 @@ The header shows your current **Organization** and **Space** as dropdowns. Click
 ### Timeline Grid
 
 The grid has three sections:
-- **Left panel** -- Company, Product, and Trial labels (sticky on horizontal scroll)
+- **Left panel** -- Company, Product, and Trial labels (sticky on horizontal scroll), plus optional MOA and ROA columns
 - **Timeline header** -- Date columns scaled to the current zoom level (sticky on vertical scroll)
 - **Trial rows** -- Phase bars and event markers for each trial
+- **Right panel** -- Notes column (hidden on small screens)
+
+### Column Visibility
+
+Click the gear icon at the far left of the grid header to toggle optional columns on or off:
+- **MOA** -- Mechanism of Action
+- **ROA** -- Route of Administration
+- **Notes** -- Trial notes (right side)
+
+All columns are visible by default. Your choices persist for the browser session.
 
 ### Zoom Controls
 

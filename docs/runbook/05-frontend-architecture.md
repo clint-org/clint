@@ -188,7 +188,7 @@ DashboardComponent               # Orchestrates state, filters, loading
   ZoomControlComponent           # Yearly/quarterly/monthly/daily toggle
   LegendComponent                # Marker type reference grouped by category
   ExportDialogComponent          # PowerPoint export dialog
-  DashboardGridComponent         # The timeline table (scrollable container)
+  DashboardGridComponent         # The timeline table (scrollable container, gear icon toggles MOA/ROA/Notes columns)
     GridHeaderComponent          # Column headers (date labels, sticky)
     RowLabel                     # Left column: company/product/trial labels (sticky)
     TrialRow                     # One row per trial
