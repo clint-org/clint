@@ -69,8 +69,21 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               id="org-name"
               class="w-full"
               [(ngModel)]="orgName"
-              (blur)="saveOrgName()"
             />
+            <div class="mt-3 flex items-center gap-3">
+              <button
+                pButton
+                type="button"
+                label="Save"
+                size="small"
+                [loading]="savingName()"
+                [disabled]="!nameChanged()"
+                (click)="saveOrgName()"
+              ></button>
+              @if (nameSaved()) {
+                <span class="text-sm text-green-700">Saved.</span>
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -239,6 +252,8 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   inviting = signal(false);
   inviteError = signal<string | null>(null);
   removeError = signal<string | null>(null);
+  savingName = signal(false);
+  nameSaved = signal(false);
   inviteEmail = '';
   inviteRole: 'owner' | 'member' = 'member';
   orgName = '';
@@ -290,14 +305,24 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/t', this.tenantId, 'spaces']);
   }
 
+  nameChanged(): boolean {
+    const t = this.tenant();
+    return !!t && this.orgName.trim() !== t.name;
+  }
+
   async saveOrgName(): Promise<void> {
     const t = this.tenant();
     if (!t || this.orgName.trim() === t.name) return;
+    this.savingName.set(true);
     try {
       const updated = await this.tenantService.updateTenant(this.tenantId, { name: this.orgName.trim() });
       this.tenant.set(updated);
+      this.nameSaved.set(true);
+      this.removeError.set(null);
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to update name');
+    } finally {
+      this.savingName.set(false);
     }
   }
 

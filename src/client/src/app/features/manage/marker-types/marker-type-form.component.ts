@@ -8,8 +8,9 @@ import { ColorPicker } from 'primeng/colorpicker';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
-import { MarkerType } from '../../../core/models/marker.model';
+import { MarkerType, MarkerCategory } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
+import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
@@ -35,7 +36,10 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private markerTypeService = inject(MarkerTypeService);
+  private categoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
+
+  categories = signal<MarkerCategory[]>([]);
 
   readonly shapeOptions = [
     { label: 'Circle', value: 'circle' },
@@ -51,6 +55,7 @@ export class MarkerTypeFormComponent implements OnInit {
     { label: 'Outline', value: 'outline' },
   ];
 
+  categoryId = '';
   name = '';
   shape: MarkerType['shape'] = 'circle';
   fillStyle: MarkerType['fill_style'] = 'filled';
@@ -65,7 +70,12 @@ export class MarkerTypeFormComponent implements OnInit {
     return this.nameBlurred() && !this.name.trim();
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+    try {
+      this.categories.set(await this.categoryService.list(spaceId));
+    } catch { /* categories will be empty */ }
+
     const existing = this.markerType();
     if (existing) {
       this.name = existing.name;
@@ -74,11 +84,13 @@ export class MarkerTypeFormComponent implements OnInit {
       this.color = existing.color;
       this.icon = existing.icon ?? '';
       this.displayOrder = existing.display_order;
+      this.categoryId = existing.category_id;
     }
   }
 
   async onSubmit(): Promise<void> {
     if (!this.name.trim()) return;
+    if (!this.categoryId) return;
 
     this.saving.set(true);
     this.error.set(null);
@@ -91,6 +103,7 @@ export class MarkerTypeFormComponent implements OnInit {
         color: this.color,
         icon: this.icon || null,
         display_order: this.displayOrder ?? 0,
+        category_id: this.categoryId,
       };
 
       const existing = this.markerType();

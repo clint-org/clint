@@ -175,11 +175,13 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [style]="{ width: '32rem' }"
       (onHide)="closeModal()"
     >
-      <app-therapeutic-area-form
-        [area]="editingArea()"
-        (saved)="onAreaSaved()"
-        (cancelled)="closeModal()"
-      />
+      @if (taModalOpen()) {
+        <app-therapeutic-area-form
+          [area]="editingArea()"
+          (saved)="onAreaSaved()"
+          (cancelled)="closeModal()"
+        />
+      }
     </p-dialog>
 
     <!-- MOA dialog -->
@@ -190,11 +192,13 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [style]="{ width: '32rem' }"
       (onHide)="closeModal()"
     >
-      <app-mechanism-of-action-form
-        [item]="editingMoa()"
-        (saved)="onMoaSaved()"
-        (cancelled)="closeModal()"
-      />
+      @if (moaModalOpen()) {
+        <app-mechanism-of-action-form
+          [item]="editingMoa()"
+          (saved)="onMoaSaved()"
+          (cancelled)="closeModal()"
+        />
+      }
     </p-dialog>
 
     <!-- ROA dialog -->
@@ -205,11 +209,13 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [style]="{ width: '32rem' }"
       (onHide)="closeModal()"
     >
-      <app-route-of-administration-form
-        [item]="editingRoa()"
-        (saved)="onRoaSaved()"
-        (cancelled)="closeModal()"
-      />
+      @if (roaModalOpen()) {
+        <app-route-of-administration-form
+          [item]="editingRoa()"
+          (saved)="onRoaSaved()"
+          (cancelled)="closeModal()"
+        />
+      }
     </p-dialog>
   `,
 })

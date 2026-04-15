@@ -5,6 +5,26 @@
 
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <app-form-field
+      label="Category"
+      fieldId="mt-category"
+      [required]="true"
+      spacing="sm:col-span-2"
+    >
+      <p-select
+        inputId="mt-category"
+        [options]="categories()"
+        [(ngModel)]="categoryId"
+        name="categoryId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select a category"
+        [style]="{ width: '100%' }"
+        class="mt-1"
+        [styleClass]="categoryId ? 'has-value' : ''"
+      />
+    </app-form-field>
+
+    <app-form-field
       label="Name"
       fieldId="mt-name"
       [required]="true"

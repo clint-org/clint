@@ -49,7 +49,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               id="space-name"
               class="w-full"
               [(ngModel)]="name"
-              (blur)="saveIfChanged()"
             />
           </div>
 
@@ -63,8 +62,19 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               class="w-full"
               [(ngModel)]="description"
               rows="3"
-              (blur)="saveIfChanged()"
             ></textarea>
+          </div>
+
+          <div class="mt-6 flex items-center gap-3">
+            <p-button
+              label="Save changes"
+              [loading]="saving()"
+              [disabled]="!hasChanges()"
+              (onClick)="saveIfChanged()"
+            />
+            @if (saved()) {
+              <span class="text-sm text-green-700">Settings saved.</span>
+            }
           </div>
 
           <div class="mt-12 border-t border-slate-200 pt-6">
@@ -97,6 +107,7 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
   loading = signal(true);
   error = signal<string | null>(null);
   saved = signal(false);
+  saving = signal(false);
   name = '';
   description = '';
 
@@ -113,11 +124,18 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
+  hasChanges(): boolean {
+    const s = this.space();
+    if (!s) return false;
+    return this.name.trim() !== s.name || (this.description.trim() || '') !== (s.description || '');
+  }
+
   async saveIfChanged(): Promise<void> {
     const s = this.space();
     if (!s) return;
-    if (this.name.trim() === s.name && (this.description.trim() || '') === (s.description || '')) return;
+    if (!this.hasChanges()) return;
 
+    this.saving.set(true);
     try {
       const updated = await this.spaceService.updateSpace(this.spaceId, {
         name: this.name.trim(),
@@ -128,6 +146,8 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
       this.error.set(null);
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to save');
+    } finally {
+      this.saving.set(false);
     }
   }
 
