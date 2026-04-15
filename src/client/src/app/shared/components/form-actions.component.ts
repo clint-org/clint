@@ -17,7 +17,6 @@ import { ButtonModule } from 'primeng/button';
       <p-button
         [label]="submitLabel()"
         type="submit"
-        [outlined]="true"
         size="small"
         [loading]="loading()"
       />
