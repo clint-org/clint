@@ -27,6 +27,15 @@ Tenant (Organization)
 
 Tenant owners automatically have access to all spaces within their tenant (enforced by the `has_space_access()` function).
 
+## Auto-Provisioning (handle_new_user trigger)
+
+When a new user signs in via Google OAuth, the `handle_new_user` trigger on `auth.users` automatically creates pharma-themed tenants and spaces:
+
+- **Boehringer Ingelheim** tenant with two spaces: "Vicadrastat Pipeline" and "Survodutide Pipeline"
+- **Azurity Pharmaceuticals** tenant with one space: "SAH Pipeline"
+
+The user is added as `owner` of all tenants and spaces. Each space gets populated with comprehensive demo data (fictional trial dataset) via `seed_demo_data(space_id)` on first visit from the frontend. Dummy users (`*@bi.example.com`, `*@azurity.example.com`) are skipped.
+
 ## Onboarding Flow
 
 New users land at `/onboarding` after first sign-in. The `OnboardingComponent` provides two tabs:
