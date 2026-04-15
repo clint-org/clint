@@ -74,22 +74,7 @@ export interface TopbarTab {
                   <span class="org-badge">{{ orgInitial() }}</span>
                 }
                 <span class="org-name">{{ tenantName() }}</span>
-                <svg
-                  width="8"
-                  height="8"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  aria-hidden="true"
-                  class="chevron"
-                >
-                  <path
-                    d="M2 3.5L5 6.5L8 3.5"
-                    stroke="currentColor"
-                    stroke-width="1.3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
+                <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               @if (orgDropdownOpen()) {
                 <div class="dropdown" role="listbox">
@@ -644,6 +629,7 @@ export interface TopbarTab {
       }
 
       .chevron {
+        font-size: 8px;
         color: #94a3b8;
       }
     `,

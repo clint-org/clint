@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
+import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
 type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
 
@@ -53,33 +54,11 @@ interface NavSection {
               <span class="active-indicator" aria-hidden="true"></span>
             }
 
-            @if (section.id === 'landscape') {
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <rect x="2" y="4" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-                <rect x="2" y="9" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-                <rect x="2" y="14" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-              </svg>
-            }
-
-            @if (section.id === 'intelligence') {
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M10 3L12 7.5H16.5L13 10L14 14.5L10 12L6 14.5L7 10L3.5 7.5H8L10 3Z" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-              </svg>
-            }
-
-            @if (section.id === 'manage') {
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <rect x="3" y="3" width="14" height="14" rx="2.5" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
-                <path d="M6 7.5h8M6 10h8M6 12.5h5" [attr.stroke]="iconColor(section.id)" stroke-width="1.2" stroke-linecap="round"/>
-              </svg>
-            }
-
-            @if (section.id === 'settings') {
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <circle cx="10" cy="10" r="3" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
-                <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.93 4.93l1.41 1.41M13.66 13.66l1.41 1.41M4.93 15.07l1.41-1.41M13.66 6.34l1.41-1.41" [attr.stroke]="iconColor(section.id)" stroke-width="1.3" stroke-linecap="round"/>
-              </svg>
-            }
+            <i
+              [class]="sectionIcon(section.id)"
+              [style.color]="iconColor(section.id)"
+              aria-hidden="true"
+            ></i>
           </button>
         }
       </div>
@@ -180,6 +159,7 @@ interface NavSection {
         border-radius: 8px;
         cursor: pointer;
         padding: 0;
+        font-size: 14px;
         transition:
           background-color 150ms ease,
           color 150ms ease;
@@ -265,10 +245,12 @@ export class IconRailComponent {
   ];
 
   readonly sections = computed(() =>
-    this.hasSpace()
-      ? this.allSections
-      : this.allSections.filter((s) => s.id === 'settings')
+    this.hasSpace() ? this.allSections : this.allSections.filter((s) => s.id === 'settings')
   );
+
+  sectionIcon(sectionId: Section): string {
+    return NAV_ICONS[sectionId] ?? '';
+  }
 
   iconColor(sectionId: Section): string {
     return this.activeSection() === sectionId ? '#0d9488' : '#64748b';
