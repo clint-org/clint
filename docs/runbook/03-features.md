@@ -72,7 +72,7 @@ A full CRUD interface for managing all data within a space:
 | Trial Phases | Phase records with phase_type, start_date, end_date, color, label |
 | Trial Markers | Event markers with event_date, end_date, tooltip_text, is_projected |
 | Trial Notes | Free-text annotations on trials |
-| Marker Types | Custom marker types beyond the 10 system defaults |
+| Marker Types | Custom marker types beyond the 10 system defaults (each assigned to a category) |
 | Therapeutic Areas | Medical indication categories (name, abbreviation) |
 
 ## Events (Intelligence Feed)

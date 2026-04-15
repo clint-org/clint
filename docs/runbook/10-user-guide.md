@@ -158,8 +158,9 @@ The Trial Detail page provides a comprehensive form with sections:
 
 You can create custom marker types beyond the 10 system defaults:
 1. Click **Add Marker Type**
-2. Choose a name, shape (circle, diamond, flag, arrow, bar, x), fill style (filled, outline, striped, gradient), and color
-3. Custom markers appear in the legend and are available when adding markers to trials
+2. Select a **category** (Clinical Trial, Data, Regulatory, Approval, or Loss of Exclusivity)
+3. Choose a name, shape (circle, diamond, flag, arrow, bar, x), fill style (filled, outline, striped, gradient), and color
+4. Custom markers appear in the legend and are available when adding markers to trials
 
 System marker types (the 10 defaults) cannot be modified or deleted.
 
@@ -188,6 +189,7 @@ The export renders phase bars and markers with visual fidelity matching the dash
 **Navigate:** Gear icon in header
 
 Tenant owners can:
+- **Edit organization name** -- Change the name and click **Save**
 - **View members** -- Table showing all members with name, email, and role
 - **Remove members** -- Click remove button (with confirmation)
 - **Invite members** -- Generate an invite code by entering email and role
@@ -201,5 +203,6 @@ Tenant owners can:
 
 - **Create a new space** -- Each space is an independent pipeline workspace
 - **Switch spaces** -- Click a space from the list or use the space dropdown in the header
+- **Space settings** -- Edit space name and description, then click **Save changes**. Manage space members and delete the space from the Settings pages.
 - Spaces within the same organization share member access rules but have completely separate data
 - Your last-visited tenant and space are remembered automatically
