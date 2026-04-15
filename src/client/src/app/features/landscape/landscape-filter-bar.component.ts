@@ -70,10 +70,13 @@ export class LandscapeFilterBarComponent implements OnInit {
   ];
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
-    { label: 'P1', value: 'P1' },
-    { label: 'P2', value: 'P2' },
-    { label: 'P3', value: 'P3' },
-    { label: 'Appr', value: 'APPROVED' },
+    { label: 'Pre-clinical', value: 'PRECLIN' },
+    { label: 'Phase I', value: 'P1' },
+    { label: 'Phase II', value: 'P2' },
+    { label: 'Phase III', value: 'P3' },
+    { label: 'Phase IV', value: 'P4' },
+    { label: 'Approved', value: 'APPROVED' },
+    { label: 'Launched', value: 'LAUNCHED' },
   ];
 
   readonly statusOptions: SelectOption[] = [
@@ -100,7 +103,7 @@ export class LandscapeFilterBarComponent implements OnInit {
       ids: string[],
       options: SelectOption[],
       field: keyof LandscapeFilters,
-      header: string,
+      header: string
     ) => {
       for (const id of ids) {
         const opt = options.find((o) => o.value === id);
@@ -115,7 +118,8 @@ export class LandscapeFilterBarComponent implements OnInit {
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
 
     for (const phase of f.phases) {
-      chips.push({ field: 'phases', header: 'Phase', value: phase, id: phase });
+      const phaseLabel = this.phaseOptions.find((o) => o.value === phase)?.label ?? phase;
+      chips.push({ field: 'phases', header: 'Phase', value: phaseLabel, id: phase });
     }
     for (const status of f.recruitmentStatuses) {
       chips.push({ field: 'recruitmentStatuses', header: 'Status', value: status, id: status });

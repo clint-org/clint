@@ -129,21 +129,29 @@
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')"
+          [styleClass]="
+            'w-fit' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')
+          "
           size="small"
           [maxSelectedLabels]="0"
           [selectedItemsLabel]="'ROA (' + state.filters().routeOfAdministrationIds.length + ')'"
         />
       }
 
-      <p-selectbutton
+      <p-multiselect
         [options]="phaseOptions"
         [ngModel]="state.filters().phases"
-        (ngModelChange)="update('phases', $event)"
-        [multiple]="true"
+        (ngModelChange)="update('phases', $event ?? [])"
+        placeholder="Phase"
+        ariaLabel="Filter by phase"
         optionLabel="label"
         optionValue="value"
+        [showClear]="true"
+        appendTo="body"
+        [styleClass]="'w-fit' + (state.filters().phases.length ? ' has-value' : '')"
         size="small"
+        [maxSelectedLabels]="0"
+        [selectedItemsLabel]="'Phase (' + state.filters().phases.length + ')'"
       />
 
       <p-multiselect

@@ -50,7 +50,11 @@ export interface TopbarTab {
                   </button>
                 }
                 <div class="dropdown-footer">
-                  <button type="button" class="dropdown-item dropdown-item--footer" (click)="onOrgSettingsClick()">
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onOrgSettingsClick()"
+                  >
                     <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
                   </button>
                 </div>
@@ -58,21 +62,42 @@ export interface TopbarTab {
             }
           } @else {
             <div class="org-switcher">
-              <button type="button" class="org-btn" (click)="orgDropdownOpen.set(!orgDropdownOpen())"
-                [attr.aria-expanded]="orgDropdownOpen()">
+              <button
+                type="button"
+                class="org-btn"
+                (click)="orgDropdownOpen.set(!orgDropdownOpen())"
+                [attr.aria-expanded]="orgDropdownOpen()"
+              >
                 @if (tenantLogoUrl()) {
                   <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
                 } @else {
                   <span class="org-badge">{{ orgInitial() }}</span>
                 }
                 <span class="org-name">{{ tenantName() }}</span>
-                <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true" class="chevron">
-                  <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg
+                  width="8"
+                  height="8"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  aria-hidden="true"
+                  class="chevron"
+                >
+                  <path
+                    d="M2 3.5L5 6.5L8 3.5"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </button>
               @if (orgDropdownOpen()) {
                 <div class="dropdown" role="listbox">
-                  <button type="button" class="dropdown-item dropdown-item--footer" (click)="onOrgSettingsClick()">
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onOrgSettingsClick()"
+                  >
                     <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
                   </button>
                 </div>
@@ -122,10 +147,18 @@ export interface TopbarTab {
                 </button>
               }
               <div class="dropdown-footer">
-                <button type="button" class="dropdown-item dropdown-item--footer" (click)="onSpaceSettingsClick()">
+                <button
+                  type="button"
+                  class="dropdown-item dropdown-item--footer"
+                  (click)="onSpaceSettingsClick()"
+                >
                   <i class="fa-solid fa-gear text-[10px]"></i> Space settings
                 </button>
-                <button type="button" class="dropdown-item dropdown-item--footer" (click)="onNewSpaceClick()">
+                <button
+                  type="button"
+                  class="dropdown-item dropdown-item--footer"
+                  (click)="onNewSpaceClick()"
+                >
                   <i class="fa-solid fa-plus text-[10px]"></i> New space
                 </button>
               </div>
@@ -138,7 +171,7 @@ export interface TopbarTab {
       @switch (pageType()) {
         @case ('landscape') {
           <div class="topbar-divider" aria-hidden="true"></div>
-          <span class="topbar-section-label">Landscape</span>
+          <span class="topbar-section-label">{{ sectionLabel() }}</span>
           <div class="topbar-divider" aria-hidden="true"></div>
           <div role="tablist" class="flex items-center">
             @for (tab of tabs(); track tab.value) {
@@ -155,6 +188,21 @@ export interface TopbarTab {
               </button>
             }
           </div>
+          @if (subTabs().length) {
+            <div class="topbar-divider" aria-hidden="true"></div>
+            <div role="tablist" class="flex items-center" aria-label="View dimension">
+              @for (sub of subTabs(); track sub.value) {
+                <button
+                  role="tab"
+                  [attr.aria-selected]="sub.active"
+                  [class]="sub.active ? 'topbar-subtab active' : 'topbar-subtab'"
+                  (click)="onSubTabClick(sub.value)"
+                >
+                  {{ sub.label }}
+                </button>
+              }
+            </div>
+          }
         }
         @case ('list') {
           <div class="topbar-divider" aria-hidden="true"></div>
@@ -208,364 +256,398 @@ export interface TopbarTab {
       </div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-    }
+  styles: [
+    `
+      :host {
+        display: block;
+      }
 
-    .topbar {
-      display: flex;
-      align-items: center;
-      height: 42px;
-      padding: 0 16px;
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-    }
+      .topbar {
+        display: flex;
+        align-items: center;
+        height: 42px;
+        padding: 0 16px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+      }
 
-    /* ---- Breadcrumb ---- */
+      /* ---- Breadcrumb ---- */
 
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
 
-    .breadcrumb-sep {
-      font-size: 11px;
-      color: #cbd5e1;
-      user-select: none;
-    }
+      .breadcrumb-sep {
+        font-size: 11px;
+        color: #cbd5e1;
+        user-select: none;
+      }
 
-    /* Org */
+      /* Org */
 
-    .org-trigger {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+      .org-trigger {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
 
-    .org-button {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: none;
-      border: none;
-      padding: 2px 4px 2px 0;
-      cursor: pointer;
-      border-radius: 4px;
-    }
+      .org-button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        padding: 2px 4px 2px 0;
+        cursor: pointer;
+        border-radius: 4px;
+      }
 
-    .org-button:hover {
-      background: #f8fafc;
-    }
+      .org-button:hover {
+        background: #f8fafc;
+      }
 
-    .org-button:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: 2px;
-    }
+      .org-button:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
-    .org-badge {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      background: #0d9488;
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-transform: uppercase;
-      flex-shrink: 0;
-    }
+      .org-badge {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        background: #0d9488;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
 
-    .org-name {
-      font-size: 11px;
-      color: #64748b;
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+      .org-name {
+        font-size: 11px;
+        color: #64748b;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-    .dropdown-chevron {
-      font-size: 8px;
-      color: #94a3b8;
-      line-height: 1;
-    }
+      .dropdown-chevron {
+        font-size: 8px;
+        color: #94a3b8;
+        line-height: 1;
+      }
 
-    /* Space */
+      /* Space */
 
-    .space-trigger {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+      .space-trigger {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
 
-    .space-pill {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #0f172a;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 5px;
-      padding: 3px 8px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
+      .space-pill {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #0f172a;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 3px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
 
-    .space-pill:hover {
-      background: #f1f5f9;
-    }
+      .space-pill:hover {
+        background: #f1f5f9;
+      }
 
-    .space-pill:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: 2px;
-    }
+      .space-pill:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
-    .space-pill.muted {
-      color: #94a3b8;
-      font-weight: 400;
-    }
+      .space-pill.muted {
+        color: #94a3b8;
+        font-weight: 400;
+      }
 
-    /* Dropdowns */
+      /* Dropdowns */
 
-    .dropdown {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      min-width: 180px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      z-index: 50;
-      padding: 4px 0;
-    }
+      .dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        min-width: 180px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        z-index: 50;
+        padding: 4px 0;
+      }
 
-    .dropdown-item {
-      display: block;
-      width: 100%;
-      text-align: left;
-      font-size: 12px;
-      color: #475569;
-      background: none;
-      border: none;
-      padding: 6px 12px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
+      .dropdown-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        font-size: 12px;
+        color: #475569;
+        background: none;
+        border: none;
+        padding: 6px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
 
-    .dropdown-item:hover {
-      background: #f8fafc;
-    }
+      .dropdown-item:hover {
+        background: #f8fafc;
+      }
 
-    .dropdown-item:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: -2px;
-    }
+      .dropdown-item:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: -2px;
+      }
 
-    .dropdown-item.active {
-      color: #0d9488;
-      font-weight: 500;
-    }
+      .dropdown-item.active {
+        color: #0d9488;
+        font-weight: 500;
+      }
 
-    /* ---- Page-specific ---- */
+      /* ---- Page-specific ---- */
 
-    .topbar-divider {
-      width: 1px;
-      height: 16px;
-      background: #e2e8f0;
-      margin: 0 12px;
-      flex-shrink: 0;
-    }
+      .topbar-divider {
+        width: 1px;
+        height: 16px;
+        background: #e2e8f0;
+        margin: 0 12px;
+        flex-shrink: 0;
+      }
 
-    .topbar-section-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #0f172a;
-      white-space: nowrap;
-    }
+      .topbar-section-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #0f172a;
+        white-space: nowrap;
+      }
 
-    .topbar-tab {
-      font-size: 11px;
-      padding: 11px 0;
-      margin-right: 16px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      color: #64748b;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      transition: color 120ms ease-out;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
+      .topbar-tab {
+        font-size: 11px;
+        padding: 11px 0;
+        margin-right: 16px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        color: #64748b;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        transition: color 120ms ease-out;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
 
-    .topbar-tab__icon {
-      font-size: 10px;
-      opacity: 0.7;
-    }
+      .topbar-tab__icon {
+        font-size: 10px;
+        opacity: 0.7;
+      }
 
-    .topbar-tab.active .topbar-tab__icon {
-      opacity: 1;
-    }
+      .topbar-tab.active .topbar-tab__icon {
+        opacity: 1;
+      }
 
-    .topbar-tab:hover {
-      color: #0f172a;
-    }
+      .topbar-tab:hover {
+        color: #0f172a;
+      }
 
-    .topbar-tab.active {
-      color: #0d9488;
-      font-weight: 500;
-      border-bottom-color: #0d9488;
-    }
+      .topbar-tab.active {
+        color: #0d9488;
+        font-weight: 500;
+        border-bottom-color: #0d9488;
+      }
 
-    .topbar-tab:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: 2px;
-    }
+      .topbar-tab:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
-    .topbar-list-icon {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-right: 6px;
-    }
+      .topbar-subtab {
+        font-size: 10px;
+        padding: 3px 8px;
+        cursor: pointer;
+        border-radius: 4px;
+        color: #64748b;
+        background: none;
+        border: 1px solid transparent;
+        transition:
+          color 120ms ease-out,
+          background 120ms ease-out;
+        white-space: nowrap;
+        margin-right: 2px;
+      }
 
-    .topbar-list-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #0f172a;
-      white-space: nowrap;
-    }
+      .topbar-subtab:hover {
+        color: #0f172a;
+        background: #f1f5f9;
+      }
 
-    .topbar-back {
-      font-size: 11px;
-      color: #94a3b8;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-      transition: color 120ms ease-out;
-    }
+      .topbar-subtab.active {
+        color: #0d9488;
+        background: rgba(13, 148, 136, 0.08);
+        border-color: rgba(13, 148, 136, 0.2);
+        font-weight: 500;
+      }
 
-    .topbar-back:hover {
-      color: #64748b;
-    }
+      .topbar-subtab:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
-    .topbar-back:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: 2px;
-    }
+      .topbar-list-icon {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-right: 6px;
+      }
 
-    .topbar-eyebrow {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #94a3b8;
-      line-height: 1;
-    }
+      .topbar-list-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #0f172a;
+        white-space: nowrap;
+      }
 
-    .topbar-detail-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: #0f172a;
-      line-height: 1.4;
-    }
+      .topbar-back {
+        font-size: 11px;
+        color: #94a3b8;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        transition: color 120ms ease-out;
+      }
 
-    /* ---- Actions ---- */
+      .topbar-back:hover {
+        color: #64748b;
+      }
 
-    .topbar-actions {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+      .topbar-back:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
-    .topbar-record-count {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-left: 6px;
-    }
+      .topbar-eyebrow {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #94a3b8;
+        line-height: 1;
+      }
 
-    :host ::ng-deep .topbar-actions .p-button {
-      font-size: 11px;
-      padding: 4px 10px;
-      height: 26px;
-    }
+      .topbar-detail-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #0f172a;
+        line-height: 1.4;
+      }
 
-    :host ::ng-deep .topbar-actions .p-button .p-button-icon {
-      font-size: 11px;
-    }
+      /* ---- Actions ---- */
 
-    /* ---- Dropdown footer ---- */
+      .topbar-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    .dropdown-footer {
-      border-top: 1px solid #e2e8f0;
-    }
+      .topbar-record-count {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-left: 6px;
+      }
 
-    .dropdown-item--footer {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #64748b;
-      font-size: 11px;
-    }
-    .dropdown-item--footer:hover {
-      color: #0f172a;
-    }
+      :host ::ng-deep .topbar-actions .p-button {
+        font-size: 11px;
+        padding: 4px 10px;
+        height: 26px;
+      }
 
-    .org-badge-img {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
+      :host ::ng-deep .topbar-actions .p-button .p-button-icon {
+        font-size: 11px;
+      }
 
-    /* Single-tenant switcher */
+      /* ---- Dropdown footer ---- */
 
-    .org-switcher {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+      .dropdown-footer {
+        border-top: 1px solid #e2e8f0;
+      }
 
-    .org-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: none;
-      border: none;
-      padding: 2px 4px 2px 0;
-      cursor: pointer;
-      border-radius: 4px;
-    }
+      .dropdown-item--footer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #64748b;
+        font-size: 11px;
+      }
+      .dropdown-item--footer:hover {
+        color: #0f172a;
+      }
 
-    .org-btn:hover {
-      background: #f8fafc;
-    }
+      .org-badge-img {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
 
-    .org-btn:focus-visible {
-      outline: 2px solid #0d9488;
-      outline-offset: 2px;
-    }
+      /* Single-tenant switcher */
 
-    .chevron {
-      color: #94a3b8;
-    }
-  `],
+      .org-switcher {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .org-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        padding: 2px 4px 2px 0;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .org-btn:hover {
+        background: #f8fafc;
+      }
+
+      .org-btn:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
+
+      .chevron {
+        color: #94a3b8;
+      }
+    `,
+  ],
 })
 export class ContextualTopbarComponent {
   // ---- Org/Space inputs ----
@@ -581,8 +663,10 @@ export class ContextualTopbarComponent {
   // ---- Page type ----
   readonly pageType = input<'landscape' | 'list' | 'detail' | 'blank'>('blank');
 
-  // ---- Landscape mode ----
+  // ---- Tabbed section mode ----
+  readonly sectionLabel = input<string>('');
   readonly tabs = input<TopbarTab[]>([]);
+  readonly subTabs = input<TopbarTab[]>([]);
 
   // ---- List mode ----
   readonly listTitle = input<string>('');
@@ -598,6 +682,7 @@ export class ContextualTopbarComponent {
 
   // ---- Outputs ----
   readonly tabClick = output<string>();
+  readonly subTabClick = output<string>();
   readonly backClick = output<void>();
   readonly tenantChange = output<string>();
   readonly spaceChange = output<string>();
@@ -643,6 +728,10 @@ export class ContextualTopbarComponent {
 
   onTabClick(value: string): void {
     this.tabClick.emit(value);
+  }
+
+  onSubTabClick(value: string): void {
+    this.subTabClick.emit(value);
   }
 
   onBackClick(): void {

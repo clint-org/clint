@@ -1,11 +1,4 @@
-import {
-  Component,
-  computed,
-  HostListener,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
@@ -74,7 +67,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [spaces]="spaces()"
           [currentSpaceId]="spaceId()"
           [hasSpace]="!!spaceId()"
-          [tabs]="landscapeTabs()"
+          [sectionLabel]="sectionLabel()"
+          [tabs]="sectionTabs()"
+          [subTabs]="bullseyeSubTabs()"
           [listTitle]="topbarListTitle()"
           [recordCount]="topbarState.recordCount()"
           [backLabel]="topbarBackLabel()"
@@ -82,7 +77,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [entityTitle]="topbarState.entityTitle()"
           [actionButtons]="topbarState.actions()"
           [tenantLogoUrl]="currentTenantLogoUrl()"
-          (tabClick)="onLandscapeTabClick($event)"
+          (tabClick)="onSectionTabClick($event)"
+          (subTabClick)="onBullseyeSubTabClick($event)"
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
@@ -112,12 +108,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
             <p class="account-menu__label">Signed in as</p>
             <p class="account-menu__email">{{ user()?.email }}</p>
           </div>
-          <button
-            type="button"
-            class="account-menu__item"
-            (click)="onSignOut()"
-            role="menuitem"
-          >
+          <button type="button" class="account-menu__item" (click)="onSignOut()" role="menuitem">
             Sign out
           </button>
         </div>
@@ -136,19 +127,44 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
             A space is a workspace for organizing and visualizing a set of clinical trials.
           </p>
           <div>
-            <label for="new-space-name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
-            <input pInputText id="new-space-name" class="w-full" [(ngModel)]="newSpaceName" name="spaceName" placeholder="e.g. SGLT2 Pipeline" required />
+            <label for="new-space-name" class="mb-1 block text-sm font-medium text-slate-700"
+              >Name</label
+            >
+            <input
+              pInputText
+              id="new-space-name"
+              class="w-full"
+              [(ngModel)]="newSpaceName"
+              name="spaceName"
+              placeholder="e.g. SGLT2 Pipeline"
+              required
+            />
           </div>
           <div>
-            <label for="new-space-desc" class="mb-1 block text-sm font-medium text-slate-700">Description</label>
-            <textarea pTextarea id="new-space-desc" class="w-full" [(ngModel)]="newSpaceDesc" name="spaceDesc" rows="2" placeholder="Optional description"></textarea>
+            <label for="new-space-desc" class="mb-1 block text-sm font-medium text-slate-700"
+              >Description</label
+            >
+            <textarea
+              pTextarea
+              id="new-space-desc"
+              class="w-full"
+              [(ngModel)]="newSpaceDesc"
+              name="spaceDesc"
+              rows="2"
+              placeholder="Optional description"
+            ></textarea>
           </div>
           @if (createSpaceError()) {
             <p-message severity="error" [closable]="false">{{ createSpaceError() }}</p-message>
           }
         </form>
         <ng-template #footer>
-          <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="createSpaceDialogOpen.set(false)" />
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="createSpaceDialogOpen.set(false)"
+          />
           <p-button label="Create space" (onClick)="createSpace()" [loading]="creatingSpace()" />
         </ng-template>
       </p-dialog>
@@ -235,7 +251,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         background: transparent;
         border: none;
         cursor: pointer;
-        transition: color 120ms ease, background-color 120ms ease;
+        transition:
+          color 120ms ease,
+          background-color 120ms ease;
       }
 
       .account-menu__item:hover {
@@ -319,38 +337,121 @@ export class AppShellComponent implements OnInit {
   readonly pageType = computed<PageType>(() => {
     const route = this.activeSpaceRoute();
     if (!this.spaceId()) return 'blank';
-    // Landscape views
-    if (
-      route === '' ||
-      route.startsWith('bullseye') ||
-      route === 'positioning'
-    ) {
-      return 'landscape';
-    }
-    // Trial detail
+    // Trial detail (check before manage)
     if (route.match(/^manage\/trials\/[^/]+$/)) {
       return 'detail';
     }
-    // List pages
+    // Tab-based sections: landscape, intelligence, manage
     if (
-      route.startsWith('manage/') ||
+      route === '' ||
+      route.startsWith('bullseye') ||
+      route === 'positioning' ||
       route === 'events' ||
       route === 'catalysts' ||
-      route.startsWith('settings/')
+      route.startsWith('manage/')
     ) {
+      return 'landscape';
+    }
+    // Settings remains a list
+    if (route.startsWith('settings/')) {
       return 'list';
     }
     return 'blank';
   });
 
-  // Landscape tabs
-  readonly landscapeTabs = computed<TopbarTab[]>(() => {
+  // Section label for the topbar
+  readonly sectionLabel = computed(() => {
+    const labels: Record<Section, string> = {
+      landscape: 'Landscape',
+      intelligence: 'Intelligence',
+      manage: 'Manage',
+      settings: 'Settings',
+    };
+    return labels[this.activeSection()] ?? '';
+  });
+
+  // Section tabs for the topbar
+  readonly sectionTabs = computed<TopbarTab[]>(() => {
     if (this.pageType() !== 'landscape') return [];
+    const section = this.activeSection();
     const route = this.activeSpaceRoute();
+
+    switch (section) {
+      case 'landscape':
+        return [
+          {
+            label: 'Timeline',
+            value: 'timeline',
+            active: route === '',
+            icon: NAV_ICONS['timeline'],
+          },
+          {
+            label: 'Bullseye',
+            value: 'bullseye',
+            active: route.startsWith('bullseye'),
+            icon: NAV_ICONS['bullseye'],
+          },
+          {
+            label: 'Positioning',
+            value: 'positioning',
+            active: route === 'positioning',
+            icon: NAV_ICONS['positioning'],
+          },
+        ];
+      case 'intelligence':
+        return [
+          {
+            label: 'Events',
+            value: 'events',
+            active: route === 'events',
+            icon: NAV_ICONS['events'],
+          },
+          {
+            label: 'Catalysts',
+            value: 'catalysts',
+            active: route === 'catalysts',
+            icon: NAV_ICONS['catalysts'],
+          },
+        ];
+      case 'manage':
+        return [
+          {
+            label: 'Companies',
+            value: 'companies',
+            active: route === 'manage/companies',
+            icon: NAV_ICONS['companies'],
+          },
+          {
+            label: 'Products',
+            value: 'products',
+            active: route === 'manage/products',
+            icon: NAV_ICONS['products'],
+          },
+          {
+            label: 'Trials',
+            value: 'trials',
+            active: route === 'manage/trials',
+            icon: NAV_ICONS['trials'],
+          },
+        ];
+      default:
+        return [];
+    }
+  });
+
+  // Bullseye dimension sub-tabs
+  readonly bullseyeSubTabs = computed<TopbarTab[]>(() => {
+    const route = this.activeSpaceRoute();
+    if (!route.startsWith('bullseye')) return [];
     return [
-      { label: 'Timeline', value: 'timeline', active: route === '', icon: NAV_ICONS['timeline'] },
-      { label: 'Bullseye', value: 'bullseye', active: route.startsWith('bullseye'), icon: NAV_ICONS['bullseye'] },
-      { label: 'Positioning', value: 'positioning', active: route === 'positioning', icon: NAV_ICONS['positioning'] },
+      {
+        label: 'Therapy Area',
+        value: 'by-therapy-area',
+        active: route.includes('by-therapy-area'),
+      },
+      { label: 'Company', value: 'by-company', active: route.includes('by-company') },
+      { label: 'MOA', value: 'by-moa', active: route.includes('by-moa') },
+      { label: 'ROA', value: 'by-roa', active: route.includes('by-roa') },
     ];
   });
 
@@ -456,18 +557,33 @@ export class AppShellComponent implements OnInit {
     this.navigateToSpaceRoute(route);
   }
 
-  onLandscapeTabClick(tab: string): void {
-    switch (tab) {
-      case 'timeline':
-        this.navigateToSpaceRoute('');
+  onSectionTabClick(tab: string): void {
+    const section = this.activeSection();
+    switch (section) {
+      case 'landscape':
+        switch (tab) {
+          case 'timeline':
+            this.navigateToSpaceRoute('');
+            break;
+          case 'bullseye':
+            this.navigateToSpaceRoute('bullseye/by-therapy-area');
+            break;
+          case 'positioning':
+            this.navigateToSpaceRoute('positioning');
+            break;
+        }
         break;
-      case 'bullseye':
-        this.navigateToSpaceRoute('bullseye/by-therapy-area');
+      case 'intelligence':
+        this.navigateToSpaceRoute(tab);
         break;
-      case 'positioning':
-        this.navigateToSpaceRoute('positioning');
+      case 'manage':
+        this.navigateToSpaceRoute(`manage/${tab}`);
         break;
     }
+  }
+
+  onBullseyeSubTabClick(dimension: string): void {
+    this.navigateToSpaceRoute(`bullseye/${dimension}`);
   }
 
   onBackClick(): void {
@@ -541,7 +657,7 @@ export class AppShellComponent implements OnInit {
       const space = await this.spaceService.createSpace(
         this.tenantId(),
         this.newSpaceName.trim(),
-        this.newSpaceDesc.trim() || undefined,
+        this.newSpaceDesc.trim() || undefined
       );
       this.createSpaceDialogOpen.set(false);
       this.resetCreateSpaceForm();
