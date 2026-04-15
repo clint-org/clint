@@ -149,20 +149,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
     // Deep-link query params override restored session state
     // (e.g. bullseye "Open in Timeline" links).
-    const qp = this.route.snapshot.queryParamMap;
-    const productIds = this.parseIdList(qp.get('productIds'));
-    const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
-    if (productIds || therapeuticAreaIds) {
-      this.state.filters.update((f) => ({
-        ...f,
-        productIds: productIds ?? f.productIds,
-        therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
-      }));
-    }
+    this.applyQueryParamFilters();
 
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
       this.extractRouteParams();
       this.syncStateFromUrl();
+      this.applyQueryParamFilters();
     });
   }
 
@@ -231,6 +223,19 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     } else {
       this.viewMode.set('timeline');
       this.entityId.set(null);
+    }
+  }
+
+  private applyQueryParamFilters(): void {
+    const qp = this.route.snapshot.queryParamMap;
+    const productIds = this.parseIdList(qp.get('productIds'));
+    const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
+    if (productIds || therapeuticAreaIds) {
+      this.state.filters.update((f) => ({
+        ...f,
+        productIds: productIds ?? f.productIds,
+        therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
+      }));
     }
   }
 
