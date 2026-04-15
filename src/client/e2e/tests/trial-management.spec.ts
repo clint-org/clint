@@ -171,8 +171,11 @@ test.describe('Trial List CRUD', () => {
     await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#trial-name', 'KEYNOTE-001');
-    await page.getByRole('button', { name: 'Create trial' }).click();
-    await page.waitForTimeout(2000);
+    // Submit and wait for the API response
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rest/') && r.request().method() === 'POST'),
+      page.locator('.p-dialog').getByRole('button', { name: /create trial/i }).click(),
+    ]);
 
     await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('KEYNOTE-001')).toBeVisible({ timeout: 10000 });

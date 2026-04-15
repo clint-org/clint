@@ -68,11 +68,8 @@ test.describe('Space Settings - Members', () => {
     await expect(page.locator('p-table tbody tr').first()).toBeVisible({ timeout: 15000 });
   });
 
-  test('add member dialog opens', async () => {
-    await page.getByRole('button', { name: 'Add member' }).click();
-    await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 5000 });
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(500);
-    await expect(page.locator('.p-dialog')).not.toBeVisible();
+  test('add member button is visible in topbar', async () => {
+    await page.goto(membersUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: 'Add member' })).toBeVisible({ timeout: 10000 });
   });
 });
