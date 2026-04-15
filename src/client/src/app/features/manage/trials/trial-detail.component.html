@@ -23,7 +23,7 @@
           (saved)="onTrialSaved()"
           (cancelled)="editingTrial.set(false)"
         />
-      }
+      } @else {
 
       <!-- Basic info -->
       <app-section-card title="Basic info">
@@ -94,8 +94,6 @@
           </dl>
         </app-section-card>
       }
-
-      <!-- Markers -->
       <app-section-card title="Markers">
         <p-button
           actions
@@ -206,6 +204,7 @@
           <p class="text-sm text-slate-400">No notes yet. Add one to get started.</p>
         }
       </app-section-card>
+      }
     </app-manage-page-shell>
   }
 }
