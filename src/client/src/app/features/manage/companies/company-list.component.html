@@ -85,5 +85,7 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-company-form [company]="editingCompany()" (saved)="onSaved()" (cancelled)="closeModal()" />
+  @if (modalOpen()) {
+    <app-company-form [company]="editingCompany()" (saved)="onSaved()" (cancelled)="closeModal()" />
+  }
 </p-dialog>

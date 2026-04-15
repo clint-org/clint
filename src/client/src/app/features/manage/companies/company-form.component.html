@@ -14,6 +14,7 @@
     <input
       pInputText
       id="company-name"
+      name="name"
       class="w-full"
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
@@ -28,6 +29,7 @@
     <input
       pInputText
       id="company-logo-url"
+      name="logoUrl"
       class="w-full"
       [ngModel]="logoUrl()"
       (ngModelChange)="logoUrl.set($event)"
@@ -38,6 +40,7 @@
   <app-form-field label="Display Order" fieldId="company-display-order" spacing="mb-6">
     <p-inputnumber
       inputId="company-display-order"
+      name="displayOrder"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
       [style]="{ width: '100%' }"

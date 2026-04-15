@@ -14,6 +14,7 @@
     <input
       pInputText
       id="moa-name"
+      name="name"
       class="w-full"
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
@@ -28,6 +29,7 @@
     <textarea
       pTextarea
       id="moa-description"
+      name="description"
       class="w-full"
       rows="3"
       [ngModel]="description()"
@@ -38,6 +40,7 @@
   <app-form-field label="Display Order" fieldId="moa-display-order" spacing="mb-6">
     <p-inputnumber
       inputId="moa-display-order"
+      name="displayOrder"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
       [style]="{ width: '100%' }"

@@ -64,9 +64,11 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-therapeutic-area-form
-    [area]="editingArea()"
-    (saved)="onSaved()"
-    (cancelled)="closeModal()"
-  />
+  @if (modalOpen()) {
+    <app-therapeutic-area-form
+      [area]="editingArea()"
+      (saved)="onSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
 </p-dialog>

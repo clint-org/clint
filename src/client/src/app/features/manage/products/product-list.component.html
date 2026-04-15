@@ -121,5 +121,7 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-product-form [product]="editingProduct()" (saved)="onSaved()" (cancelled)="closeModal()" />
+  @if (modalOpen()) {
+    <app-product-form [product]="editingProduct()" (saved)="onSaved()" (cancelled)="closeModal()" />
+  }
 </p-dialog>

@@ -42,9 +42,11 @@
   [style]="{ width: '32rem' }"
   (onHide)="closeModal()"
 >
-  <app-mechanism-of-action-form
-    [item]="editingItem()"
-    (saved)="onSaved()"
-    (cancelled)="closeModal()"
-  />
+  @if (modalOpen()) {
+    <app-mechanism-of-action-form
+      [item]="editingItem()"
+      (saved)="onSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
 </p-dialog>
