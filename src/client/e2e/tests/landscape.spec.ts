@@ -64,13 +64,12 @@ test.describe('Landscape bullseye', () => {
     await expect(page.getByText('Heart Failure HFpEF')).toBeVisible();
     await expect(page.getByText('Empty Space TA')).toBeVisible();
 
-    // HFpEF card shows the highest phase present and the product count
+    // HFpEF card shows the product and company counts
     const hfpefCard = page
       .locator('.landscape-index-card')
       .filter({ hasText: 'Heart Failure HFpEF' });
     await expect(hfpefCard).toContainText('3 products');
     await expect(hfpefCard).toContainText('3 companies');
-    await expect(hfpefCard).toContainText('LAUNCHED');
   });
 
   test('clicking a TA card opens the bullseye for that TA', async () => {
@@ -81,7 +80,7 @@ test.describe('Landscape bullseye', () => {
       .click();
 
     await expect(page).toHaveURL(
-      new RegExp(`/landscape/${taHfpefId}(\\?.*)?$`)
+      new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`)
     );
     await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
 

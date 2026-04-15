@@ -79,8 +79,8 @@ test.describe('Trial Management CRUD', () => {
     await fillInput(page, '#marker-event-date', '2025-03-15');
     await page.waitForTimeout(300);
 
-    // Submit the marker form
-    await page.getByRole('button', { name: 'Add Marker' }).click();
+    // Submit the marker form -- scope to the form to avoid matching the trigger button
+    await page.locator('form').getByRole('button', { name: 'Add Marker' }).click();
     await page.waitForTimeout(3000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });

@@ -23,8 +23,17 @@ test.describe('Tenant Settings', () => {
     await page.goto(settingsUrl(), { waitUntil: 'networkidle' });
     const nameInput = page.locator('#org-name');
     await expect(nameInput).toBeVisible();
-    // Wait for Angular to populate the input after async data load
-    await expect(nameInput).toHaveValue('Settings Test Org', { timeout: 10000 });
+    // Wait for Angular to populate the input after the async data load.
+    // ngModel binding on a plain property may not reflect immediately via
+    // toHaveValue, so poll the input's DOM value directly.
+    await page.waitForFunction(
+      (expected: string) => {
+        const el = document.querySelector('#org-name') as HTMLInputElement | null;
+        return el?.value === expected;
+      },
+      'Settings Test Org',
+      { timeout: 10000 },
+    );
   });
 
   test('edit org name via save button', async () => {
@@ -35,7 +44,14 @@ test.describe('Tenant Settings', () => {
     await page.waitForTimeout(1500);
     // Reload and verify persistence
     await page.goto(settingsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.locator('#org-name')).toHaveValue('Renamed Org');
+    await page.waitForFunction(
+      (expected: string) => {
+        const el = document.querySelector('#org-name') as HTMLInputElement | null;
+        return el?.value === expected;
+      },
+      'Renamed Org',
+      { timeout: 10000 },
+    );
   });
 
   test('save button is disabled when no changes', async () => {

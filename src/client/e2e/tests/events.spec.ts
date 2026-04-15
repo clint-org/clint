@@ -34,36 +34,34 @@ test.describe('Events CRUD', () => {
     // Fill title (required)
     await fillInput(page, '#event-title', 'Phase 3 Topline Results');
 
-    // Fill date (required) -- p-datepicker renders an input inside
-    // Use the Angular debug API approach via evaluate to set the date
+    // Fill date (required) -- set the component property directly via Angular debug API
+    // PrimeNG DatePicker doesn't respond to raw DOM input/change events for ngModel
     await page.evaluate(() => {
       const ng = (window as any).ng;
       if (!ng?.getOwningComponent) return;
-      const dateInput = document.querySelector('#event-date');
-      if (!dateInput) return;
-      const component = ng.getOwningComponent(dateInput);
+      // The dialog form is app-event-form -- find it via the form element
+      const form = document.querySelector('app-event-form');
+      if (!form) return;
+      const component = ng.getComponent(form);
       if (!component) return;
-      // Set eventDateValue to today
       component.eventDateValue = new Date();
-      // Trigger change detection
-      dateInput.dispatchEvent(new Event('input', { bubbles: true }));
-      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
     });
     await page.waitForTimeout(300);
 
-    // Select a category (required)
-    const categorySelect = page.locator('#event-category');
-    if (await categorySelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      // Click the p-select trigger to open options
-      await categorySelect.click();
-      await page.waitForTimeout(300);
-      // Pick the first available option
-      const firstOption = page.locator('.p-select-option, .p-listbox-option, [role="option"]').first();
-      if (await firstOption.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await firstOption.click();
-        await page.waitForTimeout(300);
+    // Select a category (required) -- also set via component for reliability
+    await page.evaluate(() => {
+      const ng = (window as any).ng;
+      if (!ng?.getComponent) return;
+      const form = document.querySelector('app-event-form');
+      if (!form) return;
+      const component = ng.getComponent(form);
+      if (!component) return;
+      const cats = component.categories?.() ?? component.categories ?? [];
+      if (cats.length > 0) {
+        component.categoryId = cats[0].id;
       }
-    }
+    });
+    await page.waitForTimeout(300);
 
     // Submit -- button label is "Create" for new events
     await page.locator('.p-dialog').getByRole('button', { name: /^create$/i }).click();

@@ -55,6 +55,11 @@ test.describe('Navigation', () => {
     await companiesBtn.click();
     await expect(page).toHaveURL(/\/manage\/companies/, { timeout: 10000 });
 
+    // After clicking, the sidebar may have expanded due to hover.
+    // Move mouse away to collapse the sidebar, then click Timeline icon.
+    await page.mouse.move(500, 300);
+    await page.waitForTimeout(300);
+
     const timelineBtn = sidebar.locator('button[aria-label="Timeline"]');
     await timelineBtn.click();
 

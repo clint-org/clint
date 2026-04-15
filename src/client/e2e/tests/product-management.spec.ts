@@ -83,6 +83,9 @@ test.describe('Product Management CRUD', () => {
   });
 
   test('edit product pre-populates form', async () => {
+    // Ensure we're on the products page (prior test may have left the page in an unexpected state)
+    await page.goto(productsUrl(), { waitUntil: 'networkidle' });
+
     const row = page.locator('tr', { hasText: 'Updated Product' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Edit' }).click();
