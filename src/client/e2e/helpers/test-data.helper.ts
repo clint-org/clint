@@ -157,6 +157,7 @@ export async function createTestTrialPhase(
 export async function createTestMarkerType(
   spaceId: string,
   name: string,
+  categoryId: string,
   opts?: { shape?: string; fill_style?: string; color?: string },
 ): Promise<string> {
   const admin = getAdminClient();
@@ -167,6 +168,7 @@ export async function createTestMarkerType(
       space_id: spaceId,
       created_by: getUserId(),
       name,
+      category_id: categoryId,
       shape: opts?.shape || 'circle',
       fill_style: opts?.fill_style || 'filled',
       color: opts?.color || '#14b8a6',
@@ -175,6 +177,46 @@ export async function createTestMarkerType(
     .single();
   if (error) throw new Error(`Failed to create marker type: ${error.message}`);
 
+  return data.id;
+}
+
+export async function getSystemMarkerCategoryId(name: string): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('marker_categories')
+    .select('id')
+    .eq('name', name)
+    .eq('is_system', true)
+    .single();
+  if (error) throw new Error(`System marker category "${name}" not found: ${error.message}`);
+  return data.id;
+}
+
+export async function createTestMoa(
+  spaceId: string,
+  name: string,
+): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('mechanisms_of_action')
+    .insert({ space_id: spaceId, created_by: getUserId(), name })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create MOA: ${error.message}`);
+  return data.id;
+}
+
+export async function createTestRoa(
+  spaceId: string,
+  name: string,
+): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('routes_of_administration')
+    .insert({ space_id: spaceId, created_by: getUserId(), name })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create ROA: ${error.message}`);
   return data.id;
 }
 
