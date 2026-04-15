@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
+import { MessageService } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 
 import { Space } from '../../core/models/space.model';
@@ -139,6 +140,7 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private spaceService = inject(SpaceService);
   private tenantService = inject(TenantService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   tenant = signal<Tenant | null>(null);
@@ -230,6 +232,7 @@ export class SpaceListComponent implements OnInit, OnDestroy {
       this.createDialogOpen.set(false);
       this.newSpaceName = '';
       this.newSpaceDesc = '';
+      this.messageService.add({ severity: 'success', summary: 'Space created.', life: 3000 });
       this.openSpace(space);
     } catch (e) {
       this.createError.set(

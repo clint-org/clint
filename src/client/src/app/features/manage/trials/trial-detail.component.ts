@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -48,6 +48,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   private markerService = inject(MarkerService);
   private noteService = inject(TrialNoteService);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   // Stable menu-item references per row id, keyed with a prefix so markers
@@ -156,12 +157,14 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   async onTrialSaved(): Promise<void> {
     this.editingTrial.set(false);
     await this.loadTrial();
+    this.messageService.add({ severity: 'success', summary: 'Trial updated.', life: 3000 });
   }
 
   async onMarkerSaved(): Promise<void> {
     this.addingMarker.set(false);
     this.editingMarker.set(null);
     await this.loadTrial();
+    this.messageService.add({ severity: 'success', summary: 'Marker saved.', life: 3000 });
   }
 
   async deleteMarker(id: string): Promise<void> {
@@ -173,6 +176,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     try {
       await this.markerService.delete(id);
       await this.loadTrial();
+      this.messageService.add({ severity: 'success', summary: 'Marker deleted.', life: 3000 });
     } catch (e) {
       this.error.set(
         e instanceof Error
@@ -186,6 +190,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     this.addingNote.set(false);
     this.editingNote.set(null);
     await this.loadTrial();
+    this.messageService.add({ severity: 'success', summary: 'Note saved.', life: 3000 });
   }
 
   async deleteNote(id: string): Promise<void> {
@@ -197,6 +202,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     try {
       await this.noteService.delete(id);
       await this.loadTrial();
+      this.messageService.add({ severity: 'success', summary: 'Note deleted.', life: 3000 });
     } catch (e) {
       this.error.set(
         e instanceof Error

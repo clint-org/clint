@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -92,7 +92,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       [style]="{ width: '32rem' }"
     >
       <p class="mb-3 text-xs text-slate-500">
-        Add an existing organization member to this space. They must be invited to the organization first.
+        Add an existing organization member to this space. They must be invited to the organization
+        first.
       </p>
       <div class="mb-3">
         <label for="add-member" class="mb-1 block text-sm font-medium text-slate-700">
@@ -111,9 +112,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         />
       </div>
       <div>
-        <label for="add-role" class="mb-1 block text-sm font-medium text-slate-700">
-          Role
-        </label>
+        <label for="add-role" class="mb-1 block text-sm font-medium text-slate-700"> Role </label>
         <p-select
           inputId="add-role"
           [options]="spaceRoleOptions"
@@ -124,8 +123,18 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         />
       </div>
       <ng-template #footer>
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="addDialogOpen.set(false)" />
-        <p-button label="Add member" (onClick)="addMember()" [loading]="adding()" [disabled]="!selectedUserId" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="addDialogOpen.set(false)"
+        />
+        <p-button
+          label="Add member"
+          (onClick)="addMember()"
+          [loading]="adding()"
+          [disabled]="!selectedUserId"
+        />
       </ng-template>
     </p-dialog>
   `,
@@ -135,6 +144,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   private spaceService = inject(SpaceService);
   private tenantService = inject(TenantService);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
@@ -191,6 +201,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     try {
       await this.spaceService.updateMemberRole(this.spaceId, member.user_id, newRole);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Role updated.', life: 3000 });
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to update role');
     }
@@ -206,6 +217,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     try {
       await this.spaceService.removeMember(this.spaceId, member.user_id);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Member removed.', life: 3000 });
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to remove member');
     }
@@ -218,7 +230,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     this.availableMembers.set(
       orgMembers
         .filter((m) => !spaceUserIds.has(m.user_id))
-        .map((m) => ({ label: m.email ?? m.display_name ?? m.user_id, value: m.user_id })),
+        .map((m) => ({ label: m.email ?? m.display_name ?? m.user_id, value: m.user_id }))
     );
     this.selectedUserId = '';
     this.selectedRole = 'viewer';
@@ -232,6 +244,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
       await this.spaceService.addMember(this.spaceId, this.selectedUserId, this.selectedRole);
       this.addDialogOpen.set(false);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Member added.', life: 3000 });
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to add member');
     } finally {

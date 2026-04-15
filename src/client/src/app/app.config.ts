@@ -1,7 +1,7 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withRouterConfig } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
 import ClinicalTheme from './config/primeng-theme';
@@ -23,5 +23,6 @@ export const appConfig: ApplicationConfig = {
       ripple: false,
     }),
     ConfirmationService,
+    MessageService,
   ],
 };

@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -59,6 +59,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
@@ -156,8 +157,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const isEdit = !!this.editingProduct();
     this.closeModal();
     await this.loadData();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Product updated.' : 'Product created.',
+      life: 3000,
+    });
   }
 
   openTrials(productId: string): void {
@@ -179,6 +186,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     try {
       await this.productService.delete(product.id);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Product deleted.', life: 3000 });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

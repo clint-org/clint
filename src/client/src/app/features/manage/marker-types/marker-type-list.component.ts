@@ -1,6 +1,6 @@
 import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -39,6 +39,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
   private markerTypeService = inject(MarkerTypeService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
@@ -141,8 +142,14 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
   }
 
   async onTypeSaved(): Promise<void> {
+    const wasEditing = this.editingType() !== null;
     this.closeModal();
     await this.loadMarkerTypes();
+    this.messageService.add({
+      severity: 'success',
+      summary: wasEditing ? 'Marker type updated.' : 'Marker type created.',
+      life: 3000,
+    });
   }
 
   async deleteType(id: string): Promise<void> {
@@ -154,6 +161,11 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     try {
       await this.markerTypeService.delete(id);
       await this.loadMarkerTypes();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Marker type deleted.',
+        life: 3000,
+      });
     } catch (e) {
       this.error.set(
         e instanceof Error

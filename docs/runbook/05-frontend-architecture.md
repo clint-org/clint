@@ -10,7 +10,7 @@
 src/client/
   src/
     app/
-      app.component.ts          # Root component: header + router-outlet
+      app.component.ts          # Root component: router-outlet + global overlays (p-confirmdialog, p-toast)
       app.routes.ts             # Route definitions (lazy-loaded)
       app.config.ts             # App-level providers (router, animations, PrimeNG)
       core/
@@ -116,6 +116,8 @@ providePrimeNG({
   ripple: false
 })
 ```
+
+App-level services: `ConfirmationService` (for `<p-confirmdialog>`) and `MessageService` (for `<p-toast>`).
 
 Key decisions:
 - `paramsInheritanceStrategy: 'always'` -- child routes inherit parent route params (tenantId, spaceId)
@@ -290,6 +292,14 @@ The custom theme preset (`config/primeng-theme.ts`) configures:
 - **Ripple**: Disabled
 - **CSS layers**: Disabled
 - **Prefix**: `p`
+
+## Toasts (save/action feedback)
+
+All user-facing success feedback uses PrimeNG `p-toast` via `MessageService`. A single `<p-toast position="top-right" />` lives in `app.component.ts` -- individual components never render their own toast element.
+
+**Pattern:** inject `MessageService` and call `this.messageService.add({ severity: 'success', summary: 'Saved.', life: 3000 })`. Use `life: 3000` (3 seconds auto-dismiss) for success confirmations. The toast stacks naturally if multiple actions fire in quick succession.
+
+**Do not** use inline `<span>` text next to buttons or `<p-message severity="success">` banners for save confirmations. Those patterns were removed in favor of the unified toast system. `<p-message>` is still used for inline error display within forms.
 
 ## Grids and list pages
 

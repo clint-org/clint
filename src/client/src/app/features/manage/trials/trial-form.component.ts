@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import { Component, input, output, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -10,6 +10,7 @@ import { Textarea } from 'primeng/textarea';
 import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { MessageService } from 'primeng/api';
 
 import { Trial } from '../../../core/models/trial.model';
 import { Product } from '../../../core/models/product.model';
@@ -52,6 +53,7 @@ export class TrialFormComponent implements OnInit {
   private productService = inject(ProductService);
   private therapeuticAreaService = inject(TherapeuticAreaService);
   private ctgovService = inject(CtgovSyncService);
+  private messageService = inject(MessageService);
   private route = inject(ActivatedRoute);
 
   readonly statusOptions = [
@@ -122,7 +124,6 @@ export class TrialFormComponent implements OnInit {
   therapeuticAreas = signal<TherapeuticArea[]>([]);
   saving = signal(false);
   syncing = signal(false);
-  syncSuccess = signal<string | null>(null);
   error = signal<string | null>(null);
 
   phaseType = signal<string | null>(null);
@@ -209,8 +210,6 @@ export class TrialFormComponent implements OnInit {
     if (!this.isNctId) return;
     this.syncing.set(true);
     this.error.set(null);
-    this.syncSuccess.set(null);
-
     try {
       const mapped = await this.ctgovService.fetchAndMap(this.identifier.trim());
       if (mapped.name) this.name = mapped.name;
@@ -237,7 +236,11 @@ export class TrialFormComponent implements OnInit {
       if (mapped.primary_completion_date)
         this.primaryCompletionDateStr = mapped.primary_completion_date;
       this.ctgovLastSyncedAt = new Date().toISOString();
-      this.syncSuccess.set('Synced successfully from ClinicalTrials.gov');
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Synced from ClinicalTrials.gov.',
+        life: 3000,
+      });
     } catch (e) {
       this.error.set(
         e instanceof Error

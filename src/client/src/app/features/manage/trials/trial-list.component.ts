@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -57,6 +57,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
@@ -212,8 +213,14 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const wasEditing = this.editingTrial() !== null;
     this.closeModal();
     await this.loadData();
+    this.messageService.add({
+      severity: 'success',
+      summary: wasEditing ? 'Trial updated.' : 'Trial created.',
+      life: 3000,
+    });
   }
 
   openDetail(trial: Trial): void {
@@ -230,6 +237,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
     try {
       await this.trialService.delete(trial.id);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Trial deleted.', life: 3000 });
     } catch (err) {
       this.error.set(
         err instanceof Error

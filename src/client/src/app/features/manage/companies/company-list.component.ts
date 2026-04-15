@@ -1,6 +1,6 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -42,6 +42,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
   tenantId = '';
@@ -144,8 +145,14 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const isEdit = this.editingCompany() !== null;
     this.closeModal();
     await this.loadCompanies();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Company updated.' : 'Company created.',
+      life: 3000,
+    });
   }
 
   async confirmDelete(company: Company): Promise<void> {
@@ -159,6 +166,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     try {
       await this.companyService.delete(company.id);
       await this.loadCompanies();
+      this.messageService.add({ severity: 'success', summary: 'Company deleted.', life: 3000 });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

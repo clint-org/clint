@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -51,25 +51,40 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           <!-- Logo upload -->
           <div class="flex flex-col items-center gap-2">
             @if (tenant()?.logo_url) {
-              <img [src]="tenant()!.logo_url" class="h-16 w-16 rounded-xl object-cover border border-slate-200" alt="Organization logo" />
-              <button type="button" class="text-[10px] text-slate-400 hover:text-red-500" (click)="removeLogo()">Remove</button>
+              <img
+                [src]="tenant()!.logo_url"
+                class="h-16 w-16 rounded-xl object-cover border border-slate-200"
+                alt="Organization logo"
+              />
+              <button
+                type="button"
+                class="text-[10px] text-slate-400 hover:text-red-500"
+                (click)="removeLogo()"
+              >
+                Remove
+              </button>
             } @else {
-              <label class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-teal-400 hover:text-teal-500 transition-colors">
+              <label
+                class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-teal-400 hover:text-teal-500 transition-colors"
+              >
                 Logo
-                <input type="file" class="hidden" accept="image/png,image/jpeg,image/svg+xml" (change)="onLogoSelect($event)" />
+                <input
+                  type="file"
+                  class="hidden"
+                  accept="image/png,image/jpeg,image/svg+xml"
+                  (change)="onLogoSelect($event)"
+                />
               </label>
             }
           </div>
           <div class="flex-1">
-            <label for="org-name" class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <label
+              for="org-name"
+              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
               Organization name
             </label>
-            <input
-              pInputText
-              id="org-name"
-              class="w-full"
-              [(ngModel)]="orgName"
-            />
+            <input pInputText id="org-name" class="w-full" [(ngModel)]="orgName" />
             <div class="mt-3 flex items-center gap-3">
               <button
                 pButton
@@ -80,9 +95,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
                 [disabled]="!nameChanged()"
                 (click)="saveOrgName()"
               ></button>
-              @if (nameSaved()) {
-                <span class="text-sm text-green-700">Saved.</span>
-              }
             </div>
           </div>
         </div>
@@ -239,6 +251,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private tenantService = inject(TenantService);
   private confirmation = inject(ConfirmationService);
   private readonly topbarState = inject(TopbarStateService);
+  private readonly messageService = inject(MessageService);
 
   // Stable menu-item references per member id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
@@ -253,7 +266,6 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   inviteError = signal<string | null>(null);
   removeError = signal<string | null>(null);
   savingName = signal(false);
-  nameSaved = signal(false);
   inviteEmail = '';
   inviteRole: 'owner' | 'member' = 'member';
   orgName = '';
@@ -315,10 +327,16 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     if (!t || this.orgName.trim() === t.name) return;
     this.savingName.set(true);
     try {
-      const updated = await this.tenantService.updateTenant(this.tenantId, { name: this.orgName.trim() });
+      const updated = await this.tenantService.updateTenant(this.tenantId, {
+        name: this.orgName.trim(),
+      });
       this.tenant.set(updated);
-      this.nameSaved.set(true);
       this.removeError.set(null);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Organization name updated.',
+        life: 3000,
+      });
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to update name');
     } finally {
@@ -330,6 +348,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     try {
       await this.tenantService.updateMemberRole(this.tenantId, member.user_id, newRole);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Role updated.', life: 3000 });
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to update role');
     }
@@ -347,6 +366,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       const logoUrl = await this.tenantService.uploadLogo(this.tenantId, file);
       const updated = await this.tenantService.updateTenant(this.tenantId, { logo_url: logoUrl });
       this.tenant.set(updated);
+      this.messageService.add({ severity: 'success', summary: 'Logo updated.', life: 3000 });
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to upload logo');
     }
@@ -357,6 +377,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       await this.tenantService.deleteLogo(this.tenantId);
       const updated = await this.tenantService.updateTenant(this.tenantId, { logo_url: null });
       this.tenant.set(updated);
+      this.messageService.add({ severity: 'success', summary: 'Logo removed.', life: 3000 });
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to remove logo');
     }
@@ -376,6 +397,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       this.inviteDialogOpen.set(false);
       this.inviteEmail = '';
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Invite sent.', life: 3000 });
     } catch (e) {
       this.inviteError.set(e instanceof Error ? e.message : 'Failed to send invite');
     } finally {
@@ -393,6 +415,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     try {
       await this.tenantService.removeMember(this.tenantId, member.user_id);
       await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Member removed.', life: 3000 });
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to remove member');
     }

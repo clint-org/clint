@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -29,31 +29,31 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         <p class="text-sm text-slate-400">Loading...</p>
       } @else if (space()) {
         @if (error()) {
-          <p-message severity="error" [closable]="true" (onClose)="error.set(null)" styleClass="mb-4">
+          <p-message
+            severity="error"
+            [closable]="true"
+            (onClose)="error.set(null)"
+            styleClass="mb-4"
+          >
             {{ error() }}
           </p-message>
         }
-        @if (saved()) {
-          <p-message severity="success" [closable]="true" (onClose)="saved.set(false)" styleClass="mb-4">
-            Settings saved.
-          </p-message>
-        }
-
         <div class="max-w-xl">
           <div class="mb-6">
-            <label for="space-name" class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <label
+              for="space-name"
+              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
               Space name
             </label>
-            <input
-              pInputText
-              id="space-name"
-              class="w-full"
-              [(ngModel)]="name"
-            />
+            <input pInputText id="space-name" class="w-full" [(ngModel)]="name" />
           </div>
 
           <div class="mb-6">
-            <label for="space-desc" class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <label
+              for="space-desc"
+              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
               Description
             </label>
             <textarea
@@ -72,9 +72,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               [disabled]="!hasChanges()"
               (onClick)="saveIfChanged()"
             />
-            @if (saved()) {
-              <span class="text-sm text-green-700">Settings saved.</span>
-            }
           </div>
 
           <div class="mt-12 border-t border-slate-200 pt-6">
@@ -101,12 +98,12 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private spaceService = inject(SpaceService);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
 
   space = signal<Space | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
-  saved = signal(false);
   saving = signal(false);
   name = '';
   description = '';
@@ -142,8 +139,12 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
         description: this.description.trim() || null,
       });
       this.space.set(updated);
-      this.saved.set(true);
       this.error.set(null);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Space settings updated.',
+        life: 3000,
+      });
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to save');
     } finally {

@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
@@ -48,6 +48,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   spaceId = '';
@@ -211,8 +212,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const summary = this.editingEventId() ? 'Event updated.' : 'Event created.';
     this.closeModal();
     await this.loadFeed();
+    this.messageService.add({ severity: 'success', summary, life: 3000 });
   }
 
   async onDeleteEvent(eventId: string): Promise<void> {
@@ -229,6 +232,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.closePanel();
       }
       await this.loadFeed();
+      this.messageService.add({ severity: 'success', summary: 'Event deleted.', life: 3000 });
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not delete event.');
     }

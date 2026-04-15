@@ -1,6 +1,6 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -38,6 +38,7 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
@@ -94,8 +95,14 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const isEdit = !!this.editingItem();
     this.closeModal();
     await this.loadItems();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Route of administration updated.' : 'Route of administration created.',
+      life: 3000,
+    });
   }
 
   async confirmDelete(item: RouteOfAdministration): Promise<void> {
@@ -109,6 +116,11 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
     try {
       await this.roaService.delete(item.id);
       await this.loadItems();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Route of administration deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

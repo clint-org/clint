@@ -1,7 +1,7 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { SelectButton } from 'primeng/selectbutton';
@@ -260,6 +260,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
   private spaceId = '';
@@ -463,18 +464,36 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   // --- Save handlers ---
 
   async onAreaSaved(): Promise<void> {
+    const isEdit = !!this.editingArea();
     this.closeModal();
     await this.loadAreas();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Therapeutic area updated.' : 'Therapeutic area created.',
+      life: 3000,
+    });
   }
 
   async onMoaSaved(): Promise<void> {
+    const isEdit = !!this.editingMoa();
     this.closeModal();
     await this.loadMoas();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Mechanism of action updated.' : 'Mechanism of action created.',
+      life: 3000,
+    });
   }
 
   async onRoaSaved(): Promise<void> {
+    const isEdit = !!this.editingRoa();
     this.closeModal();
     await this.loadRoas();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Route of administration updated.' : 'Route of administration created.',
+      life: 3000,
+    });
   }
 
   // --- Delete handlers ---
@@ -490,6 +509,11 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     try {
       await this.areaService.delete(area.id);
       await this.loadAreas();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Therapeutic area deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error
@@ -510,6 +534,11 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     try {
       await this.moaService.delete(item.id);
       await this.loadMoas();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Mechanism of action deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error
@@ -530,6 +559,11 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     try {
       await this.roaService.delete(item.id);
       await this.loadRoas();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Route of administration deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

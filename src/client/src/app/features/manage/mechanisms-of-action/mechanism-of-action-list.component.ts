@@ -1,6 +1,6 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -38,6 +38,7 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
   private moaService = inject(MechanismOfActionService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
@@ -97,8 +98,14 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const isEdit = !!this.editingItem();
     this.closeModal();
     await this.loadItems();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Mechanism of action updated.' : 'Mechanism of action created.',
+      life: 3000,
+    });
   }
 
   async confirmDelete(item: MechanismOfAction): Promise<void> {
@@ -112,6 +119,11 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
     try {
       await this.moaService.delete(item.id);
       await this.loadItems();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Mechanism of action deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

@@ -1,6 +1,6 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -41,6 +41,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   private areaService = inject(TherapeuticAreaService);
   private route = inject(ActivatedRoute);
   private confirmation = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   spaceId = '';
 
@@ -115,8 +116,14 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   }
 
   async onSaved(): Promise<void> {
+    const isEdit = !!this.editingArea();
     this.closeModal();
     await this.loadAreas();
+    this.messageService.add({
+      severity: 'success',
+      summary: isEdit ? 'Therapeutic area updated.' : 'Therapeutic area created.',
+      life: 3000,
+    });
   }
 
   async confirmDelete(area: TherapeuticArea): Promise<void> {
@@ -130,6 +137,11 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
     try {
       await this.areaService.delete(area.id);
       await this.loadAreas();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Therapeutic area deleted.',
+        life: 3000,
+      });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error

@@ -2,10 +2,6 @@
   @if (error()) {
     <p-message severity="error" [closable]="false">{{ error() }}</p-message>
   }
-  @if (syncSuccess()) {
-    <p-message severity="success" [closable]="true">{{ syncSuccess() }}</p-message>
-  }
-
   <app-section-card title="Basic info">
     <div class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
       <app-form-field label="Name" fieldId="trial-name" [required]="true" spacing="sm:col-span-2">
@@ -367,7 +363,7 @@
           [showClear]="true"
           [style]="{ width: '100%' }"
           [styleClass]="fdaDesignations.length ? 'has-value' : ''"
-          [maxSelectedLabels]="1"
+          [maxSelectedLabels]="0"
           [selectedItemsLabel]="'Designation (' + fdaDesignations.length + ')'"
         />
       </app-form-field>
