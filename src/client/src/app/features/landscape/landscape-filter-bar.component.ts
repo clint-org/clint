@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
 import { SelectButton } from 'primeng/selectbutton';
@@ -35,7 +36,7 @@ interface FilterChip {
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
-  imports: [FormsModule, MultiSelect, ButtonModule, SelectButton, ProgressSpinner],
+  imports: [FormsModule, MultiSelect, ButtonModule, SelectButton, ProgressSpinner, SharedModule],
   templateUrl: './landscape-filter-bar.component.html',
 })
 export class LandscapeFilterBarComponent implements OnInit {
