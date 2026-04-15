@@ -143,6 +143,11 @@
   color: rgb(15 118 110); /* teal-700 */
   font-weight: 500;
 }
+/* Let the label text show in full when w-fit is used on the container. */
+.p-multiselect.w-fit .p-multiselect-label {
+  overflow: visible;
+  text-overflow: clip;
+}
 .p-select.has-value .p-select-dropdown,
 .p-multiselect.has-value .p-multiselect-dropdown {
   color: rgb(13 148 136); /* teal-600 */
