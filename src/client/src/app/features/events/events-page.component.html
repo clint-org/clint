@@ -172,7 +172,7 @@
         } @else {
           <app-event-detail-panel
             [detail]="selectedDetail()"
-            [marker]="selectedItem()?.source_type === 'marker' ? selectedItem() : null"
+            [catalystDetail]="selectedCatalystDetail()"
             (edit)="openEditModal(selectedItem()!.id)"
             (panelClose)="closePanel()"
           />

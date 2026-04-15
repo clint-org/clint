@@ -9,6 +9,7 @@ import {
   RING_ORDER,
   RingPhase,
 } from '../../core/models/landscape.model';
+import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
 interface RingHistogramEntry {
   phase: RingPhase;
@@ -18,7 +19,7 @@ interface RingHistogramEntry {
 @Component({
   selector: 'app-bullseye-detail-panel',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [ButtonModule, DetailPanelShellComponent],
   templateUrl: './bullseye-detail-panel.component.html',
 })
 export class BullseyeDetailPanelComponent {
