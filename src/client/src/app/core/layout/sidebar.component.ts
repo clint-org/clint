@@ -1,9 +1,12 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
+import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
+import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
 interface NavItem {
   label: string;
   route: string;
+  icon?: string;
   children?: NavItem[];
 }
 
@@ -19,10 +22,11 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'landscape',
     label: 'Landscape',
     items: [
-      { label: 'Timeline', route: '' },
+      { label: 'Timeline', route: '', icon: NAV_ICONS['timeline'] },
       {
         label: 'Bullseye',
         route: 'bullseye',
+        icon: NAV_ICONS['bullseye'],
         children: [
           { label: 'Therapy Area', route: 'bullseye/by-therapy-area' },
           { label: 'Company', route: 'bullseye/by-company' },
@@ -30,24 +34,24 @@ const NAV_SECTIONS: NavSection[] = [
           { label: 'ROA', route: 'bullseye/by-roa' },
         ],
       },
-      { label: 'Positioning', route: 'positioning' },
+      { label: 'Positioning', route: 'positioning', icon: NAV_ICONS['positioning'] },
     ],
   },
   {
     id: 'intelligence',
     label: 'Intelligence',
     items: [
-      { label: 'Events', route: 'events' },
-      { label: 'Catalysts', route: 'catalysts' },
+      { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
+      { label: 'Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
     ],
   },
   {
     id: 'manage',
     label: 'Manage',
     items: [
-      { label: 'Companies', route: 'manage/companies' },
-      { label: 'Products', route: 'manage/products' },
-      { label: 'Trials', route: 'manage/trials' },
+      { label: 'Companies', route: 'manage/companies', icon: NAV_ICONS['companies'] },
+      { label: 'Products', route: 'manage/products', icon: NAV_ICONS['products'] },
+      { label: 'Trials', route: 'manage/trials', icon: NAV_ICONS['trials'] },
     ],
   },
   {
@@ -55,10 +59,10 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Settings',
     bottom: true,
     items: [
-      { label: 'General', route: 'settings/general' },
-      { label: 'Members', route: 'settings/members' },
-      { label: 'Taxonomies', route: 'settings/taxonomies' },
-      { label: 'Marker Types', route: 'settings/marker-types' },
+      { label: 'General', route: 'settings/general', icon: NAV_ICONS['general'] },
+      { label: 'Members', route: 'settings/members', icon: NAV_ICONS['members'] },
+      { label: 'Taxonomies', route: 'settings/taxonomies', icon: NAV_ICONS['taxonomies'] },
+      { label: 'Marker Types', route: 'settings/marker-types', icon: NAV_ICONS['marker-types'] },
     ],
   },
 ];
@@ -68,7 +72,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [Tooltip],
+  imports: [Tooltip, ClintLogoComponent],
   template: `
     <div
       class="sidebar"
@@ -88,7 +92,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
           aria-label="Go to home"
           (click)="logoClick.emit()"
         >
-          <div class="logo-square">C</div>
+          <app-clint-logo [size]="24" [dark]="true" />
         </button>
 
         @if (isExpanded()) {
@@ -123,6 +127,9 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
                     (click)="onNavClick(item.route)">
+                    @if (item.icon) {
+                      <i [class]="item.icon + ' nav-item__icon'" aria-hidden="true"></i>
+                    }
                     {{ item.label }}
                   </button>
                   @if (bullseyeExpanded()) {
@@ -140,48 +147,31 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
                     (click)="onNavClick(item.route)">
+                    @if (item.icon) {
+                      <i [class]="item.icon + ' nav-item__icon'" aria-hidden="true"></i>
+                    }
                     {{ item.label }}
                   </button>
                 }
               }
             } @else {
-              <!-- Collapsed: section icon only -->
-              <button type="button" class="icon-btn"
-                [class.icon-btn--active]="isSectionActive(section.id)"
-                [attr.aria-label]="section.label"
-                [attr.aria-current]="isSectionActive(section.id) ? 'true' : null"
-                [pTooltip]="section.label"
-                tooltipPosition="right"
-                (click)="onSectionClick(section.id)">
-                @if (isSectionActive(section.id)) {
-                  <span class="active-indicator" aria-hidden="true"></span>
-                }
-                <!-- Section icons -->
-                @if (section.id === 'landscape') {
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <rect x="2" y="4" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-                    <rect x="2" y="9" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-                    <rect x="2" y="14" width="16" height="2.5" rx="1.25" [attr.fill]="iconColor(section.id)"/>
-                  </svg>
-                }
-                @if (section.id === 'intelligence') {
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M10 3L12 7.5H16.5L13 10L14 14.5L10 12L6 14.5L7 10L3.5 7.5H8L10 3Z" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
-                  </svg>
-                }
-                @if (section.id === 'manage') {
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <rect x="3" y="3" width="14" height="14" rx="2.5" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
-                    <path d="M6 7.5h8M6 10h8M6 12.5h5" [attr.stroke]="iconColor(section.id)" stroke-width="1.2" stroke-linecap="round"/>
-                  </svg>
-                }
-                @if (section.id === 'settings') {
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <circle cx="10" cy="10" r="3" [attr.stroke]="iconColor(section.id)" stroke-width="1.5" fill="none"/>
-                    <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.93 4.93l1.41 1.41M13.66 13.66l1.41 1.41M4.93 15.07l1.41-1.41M13.66 6.34l1.41-1.41" [attr.stroke]="iconColor(section.id)" stroke-width="1.3" stroke-linecap="round"/>
-                  </svg>
-                }
-              </button>
+              <!-- Collapsed: individual item icons with section dividers -->
+              @for (item of section.items; track item.route) {
+                <button type="button" class="icon-btn"
+                  [class.icon-btn--active]="isActive(item.route)"
+                  [attr.aria-label]="item.label"
+                  [attr.aria-current]="isActive(item.route) ? 'page' : null"
+                  [pTooltip]="item.label"
+                  tooltipPosition="right"
+                  (click)="onNavClick(item.route)">
+                  @if (isActive(item.route)) {
+                    <span class="active-indicator" aria-hidden="true"></span>
+                  }
+                  @if (item.icon) {
+                    <i [class]="item.icon" [style.color]="isActive(item.route) ? '#0d9488' : '#64748b'" aria-hidden="true"></i>
+                  }
+                </button>
+              }
             }
           </div>
         }
@@ -266,20 +256,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 8px;
       }
 
-      .logo-square {
-        width: 28px;
-        height: 28px;
-        background: #0d9488;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-size: 14px;
-        font-weight: 700;
-        line-height: 1;
-        user-select: none;
-      }
 
       .pin-btn {
         flex-shrink: 0;
@@ -321,6 +297,10 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       }
 
       .nav-section { padding-bottom: 8px; }
+      .sidebar--collapsed .nav-section + .nav-section {
+        border-top: 1px solid #1e293b;
+        padding-top: 8px;
+      }
       .nav-section--bottom {
         margin-top: auto;
         border-top: 1px solid #1e293b;
@@ -339,7 +319,9 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
 
       /* Nav items (expanded) */
       .nav-item {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         width: 100%;
         text-align: left;
         padding: 6px 20px;
@@ -366,7 +348,15 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         font-weight: 500;
       }
       .nav-item--active:hover { color: #0d9488; background: rgba(13, 148, 136, 0.2); }
-      .nav-item--child { padding-left: 40px; font-size: 11px; }
+      .nav-item__icon {
+        width: 14px;
+        font-size: 10px;
+        text-align: center;
+        opacity: 0.6;
+        flex-shrink: 0;
+      }
+      .nav-item--active .nav-item__icon { opacity: 1; }
+      .nav-item--child { padding-left: 42px; font-size: 11px; }
 
       /* Icon buttons (collapsed) */
       .icon-btn {
@@ -381,12 +371,22 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 8px;
         cursor: pointer;
         padding: 0;
+        font-size: 13px;
         transition: background-color 150ms ease;
         outline: none;
       }
       .icon-btn:hover { background: #1e293b; }
       .icon-btn--active { background: rgba(13, 148, 136, 0.15); }
       .icon-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+
+      .icon-btn__label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        line-height: 1;
+        user-select: none;
+      }
 
       .active-indicator {
         position: absolute;
@@ -491,6 +491,7 @@ export class SidebarComponent {
   iconColor(sectionId: string): string {
     return this.isSectionActive(sectionId) ? '#0d9488' : '#64748b';
   }
+
 
   onNavClick(route: string): void {
     this.navItemClick.emit(route);

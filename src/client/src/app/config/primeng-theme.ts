@@ -148,6 +148,9 @@ const ClinicalTheme = definePreset(Aura, {
       },
     },
     select: {
+      root: {
+        borderRadius: '0',
+      },
       dropdown: {
         width: '2rem',
         color: '{slate.400}',
@@ -158,6 +161,9 @@ const ClinicalTheme = definePreset(Aura, {
       },
     },
     multiselect: {
+      root: {
+        borderRadius: '0',
+      },
       dropdown: {
         width: '2rem',
         color: '{slate.400}',

@@ -40,16 +40,18 @@
             [showAddButton]="false"
           >
             <ng-template #filter let-value let-filter="filterCallback">
-              <select
-                class="w-full border border-slate-300 px-2 py-1 text-sm"
-                [value]="value ?? ''"
-                (change)="filter($any($event.target).value || null)"
-              >
-                <option value="">All products</option>
-                @for (p of products(); track p.id) {
-                  <option [value]="p.id">{{ p.name }}</option>
-                }
-              </select>
+              <p-select
+                [options]="products()"
+                [ngModel]="value"
+                (ngModelChange)="filter($event)"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="All products"
+                [showClear]="true"
+                [filter]="true"
+                size="small"
+                appendTo="body"
+              />
             </ng-template>
           </p-columnFilter>
         </th>
@@ -64,16 +66,18 @@
             [showAddButton]="false"
           >
             <ng-template #filter let-value let-filter="filterCallback">
-              <select
-                class="w-full border border-slate-300 px-2 py-1 text-sm"
-                [value]="value ?? ''"
-                (change)="filter($any($event.target).value || null)"
-              >
-                <option value="">All companies</option>
-                @for (c of companies(); track c.id) {
-                  <option [value]="c.id">{{ c.name }}</option>
-                }
-              </select>
+              <p-select
+                [options]="companies()"
+                [ngModel]="value"
+                (ngModelChange)="filter($event)"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="All companies"
+                [showClear]="true"
+                [filter]="true"
+                size="small"
+                appendTo="body"
+              />
             </ng-template>
           </p-columnFilter>
         </th>

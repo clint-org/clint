@@ -60,6 +60,7 @@
           placeholder="Select status"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="status ? 'has-value' : ''"
         />
       </app-form-field>
 
@@ -74,6 +75,7 @@
           placeholder="Select product"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="productId ? 'has-value' : ''"
         />
       </app-form-field>
 
@@ -88,6 +90,7 @@
           placeholder="Select therapeutic area"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="therapeuticAreaId ? 'has-value' : ''"
         />
       </app-form-field>
 
@@ -138,6 +141,7 @@
           placeholder="Select study type"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="studyType ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Phase" fieldId="trial-phase" spacing="">
@@ -151,6 +155,7 @@
           placeholder="Select phase"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="phase ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Masking" fieldId="trial-masking" spacing="">
@@ -164,6 +169,7 @@
           placeholder="Select masking"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="designMasking ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Primary purpose" fieldId="trial-purpose" spacing="">
@@ -177,6 +183,7 @@
           placeholder="Select purpose"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="designPrimaryPurpose ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Intervention type" fieldId="trial-intervention-type" spacing="">
@@ -216,6 +223,7 @@
           placeholder="Select phase type"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="phaseType() ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Phase start date" fieldId="trial-phase-start-date" spacing="">
@@ -256,6 +264,7 @@
           placeholder="Select sex"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="eligibilitySex ? 'has-value' : ''"
         />
       </app-form-field>
       <app-form-field label="Min age" fieldId="trial-min-age" spacing="">
@@ -357,6 +366,9 @@
           placeholder="Select designations"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [styleClass]="fdaDesignations.length ? 'has-value' : ''"
+          [maxSelectedLabels]="1"
+          [selectedItemsLabel]="'Designation (' + fdaDesignations.length + ')'"
         />
       </app-form-field>
       <div class="flex flex-wrap items-center gap-x-6 gap-y-2 sm:col-span-2">

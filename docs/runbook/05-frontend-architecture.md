@@ -60,7 +60,10 @@ src/client/
         onboarding/             # Create org / join with invite code
         tenant-settings/        # Tenant management and member invites
       shared/
+        constants/
+          nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
+          clint-logo.component.ts # Triple C logo mark: size-adaptive SVG with auto stroke thickening
           svg-icons/            # 6 SVG shape components for markers
           manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
           row-actions.component.ts        # Overflow (ellipsis) row-action menu
@@ -209,10 +212,10 @@ Click events on phase bars, markers, and trials emit from the grid and navigate 
 
 The `AppShellComponent` orchestrates the three-panel layout: sidebar + topbar + content area.
 
-- **Sidebar** (`SidebarComponent`): Collapsed (48px icons) or expanded (220px labels). Both hover-expand and pin-expand use `position: relative` -- the sidebar always pushes content right, never overlays. Header contains logo + pin toggle only. Org/space selection lives in the topbar, not the sidebar.
-- **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. The right side of the divider adapts by page type:
-  - `landscape`: "Landscape" label + tab buttons (Timeline, Bullseye, Positioning)
-  - `list`: page title (e.g., "Events") + record count + action buttons
+- **Sidebar** (`SidebarComponent`): Collapsed (48px, individual item icons with section dividers) or expanded (220px, icon + label per item). Both hover-expand and pin-expand use `position: relative` -- the sidebar always pushes content right, never overlays. Header contains the Triple C logo mark (`ClintLogoComponent`, 24px dark variant) + pin toggle. All icons sourced from `NAV_ICONS` constant. Org/space selection lives in the topbar, not the sidebar.
+- **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. Icons from `NAV_ICONS` appear on landscape tabs and list page titles. The right side of the divider adapts by page type:
+  - `landscape`: "Landscape" label + icon-prefixed tab buttons (Timeline, Bullseye, Positioning)
+  - `list`: icon + page title (e.g., "Events") + record count + action buttons
   - `detail`: back button + entity eyebrow/title
   - `blank`: breadcrumb only
 - **TopbarStateService**: Pages contribute their record count and action buttons to the topbar via this root-level service. Pages set signals on init and call `clear()` on destroy. The shell reads these signals and passes them to the topbar component.

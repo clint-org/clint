@@ -4,7 +4,7 @@
 
 ---
 
-All schema changes are in `supabase/migrations/` as timestamped SQL files. The current schema is built from 16 migrations.
+All schema changes are in `supabase/migrations/` as timestamped SQL files.
 
 ## Migration History
 
@@ -32,6 +32,7 @@ All schema changes are in `supabase/migrations/` as timestamped SQL files. The c
 | 31 | `20260413120200_seed_events_demo_data.sql` | Updates seed_demo_data() with 20 events, threads, links, sources |
 | 32 | `20260414023709_marker_visual_redesign.sql` | Adds inner_mark to marker_types, consolidates 21 types to 12 active, adds no_longer_expected to markers |
 | 33 | `20260414120000_key_catalysts_rpc.sql` | Key Catalysts RPCs: get_key_catalysts (forward-looking marker feed), get_catalyst_detail (enriched single-marker view with trial context + related events) |
+| 34 | `20260414210000_add_tenant_logo_url.sql` | Adds logo_url column to tenants, creates tenant-logos storage bucket with owner/member RLS policies |
 
 ## Core Data Tables
 
@@ -200,6 +201,7 @@ tenants (
   id          uuid PRIMARY KEY,
   name        text NOT NULL,
   slug        text UNIQUE,
+  logo_url    text,
   created_by  uuid,
   created_at  timestamptz,
   updated_at  timestamptz

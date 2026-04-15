@@ -1,11 +1,13 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
@@ -26,10 +28,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
   standalone: true,
   imports: [
     DatePipe,
+    FormsModule,
     ButtonModule,
     Dialog,
     MessageModule,
     ProgressSpinner,
+    SelectModule,
     TableModule,
     ManagePageShellComponent,
     GridToolbarComponent,

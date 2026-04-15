@@ -14,7 +14,8 @@ import {
   standalone: true,
   template: `
     <div
-      class="fixed rounded-lg bg-slate-900 shadow-xl overflow-hidden pointer-events-none"
+      class="fixed pointer-events-none overflow-hidden"
+      style="border-radius: 8px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.04); display: flex;"
       [style.z-index]="99999"
       [style.left.px]="tooltipX()"
       [style.top.px]="tooltipY()"
@@ -22,59 +23,89 @@ import {
       [style.max-width]="'300px'"
       [style.transform]="flipAbove() ? 'translate(-50%, -100%)' : 'translateX(-50%)'"
     >
-      <!-- Arrow -->
-      @if (flipAbove()) {
-        <div
-          class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-slate-900"
-          style="top: 100%;"
-        ></div>
-      } @else {
-        <div
-          class="absolute left-1/2 -translate-x-1/2 border-x-[6px] border-b-[6px] border-x-transparent border-b-slate-900"
-          style="bottom: 100%;"
-        ></div>
-      }
+      <!-- Left accent bar -->
+      <div class="shrink-0 w-[3px]" [style.background]="typeColor()"></div>
 
-      <!-- Colored accent bar -->
-      <div class="h-1" [style.background]="typeColor()"></div>
-
-      <div class="px-3 py-2.5">
+      <!-- Content -->
+      <div class="px-3 py-2.5 flex-1 min-w-0">
         <!-- Category tag -->
         @if (categoryName()) {
           <div class="mb-1.5">
-            <span class="text-[10px] uppercase tracking-wider text-slate-500">{{ categoryName() }}</span>
+            <span class="text-[10px] uppercase tracking-wider text-slate-400">{{ categoryName() }}</span>
           </div>
         }
 
         <!-- Title -->
-        <div class="text-[12px] font-semibold text-white leading-snug mb-1.5">{{ title() }}</div>
+        <div class="text-[12px] font-semibold text-slate-900 leading-snug mb-1.5">{{ title() }}</div>
 
-        <!-- Type name with colored dot -->
-        <div class="flex items-center gap-1.5 mb-1">
-          <span class="h-2 w-2 rounded-full shrink-0" [style.background]="typeColor()"></span>
-          <span class="text-[11px] text-slate-300">{{ typeName() }}</span>
+        <!-- Type icon + name | date row -->
+        <div class="flex items-center gap-1.5 mb-1.5">
+          <!-- Marker shape icon -->
+          <svg width="10" height="10" class="shrink-0" [attr.fill]="fillStyle() === 'filled' ? typeColor() : 'white'" [attr.stroke]="typeColor()" [attr.stroke-width]="fillStyle() === 'filled' ? 0 : 1.5">
+            @switch (shape()) {
+              @case ('circle') {
+                <circle cx="5" cy="5" r="4" />
+              }
+              @case ('diamond') {
+                <rect x="5" y="1" width="5.6" height="5.6" rx="1" transform="rotate(45 5 1)" />
+              }
+              @case ('triangle') {
+                <polygon points="5,1 9,9 1,9" />
+              }
+              @case ('square') {
+                <rect x="1" y="1" width="8" height="8" rx="1" />
+              }
+              @case ('flag') {
+                <polygon points="1,1 9,1 7,5 9,9 1,9" />
+              }
+              @default {
+                <circle cx="5" cy="5" r="4" />
+              }
+            }
+          </svg>
+          <span class="text-[11px] text-slate-600">{{ typeName() }}</span>
+          <span class="text-[11px] text-slate-300 select-none">|</span>
+          <span class="text-[11px] text-slate-400 font-mono">{{ formattedDate() }}</span>
         </div>
-
-        <!-- Date -->
-        <div class="text-[11px] text-slate-400 font-mono mb-1.5">{{ formattedDate() }}</div>
 
         <!-- Projection badge -->
         @if (projectionLabel()) {
-          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-            <span class="text-[10px] font-medium text-amber-300">{{ projectionLabel() }}</span>
+          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+            <span class="text-[10px] font-medium text-amber-700">{{ projectionLabel() }}</span>
           </div>
         }
         @if (noLongerExpected()) {
-          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-slate-500/20 px-2 py-0.5">
+          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5">
             <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-            <span class="text-[10px] font-medium text-slate-300">No longer expected</span>
+            <span class="text-[10px] font-medium text-slate-500">No longer expected</span>
+          </div>
+        }
+
+        <!-- Trial context -->
+        @if (trialName()) {
+          <div class="border-t border-slate-100 pt-2 mt-2">
+            <div class="text-[10px] font-medium text-slate-900 leading-snug">{{ trialName() }}</div>
+            @if (trialPhase() || recruitmentStatus()) {
+              <div class="text-[9px] text-slate-500 mt-0.5">
+                {{ [trialPhase(), recruitmentStatus()].filter(Boolean).join(' · ') }}
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Program context -->
+        @if (companyName()) {
+          <div class="mt-1.5">
+            <span class="text-[9px] text-slate-500 tracking-[0.03em]">
+              <span class="uppercase">{{ companyName() }}</span>@if (productName()) { · {{ productName() }}}
+            </span>
           </div>
         }
 
         <!-- Description -->
         @if (description()) {
-          <p class="text-[11px] text-slate-300 leading-relaxed mt-1">{{ description() }}</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed mt-1.5">{{ description() }}</p>
         }
 
         <!-- Source URL -->
@@ -83,7 +114,7 @@ import {
             [href]="sourceUrl()!"
             target="_blank"
             rel="noopener noreferrer"
-            class="pointer-events-auto mt-2 block text-teal-400 text-xs hover:underline"
+            class="pointer-events-auto mt-2 block text-teal-600 text-xs hover:text-teal-700 hover:underline"
           >View source</a>
         }
       </div>
@@ -103,6 +134,16 @@ export class MarkerTooltipComponent implements AfterViewInit {
   description = input<string | null>(null);
   sourceUrl = input<string | null>(null);
   noLongerExpected = input<boolean>(false);
+
+  shape = input<string>('');
+  fillStyle = input<string>('filled');
+  innerMark = input<string>('none');
+
+  trialName = input<string>('');
+  trialPhase = input<string>('');
+  recruitmentStatus = input<string>('');
+  companyName = input<string>('');
+  productName = input<string>('');
 
   tooltipX = signal(0);
   tooltipY = signal(0);

@@ -33,6 +33,12 @@ export class MarkerComponent {
   endYear = input.required<number>();
   totalWidth = input.required<number>();
 
+  trialName = input<string>('');
+  trialPhase = input<string>('');
+  recruitmentStatus = input<string>('');
+  companyName = input<string>('');
+  productName = input<string>('');
+
   markerClick = output<Marker>();
 
   showTooltip = signal(false);

@@ -18,6 +18,7 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
 import { TopbarStateService } from '../services/topbar-state.service';
+import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -347,9 +348,9 @@ export class AppShellComponent implements OnInit {
     if (this.pageType() !== 'landscape') return [];
     const route = this.activeSpaceRoute();
     return [
-      { label: 'Timeline', value: 'timeline', active: route === '' },
-      { label: 'Bullseye', value: 'bullseye', active: route.startsWith('bullseye') },
-      { label: 'Positioning', value: 'positioning', active: route === 'positioning' },
+      { label: 'Timeline', value: 'timeline', active: route === '', icon: NAV_ICONS['timeline'] },
+      { label: 'Bullseye', value: 'bullseye', active: route.startsWith('bullseye'), icon: NAV_ICONS['bullseye'] },
+      { label: 'Positioning', value: 'positioning', active: route === 'positioning', icon: NAV_ICONS['positioning'] },
     ];
   });
 
@@ -502,9 +503,10 @@ export class AppShellComponent implements OnInit {
     }
   }
 
-  onSignOut(): void {
+  async onSignOut(): Promise<void> {
     this.accountOpen.set(false);
-    this.supabase.signOut();
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
   }
 
   // --- Topbar dropdown actions ---

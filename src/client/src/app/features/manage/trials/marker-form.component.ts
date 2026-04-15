@@ -53,6 +53,7 @@ import { TrialService } from '../../../core/services/trial.service';
             [style]="{ width: '100%' }"
             class="mt-1"
             (ngModelChange)="onCategoryChange($event)"
+            [styleClass]="categoryId ? 'has-value' : ''"
           />
         </div>
 
@@ -73,6 +74,7 @@ import { TrialService } from '../../../core/services/trial.service';
             class="mt-1"
             [disabled]="!categoryId"
             (ngModelChange)="onMarkerTypeChange($event)"
+            [styleClass]="markerTypeId ? 'has-value' : ''"
           />
         </div>
 
@@ -107,6 +109,7 @@ import { TrialService } from '../../../core/services/trial.service';
             placeholder="Select projection"
             [style]="{ width: '100%' }"
             class="mt-1"
+            [styleClass]="projection ? 'has-value' : ''"
           />
         </div>
 
@@ -187,6 +190,7 @@ import { TrialService } from '../../../core/services/trial.service';
               placeholder="Select pathway"
               [style]="{ width: '100%' }"
               class="mt-1"
+              [styleClass]="regulatoryPathway ? 'has-value' : ''"
             />
           </div>
         }
@@ -206,9 +210,11 @@ import { TrialService } from '../../../core/services/trial.service';
             placeholder="Select trials"
             [style]="{ width: '100%' }"
             class="mt-1"
-            display="chip"
             (ngModelChange)="selectedTrialIds = ($event ?? [])"
             aria-required="true"
+            [styleClass]="selectedTrialIds.length ? 'has-value' : ''"
+            [maxSelectedLabels]="1"
+            [selectedItemsLabel]="'Trial (' + selectedTrialIds.length + ')'"
           />
         </div>
 
@@ -242,6 +248,7 @@ import { TrialService } from '../../../core/services/trial.service';
                   placeholder="Select priority"
                   [style]="{ width: '100%' }"
                   class="mt-1"
+                  [styleClass]="notifyPriority ? 'has-value' : ''"
                 />
               </div>
               <div>

@@ -58,17 +58,8 @@
           [styleClass]="'w-32' + (state.filters().companyIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="1"
-          selectedItemsLabel="Company"
-        >
-          <ng-template pTemplate="selectedItems" let-items>
-            @if (items && items.length === 1) {
-              <span>{{ items[0].label }}</span>
-            } @else if (items && items.length > 1) {
-              <span>Company</span>
-              <span class="multiselect-badge ml-1">{{ items.length }}</span>
-            }
-          </ng-template>
-        </p-multiselect>
+          [selectedItemsLabel]="'Company (' + state.filters().companyIds.length + ')'"
+        />
       }
 
       <p-multiselect
@@ -85,17 +76,8 @@
         [styleClass]="'w-32' + (state.filters().productIds.length ? ' has-value' : '')"
         size="small"
         [maxSelectedLabels]="1"
-        selectedItemsLabel="Product"
-      >
-        <ng-template pTemplate="selectedItems" let-items>
-          @if (items && items.length === 1) {
-            <span>{{ items[0].label }}</span>
-          } @else if (items && items.length > 1) {
-            <span>Product</span>
-            <span class="multiselect-badge ml-1">{{ items.length }}</span>
-          }
-        </ng-template>
-      </p-multiselect>
+        [selectedItemsLabel]="'Product (' + state.filters().productIds.length + ')'"
+      />
 
       @if (viewMode() !== 'bullseye' || dimension() !== 'therapeutic-area') {
         <p-multiselect
@@ -112,17 +94,8 @@
           [styleClass]="'w-36' + (state.filters().therapeuticAreaIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="1"
-          selectedItemsLabel="Therapy Area"
-        >
-          <ng-template pTemplate="selectedItems" let-items>
-            @if (items && items.length === 1) {
-              <span>{{ items[0].label }}</span>
-            } @else if (items && items.length > 1) {
-              <span>Therapy Area</span>
-              <span class="multiselect-badge ml-1">{{ items.length }}</span>
-            }
-          </ng-template>
-        </p-multiselect>
+          [selectedItemsLabel]="'Therapy Area (' + state.filters().therapeuticAreaIds.length + ')'"
+        />
       }
 
       @if (viewMode() !== 'bullseye' || dimension() !== 'moa') {
@@ -140,17 +113,8 @@
           [styleClass]="'w-32' + (state.filters().mechanismOfActionIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="1"
-          selectedItemsLabel="MOA"
-        >
-          <ng-template pTemplate="selectedItems" let-items>
-            @if (items && items.length === 1) {
-              <span>{{ items[0].label }}</span>
-            } @else if (items && items.length > 1) {
-              <span>MOA</span>
-              <span class="multiselect-badge ml-1">{{ items.length }}</span>
-            }
-          </ng-template>
-        </p-multiselect>
+          [selectedItemsLabel]="'MOA (' + state.filters().mechanismOfActionIds.length + ')'"
+        />
       }
 
       @if (viewMode() !== 'bullseye' || dimension() !== 'roa') {
@@ -168,17 +132,8 @@
           [styleClass]="'w-32' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="1"
-          selectedItemsLabel="ROA"
-        >
-          <ng-template pTemplate="selectedItems" let-items>
-            @if (items && items.length === 1) {
-              <span>{{ items[0].label }}</span>
-            } @else if (items && items.length > 1) {
-              <span>ROA</span>
-              <span class="multiselect-badge ml-1">{{ items.length }}</span>
-            }
-          </ng-template>
-        </p-multiselect>
+          [selectedItemsLabel]="'ROA (' + state.filters().routeOfAdministrationIds.length + ')'"
+        />
       }
 
       <p-selectbutton
@@ -204,17 +159,8 @@
         [styleClass]="'w-28' + (state.filters().recruitmentStatuses.length ? ' has-value' : '')"
         size="small"
         [maxSelectedLabels]="1"
-        selectedItemsLabel="Status"
-      >
-        <ng-template pTemplate="selectedItems" let-items>
-          @if (items && items.length === 1) {
-            <span>{{ items[0].label }}</span>
-          } @else if (items && items.length > 1) {
-            <span>Status</span>
-            <span class="multiselect-badge ml-1">{{ items.length }}</span>
-          }
-        </ng-template>
-      </p-multiselect>
+        [selectedItemsLabel]="'Status (' + state.filters().recruitmentStatuses.length + ')'"
+      />
 
       <p-multiselect
         [options]="studyTypeOptions"
@@ -229,17 +175,8 @@
         [styleClass]="'w-28' + (state.filters().studyTypes.length ? ' has-value' : '')"
         size="small"
         [maxSelectedLabels]="1"
-        selectedItemsLabel="Study type"
-      >
-        <ng-template pTemplate="selectedItems" let-items>
-          @if (items && items.length === 1) {
-            <span>{{ items[0].label }}</span>
-          } @else if (items && items.length > 1) {
-            <span>Study type</span>
-            <span class="multiselect-badge ml-1">{{ items.length }}</span>
-          }
-        </ng-template>
-      </p-multiselect>
+        [selectedItemsLabel]="'Study type (' + state.filters().studyTypes.length + ')'"
+      />
 
       @if (hasAnyActive()) {
         <p-button

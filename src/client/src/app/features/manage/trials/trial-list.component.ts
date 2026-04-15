@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
+import { FormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -34,6 +36,8 @@ interface TrialRow {
   selector: 'app-trial-list',
   standalone: true,
   imports: [
+    FormsModule,
+    SelectModule,
     TableModule,
     ButtonModule,
     Dialog,

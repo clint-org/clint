@@ -20,8 +20,8 @@ import type { GridState } from '../grids/filter-types';
   template: `
     <div class="grid-toolbar mb-3">
       <div class="flex items-center justify-between gap-3">
-        <p-iconfield iconPosition="left" styleClass="search-tinted">
-          <p-inputicon><i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400"></i></p-inputicon>
+        <p-iconfield iconPosition="left" [styleClass]="'search-tinted' + (state().globalSearch() ? ' has-value' : '')">
+          <p-inputicon><i class="fa-solid fa-magnifying-glass text-[11px]"></i></p-inputicon>
           <input
             pInputText
             type="text"

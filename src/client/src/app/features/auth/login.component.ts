@@ -1,20 +1,20 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
+  imports: [ClintLogoComponent],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-sm border border-slate-200 bg-white">
         <div class="h-0.5 bg-teal-500"></div>
         <div class="px-8 py-10">
-          <p
-            class="text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
-          >
-            Clint
-          </p>
+          <div class="flex justify-center">
+            <app-clint-logo [size]="48" />
+          </div>
           <h1 class="mt-2 text-center text-lg font-semibold tracking-tight text-slate-900">
             Clinical trial intelligence
           </h1>

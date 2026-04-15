@@ -64,6 +64,7 @@ interface SourceRow {
             placeholder="Select level"
             [style]="{ width: '100%' }"
             (ngModelChange)="onEntityLevelChange()"
+            [styleClass]="entityLevel ? 'has-value' : ''"
           />
         </div>
 
@@ -82,6 +83,7 @@ interface SourceRow {
               placeholder="Select..."
               [filter]="true"
               [style]="{ width: '100%' }"
+              [styleClass]="entityId ? 'has-value' : ''"
             />
           </div>
         }
@@ -119,6 +121,7 @@ interface SourceRow {
             optionValue="id"
             placeholder="Select category"
             [style]="{ width: '100%' }"
+            [styleClass]="categoryId ? 'has-value' : ''"
           />
         </div>
         <div>
@@ -131,6 +134,7 @@ interface SourceRow {
             optionLabel="label"
             optionValue="value"
             [style]="{ width: '100%' }"
+            [styleClass]="priority ? 'has-value' : ''"
           />
         </div>
       </div>
@@ -178,6 +182,7 @@ interface SourceRow {
             placeholder="None"
             [showClear]="true"
             [style]="{ width: '100%' }"
+            [styleClass]="threadId ? 'has-value' : ''"
           />
         </div>
         @if (!threadId) {

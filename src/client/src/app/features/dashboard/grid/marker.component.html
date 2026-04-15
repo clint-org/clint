@@ -97,6 +97,14 @@
         [description]="marker().description"
         [sourceUrl]="marker().source_url"
         [noLongerExpected]="isNle()"
+        [shape]="markerType()?.shape ?? ''"
+        [fillStyle]="effectiveFillStyle()"
+        [innerMark]="markerType()?.inner_mark ?? 'none'"
+        [trialName]="trialName()"
+        [trialPhase]="trialPhase()"
+        [recruitmentStatus]="recruitmentStatus()"
+        [companyName]="companyName()"
+        [productName]="productName()"
       />
     }
   </div>

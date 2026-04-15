@@ -50,6 +50,7 @@ New users land at `/onboarding` after first sign-in. The `OnboardingComponent` p
 
 The `TenantSettingsComponent` provides:
 
+- **Organization branding**: logo upload (stored in `tenant-logos` Supabase storage bucket; owners can upload/delete, all members can read)
 - **Members table**: lists all members with name, email, role; remove button per member (with confirmation)
 - **Pending invites table**: shows invite code, email, role, expiration
 - **Invite dialog**: email + role dropdown to generate new invite codes

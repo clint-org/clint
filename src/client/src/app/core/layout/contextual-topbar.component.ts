@@ -1,11 +1,13 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TopbarAction } from '../services/topbar-state.service';
+import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
 export interface TopbarTab {
   label: string;
   value: string;
   active: boolean;
+  icon?: string;
 }
 
 @Component({
@@ -146,6 +148,9 @@ export interface TopbarTab {
                 [class]="tab.active ? 'topbar-tab active' : 'topbar-tab'"
                 (click)="onTabClick(tab.value)"
               >
+                @if (tab.icon) {
+                  <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
+                }
                 {{ tab.label }}
               </button>
             }
@@ -153,7 +158,13 @@ export interface TopbarTab {
         }
         @case ('list') {
           <div class="topbar-divider" aria-hidden="true"></div>
+          @if (listIcon()) {
+            <i [class]="listIcon()" class="topbar-list-icon" aria-hidden="true"></i>
+          }
           <span class="topbar-list-title">{{ listTitle() }}</span>
+          @if (recordCount()) {
+            <span class="topbar-record-count">{{ recordCount() }}</span>
+          }
         }
         @case ('detail') {
           <div class="topbar-divider" aria-hidden="true"></div>
@@ -182,9 +193,6 @@ export interface TopbarTab {
 
       <!-- Right-side actions -->
       <div class="topbar-actions">
-        @if (recordCount()) {
-          <span class="topbar-record-count">{{ recordCount() }}</span>
-        }
         @for (action of actionButtons(); track action.label) {
           <p-button
             [label]="action.label"
@@ -396,6 +404,18 @@ export interface TopbarTab {
       border-right: none;
       transition: color 120ms ease-out;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .topbar-tab__icon {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .topbar-tab.active .topbar-tab__icon {
+      opacity: 1;
     }
 
     .topbar-tab:hover {
@@ -411,6 +431,12 @@ export interface TopbarTab {
     .topbar-tab:focus-visible {
       outline: 2px solid #0d9488;
       outline-offset: 2px;
+    }
+
+    .topbar-list-icon {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-right: 6px;
     }
 
     .topbar-list-title {
@@ -470,6 +496,17 @@ export interface TopbarTab {
     .topbar-record-count {
       font-size: 11px;
       color: #94a3b8;
+      margin-left: 6px;
+    }
+
+    :host ::ng-deep .topbar-actions .p-button {
+      font-size: 11px;
+      padding: 4px 10px;
+      height: 26px;
+    }
+
+    :host ::ng-deep .topbar-actions .p-button .p-button-icon {
+      font-size: 11px;
     }
 
     /* ---- Dropdown footer ---- */
@@ -575,6 +612,11 @@ export class ContextualTopbarComponent {
   readonly orgInitial = computed(() => {
     const name = this.tenantName();
     return name ? name.charAt(0).toUpperCase() : '';
+  });
+
+  readonly listIcon = computed(() => {
+    const title = this.listTitle().toLowerCase().replace(/\s+/g, '-');
+    return NAV_ICONS[title] ?? '';
   });
 
   // ---- Methods ----

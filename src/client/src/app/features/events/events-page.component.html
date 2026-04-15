@@ -41,15 +41,17 @@
                 [showAddButton]="false"
               >
                 <ng-template #filter let-value let-filter="filterCallback">
-                  <select
-                    class="w-full border border-slate-300 px-2 py-1 text-sm"
-                    [value]="value ?? ''"
-                    (change)="filter($any($event.target).value || null)"
-                  >
-                    <option value="">All</option>
-                    <option value="event">Event</option>
-                    <option value="marker">Marker</option>
-                  </select>
+                  <p-select
+                    [options]="[{ label: 'Event', value: 'event' }, { label: 'Marker', value: 'marker' }]"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                  />
                 </ng-template>
               </p-columnFilter>
             </th>
@@ -76,15 +78,17 @@
                 [showAddButton]="false"
               >
                 <ng-template #filter let-value let-filter="filterCallback">
-                  <select
-                    class="w-full border border-slate-300 px-2 py-1 text-sm"
-                    [value]="value ?? ''"
-                    (change)="filter($any($event.target).value || null)"
-                  >
-                    <option value="">All</option>
-                    <option value="high">High</option>
-                    <option value="low">Low</option>
-                  </select>
+                  <p-select
+                    [options]="[{ label: 'High', value: 'high' }, { label: 'Low', value: 'low' }]"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                  />
                 </ng-template>
               </p-columnFilter>
             </th>

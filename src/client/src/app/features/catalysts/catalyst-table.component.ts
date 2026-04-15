@@ -1,5 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
@@ -7,7 +9,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
-  imports: [DatePipe, TableModule],
+  imports: [DatePipe, FormsModule, SelectModule, TableModule],
   template: `
     <p-table
       [value]="catalysts()"
@@ -17,13 +19,64 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
       scrollHeight="flex"
       dataKey="marker_id"
       styleClass="data-table"
+      [filters]="gridFilters()"
+      [lazy]="true"
+      (onLazyLoad)="filterChange.emit($any($event))"
     >
       <ng-template #header>
         <tr>
           <th class="w-[80px]">Date</th>
-          <th class="w-[110px]">Category</th>
+          <th class="w-[110px]">
+            Category
+            <p-columnFilter
+              field="category_name"
+              display="menu"
+              matchMode="in"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+            >
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select
+                  [options]="categoryOptions()"
+                  [ngModel]="value"
+                  (ngModelChange)="filter($event)"
+                  placeholder="All"
+                  [showClear]="true"
+                  optionLabel="label"
+                  optionValue="value"
+                  size="small"
+                  appendTo="body"
+                />
+              </ng-template>
+            </p-columnFilter>
+          </th>
           <th>Catalyst</th>
-          <th class="w-[200px]">Company / Product</th>
+          <th class="w-[200px]">
+            Company / Product
+            <p-columnFilter
+              field="company_name"
+              display="menu"
+              matchMode="in"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+            >
+              <ng-template #filter let-value let-filter="filterCallback">
+                <p-select
+                  [options]="companyOptions()"
+                  [ngModel]="value"
+                  (ngModelChange)="filter($event)"
+                  placeholder="All"
+                  [showClear]="true"
+                  optionLabel="label"
+                  optionValue="value"
+                  size="small"
+                  appendTo="body"
+                />
+              </ng-template>
+            </p-columnFilter>
+          </th>
           <th class="w-[90px]">Status</th>
         </tr>
       </ng-template>
@@ -112,5 +165,9 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
 export class CatalystTableComponent {
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly selectedId = input<string | null>(null);
+  readonly categoryOptions = input<{ label: string; value: string }[]>([]);
+  readonly companyOptions = input<{ label: string; value: string }[]>([]);
+  readonly gridFilters = input<Record<string, { value: unknown; matchMode: string }[]>>({});
   readonly rowSelect = output<string>();
+  readonly filterChange = output<Record<string, unknown>>();
 }

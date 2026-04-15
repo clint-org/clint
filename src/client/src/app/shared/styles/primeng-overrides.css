@@ -123,6 +123,12 @@
   color: #ffffff;
   font-weight: 600;
 }
+.p-selectbutton .p-togglebutton .p-togglebutton-content {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
 
 /* -- Active Select / MultiSelect ---------------------------------------- */
 
@@ -156,16 +162,19 @@
   color: #ffffff;
 }
 
-/* -- Search field tint --------------------------------------------------- */
+/* -- Search field -------------------------------------------------------- */
 
-.search-tinted .p-inputtext {
-  background: rgb(240 253 250); /* teal-50 */
-  border-color: rgb(153 246 228); /* teal-200 */
-}
-.search-tinted .p-inputtext:focus {
-  background: #ffffff;
-}
+/* Idle: white background, standard slate border, slate icon. */
 .search-tinted .p-inputicon i {
+  color: rgb(148 163 184); /* slate-400 */
+}
+
+/* Active: teal accents when the field has a value. */
+.search-tinted.has-value .p-inputtext {
+  border-color: rgb(13 148 136); /* teal-600 */
+  background: rgb(240 253 250); /* teal-50 */
+}
+.search-tinted.has-value .p-inputicon i {
   color: rgb(13 148 136); /* teal-600 */
 }
 
