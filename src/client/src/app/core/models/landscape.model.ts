@@ -235,6 +235,36 @@ export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGr
   { label: 'Route of Administration', value: 'roa' },
 ];
 
+export function groupingToSegment(g: PositioningGrouping): string {
+  const map: Record<PositioningGrouping, string> = {
+    moa: 'by-moa',
+    'therapeutic-area': 'by-therapy-area',
+    'moa+therapeutic-area': 'by-moa-therapy-area',
+    company: 'by-company',
+    roa: 'by-roa',
+  };
+  return map[g];
+}
+
+export function segmentToGrouping(segment: string): PositioningGrouping {
+  const map: Record<string, PositioningGrouping> = {
+    'by-moa': 'moa',
+    'by-therapy-area': 'therapeutic-area',
+    'by-moa-therapy-area': 'moa+therapeutic-area',
+    'by-company': 'company',
+    'by-roa': 'roa',
+  };
+  return map[segment] ?? 'moa';
+}
+
+export const POSITIONING_SEGMENTS = [
+  'by-moa',
+  'by-therapy-area',
+  'by-moa-therapy-area',
+  'by-company',
+  'by-roa',
+] as const;
+
 export const COUNT_UNIT_OPTIONS: { label: string; value: CountUnit }[] = [
   { label: 'Products', value: 'products' },
   { label: 'Trials', value: 'trials' },

@@ -34,7 +34,18 @@ const NAV_SECTIONS: NavSection[] = [
           { label: 'ROA', route: 'bullseye/by-roa' },
         ],
       },
-      { label: 'Positioning', route: 'positioning', icon: NAV_ICONS['positioning'] },
+      {
+        label: 'Positioning',
+        route: 'positioning',
+        icon: NAV_ICONS['positioning'],
+        children: [
+          { label: 'MOA', route: 'positioning/by-moa' },
+          { label: 'Therapy Area', route: 'positioning/by-therapy-area' },
+          { label: 'MOA + TA', route: 'positioning/by-moa-therapy-area' },
+          { label: 'Company', route: 'positioning/by-company' },
+          { label: 'ROA', route: 'positioning/by-roa' },
+        ],
+      },
     ],
   },
   {
@@ -86,12 +97,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
     >
       <!-- Logo row -->
       <div class="sidebar__logo">
-        <button
-          type="button"
-          class="logo-btn"
-          aria-label="Go to home"
-          (click)="logoClick.emit()"
-        >
+        <button type="button" class="logo-btn" aria-label="Go to home" (click)="logoClick.emit()">
           <app-clint-logo [size]="24" [dark]="true" />
         </button>
 
@@ -106,10 +112,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
             [attr.aria-label]="pinned() ? 'Unpin sidebar' : 'Pin sidebar'"
             [attr.aria-pressed]="pinned()"
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M10 1.5L12.5 4L11 7.5V10H5V7.5L3.5 4L6 1.5H10Z" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linejoin="round"/>
-              <line x1="8" y1="10" x2="8" y2="14.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
           </button>
         }
       </div>
@@ -123,30 +126,39 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
               <div class="section-header" role="heading" aria-level="2">{{ section.label }}</div>
               @for (item of section.items; track item.route) {
                 @if (item.children) {
-                  <button type="button" class="nav-item"
+                  <button
+                    type="button"
+                    class="nav-item"
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
-                    (click)="onNavClick(item.route)">
+                    (click)="onNavClick(item.route)"
+                  >
                     @if (item.icon) {
                       <i [class]="item.icon + ' nav-item__icon'" aria-hidden="true"></i>
                     }
                     {{ item.label }}
                   </button>
-                  @if (bullseyeExpanded()) {
+                  @if (isParentExpanded(item.route)) {
                     @for (child of item.children; track child.route) {
-                      <button type="button" class="nav-item nav-item--child"
+                      <button
+                        type="button"
+                        class="nav-item nav-item--child"
                         [class.nav-item--active]="isActive(child.route)"
                         [attr.aria-current]="isActive(child.route) ? 'page' : null"
-                        (click)="onNavClick(child.route)">
+                        (click)="onNavClick(child.route)"
+                      >
                         {{ child.label }}
                       </button>
                     }
                   }
                 } @else {
-                  <button type="button" class="nav-item"
+                  <button
+                    type="button"
+                    class="nav-item"
                     [class.nav-item--active]="isActive(item.route)"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null"
-                    (click)="onNavClick(item.route)">
+                    (click)="onNavClick(item.route)"
+                  >
                     @if (item.icon) {
                       <i [class]="item.icon + ' nav-item__icon'" aria-hidden="true"></i>
                     }
@@ -157,18 +169,25 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
             } @else {
               <!-- Collapsed: individual item icons with section dividers -->
               @for (item of section.items; track item.route) {
-                <button type="button" class="icon-btn"
+                <button
+                  type="button"
+                  class="icon-btn"
                   [class.icon-btn--active]="isActive(item.route)"
                   [attr.aria-label]="item.label"
                   [attr.aria-current]="isActive(item.route) ? 'page' : null"
                   [pTooltip]="item.label"
                   tooltipPosition="right"
-                  (click)="onNavClick(item.route)">
+                  (click)="onNavClick(item.route)"
+                >
                   @if (isActive(item.route)) {
                     <span class="active-indicator" aria-hidden="true"></span>
                   }
                   @if (item.icon) {
-                    <i [class]="item.icon" [style.color]="isActive(item.route) ? '#0d9488' : '#64748b'" aria-hidden="true"></i>
+                    <i
+                      [class]="item.icon"
+                      [style.color]="isActive(item.route) ? '#0d9488' : '#64748b'"
+                      aria-hidden="true"
+                    ></i>
                   }
                 </button>
               }
@@ -179,11 +198,14 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
 
       <!-- User avatar -->
       <div class="sidebar__footer">
-        <button type="button" class="avatar-btn"
+        <button
+          type="button"
+          class="avatar-btn"
           [attr.aria-label]="'User account: ' + userInitials()"
           [pTooltip]="isExpanded() ? '' : 'Account'"
           tooltipPosition="right"
-          (click)="avatarClick.emit()">
+          (click)="avatarClick.emit()"
+        >
           {{ userInitials() }}
         </button>
         @if (isExpanded()) {
@@ -256,7 +278,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 8px;
       }
 
-
       .pin-btn {
         flex-shrink: 0;
         display: flex;
@@ -269,14 +290,26 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 4px;
         cursor: pointer;
         color: #475569;
+        font-size: 11px;
         padding: 0;
         margin-top: 4px;
-        transition: color 150ms ease, transform 150ms ease;
+        transition:
+          color 150ms ease,
+          transform 150ms ease;
         outline: none;
       }
-      .pin-btn:hover { color: #94a3b8; background: #1e293b; }
-      .pin-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
-      .pin-btn--pinned { color: #0d9488; transform: rotate(45deg); }
+      .pin-btn:hover {
+        color: #94a3b8;
+        background: #1e293b;
+      }
+      .pin-btn:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
+      .pin-btn--pinned {
+        color: #0d9488;
+        transform: rotate(45deg);
+      }
 
       /* Nav area */
       .sidebar__nav {
@@ -296,7 +329,9 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         padding: 12px 0;
       }
 
-      .nav-section { padding-bottom: 8px; }
+      .nav-section {
+        padding-bottom: 8px;
+      }
       .sidebar--collapsed .nav-section + .nav-section {
         border-top: 1px solid #1e293b;
         padding-top: 8px;
@@ -335,11 +370,20 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        transition: color 120ms ease, background-color 120ms ease;
+        transition:
+          color 120ms ease,
+          background-color 120ms ease;
         outline: none;
       }
-      .nav-item:hover { color: #e2e8f0; background: #1e293b; }
-      .nav-item:focus-visible { outline: 2px solid #0d9488; outline-offset: -2px; border-radius: 0 5px 5px 0; }
+      .nav-item:hover {
+        color: #e2e8f0;
+        background: #1e293b;
+      }
+      .nav-item:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: -2px;
+        border-radius: 0 5px 5px 0;
+      }
       .nav-item--active {
         color: #0d9488;
         background: rgba(13, 148, 136, 0.15);
@@ -347,7 +391,10 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 0 5px 5px 0;
         font-weight: 500;
       }
-      .nav-item--active:hover { color: #0d9488; background: rgba(13, 148, 136, 0.2); }
+      .nav-item--active:hover {
+        color: #0d9488;
+        background: rgba(13, 148, 136, 0.2);
+      }
       .nav-item__icon {
         width: 14px;
         font-size: 10px;
@@ -355,8 +402,13 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         opacity: 0.6;
         flex-shrink: 0;
       }
-      .nav-item--active .nav-item__icon { opacity: 1; }
-      .nav-item--child { padding-left: 42px; font-size: 11px; }
+      .nav-item--active .nav-item__icon {
+        opacity: 1;
+      }
+      .nav-item--child {
+        padding-left: 42px;
+        font-size: 11px;
+      }
 
       /* Icon buttons (collapsed) */
       .icon-btn {
@@ -375,9 +427,16 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         transition: background-color 150ms ease;
         outline: none;
       }
-      .icon-btn:hover { background: #1e293b; }
-      .icon-btn--active { background: rgba(13, 148, 136, 0.15); }
-      .icon-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+      .icon-btn:hover {
+        background: #1e293b;
+      }
+      .icon-btn--active {
+        background: rgba(13, 148, 136, 0.15);
+      }
+      .icon-btn:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
       .icon-btn__label {
         font-size: 11px;
@@ -434,8 +493,14 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         outline: none;
         user-select: none;
       }
-      .avatar-btn:hover { background: rgba(13, 148, 136, 0.25); border-color: rgba(13, 148, 136, 0.7); }
-      .avatar-btn:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+      .avatar-btn:hover {
+        background: rgba(13, 148, 136, 0.25);
+        border-color: rgba(13, 148, 136, 0.7);
+      }
+      .avatar-btn:focus-visible {
+        outline: 2px solid #0d9488;
+        outline-offset: 2px;
+      }
 
       .avatar-email {
         font-size: 11px;
@@ -445,7 +510,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         text-overflow: ellipsis;
         min-width: 0;
       }
-
     `,
   ],
 })
@@ -466,11 +530,11 @@ export class SidebarComponent {
 
   readonly isExpanded = computed(() => this.expanded() || this.pinned());
 
-  readonly visibleSections = computed(() =>
-    this.hasSpace() ? NAV_SECTIONS : ORG_ONLY_SECTIONS
-  );
+  readonly visibleSections = computed(() => (this.hasSpace() ? NAV_SECTIONS : ORG_ONLY_SECTIONS));
 
-  readonly bullseyeExpanded = computed(() => this.activeRoute().startsWith('bullseye'));
+  isParentExpanded(route: string): boolean {
+    return this.activeRoute().startsWith(route);
+  }
 
   readonly activeSection = computed(() => {
     const route = this.activeRoute();
@@ -491,7 +555,6 @@ export class SidebarComponent {
   iconColor(sectionId: string): string {
     return this.isSectionActive(sectionId) ? '#0d9488' : '#64748b';
   }
-
 
   onNavClick(route: string): void {
     this.navItemClick.emit(route);

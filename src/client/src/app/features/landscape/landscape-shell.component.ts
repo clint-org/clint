@@ -13,9 +13,11 @@ import { filter } from 'rxjs';
 import {
   BullseyeDimension,
   LandscapeIndexEntry,
-  PositioningGrouping,
   dimensionToSegment,
   segmentToDimension,
+  groupingToSegment,
+  segmentToGrouping,
+  POSITIONING_SEGMENTS,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
@@ -82,13 +84,13 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         { label: 'ROA', value: 'by-roa', active: seg === 'by-roa' },
       ]);
     } else if (mode === 'positioning') {
-      const g = this.state.positioningGrouping();
+      const seg = groupingToSegment(this.state.positioningGrouping());
       this.topbarState.subTabs.set([
-        { label: 'MOA', value: 'moa', active: g === 'moa' },
-        { label: 'Therapy Area', value: 'therapeutic-area', active: g === 'therapeutic-area' },
-        { label: 'MOA + TA', value: 'moa+therapeutic-area', active: g === 'moa+therapeutic-area' },
-        { label: 'Company', value: 'company', active: g === 'company' },
-        { label: 'ROA', value: 'roa', active: g === 'roa' },
+        { label: 'MOA', value: 'by-moa', active: seg === 'by-moa' },
+        { label: 'Therapy Area', value: 'by-therapy-area', active: seg === 'by-therapy-area' },
+        { label: 'MOA + TA', value: 'by-moa-therapy-area', active: seg === 'by-moa-therapy-area' },
+        { label: 'Company', value: 'by-company', active: seg === 'by-company' },
+        { label: 'ROA', value: 'by-roa', active: seg === 'by-roa' },
       ]);
     } else {
       this.topbarState.subTabs.set([]);
@@ -132,12 +134,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // (e.g. bullseye "Open in Timeline" links).
     this.applyQueryParamFilters();
 
-    // Sub-tab click handler: navigates for Bullseye, updates signal for Positioning.
+    // Sub-tab click handler: navigates for both Bullseye and Positioning.
     this.topbarState.onSubTabClick.set((value: string) => {
       if (this.viewMode() === 'bullseye') {
         this.router.navigate([...this.spaceBase(), 'bullseye', value]);
       } else if (this.viewMode() === 'positioning') {
-        this.state.positioningGrouping.set(value as PositioningGrouping);
+        this.router.navigate([...this.spaceBase(), 'positioning', value]);
       }
     });
 
@@ -200,9 +202,16 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s)
     );
 
+    const posSegment = allSegments.find((s) =>
+      (POSITIONING_SEGMENTS as readonly string[]).includes(s)
+    );
+
     if (allSegments.includes('positioning')) {
       this.viewMode.set('positioning');
       this.entityId.set(null);
+      if (posSegment) {
+        this.state.positioningGrouping.set(segmentToGrouping(posSegment));
+      }
     } else if (dimSegment) {
       this.viewMode.set('bullseye');
       this.dimension.set(segmentToDimension(dimSegment));

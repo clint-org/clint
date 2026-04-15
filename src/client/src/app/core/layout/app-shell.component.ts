@@ -345,7 +345,7 @@ export class AppShellComponent implements OnInit {
     if (
       route === '' ||
       route.startsWith('bullseye') ||
-      route === 'positioning' ||
+      route.startsWith('positioning') ||
       route === 'events' ||
       route === 'catalysts' ||
       route.startsWith('manage/')
@@ -394,7 +394,7 @@ export class AppShellComponent implements OnInit {
           {
             label: 'Positioning',
             value: 'positioning',
-            active: route === 'positioning',
+            active: route.startsWith('positioning'),
             icon: NAV_ICONS['positioning'],
           },
         ];
@@ -556,7 +556,7 @@ export class AppShellComponent implements OnInit {
             this.navigateToSpaceRoute('bullseye/by-therapy-area');
             break;
           case 'positioning':
-            this.navigateToSpaceRoute('positioning');
+            this.navigateToSpaceRoute('positioning/by-moa');
             break;
         }
         break;

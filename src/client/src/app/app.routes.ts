@@ -32,7 +32,7 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./features/tenant-settings/tenant-settings.component').then(
-            (m) => m.TenantSettingsComponent,
+            (m) => m.TenantSettingsComponent
           ),
       },
       {
@@ -42,14 +42,14 @@ export const routes: Routes = [
             path: '',
             loadComponent: () =>
               import('./features/landscape/landscape-shell.component').then(
-                (m) => m.LandscapeShellComponent,
+                (m) => m.LandscapeShellComponent
               ),
             children: [
               {
                 path: '',
                 loadComponent: () =>
                   import('./features/landscape/timeline-view.component').then(
-                    (m) => m.TimelineViewComponent,
+                    (m) => m.TimelineViewComponent
                   ),
               },
               {
@@ -64,66 +64,100 @@ export const routes: Routes = [
                     path: 'by-therapy-area',
                     loadComponent: () =>
                       import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent,
+                        (m) => m.LandscapeIndexComponent
                       ),
                   },
                   {
                     path: 'by-therapy-area/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent,
+                        (m) => m.LandscapeComponent
                       ),
                   },
                   {
                     path: 'by-company',
                     loadComponent: () =>
                       import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent,
+                        (m) => m.LandscapeIndexComponent
                       ),
                   },
                   {
                     path: 'by-company/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent,
+                        (m) => m.LandscapeComponent
                       ),
                   },
                   {
                     path: 'by-moa',
                     loadComponent: () =>
                       import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent,
+                        (m) => m.LandscapeIndexComponent
                       ),
                   },
                   {
                     path: 'by-moa/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent,
+                        (m) => m.LandscapeComponent
                       ),
                   },
                   {
                     path: 'by-roa',
                     loadComponent: () =>
                       import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent,
+                        (m) => m.LandscapeIndexComponent
                       ),
                   },
                   {
                     path: 'by-roa/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent,
+                        (m) => m.LandscapeComponent
                       ),
                   },
                 ],
               },
               {
                 path: 'positioning',
-                loadComponent: () =>
-                  import('./features/landscape/positioning-view.component').then(
-                    (m) => m.PositioningViewComponent,
-                  ),
+                children: [
+                  { path: '', redirectTo: 'by-moa', pathMatch: 'full' as const },
+                  {
+                    path: 'by-moa',
+                    loadComponent: () =>
+                      import('./features/landscape/positioning-view.component').then(
+                        (m) => m.PositioningViewComponent
+                      ),
+                  },
+                  {
+                    path: 'by-therapy-area',
+                    loadComponent: () =>
+                      import('./features/landscape/positioning-view.component').then(
+                        (m) => m.PositioningViewComponent
+                      ),
+                  },
+                  {
+                    path: 'by-moa-therapy-area',
+                    loadComponent: () =>
+                      import('./features/landscape/positioning-view.component').then(
+                        (m) => m.PositioningViewComponent
+                      ),
+                  },
+                  {
+                    path: 'by-company',
+                    loadComponent: () =>
+                      import('./features/landscape/positioning-view.component').then(
+                        (m) => m.PositioningViewComponent
+                      ),
+                  },
+                  {
+                    path: 'by-roa',
+                    loadComponent: () =>
+                      import('./features/landscape/positioning-view.component').then(
+                        (m) => m.PositioningViewComponent
+                      ),
+                  },
+                ],
               },
             ],
           },
@@ -174,28 +208,28 @@ export const routes: Routes = [
             path: 'manage/companies',
             loadComponent: () =>
               import('./features/manage/companies/company-list.component').then(
-                (m) => m.CompanyListComponent,
+                (m) => m.CompanyListComponent
               ),
           },
           {
             path: 'manage/products',
             loadComponent: () =>
               import('./features/manage/products/product-list.component').then(
-                (m) => m.ProductListComponent,
+                (m) => m.ProductListComponent
               ),
           },
           {
             path: 'manage/trials',
             loadComponent: () =>
               import('./features/manage/trials/trial-list.component').then(
-                (m) => m.TrialListComponent,
+                (m) => m.TrialListComponent
               ),
           },
           {
             path: 'manage/trials/:id',
             loadComponent: () =>
               import('./features/manage/trials/trial-detail.component').then(
-                (m) => m.TrialDetailComponent,
+                (m) => m.TrialDetailComponent
               ),
           },
           // Settings routes (moved from manage)
@@ -203,28 +237,28 @@ export const routes: Routes = [
             path: 'settings/marker-types',
             loadComponent: () =>
               import('./features/manage/marker-types/marker-type-list.component').then(
-                (m) => m.MarkerTypeListComponent,
+                (m) => m.MarkerTypeListComponent
               ),
           },
           {
             path: 'settings/taxonomies',
             loadComponent: () =>
               import('./features/manage/taxonomies/taxonomies-page.component').then(
-                (m) => m.TaxonomiesPageComponent,
+                (m) => m.TaxonomiesPageComponent
               ),
           },
           {
             path: 'settings/general',
             loadComponent: () =>
               import('./features/space-settings/space-general.component').then(
-                (m) => m.SpaceGeneralComponent,
+                (m) => m.SpaceGeneralComponent
               ),
           },
           {
             path: 'settings/members',
             loadComponent: () =>
               import('./features/space-settings/space-members.component').then(
-                (m) => m.SpaceMembersComponent,
+                (m) => m.SpaceMembersComponent
               ),
           },
           // Redirects: old manage taxonomy/marker paths -> new settings paths
@@ -247,15 +281,13 @@ export const routes: Routes = [
           {
             path: 'events',
             loadComponent: () =>
-              import('./features/events/events-page.component').then(
-                (m) => m.EventsPageComponent,
-              ),
+              import('./features/events/events-page.component').then((m) => m.EventsPageComponent),
           },
           {
             path: 'catalysts',
             loadComponent: () =>
               import('./features/catalysts/catalysts-page.component').then(
-                (m) => m.CatalystsPageComponent,
+                (m) => m.CatalystsPageComponent
               ),
           },
         ],
