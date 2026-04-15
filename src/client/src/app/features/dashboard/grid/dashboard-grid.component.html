@@ -15,6 +15,16 @@
       >
         <!-- Header row -->
         <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
+          <!-- Column settings toggle -->
+          <button
+            type="button"
+            class="flex-none w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 border-r border-slate-700 transition-colors"
+            aria-label="Column settings"
+            [attr.aria-expanded]="columnSettingsOpen"
+            (click)="columnSettingsPanel.toggle($event)"
+          >
+            <i class="pi pi-cog text-xs"></i>
+          </button>
           <div
             class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
             [class.w-36]="!isScrolled()"
@@ -49,8 +59,41 @@
             Trial
           </div>
         </div>
+        <p-popover #columnSettingsPanel ariaLabel="Column visibility settings" (onShow)="columnSettingsOpen = true" (onHide)="columnSettingsOpen = false">
+          <div class="flex flex-col gap-2 p-1">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Columns</span>
+            <div class="flex items-center gap-2">
+              <p-checkbox
+                [(ngModel)]="showMoaColumn"
+                [binary]="true"
+                inputId="col-moa"
+                size="small"
+              />
+              <label for="col-moa" class="text-sm text-slate-700 cursor-pointer">MOA</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <p-checkbox
+                [(ngModel)]="showRoaColumn"
+                [binary]="true"
+                inputId="col-roa"
+                size="small"
+              />
+              <label for="col-roa" class="text-sm text-slate-700 cursor-pointer">ROA</label>
+            </div>
+            <div class="flex items-center gap-2">
+              <p-checkbox
+                [(ngModel)]="showNotesColumn"
+                [binary]="true"
+                inputId="col-notes"
+                size="small"
+              />
+              <label for="col-notes" class="text-sm text-slate-700 cursor-pointer">Notes</label>
+            </div>
+          </div>
+        </p-popover>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-100">
+            <div class="w-8 flex-none">&nbsp;</div>
             <div
               class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"
@@ -92,6 +135,7 @@
             [class.border-l-teal-500]="row.isFirstInCompany"
             [style.height.px]="36"
           >
+            <div class="w-8 flex-none" aria-hidden="true"></div>
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             <div
               class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
@@ -292,7 +336,7 @@
       </div>
 
       <!-- Notes column (hidden below lg) -->
-      @if (flattenedTrials().length > 0) {
+      @if (showNotesColumn() && flattenedTrials().length > 0) {
         <div class="hidden lg:block flex-none w-48 bg-white border-l border-slate-200">
           <div
             class="border-b border-slate-300 bg-slate-800 px-3 h-8 flex items-center text-[10px] font-bold uppercase tracking-widest text-slate-400"
