@@ -55,9 +55,9 @@
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-32' + (state.filters().companyIds.length ? ' has-value' : '')"
+          [styleClass]="'w-36' + (state.filters().companyIds.length ? ' has-value' : '')"
           size="small"
-          [maxSelectedLabels]="1"
+          [maxSelectedLabels]="0"
           [selectedItemsLabel]="'Company (' + state.filters().companyIds.length + ')'"
         />
       }
@@ -75,7 +75,7 @@
         appendTo="body"
         [styleClass]="'w-32' + (state.filters().productIds.length ? ' has-value' : '')"
         size="small"
-        [maxSelectedLabels]="1"
+        [maxSelectedLabels]="0"
         [selectedItemsLabel]="'Product (' + state.filters().productIds.length + ')'"
       />
 
@@ -91,9 +91,9 @@
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-36' + (state.filters().therapeuticAreaIds.length ? ' has-value' : '')"
+          [styleClass]="'w-44' + (state.filters().therapeuticAreaIds.length ? ' has-value' : '')"
           size="small"
-          [maxSelectedLabels]="1"
+          [maxSelectedLabels]="0"
           [selectedItemsLabel]="'Therapy Area (' + state.filters().therapeuticAreaIds.length + ')'"
         />
       }
@@ -112,7 +112,7 @@
           appendTo="body"
           [styleClass]="'w-32' + (state.filters().mechanismOfActionIds.length ? ' has-value' : '')"
           size="small"
-          [maxSelectedLabels]="1"
+          [maxSelectedLabels]="0"
           [selectedItemsLabel]="'MOA (' + state.filters().mechanismOfActionIds.length + ')'"
         />
       }
@@ -129,9 +129,11 @@
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-32' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')"
+          [styleClass]="
+            'w-32' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')
+          "
           size="small"
-          [maxSelectedLabels]="1"
+          [maxSelectedLabels]="0"
           [selectedItemsLabel]="'ROA (' + state.filters().routeOfAdministrationIds.length + ')'"
         />
       }
@@ -158,7 +160,7 @@
         appendTo="body"
         [styleClass]="'w-28' + (state.filters().recruitmentStatuses.length ? ' has-value' : '')"
         size="small"
-        [maxSelectedLabels]="1"
+        [maxSelectedLabels]="0"
         [selectedItemsLabel]="'Status (' + state.filters().recruitmentStatuses.length + ')'"
       />
 
@@ -174,7 +176,7 @@
         appendTo="body"
         [styleClass]="'w-28' + (state.filters().studyTypes.length ? ' has-value' : '')"
         size="small"
-        [maxSelectedLabels]="1"
+        [maxSelectedLabels]="0"
         [selectedItemsLabel]="'Study type (' + state.filters().studyTypes.length + ')'"
       />
 
@@ -191,7 +193,11 @@
   </div>
 
   @if (activeChips().length > 0) {
-    <div class="flex flex-wrap items-center gap-1.5 px-3 pb-1.5" role="list" aria-label="Active filters">
+    <div
+      class="flex flex-wrap items-center gap-1.5 px-3 pb-1.5"
+      role="list"
+      aria-label="Active filters"
+    >
       @for (chip of activeChips(); track chip.field + chip.id) {
         <span
           role="listitem"

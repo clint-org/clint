@@ -75,8 +75,8 @@
       [showClear]="true"
       [style]="{ width: '100%' }"
       [styleClass]="selectedMoaIds().length ? 'has-value' : ''"
-      [maxSelectedLabels]="1"
-      selectedItemsLabel="MOAs"
+      [maxSelectedLabels]="0"
+      [selectedItemsLabel]="'MOA (' + selectedMoaIds().length + ')'"
     />
   </app-form-field>
 
@@ -94,8 +94,8 @@
       [showClear]="true"
       [style]="{ width: '100%' }"
       [styleClass]="selectedRoaIds().length ? 'has-value' : ''"
-      [maxSelectedLabels]="1"
-      selectedItemsLabel="ROAs"
+      [maxSelectedLabels]="0"
+      [selectedItemsLabel]="'ROA (' + selectedRoaIds().length + ')'"
     />
   </app-form-field>
 

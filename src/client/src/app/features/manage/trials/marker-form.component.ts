@@ -210,10 +210,10 @@ import { TrialService } from '../../../core/services/trial.service';
             placeholder="Select trials"
             [style]="{ width: '100%' }"
             class="mt-1"
-            (ngModelChange)="selectedTrialIds = ($event ?? [])"
+            (ngModelChange)="selectedTrialIds = $event ?? []"
             aria-required="true"
             [styleClass]="selectedTrialIds.length ? 'has-value' : ''"
-            [maxSelectedLabels]="1"
+            [maxSelectedLabels]="0"
             [selectedItemsLabel]="'Trial (' + selectedTrialIds.length + ')'"
           />
         </div>
@@ -358,7 +358,7 @@ export class MarkerFormComponent implements OnInit {
 
       // Pre-populate selected trials from existing assignments
       if (existing.marker_assignments) {
-        this.selectedTrialIds = existing.marker_assignments.map(a => a.trial_id);
+        this.selectedTrialIds = existing.marker_assignments.map((a) => a.trial_id);
       }
     }
 
@@ -371,10 +371,7 @@ export class MarkerFormComponent implements OnInit {
 
   private async loadData(): Promise<void> {
     const spaceId = this.getSpaceId();
-    await Promise.all([
-      this.loadCategories(spaceId),
-      this.loadTrials(spaceId),
-    ]);
+    await Promise.all([this.loadCategories(spaceId), this.loadTrials(spaceId)]);
 
     // If editing, resolve the category from the existing marker type
     const existing = this.marker();
@@ -434,7 +431,7 @@ export class MarkerFormComponent implements OnInit {
   }
 
   onMarkerTypeChange(typeId: string): void {
-    const selected = this.markerTypes().find(t => t.id === typeId);
+    const selected = this.markerTypes().find((t) => t.id === typeId);
     this.showRegulatoryPathway.set(selected?.name === 'FDA Submission');
     if (!this.showRegulatoryPathway()) {
       this.regulatoryPathway = '';
