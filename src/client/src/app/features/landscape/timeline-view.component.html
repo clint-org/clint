@@ -56,3 +56,10 @@
   [open]="exportDialogOpen()"
   (closed)="exportDialogOpen.set(false)"
 />
+
+<app-marker-detail-drawer
+  [detail]="drawerDetail()"
+  [open]="drawerOpen()"
+  (drawerClose)="closeDrawer()"
+  (markerClick)="onDrawerMarkerClick($event)"
+/>

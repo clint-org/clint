@@ -64,10 +64,14 @@
               &nbsp;
             </div>
             @if (showMoaColumn()) {
-              <div class="w-28 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+              <div class="w-28 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+                &nbsp;
+              </div>
             }
             @if (showRoaColumn()) {
-              <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">&nbsp;</div>
+              <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+                &nbsp;
+              </div>
             }
             <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
               &nbsp;
@@ -146,10 +150,15 @@
                   @if (row.productMoas.length > 0) {
                     <div class="flex flex-col gap-0.5 min-w-0">
                       @for (moa of row.productMoas.slice(0, 2); track moa.id) {
-                        <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate">{{ moa.name }}</span>
+                        <span
+                          class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
+                          >{{ moa.name }}</span
+                        >
                       }
                       @if (row.productMoas.length > 2) {
-                        <span class="text-[10px] text-slate-500">+{{ row.productMoas.length - 2 }}</span>
+                        <span class="text-[10px] text-slate-500"
+                          >+{{ row.productMoas.length - 2 }}</span
+                        >
                       }
                     </div>
                   } @else {
@@ -168,10 +177,15 @@
                   @if (row.productRoas.length > 0) {
                     <div class="flex flex-col gap-0.5 min-w-0">
                       @for (roa of row.productRoas.slice(0, 2); track roa.id) {
-                        <span class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate">{{ roa.abbreviation ?? roa.name }}</span>
+                        <span
+                          class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
+                          >{{ roa.abbreviation ?? roa.name }}</span
+                        >
                       }
                       @if (row.productRoas.length > 2) {
-                        <span class="text-[10px] text-slate-500">+{{ row.productRoas.length - 2 }}</span>
+                        <span class="text-[10px] text-slate-500"
+                          >+{{ row.productRoas.length - 2 }}</span
+                        >
                       }
                     </div>
                   } @else {
@@ -192,7 +206,9 @@
             >
               {{ row.trial.name }}
               @if (row.trial.identifier) {
-                <span class="text-[10px] text-slate-400 font-mono ml-1">{{ row.trial.identifier }}</span>
+                <span class="text-[10px] text-slate-400 font-mono ml-1">{{
+                  row.trial.identifier
+                }}</span>
               }
             </div>
           </div>
@@ -261,6 +277,11 @@
                     [startYear]="startYear()"
                     [endYear]="endYear()"
                     [totalWidth]="totalWidth()"
+                    [trialName]="row.trial.name"
+                    [trialPhase]="row.trial.phase_type ?? ''"
+                    [recruitmentStatus]="row.trial.recruitment_status ?? ''"
+                    [companyName]="row.companyName"
+                    [productName]="row.productName"
                     (markerClick)="onMarkerClick($event)"
                   />
                 }
@@ -279,9 +300,7 @@
             Notes
           </div>
           @if (hasSubColumns()) {
-            <div
-              class="border-b border-slate-200 bg-slate-100 px-3 py-0.5 text-xs text-slate-400"
-            >
+            <div class="border-b border-slate-200 bg-slate-100 px-3 py-0.5 text-xs text-slate-400">
               &nbsp;
             </div>
           }

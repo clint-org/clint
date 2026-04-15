@@ -16,6 +16,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
       <div
         class="fixed inset-0 z-40 bg-black/20"
         (click)="drawerClose.emit()"
+        (keydown.escape)="drawerClose.emit()"
         aria-hidden="true"
       ></div>
 
@@ -26,12 +27,16 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
         aria-modal="true"
         aria-label="Marker detail"
         (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
       >
         <!-- Panel header -->
-        <div class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+        <div
+          class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4"
+        >
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-semibold uppercase tracking-widest text-teal-600">
-              {{ detail()!.catalyst.category_name }} &middot; {{ detail()!.catalyst.marker_type_name }}
+              {{ detail()!.catalyst.category_name }} &middot;
+              {{ detail()!.catalyst.marker_type_name }}
             </p>
           </div>
           <button
@@ -56,7 +61,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <div class="mb-4 flex items-center gap-4 text-xs text-slate-500">
               <div>
                 <span class="font-semibold">Date</span><br />
-                {{ d.catalyst.event_date | date:'mediumDate' }}
+                {{ d.catalyst.event_date | date: 'mediumDate' }}
               </div>
               <div>
                 <span class="font-semibold">Status</span><br />
@@ -83,7 +88,9 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <!-- Source -->
             @if (d.catalyst.source_url) {
               <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <p
+                  class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                >
                   Source
                 </p>
                 <a
@@ -101,7 +108,9 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <!-- Trial -->
             @if (d.catalyst.trial_name) {
               <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <p
+                  class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                >
                   Trial
                 </p>
                 <p class="text-xs font-medium text-slate-900">
@@ -119,7 +128,9 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <!-- Program -->
             @if (d.catalyst.company_name) {
               <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <p
+                  class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                >
                   Program
                 </p>
                 <p class="text-xs text-slate-900">
@@ -134,7 +145,9 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <!-- Upcoming for this trial -->
             @if (d.upcoming_markers.length > 0) {
               <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <p
+                  class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                >
                   Upcoming for this trial
                 </p>
                 <ul class="space-y-1">
@@ -146,7 +159,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
                       tabindex="0"
                       role="button"
                     >
-                      {{ um.event_date | date:'MMM yyyy' }} &middot;
+                      {{ um.event_date | date: 'MMM yyyy' }} &middot;
                       {{ um.marker_type_name }}
                       @if (um.is_projected) {
                         <span class="text-amber-500">(projected)</span>
@@ -160,13 +173,15 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             <!-- Related events -->
             @if (d.related_events.length > 0) {
               <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                <p
+                  class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                >
                   Related events
                 </p>
                 <ul class="space-y-1">
                   @for (re of d.related_events; track re.event_id) {
                     <li class="text-[11px] text-slate-500">
-                      {{ re.event_date | date:'mediumDate' }} &mdash; {{ re.title }}
+                      {{ re.event_date | date: 'mediumDate' }} &mdash; {{ re.title }}
                       <span class="text-slate-300">({{ re.category_name }})</span>
                     </li>
                   }

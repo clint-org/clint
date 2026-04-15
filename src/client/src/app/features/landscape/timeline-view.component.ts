@@ -4,14 +4,17 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { CatalystDetail } from '../../core/models/catalyst.model';
 import { DashboardFilters } from '../../core/models/dashboard.model';
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
+import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
+import { MarkerDetailDrawerComponent } from './marker-detail-drawer.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -20,6 +23,7 @@ import { LandscapeStateService } from './landscape-state.service';
     DashboardGridComponent,
     ExportDialogComponent,
     LegendComponent,
+    MarkerDetailDrawerComponent,
     ButtonModule,
     MessageModule,
     ProgressSpinner,
@@ -28,6 +32,7 @@ import { LandscapeStateService } from './landscape-state.service';
 })
 export class TimelineViewComponent {
   private readonly dashboardService = inject(DashboardService);
+  private readonly catalystService = inject(CatalystService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly state = inject(LandscapeStateService);
@@ -37,6 +42,9 @@ export class TimelineViewComponent {
   readonly startYear = signal(2016);
   readonly endYear = signal(2026);
   readonly exportDialogOpen = signal(false);
+
+  readonly drawerOpen = signal(false);
+  readonly drawerDetail = signal<CatalystDetail | null>(null);
 
   private seeded = false;
 
@@ -48,7 +56,9 @@ export class TimelineViewComponent {
       productIds: f.productIds.length ? f.productIds : null,
       therapeuticAreaIds: f.therapeuticAreaIds.length ? f.therapeuticAreaIds : null,
       mechanismOfActionIds: f.mechanismOfActionIds.length ? f.mechanismOfActionIds : null,
-      routeOfAdministrationIds: f.routeOfAdministrationIds.length ? f.routeOfAdministrationIds : null,
+      routeOfAdministrationIds: f.routeOfAdministrationIds.length
+        ? f.routeOfAdministrationIds
+        : null,
       recruitmentStatuses: f.recruitmentStatuses.length ? f.recruitmentStatuses : null,
       studyTypes: f.studyTypes.length ? f.studyTypes : null,
       phases: f.phases.length ? (f.phases as string[]) : null,
@@ -64,10 +74,7 @@ export class TimelineViewComponent {
     }),
     loader: async ({ request }) => {
       if (!request.spaceId) return { companies: [] };
-      const data = await this.dashboardService.getDashboardData(
-        request.spaceId,
-        request.filters,
-      );
+      const data = await this.dashboardService.getDashboardData(request.spaceId, request.filters);
       if (!this.seeded && data.companies.length === 0) {
         this.seeded = true;
         await this.dashboardService.seedDemoData(request.spaceId);
@@ -134,18 +141,51 @@ export class TimelineViewComponent {
   }
 
   onPhaseClick(trial: Trial): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      trial.id,
+    ]);
   }
 
-  onMarkerClick(marker: Marker): void {
-    const trialId = marker.marker_assignments?.[0]?.trial_id;
-    if (trialId) {
-      this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
+  async onMarkerClick(marker: Marker): Promise<void> {
+    this.drawerOpen.set(true);
+    try {
+      const detail = await this.catalystService.getCatalystDetail(marker.id);
+      this.drawerDetail.set(detail);
+    } catch {
+      this.drawerOpen.set(false);
     }
   }
 
+  async onDrawerMarkerClick(markerId: string): Promise<void> {
+    try {
+      const detail = await this.catalystService.getCatalystDetail(markerId);
+      this.drawerDetail.set(detail);
+    } catch {
+      // keep current detail on error
+    }
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
+    this.drawerDetail.set(null);
+  }
+
   onTrialClick(trial: Trial): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trial.id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      trial.id,
+    ]);
   }
 
   onCompanyClick(): void {

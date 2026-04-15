@@ -191,9 +191,10 @@ DashboardComponent               # Orchestrates state, filters, loading
     RowLabel                     # Left column: company/product/trial labels (sticky)
     TrialRow                     # One row per trial
       PhaseBarComponent          # SVG <g> phase bar with rounded corners + label
-      MarkerComponent            # SVG marker icon (6 shapes x 4 fills)
-        MarkerTooltipComponent   # Hover tooltip with marker details
+      MarkerComponent            # SVG marker icon (6 shapes x 4 fills), receives trial/program context
+        MarkerTooltipComponent   # Light hover tooltip: left accent bar, marker icon, trial + program context
       RowNotesComponent          # Notes display below a trial row
+  MarkerDetailDrawerComponent    # Slide-over drawer (480px) on marker click: detail, upcoming, related events
 ```
 
 ### DashboardComponent
@@ -206,7 +207,7 @@ The root dashboard component uses Angular signals extensively:
 - `computed()` -- derived lists for filter options (unique companies, etc.)
 - `effect()` -- syncs filter state to URL query params
 
-Click events on phase bars, markers, and trials emit from the grid and navigate to trial detail pages.
+Click events on phase bars and trials navigate to trial detail pages. Marker clicks open a slide-over detail drawer (`MarkerDetailDrawerComponent`) that fetches full detail via `CatalystService.getCatalystDetail()` -- showing description, source, trial context, program, upcoming markers, and related events. The drawer dismisses via X button, backdrop click, or Escape. Clicking another marker inside the drawer swaps its content in place.
 
 ### AppShellComponent (Layout)
 
