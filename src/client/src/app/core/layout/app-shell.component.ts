@@ -18,6 +18,7 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
 import { TopbarStateService } from '../services/topbar-state.service';
+import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -34,7 +35,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
     SidebarComponent,
     ContextualTopbarComponent,
     NotificationBellComponent,
+    ButtonModule,
     Dialog,
+    FormsModule,
     InputText,
     Textarea,
     MessageModule,
