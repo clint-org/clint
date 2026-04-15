@@ -1,10 +1,14 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, resource, signal } from '@angular/core';
 import {
-  ActivatedRoute,
-  NavigationEnd,
-  Router,
-  RouterOutlet,
-} from '@angular/router';
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  resource,
+  signal,
+} from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
 import { SelectButton } from 'primeng/selectbutton';
@@ -26,18 +30,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [
-    RouterOutlet,
-    FormsModule,
-    SelectButton,
-    Select,
-    LandscapeFilterBarComponent,
-  ],
+  imports: [RouterOutlet, FormsModule, SelectButton, Select, LandscapeFilterBarComponent],
   providers: [LandscapeStateService],
   template: `
     <div class="flex flex-col h-full">
       <!-- View-specific controls (only shown when needed) -->
-      @if (viewMode() === 'bullseye' && entityId() || viewMode() === 'positioning') {
+      @if ((viewMode() === 'bullseye' && entityId()) || viewMode() === 'positioning') {
         <div class="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 bg-white">
           @if (viewMode() === 'bullseye' && entityId()) {
             <p-select
@@ -100,7 +98,13 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly exportEffect = effect(() => {
     if (this.viewMode() === 'timeline') {
       this.topbarState.actions.set([
-        { label: '', icon: 'fa-solid fa-file-powerpoint', text: true, severity: 'secondary', callback: () => this.onExportClick() },
+        {
+          label: '',
+          icon: 'fa-solid fa-file-powerpoint',
+          text: true,
+          severity: 'secondary',
+          callback: () => this.onExportClick(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -133,21 +137,18 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     (this.entityIndex.value() ?? []).map((e: LandscapeIndexEntry) => ({
       label: e.entity.name,
       value: e.entity.id,
-    })),
+    }))
   );
 
   ngOnInit(): void {
     this.extractRouteParams();
     this.syncStateFromUrl();
 
-    this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(() => {
-        this.extractRouteParams();
-        this.syncStateFromUrl();
-      });
+    // Restore persisted landscape state from sessionStorage.
+    this.state.init(this.spaceId());
 
-    // Seed filters from query params (deep links from bullseye "Open in Timeline")
+    // Deep-link query params override restored session state
+    // (e.g. bullseye "Open in Timeline" links).
     const qp = this.route.snapshot.queryParamMap;
     const productIds = this.parseIdList(qp.get('productIds'));
     const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
@@ -158,6 +159,11 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
       }));
     }
+
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
+      this.extractRouteParams();
+      this.syncStateFromUrl();
+    });
   }
 
   ngOnDestroy(): void {
@@ -173,11 +179,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         entityId,
       ]);
     } else {
-      this.router.navigate([
-        ...this.spaceBase(),
-        'bullseye',
-        dimensionToSegment(this.dimension()),
-      ]);
+      this.router.navigate([...this.spaceBase(), 'bullseye', dimensionToSegment(this.dimension())]);
     }
   }
 
@@ -213,7 +215,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const allSegments = [...parentSegments, ...segments];
 
     const dimSegment = allSegments.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s),
+      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s)
     );
 
     if (allSegments.includes('positioning')) {
@@ -234,7 +236,10 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private parseIdList(value: string | null): string[] | null {
     if (!value) return null;
-    const ids = value.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+    const ids = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
     return ids.length > 0 ? ids : null;
   }
 }
