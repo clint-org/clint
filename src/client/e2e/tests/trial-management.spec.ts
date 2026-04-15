@@ -105,7 +105,7 @@ test.describe('Trial Management CRUD', () => {
     await expect(page.locator('#note-content')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#note-content', 'This is a test note for the trial.');
-    await page.getByRole('button', { name: 'Add Note' }).click();
+    await page.locator('form').getByRole('button', { name: 'Add Note' }).click();
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });

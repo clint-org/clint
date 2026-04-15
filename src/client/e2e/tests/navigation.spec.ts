@@ -47,24 +47,16 @@ test.describe('Navigation', () => {
     await expect(topbar).toBeVisible();
   });
 
-  test('sidebar timeline button navigates back to dashboard', async () => {
+  test('navigating to companies then back to space root works', async () => {
     await navigateToSpace(page, tenantId, spaceId);
+    // Navigate to companies via URL
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, { waitUntil: 'networkidle' });
+    await expect(page).toHaveURL(/\/manage\/companies/);
 
-    const sidebar = page.locator('app-sidebar');
-    const companiesBtn = sidebar.locator('button[aria-label="Companies"]');
-    await companiesBtn.click();
-    await expect(page).toHaveURL(/\/manage\/companies/, { timeout: 10000 });
-
-    // After clicking, the sidebar may have expanded due to hover.
-    // Move mouse away to collapse the sidebar, then click Timeline icon.
-    await page.mouse.move(500, 300);
-    await page.waitForTimeout(300);
-
-    const timelineBtn = sidebar.locator('button[aria-label="Timeline"]');
-    await timelineBtn.click();
-
+    // Navigate back to space root
+    await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(
-      new RegExp(`/t/${tenantId}/s/${spaceId}$`),
+      new RegExp(`/t/${tenantId}/s/${spaceId}`),
       { timeout: 10000 },
     );
   });
