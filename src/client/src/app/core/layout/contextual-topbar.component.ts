@@ -26,7 +26,11 @@ export interface TopbarTab {
               aria-haspopup="listbox"
               aria-label="Switch organization"
             >
-              <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
+              @if (tenantLogoUrl()) {
+                <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
+              } @else {
+                <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
+              }
               <span class="org-name">{{ tenantName() }}</span>
               <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
             </button>
@@ -43,11 +47,35 @@ export interface TopbarTab {
                     {{ t.name }}
                   </button>
                 }
+                <div class="dropdown-footer">
+                  <button type="button" class="dropdown-item dropdown-item--footer" (click)="onOrgSettingsClick()">
+                    <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
+                  </button>
+                </div>
               </div>
             }
           } @else {
-            <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
-            <span class="org-name">{{ tenantName() }}</span>
+            <div class="org-switcher">
+              <button type="button" class="org-btn" (click)="orgDropdownOpen.set(!orgDropdownOpen())"
+                [attr.aria-expanded]="orgDropdownOpen()">
+                @if (tenantLogoUrl()) {
+                  <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
+                } @else {
+                  <span class="org-badge">{{ orgInitial() }}</span>
+                }
+                <span class="org-name">{{ tenantName() }}</span>
+                <svg width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true" class="chevron">
+                  <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              @if (orgDropdownOpen()) {
+                <div class="dropdown" role="listbox">
+                  <button type="button" class="dropdown-item dropdown-item--footer" (click)="onOrgSettingsClick()">
+                    <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
+                  </button>
+                </div>
+              }
+            </div>
           }
         </div>
 
@@ -91,6 +119,14 @@ export interface TopbarTab {
                   {{ s.name }}
                 </button>
               }
+              <div class="dropdown-footer">
+                <button type="button" class="dropdown-item dropdown-item--footer" (click)="onSpaceSettingsClick()">
+                  <i class="fa-solid fa-gear text-[10px]"></i> Space settings
+                </button>
+                <button type="button" class="dropdown-item dropdown-item--footer" (click)="onNewSpaceClick()">
+                  <i class="fa-solid fa-plus text-[10px]"></i> New space
+                </button>
+              </div>
             </div>
           }
         </div>
@@ -435,11 +471,69 @@ export interface TopbarTab {
       font-size: 11px;
       color: #94a3b8;
     }
+
+    /* ---- Dropdown footer ---- */
+
+    .dropdown-footer {
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .dropdown-item--footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #64748b;
+      font-size: 11px;
+    }
+    .dropdown-item--footer:hover {
+      color: #0f172a;
+    }
+
+    .org-badge-img {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    /* Single-tenant switcher */
+
+    .org-switcher {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .org-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      padding: 2px 4px 2px 0;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .org-btn:hover {
+      background: #f8fafc;
+    }
+
+    .org-btn:focus-visible {
+      outline: 2px solid #0d9488;
+      outline-offset: 2px;
+    }
+
+    .chevron {
+      color: #94a3b8;
+    }
   `],
 })
 export class ContextualTopbarComponent {
   // ---- Org/Space inputs ----
   readonly tenantName = input<string>('');
+  readonly tenantLogoUrl = input<string | null>(null);
   readonly tenants = input<{ id: string; name: string }[]>([]);
   readonly currentTenantId = input<string>('');
   readonly spaceName = input<string>('');
@@ -470,6 +564,9 @@ export class ContextualTopbarComponent {
   readonly backClick = output<void>();
   readonly tenantChange = output<string>();
   readonly spaceChange = output<string>();
+  readonly orgSettingsClick = output<void>();
+  readonly spaceSettingsClick = output<void>();
+  readonly newSpaceClick = output<void>();
 
   // ---- Internal state ----
   readonly orgDropdownOpen = signal(false);
@@ -508,5 +605,20 @@ export class ContextualTopbarComponent {
 
   onBackClick(): void {
     this.backClick.emit();
+  }
+
+  onOrgSettingsClick(): void {
+    this.orgDropdownOpen.set(false);
+    this.orgSettingsClick.emit();
+  }
+
+  onSpaceSettingsClick(): void {
+    this.spaceDropdownOpen.set(false);
+    this.spaceSettingsClick.emit();
+  }
+
+  onNewSpaceClick(): void {
+    this.spaceDropdownOpen.set(false);
+    this.newSpaceClick.emit();
   }
 }

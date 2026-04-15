@@ -115,6 +115,42 @@ export class TenantService {
     return this.getTenant(invite.tenant_id);
   }
 
+  async updateMemberRole(tenantId: string, userId: string, role: 'owner' | 'member'): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('tenant_members')
+      .update({ role })
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId);
+    if (error) throw error;
+  }
+
+  async uploadLogo(tenantId: string, file: File): Promise<string> {
+    const ext = file.name.split('.').pop() ?? 'png';
+    const path = `${tenantId}/logo.${ext}`;
+
+    const { error: uploadError } = await this.supabase.client.storage
+      .from('tenant-logos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) throw uploadError;
+
+    const { data } = this.supabase.client.storage
+      .from('tenant-logos')
+      .getPublicUrl(path);
+
+    return data.publicUrl;
+  }
+
+  async deleteLogo(tenantId: string): Promise<void> {
+    const { data: files } = await this.supabase.client.storage
+      .from('tenant-logos')
+      .list(tenantId);
+
+    if (files && files.length > 0) {
+      const paths = files.map((f) => `${tenantId}/${f.name}`);
+      await this.supabase.client.storage.from('tenant-logos').remove(paths);
+    }
+  }
+
   private generateCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';

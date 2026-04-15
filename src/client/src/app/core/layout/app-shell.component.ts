@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
 import { SupabaseService } from '../services/supabase.service';
 import { SpaceService } from '../services/space.service';
@@ -17,6 +18,11 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
 import { TopbarStateService } from '../services/topbar-state.service';
+import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { MessageModule } from 'primeng/message';
 
 type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
 type PageType = 'landscape' | 'list' | 'detail' | 'blank';
@@ -29,6 +35,13 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
     SidebarComponent,
     ContextualTopbarComponent,
     NotificationBellComponent,
+    ButtonModule,
+    Dialog,
+    FormsModule,
+    InputText,
+    Textarea,
+    MessageModule,
+    FormsModule,
   ],
   template: `
     <div class="shell">
@@ -67,10 +80,14 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [entityContext]="topbarState.entityContext()"
           [entityTitle]="topbarState.entityTitle()"
           [actionButtons]="topbarState.actions()"
+          [tenantLogoUrl]="currentTenantLogoUrl()"
           (tabClick)="onLandscapeTabClick($event)"
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
+          (orgSettingsClick)="onOrgSettingsClick()"
+          (spaceSettingsClick)="onSpaceSettingsClick()"
+          (newSpaceClick)="onNewSpaceClick()"
         >
           <div topbar-actions class="flex items-center gap-3">
             @if (spaceId()) {
@@ -104,6 +121,36 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           </button>
         </div>
       }
+
+      <!-- Create space dialog -->
+      <p-dialog
+        header="Create space"
+        [(visible)]="createSpaceDialogOpen"
+        [modal]="true"
+        [style]="{ width: '32rem' }"
+        (onHide)="resetCreateSpaceForm()"
+      >
+        <form (ngSubmit)="createSpace()" class="space-y-4">
+          <p class="text-xs text-slate-500">
+            A space is a workspace for organizing and visualizing a set of clinical trials.
+          </p>
+          <div>
+            <label for="new-space-name" class="mb-1 block text-sm font-medium text-slate-700">Name</label>
+            <input pInputText id="new-space-name" class="w-full" [(ngModel)]="newSpaceName" name="spaceName" placeholder="e.g. SGLT2 Pipeline" required />
+          </div>
+          <div>
+            <label for="new-space-desc" class="mb-1 block text-sm font-medium text-slate-700">Description</label>
+            <textarea pTextarea id="new-space-desc" class="w-full" [(ngModel)]="newSpaceDesc" name="spaceDesc" rows="2" placeholder="Optional description"></textarea>
+          </div>
+          @if (createSpaceError()) {
+            <p-message severity="error" [closable]="false">{{ createSpaceError() }}</p-message>
+          }
+        </form>
+        <ng-template #footer>
+          <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="createSpaceDialogOpen.set(false)" />
+          <p-button label="Create space" (onClick)="createSpace()" [loading]="creatingSpace()" />
+        </ng-template>
+      </p-dialog>
     </div>
   `,
   styles: [
@@ -211,6 +258,13 @@ export class AppShellComponent implements OnInit {
   readonly tenants = signal<Tenant[]>([]);
   readonly accountOpen = signal(false);
 
+  // Create space dialog state
+  readonly createSpaceDialogOpen = signal(false);
+  readonly creatingSpace = signal(false);
+  readonly createSpaceError = signal<string | null>(null);
+  newSpaceName = '';
+  newSpaceDesc = '';
+
   // Sidebar state
   readonly sidebarHovering = signal(false);
   readonly sidebarPinned = signal(false);
@@ -243,6 +297,12 @@ export class AppShellComponent implements OnInit {
     const id = this.spaceId();
     const space = this.spaces().find((s) => s.id === id);
     return space?.name ?? '';
+  });
+
+  readonly currentTenantLogoUrl = computed(() => {
+    const id = this.tenantId();
+    const tenant = this.tenants().find((t) => t.id === id);
+    return tenant?.logo_url ?? null;
   });
 
   // Determine which section is active from the route
@@ -306,6 +366,8 @@ export class AppShellComponent implements OnInit {
       'settings/marker-types': 'Marker Types',
       'settings/organization': 'Organization',
       'settings/spaces': 'Spaces',
+      'settings/general': 'General',
+      'settings/members': 'Members',
     };
     return titleMap[route] ?? this.topbarState.title();
   });
@@ -390,15 +452,6 @@ export class AppShellComponent implements OnInit {
   }
 
   onNavItemClick(route: string): void {
-    // Organization and Spaces are tenant-level routes
-    if (route === 'settings/organization') {
-      this.router.navigate(['/t', this.tenantId(), 'settings']);
-      return;
-    }
-    if (route === 'settings/spaces') {
-      this.router.navigate(['/t', this.tenantId(), 'spaces']);
-      return;
-    }
     this.navigateToSpaceRoute(route);
   }
 
@@ -452,6 +505,50 @@ export class AppShellComponent implements OnInit {
   onSignOut(): void {
     this.accountOpen.set(false);
     this.supabase.signOut();
+  }
+
+  // --- Topbar dropdown actions ---
+
+  onOrgSettingsClick(): void {
+    this.router.navigate(['/t', this.tenantId(), 'settings']);
+  }
+
+  onSpaceSettingsClick(): void {
+    if (this.spaceId()) {
+      this.navigateToSpaceRoute('settings/general');
+    }
+  }
+
+  onNewSpaceClick(): void {
+    this.createSpaceDialogOpen.set(true);
+  }
+
+  // --- Create space dialog ---
+
+  resetCreateSpaceForm(): void {
+    this.newSpaceName = '';
+    this.newSpaceDesc = '';
+    this.createSpaceError.set(null);
+  }
+
+  async createSpace(): Promise<void> {
+    if (!this.newSpaceName.trim()) return;
+    this.creatingSpace.set(true);
+    this.createSpaceError.set(null);
+    try {
+      const space = await this.spaceService.createSpace(
+        this.tenantId(),
+        this.newSpaceName.trim(),
+        this.newSpaceDesc.trim() || undefined,
+      );
+      this.createSpaceDialogOpen.set(false);
+      this.resetCreateSpaceForm();
+      this.switchSpace(space.id);
+    } catch (e) {
+      this.createSpaceError.set(e instanceof Error ? e.message : 'Failed to create space');
+    } finally {
+      this.creatingSpace.set(false);
+    }
   }
 
   // --- Helpers ---

@@ -45,6 +45,36 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </p-message>
       }
 
+      <!-- Org identity -->
+      <div class="mb-8 max-w-xl">
+        <div class="flex items-start gap-4">
+          <!-- Logo upload -->
+          <div class="flex flex-col items-center gap-2">
+            @if (tenant()?.logo_url) {
+              <img [src]="tenant()!.logo_url" class="h-16 w-16 rounded-xl object-cover border border-slate-200" alt="Organization logo" />
+              <button type="button" class="text-[10px] text-slate-400 hover:text-red-500" (click)="removeLogo()">Remove</button>
+            } @else {
+              <label class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-teal-400 hover:text-teal-500 transition-colors">
+                Logo
+                <input type="file" class="hidden" accept="image/png,image/jpeg,image/svg+xml" (change)="onLogoSelect($event)" />
+              </label>
+            }
+          </div>
+          <div class="flex-1">
+            <label for="org-name" class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Organization name
+            </label>
+            <input
+              pInputText
+              id="org-name"
+              class="w-full"
+              [(ngModel)]="orgName"
+              (blur)="saveOrgName()"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Members -->
       <div class="mb-3 flex items-baseline justify-between">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -72,9 +102,14 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             <td>{{ member.display_name }}</td>
             <td class="col-identifier">{{ member.email }}</td>
             <td>
-              <app-status-tag
-                [label]="member.role"
-                [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+              <p-select
+                [options]="roleOptions"
+                [ngModel]="member.role"
+                (ngModelChange)="changeMemberRole(member, $event)"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                [style]="{ minWidth: '8rem' }"
               />
             </td>
             <td class="col-actions">
@@ -206,6 +241,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   removeError = signal<string | null>(null);
   inviteEmail = '';
   inviteRole: 'owner' | 'member' = 'member';
+  orgName = '';
 
   readonly roleOptions = [
     { label: 'Member', value: 'member' },
@@ -228,6 +264,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       },
     ]);
     await this.loadData();
+    this.orgName = this.tenant()?.name ?? '';
   }
 
   ngOnDestroy(): void {
@@ -251,6 +288,53 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/t', this.tenantId, 'spaces']);
+  }
+
+  async saveOrgName(): Promise<void> {
+    const t = this.tenant();
+    if (!t || this.orgName.trim() === t.name) return;
+    try {
+      const updated = await this.tenantService.updateTenant(this.tenantId, { name: this.orgName.trim() });
+      this.tenant.set(updated);
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to update name');
+    }
+  }
+
+  async changeMemberRole(member: TenantMember, newRole: 'owner' | 'member'): Promise<void> {
+    try {
+      await this.tenantService.updateMemberRole(this.tenantId, member.user_id, newRole);
+      await this.loadData();
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to update role');
+    }
+  }
+
+  async onLogoSelect(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      this.removeError.set('Logo must be under 2MB');
+      return;
+    }
+    try {
+      const logoUrl = await this.tenantService.uploadLogo(this.tenantId, file);
+      const updated = await this.tenantService.updateTenant(this.tenantId, { logo_url: logoUrl });
+      this.tenant.set(updated);
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to upload logo');
+    }
+  }
+
+  async removeLogo(): Promise<void> {
+    try {
+      await this.tenantService.deleteLogo(this.tenantId);
+      const updated = await this.tenantService.updateTenant(this.tenantId, { logo_url: null });
+      this.tenant.set(updated);
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to remove logo');
+    }
   }
 
   async sendInvite(): Promise<void> {

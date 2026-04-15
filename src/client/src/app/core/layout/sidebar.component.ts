@@ -55,25 +55,15 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Settings',
     bottom: true,
     items: [
+      { label: 'General', route: 'settings/general' },
+      { label: 'Members', route: 'settings/members' },
       { label: 'Taxonomies', route: 'settings/taxonomies' },
       { label: 'Marker Types', route: 'settings/marker-types' },
-      { label: 'Organization', route: 'settings/organization' },
-      { label: 'Spaces', route: 'settings/spaces' },
     ],
   },
 ];
 
-const ORG_ONLY_SECTIONS: NavSection[] = [
-  {
-    id: 'settings',
-    label: 'Settings',
-    bottom: true,
-    items: [
-      { label: 'Organization', route: 'settings/organization' },
-      { label: 'Spaces', route: 'settings/spaces' },
-    ],
-  },
-];
+const ORG_ONLY_SECTIONS: NavSection[] = [];
 
 @Component({
   selector: 'app-sidebar',
