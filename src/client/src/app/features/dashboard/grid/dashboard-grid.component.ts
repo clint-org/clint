@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   input,
@@ -9,6 +10,7 @@ import {
   AfterViewInit,
   OnDestroy,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
@@ -16,6 +18,8 @@ import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { ButtonModule } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Popover } from 'primeng/popover';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
@@ -41,14 +45,19 @@ export interface FlattenedTrial {
   standalone: true,
   imports: [
     ButtonModule,
+    Checkbox,
+    FormsModule,
     GridHeaderComponent,
-    PhaseBarComponent,
     MarkerComponent,
+    PhaseBarComponent,
+    Popover,
     RowNotesComponent,
   ],
   templateUrl: './dashboard-grid.component.html',
 })
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
+  private static readonly STORAGE_KEY = 'timeline-column-visibility';
+
   private timeline = inject(TimelineService);
   private elRef = inject(ElementRef);
   private scrollListener: (() => void) | null = null;
@@ -68,6 +77,37 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   isScrolled = signal(false);
   showMoaColumn = signal(true);
   showRoaColumn = signal(true);
+  showNotesColumn = signal(true);
+  columnSettingsOpen = signal(false);
+
+  constructor() {
+    try {
+      const stored = sessionStorage.getItem(DashboardGridComponent.STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { moa?: boolean; roa?: boolean; notes?: boolean };
+        if (typeof parsed.moa === 'boolean') this.showMoaColumn.set(parsed.moa);
+        if (typeof parsed.roa === 'boolean') this.showRoaColumn.set(parsed.roa);
+        if (typeof parsed.notes === 'boolean') this.showNotesColumn.set(parsed.notes);
+      }
+    } catch {
+      // ignore corrupt data
+    }
+
+    effect(() => {
+      try {
+        sessionStorage.setItem(
+          DashboardGridComponent.STORAGE_KEY,
+          JSON.stringify({
+            moa: this.showMoaColumn(),
+            roa: this.showRoaColumn(),
+            notes: this.showNotesColumn(),
+          }),
+        );
+      } catch {
+        // ignore full storage
+      }
+    });
+  }
 
   columns = computed<TimelineColumn[]>(() =>
     this.timeline.getColumns(this.startYear(), this.endYear(), this.zoomLevel())
@@ -157,14 +197,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   onProductClick(productId: string): void {
     this.productClick.emit(productId);
-  }
-
-  toggleMoaColumn(value: boolean): void {
-    this.showMoaColumn.set(value);
-  }
-
-  toggleRoaColumn(value: boolean): void {
-    this.showRoaColumn.set(value);
   }
 
   moaTooltipText(moas: { id: string; name: string }[]): string {
