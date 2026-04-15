@@ -28,12 +28,49 @@
         <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
       }
 
-      <!-- View-specific: spoke mode (bullseye) -->
+      <!-- View-specific: spoke mode + entity selector (bullseye) -->
       @if (viewMode() === 'bullseye') {
         <p-selectbutton
           [options]="spokeModeOptions"
           [ngModel]="state.spokeMode()"
           (ngModelChange)="state.spokeMode.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          size="small"
+        />
+        @if (entityId()) {
+          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+          <p-select
+            [options]="entityOptions()"
+            [ngModel]="entityId()"
+            (ngModelChange)="entityChange.emit($event)"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            [style]="{ minWidth: '12rem' }"
+            size="small"
+            placeholder="Select entity"
+          />
+        }
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+      }
+
+      <!-- View-specific: grouping + count unit (positioning) -->
+      @if (viewMode() === 'positioning') {
+        <p-select
+          [options]="groupingOptions"
+          [ngModel]="state.positioningGrouping()"
+          (ngModelChange)="state.positioningGrouping.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          [style]="{ minWidth: '14rem' }"
+          size="small"
+        />
+        <p-selectbutton
+          [options]="countUnitOptions"
+          [ngModel]="state.countUnit()"
+          (ngModelChange)="state.countUnit.set($event)"
           optionLabel="label"
           optionValue="value"
           [allowEmpty]="false"

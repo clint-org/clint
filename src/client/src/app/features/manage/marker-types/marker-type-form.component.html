@@ -20,7 +20,6 @@
         placeholder="Select a category"
         [style]="{ width: '100%' }"
         class="mt-1"
-        [styleClass]="categoryId ? 'has-value' : ''"
       />
     </app-form-field>
 
@@ -54,7 +53,6 @@
         optionValue="value"
         [style]="{ width: '100%' }"
         class="mt-1"
-        [styleClass]="shape ? 'has-value' : ''"
       />
     </app-form-field>
 
@@ -68,7 +66,6 @@
         optionValue="value"
         [style]="{ width: '100%' }"
         class="mt-1"
-        [styleClass]="fillStyle ? 'has-value' : ''"
       />
     </app-form-field>
 
@@ -159,7 +156,10 @@
           }
           @case ('dashed-line') {
             <line
-              x1="16" y1="4" x2="16" y2="28"
+              x1="16"
+              y1="4"
+              x2="16"
+              y2="28"
               [attr.stroke]="color"
               stroke-width="2"
               stroke-dasharray="4,3"

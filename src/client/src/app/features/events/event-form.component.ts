@@ -53,7 +53,9 @@ interface SourceRow {
       <!-- Entity level + entity picker -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="event-level" class="mb-1 block text-xs font-medium text-slate-600">Level</label>
+          <label for="event-level" class="mb-1 block text-xs font-medium text-slate-600"
+            >Level</label
+          >
           <p-select
             inputId="event-level"
             [options]="entityLevelOptions"
@@ -64,14 +66,19 @@ interface SourceRow {
             placeholder="Select level"
             [style]="{ width: '100%' }"
             (ngModelChange)="onEntityLevelChange()"
-            [styleClass]="entityLevel ? 'has-value' : ''"
           />
         </div>
 
         @if (entityLevel && entityLevel !== 'space') {
           <div>
             <label for="event-entity" class="mb-1 block text-xs font-medium text-slate-600">
-              {{ entityLevel === 'company' ? 'Company' : entityLevel === 'product' ? 'Product' : 'Trial' }}
+              {{
+                entityLevel === 'company'
+                  ? 'Company'
+                  : entityLevel === 'product'
+                    ? 'Product'
+                    : 'Trial'
+              }}
             </label>
             <p-select
               inputId="event-entity"
@@ -83,7 +90,6 @@ interface SourceRow {
               placeholder="Select..."
               [filter]="true"
               [style]="{ width: '100%' }"
-              [styleClass]="entityId ? 'has-value' : ''"
             />
           </div>
         }
@@ -92,8 +98,17 @@ interface SourceRow {
       <!-- Title + Date -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="event-title" class="mb-1 block text-xs font-medium text-slate-600">Title</label>
-          <input pInputText id="event-title" [(ngModel)]="title" name="title" class="w-full" required />
+          <label for="event-title" class="mb-1 block text-xs font-medium text-slate-600"
+            >Title</label
+          >
+          <input
+            pInputText
+            id="event-title"
+            [(ngModel)]="title"
+            name="title"
+            class="w-full"
+            required
+          />
         </div>
         <div>
           <label for="event-date" class="mb-1 block text-xs font-medium text-slate-600">Date</label>
@@ -111,7 +126,9 @@ interface SourceRow {
       <!-- Category + Priority -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="event-category" class="mb-1 block text-xs font-medium text-slate-600">Category</label>
+          <label for="event-category" class="mb-1 block text-xs font-medium text-slate-600"
+            >Category</label
+          >
           <p-select
             inputId="event-category"
             [options]="categories()"
@@ -121,11 +138,12 @@ interface SourceRow {
             optionValue="id"
             placeholder="Select category"
             [style]="{ width: '100%' }"
-            [styleClass]="categoryId ? 'has-value' : ''"
           />
         </div>
         <div>
-          <label for="event-priority" class="mb-1 block text-xs font-medium text-slate-600">Priority</label>
+          <label for="event-priority" class="mb-1 block text-xs font-medium text-slate-600"
+            >Priority</label
+          >
           <p-select
             inputId="event-priority"
             [options]="priorityOptions"
@@ -134,21 +152,35 @@ interface SourceRow {
             optionLabel="label"
             optionValue="value"
             [style]="{ width: '100%' }"
-            [styleClass]="priority ? 'has-value' : ''"
           />
         </div>
       </div>
 
       <!-- Description -->
       <div>
-        <label for="event-description" class="mb-1 block text-xs font-medium text-slate-600">Description</label>
-        <textarea pTextarea id="event-description" [(ngModel)]="description" name="description" rows="3" class="w-full"></textarea>
+        <label for="event-description" class="mb-1 block text-xs font-medium text-slate-600"
+          >Description</label
+        >
+        <textarea
+          pTextarea
+          id="event-description"
+          [(ngModel)]="description"
+          name="description"
+          rows="3"
+          class="w-full"
+        ></textarea>
       </div>
 
       <!-- Tags -->
       <div>
         <label for="event-tags" class="mb-1 block text-xs font-medium text-slate-600">Tags</label>
-        <p-chips inputId="event-tags" [(ngModel)]="tags" name="tags" placeholder="Add tags..." [style]="{ width: '100%' }" />
+        <p-chips
+          inputId="event-tags"
+          [(ngModel)]="tags"
+          name="tags"
+          placeholder="Add tags..."
+          [style]="{ width: '100%' }"
+        />
       </div>
 
       <!-- Sources -->
@@ -156,21 +188,44 @@ interface SourceRow {
         <p class="mb-1 text-xs font-medium text-slate-600" id="source-urls-label">Source URLs</p>
         @for (src of sources; track $index) {
           <div class="mb-2 flex items-center gap-2">
-            <input pInputText [(ngModel)]="src.url" [name]="'srcUrl' + $index" placeholder="URL" class="flex-1" />
-            <input pInputText [(ngModel)]="src.label" [name]="'srcLabel' + $index" placeholder="Label (optional)" class="w-40" />
-            <button type="button" class="text-slate-400 hover:text-red-500" (click)="removeSource($index)" aria-label="Remove source">
+            <input
+              pInputText
+              [(ngModel)]="src.url"
+              [name]="'srcUrl' + $index"
+              placeholder="URL"
+              class="flex-1"
+            />
+            <input
+              pInputText
+              [(ngModel)]="src.label"
+              [name]="'srcLabel' + $index"
+              placeholder="Label (optional)"
+              class="w-40"
+            />
+            <button
+              type="button"
+              class="text-slate-400 hover:text-red-500"
+              (click)="removeSource($index)"
+              aria-label="Remove source"
+            >
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         }
-        <button type="button" class="text-xs text-teal-700 hover:text-teal-800" (click)="addSource()">
+        <button
+          type="button"
+          class="text-xs text-teal-700 hover:text-teal-800"
+          (click)="addSource()"
+        >
           + Add source
         </button>
       </div>
 
       <!-- Thread -->
       <div>
-        <label for="event-thread" class="mb-1 block text-xs font-medium text-slate-600">Thread (optional)</label>
+        <label for="event-thread" class="mb-1 block text-xs font-medium text-slate-600"
+          >Thread (optional)</label
+        >
         <div class="flex items-center gap-2">
           <p-select
             inputId="event-thread"
@@ -182,19 +237,30 @@ interface SourceRow {
             placeholder="None"
             [showClear]="true"
             [style]="{ width: '100%' }"
-            [styleClass]="threadId ? 'has-value' : ''"
           />
         </div>
         @if (!threadId) {
           <div class="mt-2 flex items-center gap-2">
-            <input pInputText [(ngModel)]="newThreadTitle" name="newThreadTitle" placeholder="Or start a new thread..." class="flex-1 text-sm" />
+            <input
+              pInputText
+              [(ngModel)]="newThreadTitle"
+              name="newThreadTitle"
+              placeholder="Or start a new thread..."
+              class="flex-1 text-sm"
+            />
           </div>
         }
       </div>
 
       <!-- Actions -->
       <div class="flex justify-end gap-2 pt-2">
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancelled.emit()" type="button" />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelled.emit()"
+          type="button"
+        />
         <p-button [label]="eventId() ? 'Update' : 'Create'" type="submit" [loading]="saving()" />
       </div>
     </form>
@@ -337,9 +403,7 @@ export class EventFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (err) {
-      this.error.set(
-        err instanceof Error ? err.message : 'Could not save event.',
-      );
+      this.error.set(err instanceof Error ? err.message : 'Could not save event.');
     } finally {
       this.saving.set(false);
     }

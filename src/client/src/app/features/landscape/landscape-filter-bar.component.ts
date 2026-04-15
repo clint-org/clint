@@ -1,7 +1,8 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
+import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
@@ -9,6 +10,8 @@ import {
   BullseyeDimension,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
+  POSITIONING_GROUPING_OPTIONS,
+  COUNT_UNIT_OPTIONS,
   RingPhase,
   ViewMode,
 } from '../../core/models/landscape.model';
@@ -35,7 +38,7 @@ interface FilterChip {
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
-  imports: [FormsModule, MultiSelect, ButtonModule, SelectButton, ProgressSpinner],
+  imports: [FormsModule, MultiSelect, Select, ButtonModule, SelectButton, ProgressSpinner],
   templateUrl: './landscape-filter-bar.component.html',
 })
 export class LandscapeFilterBarComponent implements OnInit {
@@ -49,6 +52,12 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly spaceId = input.required<string>();
   readonly viewMode = input<ViewMode>('timeline');
   readonly dimension = input<BullseyeDimension>('therapeutic-area');
+  readonly entityId = input<string | null>(null);
+  readonly entityOptions = input<SelectOption[]>([]);
+  readonly entityChange = output<string | null>();
+
+  readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
+  readonly countUnitOptions = COUNT_UNIT_OPTIONS;
 
   readonly loading = signal(true);
   readonly companyOptions = signal<SelectOption[]>([]);

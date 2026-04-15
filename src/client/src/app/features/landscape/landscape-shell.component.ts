@@ -9,15 +9,10 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
-import { SelectButton } from 'primeng/selectbutton';
-import { Select } from 'primeng/select';
 import {
   BullseyeDimension,
-  COUNT_UNIT_OPTIONS,
   LandscapeIndexEntry,
-  POSITIONING_GROUPING_OPTIONS,
   dimensionToSegment,
   segmentToDimension,
   ViewMode,
@@ -30,55 +25,18 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, FormsModule, SelectButton, Select, LandscapeFilterBarComponent],
+  imports: [RouterOutlet, LandscapeFilterBarComponent],
   providers: [LandscapeStateService],
   template: `
     <div class="flex flex-col h-full">
-      <!-- View-specific controls (only shown when needed) -->
-      @if ((viewMode() === 'bullseye' && entityId()) || viewMode() === 'positioning') {
-        <div class="flex items-center gap-2 px-3 py-1.5 border-b border-slate-200 bg-white">
-          @if (viewMode() === 'bullseye' && entityId()) {
-            <p-select
-              [options]="entityOptions()"
-              [ngModel]="entityId()"
-              (ngModelChange)="onEntityChange($event)"
-              optionLabel="label"
-              optionValue="value"
-              [showClear]="true"
-              [style]="{ minWidth: '12rem' }"
-              size="small"
-              placeholder="Select entity"
-            />
-          }
-
-          @if (viewMode() === 'positioning') {
-            <p-select
-              [options]="groupingOptions"
-              [ngModel]="state.positioningGrouping()"
-              (ngModelChange)="state.positioningGrouping.set($event)"
-              optionLabel="label"
-              optionValue="value"
-              [style]="{ minWidth: '14rem' }"
-              size="small"
-            />
-            <p-selectbutton
-              [options]="countUnitOptions"
-              [ngModel]="state.countUnit()"
-              (ngModelChange)="state.countUnit.set($event)"
-              optionLabel="label"
-              optionValue="value"
-              [allowEmpty]="false"
-              size="small"
-            />
-          }
-        </div>
-      }
-
-      <!-- Filters -->
+      <!-- Filters (includes view-specific controls) -->
       <app-landscape-filter-bar
         [spaceId]="spaceId()"
         [viewMode]="viewMode()"
         [dimension]="dimension()"
+        [entityId]="entityId()"
+        [entityOptions]="entityOptions()"
+        (entityChange)="onEntityChange($event)"
       />
 
       <!-- Content -->
@@ -110,9 +68,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.topbarState.actions.set([]);
     }
   });
-
-  readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
-  readonly countUnitOptions = COUNT_UNIT_OPTIONS;
 
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('therapeutic-area');
