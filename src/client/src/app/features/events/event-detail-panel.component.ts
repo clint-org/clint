@@ -1,18 +1,20 @@
 import { Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
-import { EventDetail, FeedItem } from '../../core/models/event.model';
+import { CatalystDetail } from '../../core/models/catalyst.model';
+import { EventDetail } from '../../core/models/event.model';
+import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
 
 @Component({
   selector: 'app-event-detail-panel',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, MarkerDetailContentComponent],
   template: `
     <div class="event-detail-panel flex h-full flex-col overflow-hidden border-l border-slate-200 bg-white">
       <!-- Panel header -->
       <div class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div class="min-w-0 flex-1">
-          <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          <p class="text-[10px] font-semibold uppercase tracking-widest text-teal-600">
             {{ categoryLabel() }}
           </p>
         </div>
@@ -148,50 +150,10 @@ import { EventDetail, FeedItem } from '../../core/models/event.model';
             Created {{ d.created_at | date:'medium' }}
           </p>
 
-        } @else {
-          @if (marker(); as m) {
-            <!-- Marker detail (simpler) -->
-            <h2 class="mb-3 text-sm font-semibold leading-snug text-slate-900">{{ m.title }}</h2>
-
-            <!-- Meta row -->
-            <div class="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span>{{ m.event_date | date:'mediumDate' }}</span>
-              @if (m.entity_level === 'space') {
-                <span class="text-slate-400">Industry</span>
-              } @else if (m.company_name) {
-                <span class="text-slate-400">
-                  {{ m.company_name }}
-                  @if (m.entity_level !== 'company' && m.entity_name) {
-                    <span class="text-slate-300"> / </span>{{ m.entity_name }}
-                  }
-                </span>
-              }
-            </div>
-
-            <!-- Description -->
-            @if (m.description) {
-              <div class="mb-4">
-                <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Description</p>
-                <p class="text-xs leading-relaxed text-slate-600">{{ m.description }}</p>
-              </div>
-            }
-
-            <!-- Source URL -->
-            @if (m.source_url) {
-              <div class="mb-4">
-                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Source</p>
-                <a
-                  [href]="m.source_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
-                >
-                  {{ m.source_url }}
-                  <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                </a>
-              </div>
-            }
-          }
+        } @else if (catalystDetail()) {
+          <app-marker-detail-content
+            [detail]="catalystDetail()"
+          />
         }
       </div>
     </div>
@@ -200,8 +162,8 @@ import { EventDetail, FeedItem } from '../../core/models/event.model';
 export class EventDetailPanelComponent {
   /** Full event detail -- set when a row of source_type 'event' is selected. */
   readonly detail = input<EventDetail | null>(null);
-  /** Marker feed item -- set when a row of source_type 'marker' is selected. */
-  readonly marker = input<FeedItem | null>(null);
+  /** Full catalyst detail -- set when a row of source_type 'marker' is selected. */
+  readonly catalystDetail = input<CatalystDetail | null>(null);
 
   readonly edit = output<void>();
   readonly panelClose = output<void>();
@@ -209,8 +171,8 @@ export class EventDetailPanelComponent {
   readonly categoryLabel = computed(() => {
     const d = this.detail();
     if (d) return d.category.name;
-    const m = this.marker();
-    if (m) return m.category_name;
+    const cd = this.catalystDetail();
+    if (cd) return `${cd.catalyst.category_name} \u00b7 ${cd.catalyst.marker_type_name}`;
     return '';
   });
 }

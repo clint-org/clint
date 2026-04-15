@@ -10,8 +10,10 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
+import { CatalystDetail } from '../../core/models/catalyst.model';
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
 import { MarkerCategory } from '../../core/models/marker.model';
+import { CatalystService } from '../../core/services/catalyst.service';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
@@ -44,6 +46,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 })
 export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);
+  private catalystService = inject(CatalystService);
   private eventCategoryService = inject(EventCategoryService);
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
@@ -67,6 +70,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   // Detail panel
   selectedItem = signal<FeedItem | null>(null);
   selectedDetail = signal<EventDetail | null>(null);
+  selectedCatalystDetail = signal<CatalystDetail | null>(null);
   detailLoading = signal(false);
 
   // All categories combined for the category filter
@@ -168,32 +172,38 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     if (this.selectedItem()?.id === item.id) {
       this.selectedItem.set(null);
       this.selectedDetail.set(null);
+      this.selectedCatalystDetail.set(null);
       return;
     }
 
     this.selectedItem.set(item);
     this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
+    this.detailLoading.set(true);
 
-    if (item.source_type === 'event') {
-      this.detailLoading.set(true);
-      try {
+    try {
+      if (item.source_type === 'event') {
         const detail = await this.eventService.getEventDetail(item.id);
-        // Only apply if the same item is still selected
         if (this.selectedItem()?.id === item.id) {
           this.selectedDetail.set(detail);
         }
-      } catch (err) {
-        this.error.set(err instanceof Error ? err.message : 'Could not load event detail.');
-      } finally {
-        this.detailLoading.set(false);
+      } else {
+        const detail = await this.catalystService.getCatalystDetail(item.id);
+        if (this.selectedItem()?.id === item.id) {
+          this.selectedCatalystDetail.set(detail);
+        }
       }
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Could not load detail.');
+    } finally {
+      this.detailLoading.set(false);
     }
-    // Markers: no detail fetch needed -- panel uses the FeedItem directly
   }
 
   closePanel(): void {
     this.selectedItem.set(null);
     this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
   }
 
   openCreateModal(): void {

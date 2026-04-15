@@ -1,5 +1,4 @@
 import { Component, computed, input, output } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 
 import {
   PHASE_COLOR,
@@ -7,73 +6,75 @@ import {
   PositioningProduct,
   RingPhase,
 } from '../../core/models/landscape.model';
+import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
 @Component({
   selector: 'app-positioning-detail-panel',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [DetailPanelShellComponent],
   template: `
-    <aside class="landscape-detail-panel" aria-live="polite">
+    <app-detail-panel-shell
+      [label]="'SELECTED'"
+      [showHeader]="!!bubble()"
+      [showClose]="!!bubble()"
+      (closed)="clearSelection.emit()"
+    >
       @if (bubble()) {
         @let b = bubble()!;
-        <div class="landscape-detail-header">
-          <div class="landscape-detail-label">SELECTED</div>
-          <button
-            type="button"
-            class="landscape-detail-clear"
-            (click)="clearSelection.emit()"
-            aria-label="Clear selection"
-          >&times;</button>
+
+        <div class="flex flex-col gap-3">
+          <h2 class="text-xl font-bold leading-tight text-slate-900">{{ fullLabel() }}</h2>
+
+          <!-- Summary stats -->
+          <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
+            <div class="flex items-center gap-3 text-sm text-slate-600">
+              <span><strong class="text-slate-800">{{ b.competitor_count }}</strong> {{ b.competitor_count === 1 ? 'competitor' : 'competitors' }}</span>
+              <span class="h-3.5 w-px bg-slate-200"></span>
+              <span>
+                <span
+                  class="mr-1 inline-block h-2 w-2 rounded-full"
+                  [style.background-color]="phaseColor(b.highest_phase)"
+                ></span>
+                {{ b.highest_phase }}
+              </span>
+              <span class="h-3.5 w-px bg-slate-200"></span>
+              <span><strong class="text-slate-800">{{ b.unit_count }}</strong> {{ countUnit() }}</span>
+            </div>
+          </section>
+
+          <!-- Products -->
+          <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
+            <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">PRODUCTS ({{ b.products.length }})</div>
+            <ul class="mt-1 flex flex-col gap-0.5 p-0">
+              @for (product of sortedProducts(); track product.id) {
+                <li class="list-none">
+                  <div class="flex flex-col gap-0.5 rounded-sm px-2 py-1.5">
+                    <span class="text-[13px] font-medium text-slate-900">{{ product.name }}</span>
+                    <span class="flex gap-2 font-mono text-[11px] text-slate-400">
+                      <span class="text-slate-500">{{ product.company_name }}</span>
+                      <span
+                        class="inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-semibold"
+                        [style.background-color]="phaseColor(product.highest_phase) + '18'"
+                        [style.color]="phaseColor(product.highest_phase)"
+                      >{{ product.highest_phase }}</span>
+                      <span class="text-slate-400">{{ product.trial_count }} {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span>
+                    </span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
         </div>
-
-        <h2 class="landscape-detail-name">{{ fullLabel() }}</h2>
-
-        <section class="landscape-detail-section">
-          <div class="flex items-center gap-3 text-sm text-slate-600">
-            <span><strong class="text-slate-800">{{ b.competitor_count }}</strong> {{ b.competitor_count === 1 ? 'competitor' : 'competitors' }}</span>
-            <span class="w-px h-3.5 bg-slate-200"></span>
-            <span>
-              <span
-                class="inline-block w-2 h-2 rounded-full mr-1"
-                [style.background-color]="phaseColor(b.highest_phase)"
-              ></span>
-              {{ b.highest_phase }}
-            </span>
-            <span class="w-px h-3.5 bg-slate-200"></span>
-            <span><strong class="text-slate-800">{{ b.unit_count }}</strong> {{ countUnit() }}</span>
-          </div>
-        </section>
-
-        <section class="landscape-detail-section">
-          <div class="landscape-detail-label">PRODUCTS ({{ b.products.length }})</div>
-          <ul class="landscape-detail-trial-list">
-            @for (product of sortedProducts(); track product.id) {
-              <li class="landscape-detail-trial-row">
-                <div class="landscape-detail-trial-link" style="cursor: default;">
-                  <span class="landscape-detail-trial-name">{{ product.name }}</span>
-                  <span class="landscape-detail-trial-meta">
-                    <span class="text-slate-500">{{ product.company_name }}</span>
-                    <span
-                      class="inline-block rounded-sm text-[10px] px-1.5 py-0.5 font-semibold"
-                      [style.background-color]="phaseColor(product.highest_phase) + '18'"
-                      [style.color]="phaseColor(product.highest_phase)"
-                    >{{ product.highest_phase }}</span>
-                    <span class="text-slate-400">{{ product.trial_count }} {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span>
-                  </span>
-                </div>
-              </li>
-            }
-          </ul>
-        </section>
       } @else {
-        <div class="landscape-detail-empty">
-          <div class="landscape-detail-label">CLICK A BUBBLE TO SEE DETAILS</div>
-          <p class="landscape-detail-summary">
+        <!-- Empty state -->
+        <div class="flex flex-col gap-3">
+          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">CLICK A BUBBLE TO SEE DETAILS</div>
+          <p class="text-[13px] text-slate-700">
             {{ totalBubbles() }} {{ totalBubbles() === 1 ? 'group' : 'groups' }} plotted
           </p>
         </div>
       }
-    </aside>
+    </app-detail-panel-shell>
   `,
 })
 export class PositioningDetailPanelComponent {
