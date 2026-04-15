@@ -14,7 +14,6 @@ import { SpaceService } from '../../core/services/space.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
-import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
@@ -30,7 +29,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     MessageModule,
     ManagePageShellComponent,
     RowActionsComponent,
-    StatusTagComponent,
   ],
   template: `
     <app-manage-page-shell>

@@ -86,9 +86,9 @@ import {
         @if (trialName()) {
           <div class="border-t border-slate-100 pt-2 mt-2">
             <div class="text-[10px] font-medium text-slate-900 leading-snug">{{ trialName() }}</div>
-            @if (trialPhase() || recruitmentStatus()) {
+            @if (trialContext()) {
               <div class="text-[9px] text-slate-500 mt-0.5">
-                {{ [trialPhase(), recruitmentStatus()].filter(Boolean).join(' · ') }}
+                {{ trialContext() }}
               </div>
             }
           </div>
@@ -148,6 +148,10 @@ export class MarkerTooltipComponent implements AfterViewInit {
   tooltipX = signal(0);
   tooltipY = signal(0);
   flipAbove = signal(false);
+
+  trialContext = computed(() =>
+    [this.trialPhase(), this.recruitmentStatus()].filter(v => !!v).join(' \u00b7 ')
+  );
 
   formattedDate = computed(() => {
     if (!this.date()) return '';
