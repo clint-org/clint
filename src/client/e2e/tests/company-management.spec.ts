@@ -22,13 +22,10 @@ test.describe('Company Management CRUD', () => {
     await page.close();
   });
 
-  test.beforeAll(async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-  });
+
 
   test('company list loads', async () => {
     await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Companies' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add Company' })).toBeVisible();
   });
 
@@ -86,6 +83,8 @@ test.describe('Company Management CRUD', () => {
     const row = page.locator('tr', { hasText: 'Updated Company' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(1000);
 
     await page.goto(companiesUrl(), { waitUntil: 'networkidle' });

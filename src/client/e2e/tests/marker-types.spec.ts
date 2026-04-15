@@ -67,10 +67,11 @@ test.describe('Marker Type Management CRUD', () => {
   });
 
   test('delete marker type', async () => {
-    page.on('dialog', (d) => d.accept());
     const row = page.locator('tr', { hasText: 'Safety Signal' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(1000);
 
     await page.goto(mtUrl(), { waitUntil: 'networkidle' });

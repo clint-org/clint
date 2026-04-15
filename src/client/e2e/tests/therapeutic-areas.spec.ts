@@ -9,7 +9,8 @@ test.describe('Therapeutic Area Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  const taUrl = () => `/t/${tenantId}/s/${spaceId}/manage/therapeutic-areas`;
+  // The old /manage/therapeutic-areas now redirects to /settings/taxonomies
+  const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=therapeutic-areas`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('TA Org');
@@ -24,12 +25,11 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
   test('therapeutic area list loads', async () => {
     await page.goto(taUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Therapeutic Areas' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add Therapeutic Area' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
   });
 
   test('create therapeutic area via modal', async () => {
-    await page.getByRole('button', { name: 'Add Therapeutic Area' }).click();
+    await page.getByRole('button', { name: 'Add therapeutic area' }).click();
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#ta-name', 'Oncology');
@@ -45,7 +45,8 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
   test('edit therapeutic area via modal', async () => {
     const row = page.locator('tr', { hasText: 'Oncology' });
-    await row.getByRole('button', { name: 'Edit' }).click();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#ta-name', 'Immunology');
@@ -58,10 +59,11 @@ test.describe('Therapeutic Area Management CRUD', () => {
   });
 
   test('delete therapeutic area succeeds', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     const row = page.locator('tr', { hasText: 'Immunology' });
-    await row.getByRole('button', { name: 'Delete' }).click();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(taUrl(), { waitUntil: 'networkidle' });

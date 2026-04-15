@@ -41,15 +41,18 @@ test.describe('Dashboard', () => {
   });
 
   test('filter controls are visible', async () => {
-    await expect(page.locator('app-filter-panel')).toBeVisible();
+    // Filters are now in app-landscape-filter-bar within the landscape shell
+    await expect(page.locator('app-landscape-filter-bar')).toBeVisible();
   });
 
   test('zoom control is present and functional', async () => {
-    const zoomControl = page.locator('app-zoom-control');
-    await expect(zoomControl).toBeVisible();
+    // Zoom is now a p-selectbutton inside the filter bar, not a standalone component.
+    // The filter bar toolbar contains Y/Q/M/D zoom buttons.
+    const filterBar = page.locator('app-landscape-filter-bar');
+    await expect(filterBar).toBeVisible();
 
-    const yearButton = zoomControl.getByText('Year');
-    const quarterButton = zoomControl.getByText('Quarter');
+    const yearButton = filterBar.getByText('Y', { exact: true });
+    const quarterButton = filterBar.getByText('Q', { exact: true });
     await expect(yearButton).toBeVisible();
     await expect(quarterButton).toBeVisible();
 

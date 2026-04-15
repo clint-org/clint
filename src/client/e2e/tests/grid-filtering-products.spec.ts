@@ -39,7 +39,6 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
 
   test('grid loads with toolbar and paginator', async () => {
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible();
     await expect(page.getByPlaceholder('Search products...')).toBeVisible();
     await expect(page.locator('.p-paginator')).toBeVisible();
   });

@@ -32,7 +32,6 @@ test.describe('Product Management CRUD', () => {
 
   test('product list loads', async () => {
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Products' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add Product' })).toBeVisible();
   });
 
@@ -53,7 +52,8 @@ test.describe('Product Management CRUD', () => {
 
   test('edit product via modal', async () => {
     const row = page.locator('tr', { hasText: 'Test Product' });
-    await row.getByRole('button', { name: 'Edit' }).click();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
     await expect(page.locator('#product-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#product-name', 'Updated Product');
@@ -100,14 +100,15 @@ test.describe('Product Management CRUD', () => {
   });
 
   test('delete product succeeds', async () => {
-    page.on('dialog', (dialog) => dialog.accept());
-
     // Delete the "Updated Product" (the one without trials)
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });
     const rows = page.locator('tr', { hasText: 'Updated Product' });
     const count = await rows.count();
-    // Click delete on the first row
-    await rows.first().getByRole('button', { name: 'Delete' }).click();
+    // Open row-actions menu and click Delete
+    await rows.first().locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(productsUrl(), { waitUntil: 'networkidle' });

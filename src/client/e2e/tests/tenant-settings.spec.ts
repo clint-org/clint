@@ -23,7 +23,8 @@ test.describe('Tenant Settings', () => {
     await page.goto(settingsUrl(), { waitUntil: 'networkidle' });
     const nameInput = page.locator('#org-name');
     await expect(nameInput).toBeVisible();
-    await expect(nameInput).toHaveValue('Settings Test Org');
+    // Wait for Angular to populate the input after async data load
+    await expect(nameInput).toHaveValue('Settings Test Org', { timeout: 10000 });
   });
 
   test('edit org name via save button', async () => {
@@ -43,7 +44,7 @@ test.describe('Tenant Settings', () => {
   });
 
   test('members table is visible', async () => {
-    await expect(page.getByText('e2e-test@clint.local')).toBeVisible();
+    await expect(page.getByText('e2e-test@clint.local')).toBeVisible({ timeout: 10000 });
   });
 
   test('invite member dialog opens and closes', async () => {

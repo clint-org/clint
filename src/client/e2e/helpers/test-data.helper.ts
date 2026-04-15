@@ -128,8 +128,17 @@ export async function createTestTrial(
   return data.id;
 }
 
+/**
+ * Update a trial's phase data directly on the trials table.
+ * The trial_phases table was dropped in the marker_system_redesign migration;
+ * phase data now lives as columns on the trials table.
+ *
+ * This updates the trial with the given phase_type, phase_start_date, and
+ * optional phase_end_date. If the trial already has phase data and you want
+ * to simulate the "latest" phase, call this again -- it overwrites.
+ */
 export async function createTestTrialPhase(
-  spaceId: string,
+  _spaceId: string,
   trialId: string,
   phaseType: string,
   startDate: string,
@@ -138,18 +147,16 @@ export async function createTestTrialPhase(
   const admin = getAdminClient();
 
   const { data, error } = await admin
-    .from('trial_phases')
-    .insert({
-      space_id: spaceId,
-      created_by: getUserId(),
-      trial_id: trialId,
+    .from('trials')
+    .update({
       phase_type: phaseType,
-      start_date: startDate,
-      end_date: endDate ?? null,
+      phase_start_date: startDate,
+      phase_end_date: endDate ?? null,
     })
+    .eq('id', trialId)
     .select('id')
     .single();
-  if (error) throw new Error(`Failed to create trial phase: ${error.message}`);
+  if (error) throw new Error(`Failed to update trial phase: ${error.message}`);
 
   return data.id;
 }

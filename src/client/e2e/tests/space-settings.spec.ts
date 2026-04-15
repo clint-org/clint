@@ -64,7 +64,8 @@ test.describe('Space Settings - Members', () => {
 
   test('members page loads with current user', async () => {
     await page.goto(membersUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('e2e-test@clint.local')).toBeVisible();
+    // Wait for async member data to load and render
+    await expect(page.getByText('e2e-test@clint.local')).toBeVisible({ timeout: 10000 });
   });
 
   test('add member dialog opens', async () => {

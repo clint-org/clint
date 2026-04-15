@@ -29,7 +29,8 @@ test.describe('Space Management', () => {
     await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#space-name', 'E2E Test Space');
-    await page.getByRole('button', { name: 'Create space' }).click();
+    // Scope click to the dialog to avoid strict mode violation (button exists in topbar too)
+    await page.locator('.p-dialog').getByRole('button', { name: 'Create space' }).click();
 
     // Should navigate to the new space
     await page.waitForURL(/\/s\//, { timeout: 10000 });
@@ -44,8 +45,8 @@ test.describe('Space Management', () => {
     await page.getByRole('button', { name: 'New space' }).click();
     await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 5000 });
 
-    // Try submitting without filling name
-    await page.getByRole('button', { name: 'Create space' }).click();
+    // Try submitting without filling name -- scope to dialog
+    await page.locator('.p-dialog').getByRole('button', { name: 'Create space' }).click();
     // Dialog should remain open (form prevents submission)
     await expect(page.locator('.p-dialog')).toBeVisible();
     await page.keyboard.press('Escape');

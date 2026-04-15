@@ -60,10 +60,11 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
   });
 
   test('delete therapeutic area', async () => {
-    page.on('dialog', (d) => d.accept());
     const row = page.locator('tr', { hasText: 'Neurology' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
@@ -121,10 +122,11 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
   });
 
   test('delete MOA', async () => {
-    page.on('dialog', (d) => d.accept());
     const row = page.locator('tr', { hasText: 'VEGF Inhibitor' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
@@ -185,10 +187,11 @@ test.describe('Taxonomies - Routes of Administration', () => {
   });
 
   test('delete ROA', async () => {
-    page.on('dialog', (d) => d.accept());
     const row = page.locator('tr', { hasText: 'Subcutaneous' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Handle PrimeNG ConfirmDialog
+    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
