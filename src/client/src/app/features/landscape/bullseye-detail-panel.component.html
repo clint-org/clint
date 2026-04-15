@@ -78,17 +78,6 @@
         </section>
       }
 
-      <!-- Highest phase -->
-      <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-        <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-          HIGHEST PHASE IN {{ scopeName().toUpperCase() }}
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-block h-2.5 w-2.5 rounded-full bg-teal-600" aria-hidden="true"></span>
-          <span class="font-mono text-sm font-semibold tracking-wider text-teal-600">{{ highestPhaseLabel() }}</span>
-        </div>
-      </section>
-
       <!-- Trials -->
       <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
         <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">TRIALS ({{ product.trials.length }})</div>

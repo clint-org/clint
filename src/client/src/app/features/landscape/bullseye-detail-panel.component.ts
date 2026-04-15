@@ -83,15 +83,7 @@ export class BullseyeDetailPanelComponent {
 
   protected readonly totalProducts = computed(() => this.allProducts().length);
   protected readonly totalSpokes = computed(() => this.data()?.spokes.length ?? 0);
-  protected readonly scopeName = computed(
-    () => this.data()?.scope?.name ?? ''
-  );
   protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
-
-  protected readonly highestPhaseLabel = computed(() => {
-    const p = this.selectedProduct();
-    return p ? p.highest_phase : '';
-  });
 
   protected isScopedMoa(moaId: string): boolean {
     const d = this.data();
