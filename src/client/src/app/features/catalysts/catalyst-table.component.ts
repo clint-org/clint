@@ -25,8 +25,8 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
     >
       <ng-template #header>
         <tr>
-          <th class="w-[80px]">Date</th>
-          <th class="w-[110px]">
+          <th class="col-date-short">Date</th>
+          <th class="col-category">
             Category
             <p-columnFilter
               field="category_name"
@@ -52,7 +52,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
             </p-columnFilter>
           </th>
           <th>Catalyst</th>
-          <th class="w-[200px]">
+          <th class="col-company">
             Company / Product
             <p-columnFilter
               field="company_name"
@@ -77,7 +77,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
               </ng-template>
             </p-columnFilter>
           </th>
-          <th class="w-[90px]">Status</th>
+          <th class="col-status">Status</th>
         </tr>
       </ng-template>
 
@@ -112,7 +112,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
           [attr.aria-pressed]="catalyst.marker_id === selectedId()"
         >
           <td class="font-mono text-xs tabular-nums text-slate-500">
-            {{ catalyst.event_date | date:'MMM dd' }}
+            {{ catalyst.event_date | date: 'MMM dd' }}
           </td>
           <td>
             <span class="inline-flex items-center gap-1.5">
@@ -120,7 +120,9 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
                 class="inline-block h-2 w-2 shrink-0"
                 [style.background]="catalyst.marker_type_color"
                 [class.rounded-full]="catalyst.marker_type_shape === 'circle'"
-                [style.transform]="catalyst.marker_type_shape === 'diamond' ? 'rotate(45deg)' : 'none'"
+                [style.transform]="
+                  catalyst.marker_type_shape === 'diamond' ? 'rotate(45deg)' : 'none'
+                "
               ></span>
               <span class="text-xs text-slate-500">{{ catalyst.category_name }}</span>
             </span>

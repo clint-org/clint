@@ -8,10 +8,10 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
   template: `
     <div class="relative" [style.width.px]="totalWidth()">
       <!-- Primary row (years) -->
-      <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center" role="row">
+      <div class="grid-header-row flex items-center" role="row">
         @for (col of columns(); track col.label) {
           <div
-            class="flex-none border-r border-slate-700 px-2 text-center font-mono text-xs tracking-widest font-bold text-slate-300"
+            class="grid-header-cell flex-none border-r border-slate-200"
             [style.width.px]="col.width"
             role="columnheader"
           >
@@ -22,12 +22,12 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
 
       <!-- Sub-column row (quarters/months) if present -->
       @if (hasSubColumns()) {
-        <div class="flex border-b border-slate-200 bg-slate-100" role="row">
+        <div class="grid-header-sub-row flex" role="row">
           @for (col of columns(); track col.label) {
             @if (col.subColumns) {
               @for (sub of col.subColumns; track sub.label) {
                 <div
-                  class="flex-none border-r border-slate-200 px-1 py-0.5 text-center font-mono text-[10px] font-medium text-slate-500 truncate"
+                  class="grid-header-sub-cell flex-none border-r border-slate-200"
                   [style.width.px]="sub.width"
                   role="columnheader"
                 >

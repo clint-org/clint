@@ -22,8 +22,12 @@
   border: none;
 }
 
-.data-table .p-datatable-thead {
-  background: rgb(248 250 252 / 0.6); /* slate-50 @ 60% */
+.data-table .p-datatable-thead,
+.data-table.p-datatable-scrollable
+  > .p-datatable-table-container
+  > .p-datatable-table
+  > .p-datatable-thead {
+  background: rgb(248 250 252); /* slate-50, solid */
 }
 
 .data-table .p-datatable-thead > tr > th {
@@ -31,6 +35,7 @@
   border-top: none;
   border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
   padding: 0.5rem 0.75rem;
+  height: 2.25rem;
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -93,6 +98,46 @@
 }
 
 /* --------------------------------------------------------------------- */
+/* Timeline grid-header (aligned with data-table thead)                   */
+/* --------------------------------------------------------------------- */
+
+.grid-header-row {
+  background: rgb(248 250 252); /* slate-50, solid — matches data-table thead */
+  border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
+}
+
+.grid-header-cell {
+  padding: 0.375rem 0.25rem;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(100 116 139); /* slate-500 */
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid-header-sub-row {
+  background: #ffffff;
+  border-bottom: 1px solid rgb(226 232 240); /* slate-200 */
+}
+
+.grid-header-sub-cell {
+  padding: 0.25rem 0.25rem;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgb(148 163 184); /* slate-400 */
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------------------- */
 /* Column role modifiers                                                  */
 /* --------------------------------------------------------------------- */
 
@@ -120,6 +165,14 @@
   white-space: nowrap;
 }
 
+/* Compact date column for short formats (e.g. "Apr 15"). */
+.data-table th.col-date-short,
+.data-table td.col-date-short {
+  width: 5rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .data-table th.col-source,
 .data-table td.col-source {
   width: 5.5rem;
@@ -130,6 +183,26 @@
 .data-table td.col-priority {
   width: 4rem;
   text-align: center;
+}
+
+.data-table th.col-logo,
+.data-table td.col-logo {
+  width: 10rem;
+}
+
+.data-table th.col-category,
+.data-table td.col-category {
+  width: 7rem;
+}
+
+.data-table th.col-company,
+.data-table td.col-company {
+  width: 12.5rem;
+}
+
+.data-table th.col-status,
+.data-table td.col-status {
+  width: 5.5rem;
 }
 
 .data-table th.col-actions,

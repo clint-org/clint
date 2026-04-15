@@ -193,6 +193,12 @@ const ClinicalTheme = definePreset(Aura, {
         background: '{teal.600}',
       },
     },
+    datatable: {
+      headerCell: {
+        background: '{slate.50}',
+        color: '{slate.500}',
+      },
+    },
     toast: {
       root: {
         borderRadius: '6px',
