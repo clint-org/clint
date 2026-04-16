@@ -17,6 +17,7 @@ import { CatalystService } from '../../core/services/catalyst.service';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
+import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../shared/grids';
@@ -43,6 +44,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     EventFormComponent,
   ],
   templateUrl: './events-page.component.html',
+  animations: [slidePanelAnimation],
 })
 export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);

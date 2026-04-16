@@ -11,6 +11,7 @@ import { CatalystService } from '../../core/services/catalyst.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { CompanyService } from '../../core/services/company.service';
 import { ProductService } from '../../core/services/product.service';
+import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../shared/grids';
@@ -31,6 +32,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     CatalystDetailPanelComponent,
   ],
   templateUrl: './catalysts-page.component.html',
+  animations: [slidePanelAnimation],
 })
 export class CatalystsPageComponent implements OnInit, OnDestroy {
   private catalystService = inject(CatalystService);

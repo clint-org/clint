@@ -53,18 +53,20 @@
                 />
               </div>
             </div>
-            <div class="landscape-panel-wrap">
-              <app-bullseye-detail-panel
-                [data]="bullseyeData.value()!"
-                [dimension]="dimension()"
-                [selectedProduct]="selectedProduct()"
-                (openTrial)="onOpenTrial($event)"
-                (openCompany)="onOpenCompany()"
-                (openInTimeline)="onOpenInTimeline($event)"
-                (ringHighlightToggle)="onRingHighlightToggle($event)"
-                (clearSelection)="onClearSelection()"
-              />
-            </div>
+            @if (selectedProduct()) {
+              <div class="landscape-panel-wrap" @slidePanel>
+                <app-bullseye-detail-panel
+                  [data]="bullseyeData.value()!"
+                  [dimension]="dimension()"
+                  [selectedProduct]="selectedProduct()"
+                  (openTrial)="onOpenTrial($event)"
+                  (openCompany)="onOpenCompany()"
+                  (openInTimeline)="onOpenInTimeline($event)"
+                  (ringHighlightToggle)="onRingHighlightToggle($event)"
+                  (clearSelection)="onClearSelection()"
+                />
+              </div>
+            }
           </div>
         }
       }

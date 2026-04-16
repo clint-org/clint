@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full">
+<div class="relative flex flex-col h-full">
   <div class="flex-1 overflow-auto px-4 pb-0">
     @if (dashboardData.isLoading()) {
       <div class="flex items-center justify-center py-20">
@@ -47,6 +47,13 @@
   <div class="flex-none">
     <app-legend [spaceId]="spaceId()" />
   </div>
+
+  <app-marker-detail-drawer
+    [detail]="drawerDetail()"
+    [open]="drawerOpen()"
+    (drawerClose)="closeDrawer()"
+    (markerClick)="onDrawerMarkerClick($event)"
+  />
 </div>
 
 <app-export-dialog
@@ -55,11 +62,4 @@
   [endYear]="endYear()"
   [open]="exportDialogOpen()"
   (closed)="exportDialogOpen.set(false)"
-/>
-
-<app-marker-detail-drawer
-  [detail]="drawerDetail()"
-  [open]="drawerOpen()"
-  (drawerClose)="closeDrawer()"
-  (markerClick)="onDrawerMarkerClick($event)"
 />

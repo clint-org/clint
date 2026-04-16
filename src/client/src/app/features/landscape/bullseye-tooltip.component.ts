@@ -1,14 +1,17 @@
 import { Component, computed, input } from '@angular/core';
 
 import { BullseyeProduct } from '../../core/models/landscape.model';
+import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 @Component({
   selector: 'app-bullseye-tooltip',
   standalone: true,
+  animations: [fadeTooltipAnimation],
   template: `
     @if (product()) {
       @let p = product()!;
       <div
+        @fadeTooltip
         class="fixed z-50 pointer-events-none bg-slate-800 text-white text-xs rounded-md px-3 py-2 shadow-lg max-w-56"
         [style.left.px]="x()"
         [style.top.px]="y()"

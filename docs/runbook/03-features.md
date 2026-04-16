@@ -79,7 +79,7 @@ A full CRUD interface for managing all data within a space:
 
 A unified chronological feed showing analyst-created events and timeline markers together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial.
 
-**Layout:** Data table (p-table) with sortable/filterable columns + a right-side detail panel that opens on row click.
+**Layout:** Data table (p-table) with sortable/filterable columns + a right-side overlay detail panel (340px, absolute-positioned, `@slidePanel` animation) that slides in on row click and hides when nothing is selected.
 
 | Column | Content |
 |---|---|
@@ -90,7 +90,7 @@ A unified chronological feed showing analyst-created events and timeline markers
 | Entity | Company / Product / Trial name, or "Industry" for space-level |
 | Priority | Red dot for high, empty for low |
 
-**Detail panel (380px right):** Description, source URLs, tags, thread context (ordered list of events in the narrative), related events (ad-hoc links), and created timestamp.
+**Detail panel (340px overlay):** Description, source URLs, tags, thread context (ordered list of events in the narrative), related events (ad-hoc links), and created timestamp.
 
 **Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority.
 
@@ -100,7 +100,7 @@ A standalone forward-looking page showing all upcoming markers (clinical trial m
 
 **Route:** `/t/:tenantId/s/:spaceId/catalysts`
 
-**Layout:** Dense table (p-table with `rowGroupMode="subheader"`) + a right-side 380px detail panel on row click. No summary header -- straight to data.
+**Layout:** Dense table (p-table with `rowGroupMode="subheader"`) + a right-side 340px overlay detail panel (`@slidePanel` animation) on row click. No summary header -- straight to data.
 
 **Grouping:** Adaptive time-bucket density based on distance from today:
 - Current ISO week -> "This Week" (with date range)
@@ -118,7 +118,7 @@ A standalone forward-looking page showing all upcoming markers (clinical trial m
 
 **Filter bar:** Category (p-multiselect), Company (p-select with search), Product (p-select, cascading from company), and text search (client-side, debounced).
 
-**Detail panel (380px right):** Three tiers:
+**Detail panel (340px overlay):** Three tiers:
 1. Catalyst data -- category/type label, title, date, status, description, source link
 2. Trial context -- trial name, phase, recruitment status, company/product
 3. Related timeline -- upcoming markers for same trial (clickable, switches panel), related events for same trial/product/company (read-only)

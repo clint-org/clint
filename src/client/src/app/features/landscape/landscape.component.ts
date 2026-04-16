@@ -25,6 +25,7 @@ import { LandscapeService } from '../../core/services/landscape.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
+import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
@@ -40,6 +41,7 @@ import { LandscapeStateService } from './landscape-state.service';
     ProgressSpinner,
   ],
   templateUrl: './landscape.component.html',
+  animations: [slidePanelAnimation],
 })
 export class LandscapeComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
