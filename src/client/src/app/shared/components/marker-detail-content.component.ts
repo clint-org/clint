@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
@@ -14,18 +14,41 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
         {{ d.catalyst.title }}
       </h2>
 
+      <!-- Projection / no longer expected badges -->
+      @if (projectionLabel()) {
+        <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5">
+          <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+          <span class="text-[10px] font-medium text-amber-700">{{ projectionLabel() }}</span>
+        </div>
+      }
+      @if (d.catalyst.no_longer_expected) {
+        <div class="mb-2 ml-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5">
+          <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+          <span class="text-[10px] font-medium text-slate-500">No longer expected</span>
+        </div>
+      }
+
       <!-- Program -->
       @if (d.catalyst.company_name) {
         <div class="mb-3 border-b border-slate-100 pb-2">
           <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Program
           </p>
-          <p class="text-xs text-slate-900">
-            <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
-            @if (d.catalyst.product_name) {
-              &middot; {{ d.catalyst.product_name }}
+          <div class="flex items-center gap-2 text-xs text-slate-900">
+            @if (d.catalyst.company_logo_url) {
+              <img
+                [src]="d.catalyst.company_logo_url"
+                [alt]="d.catalyst.company_name"
+                class="h-5 w-5 rounded object-contain flex-none"
+              />
             }
-          </p>
+            <p>
+              <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
+              @if (d.catalyst.product_name) {
+                &middot; {{ d.catalyst.product_name }}
+              }
+            </p>
+          </div>
         </div>
       }
 
@@ -141,6 +164,22 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
 export class MarkerDetailContentComponent {
   readonly detail = input<CatalystDetail | null>(null);
   readonly markerClick = output<string>();
+
+  protected projectionLabel = computed(() => {
+    const d = this.detail();
+    if (!d) return '';
+    switch (d.catalyst.projection) {
+      case 'stout':
+        return 'Stout estimate';
+      case 'company':
+        return 'Company guidance';
+      case 'primary':
+        return 'Primary source estimate';
+      case 'actual':
+      default:
+        return '';
+    }
+  });
 
   protected extractDomain(url: string): string {
     try {

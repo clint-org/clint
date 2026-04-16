@@ -119,8 +119,8 @@ A standalone forward-looking page showing all upcoming markers (clinical trial m
 **Filter bar:** Category (p-multiselect), Company (p-select with search), Product (p-select, cascading from company), and text search (client-side, debounced).
 
 **Detail panel (340px overlay):** Three tiers:
-1. Catalyst data -- category/type label, title, date, status, description, source link
-2. Trial context -- trial name, phase, recruitment status, company/product
+1. Catalyst data -- marker shape icon (SVG, matches type shape/color/projected fill), category/type label, title, projection badge (Stout estimate / Company guidance / Primary source estimate), "No longer expected" badge, date, status, description, source link
+2. Trial context -- trial name, phase, recruitment status, company logo + company/product
 3. Related timeline -- upcoming markers for same trial (clickable, switches panel), related events for same trial/product/company (read-only)
 
 **Data source:** Reads from the existing `markers` table via two RPC functions (`get_key_catalysts`, `get_catalyst_detail`). No new database tables.

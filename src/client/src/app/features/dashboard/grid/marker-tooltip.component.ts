@@ -8,10 +8,23 @@ import {
   signal,
   ChangeDetectorRef,
 } from '@angular/core';
+import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
+import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
+import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
+import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
+import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
+import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
 @Component({
   selector: 'app-marker-tooltip',
   standalone: true,
+  imports: [
+    CircleIconComponent,
+    DiamondIconComponent,
+    FlagIconComponent,
+    TriangleIconComponent,
+    SquareIconComponent,
+  ],
   template: `
     <div
       class="fixed pointer-events-none overflow-hidden"
@@ -41,25 +54,25 @@ import {
         <!-- Type icon + name | date row -->
         <div class="flex items-center gap-1.5 mb-1.5">
           <!-- Marker shape icon -->
-          <svg width="10" height="10" class="shrink-0" [attr.fill]="fillStyle() === 'filled' ? typeColor() : 'white'" [attr.stroke]="typeColor()" [attr.stroke-width]="fillStyle() === 'filled' ? 0 : 1.5">
+          <svg width="10" height="10" class="shrink-0 overflow-visible">
             @switch (shape()) {
               @case ('circle') {
-                <circle cx="5" cy="5" r="4" />
+                <g app-circle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
               }
               @case ('diamond') {
-                <rect x="5" y="1" width="5.6" height="5.6" rx="1" transform="rotate(45 5 1)" />
-              }
-              @case ('triangle') {
-                <polygon points="5,1 9,9 1,9" />
-              }
-              @case ('square') {
-                <rect x="1" y="1" width="8" height="8" rx="1" />
+                <g app-diamond-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
               }
               @case ('flag') {
-                <polygon points="1,1 9,1 7,5 9,9 1,9" />
+                <g app-flag-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+              }
+              @case ('triangle') {
+                <g app-triangle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+              }
+              @case ('square') {
+                <g app-square-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
               }
               @default {
-                <circle cx="5" cy="5" r="4" />
+                <g app-circle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
               }
             }
           </svg>
@@ -148,6 +161,9 @@ export class MarkerTooltipComponent implements AfterViewInit {
   tooltipX = signal(0);
   tooltipY = signal(0);
   flipAbove = signal(false);
+
+  typedFillStyle = computed<FillStyle>(() => (this.fillStyle() as FillStyle) ?? 'filled');
+  typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
 
   trialContext = computed(() =>
     [this.trialPhase(), this.recruitmentStatus()].filter(v => !!v).join(' \u00b7 ')

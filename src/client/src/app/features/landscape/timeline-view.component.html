@@ -48,10 +48,11 @@
     <app-legend [spaceId]="spaceId()" />
   </div>
 
-  <app-marker-detail-drawer
+  <app-marker-detail-panel
+    mode="drawer"
     [detail]="drawerDetail()"
     [open]="drawerOpen()"
-    (drawerClose)="closeDrawer()"
+    (panelClose)="closeDrawer()"
     (markerClick)="onDrawerMarkerClick($event)"
   />
 </div>

@@ -32,8 +32,13 @@ Reorder the sections so the competitive identity comes first:
 
 Additional fixes:
 - **Source URL:** Truncate to domain name only (e.g., `sec.gov`) with external-link icon. Full URL remains as the `href`. Extract domain via `new URL(url).hostname.replace('www.', '')`.
-- **Header color dot:** Add a small colored dot in the marker detail drawer header matching `marker_type_color` to maintain the visual thread from the timeline.
+- **Header marker icon:** Replace the plain colored dot with the actual marker shape SVG (circle, diamond, triangle, square, flag) matching `marker_type_shape` and `marker_type_color`. Outline style for projected markers, filled for actual -- same rendering as the tooltip. Applied to both the landscape drawer header and the catalysts detail panel header.
+- **Projection type badge:** Show the specific projection type ("Stout estimate", "Company guidance", "Primary source estimate") as an amber badge below the title. Replaces the binary Projected/Confirmed with granular detail matching the tooltip. The Date & Status section still shows Projected/Confirmed as a secondary indicator.
+- **No longer expected badge:** Show a slate badge when `no_longer_expected` is true.
+- **Company logo:** Display the company logo (20x20, rounded) next to the company name in the Program section, consistent with the timeline grid's company column.
 - **Related events category:** Change from `text-slate-300` to `text-slate-500` for readable contrast.
+
+**Superset rule:** The detail pane must display every field the tooltip shows. The tooltip is a quick-glance summary; the detail pane is the expanded view. Any field added to the tooltip in the future must also be added to the detail pane.
 
 ### 2. Bullseye -- Product Detail Panel
 
@@ -72,6 +77,31 @@ Remove the "Highest phase" stat line entirely.
 
 ## Data Model Changes
 
+### `CatalystDetail` (catalyst.model.ts)
+
+Add `projection`, `no_longer_expected`, and `company_logo_url` to the `CatalystDetail.catalyst` intersection type (not the base `Catalyst` interface, since `get_key_catalysts` list RPC does not return these fields):
+```typescript
+export interface CatalystDetail {
+  catalyst: Catalyst & {
+    recruitment_status: string | null;
+    projection: string;             // NEW -- 'stout' | 'company' | 'primary' | 'actual'
+    no_longer_expected: boolean;     // NEW
+    company_logo_url: string | null; // NEW
+  };
+  upcoming_markers: UpcomingMarker[];
+  related_events: RelatedEvent[];
+}
+```
+
+### `get_catalyst_detail` (Supabase RPC function)
+
+Add three fields to the `jsonb_build_object` in the main query:
+1. `'projection', m.projection`
+2. `'no_longer_expected', m.no_longer_expected`
+3. `'company_logo_url', co.logo_url`
+
+Migration: `supabase/migrations/20260415180000_catalyst_detail_add_projection_logo.sql`
+
 ### `PositioningProduct` (landscape.model.ts)
 
 Add `generic_name`:
@@ -109,22 +139,28 @@ The `marker_type_color` for the header dot is already available on the `Catalyst
 - Cross-navigation (positioning to bullseye, product click-through)
 - Label/separator/formatting fixes
 - One model field addition (`generic_name` on `PositioningProduct`)
+- Marker shape icon in drawer/panel headers (replacing plain colored dot)
+- Projection type badges, no-longer-expected badge, company logo in detail pane
+- Detail pane as superset of tooltip data
 
 **Out of scope:**
 - Therapeutic area/indication display (requires deeper data model work)
 - Bullseye empty state (already solid, no changes)
 - Tooltip changes (tooltips are fine as-is)
-- New backend endpoints or schema migrations beyond the SELECT change
+- New backend endpoints or schema migrations beyond SELECT changes
 
 ## Files Affected
 
 | File | Change Type |
 |------|-------------|
-| `shared/components/marker-detail-content.component.ts` | Reorder template sections, truncate source URL, fix category contrast |
-| `features/landscape/marker-detail-drawer.component.ts` | Add color dot to header using `marker_type_color` |
+| `shared/components/marker-detail-content.component.ts` | Reorder template sections, truncate source URL, fix category contrast, projection badges, no-longer-expected badge, company logo |
+| `features/landscape/marker-detail-drawer.component.ts` | Replace colored dot with marker shape SVG icon in header |
+| `features/catalysts/catalyst-detail-panel.component.ts` | Replace colored dot with marker shape SVG icon in header |
 | `features/landscape/bullseye-detail-panel.component.html` | Add recruitment status to trial rows |
 | `features/landscape/bullseye-detail-panel.component.ts` | Add DatePipe import |
 | `features/landscape/positioning-detail-panel.component.ts` | Header label, separator, stacked stats, phase breakdown, generic names, clickable products, cross-nav action |
+| `core/models/catalyst.model.ts` | Add `projection`, `no_longer_expected`, `company_logo_url` to `CatalystDetail` |
 | `core/models/landscape.model.ts` | Add `generic_name` to `PositioningProduct` |
-| `supabase/migrations/` (new migration) | Add `generic_name` to `get_positioning_data` RPC |
+| `supabase/migrations/20260415170000_...` | Add `generic_name` to `get_positioning_data` RPC |
+| `supabase/migrations/20260415180000_...` | Add `projection`, `no_longer_expected`, `company_logo_url` to `get_catalyst_detail` RPC |
 | `core/services/landscape.service.ts` | No change needed (passes through RPC response) |

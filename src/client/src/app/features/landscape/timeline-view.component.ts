@@ -14,7 +14,7 @@ import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.compone
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
-import { MarkerDetailDrawerComponent } from './marker-detail-drawer.component';
+import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -23,7 +23,7 @@ import { MarkerDetailDrawerComponent } from './marker-detail-drawer.component';
     DashboardGridComponent,
     ExportDialogComponent,
     LegendComponent,
-    MarkerDetailDrawerComponent,
+    MarkerDetailPanelComponent,
     ButtonModule,
     MessageModule,
     ProgressSpinner,

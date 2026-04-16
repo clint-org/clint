@@ -16,7 +16,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../shared/grids';
 import { CatalystTableComponent } from './catalyst-table.component';
-import { CatalystDetailPanelComponent } from './catalyst-detail-panel.component';
+import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from './group-catalysts';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
@@ -29,7 +29,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     ManagePageShellComponent,
     GridToolbarComponent,
     CatalystTableComponent,
-    CatalystDetailPanelComponent,
+    MarkerDetailPanelComponent,
   ],
   templateUrl: './catalysts-page.component.html',
   animations: [slidePanelAnimation],

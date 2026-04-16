@@ -24,6 +24,10 @@ export interface Catalyst {
 export interface CatalystDetail {
   catalyst: Catalyst & {
     recruitment_status: string | null;
+    projection: string;
+    no_longer_expected: boolean;
+    company_logo_url: string | null;
+    marker_type_inner_mark: string;
   };
   upcoming_markers: UpcomingMarker[];
   related_events: RelatedEvent[];
