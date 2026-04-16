@@ -125,6 +125,11 @@ export class BullseyeDetailPanelComponent {
     this.clearSelection.emit();
   }
 
+  protected isTerminalStatus(status: string): boolean {
+    const terminal = ['completed', 'terminated', 'withdrawn', 'suspended', 'no longer available'];
+    return terminal.includes(status.toLowerCase());
+  }
+
   protected phaseColor(phase: RingPhase): string {
     return PHASE_COLOR[phase] ?? '#64748b';
   }

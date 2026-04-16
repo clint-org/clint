@@ -4,7 +4,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
-import { PositioningBubble } from '../../core/models/landscape.model';
+import { PositioningBubble, PositioningGrouping } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
@@ -189,12 +189,24 @@ export class PositioningViewComponent implements OnInit {
 
   onOpenProduct(productId: string): void {
     this.router.navigate(
-      ['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', 'by-therapy-area'],
+      ['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', this.bullseyeSegment()],
       { queryParams: { product: productId } },
     );
   }
 
   onOpenInBullseye(): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', 'by-therapy-area']);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', this.bullseyeSegment()]);
+  }
+
+  /** Map positioning grouping to the closest bullseye dimension segment. */
+  private bullseyeSegment(): string {
+    const map: Record<PositioningGrouping, string> = {
+      'moa': 'by-moa',
+      'therapeutic-area': 'by-therapy-area',
+      'moa+therapeutic-area': 'by-therapy-area',
+      'company': 'by-company',
+      'roa': 'by-roa',
+    };
+    return map[this.state.positioningGrouping()] ?? 'by-therapy-area';
   }
 }

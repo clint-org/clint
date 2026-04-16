@@ -104,7 +104,7 @@
                       <span>{{ trial.phase }}</span>
                     }
                     @if (trial.recruitment_status) {
-                      <span class="text-teal-600">{{ trial.recruitment_status }}</span>
+                      <span [class]="isTerminalStatus(trial.recruitment_status) ? 'text-slate-400' : 'text-teal-600'">{{ trial.recruitment_status }}</span>
                     }
                   </span>
                 </button>
