@@ -1,11 +1,12 @@
 import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { PositioningBubble } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
+import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 import { PositioningChartComponent } from './positioning-chart.component';
 import { PositioningDetailPanelComponent } from './positioning-detail-panel.component';
@@ -22,6 +23,7 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
     MessageModule,
     ButtonModule,
   ],
+  animations: [slidePanelAnimation],
   template: `
     @if (positioningData.isLoading()) {
       <div class="flex items-center justify-center h-full">
@@ -47,7 +49,7 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       @let data = positioningData.value();
       @if (data && chartBubbles().length > 0) {
         <div class="landscape-layout">
-          <div style="min-width: 0; min-height: 0; overflow: hidden;">
+          <div class="landscape-chart-wrap" style="min-width: 0; min-height: 0; overflow: hidden;">
             <app-positioning-chart
               [bubbles]="chartBubbles()"
               [width]="1200"
@@ -59,14 +61,18 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
               (bubbleClick)="onBubbleClick($event)"
             />
           </div>
-          <div class="landscape-panel-wrap">
-            <app-positioning-detail-panel
-              [bubble]="selectedBubble()"
-              [countUnit]="state.countUnit()"
-              [totalBubbles]="data.bubbles.length"
-              (clearSelection)="selectedBubble.set(null)"
-            />
-          </div>
+          @if (selectedBubble()) {
+            <div class="landscape-panel-wrap" @slidePanel>
+              <app-positioning-detail-panel
+                [bubble]="selectedBubble()"
+                [countUnit]="state.countUnit()"
+                [totalBubbles]="data.bubbles.length"
+                (clearSelection)="selectedBubble.set(null)"
+                (openProduct)="onOpenProduct($event)"
+                (openInBullseye)="onOpenInBullseye()"
+              />
+            </div>
+          }
         </div>
       } @else if (data) {
         <div class="flex items-center justify-center h-full">
@@ -89,8 +95,10 @@ export class PositioningViewComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
   private readonly route = inject(ActivatedRoute);
   readonly state = inject(LandscapeStateService);
+  private readonly router = inject(Router);
 
   readonly spaceId = signal('');
+  readonly tenantId = signal('');
   readonly selectedBubble = signal<PositioningBubble | null>(null);
   readonly hoveredBubble = signal<PositioningBubble | null>(null);
   readonly tooltipX = signal(0);
@@ -151,7 +159,9 @@ export class PositioningViewComponent implements OnInit {
     while (snap) {
       if (snap.paramMap.has('spaceId')) {
         this.spaceId.set(snap.paramMap.get('spaceId')!);
-        break;
+      }
+      if (snap.paramMap.has('tenantId')) {
+        this.tenantId.set(snap.paramMap.get('tenantId')!);
       }
       snap = snap.parent;
     }
@@ -175,5 +185,16 @@ export class PositioningViewComponent implements OnInit {
     } else {
       this.selectedBubble.set(bubble);
     }
+  }
+
+  onOpenProduct(productId: string): void {
+    this.router.navigate(
+      ['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', 'by-therapy-area'],
+      { queryParams: { product: productId } },
+    );
+  }
+
+  onOpenInBullseye(): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', 'by-therapy-area']);
   }
 }
