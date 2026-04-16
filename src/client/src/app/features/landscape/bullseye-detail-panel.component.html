@@ -103,6 +103,9 @@
                     @if (trial.phase) {
                       <span>{{ trial.phase }}</span>
                     }
+                    @if (trial.recruitment_status) {
+                      <span class="text-teal-600">{{ trial.recruitment_status }}</span>
+                    }
                   </span>
                 </button>
               </li>
@@ -132,7 +135,7 @@
                   [style.background-color]="marker.color"
                   aria-hidden="true"
                 ></span>
-                <span class="font-mono text-[11px] text-slate-500">{{ marker.event_date }}</span>
+                <span class="font-mono text-[11px] text-slate-500">{{ marker.event_date | date: 'mediumDate' }}</span>
                 <span>{{ marker.marker_type_name }}</span>
                 @if (marker.category_name) {
                   <span class="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ marker.category_name }}</span>

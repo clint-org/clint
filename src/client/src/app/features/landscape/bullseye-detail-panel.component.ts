@@ -1,4 +1,5 @@
 import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 
 import {
@@ -19,7 +20,7 @@ interface RingHistogramEntry {
 @Component({
   selector: 'app-bullseye-detail-panel',
   standalone: true,
-  imports: [ButtonModule, DetailPanelShellComponent],
+  imports: [ButtonModule, DatePipe, DetailPanelShellComponent],
   templateUrl: './bullseye-detail-panel.component.html',
 })
 export class BullseyeDetailPanelComponent {
