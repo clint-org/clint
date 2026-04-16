@@ -14,6 +14,39 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
         {{ d.catalyst.title }}
       </h2>
 
+      <!-- Program -->
+      @if (d.catalyst.company_name) {
+        <div class="mb-3 border-b border-slate-100 pb-2">
+          <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            Program
+          </p>
+          <p class="text-xs text-slate-900">
+            <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
+            @if (d.catalyst.product_name) {
+              &middot; {{ d.catalyst.product_name }}
+            }
+          </p>
+        </div>
+      }
+
+      <!-- Trial -->
+      @if (d.catalyst.trial_name) {
+        <div class="mb-3 border-b border-slate-100 pb-2">
+          <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            Trial
+          </p>
+          <p class="text-xs font-medium text-slate-900">
+            {{ d.catalyst.trial_name }}
+          </p>
+          <p class="text-[11px] text-slate-500">
+            {{ d.catalyst.trial_phase }}
+            @if (d.catalyst.recruitment_status) {
+              &middot; {{ d.catalyst.recruitment_status }}
+            }
+          </p>
+        </div>
+      }
+
       <!-- Date & Status -->
       <div class="mb-4 flex items-center gap-4 text-xs text-slate-500">
         <div>
@@ -54,42 +87,9 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             rel="noopener noreferrer"
             class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
           >
-            {{ d.catalyst.source_url }}
+            {{ extractDomain(d.catalyst.source_url) }}
             <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
           </a>
-        </div>
-      }
-
-      <!-- Trial -->
-      @if (d.catalyst.trial_name) {
-        <div class="mb-4">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Trial
-          </p>
-          <p class="text-xs font-medium text-slate-900">
-            {{ d.catalyst.trial_name }}
-          </p>
-          <p class="text-[11px] text-slate-500">
-            {{ d.catalyst.trial_phase }}
-            @if (d.catalyst.recruitment_status) {
-              &middot; {{ d.catalyst.recruitment_status }}
-            }
-          </p>
-        </div>
-      }
-
-      <!-- Program -->
-      @if (d.catalyst.company_name) {
-        <div class="mb-4">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Program
-          </p>
-          <p class="text-xs text-slate-900">
-            <span class="uppercase">{{ d.catalyst.company_name }}</span>
-            @if (d.catalyst.product_name) {
-              &middot; {{ d.catalyst.product_name }}
-            }
-          </p>
         </div>
       }
 
@@ -129,7 +129,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             @for (re of d.related_events; track re.event_id) {
               <li class="text-[11px] text-slate-500">
                 {{ re.event_date | date: 'mediumDate' }} &mdash; {{ re.title }}
-                <span class="text-slate-300">({{ re.category_name }})</span>
+                <span class="text-slate-500">({{ re.category_name }})</span>
               </li>
             }
           </ul>
@@ -141,4 +141,12 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
 export class MarkerDetailContentComponent {
   readonly detail = input<CatalystDetail | null>(null);
   readonly markerClick = output<string>();
+
+  protected extractDomain(url: string): string {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  }
 }
