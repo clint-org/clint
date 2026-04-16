@@ -16,6 +16,7 @@ import {
 } from '../../core/models/landscape.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import { CompanyService } from '../../core/services/company.service';
+import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
 import { ProductService } from '../../core/services/product.service';
 import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
@@ -46,6 +47,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   private readonly taService = inject(TherapeuticAreaService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
+  private readonly markerCategoryService = inject(MarkerCategoryService);
   readonly state = inject(LandscapeStateService);
 
   readonly spaceId = input.required<string>();
@@ -63,6 +65,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly taOptions = signal<SelectOption[]>([]);
   readonly moaOptions = signal<SelectOption[]>([]);
   readonly roaOptions = signal<SelectOption[]>([]);
+  readonly markerCategoryOptions = signal<SelectOption[]>([]);
 
   readonly zoomOptions: { label: string; value: ZoomLevel }[] = [
     { label: 'Y', value: 'yearly' },
@@ -123,6 +126,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     addChips(f.therapeuticAreaIds, this.taOptions(), 'therapeuticAreaIds', 'Therapy Area');
     addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
+    addChips(f.markerCategoryIds, this.markerCategoryOptions(), 'markerCategoryIds', 'Category');
 
     for (const phase of f.phases) {
       const phaseLabel = this.phaseOptions.find((o) => o.value === phase)?.label ?? phase;
@@ -148,7 +152,8 @@ export class LandscapeFilterBarComponent implements OnInit {
       f.routeOfAdministrationIds.length > 0 ||
       f.phases.length > 0 ||
       f.recruitmentStatuses.length > 0 ||
-      f.studyTypes.length > 0
+      f.studyTypes.length > 0 ||
+      f.markerCategoryIds.length > 0
     );
   });
 
@@ -159,18 +164,20 @@ export class LandscapeFilterBarComponent implements OnInit {
       return;
     }
     try {
-      const [companies, products, areas, moas, roas] = await Promise.all([
+      const [companies, products, areas, moas, roas, markerCategories] = await Promise.all([
         this.companyService.list(sid),
         this.productService.list(sid),
         this.taService.list(sid),
         this.moaService.list(sid),
         this.roaService.list(sid),
+        this.markerCategoryService.list(sid),
       ]);
       this.companyOptions.set(companies.map((c) => ({ label: c.name, value: c.id })));
       this.productOptions.set(products.map((p) => ({ label: p.name, value: p.id })));
       this.taOptions.set(areas.map((a) => ({ label: a.name, value: a.id })));
       this.moaOptions.set(moas.map((m) => ({ label: m.name, value: m.id })));
       this.roaOptions.set(roas.map((r) => ({ label: r.name, value: r.id })));
+      this.markerCategoryOptions.set(markerCategories.map((c) => ({ label: c.name, value: c.id })));
     } finally {
       this.loading.set(false);
     }

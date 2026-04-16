@@ -48,12 +48,6 @@ export interface RelatedEvent {
   category_name: string;
 }
 
-export interface CatalystFilters {
-  category_ids?: string[];
-  company_id?: string;
-  product_id?: string;
-}
-
 export interface CatalystGroup {
   label: string;
   date_range: string;

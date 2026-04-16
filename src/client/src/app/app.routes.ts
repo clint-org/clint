@@ -159,6 +159,13 @@ export const routes: Routes = [
                   },
                 ],
               },
+              {
+                path: 'catalysts',
+                loadComponent: () =>
+                  import('./features/catalysts/catalysts-page.component').then(
+                    (m) => m.CatalystsPageComponent
+                  ),
+              },
             ],
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
@@ -282,13 +289,6 @@ export const routes: Routes = [
             path: 'events',
             loadComponent: () =>
               import('./features/events/events-page.component').then((m) => m.EventsPageComponent),
-          },
-          {
-            path: 'catalysts',
-            loadComponent: () =>
-              import('./features/catalysts/catalysts-page.component').then(
-                (m) => m.CatalystsPageComponent
-              ),
           },
         ],
       },

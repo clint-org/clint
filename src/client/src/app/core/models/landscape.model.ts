@@ -133,6 +133,7 @@ export interface LandscapeFilters {
   phases: RingPhase[];
   recruitmentStatuses: string[];
   studyTypes: string[];
+  markerCategoryIds: string[];
 }
 
 export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
@@ -144,6 +145,7 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   phases: [],
   recruitmentStatuses: [],
   studyTypes: [],
+  markerCategoryIds: [],
 };
 
 export interface LandscapeIndexEntry {
@@ -155,12 +157,13 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye' | 'positioning';
+export type ViewMode = 'timeline' | 'bullseye' | 'positioning' | 'catalysts';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
   { label: 'Positioning', value: 'positioning' },
+  { label: 'Catalysts', value: 'catalysts' },
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [

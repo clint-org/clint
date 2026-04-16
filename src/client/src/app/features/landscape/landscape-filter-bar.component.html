@@ -214,6 +214,23 @@
         [selectedItemsLabel]="'Study type (' + state.filters().studyTypes.length + ')'"
       />
 
+      <p-multiselect
+        [options]="markerCategoryOptions()"
+        [ngModel]="state.filters().markerCategoryIds"
+        (ngModelChange)="update('markerCategoryIds', $event ?? [])"
+        placeholder="Category"
+        ariaLabel="Filter by marker category"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        [showClear]="true"
+        appendTo="body"
+        [styleClass]="'w-fit' + (state.filters().markerCategoryIds.length ? ' has-value' : '')"
+        size="small"
+        [maxSelectedLabels]="0"
+        [selectedItemsLabel]="'Category (' + state.filters().markerCategoryIds.length + ')'"
+      />
+
       @if (hasAnyActive()) {
         <p-button
           label="Clear"

@@ -1,6 +1,6 @@
 <div class="relative flex flex-col h-full">
   <div class="flex-1 overflow-auto px-4 pb-0">
-    @if (dashboardData.isLoading()) {
+    @if (state.dataLoading()) {
       <div class="flex items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3">
           <p-progressspinner
@@ -11,11 +11,11 @@
           <span class="text-sm text-slate-500">Loading dashboard data...</span>
         </div>
       </div>
-    } @else if (dashboardData.error()) {
+    } @else if (state.dataError()) {
       <div class="flex items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
           <p-message severity="error" [closable]="false">
-            Failed to load dashboard data: {{ dashboardData.error() }}
+            Failed to load dashboard data: {{ state.dataError() }}
           </p-message>
           <p-button label="Retry" severity="primary" size="small" (onClick)="retry()" />
         </div>
@@ -47,14 +47,6 @@
   <div class="flex-none">
     <app-legend [spaceId]="spaceId()" />
   </div>
-
-  <app-marker-detail-panel
-    mode="drawer"
-    [detail]="drawerDetail()"
-    [open]="drawerOpen()"
-    (panelClose)="closeDrawer()"
-    (markerClick)="onDrawerMarkerClick($event)"
-  />
 </div>
 
 <app-export-dialog

@@ -50,11 +50,11 @@ src/client/
           events-page.component  # p-table with createGridState, detail panel toggle
           event-detail-panel.component # Right-side panel: description, sources, tags, thread, links
           event-form.component   # Create/edit event modal (p-dialog)
-        catalysts/              # Key Catalysts: forward-looking marker timeline
-          catalysts-page.component   # Smart component: filters, data fetching, grouping
+        catalysts/              # Key Catalysts: forward-looking marker timeline (child of landscape shell)
+          catalysts-page.component   # Thin presenter: reads state.filteredCatalysts(), delegates detail to shared panel
           catalyst-table.component   # p-table with rowGroupMode="subheader" for time buckets
           catalyst-table.css         # Global table chrome (imported from styles.css)
-          group-catalysts.ts         # Pure utility: adaptive time-bucket grouping
+          group-catalysts.ts         # Pure utility: adaptive time-bucket grouping (used by LandscapeStateService)
         spaces/                 # Space list and creation
         onboarding/             # Create org / join with invite code
         tenant-settings/        # Tenant management and member invites
@@ -154,6 +154,7 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
     bullseye/by-roa                 -> LandscapeIndexComponent
     bullseye/by-roa/:id             -> LandscapeComponent
     positioning                     -> PositioningViewComponent
+    catalysts                       -> CatalystsPageComponent
     manage/companies                -> CompanyListComponent
     manage/products                 -> ProductListComponent
     manage/trials                   -> TrialListComponent  (supports ?product=<id> filter)
@@ -161,7 +162,6 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
     settings/marker-types           -> MarkerTypeListComponent
     settings/taxonomies             -> TaxonomiesPageComponent (Therapeutic Areas, MOA, ROA)
     events                          -> EventsPageComponent
-    catalysts                       -> CatalystsPageComponent
 /                                   -> onboardingRedirectGuard (auto-redirect)
 /**                                 -> redirects to /
 ```
@@ -184,7 +184,7 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
 | `TherapeuticAreaService` | Therapeutic area CRUD (name, abbreviation) |
 | `TimelineService` | Date-to-pixel calculations, column generation, zoom config |
 | `PptxExportService` | Client-side PowerPoint generation via pptxgenjs |
-| `CatalystService` | Calls `get_key_catalysts()` and `get_catalyst_detail()` RPCs for the Key Catalysts page |
+| `CatalystService` | Calls `get_catalyst_detail()` RPC for marker detail panels (used by events page and landscape state service) |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 | `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
 
@@ -217,7 +217,7 @@ The root dashboard component uses Angular signals extensively:
 - `computed()` -- derived lists for filter options (unique companies, etc.)
 - `effect()` -- syncs filter state to URL query params
 
-Click events on phase bars and trials navigate to trial detail pages. Marker clicks open an overlay detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) that fetches full detail via `CatalystService.getCatalystDetail()`. Sections are ordered for the CI analyst's mental model: **Program** (company logo + company/product) and **Trial** (name, phase, recruitment status) appear first, followed by projection badge (Stout estimate / Company guidance / Primary source estimate) and "No longer expected" badge when applicable, then date/status, description, source URL (truncated to domain name via `extractDomain()`), upcoming markers, and related events. The header reuses the shared SVG icon components (`CircleIconComponent`, `DiamondIconComponent`, etc. from `shared/components/svg-icons/`) with fill style derived from `projection` (`actual` = filled, else outline) and `inner_mark` -- identical rendering to the timeline grid markers. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel uses the shared `@slidePanel` animation from `shared/animations/slide-panel.animation.ts`.
+Click events on phase bars and trials navigate to trial detail pages. Marker clicks call `LandscapeStateService.selectMarker()`, which opens the shared detail panel rendered by the landscape shell. The detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) fetches full detail via `get_catalyst_detail` RPC. Sections are ordered for the CI analyst's mental model: **Program** (company logo + company/product) and **Trial** (name, phase, recruitment status) appear first, followed by projection badge (Stout estimate / Company guidance / Primary source estimate) and "No longer expected" badge when applicable, then date/status, description, source URL (truncated to domain name via `extractDomain()`), upcoming markers, and related events. The header reuses the shared SVG icon components (`CircleIconComponent`, `DiamondIconComponent`, etc. from `shared/components/svg-icons/`) with fill style derived from `projection` (`actual` = filled, else outline) and `inner_mark` -- identical rendering to the timeline grid markers. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel persists across tab switches (timeline -> catalysts -> etc.) since it is owned by the landscape shell, not individual child views.
 
 ### AppShellComponent (Layout)
 
@@ -225,7 +225,7 @@ The `AppShellComponent` orchestrates the three-panel layout: sidebar + topbar + 
 
 - **Sidebar** (`SidebarComponent`): Collapsed (48px, individual item icons with section dividers) or expanded (220px, icon + label per item). Both hover-expand and pin-expand use `position: relative` -- the sidebar always pushes content right, never overlays. Header contains the Triple C logo mark (`ClintLogoComponent`, 24px dark variant) + pin toggle. All icons sourced from `NAV_ICONS` constant. Org/space selection lives in the topbar, not the sidebar.
 - **Topbar** (`ContextualTopbarComponent`): Left side shows an org/space breadcrumb (`Org / Space | Page`). Org and space are dropdown-switchable. Icons from `NAV_ICONS` appear on section tabs and list page titles. The right side of the divider adapts by page type:
-  - `landscape` (used for all tab-based sections): dynamic section label (`sectionLabel` input) + icon-prefixed tab buttons. Landscape shows Timeline / Bullseye / Positioning; Intelligence shows Events / Catalysts; Manage shows Companies / Products / Trials. When Bullseye or Positioning is active, a row of smaller pill-style dimension sub-tabs appears after the main tabs (Bullseye: Therapy Area, Company, MOA, ROA; Positioning: MOA, Therapy Area, MOA + TA, Company, ROA). Sub-tab state is owned by `LandscapeShellComponent` and pushed to the topbar via `TopbarStateService.subTabs` / `onSubTabClick`.
+  - `landscape` (used for all tab-based sections): dynamic section label (`sectionLabel` input) + icon-prefixed tab buttons. Landscape shows Timeline / Bullseye / Positioning / Catalysts; Intelligence shows Events; Manage shows Companies / Products / Trials. When Bullseye or Positioning is active, a row of smaller pill-style dimension sub-tabs appears after the main tabs (Bullseye: Therapy Area, Company, MOA, ROA; Positioning: MOA, Therapy Area, MOA + TA, Company, ROA). Sub-tab state is owned by `LandscapeShellComponent` and pushed to the topbar via `TopbarStateService.subTabs` / `onSubTabClick`.
   - `list`: icon + page title (e.g., "Taxonomies") + record count + action buttons (used for Settings pages)
   - `detail`: back button + entity eyebrow/title
   - `blank`: breadcrumb only
@@ -254,11 +254,10 @@ All detail panels across the app use a unified overlay pattern: a 340px absolute
 **Layout structure:** The container (`.landscape-layout` for landscape views, or a `position: relative` wrapper for events/catalysts) uses `position: relative` with its chart or table filling the full space. The panel wrapper (`.landscape-panel-wrap` or an inline `absolute` div) is positioned `absolute top-0 right-0 bottom-0 w-[340px] z-10` with a left box-shadow for depth.
 
 **Consumers:**
-- **Timeline** -- `MarkerDetailPanelComponent` with `mode='drawer'` (marker click opens panel)
+- **Timeline + Catalysts** -- Shared `MarkerDetailPanelComponent` with `mode='drawer'` rendered by `LandscapeShellComponent`. State lives in `LandscapeStateService` (`selectedMarkerId`, `selectedDetail`, `detailLoading`). Panel persists across tab switches.
 - **Bullseye** -- `LandscapeComponent` (dot click opens `BullseyeDetailPanelComponent`: product name, company, MOA/ROA tags, trials with recruitment status, recent markers with formatted dates, "Open in timeline" action)
 - **Positioning** -- `PositioningViewComponent` (bubble click opens `PositioningDetailPanelComponent`: "COMPETITIVE GROUP" header, stacked stats, phase breakdown chips, clickable products with generic names and navigation arrows, "Open in bullseye" cross-navigation that maps the current positioning grouping to the matching bullseye dimension)
 - **Events** -- `EventsPageComponent` (row click opens `EventDetailPanelComponent`)
-- **Catalysts** -- `CatalystsPageComponent` (row click opens `MarkerDetailPanelComponent` with `mode='inline'`)
 
 **When adding a new detail panel:** use `position: relative` on the parent container, absolute-position the panel at the right edge, import `slidePanelAnimation` from `shared/animations/slide-panel.animation.ts`, and apply `@slidePanel` to the panel wrapper inside an `@if` block so the animation triggers on enter/leave.
 

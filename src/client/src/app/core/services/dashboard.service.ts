@@ -42,8 +42,9 @@ export class DashboardService {
             marker_types: m.marker_type
               ? {
                   ...m.marker_type,
+                  category_id: m.marker_type.category_id ?? null,
                   marker_categories: m.marker_type.category_name
-                    ? { name: m.marker_type.category_name }
+                    ? { id: m.marker_type.category_id, name: m.marker_type.category_name }
                     : null,
                 }
               : null,

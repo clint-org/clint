@@ -96,11 +96,11 @@ A unified chronological feed showing analyst-created events and timeline markers
 
 ## Key Catalysts
 
-A standalone forward-looking page showing all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
+The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Catalysts**). Shows all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
 
-**Route:** `/t/:tenantId/s/:spaceId/catalysts`
+**Route:** `/t/:tenantId/s/:spaceId/catalysts` (child of landscape shell)
 
-**Layout:** Dense table (p-table with `rowGroupMode="subheader"`) + a right-side 340px overlay detail panel (`@slidePanel` animation) on row click. No summary header -- straight to data.
+**Layout:** Dense table (p-table with `rowGroupMode="subheader"`). No summary header -- straight to data. The detail panel is shared with other landscape views (see below).
 
 **Grouping:** Adaptive time-bucket density based on distance from today:
 - Current ISO week -> "This Week" (with date range)
@@ -116,14 +116,11 @@ A standalone forward-looking page showing all upcoming markers (clinical trial m
 | Company / Product | "COMPANY (uppercase) -- Product" |
 | Status | "CONFIRMED" (green badge) or "PROJECTED" (amber badge), derived from `is_projected` |
 
-**Filter bar:** Category (p-multiselect), Company (p-select with search), Product (p-select, cascading from company), and text search (client-side, debounced).
+**Filtering:** Uses the shared landscape filter panel (company, product, therapeutic area, MOA, ROA, phase, recruitment status, study type, marker category). The table also has its own text search via `createGridState` for quick in-table filtering.
 
-**Detail panel (340px overlay):** Three tiers:
-1. Catalyst data -- marker shape icon (SVG, matches type shape/color/projected fill), category/type label, title, projection badge (Stout estimate / Company guidance / Primary source estimate), "No longer expected" badge, date, status, description, source link
-2. Trial context -- trial name, phase, recruitment status, company logo + company/product
-3. Related timeline -- upcoming markers for same trial (clickable, switches panel), related events for same trial/product/company (read-only)
+**Data source:** Derived client-side from the shared `LandscapeStateService.filteredCatalysts` computed signal, which flattens the unfiltered dashboard dataset (fetched once via `get_dashboard_data`) to future markers. Detail panel uses `get_catalyst_detail` RPC.
 
-**Data source:** Reads from the existing `markers` table via two RPC functions (`get_key_catalysts`, `get_catalyst_detail`). No new database tables.
+**Cross-navigation:** Clicking a catalyst row opens the shared detail panel. Switching to the Timeline tab keeps the panel open with the same marker in spatial context. Filters carry over across all landscape tabs.
 
 ## PowerPoint Export
 

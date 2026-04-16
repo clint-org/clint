@@ -46,15 +46,13 @@ const NAV_SECTIONS: NavSection[] = [
           { label: 'ROA', route: 'positioning/by-roa' },
         ],
       },
+      { label: 'Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
     ],
   },
   {
     id: 'intelligence',
     label: 'Intelligence',
-    items: [
-      { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
-      { label: 'Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
-    ],
+    items: [{ label: 'Events', route: 'events', icon: NAV_ICONS['events'] }],
   },
   {
     id: 'manage',
@@ -540,7 +538,8 @@ export class SidebarComponent {
     const route = this.activeRoute();
     if (route.startsWith('manage/')) return 'manage';
     if (route.startsWith('settings/')) return 'settings';
-    if (route === 'events' || route === 'catalysts') return 'intelligence';
+    if (route === 'events') return 'intelligence';
+    if (route === 'catalysts') return 'landscape';
     return 'landscape';
   });
 

@@ -24,12 +24,14 @@ import {
 import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
+import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, LandscapeFilterBarComponent],
+  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, ProgressSpinner],
   animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
@@ -44,9 +46,26 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         (entityChange)="onEntityChange($event)"
       />
 
-      <!-- Content -->
-      <div class="flex-1 overflow-hidden" [@routeFade]="viewMode() + '-' + dimension()">
+      <div class="relative flex-1 overflow-hidden" [@routeFade]="viewMode() + '-' + dimension()">
         <router-outlet />
+
+        @if (state.selectedMarkerId()) {
+          @if (state.detailLoading() && !state.selectedDetail()) {
+            <div
+              class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
+            >
+              <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+            </div>
+          } @else {
+            <app-marker-detail-panel
+              mode="drawer"
+              [detail]="state.selectedDetail()"
+              [open]="!!state.selectedMarkerId()"
+              (panelClose)="state.clearSelection()"
+              (markerClick)="state.selectMarker($event)"
+            />
+          }
+        }
       </div>
     </div>
   `,
@@ -220,6 +239,9 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.entityId.set(child.snapshot.paramMap.get('entityId'));
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');
+      this.entityId.set(null);
+    } else if (allSegments.includes('catalysts')) {
+      this.viewMode.set('catalysts');
       this.entityId.set(null);
     } else {
       this.viewMode.set('timeline');
