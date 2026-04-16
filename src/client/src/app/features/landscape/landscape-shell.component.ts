@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { routeFadeAnimation } from '../../shared/animations/route-fade.animation';
 import { filter } from 'rxjs';
 import {
   BullseyeDimension,
@@ -29,6 +30,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
   selector: 'app-landscape-shell',
   standalone: true,
   imports: [RouterOutlet, LandscapeFilterBarComponent],
+  animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
     <div class="flex flex-col h-full">
@@ -43,7 +45,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       />
 
       <!-- Content -->
-      <div class="flex-1 overflow-hidden">
+      <div class="flex-1 overflow-hidden" [@routeFade]="viewMode() + '-' + dimension()">
         <router-outlet />
       </div>
     </div>

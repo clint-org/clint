@@ -1,11 +1,13 @@
 import { Component, inject, input, signal, effect } from '@angular/core';
 import { NotificationService } from '../services/notification.service';
 import { NotificationPanelComponent } from './notification-panel.component';
+import { panelSlideDownAnimation } from '../../shared/animations/overlay.animation';
 
 @Component({
   selector: 'app-notification-bell',
   standalone: true,
   imports: [NotificationPanelComponent],
+  animations: [panelSlideDownAnimation],
   template: `
     <div class="relative">
       <button
@@ -24,11 +26,13 @@ import { NotificationPanelComponent } from './notification-panel.component';
       </button>
 
       @if (panelOpen()) {
-        <app-notification-panel
-          [spaceId]="spaceId()"
-          (closed)="panelOpen.set(false)"
-          (read)="loadUnreadCount()"
-        />
+        <div @panelSlideDown>
+          <app-notification-panel
+            [spaceId]="spaceId()"
+            (closed)="panelOpen.set(false)"
+            (read)="loadUnreadCount()"
+          />
+        </div>
       }
     </div>
   `,

@@ -31,18 +31,29 @@
           </div>
         </div>
       } @else {
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
           @for (entry of entries; track entry.entity.id) {
             <a
               class="landscape-index-card"
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'bullseye', routeSegment(), entry.entity.id]"
+              [routerLink]="[
+                '/t',
+                tenantId(),
+                's',
+                spaceId(),
+                'bullseye',
+                routeSegment(),
+                entry.entity.id,
+              ]"
             >
               <div class="landscape-index-card-title">{{ entry.entity.name }}</div>
               @if (entry.entity.abbreviation) {
                 <div class="landscape-index-card-abbr">{{ entry.entity.abbreviation }}</div>
               }
               <div class="landscape-index-card-stats">
-                <span>{{ entry.product_count }} {{ entry.product_count === 1 ? 'product' : 'products' }}</span>
+                <span
+                  >{{ entry.product_count }}
+                  {{ entry.product_count === 1 ? 'product' : 'products' }}</span
+                >
                 <span class="landscape-index-card-sep">&middot;</span>
                 <span>{{ entry.secondary_count }} {{ entry.secondary_label }}</span>
               </div>

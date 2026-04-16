@@ -53,7 +53,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </div>
       } @else {
         <div
-          class="grid grid-cols-1 gap-px bg-slate-200 border border-slate-200 sm:grid-cols-2 lg:grid-cols-3"
+          class="grid grid-cols-1 gap-px bg-slate-200 border border-slate-200 sm:grid-cols-2 lg:grid-cols-3 animate-stagger"
         >
           @for (space of spaces(); track space.id) {
             <button

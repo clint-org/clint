@@ -3,5 +3,6 @@
 @import './app/shared/styles/primeng-overrides.css';
 @import './app/shared/styles/data-table.css';
 @import './app/shared/styles/page-shell.css';
+@import './app/shared/styles/animations.css';
 @import './app/features/landscape/landscape.css';
 @plugin "tailwindcss-primeui";

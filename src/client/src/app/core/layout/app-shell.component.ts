@@ -17,6 +17,11 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
+import { routeFadeAnimation } from '../../shared/animations/route-fade.animation';
+import {
+  backdropFadeAnimation,
+  menuSlideUpAnimation,
+} from '../../shared/animations/overlay.animation';
 
 type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
 type PageType = 'landscape' | 'list' | 'detail' | 'blank';
@@ -37,6 +42,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
     MessageModule,
     FormsModule,
   ],
+  animations: [routeFadeAnimation, backdropFadeAnimation, menuSlideUpAnimation],
   template: `
     <div class="shell">
       <!-- Sidebar (collapsed: 48px icons, expanded: 220px full nav) -->
@@ -94,7 +100,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         </app-contextual-topbar>
 
         <!-- Page content -->
-        <div class="content-area">
+        <div class="content-area" [@routeFade]="activeSpaceRoute()">
           <router-outlet />
         </div>
       </div>
@@ -102,8 +108,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       <!-- Account menu overlay -->
       @if (accountOpen()) {
         <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-        <div class="account-backdrop" (click)="accountOpen.set(false)"></div>
-        <div class="account-menu" role="menu">
+        <div class="account-backdrop" @backdropFade (click)="accountOpen.set(false)"></div>
+        <div class="account-menu" @menuSlideUp role="menu">
           <div class="account-menu__header">
             <p class="account-menu__label">Signed in as</p>
             <p class="account-menu__email">{{ user()?.email }}</p>
