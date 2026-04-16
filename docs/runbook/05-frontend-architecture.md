@@ -60,6 +60,9 @@ src/client/
         onboarding/             # Create org / join with invite code
         tenant-settings/        # Tenant management and member invites
       shared/
+        animations/
+          slide-panel.animation.ts  # Reusable slide-in/out trigger (@slidePanel) for overlay detail panels (200ms enter, 150ms leave)
+          fade-tooltip.animation.ts # Reusable fade trigger (@fadeTooltip) for chart tooltips (120ms enter, 80ms leave)
         constants/
           nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
@@ -196,7 +199,7 @@ DashboardComponent               # Orchestrates state, filters, loading
       MarkerComponent            # SVG marker icon (6 shapes x 4 fills), receives trial/program context
         MarkerTooltipComponent   # Light hover tooltip: left accent bar, marker icon, trial + program context
       RowNotesComponent          # Notes display below a trial row
-  MarkerDetailDrawerComponent    # Slide-over drawer (480px) on marker click: detail, upcoming, related events
+  MarkerDetailDrawerComponent    # Overlay panel (340px) on marker click: program, trial, date/status, description, source, upcoming, related
 ```
 
 ### DashboardComponent
@@ -209,7 +212,7 @@ The root dashboard component uses Angular signals extensively:
 - `computed()` -- derived lists for filter options (unique companies, etc.)
 - `effect()` -- syncs filter state to URL query params
 
-Click events on phase bars and trials navigate to trial detail pages. Marker clicks open a slide-over detail drawer (`MarkerDetailDrawerComponent`) that fetches full detail via `CatalystService.getCatalystDetail()` -- showing description, source, trial context, program, upcoming markers, and related events. The drawer dismisses via X button, backdrop click, or Escape. Clicking another marker inside the drawer swaps its content in place.
+Click events on phase bars and trials navigate to trial detail pages. Marker clicks open an overlay detail panel (`MarkerDetailDrawerComponent`, 340px, absolute-positioned right) that fetches full detail via `CatalystService.getCatalystDetail()`. Sections are ordered for the CI analyst's mental model: **Program** (company/product) and **Trial** (name, phase, recruitment status) appear first, followed by date/status, description, source URL (truncated to domain name via `extractDomain()`), upcoming markers, and related events. The header shows a colored dot matching the marker type color. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel uses the shared `@slidePanel` animation from `shared/animations/slide-panel.animation.ts`.
 
 ### AppShellComponent (Layout)
 
@@ -238,6 +241,30 @@ All non-timeline management pages (Companies, Products, Trials, Marker Types, Th
 The Products list **no longer** renders its trials inline (the old chevron-expand + nested p-table pattern is removed). Instead, the Trials column shows a count that deep-links to `/manage/trials?product=<id>`, which filters the dedicated Trials list to that product. The "Add Trial" action moved with it: trials are created from the Trials list with a product dropdown, or from a product-filtered Trials view where the product is preselected.
 
 The trial edit form (`TrialFormComponent`) **does not use `p-fieldset`**. The previous collapsible fieldset pattern for CT.gov sections (Study Design / Eligibility / Timeline / Regulatory) caused content-leakage bugs during collapse animations and has been replaced with sibling `SectionCard`s that are always expanded — users scroll. When adding new grouped form sections, follow the same pattern.
+
+## Detail Panel Pattern (Overlay)
+
+All detail panels across the app use a unified overlay pattern: a 340px absolute-positioned panel that slides in from the right edge of its container when an item is selected, and hides when nothing is selected. The chart/table beneath fills the full available width; the panel overlays on top of it. There is no backdrop or scroll lock -- the underlying content remains visible and interactive around the panel.
+
+**Layout structure:** The container (`.landscape-layout` for landscape views, or a `position: relative` wrapper for events/catalysts) uses `position: relative` with its chart or table filling the full space. The panel wrapper (`.landscape-panel-wrap` or an inline `absolute` div) is positioned `absolute top-0 right-0 bottom-0 w-[340px] z-10` with a left box-shadow for depth.
+
+**Consumers:**
+- **Timeline** -- `MarkerDetailDrawerComponent` (marker click opens panel)
+- **Bullseye** -- `LandscapeComponent` (dot click opens `BullseyeDetailPanelComponent`: product name, company, MOA/ROA tags, trials with recruitment status, recent markers with formatted dates, "Open in timeline" action)
+- **Positioning** -- `PositioningViewComponent` (bubble click opens `PositioningDetailPanelComponent`: "COMPETITIVE GROUP" header, stacked stats, phase breakdown chips, clickable products with generic names and navigation arrows, "Open in bullseye" cross-navigation that maps the current positioning grouping to the matching bullseye dimension)
+- **Events** -- `EventsPageComponent` (row click opens `EventDetailPanelComponent`)
+- **Catalysts** -- `CatalystsPageComponent` (row click opens `CatalystDetailPanelComponent`)
+
+**When adding a new detail panel:** use `position: relative` on the parent container, absolute-position the panel at the right edge, import `slidePanelAnimation` from `shared/animations/slide-panel.animation.ts`, and apply `@slidePanel` to the panel wrapper inside an `@if` block so the animation triggers on enter/leave.
+
+## Shared Animations
+
+Two reusable Angular animation triggers live in `shared/animations/`:
+
+- **`slidePanelAnimation`** (`@slidePanel`) -- translateX slide-in from the right (200ms ease-out enter, 150ms ease-in leave). Used by all five detail panel consumers listed above.
+- **`fadeTooltipAnimation`** (`@fadeTooltip`) -- opacity fade (120ms ease-out enter, 80ms ease-in leave). Used by `BullseyeTooltipComponent` and `PositioningTooltipComponent` for chart hover tooltips.
+
+Import the trigger constant, add it to the component's `animations` array, and apply the trigger name (e.g., `@slidePanel`) to the conditionally-rendered element.
 
 ## Models
 
@@ -298,6 +325,8 @@ The custom theme preset (`config/primeng-theme.ts`) configures:
 All user-facing success feedback uses PrimeNG `p-toast` via `MessageService`. A single `<p-toast position="top-right" />` lives in `app.component.ts` -- individual components never render their own toast element.
 
 **Pattern:** inject `MessageService` and call `this.messageService.add({ severity: 'success', summary: 'Saved.', life: 3000 })`. Use `life: 3000` (3 seconds auto-dismiss) for success confirmations. The toast stacks naturally if multiple actions fire in quick succession.
+
+**Visual treatment:** Toasts use square corners (`borderRadius: 0`), a uniform `slate-200` border, and a 3px left-border accent colored per severity (teal for success, red for error, amber for warn, slate for info). Close button and icon are tightened for a compact, data-instrument feel. These overrides live in `primeng-theme.ts` (design tokens) and `primeng-overrides.css` (structural CSS).
 
 **Do not** use inline `<span>` text next to buttons or `<p-message severity="success">` banners for save confirmations. Those patterns were removed in favor of the unified toast system. `<p-message>` is still used for inline error display within forms.
 
