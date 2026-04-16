@@ -204,6 +204,7 @@ export type CountUnit = 'products' | 'trials' | 'companies';
 export interface PositioningProduct {
   id: string;
   name: string;
+  generic_name: string | null;
   company_id: string;
   company_name: string;
   highest_phase: RingPhase;
