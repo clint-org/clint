@@ -1,14 +1,17 @@
 import { Component, computed, input } from '@angular/core';
 
 import { PositioningBubble } from '../../core/models/landscape.model';
+import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 @Component({
   selector: 'app-positioning-tooltip',
   standalone: true,
+  animations: [fadeTooltipAnimation],
   template: `
     @if (bubble()) {
       @let b = bubble()!;
       <div
+        @fadeTooltip
         class="fixed z-50 pointer-events-none bg-slate-800 text-white text-xs rounded-md px-3 py-2 shadow-lg max-w-56"
         [style.left.px]="x()"
         [style.top.px]="y()"
@@ -47,7 +50,7 @@ export class PositioningTooltipComponent {
     if (keys['therapeutic_area_name']) parts.push(keys['therapeutic_area_name']);
     if (keys['company_name']) parts.push(keys['company_name']);
     if (keys['roa_name']) parts.push(keys['roa_name']);
-    return parts.length > 0 ? parts.join(' + ') : b.label;
+    return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 
   readonly topCompanies = computed<string[]>(() => {
