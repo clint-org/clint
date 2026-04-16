@@ -15,16 +15,17 @@
       >
         <!-- Header row -->
         <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
-          <!-- Column settings toggle -->
-          <button
-            type="button"
-            class="flex-none w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 border-r border-slate-700 transition-colors"
-            aria-label="Column settings"
-            [attr.aria-expanded]="columnSettingsOpen()"
-            (click)="columnSettingsPanel.toggle($event)"
-          >
-            <i class="fa-solid fa-gear text-xs"></i>
-          </button>
+          @if (!isScrolled()) {
+            <button
+              type="button"
+              class="flex-none w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 border-r border-slate-700 transition-colors"
+              aria-label="Column settings"
+              [attr.aria-expanded]="columnSettingsOpen()"
+              (click)="columnSettingsPanel.toggle($event)"
+            >
+              <i class="fa-solid fa-gear text-xs"></i>
+            </button>
+          }
           <div
             class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
             [class.w-36]="!isScrolled()"
@@ -93,7 +94,9 @@
         </p-popover>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-100">
-            <div class="w-8 flex-none" aria-hidden="true">&nbsp;</div>
+            @if (!isScrolled()) {
+              <div class="w-8 flex-none" aria-hidden="true">&nbsp;</div>
+            }
             <div
               class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
               [class.w-36]="!isScrolled()"
@@ -125,17 +128,19 @@
         <!-- Row labels -->
         @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
           <div
-            class="flex border-slate-200"
+            class="flex border-l-2 border-slate-200"
             [class.border-b-2]="row.isLastInCompany"
             [class.border-b]="!row.isLastInCompany"
             [class.border-slate-300]="row.isLastInCompany"
             [class.bg-white]="idx % 2 === 0"
             [class.bg-slate-50]="idx % 2 !== 0"
-            [class.border-l-2]="row.isFirstInCompany"
             [class.border-l-teal-500]="row.isFirstInCompany"
+            [class.border-l-transparent]="!row.isFirstInCompany"
             [style.height.px]="36"
           >
-            <div class="w-8 flex-none" aria-hidden="true"></div>
+            @if (!isScrolled()) {
+              <div class="w-8 flex-none" aria-hidden="true"></div>
+            }
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             <div
               class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-teal-50 hover:text-teal-700"
