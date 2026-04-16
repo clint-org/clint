@@ -335,7 +335,8 @@ export class AppShellComponent implements OnInit {
     const route = this.activeSpaceRoute();
     if (route.startsWith('manage/')) return 'manage';
     if (route.startsWith('settings/')) return 'settings';
-    if (route === 'events' || route === 'catalysts') return 'intelligence';
+    if (route === 'events') return 'intelligence';
+    if (route === 'catalysts') return 'landscape';
     return 'landscape';
   });
 
@@ -403,6 +404,12 @@ export class AppShellComponent implements OnInit {
             active: route.startsWith('positioning'),
             icon: NAV_ICONS['positioning'],
           },
+          {
+            label: 'Catalysts',
+            value: 'catalysts',
+            active: route === 'catalysts',
+            icon: NAV_ICONS['catalysts'],
+          },
         ];
       case 'intelligence':
         return [
@@ -411,12 +418,6 @@ export class AppShellComponent implements OnInit {
             value: 'events',
             active: route === 'events',
             icon: NAV_ICONS['events'],
-          },
-          {
-            label: 'Catalysts',
-            value: 'catalysts',
-            active: route === 'catalysts',
-            icon: NAV_ICONS['catalysts'],
           },
         ];
       case 'manage':
@@ -563,6 +564,9 @@ export class AppShellComponent implements OnInit {
             break;
           case 'positioning':
             this.navigateToSpaceRoute('positioning/by-moa');
+            break;
+          case 'catalysts':
+            this.navigateToSpaceRoute('catalysts');
             break;
         }
         break;
