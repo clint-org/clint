@@ -138,7 +138,7 @@ All whitelabel RPCs follow the project's SECURITY DEFINER convention modeled on 
 get_brand_by_host(p_host text) -> jsonb
 ```
 
-**Anon-callable.** Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority). Returns a public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `auth_providers[]`, `has_self_join` (boolean — never the actual allowlist), `suspended`. Returns `kind: "default"` with Clint defaults if no match.
+**Anon-callable.** Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, the reserved `admin.<anything>` subdomain (returns `kind: "super-admin"` — requires the host to have at least two segments so bare `admin` doesn't match), `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority over the magic admin subdomain). Returns a public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `auth_providers[]`, `has_self_join` (boolean — never the actual allowlist), `suspended`. Returns `kind: "default"` with Clint defaults if no match.
 
 ### check_subdomain_available
 

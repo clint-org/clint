@@ -139,6 +139,8 @@ http://localhost:4200/?wl_kind=super-admin
 
 When the param is present, `fetchBrand()` short-circuits to a synthetic `Brand` and skips the `get_brand_by_host` RPC. `kind === 'super-admin'` does NOT auto-elevate platform-admin status — you still need a real `platform_admins` row. The override only changes brand resolution.
 
+For super-admin specifically, the override is no longer required: the RPC recognizes any `admin.<anything>` host (e.g. `admin.localhost:4200`) and returns `kind: "super-admin"` natively. The override remains useful for agency / tenant kinds where you want to point at a real DB row without DNS.
+
 ## Platform Admin Bootstrap
 
 `platform_admins` is not exposed via PostgREST. There is no UI to add platform admins. To bootstrap yourself locally:

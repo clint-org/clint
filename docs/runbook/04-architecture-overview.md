@@ -57,8 +57,9 @@ Every page load runs `get_brand_by_host(p_host text) returns jsonb` (anon-callab
 
 1. `tenants.custom_domain` (sales-led upgrade)
 2. `agencies.custom_domain`
-3. `tenants.subdomain`
-4. `agencies.subdomain`
+3. Reserved `admin.<anything>` subdomain → `kind: "super-admin"` (between custom domains and tenant/agency subdomain matches, so a tenant whose `custom_domain` is `admin.somebrand.com` still wins)
+4. `tenants.subdomain`
+5. `agencies.subdomain`
 
 It returns a small public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `auth_providers[]`, `has_self_join`, `suspended`. The full `email_domain_allowlist` is **never** returned to anon (would leak which corporate email domains unlock the workspace) — authenticated tenant owners read it through `get_tenant_access_settings`.
 
