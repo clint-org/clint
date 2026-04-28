@@ -78,6 +78,16 @@ export class SupabaseService {
     });
   }
 
+  signInWithMicrosoft() {
+    return this.supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: 'email openid profile',
+      },
+    });
+  }
+
   signOut() {
     return this.supabase.auth.signOut();
   }

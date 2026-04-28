@@ -310,6 +310,12 @@ redirect_uri = "http://localhost:54321/auth/v1/callback"
 url = ""
 skip_nonce_check = false
 
+[auth.external.azure]
+enabled = true
+client_id = "env(MICROSOFT_OAUTH_CLIENT_ID)"
+secret = "env(MICROSOFT_OAUTH_CLIENT_SECRET)"
+url = "env(MICROSOFT_OAUTH_TENANT_URL)"
+
 [auth.external.apple]
 enabled = false
 client_id = ""
