@@ -68,9 +68,13 @@ export class PptxExportService {
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
 
+    // Two slides total: cover + data slide.
+    const totalPages = 2;
+
     // Slide 1: branded cover.
     const cover = pptx.addSlide();
     this.renderCover(cover, appDisplayName, primaryColorHex, logoData);
+    this.addFooter(cover, appDisplayName, 1, totalPages);
 
     // Slide 2: data slide.
     const slide = pptx.addSlide();
@@ -82,8 +86,36 @@ export class PptxExportService {
     this.renderGridLines(slide, startYear, endYear, zoomLevel, rows.length, rowH);
     this.renderRows(slide, rows, rowH, startYear, endYear);
     this.renderLegend(slide, companies);
+    this.addFooter(slide, appDisplayName, 2, totalPages);
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
+  }
+
+  private addFooter(
+    slide: PptxGenJS.Slide,
+    appDisplayName: string,
+    pageNum: number,
+    totalPages: number
+  ): void {
+    slide.addText(appDisplayName, {
+      x: 0.1,
+      y: SLIDE_H - 0.25,
+      w: 4,
+      h: 0.2,
+      fontSize: 8,
+      fontFace: 'Arial',
+      color: '94a3b8',
+    });
+    slide.addText(`${pageNum} / ${totalPages}`, {
+      x: SLIDE_W - 1.5,
+      y: SLIDE_H - 0.25,
+      w: 1.4,
+      h: 0.2,
+      fontSize: 8,
+      fontFace: 'Arial',
+      color: '94a3b8',
+      align: 'right',
+    });
   }
 
   private renderCover(
