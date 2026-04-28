@@ -1,8 +1,393 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { ColorPicker } from 'primeng/colorpicker';
+import { TableModule } from 'primeng/table';
+import { MessageModule } from 'primeng/message';
+import { MessageService } from 'primeng/api';
+
+import { AgencyService } from '../../core/services/agency.service';
+import { TenantService } from '../../core/services/tenant.service';
+import { TenantBrandFields, TenantBrandingUpdate } from '../../core/models/agency.model';
+import { TenantMember } from '../../core/models/tenant.model';
+import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { StatusTagComponent } from '../../shared/components/status-tag.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-agency-tenant-detail',
   standalone: true,
-  template: `<div class="p-8 text-sm text-slate-500">Tenant detail (stub)</div>`,
+  imports: [
+    FormsModule,
+    ButtonModule,
+    InputText,
+    ColorPicker,
+    TableModule,
+    MessageModule,
+    ManagePageShellComponent,
+    StatusTagComponent,
+  ],
+  template: `
+    <app-manage-page-shell>
+      <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <button
+            type="button"
+            class="text-xs text-slate-500 hover:text-slate-900 mb-2"
+            (click)="onBack()"
+          >
+            <i class="fa-solid fa-arrow-left mr-1.5"></i>Back to tenants
+          </button>
+          @if (tenant(); as t) {
+            <h1 class="text-base font-semibold text-slate-900">{{ t.name }}</h1>
+            <div class="mt-1 flex items-center gap-3 text-xs text-slate-500">
+              @if (t.subdomain) {
+                <span class="font-mono">{{ t.subdomain }}</span>
+              }
+              @if (t.suspended_at) {
+                <app-status-tag label="suspended" tone="amber" />
+              } @else {
+                <app-status-tag label="active" tone="teal" />
+              }
+            </div>
+          }
+        </div>
+        <p-button
+          label="Open tenant"
+          icon="fa-solid fa-arrow-up-right-from-square"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="!tenant()"
+          (onClick)="onOpenTenant()"
+        />
+      </div>
+
+      @if (loadError()) {
+        <p-message severity="error" [closable]="true" (onClose)="loadError.set(null)" styleClass="mb-4">
+          {{ loadError() }}
+        </p-message>
+      }
+
+      @if (tenant(); as t) {
+        <!-- Branding section -->
+        <section class="mb-10 max-w-2xl">
+          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Branding
+          </h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+              <label
+                for="display-name"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                App display name
+              </label>
+              <input
+                pInputText
+                id="display-name"
+                class="w-full"
+                [(ngModel)]="appDisplayName"
+                name="appDisplayName"
+              />
+            </div>
+
+            <div>
+              <label
+                for="primary-color"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Primary color
+              </label>
+              <div class="flex items-center gap-2">
+                <p-colorpicker [(ngModel)]="primaryColorRaw" name="primaryColor" />
+                <input
+                  pInputText
+                  id="primary-color"
+                  class="flex-1 font-mono text-xs"
+                  [(ngModel)]="primaryColorHash"
+                  name="primaryColorText"
+                  maxlength="7"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                for="accent-color"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Accent color
+              </label>
+              <div class="flex items-center gap-2">
+                <p-colorpicker [(ngModel)]="accentColorRaw" name="accentColor" />
+                <input
+                  pInputText
+                  id="accent-color"
+                  class="flex-1 font-mono text-xs"
+                  [(ngModel)]="accentColorHash"
+                  name="accentColorText"
+                  maxlength="7"
+                  placeholder="#optional"
+                />
+              </div>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label
+                for="logo-url"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Logo URL
+              </label>
+              <input
+                pInputText
+                id="logo-url"
+                class="w-full"
+                [(ngModel)]="logoUrl"
+                name="logoUrl"
+                placeholder="https://..."
+              />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label
+                for="email-from-name"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Email from name
+              </label>
+              <input
+                pInputText
+                id="email-from-name"
+                class="w-full"
+                [(ngModel)]="emailFromName"
+                name="emailFromName"
+                placeholder="Defaults to display name"
+              />
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-3">
+            <p-button
+              label="Save branding"
+              size="small"
+              [loading]="saving()"
+              [disabled]="!hasChanges() || saving()"
+              (onClick)="onSave()"
+            />
+            @if (saveError()) {
+              <span class="text-xs text-red-600">{{ saveError() }}</span>
+            }
+          </div>
+        </section>
+
+        <!-- Members section -->
+        <section>
+          <div class="mb-3 flex items-baseline justify-between">
+            <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Tenant members
+            </h2>
+            <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
+          </div>
+          <p-table
+            styleClass="data-table"
+            [value]="members()"
+            [loading]="membersLoading()"
+            [tableStyle]="{ 'min-width': '40rem' }"
+            aria-label="Tenant members"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-member>
+              <tr>
+                <td>{{ member.display_name || '--' }}</td>
+                <td class="col-identifier">{{ member.email || member.user_id }}</td>
+                <td>
+                  <app-status-tag
+                    [label]="member.role"
+                    [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="3" class="text-center py-6 text-sm text-slate-500">
+                  No tenant members yet.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </section>
+      }
+    </app-manage-page-shell>
+  `,
 })
-export class AgencyTenantDetailComponent {}
+export class AgencyTenantDetailComponent implements OnInit {
+  private readonly agencyService = inject(AgencyService);
+  private readonly tenantService = inject(TenantService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly messageService = inject(MessageService);
+
+  readonly tenant = signal<TenantBrandFields | null>(null);
+  readonly members = signal<TenantMember[]>([]);
+  readonly membersLoading = signal(true);
+  readonly loadError = signal<string | null>(null);
+  readonly saveError = signal<string | null>(null);
+  readonly saving = signal(false);
+
+  appDisplayName = '';
+  logoUrl = '';
+  emailFromName = '';
+  primaryColorRaw = '0d9488';
+  accentColorRaw = '';
+
+  private _primaryColorHash = '#0d9488';
+  get primaryColorHash(): string {
+    return this._primaryColorHash;
+  }
+  set primaryColorHash(value: string) {
+    this._primaryColorHash = value;
+    const stripped = value.replace(/^#/, '').toLowerCase();
+    if (/^[0-9a-f]{6}$/.test(stripped)) {
+      this.primaryColorRaw = stripped;
+    }
+  }
+
+  private _accentColorHash = '';
+  get accentColorHash(): string {
+    return this._accentColorHash;
+  }
+  set accentColorHash(value: string) {
+    this._accentColorHash = value;
+    const stripped = value.replace(/^#/, '').toLowerCase();
+    if (/^[0-9a-f]{6}$/.test(stripped)) {
+      this.accentColorRaw = stripped;
+    } else if (stripped === '') {
+      this.accentColorRaw = '';
+    }
+  }
+
+  private tenantId = '';
+
+  readonly hasChanges = computed(() => {
+    const t = this.tenant();
+    if (!t) return false;
+    const primary = this.normalizeHash(this._primaryColorHash);
+    const accent = this._accentColorHash.trim() ? this.normalizeHash(this._accentColorHash) : null;
+    return (
+      this.appDisplayName !== (t.app_display_name ?? '') ||
+      (this.logoUrl || null) !== (t.logo_url ?? null) ||
+      (this.emailFromName || null) !== (t.email_from_name ?? null) ||
+      primary !== (t.primary_color ?? '#0d9488').toLowerCase() ||
+      accent !== (t.accent_color ?? null)
+    );
+  });
+
+  async ngOnInit(): Promise<void> {
+    this.tenantId = this.route.snapshot.paramMap.get('id')!;
+    await this.loadAll();
+  }
+
+  private async loadAll(): Promise<void> {
+    try {
+      const t = await this.agencyService.getTenantBranding(this.tenantId);
+      this.tenant.set(t);
+      this.appDisplayName = t.app_display_name ?? '';
+      this.logoUrl = t.logo_url ?? '';
+      this.emailFromName = t.email_from_name ?? '';
+      this.primaryColorHash = (t.primary_color ?? '#0d9488').toLowerCase();
+      this.accentColorHash = (t.accent_color ?? '').toLowerCase();
+    } catch (e) {
+      this.loadError.set(e instanceof Error ? e.message : 'Failed to load tenant.');
+    }
+
+    this.membersLoading.set(true);
+    try {
+      const members = await this.tenantService.listMembers(this.tenantId);
+      this.members.set(members);
+    } catch (e) {
+      console.warn('agency-tenant-detail: members load failed', e);
+      this.members.set([]);
+    } finally {
+      this.membersLoading.set(false);
+    }
+  }
+
+  async onSave(): Promise<void> {
+    const t = this.tenant();
+    if (!t) return;
+    this.saving.set(true);
+    this.saveError.set(null);
+    try {
+      const branding: TenantBrandingUpdate = {};
+      if (this.appDisplayName !== (t.app_display_name ?? '')) {
+        branding.app_display_name = this.appDisplayName.trim() || t.name;
+      }
+      const primary = this.normalizeHash(this._primaryColorHash);
+      if (primary !== (t.primary_color ?? '#0d9488').toLowerCase()) {
+        branding.primary_color = primary;
+      }
+      const accentInput = this._accentColorHash.trim();
+      const accent = accentInput ? this.normalizeHash(accentInput) : null;
+      if (accent !== (t.accent_color ?? null)) {
+        branding.accent_color = accent;
+      }
+      const newLogo = this.logoUrl.trim() || null;
+      if (newLogo !== (t.logo_url ?? null)) {
+        branding.logo_url = newLogo;
+      }
+      const newFromName = this.emailFromName.trim() || null;
+      if (newFromName !== (t.email_from_name ?? null)) {
+        branding.email_from_name = newFromName ?? undefined;
+      }
+
+      if (Object.keys(branding).length === 0) {
+        this.saving.set(false);
+        return;
+      }
+
+      await this.agencyService.updateTenantBranding(this.tenantId, branding);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Branding updated.',
+        life: 3000,
+      });
+      await this.loadAll();
+    } catch (e) {
+      this.saveError.set(e instanceof Error ? e.message : 'Failed to save branding.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  onBack(): void {
+    this.router.navigate(['/admin/tenants']);
+  }
+
+  onOpenTenant(): void {
+    const t = this.tenant();
+    if (!t) return;
+    const apex = environment.apexDomain;
+    if (apex && t.subdomain) {
+      const proto = window.location.protocol;
+      window.open(`${proto}//${t.subdomain}.${apex}`, '_blank', 'noopener');
+    } else {
+      // Dev fallback: route via tenant id (assumes user has tenant_members access).
+      this.router.navigate(['/t', t.id, 'spaces']);
+    }
+  }
+
+  private normalizeHash(value: string): string {
+    const stripped = value.replace(/^#/, '').toLowerCase();
+    return '#' + stripped;
+  }
+}
