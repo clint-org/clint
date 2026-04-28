@@ -96,14 +96,14 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
                 }
               }
             </svg>
-            <p class="text-[10px] font-semibold uppercase tracking-widest text-teal-600">
+            <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-600">
               {{ d.catalyst.category_name }} &middot; {{ d.catalyst.marker_type_name }}
             </p>
           }
         </div>
         <button
           type="button"
-          class="flex shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          class="flex shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
           [ngClass]="mode() === 'drawer' ? 'h-6 w-6' : 'h-7 w-7'"
           (click)="panelClose.emit()"
           aria-label="Close detail panel"

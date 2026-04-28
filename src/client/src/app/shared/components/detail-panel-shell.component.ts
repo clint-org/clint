@@ -16,7 +16,7 @@ import { Component, input, output } from '@angular/core';
           @if (showClose()) {
             <button
               type="button"
-              class="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:text-slate-900 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              class="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:text-slate-900 focus:outline-none focus:ring-1 focus:ring-brand-500"
               (click)="closed.emit()"
               aria-label="Clear selection"
             >

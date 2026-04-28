@@ -127,7 +127,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
             [href]="sourceUrl()!"
             target="_blank"
             rel="noopener noreferrer"
-            class="pointer-events-auto mt-2 block text-teal-600 text-xs hover:text-teal-700 hover:underline"
+            class="pointer-events-auto mt-2 block text-brand-600 text-xs hover:text-brand-700 hover:underline"
           >View source</a>
         }
       </div>

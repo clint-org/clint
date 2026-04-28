@@ -118,7 +118,7 @@ import { TrialService } from '../../../core/services/trial.service';
           <input
             type="date"
             id="marker-event-date"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             [(ngModel)]="eventDate"
             name="eventDate"
             required
@@ -134,7 +134,7 @@ import { TrialService } from '../../../core/services/trial.service';
           <input
             type="date"
             id="marker-end-date"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             [(ngModel)]="endDate"
             name="endDate"
           />
@@ -228,7 +228,7 @@ import { TrialService } from '../../../core/services/trial.service';
           </div>
 
           @if (notifyTeam) {
-            <div class="mt-3 space-y-3 border-l-2 border-teal-200 pl-4">
+            <div class="mt-3 space-y-3 border-l-2 border-brand-200 pl-4">
               <div>
                 <label for="notify-priority" class="block text-sm font-medium text-slate-700">
                   Priority

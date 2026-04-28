@@ -34,7 +34,7 @@ import { FormsModule } from '@angular/forms';
         @for (n of filteredNotifications(); track n.id) {
           <div
             class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
-            [ngClass]="{ 'bg-teal-50': !n.is_read }"
+            [ngClass]="{ 'bg-brand-50': !n.is_read }"
             role="button"
             tabindex="0"
             (click)="onNotificationClick(n)"

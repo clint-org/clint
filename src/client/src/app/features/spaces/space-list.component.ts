@@ -58,13 +58,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           @for (space of spaces(); track space.id) {
             <button
               type="button"
-              class="group bg-white p-5 text-left transition-colors hover:bg-teal-50/40 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-teal-500"
+              class="group bg-white p-5 text-left transition-colors hover:bg-brand-50/40 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-brand-500"
               (click)="openSpace(space)"
             >
               <div class="flex items-start justify-between gap-3">
                 <h3 class="text-sm font-semibold text-slate-900">{{ space.name }}</h3>
                 <i
-                  class="fa-solid fa-arrow-right text-[11px] text-slate-300 transition-colors group-hover:text-teal-600"
+                  class="fa-solid fa-arrow-right text-[11px] text-slate-300 transition-colors group-hover:text-brand-600"
                 ></i>
               </div>
               @if (space.description) {

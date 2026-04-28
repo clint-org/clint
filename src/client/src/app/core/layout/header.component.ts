@@ -31,7 +31,7 @@ import { NotificationBellComponent } from './notification-bell.component';
   imports: [RouterLink, RouterLinkActive, FormsModule, Select, ButtonModule, NotificationBellComponent],
   template: `
     <header class="border-b border-slate-200 bg-white">
-      <div class="h-0.5 bg-teal-500"></div>
+      <div class="h-0.5 bg-brand-500"></div>
       <div class="flex items-center justify-between px-6 py-2.5">
         <!-- Left: brand + org / space selectors -->
         <div class="flex items-center gap-3">
@@ -155,7 +155,7 @@ import { NotificationBellComponent } from './notification-bell.component';
             <div class="relative">
               <button
                 type="button"
-                class="flex h-7 w-7 items-center justify-center border border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-600 transition-colors hover:border-teal-400 hover:text-slate-900"
+                class="flex h-7 w-7 items-center justify-center border border-slate-200 bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-600 transition-colors hover:border-brand-400 hover:text-slate-900"
                 (click)="toggleAccount($event)"
                 [attr.aria-label]="user()?.email ?? 'Account menu'"
                 [attr.aria-expanded]="accountOpen()"
