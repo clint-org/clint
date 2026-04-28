@@ -156,6 +156,14 @@ provision_agency(p_name text, p_slug text, p_subdomain text, p_owner_email text,
 
 **Platform admins only.** Creates an `agencies` row. If `p_owner_email` matches an existing `auth.users` row (case-insensitive), the owner is added directly to `agency_members`. Otherwise an `agency_invites` row is held with `role='owner'`; the existing `handle_new_user` trigger consumes it on the owner's first sign-in. Validates email shape, subdomain regex (`^[a-z][a-z0-9-]{1,62}$`), reserved-list, cross-table uniqueness, retired-hostname holdback. Returns `owner_invited: boolean` so the caller can distinguish the two paths. Callable from `psql` during phase-6 bootstrap and from the super-admin portal.
 
+### delete_agency
+
+```
+delete_agency(p_agency_id uuid) -> jsonb
+```
+
+**Platform admins only.** Deletes an agency; cascades to `agency_members` and `agency_invites` via existing FK `on delete cascade`. Refuses with `foreign_key_violation` if any `tenants` rows still reference the agency (`tenants.agency_id` is `on delete set null` by design — the RPC blocks rather than silently orphan customer data). **Skips the `retired_hostnames` 90-day holdback** — this is a super-admin override path for cleanup and re-provisioning, not a customer decommission flow. Returns `members_removed` and `invites_removed` counts.
+
 ### provision_tenant
 
 ```
