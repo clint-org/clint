@@ -116,7 +116,7 @@ Use `is_tenant_member()` checks for membership-based access. Extended with agenc
 
 ### Bootstrapping
 
-Special RLS policies allow users to add themselves as the first member when creating a tenant or space. The `handle_new_user` trigger that auto-provisioned demo tenants on signup was retired in migration 41 — its body is now a no-op. New users land on the marketing landing or login screen and accept an invite, self-join, or get provisioned by an agency.
+Special RLS policies allow users to add themselves as the first member when creating a tenant or space. The `handle_new_user` trigger was retired in migration 41 (no-op body) and re-extended in migration 69 with a single responsibility: scan `agency_invites` for rows matching the new user's email and promote any non-expired pending invites into `agency_members` rows. It does not provision tenants or spaces — that stays opt-in via `provision_demo_workspace()`. New users land on the marketing landing or login screen and either accept a tenant invite (code-based, see `accept_invite()`), self-join, get provisioned by an agency, or — if a super-admin provisioned an agency to their email — silently get the agency-owner role on first sign-in.
 
 ## Authorization Model Summary
 

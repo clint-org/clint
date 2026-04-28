@@ -209,7 +209,7 @@ The platform owner's UI for provisioning agencies, registering custom domains, a
 
 | Route | Component | Purpose |
 |---|---|---|
-| `/super-admin/agencies` | `super-admin-agencies` | All agencies; "Provision agency" dialog (name, slug, subdomain, owner via `lookup_user_by_email`, contact email) |
+| `/super-admin/agencies` | `super-admin-agencies` | All agencies; "Provision agency" dialog (name, slug, subdomain, owner email, contact email). Owner email need not be a registered user — if no `auth.users` row matches, an `agency_invites` row is held and `handle_new_user` promotes it on first sign-in |
 | `/super-admin/tenants` | `super-admin-tenants` | All tenants across all agencies; filter by agency; register custom domain dialog |
 | `/super-admin/domains` | `super-admin-domains` | Retired-hostnames hold list (90-day decommissioning window) |
 

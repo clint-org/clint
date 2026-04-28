@@ -37,6 +37,8 @@ export interface ProvisionAgencyResult {
   subdomain: string;
   app_display_name: string;
   created_at: string;
+  owner_invited: boolean;
+  owner_email: string;
 }
 
 export interface RegisterCustomDomainResult {
@@ -170,14 +172,14 @@ export class SuperAdminService {
     name: string,
     slug: string,
     subdomain: string,
-    ownerUserId: string,
+    ownerEmail: string,
     contactEmail: string | null
   ): Promise<ProvisionAgencyResult> {
     const { data, error } = await this.supabase.client.rpc('provision_agency', {
       p_name: name,
       p_slug: slug,
       p_subdomain: subdomain,
-      p_owner_user_id: ownerUserId,
+      p_owner_email: ownerEmail,
       p_contact_email: contactEmail,
     });
     if (error) throw error;

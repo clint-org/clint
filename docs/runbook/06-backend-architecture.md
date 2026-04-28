@@ -151,10 +151,10 @@ Authenticated. Checks `tenants.subdomain`, `agencies.subdomain`, the reserved-su
 ### provision_agency
 
 ```
-provision_agency(p_name text, p_slug text, p_subdomain text, p_owner_user_id uuid) -> jsonb
+provision_agency(p_name text, p_slug text, p_subdomain text, p_owner_email text, p_contact_email text default null) -> jsonb
 ```
 
-**Platform admins only.** Creates an `agencies` row + an `agency_members` `owner` row. Validates subdomain regex (`^[a-z][a-z0-9-]{1,62}$`), reserved-list, cross-table uniqueness, retired-hostname holdback. Callable from `psql` during phase-6 bootstrap and from the super-admin portal.
+**Platform admins only.** Creates an `agencies` row. If `p_owner_email` matches an existing `auth.users` row (case-insensitive), the owner is added directly to `agency_members`. Otherwise an `agency_invites` row is held with `role='owner'`; the existing `handle_new_user` trigger consumes it on the owner's first sign-in. Validates email shape, subdomain regex (`^[a-z][a-z0-9-]{1,62}$`), reserved-list, cross-table uniqueness, retired-hostname holdback. Returns `owner_invited: boolean` so the caller can distinguish the two paths. Callable from `psql` during phase-6 bootstrap and from the super-admin portal.
 
 ### provision_tenant
 

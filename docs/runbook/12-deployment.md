@@ -174,11 +174,11 @@ SELECT public.provision_agency(
   p_name             => 'ZS Associates',
   p_slug             => 'zs',
   p_subdomain        => 'zs',
-  p_owner_user_id    => '<owner-auth-uid>'
+  p_owner_email      => 'owner@zs.com'
 );
 ```
 
-After this, the agency owner can sign in at `https://zs.yourproduct.com`, land on `/admin/tenants`, and provision pharma client tenants self-serve.
+If the owner has signed in to the platform before, they're inserted directly into `agency_members` with role `owner` (returns `owner_invited: false`). Otherwise an `agency_invites` row is held; the owner's first Google OAuth sign-in fires `handle_new_user`, which promotes the invite to an `agency_members` row silently (returns `owner_invited: true`). After this, the agency owner can sign in at `https://zs.yourproduct.com`, land on `/admin/tenants`, and provision pharma client tenants self-serve.
 
 ### 11. Provisioning a custom domain (manual ops checklist, sales-led)
 

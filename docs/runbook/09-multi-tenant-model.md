@@ -70,7 +70,7 @@ See [Architecture Overview](04-architecture-overview.md) for the full host-resol
 
 ## Auto-Provisioning (handle_new_user trigger)
 
-The `handle_new_user` trigger on `auth.users` was retired during the whitelabel rollout (migration 41) — its body is now a no-op. New signups land on the marketing landing or login screen and either accept an invite, self-join via domain allowlist, or get provisioned a fresh tenant by their agency owner.
+The `handle_new_user` trigger on `auth.users` was retired during the whitelabel rollout (migration 41) and re-extended in migration 69 with one job: consume any pending `agency_invites` rows matching the new user's email. If a super-admin provisioned an agency to an email that had not yet signed in, the invite is held in `agency_invites`; on that user's first sign-in, the trigger promotes it to an `agency_members` `owner` row and marks the invite accepted. The trigger does not provision tenants or spaces — those stay opt-in. Tenant invites are unchanged: still code-based via `accept_invite(p_code)`.
 
 For demo / testing, the `provision_demo_workspace()` SECURITY DEFINER RPC creates Boehringer Ingelheim + Azurity Pharmaceuticals on demand for the calling user (idempotent). The frontend exposes this via the `/provision-demo` route.
 
