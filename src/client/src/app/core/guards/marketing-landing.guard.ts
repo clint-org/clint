@@ -5,14 +5,22 @@ import { BrandContextService } from '../services/brand-context.service';
 import { TenantService } from '../services/tenant.service';
 
 /**
- * Root-path guard for the apex (default-host) marketing landing.
+ * Root-path guard. Routes based on host brand kind and auth state.
  *
- * - Unauthenticated + brand kind 'default'  -> render the marketing landing.
- * - Unauthenticated + tenant/agency/super-admin host -> redirect to /login.
- *   On those branded hosts the root URL is just a sign-in entry point.
- * - Authenticated -> defer to legacy onboarding behavior: send to /onboarding
- *   for users with no tenants, otherwise to their last-used tenant. This
- *   preserves the existing direct-customer flow on the apex host.
+ * Unauthenticated:
+ *   - default host       -> marketing landing
+ *   - any branded host   -> /login
+ *
+ * Authenticated:
+ *   - agency host        -> /admin
+ *   - super-admin host   -> /super-admin
+ *   - tenant host        -> /t/{brand.id}/spaces
+ *   - default host       -> last-used tenant if any, else /onboarding
+ *
+ * The per-kind routing must mirror auth-callback's redirectAfterSignIn — the
+ * callback only runs on fresh sign-in; this guard handles the apex-cookie
+ * case where an already-authenticated user lands on a branded host without
+ * going through the callback.
  */
 export const marketingLandingGuard: CanActivateFn = async () => {
   const supabaseService = inject(SupabaseService);
@@ -21,17 +29,22 @@ export const marketingLandingGuard: CanActivateFn = async () => {
   const router = inject(Router);
 
   await supabaseService.waitForSession();
+  const kind = brand.kind();
 
-  // Unauthenticated path: marketing on default host, login everywhere else.
   if (!supabaseService.session()) {
-    if (brand.kind() === 'default') {
-      // Allow the route to render the MarketingLandingComponent.
-      return true;
-    }
+    if (kind === 'default') return true;
     return router.createUrlTree(['/login']);
   }
 
-  // Authenticated path: route to the user's most recent tenant, or onboarding.
+  if (kind === 'agency') return router.createUrlTree(['/admin']);
+  if (kind === 'super-admin') return router.createUrlTree(['/super-admin']);
+  if (kind === 'tenant') {
+    const id = brand.brand().id;
+    if (id) return router.createUrlTree(['/t', id, 'spaces']);
+    return router.createUrlTree(['/onboarding']);
+  }
+
+  // default host: route to user's most recent tenant, or onboarding.
   try {
     const tenants = await tenantService.listMyTenants();
     if (tenants.length === 0) {
