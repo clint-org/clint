@@ -52,6 +52,11 @@ export class TenantService {
     return data;
   }
 
+  async deleteTenant(id: string): Promise<void> {
+    const { error } = await this.supabase.client.from('tenants').delete().eq('id', id);
+    if (error) throw error;
+  }
+
   async listMembers(tenantId: string): Promise<TenantMember[]> {
     const { data, error } = await this.supabase.client
       .from('tenant_members_view')

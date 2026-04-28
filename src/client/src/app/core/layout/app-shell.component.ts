@@ -91,6 +91,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (orgSettingsClick)="onOrgSettingsClick()"
           (spaceSettingsClick)="onSpaceSettingsClick()"
           (newSpaceClick)="onNewSpaceClick()"
+          (createOrgClick)="onCreateOrgClick()"
+          (joinOrgClick)="onJoinOrgClick()"
         >
           <div topbar-actions class="flex items-center gap-3">
             @if (spaceId()) {
@@ -636,6 +638,14 @@ export class AppShellComponent implements OnInit {
 
   onNewSpaceClick(): void {
     this.createSpaceDialogOpen.set(true);
+  }
+
+  onCreateOrgClick(): void {
+    this.router.navigate(['/onboarding']);
+  }
+
+  onJoinOrgClick(): void {
+    this.router.navigate(['/onboarding'], { queryParams: { tab: 'join' } });
   }
 
   // --- Create space dialog ---

@@ -57,6 +57,20 @@ export interface TopbarTab {
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
                   </button>
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onCreateOrgClick()"
+                  >
+                    <i class="fa-solid fa-plus text-[10px]"></i> Create organization
+                  </button>
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onJoinOrgClick()"
+                  >
+                    <i class="fa-solid fa-user-plus text-[10px]"></i> Join with code
+                  </button>
                 </div>
               </div>
             }
@@ -84,6 +98,20 @@ export interface TopbarTab {
                     (click)="onOrgSettingsClick()"
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
+                  </button>
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onCreateOrgClick()"
+                  >
+                    <i class="fa-solid fa-plus text-[10px]"></i> Create organization
+                  </button>
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onJoinOrgClick()"
+                  >
+                    <i class="fa-solid fa-user-plus text-[10px]"></i> Join with code
                   </button>
                 </div>
               }
@@ -675,6 +703,8 @@ export class ContextualTopbarComponent {
   readonly orgSettingsClick = output<void>();
   readonly spaceSettingsClick = output<void>();
   readonly newSpaceClick = output<void>();
+  readonly createOrgClick = output<void>();
+  readonly joinOrgClick = output<void>();
 
   // ---- Internal state ----
   readonly orgDropdownOpen = signal(false);
@@ -737,5 +767,15 @@ export class ContextualTopbarComponent {
   onNewSpaceClick(): void {
     this.spaceDropdownOpen.set(false);
     this.newSpaceClick.emit();
+  }
+
+  onCreateOrgClick(): void {
+    this.orgDropdownOpen.set(false);
+    this.createOrgClick.emit();
+  }
+
+  onJoinOrgClick(): void {
+    this.orgDropdownOpen.set(false);
+    this.joinOrgClick.emit();
   }
 }

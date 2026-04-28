@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
@@ -11,6 +11,7 @@ import { MessageModule } from 'primeng/message';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { TenantService } from '../../core/services/tenant.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
@@ -192,6 +193,26 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           </tr>
         </ng-template>
       </p-table>
+
+      <!-- Danger zone (owner-only) -->
+      @if (currentUserIsOwner()) {
+        <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
+          <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
+          <p class="mt-1 text-xs text-slate-500">
+            Deleting an organization permanently removes every space, member, invite, and
+            data record inside it. This cannot be undone.
+          </p>
+          <p-button
+            label="Delete organization"
+            severity="danger"
+            [outlined]="true"
+            size="small"
+            styleClass="mt-3"
+            [loading]="deletingTenant()"
+            (onClick)="confirmDeleteTenant()"
+          />
+        </div>
+      }
     </app-manage-page-shell>
 
     <p-dialog
@@ -249,6 +270,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private tenantService = inject(TenantService);
+  private supabase = inject(SupabaseService);
   private confirmation = inject(ConfirmationService);
   private readonly topbarState = inject(TopbarStateService);
   private readonly messageService = inject(MessageService);
@@ -266,6 +288,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   inviteError = signal<string | null>(null);
   removeError = signal<string | null>(null);
   savingName = signal(false);
+  deletingTenant = signal(false);
   inviteEmail = '';
   inviteRole: 'owner' | 'member' = 'member';
   orgName = '';
@@ -274,6 +297,12 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     { label: 'Member', value: 'member' },
     { label: 'Owner', value: 'owner' },
   ];
+
+  readonly currentUserIsOwner = computed(() => {
+    const userId = this.supabase.currentUser()?.id;
+    if (!userId) return false;
+    return this.members().some((m) => m.user_id === userId && m.role === 'owner');
+  });
 
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
@@ -405,6 +434,31 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  async confirmDeleteTenant(): Promise<void> {
+    const t = this.tenant();
+    if (!t) return;
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete organization',
+      message:
+        `Delete "${t.name}"? Every space, member, invite, and data record in this ` +
+        `organization will be permanently removed. This cannot be undone.`,
+      acceptLabel: 'Delete organization',
+    });
+    if (!ok) return;
+
+    this.deletingTenant.set(true);
+    try {
+      await this.tenantService.deleteTenant(this.tenantId);
+      // landing on `/` triggers onboardingRedirectGuard which routes to
+      // another tenant or onboarding, depending on what's left.
+      this.router.navigate(['/']);
+    } catch (e) {
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to delete organization');
+    } finally {
+      this.deletingTenant.set(false);
+    }
+  }
+
   async removeMember(member: TenantMember): Promise<void> {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Remove member',
@@ -424,14 +478,33 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      const [tenant, members, invites] = await Promise.all([
+      // allSettled so a failure on one section (e.g. listMembers blowing up
+      // on a permissions issue) doesn't blank out the whole page. Each
+      // successful call still updates its slice.
+      const [tenantResult, membersResult, invitesResult] = await Promise.allSettled([
         this.tenantService.getTenant(this.tenantId),
         this.tenantService.listMembers(this.tenantId),
         this.tenantService.listInvites(this.tenantId),
       ]);
-      this.tenant.set(tenant);
-      this.members.set(members);
-      this.invites.set(invites);
+
+      if (tenantResult.status === 'fulfilled') {
+        this.tenant.set(tenantResult.value);
+      } else {
+        console.error('tenant-settings: failed to load tenant', tenantResult.reason);
+      }
+
+      if (membersResult.status === 'fulfilled') {
+        this.members.set(membersResult.value);
+      } else {
+        console.error('tenant-settings: failed to load members', membersResult.reason);
+      }
+
+      if (invitesResult.status === 'fulfilled') {
+        this.invites.set(invitesResult.value);
+      } else {
+        console.error('tenant-settings: failed to load invites', invitesResult.reason);
+      }
+
       this.menuCache.clear();
     } finally {
       this.loading.set(false);

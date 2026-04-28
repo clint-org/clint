@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -30,7 +30,7 @@ import { TenantService } from '../../core/services/tenant.service';
         <div class="border border-slate-200 bg-white">
           <div class="h-0.5 bg-teal-500"></div>
           <div class="p-6">
-            <p-tabs value="0">
+            <p-tabs [value]="initialTab">
               <p-tablist>
                 <p-tab value="0">Create Organization</p-tab>
                 <p-tab value="1">Join with Code</p-tab>
@@ -118,6 +118,10 @@ import { TenantService } from '../../core/services/tenant.service';
 export class OnboardingComponent {
   private tenantService = inject(TenantService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // ?tab=join lands on the Join with Code panel; default is Create.
+  readonly initialTab = this.route.snapshot.queryParamMap.get('tab') === 'join' ? '1' : '0';
 
   tenantName = '';
   inviteCode = '';
