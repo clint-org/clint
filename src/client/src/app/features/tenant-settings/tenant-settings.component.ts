@@ -89,15 +89,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             </label>
             <input pInputText id="org-name" class="w-full" [(ngModel)]="orgName" />
             <div class="mt-3 flex items-center gap-3">
-              <button
-                pButton
-                type="button"
+              <p-button
                 label="Save"
                 size="small"
                 [loading]="savingName()"
                 [disabled]="!nameChanged()"
-                (click)="saveOrgName()"
-              ></button>
+                (onClick)="saveOrgName()"
+              />
             </div>
           </div>
         </div>

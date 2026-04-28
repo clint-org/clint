@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
-import { authGuard, onboardingRedirectGuard } from './core/guards/auth.guard';
+import { authGuard } from './core/guards/auth.guard';
 import { agencyGuard } from './core/guards/agency.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
+import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
   {
@@ -382,8 +383,12 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivate: [onboardingRedirectGuard],
-    children: [],
+    pathMatch: 'full',
+    canActivate: [marketingLandingGuard],
+    loadComponent: () =>
+      import('./features/marketing/marketing-landing.component').then(
+        (m) => m.MarketingLandingComponent
+      ),
   },
   { path: '**', redirectTo: '' },
 ];
