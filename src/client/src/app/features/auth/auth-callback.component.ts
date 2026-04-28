@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -33,6 +34,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 export class AuthCallbackComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
+  private readonly brand = inject(BrandContextService);
   error = signal<string | null>(null);
 
   ngOnInit() {
@@ -43,7 +45,7 @@ export class AuthCallbackComponent implements OnInit {
     } = this.supabase.client.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         subscription.unsubscribe();
-        this.router.navigate(['/']);
+        this.redirectAfterSignIn();
       } else if (event === 'SIGNED_OUT') {
         subscription.unsubscribe();
         this.router.navigate(['/login']);
@@ -55,7 +57,7 @@ export class AuthCallbackComponent implements OnInit {
       const { data } = await this.supabase.client.auth.getSession();
       if (data.session) {
         subscription.unsubscribe();
-        this.router.navigate(['/']);
+        this.redirectAfterSignIn();
       }
     }, 500);
 
@@ -66,5 +68,36 @@ export class AuthCallbackComponent implements OnInit {
         this.error.set('Sign in timed out. Please try again.');
       }
     }, 8000);
+  }
+
+  /**
+   * Routes the user post-sign-in based on the host brand kind:
+   *   - agency host       -> /admin (real UI in plan 6)
+   *   - super-admin host  -> /super-admin (real UI in plan 9)
+   *   - tenant host       -> /t/{tenantId}/spaces (brand.id is the tenant uuid)
+   *   - default host      -> /  (the existing onboardingRedirectGuard takes over)
+   */
+  private redirectAfterSignIn(): void {
+    const kind = this.brand.kind();
+    const id = this.brand.brand().id;
+    switch (kind) {
+      case 'agency':
+        this.router.navigate(['/admin']);
+        return;
+      case 'super-admin':
+        this.router.navigate(['/super-admin']);
+        return;
+      case 'tenant':
+        if (id) {
+          this.router.navigate(['/t', id, 'spaces']);
+          return;
+        }
+        this.router.navigate(['/']);
+        return;
+      case 'default':
+      default:
+        this.router.navigate(['/']);
+        return;
+    }
   }
 }
