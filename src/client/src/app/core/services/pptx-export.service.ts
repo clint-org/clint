@@ -81,10 +81,10 @@ export class PptxExportService {
     const rowH = Math.min(0.28, (SLIDE_H - DATA_Y - LEGEND_H) / rows.length);
     const { startYear, endYear, zoomLevel } = options;
 
-    this.renderTitle(slide);
+    this.renderTitle(slide, appDisplayName, primaryColorHex);
     this.renderHeader(slide, startYear, endYear, zoomLevel);
     this.renderGridLines(slide, startYear, endYear, zoomLevel, rows.length, rowH);
-    this.renderRows(slide, rows, rowH, startYear, endYear);
+    this.renderRows(slide, rows, rowH, startYear, endYear, primaryColorHex);
     this.renderLegend(slide, companies);
     this.addFooter(slide, appDisplayName, 2, totalPages);
 
@@ -213,8 +213,12 @@ export class PptxExportService {
     return rows;
   }
 
-  private renderTitle(slide: PptxGenJS.Slide): void {
-    slide.addText('Clinical Trial Dashboard', {
+  private renderTitle(
+    slide: PptxGenJS.Slide,
+    appDisplayName: string,
+    primaryColorHex: string
+  ): void {
+    slide.addText(appDisplayName, {
       x: 0.2,
       y: 0,
       w: SLIDE_W - 0.4,
@@ -222,7 +226,7 @@ export class PptxExportService {
       fontSize: 12,
       fontFace: 'Arial',
       bold: true,
-      color: '1e293b',
+      color: primaryColorHex,
     });
     slide.addText(
       new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -242,7 +246,7 @@ export class PptxExportService {
       y: TITLE_H - 0.02,
       w: SLIDE_W,
       h: 0,
-      line: { color: '14b8a6', width: 1.5 },
+      line: { color: primaryColorHex, width: 1.5 },
     });
   }
 
@@ -315,7 +319,8 @@ export class PptxExportService {
     rows: FlatRow[],
     rowH: number,
     startYear: number,
-    endYear: number
+    endYear: number,
+    primaryColorHex: string
   ): void {
     const fontSize = Math.max(5, Math.min(7, rowH * 28));
 
@@ -342,7 +347,7 @@ export class PptxExportService {
           fontSize: Math.max(4, fontSize - 1),
           fontFace: 'Arial',
           bold: true,
-          color: '94a3b8',
+          color: primaryColorHex,
           valign: 'middle',
           shrinkText: true,
         });
