@@ -50,7 +50,7 @@ agencies                                      ZS Associates (zs.yourproduct.com)
 ```
 
 - A tenant has at most one `agency_id` (nullable -- direct C-style deals have none).
-- Agency members get implicit access to all tenants in their agency, mirroring the existing pattern where tenant owners get implicit access to all spaces.
+- **Agency owners** get full access (read + write) to all tenants in their agency -- equivalent to being a tenant owner on each. **Agency members** get viewer-equivalent (read-only) access to all tenants in their agency. Mirrors the existing pattern where tenant owners get implicit access to all spaces.
 - A user can be a member of multiple agencies AND multiple tenants directly.
 
 ### Host-based runtime resolution
@@ -149,7 +149,11 @@ returns boolean as $$
 $$ language sql security definer stable;
 ```
 
-`has_space_access` and `is_tenant_member` get a third disjunct: agency members of the parent agency get implicit access; platform admins bypass for read.
+`has_space_access` and `is_tenant_member` get two new disjuncts:
+
+- **Agency owner of the parent agency:** passes regardless of `p_roles` (full access, equivalent to tenant owner).
+- **Agency member of the parent agency:** passes only when `p_roles is null` or `'viewer' = any(p_roles)` (read-only).
+- **Platform admin:** passes regardless of `p_roles` for SELECT; for write checks, platform admins still must call write RPCs explicitly (RLS exception is read-only by design).
 
 ### RLS
 
@@ -168,8 +172,14 @@ $$ language sql security definer stable;
 
 - `tenants(subdomain)` unique partial where `subdomain is not null`.
 - `tenants(custom_domain)` unique partial where `custom_domain is not null`.
+- `agencies(subdomain)` unique.
+- `agencies(custom_domain)` unique partial where `custom_domain is not null`.
 - `tenants(agency_id)`.
 - `agency_members(user_id)`.
+
+### Cross-table host uniqueness
+
+Per-table unique constraints don't prevent a tenant subdomain colliding with an agency subdomain (or any subdomain colliding with a custom domain). Enforce via two `BEFORE INSERT OR UPDATE` triggers (`enforce_subdomain_unique_across_tables`, `enforce_custom_domain_unique_across_tables`) on both `tenants` and `agencies` that raise if `NEW.subdomain` (or `NEW.custom_domain`) already exists in the *other* table. The reserved-list check stays in the RPCs.
 
 ### Backfill (single migration after column adds)
 
@@ -209,6 +219,8 @@ If no match, returns `kind: "default"` with the Clint defaults. Never returns se
 **`update_tenant_branding(p_tenant_id uuid, p_branding jsonb) returns jsonb`** -- SECURITY DEFINER. Caller must be tenant owner, agency owner of the parent agency, or platform admin. Validates color hex shape and URL shape. Accepts only branding fields: `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `email_from_name`. Other tenant settings (`email_domain_allowlist`, `email_self_join_enabled`, `subdomain`, `custom_domain`, `agency_id`, `suspended_at`) are managed by separate RPCs or admin paths and rejected if present in `p_branding`.
 
 **`update_tenant_access(p_tenant_id uuid, p_settings jsonb) returns jsonb`** -- SECURITY DEFINER. Caller must be tenant owner, agency owner of the parent agency, or platform admin. Accepts: `email_domain_allowlist`, `email_self_join_enabled`. Validates domain shape (`^[a-z0-9.-]+\.[a-z]{2,}$`).
+
+**`update_agency_branding(p_agency_id uuid, p_branding jsonb) returns jsonb`** -- SECURITY DEFINER. Caller must be agency owner or platform admin. Accepts only branding fields (`app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `contact_email`). Subdomain / custom_domain / plan_tier / max_tenants are not editable here; they go through `provision_agency`, `register_custom_domain`, or platform-admin direct UPDATE on `agencies`.
 
 **`check_subdomain_available(p_subdomain text) returns boolean`** -- callable by authenticated users. Checks `tenants.subdomain`, `agencies.subdomain`, reserved list.
 
@@ -262,7 +274,9 @@ Slate, red, amber, green stay hard-coded -- these are *data* colors (markers, ph
 
 ### PrimeNG preset
 
-Refactor `src/client/src/app/config/primeng-theme.ts` so every direct `{teal.X}` reference becomes `{primary.X}` (the preset already maps `primary` to teal at the top -- propagate that one indirection consistently). The dynamic preset constructor receives the scale and overrides only `semantic.primary`.
+Refactor `src/client/src/app/config/primeng-theme.ts` so every direct `{teal.X}` reference becomes `{primary.X}` (the preset already maps `primary` to teal at the top -- propagate that one indirection consistently).
+
+Replace the static default export with a `buildBrandPreset(primaryScale?: ColorScale)` function. When called without an argument, returns the existing preset (with the teal-derived primary scale). When called with a scale, returns the same preset structure but with `semantic.primary` overridden. All other customizations (form fields, dialog, button, select, datatable, toast, message) carry over unchanged. Callers: `app.config.ts` for the static default; `main.ts` bootstrap for the dynamic per-tenant preset.
 
 ---
 
@@ -312,7 +326,7 @@ Sessions are scoped per host (Supabase JS uses localStorage). Tenant switcher fl
 
 1. Source page calls `supabase.auth.getSession()` to grab `access_token` + `refresh_token`.
 2. Redirects to `https://gsk.yourproduct.com/#access_token=...&refresh_token=...&type=switch`.
-3. Destination's `auth-handoff.guard.ts` parses the hash, calls `supabase.auth.setSession({...})`, scrubs the hash, proceeds.
+3. Destination's `auth-handoff.guard.ts` runs first on every route. If `location.hash` includes an `access_token`, it parses the hash, calls `supabase.auth.setSession({...})`, scrubs the hash via `history.replaceState`, then proceeds. Otherwise it's a no-op.
 
 Tokens go in the URL hash, not query string -- browsers do not include the hash in `Referer`. Tokens are short-lived (1h). Custom domains do not share session state with the apex; users sign in fresh on those.
 
@@ -321,7 +335,7 @@ Tokens go in the URL hash, not query string -- browsers do not include the hash 
 Single component, reads from `BrandContext`. Renders:
 - Tenant/agency logo and `app_display_name`.
 - One button per provider in `brand.auth_providers` (Google, Microsoft).
-- If `brand.domain_allowlist` is set: hint copy "Use your @pfizer.com email".
+- If `brand.email_domain_allowlist` is set: hint copy "Use your @pfizer.com email".
 - Accept-invite path: `/onboarding?code=...` validates via `accept_invite()`; routes to login first if unauthed.
 
 ### Agency portal components
@@ -357,7 +371,7 @@ Under `src/client/src/app/features/super-admin/`. Intentionally minimal UI -- Pr
 ### Domain allowlist + self-join
 
 - Tenant settings: "Allow @pfizer.com employees to self-join" toggle. When enabled, owner adds domain(s) to the allowlist.
-- On login, after auth, check: is the user already a member of this tenant? If not, but their email matches the allowlist and `self_join_enabled = true`, call `self_join_tenant(p_subdomain)` and continue.
+- On login, after auth, check: is the user already a member of this tenant? If not, but their email matches the allowlist and `email_self_join_enabled = true`, call `self_join_tenant(p_subdomain)` and continue.
 - New users created at `viewer` role by default; owners can promote in tenant member management.
 
 ### Platform super-admin
@@ -371,14 +385,17 @@ Under `src/client/src/app/features/super-admin/`. Intentionally minimal UI -- Pr
 
 ### Branded invite emails
 
+Today, `tenantService.inviteMember()` creates a `tenant_invites` row with an 8-character code; there is no email delivery. Owners share the code manually. This phase adds delivery.
+
 New Supabase Edge Function `supabase/functions/send-invite-email/index.ts`:
 
-- **Trigger:** Supabase database webhook on `INSERT` into `tenant_invites`.
+- **Trigger:** Supabase database webhook on `INSERT` into `tenant_invites` (configured in `supabase/config.toml`).
 - **Logic:** Read tenant brand (`app_display_name`, `logo_url`, `email_from_name`, `primary_color`, `subdomain`/`custom_domain`). Compose HTML + plain-text. POST to Resend.
 - **Template:** tenant logo, headline in `primary_color`, "Accept invite" button to `https://{subdomain}.yourproduct.com/onboarding?code={code}`, expiry notice.
 - **Resend:** sender domain `noreply@yourproduct.com` (one DKIM/SPF setup, platform-wide). Per-tenant display name via `From: "Pfizer Trial Intel" <noreply@yourproduct.com>`.
 - **Secrets:** `RESEND_API_KEY` in Supabase function secrets.
 - **Idempotency:** accept duplicate sends on webhook retries; invite emails are not catastrophic to send twice.
+- **Manual fallback:** the existing manual code-sharing flow stays functional -- agency owners can copy the invite code from tenant settings if email delivery fails or the recipient's mail server bounces.
 
 ### Built-in Supabase Auth emails
 
@@ -420,7 +437,7 @@ Welcome, password reset, magic link -- keep on Supabase defaults with generic "S
 | 3 | `BrandContext` + pre-bootstrap host fetch + dynamic CSS vars + dynamic PrimeNG preset (color-scale generator). | No (defaults match teal) | Edit a test tenant's `primary_color`, hit subdomain, see new color |
 | 4 | Host-aware routing restructure; `/t/:tenantId/...` -> `/s/:spaceId/...` shim with redirects; cross-subdomain auth handoff. | Routing churn | Existing bookmarks redirect cleanly |
 | 5 | Microsoft OAuth + branded login screen reading from `BrandContext`. | No | Sign in via MS on staging |
-| 6 | Agency portal: 6 components, `agency.guard`, `provision_tenant`, `check_subdomain_available`, `update_tenant_branding` RPCs. | New surface | End-to-end: provision agency in super-admin -> log in -> provision tenant -> brand it -> invite user -> accept invite |
+| 6 | Agency portal: 6 components, `agency.guard`, `provision_tenant`, `check_subdomain_available`, `update_tenant_branding`, `update_agency_branding` RPCs. | New surface | End-to-end: provision a test agency via `psql` (`select provision_agency(...)`) since super-admin UI is phase 9 -> log in to agency portal -> provision tenant -> brand it -> invite user -> accept invite |
 | 7 | Branded emails: Resend + Edge Function + DB webhook; stop using Supabase invite emails. | New external dependency | Test invite renders in Gmail, Outlook, iOS Mail |
 | 8 | Branded PPT exports -- wire `BrandContext` into `pptx-export.service`. | No | Export from two tenants, diff |
 | 9 | Super-admin app on `admin.yourproduct.com`: agencies / tenants / domains tables; bootstrap your `platform_admins` row via SQL. | New surface, gated | Provision a new agency without touching DB directly |
