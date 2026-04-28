@@ -140,7 +140,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             pInputText
             id="agency-name"
             class="w-full"
-            [(ngModel)]="name"
+            [ngModel]="name()"
+            (ngModelChange)="name.set($event)"
             name="name"
             required
             aria-required="true"
@@ -159,7 +160,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             pInputText
             id="agency-slug"
             class="w-full font-mono text-xs"
-            [(ngModel)]="slug"
+            [ngModel]="slug()"
             (ngModelChange)="onSlugChange($event)"
             name="slug"
             required
@@ -184,7 +185,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             pInputText
             id="agency-subdomain"
             class="w-full font-mono text-xs"
-            [(ngModel)]="subdomain"
+            [ngModel]="subdomain()"
             (ngModelChange)="onSubdomainChange($event)"
             name="subdomain"
             required
@@ -245,7 +246,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             id="agency-owner"
             type="email"
             class="w-full text-sm"
-            [(ngModel)]="ownerEmail"
+            [ngModel]="ownerEmail()"
+            (ngModelChange)="ownerEmail.set($event)"
             name="ownerEmail"
             required
             aria-required="true"
@@ -272,7 +274,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             id="agency-contact"
             type="email"
             class="w-full"
-            [(ngModel)]="contactEmail"
+            [ngModel]="contactEmail()"
+            (ngModelChange)="contactEmail.set($event)"
             name="contactEmail"
             placeholder="ops@agency.com"
           />
@@ -384,11 +387,11 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   // Dialog state
   dialogOpen = false;
-  name = '';
-  slug = '';
-  subdomain = '';
-  ownerEmail = '';
-  contactEmail = '';
+  readonly name = signal('');
+  readonly slug = signal('');
+  readonly subdomain = signal('');
+  readonly ownerEmail = signal('');
+  readonly contactEmail = signal('');
 
   readonly subdomainStatus = signal<SubdomainStatus>({ kind: 'idle' });
   readonly statusReason = computed(() => {
@@ -410,14 +413,12 @@ export class SuperAdminAgenciesComponent implements OnInit {
   readonly deleteError = signal<string | null>(null);
 
   readonly canSubmit = computed(() => {
-    const subdomainAvailable = this.subdomainStatus().kind === 'available';
-    const notSubmitting = !this.submitting();
     return (
-      subdomainAvailable &&
-      notSubmitting &&
-      this.name.trim().length > 0 &&
-      SLUG_REGEX.test(this.slug.trim()) &&
-      EMAIL_REGEX.test(this.ownerEmail.trim())
+      this.subdomainStatus().kind === 'available' &&
+      !this.submitting() &&
+      this.name().trim().length > 0 &&
+      SLUG_REGEX.test(this.slug().trim()) &&
+      EMAIL_REGEX.test(this.ownerEmail().trim())
     );
   });
 
@@ -454,23 +455,22 @@ export class SuperAdminAgenciesComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.name = '';
-    this.slug = '';
-    this.subdomain = '';
-    this.ownerEmail = '';
-    this.contactEmail = '';
+    this.name.set('');
+    this.slug.set('');
+    this.subdomain.set('');
+    this.ownerEmail.set('');
+    this.contactEmail.set('');
     this.subdomainStatus.set({ kind: 'idle' });
     this.submitError.set(null);
   }
 
   onSlugChange(value: string): void {
-    const cleaned = (value || '').toLowerCase().trim();
-    if (this.slug !== cleaned) this.slug = cleaned;
+    this.slug.set((value || '').toLowerCase().trim());
   }
 
   onSubdomainChange(value: string): void {
     const cleaned = (value || '').toLowerCase().trim();
-    if (this.subdomain !== cleaned) this.subdomain = cleaned;
+    this.subdomain.set(cleaned);
     if (this.debounceHandle) {
       clearTimeout(this.debounceHandle);
       this.debounceHandle = null;
@@ -490,10 +490,10 @@ export class SuperAdminAgenciesComponent implements OnInit {
     this.debounceHandle = setTimeout(async () => {
       try {
         const available = await this.service.checkSubdomainAvailable(cleaned);
-        if (cleaned !== this.subdomain) return;
+        if (cleaned !== this.subdomain()) return;
         this.subdomainStatus.set({ kind: available ? 'available' : 'taken' });
       } catch (e) {
-        if (cleaned !== this.subdomain) return;
+        if (cleaned !== this.subdomain()) return;
         this.subdomainStatus.set({
           kind: 'error',
           message: e instanceof Error ? e.message : 'unknown error',
@@ -508,11 +508,11 @@ export class SuperAdminAgenciesComponent implements OnInit {
     this.submitError.set(null);
     try {
       const result = await this.service.provisionAgency(
-        this.name.trim(),
-        this.slug.trim(),
-        this.subdomain.trim(),
-        this.ownerEmail.trim(),
-        this.contactEmail.trim() || null
+        this.name().trim(),
+        this.slug().trim(),
+        this.subdomain().trim(),
+        this.ownerEmail().trim(),
+        this.contactEmail().trim() || null
       );
       this.messageService.add({
         severity: 'success',

@@ -76,7 +76,8 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
             pInputText
             id="tenant-name"
             class="w-full"
-            [(ngModel)]="name"
+            [ngModel]="name()"
+            (ngModelChange)="name.set($event)"
             name="name"
             placeholder="e.g. Pfizer Oncology"
             required
@@ -97,7 +98,7 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
               pInputText
               id="tenant-subdomain"
               class="flex-1"
-              [(ngModel)]="subdomain"
+              [ngModel]="subdomain()"
               (ngModelChange)="onSubdomainChange($event)"
               name="subdomain"
               placeholder="pfizer-oncology"
@@ -223,8 +224,8 @@ export class AgencyTenantNewComponent implements OnInit {
   readonly submitting = signal(false);
   readonly submitError = signal<string | null>(null);
 
-  name = '';
-  subdomain = '';
+  readonly name = signal('');
+  readonly subdomain = signal('');
   // PrimeNG colorpicker emits without leading "#"; mirror it as-is then normalize on submit.
   primaryColorRaw = '0d9488';
   // Synced text input that includes the leading "#".
@@ -244,9 +245,11 @@ export class AgencyTenantNewComponent implements OnInit {
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   readonly canSubmit = computed(() => {
-    const subdomainAvailable = this.subdomainStatus().kind === 'available';
-    const notSubmitting = !this.submitting();
-    return subdomainAvailable && notSubmitting && this.name.trim().length > 0;
+    return (
+      this.subdomainStatus().kind === 'available' &&
+      !this.submitting() &&
+      this.name().trim().length > 0
+    );
   });
 
   async ngOnInit(): Promise<void> {
@@ -267,9 +270,7 @@ export class AgencyTenantNewComponent implements OnInit {
 
   onSubdomainChange(value: string): void {
     const cleaned = (value || '').toLowerCase().trim();
-    if (this.subdomain !== cleaned) {
-      this.subdomain = cleaned;
-    }
+    this.subdomain.set(cleaned);
     if (this.debounceHandle) {
       clearTimeout(this.debounceHandle);
       this.debounceHandle = null;
@@ -291,10 +292,10 @@ export class AgencyTenantNewComponent implements OnInit {
       try {
         const available = await this.agencyService.checkSubdomainAvailable(cleaned);
         // Race-guard: only apply the result if the subdomain hasn't changed since.
-        if (cleaned !== this.subdomain) return;
+        if (cleaned !== this.subdomain()) return;
         this.subdomainStatus.set({ kind: available ? 'available' : 'taken' });
       } catch (e) {
-        if (cleaned !== this.subdomain) return;
+        if (cleaned !== this.subdomain()) return;
         this.subdomainStatus.set({
           kind: 'error',
           message: e instanceof Error ? e.message : 'unknown error',
@@ -318,10 +319,10 @@ export class AgencyTenantNewComponent implements OnInit {
         : '#' + this._primaryColorHash.toLowerCase();
       const result = await this.agencyService.provisionTenant(
         a.id,
-        this.name.trim(),
-        this.subdomain,
+        this.name().trim(),
+        this.subdomain(),
         {
-          app_display_name: this.name.trim(),
+          app_display_name: this.name().trim(),
           primary_color: primary,
         }
       );

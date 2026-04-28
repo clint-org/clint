@@ -57,7 +57,8 @@ interface AgencyOption {
           <p-select
             id="agency-filter"
             [options]="agencyOptions()"
-            [(ngModel)]="agencyFilter"
+            [ngModel]="agencyFilter()"
+            (ngModelChange)="agencyFilter.set($event)"
             placeholder="All agencies"
             [style]="{ width: '14rem' }"
             optionLabel="label"
@@ -189,7 +190,8 @@ interface AgencyOption {
                 pInputText
                 id="custom-domain"
                 class="w-full font-mono text-xs"
-                [(ngModel)]="customDomain"
+                [ngModel]="customDomain()"
+                (ngModelChange)="onDomainChange($event)"
                 (ngModelChange)="onDomainChange($event)"
                 name="customDomain"
                 placeholder="trials.client.com"
@@ -240,7 +242,7 @@ export class SuperAdminTenantsComponent implements OnInit {
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
 
-  agencyFilter: string | null = null;
+  readonly agencyFilter = signal<string | null>(null);
 
   readonly agencyOptions = computed<AgencyOption[]>(() => [
     { label: 'All agencies', value: null },
@@ -248,7 +250,7 @@ export class SuperAdminTenantsComponent implements OnInit {
   ]);
 
   readonly filtered = computed<SuperAdminTenantSummary[]>(() => {
-    const f = this.agencyFilter;
+    const f = this.agencyFilter();
     const list = this.tenants();
     if (!f) return list;
     return list.filter((t) => t.agency_id === f);
@@ -257,21 +259,22 @@ export class SuperAdminTenantsComponent implements OnInit {
   // Dialog state
   dialogOpen = false;
   readonly selected = signal<SuperAdminTenantSummary | null>(null);
-  customDomain = '';
+  readonly customDomain = signal('');
   readonly submitting = signal(false);
   readonly submitError = signal<string | null>(null);
 
   readonly domainInvalid = computed(() => {
-    const v = this.customDomain.trim().toLowerCase();
+    const v = this.customDomain().trim().toLowerCase();
     if (v.length === 0) return false;
     return !HOSTNAME_REGEX.test(v);
   });
 
   readonly canSubmit = computed(() => {
-    const notSubmitting = !this.submitting();
-    const hasSelection = !!this.selected();
-    const v = this.customDomain.trim().toLowerCase();
-    return notSubmitting && hasSelection && HOSTNAME_REGEX.test(v);
+    return (
+      !this.submitting() &&
+      !!this.selected() &&
+      HOSTNAME_REGEX.test(this.customDomain().trim().toLowerCase())
+    );
   });
 
   async ngOnInit(): Promise<void> {
@@ -297,20 +300,19 @@ export class SuperAdminTenantsComponent implements OnInit {
 
   openTenant(tenant: SuperAdminTenantSummary): void {
     this.selected.set(tenant);
-    this.customDomain = tenant.custom_domain ?? '';
+    this.customDomain.set(tenant.custom_domain ?? '');
     this.submitError.set(null);
     this.dialogOpen = true;
   }
 
   resetDialog(): void {
     this.selected.set(null);
-    this.customDomain = '';
+    this.customDomain.set('');
     this.submitError.set(null);
   }
 
   onDomainChange(value: string): void {
-    const cleaned = (value || '').toLowerCase().trim();
-    if (this.customDomain !== cleaned) this.customDomain = cleaned;
+    this.customDomain.set((value || '').toLowerCase().trim());
   }
 
   async onRegisterDomain(): Promise<void> {
@@ -319,7 +321,7 @@ export class SuperAdminTenantsComponent implements OnInit {
     this.submitting.set(true);
     this.submitError.set(null);
     try {
-      await this.service.registerCustomDomain(t.id, this.customDomain.trim().toLowerCase());
+      await this.service.registerCustomDomain(t.id, this.customDomain().trim().toLowerCase());
       this.messageService.add({
         severity: 'success',
         summary: `Custom domain registered for ${t.name}.`,
