@@ -98,11 +98,13 @@ New users land on `/onboarding` after first sign-in (when not auto-routed by sel
 
 The `TenantSettingsComponent` provides:
 
-- **Organization branding**: logo upload (stored in `tenant-logos` Supabase storage bucket; owners can upload/delete, all members can read), display name, primary/accent color, email_from_name — all via `update_tenant_branding`
+- **Branding (logo + tenant name)**: shown only when `tenant.agency_id IS NULL` (direct-customer tenants self-serve branding). For agency-managed tenants, branding is owned by the agency portal's tenant detail page (`/admin/tenants/<id>`); the tenant settings page replaces the editor with a read-only identity card and a hint pointing to the agency. Logo upload is stored in the `tenant-logos` Supabase storage bucket; owners can upload/delete, all members can read.
 - **Access** (owners only): `email_domain_allowlist` chip editor + "Allow employees to self-join this workspace" toggle, persisted via `update_tenant_access`. Loaded via `get_tenant_access_settings` (auth-only — never returned to anon)
 - **Members table**: lists all members with name, email, role; remove button per member (with confirmation)
 - **Pending invites table**: shows invite code, email, role, expiration
 - **Invite dialog**: email + role dropdown to generate new invite codes (triggers branded email via the `send-invite-email` Edge Function)
+
+**Ownership boundary:** for agency-managed tenants, the agency owns branding (display name, logo, primary/accent color, email_from_name — all editable via `update_tenant_branding` from the agency portal) and the tenant team owns access (members, invites, self-join, danger zone — editable from tenant settings). Both roles still call the same RPCs; the split is enforced in the UI, not in the data model.
 
 ## Data Isolation
 
