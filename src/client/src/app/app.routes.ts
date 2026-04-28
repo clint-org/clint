@@ -18,6 +18,14 @@ export const routes: Routes = [
       import('./features/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
   },
   {
+    path: 'provision-demo',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/onboarding/provision-demo.component').then(
+        (m) => m.ProvisionDemoComponent
+      ),
+  },
+  {
     path: 't/:tenantId',
     canActivate: [authGuard],
     loadComponent: () =>

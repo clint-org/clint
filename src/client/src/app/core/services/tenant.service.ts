@@ -16,6 +16,12 @@ export class TenantService {
     return data as Tenant;
   }
 
+  async provisionDemoWorkspace(): Promise<{ tenant_id: string; created: boolean }> {
+    const { data, error } = await this.supabase.client.rpc('provision_demo_workspace');
+    if (error) throw error;
+    return data as { tenant_id: string; created: boolean };
+  }
+
   async listMyTenants(): Promise<Tenant[]> {
     const { data, error } = await this.supabase.client
       .from('tenants')
