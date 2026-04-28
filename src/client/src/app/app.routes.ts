@@ -17,9 +17,45 @@ export const routes: Routes = [
     path: 'admin',
     canActivate: [agencyGuard, authGuard],
     loadComponent: () =>
-      import('./features/agency/agency-placeholder.component').then(
-        (m) => m.AgencyPlaceholderComponent
-      ),
+      import('./features/agency/agency-shell.component').then((m) => m.AgencyShellComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'tenants' },
+      {
+        path: 'tenants',
+        loadComponent: () =>
+          import('./features/agency/agency-tenant-list.component').then(
+            (m) => m.AgencyTenantListComponent
+          ),
+      },
+      {
+        path: 'tenants/new',
+        loadComponent: () =>
+          import('./features/agency/agency-tenant-new.component').then(
+            (m) => m.AgencyTenantNewComponent
+          ),
+      },
+      {
+        path: 'tenants/:id',
+        loadComponent: () =>
+          import('./features/agency/agency-tenant-detail.component').then(
+            (m) => m.AgencyTenantDetailComponent
+          ),
+      },
+      {
+        path: 'members',
+        loadComponent: () =>
+          import('./features/agency/agency-members.component').then(
+            (m) => m.AgencyMembersComponent
+          ),
+      },
+      {
+        path: 'branding',
+        loadComponent: () =>
+          import('./features/agency/agency-branding.component').then(
+            (m) => m.AgencyBrandingComponent
+          ),
+      },
+    ],
   },
   {
     path: 'super-admin',
