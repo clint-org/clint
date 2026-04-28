@@ -1,11 +1,13 @@
-# Clinical Trial Dashboard -- Brand Guide
+# Clint -- Brand Guide
+
+> Positioning: **Competitive intelligence for pharma.** Covers pipeline, catalyst, clinical trial, and portfolio cuts.
 
 ## Personality
 **Precise. Authoritative. Premium.**
 Clean, structured, data-dense. Inspired by medical journals, regulatory documents, and financial terminals. Feels like a serious analytical tool built by people who understand clinical data. Should convey institutional credibility -- users make high-stakes investment and partnership decisions based on what they see.
 
 ## Target Audience
-Pharma executives and BD teams scanning competitive landscapes under time pressure, often reviewing dozens of trials across multiple companies. Prioritize instant visual parsing over decoration -- every pixel should earn its place.
+Pharma competitive intelligence professionals and the teams they support -- business development, strategy, portfolio, licensing, and executive leadership. They scan competitor pipelines, catalysts, and trials under time pressure, often reviewing dozens of programs across many companies in a single session. Prioritize instant visual parsing over decoration -- every pixel should earn its place.
 
 ## Emotional Goals
 - **Confidence:** Users trust the data and feel certain in their reads

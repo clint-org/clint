@@ -4,9 +4,13 @@
 
 ---
 
+## Positioning
+
+**Competitive intelligence for pharma.** The product spans the four cuts that pharma CI professionals work in daily: pipeline intelligence, catalyst tracking, clinical trial timelines, and portfolio analysis. The buyer audiences are business development, strategy, portfolio, licensing, and executive leadership teams -- and the dedicated competitive intelligence function that supports them.
+
 ## The Problem
 
-Pharmaceutical BD teams and executives track competitive clinical trial landscapes using manually maintained PowerPoint slides. This approach has fundamental limitations:
+Pharmaceutical competitive intelligence, business development, and strategy teams track competitor pipelines, clinical trials, and catalysts using manually maintained PowerPoint slides and ad-hoc spreadsheets. This approach has fundamental limitations:
 
 - **Stale data** -- slides are only as current as the last manual update
 - **No collaboration** -- multiple teams maintain separate versions
@@ -16,10 +20,10 @@ Pharmaceutical BD teams and executives track competitive clinical trial landscap
 
 ## The Solution
 
-Clint provides a purpose-built web application that mirrors the familiar visual language of the PowerPoint format (timeline grid, phase bars, event markers) while adding:
+Clint provides a purpose-built web application that mirrors the familiar visual language of the PowerPoint format (timeline grid, phase bars, event markers, bullseye competitive views) while adding:
 
-- Real-time collaborative data management
-- Flexible filtering and zoom
+- Real-time collaborative pipeline + catalyst + trial management
+- Flexible filtering, zoom, and competitive cuts (by therapy area, mechanism of action, route of administration)
 - Multi-tenant isolation so different organizations each have their own data
 - PowerPoint export for stakeholders who still need slides
 

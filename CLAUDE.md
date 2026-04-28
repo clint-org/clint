@@ -1,4 +1,4 @@
-# Clinical Trial Status Dashboard
+# Clint -- Competitive Intelligence for Pharma
 
 ## Tech Stack
 - **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Netlify
@@ -10,8 +10,11 @@
 
 `docs/brand.md` is the authoritative brand guide. This section is the short form that should shape every design decision.
 
+### Product positioning
+**Competitive intelligence for pharma.** The product covers pipeline intelligence, catalyst tracking, clinical trial timelines, and portfolio analysis -- the four cuts that pharma CI professionals use most. Sub-disciplines it serves: pipeline intelligence, asset/scientific intelligence, catalyst tracking, portfolio intelligence, early signal analysis.
+
 ### Users
-Pharma executives and BD teams scanning competitive landscapes under time pressure. They review dozens of trials across multiple companies and make high-stakes investment, licensing, and partnership calls based on what they see. Context is dense, adversarial, and institutional -- the tool sits alongside Bloomberg Terminal, Evaluate Pharma, and Citeline in their workflow. Job to be done: extract the competitive read on a drug program in seconds, with enough certainty to act on it.
+Pharma competitive intelligence professionals and the teams they support -- business development, strategy, portfolio, licensing, and executive leadership. They review dozens of trials, catalysts, and pipelines across multiple companies under time pressure and make high-stakes investment, licensing, and partnership calls based on what they see. Context is dense, adversarial, and institutional -- the tool sits alongside Bloomberg Terminal, Evaluate Pharma, and Citeline in their workflow. Job to be done: extract the competitive read on a drug program in seconds, with enough certainty to act on it.
 
 ### Brand Personality
 **Precise. Authoritative. Premium.** The interface should feel like a serious analytical instrument built by people who understand clinical data -- closer to a medical journal or a regulatory document than a consumer SaaS product. Emotional goals: confidence in the data, institutional authority, efficiency without clutter. Voice is terse and factual; there is no playfulness, no cheerleading, no emoji.

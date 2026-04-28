@@ -28,10 +28,11 @@ import { environment } from '../../../environments/environment';
 
       <main class="mx-auto max-w-3xl px-6 py-20">
         <h1 class="text-4xl font-semibold tracking-tight text-slate-900">
-          Clinical trial intelligence for pharma BD teams
+          Competitive intelligence for pharma
         </h1>
         <p class="mt-4 text-lg text-slate-600">
-          A whitelabeled competitive landscape platform for consulting partners and the pharma clients they serve.
+          Track competitor pipelines, catalysts, and clinical trials in one place.
+          Built for business development, strategy, portfolio, and competitive intelligence teams.
         </p>
 
         <div class="mt-12 border border-slate-200 bg-white p-6">
