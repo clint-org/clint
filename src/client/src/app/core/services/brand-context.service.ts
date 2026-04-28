@@ -9,7 +9,7 @@ export const DEFAULT_BRAND: Brand = {
   favicon_url: null,
   primary_color: '#0d9488',
   accent_color: null,
-  auth_providers: ['google'],
+  auth_providers: ['google', 'microsoft'],
   has_self_join: false,
   suspended: false,
 };
