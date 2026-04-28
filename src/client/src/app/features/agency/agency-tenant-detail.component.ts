@@ -89,7 +89,8 @@ import { environment } from '../../../environments/environment';
                 pInputText
                 id="display-name"
                 class="w-full"
-                [(ngModel)]="appDisplayName"
+                [ngModel]="appDisplayName()"
+                (ngModelChange)="appDisplayName.set($event)"
                 name="appDisplayName"
               />
             </div>
@@ -102,12 +103,17 @@ import { environment } from '../../../environments/environment';
                 Primary color
               </label>
               <div class="flex items-center gap-2">
-                <p-colorpicker [(ngModel)]="primaryColorRaw" name="primaryColor" />
+                <p-colorpicker
+                  [ngModel]="primaryColorRaw()"
+                  (ngModelChange)="onPrimaryColorRawChange($event)"
+                  name="primaryColor"
+                />
                 <input
                   pInputText
                   id="primary-color"
                   class="flex-1 font-mono text-xs"
-                  [(ngModel)]="primaryColorHash"
+                  [ngModel]="primaryColorHash()"
+                  (ngModelChange)="primaryColorHash.set($event)"
                   name="primaryColorText"
                   maxlength="7"
                 />
@@ -122,12 +128,17 @@ import { environment } from '../../../environments/environment';
                 Accent color
               </label>
               <div class="flex items-center gap-2">
-                <p-colorpicker [(ngModel)]="accentColorRaw" name="accentColor" />
+                <p-colorpicker
+                  [ngModel]="accentColorRaw()"
+                  (ngModelChange)="onAccentColorRawChange($event)"
+                  name="accentColor"
+                />
                 <input
                   pInputText
                   id="accent-color"
                   class="flex-1 font-mono text-xs"
-                  [(ngModel)]="accentColorHash"
+                  [ngModel]="accentColorHash()"
+                  (ngModelChange)="accentColorHash.set($event)"
                   name="accentColorText"
                   maxlength="7"
                   placeholder="#optional"
@@ -146,7 +157,8 @@ import { environment } from '../../../environments/environment';
                 pInputText
                 id="logo-url"
                 class="w-full"
-                [(ngModel)]="logoUrl"
+                [ngModel]="logoUrl()"
+                (ngModelChange)="logoUrl.set($event)"
                 name="logoUrl"
                 placeholder="https://..."
               />
@@ -163,7 +175,8 @@ import { environment } from '../../../environments/environment';
                 pInputText
                 id="email-from-name"
                 class="w-full"
-                [(ngModel)]="emailFromName"
+                [ngModel]="emailFromName()"
+                (ngModelChange)="emailFromName.set($event)"
                 name="emailFromName"
                 placeholder="Defaults to display name"
               />
@@ -244,53 +257,43 @@ export class AgencyTenantDetailComponent implements OnInit {
   readonly saveError = signal<string | null>(null);
   readonly saving = signal(false);
 
-  appDisplayName = '';
-  logoUrl = '';
-  emailFromName = '';
-  primaryColorRaw = '0d9488';
-  accentColorRaw = '';
-
-  private _primaryColorHash = '#0d9488';
-  get primaryColorHash(): string {
-    return this._primaryColorHash;
-  }
-  set primaryColorHash(value: string) {
-    this._primaryColorHash = value;
-    const stripped = value.replace(/^#/, '').toLowerCase();
-    if (/^[0-9a-f]{6}$/.test(stripped)) {
-      this.primaryColorRaw = stripped;
-    }
-  }
-
-  private _accentColorHash = '';
-  get accentColorHash(): string {
-    return this._accentColorHash;
-  }
-  set accentColorHash(value: string) {
-    this._accentColorHash = value;
-    const stripped = value.replace(/^#/, '').toLowerCase();
-    if (/^[0-9a-f]{6}$/.test(stripped)) {
-      this.accentColorRaw = stripped;
-    } else if (stripped === '') {
-      this.accentColorRaw = '';
-    }
-  }
+  readonly appDisplayName = signal('');
+  readonly logoUrl = signal('');
+  readonly emailFromName = signal('');
+  // Canonical color storage uses the leading "#"; the colorpicker emits/expects the
+  // bare hex, so we expose a derived view + a setter that re-adds the "#".
+  readonly primaryColorHash = signal('#0d9488');
+  readonly accentColorHash = signal('');
+  readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
+  readonly accentColorRaw = computed(() => this.accentColorHash().replace(/^#/, ''));
 
   private tenantId = '';
 
   readonly hasChanges = computed(() => {
     const t = this.tenant();
     if (!t) return false;
-    const primary = this.normalizeHash(this._primaryColorHash);
-    const accent = this._accentColorHash.trim() ? this.normalizeHash(this._accentColorHash) : null;
+    const primary = this.normalizeHash(this.primaryColorHash());
+    const accent = this.accentColorHash().trim()
+      ? this.normalizeHash(this.accentColorHash())
+      : null;
     return (
-      this.appDisplayName !== (t.app_display_name ?? '') ||
-      (this.logoUrl || null) !== (t.logo_url ?? null) ||
-      (this.emailFromName || null) !== (t.email_from_name ?? null) ||
+      this.appDisplayName() !== (t.app_display_name ?? '') ||
+      (this.logoUrl() || null) !== (t.logo_url ?? null) ||
+      (this.emailFromName() || null) !== (t.email_from_name ?? null) ||
       primary !== (t.primary_color ?? '#0d9488').toLowerCase() ||
       accent !== (t.accent_color ?? null)
     );
   });
+
+  onPrimaryColorRawChange(raw: string): void {
+    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
+    this.primaryColorHash.set(stripped ? `#${stripped}` : '');
+  }
+
+  onAccentColorRawChange(raw: string): void {
+    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
+    this.accentColorHash.set(stripped ? `#${stripped}` : '');
+  }
 
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('id')!;
@@ -301,11 +304,11 @@ export class AgencyTenantDetailComponent implements OnInit {
     try {
       const t = await this.agencyService.getTenantBranding(this.tenantId);
       this.tenant.set(t);
-      this.appDisplayName = t.app_display_name ?? '';
-      this.logoUrl = t.logo_url ?? '';
-      this.emailFromName = t.email_from_name ?? '';
-      this.primaryColorHash = (t.primary_color ?? '#0d9488').toLowerCase();
-      this.accentColorHash = (t.accent_color ?? '').toLowerCase();
+      this.appDisplayName.set(t.app_display_name ?? '');
+      this.logoUrl.set(t.logo_url ?? '');
+      this.emailFromName.set(t.email_from_name ?? '');
+      this.primaryColorHash.set((t.primary_color ?? '#0d9488').toLowerCase());
+      this.accentColorHash.set((t.accent_color ?? '').toLowerCase());
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load tenant.');
     }
@@ -329,23 +332,24 @@ export class AgencyTenantDetailComponent implements OnInit {
     this.saveError.set(null);
     try {
       const branding: TenantBrandingUpdate = {};
-      if (this.appDisplayName !== (t.app_display_name ?? '')) {
-        branding.app_display_name = this.appDisplayName.trim() || t.name;
+      const displayName = this.appDisplayName();
+      if (displayName !== (t.app_display_name ?? '')) {
+        branding.app_display_name = displayName.trim() || t.name;
       }
-      const primary = this.normalizeHash(this._primaryColorHash);
+      const primary = this.normalizeHash(this.primaryColorHash());
       if (primary !== (t.primary_color ?? '#0d9488').toLowerCase()) {
         branding.primary_color = primary;
       }
-      const accentInput = this._accentColorHash.trim();
+      const accentInput = this.accentColorHash().trim();
       const accent = accentInput ? this.normalizeHash(accentInput) : null;
       if (accent !== (t.accent_color ?? null)) {
         branding.accent_color = accent;
       }
-      const newLogo = this.logoUrl.trim() || null;
+      const newLogo = this.logoUrl().trim() || null;
       if (newLogo !== (t.logo_url ?? null)) {
         branding.logo_url = newLogo;
       }
-      const newFromName = this.emailFromName.trim() || null;
+      const newFromName = this.emailFromName().trim() || null;
       if (newFromName !== (t.email_from_name ?? null)) {
         branding.email_from_name = newFromName ?? undefined;
       }
