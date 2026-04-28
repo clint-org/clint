@@ -119,14 +119,14 @@ interface NavSection {
       }
 
       .logo-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
       .logo-square {
         width: 28px;
         height: 28px;
-        background: #0d9488;
+        background: var(--brand-600);
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -171,11 +171,11 @@ interface NavSection {
       }
 
       .icon-btn--active {
-        background: rgba(13, 148, 136, 0.15);
+        background: rgb(from var(--brand-600) r g b / 0.15);
       }
 
       .icon-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -186,7 +186,7 @@ interface NavSection {
         transform: translateY(-50%);
         width: 3px;
         height: 18px;
-        background: #0d9488;
+        background: var(--brand-600);
         border-radius: 0 2px 2px 0;
       }
 
@@ -196,10 +196,10 @@ interface NavSection {
         justify-content: center;
         width: 28px;
         height: 28px;
-        background: rgba(13, 148, 136, 0.15);
-        border: 1.5px solid rgba(13, 148, 136, 0.4);
+        background: rgb(from var(--brand-600) r g b / 0.15);
+        border: 1.5px solid rgb(from var(--brand-600) r g b / 0.4);
         border-radius: 50%;
-        color: #0d9488;
+        color: var(--brand-600);
         font-size: 9px;
         font-weight: 700;
         letter-spacing: 0.06em;
@@ -215,12 +215,12 @@ interface NavSection {
       }
 
       .avatar-btn:hover {
-        background: rgba(13, 148, 136, 0.25);
-        border-color: rgba(13, 148, 136, 0.7);
+        background: rgb(from var(--brand-600) r g b / 0.25);
+        border-color: rgb(from var(--brand-600) r g b / 0.7);
       }
 
       .avatar-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
     `,
@@ -253,6 +253,6 @@ export class IconRailComponent {
   }
 
   iconColor(sectionId: Section): string {
-    return this.activeSection() === sectionId ? '#0d9488' : '#64748b';
+    return this.activeSection() === sectionId ? 'var(--brand-600)' : '#64748b';
   }
 }

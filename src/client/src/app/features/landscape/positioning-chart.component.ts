@@ -92,7 +92,7 @@ interface PlottedBubble {
         [attr.y]="quadrantMidY()"
         [attr.width]="quadrantMidX() - margin.left"
         [attr.height]="height() - margin.bottom - quadrantMidY()"
-        fill="#0d9488"
+        style="fill: var(--brand-600)"
         opacity="0.04"
       />
       <!-- Quadrant shading: red-ocean (top-right) -->

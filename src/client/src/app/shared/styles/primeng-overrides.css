@@ -12,7 +12,7 @@
   content: '';
   display: block;
   height: 2px;
-  background: rgb(20 184 166); /* teal-500 */
+  background: var(--brand-500); /* teal-500 */
 }
 
 .p-dialog-header {
@@ -84,7 +84,7 @@
   border-left-color: rgb(185 28 28); /* red-700 */
 }
 .p-message.p-message-success {
-  border-left-color: rgb(13 148 136); /* teal-600 */
+  border-left-color: var(--brand-600); /* teal-600 */
 }
 .p-message.p-message-warn {
   border-left-color: rgb(180 83 9); /* amber-700 */
@@ -100,7 +100,7 @@
    higher specificity (.p-toast .p-toast-message-*) to override. */
 .p-toast .p-toast-message.p-toast-message-success {
   border-width: 1px 1px 1px 3px;
-  border-left-color: rgb(13 148 136); /* teal-600 */
+  border-left-color: var(--brand-600); /* teal-600 */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 .p-toast .p-toast-message.p-toast-message-error {
@@ -146,7 +146,7 @@
   color: rgb(15 23 42);
 }
 .p-toast .p-toast-close-button:focus-visible {
-  outline: 2px solid rgb(13 148 136);
+  outline: 2px solid var(--brand-600);
   outline-offset: -2px;
 }
 
@@ -176,7 +176,7 @@
   color: rgb(15 23 42);
 }
 .p-selectbutton .p-togglebutton.p-togglebutton-checked {
-  background: rgb(13 148 136); /* teal-600 */
+  background: var(--brand-600); /* teal-600 */
   color: #ffffff;
   font-weight: 600;
 }
@@ -192,12 +192,12 @@
 /* Applied via [styleClass] binding when the control has a value. */
 .p-select.has-value,
 .p-multiselect.has-value {
-  border-color: rgb(13 148 136); /* teal-600 */
-  background: rgb(240 253 250); /* teal-50 */
+  border-color: var(--brand-600); /* teal-600 */
+  background: var(--brand-50); /* teal-50 */
 }
 .p-select.has-value .p-select-label,
 .p-multiselect.has-value .p-multiselect-label {
-  color: rgb(15 118 110); /* teal-700 */
+  color: var(--brand-700); /* teal-700 */
   font-weight: 500;
 }
 /* Let the label text show in full when w-fit is used on the container. */
@@ -207,7 +207,7 @@
 }
 .p-select.has-value .p-select-dropdown,
 .p-multiselect.has-value .p-multiselect-dropdown {
-  color: rgb(13 148 136); /* teal-600 */
+  color: var(--brand-600); /* teal-600 */
 }
 
 /* Solid teal badge for multi-select count. */
@@ -220,7 +220,7 @@
   padding: 0 5px;
   font-size: 10px;
   font-weight: 700;
-  background: rgb(13 148 136); /* teal-600 */
+  background: var(--brand-600); /* teal-600 */
   color: #ffffff;
 }
 
@@ -233,11 +233,11 @@
 
 /* Active: teal accents when the field has a value. */
 .search-tinted.has-value .p-inputtext {
-  border-color: rgb(13 148 136); /* teal-600 */
-  background: rgb(240 253 250); /* teal-50 */
+  border-color: var(--brand-600); /* teal-600 */
+  background: var(--brand-50); /* teal-50 */
 }
 .search-tinted.has-value .p-inputicon i {
-  color: rgb(13 148 136); /* teal-600 */
+  color: var(--brand-600); /* teal-600 */
 }
 
 /* -- Text button disabled ------------------------------------------------ */
@@ -266,7 +266,7 @@
 /* -- ProgressSpinner --------------------------------------------------- */
 
 .p-progressspinner-circle {
-  stroke: rgb(13 148 136); /* teal-600 */
+  stroke: var(--brand-600); /* teal-600 */
 }
 
 /* -- Row action menu --------------------------------------------------- */

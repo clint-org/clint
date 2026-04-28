@@ -183,7 +183,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                   @if (item.icon) {
                     <i
                       [class]="item.icon"
-                      [style.color]="isActive(item.route) ? '#0d9488' : '#64748b'"
+                      [style.color]="isActive(item.route) ? 'var(--brand-600)' : '#64748b'"
                       aria-hidden="true"
                     ></i>
                   }
@@ -271,7 +271,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       }
 
       .logo-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
         border-radius: 8px;
       }
@@ -301,11 +301,11 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         background: #1e293b;
       }
       .pin-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
       .pin-btn--pinned {
-        color: #0d9488;
+        color: var(--brand-600);
         transform: rotate(45deg);
       }
 
@@ -378,20 +378,20 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         background: #1e293b;
       }
       .nav-item:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: -2px;
         border-radius: 0 5px 5px 0;
       }
       .nav-item--active {
-        color: #0d9488;
-        background: rgba(13, 148, 136, 0.15);
-        border-left-color: #0d9488;
+        color: var(--brand-600);
+        background: rgb(from var(--brand-600) r g b / 0.15);
+        border-left-color: var(--brand-600);
         border-radius: 0 5px 5px 0;
         font-weight: 500;
       }
       .nav-item--active:hover {
-        color: #0d9488;
-        background: rgba(13, 148, 136, 0.2);
+        color: var(--brand-600);
+        background: rgb(from var(--brand-600) r g b / 0.2);
       }
       .nav-item__icon {
         width: 14px;
@@ -429,10 +429,10 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         background: #1e293b;
       }
       .icon-btn--active {
-        background: rgba(13, 148, 136, 0.15);
+        background: rgb(from var(--brand-600) r g b / 0.15);
       }
       .icon-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -452,7 +452,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         transform: translateY(-50%);
         width: 3px;
         height: 18px;
-        background: #0d9488;
+        background: var(--brand-600);
         border-radius: 0 2px 2px 0;
       }
 
@@ -478,10 +478,10 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         width: 28px;
         height: 28px;
         flex-shrink: 0;
-        background: rgba(13, 148, 136, 0.15);
-        border: 1.5px solid rgba(13, 148, 136, 0.4);
+        background: rgb(from var(--brand-600) r g b / 0.15);
+        border: 1.5px solid rgb(from var(--brand-600) r g b / 0.4);
         border-radius: 50%;
-        color: #0d9488;
+        color: var(--brand-600);
         font-size: 9px;
         font-weight: 700;
         letter-spacing: 0.06em;
@@ -492,11 +492,11 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         user-select: none;
       }
       .avatar-btn:hover {
-        background: rgba(13, 148, 136, 0.25);
-        border-color: rgba(13, 148, 136, 0.7);
+        background: rgb(from var(--brand-600) r g b / 0.25);
+        border-color: rgb(from var(--brand-600) r g b / 0.7);
       }
       .avatar-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -552,7 +552,7 @@ export class SidebarComponent {
   }
 
   iconColor(sectionId: string): string {
-    return this.isSectionActive(sectionId) ? '#0d9488' : '#64748b';
+    return this.isSectionActive(sectionId) ? 'var(--brand-600)' : '#64748b';
   }
 
   onNavClick(route: string): void {

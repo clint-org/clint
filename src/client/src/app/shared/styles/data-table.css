@@ -69,12 +69,12 @@
   background: rgb(240 253 250 / 0.55); /* teal-50 @ 55% */
 }
 
-/* Selected row: teal left border + subtle teal wash. */
+/* Selected row: brand left border + subtle brand wash. */
 .data-table .p-datatable-tbody > tr.selected-row > td {
-  background: rgb(240 253 250 / 0.6); /* teal-50 @ 60% */
+  background: rgb(from var(--brand-50) r g b / 0.6);
 }
 .data-table .p-datatable-tbody > tr.selected-row > td:first-child {
-  border-left: 2px solid rgb(20 184 166); /* teal-500 */
+  border-left: 2px solid var(--brand-500);
   padding-left: calc(0.75rem - 2px);
 }
 
