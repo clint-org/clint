@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clint",
+  "compatibility_date": "2026-04-28",
+  "assets": {
+    "directory": "./dist/clinical-trial-dashboard/browser",
+    "not_found_handling": "single-page-application"
+  }
+}
