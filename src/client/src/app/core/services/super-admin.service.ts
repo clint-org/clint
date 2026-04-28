@@ -47,6 +47,14 @@ export interface RegisterCustomDomainResult {
   updated: boolean;
 }
 
+export interface DeleteAgencyResult {
+  id: string;
+  name: string;
+  subdomain: string;
+  members_removed: number;
+  invites_removed: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SuperAdminService {
   private supabase = inject(SupabaseService);
@@ -184,6 +192,14 @@ export class SuperAdminService {
     });
     if (error) throw error;
     return data as ProvisionAgencyResult;
+  }
+
+  async deleteAgency(agencyId: string): Promise<DeleteAgencyResult> {
+    const { data, error } = await this.supabase.client.rpc('delete_agency', {
+      p_agency_id: agencyId,
+    });
+    if (error) throw error;
+    return data as DeleteAgencyResult;
   }
 
   async registerCustomDomain(

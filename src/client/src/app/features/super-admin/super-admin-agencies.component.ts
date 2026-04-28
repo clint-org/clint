@@ -81,6 +81,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <th class="text-right">Max tenants</th>
             <th class="text-right">Tenants</th>
             <th>Created</th>
+            <th class="text-right w-12"><span class="sr-only">Actions</span></th>
           </tr>
         </ng-template>
         <ng-template #body let-agency>
@@ -92,11 +93,22 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <td class="text-right tabular-nums">{{ agency.max_tenants }}</td>
             <td class="text-right tabular-nums">{{ agency.tenant_count }}</td>
             <td class="col-identifier text-xs">{{ agency.created_at | date: 'MMM d, y' }}</td>
+            <td class="text-right">
+              <p-button
+                icon="fa-solid fa-trash"
+                severity="danger"
+                size="small"
+                [text]="true"
+                [rounded]="true"
+                [attr.aria-label]="'Delete agency ' + agency.name"
+                (onClick)="openDelete(agency)"
+              />
+            </td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="7" class="text-center py-8 text-sm text-slate-500">
+            <td colspan="8" class="text-center py-8 text-sm text-slate-500">
               No agencies yet. Provision your first one.
             </td>
           </tr>
@@ -287,6 +299,78 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         </div>
       </form>
     </p-dialog>
+
+    <!-- Delete confirmation dialog -->
+    <p-dialog
+      [(visible)]="deleteDialogOpen"
+      [modal]="true"
+      [closable]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '28rem' }"
+      header="Delete agency"
+      (onHide)="resetDelete()"
+    >
+      @if (deleteTarget(); as target) {
+        <div class="space-y-4">
+          <p class="text-sm text-slate-700">
+            Permanently delete
+            <strong class="font-semibold text-slate-900">{{ target.name }}</strong>
+            and all of its agency members and pending invites. This cannot be undone.
+          </p>
+          <p class="text-xs text-slate-500">
+            The subdomain
+            <code class="font-mono text-slate-700">{{ target.subdomain }}</code>
+            will be immediately re-usable (no 90-day holdback).
+          </p>
+          @if (target.tenant_count > 0) {
+            <p-message severity="error" [closable]="false">
+              This agency has {{ target.tenant_count }} tenant(s). Detach or delete
+              those tenants first.
+            </p-message>
+          } @else {
+            <div>
+              <label
+                for="delete-confirm"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Type the agency name to confirm
+              </label>
+              <input
+                pInputText
+                id="delete-confirm"
+                class="w-full"
+                [(ngModel)]="deleteConfirmText"
+                name="deleteConfirm"
+                spellcheck="false"
+                autocomplete="off"
+                [placeholder]="target.name"
+              />
+            </div>
+          }
+          @if (deleteError()) {
+            <p-message severity="error" [closable]="false">{{ deleteError() }}</p-message>
+          }
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              type="button"
+              (onClick)="deleteDialogOpen = false"
+            />
+            <p-button
+              label="Delete"
+              severity="danger"
+              type="button"
+              [loading]="deleting()"
+              [disabled]="!canDelete()"
+              (onClick)="onConfirmDelete()"
+            />
+          </div>
+        </div>
+      }
+    </p-dialog>
   `,
 })
 export class SuperAdminAgenciesComponent implements OnInit {
@@ -317,6 +401,13 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
+  // Delete dialog state
+  deleteDialogOpen = false;
+  deleteConfirmText = '';
+  readonly deleteTarget = signal<SuperAdminAgencySummary | null>(null);
+  readonly deleting = signal(false);
+  readonly deleteError = signal<string | null>(null);
+
   readonly canSubmit = computed(() => {
     const subdomainAvailable = this.subdomainStatus().kind === 'available';
     const notSubmitting = !this.submitting();
@@ -327,6 +418,14 @@ export class SuperAdminAgenciesComponent implements OnInit {
       SLUG_REGEX.test(this.slug.trim()) &&
       EMAIL_REGEX.test(this.ownerEmail.trim())
     );
+  });
+
+  readonly canDelete = computed(() => {
+    const target = this.deleteTarget();
+    if (!target) return false;
+    if (this.deleting()) return false;
+    if (target.tenant_count > 0) return false;
+    return this.deleteConfirmText.trim() === target.name;
   });
 
   async ngOnInit(): Promise<void> {
@@ -426,6 +525,42 @@ export class SuperAdminAgenciesComponent implements OnInit {
       this.submitError.set(e instanceof Error ? e.message : 'Failed to provision agency.');
     } finally {
       this.submitting.set(false);
+    }
+  }
+
+  openDelete(agency: SuperAdminAgencySummary): void {
+    this.deleteTarget.set(agency);
+    this.deleteConfirmText = '';
+    this.deleteError.set(null);
+    this.deleteDialogOpen = true;
+  }
+
+  resetDelete(): void {
+    this.deleteTarget.set(null);
+    this.deleteConfirmText = '';
+    this.deleteError.set(null);
+    this.deleting.set(false);
+  }
+
+  async onConfirmDelete(): Promise<void> {
+    const target = this.deleteTarget();
+    if (!target || !this.canDelete()) return;
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    try {
+      const result = await this.service.deleteAgency(target.id);
+      this.messageService.add({
+        severity: 'success',
+        summary: `Agency "${result.name}" deleted (${result.members_removed} member(s), ${result.invites_removed} pending invite(s) removed). Subdomain "${result.subdomain}" is free.`,
+        life: 5000,
+      });
+      this.deleteDialogOpen = false;
+      this.resetDelete();
+      await this.load();
+    } catch (e) {
+      this.deleteError.set(e instanceof Error ? e.message : 'Failed to delete agency.');
+    } finally {
+      this.deleting.set(false);
     }
   }
 }
