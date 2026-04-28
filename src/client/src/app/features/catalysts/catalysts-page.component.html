@@ -1,7 +1,7 @@
 <app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search catalysts..." />
 
-  <div class="flex-1 overflow-hidden">
+  <div class="md:flex-1 md:overflow-hidden">
     <app-catalyst-table
       [catalysts]="flatCatalysts()"
       [selectedId]="state.selectedMarkerId()"
