@@ -4,6 +4,7 @@ import PptxGenJS from 'pptxgenjs';
 import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
+import { BrandContextService } from './brand-context.service';
 import { TimelineService } from './timeline.service';
 
 export interface ExportOptions {
@@ -46,14 +47,27 @@ const PRODUCT_W = 0.8;
 const TRIAL_X = 1.8;
 const TRIAL_W = 1.0;
 
+const FALLBACK_PRIMARY = '0d9488';
+
 @Injectable({ providedIn: 'root' })
 export class PptxExportService {
   private timeline = inject(TimelineService);
+  private brand = inject(BrandContextService);
 
   async exportDashboard(companies: Company[], options: ExportOptions): Promise<void> {
     const pptx = new PptxGenJS();
     pptx.defineLayout({ name: 'WIDE', width: SLIDE_W, height: SLIDE_H });
     pptx.layout = 'WIDE';
+
+    // Capture brand vars once at the start of the export.
+    const appDisplayName = this.brand.appDisplayName();
+    const logoUrl = this.brand.logoUrl();
+    const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
+    const logoData = logoUrl ? await this.loadLogoAsBase64(logoUrl) : null;
+    // Hush unused locals while later commits wire them in.
+    void appDisplayName;
+    void primaryColorHex;
+    void logoData;
 
     const slide = pptx.addSlide();
     const rows = this.flattenTrials(companies);
@@ -69,6 +83,29 @@ export class PptxExportService {
     this.renderLegend(slide, companies);
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
+  }
+
+  private async loadLogoAsBase64(url: string): Promise<string | null> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+      }
+      const base64 = btoa(binary);
+      const contentType = res.headers.get('content-type') || 'image/png';
+      return `data:${contentType};base64,${base64}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizeHex(value: string | null | undefined): string {
+    if (!value) return '';
+    return value.replace('#', '').trim().toLowerCase();
   }
 
   private flattenTrials(companies: Company[]): FlatRow[] {
