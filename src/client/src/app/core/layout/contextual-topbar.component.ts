@@ -323,7 +323,7 @@ export interface TopbarTab {
       }
 
       .org-button:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -331,7 +331,7 @@ export interface TopbarTab {
         width: 20px;
         height: 20px;
         border-radius: 4px;
-        background: #0d9488;
+        background: var(--brand-600);
         color: white;
         font-size: 10px;
         font-weight: 700;
@@ -385,7 +385,7 @@ export interface TopbarTab {
       }
 
       .space-pill:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -427,12 +427,12 @@ export interface TopbarTab {
       }
 
       .dropdown-item:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: -2px;
       }
 
       .dropdown-item.active {
-        color: #0d9488;
+        color: var(--brand-600);
         font-weight: 500;
       }
 
@@ -485,13 +485,13 @@ export interface TopbarTab {
       }
 
       .topbar-tab.active {
-        color: #0d9488;
+        color: var(--brand-600);
         font-weight: 500;
-        border-bottom-color: #0d9488;
+        border-bottom-color: var(--brand-600);
       }
 
       .topbar-tab:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -516,14 +516,14 @@ export interface TopbarTab {
       }
 
       .topbar-subtab.active {
-        color: #0d9488;
-        background: rgba(13, 148, 136, 0.08);
-        border-color: rgba(13, 148, 136, 0.2);
+        color: var(--brand-600);
+        background: rgb(from var(--brand-600) r g b / 0.08);
+        border-color: rgb(from var(--brand-600) r g b / 0.2);
         font-weight: 500;
       }
 
       .topbar-subtab:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -559,7 +559,7 @@ export interface TopbarTab {
       }
 
       .topbar-back:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
@@ -652,7 +652,7 @@ export interface TopbarTab {
       }
 
       .org-btn:focus-visible {
-        outline: 2px solid #0d9488;
+        outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 

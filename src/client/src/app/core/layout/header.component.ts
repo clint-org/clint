@@ -209,7 +209,7 @@ import { NotificationBellComponent } from './notification-bell.component';
       }
       .nav-active {
         color: rgb(15 23 42); /* slate-900 */
-        border-bottom-color: rgb(13 148 136); /* teal-600 */
+        border-bottom-color: var(--brand-600);
       }
     `,
   ],

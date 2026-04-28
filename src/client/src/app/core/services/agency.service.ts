@@ -102,6 +102,23 @@ export class AgencyService {
     if (error) throw error;
   }
 
+  /**
+   * Resolve an email to a user_id via the lookup_user_by_email RPC.
+   * Returns null when the email isn't registered (not an error condition --
+   * the UI should offer "send invite" as the alternative).
+   */
+  async lookupUserByEmail(
+    email: string
+  ): Promise<{ user_id: string; display_name: string } | null> {
+    const { data, error } = await this.supabase.client.rpc('lookup_user_by_email', {
+      p_email: email,
+    });
+    if (error) throw error;
+    const result = data as { found: boolean; user_id?: string; display_name?: string };
+    if (!result?.found || !result.user_id) return null;
+    return { user_id: result.user_id, display_name: result.display_name ?? email };
+  }
+
   // ---------------------------------------------------------------------------
   // tenants under an agency
   // ---------------------------------------------------------------------------
