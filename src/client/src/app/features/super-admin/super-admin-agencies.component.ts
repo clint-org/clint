@@ -23,7 +23,6 @@ type SubdomainStatus =
 
 const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
 const SLUG_REGEX = /^[a-z][a-z0-9-]{1,99}$/;
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Component({
   selector: 'app-super-admin-agencies',
@@ -220,29 +219,44 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
           </div>
         </div>
 
-        <!-- Owner user id -->
+        <!-- Owner email -->
         <div>
           <label
             for="agency-owner"
             class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
           >
-            Owner user UUID
+            Owner email
           </label>
           <input
             pInputText
             id="agency-owner"
-            class="w-full font-mono text-xs"
-            [(ngModel)]="ownerUserId"
-            name="ownerUserId"
+            type="email"
+            class="w-full text-sm"
+            [(ngModel)]="ownerEmail"
+            name="ownerEmail"
             required
             aria-required="true"
-            placeholder="00000000-0000-0000-0000-000000000000"
+            placeholder="owner@example.com"
             spellcheck="false"
             autocomplete="off"
+            (blur)="onOwnerEmailBlur()"
           />
-          <p class="mt-1 text-[11px] text-slate-400">
-            Paste the owner's <code>auth.users.id</code>. Email lookup is not yet exposed to clients.
-          </p>
+          <div class="mt-1 text-[11px] min-h-[1.2em]" aria-live="polite">
+            @if (lookingUpOwner()) {
+              <span class="text-slate-500">Looking up user&hellip;</span>
+            } @else if (resolvedOwner()) {
+              <span class="text-emerald-700">
+                <i class="fa-solid fa-check mr-1"></i>Found:
+                <strong>{{ resolvedOwner()!.display_name }}</strong>
+              </span>
+            } @else if (ownerLookupError()) {
+              <span class="text-red-600">{{ ownerLookupError() }}</span>
+            } @else {
+              <span class="text-slate-400">
+                The user must already have signed in to the platform.
+              </span>
+            }
+          </div>
         </div>
 
         <!-- Contact email -->
@@ -300,7 +314,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
   name = '';
   slug = '';
   subdomain = '';
-  ownerUserId = '';
+  ownerEmail = '';
   contactEmail = '';
 
   readonly subdomainStatus = signal<SubdomainStatus>({ kind: 'idle' });
@@ -313,6 +327,11 @@ export class SuperAdminAgenciesComponent implements OnInit {
   readonly submitting = signal(false);
   readonly submitError = signal<string | null>(null);
 
+  readonly resolvedOwner = signal<{ user_id: string; display_name: string } | null>(null);
+  readonly lookingUpOwner = signal(false);
+  readonly ownerLookupError = signal<string | null>(null);
+  private ownerLookupSeq = 0;
+
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   readonly canSubmit = computed(() => {
@@ -320,7 +339,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
       this.name.trim().length > 0 &&
       SLUG_REGEX.test(this.slug.trim()) &&
       this.subdomainStatus().kind === 'available' &&
-      UUID_REGEX.test(this.ownerUserId.trim()) &&
+      this.resolvedOwner() !== null &&
       !this.submitting()
     );
   });
@@ -351,10 +370,38 @@ export class SuperAdminAgenciesComponent implements OnInit {
     this.name = '';
     this.slug = '';
     this.subdomain = '';
-    this.ownerUserId = '';
+    this.ownerEmail = '';
     this.contactEmail = '';
     this.subdomainStatus.set({ kind: 'idle' });
     this.submitError.set(null);
+    this.resolvedOwner.set(null);
+    this.ownerLookupError.set(null);
+    this.lookingUpOwner.set(false);
+  }
+
+  async onOwnerEmailBlur(): Promise<void> {
+    const email = this.ownerEmail.trim();
+    this.resolvedOwner.set(null);
+    this.ownerLookupError.set(null);
+    if (!email) return;
+    const seq = ++this.ownerLookupSeq;
+    this.lookingUpOwner.set(true);
+    try {
+      const found = await this.service.lookupUserByEmail(email);
+      if (seq !== this.ownerLookupSeq) return;
+      if (found) {
+        this.resolvedOwner.set(found);
+      } else {
+        this.ownerLookupError.set(
+          'No user found with that email. They must sign in to the platform first.'
+        );
+      }
+    } catch (e) {
+      if (seq !== this.ownerLookupSeq) return;
+      this.ownerLookupError.set(e instanceof Error ? e.message : 'Lookup failed.');
+    } finally {
+      if (seq === this.ownerLookupSeq) this.lookingUpOwner.set(false);
+    }
   }
 
   onSlugChange(value: string): void {
@@ -398,6 +445,8 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (!this.canSubmit()) return;
+    const owner = this.resolvedOwner();
+    if (!owner) return;
     this.submitting.set(true);
     this.submitError.set(null);
     try {
@@ -405,7 +454,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
         this.name.trim(),
         this.slug.trim(),
         this.subdomain.trim(),
-        this.ownerUserId.trim(),
+        owner.user_id,
         this.contactEmail.trim() || null
       );
       this.messageService.add({
