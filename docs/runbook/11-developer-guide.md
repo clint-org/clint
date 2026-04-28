@@ -80,10 +80,11 @@ Four reference guides in `docs/supabase-guides/`:
 
 ```bash
 cd src/client
-ng serve        # Dev server at localhost:4200 (hot reload)
-ng build        # Production build -> dist/client/browser/
-ng lint         # ESLint
-ng test         # Unit tests
+ng serve            # Dev server at localhost:4200 (hot reload)
+ng build            # Production build -> dist/client/browser/
+ng lint             # ESLint
+npm run lint        # ESLint + scripts/check-no-banana-ngmodel.sh (see Forms)
+ng test             # Unit tests
 ```
 
 ## Adding a New Feature
@@ -94,6 +95,22 @@ ng test         # Unit tests
 4. **Create feature components** in `src/app/features/<feature-name>/`
 5. **Register the route** in `app.routes.ts` using `loadComponent`
 6. Follow the Angular conventions: standalone, `inject()`, signals, new control flow, inline templates
+
+## Forms (signal-only pattern)
+
+Two-way `[(ngModel)]` is **not** allowed for new form fields. Bind one-way to a signal instead:
+
+```ts
+readonly email = signal('');
+
+readonly canSubmit = computed(() => EMAIL_RE.test(this.email()));
+```
+
+```html
+<input [ngModel]="email()" (ngModelChange)="email.set($event)" />
+```
+
+**Why:** `[(ngModel)]` writes to a plain class property. Plain properties are invisible to Angular's signal reactivity — any `computed()` that reads the property never re-evaluates when the user types, leaving Save/Submit buttons stuck at their initial value. Hit four times in this codebase before the rule was added. `scripts/check-no-banana-ngmodel.sh` (run by `npm run lint`) flags any `[(ngModel)]` in `src/`. Soft mode by default; flip to hard mode with `CHECK_NGMODEL_HARD=1` once the legacy files listed in the warning are migrated.
 
 ## PrimeNG Usage
 
