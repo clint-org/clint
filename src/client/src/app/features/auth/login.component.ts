@@ -1,5 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
@@ -23,9 +24,15 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
           <h1 class="mt-2 text-center text-lg font-semibold tracking-tight text-slate-900">
             Sign in to {{ appName() }}
           </h1>
-          <p class="mt-1 text-center text-xs text-slate-500">
-            Choose a sign-in method below.
-          </p>
+          @if (workspaceHint()) {
+            <p class="mt-1 text-center text-xs text-slate-500">
+              Signing in to <span class="font-medium text-slate-700">{{ workspaceHint() }}</span>
+            </p>
+          } @else {
+            <p class="mt-1 text-center text-xs text-slate-500">
+              Choose a sign-in method below.
+            </p>
+          }
 
           @if (error()) {
             <div class="mt-6 border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">
@@ -86,14 +93,25 @@ export class LoginComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly brand = inject(BrandContextService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly loading = signal<'google' | 'microsoft' | null>(null);
   readonly error = signal<string | null>(null);
+  /** Sanitized `?workspace=` value -- only set when host is the apex (kind === 'default'). */
+  readonly workspaceParam = signal<string | null>(null);
 
   protected readonly logoUrl = this.brand.logoUrl;
   protected readonly appName = this.brand.appDisplayName;
   protected readonly authProviders = this.brand.authProviders;
   protected readonly hasSelfJoin = this.brand.hasSelfJoin;
+
+  /** Display string for the workspace hint (e.g. `acme.yourproduct.com`). */
+  protected readonly workspaceHint = computed(() => {
+    const sub = this.workspaceParam();
+    if (!sub) return null;
+    const apex = environment.apexDomain || 'yourproduct.com';
+    return `${sub}.${apex}`;
+  });
 
   async ngOnInit() {
     // Surface a self-join failure stashed by the auth-callback flow. The
@@ -109,6 +127,20 @@ export class LoginComponent implements OnInit {
     } catch {
       // sessionStorage unavailable; nothing to surface.
     }
+
+    // Workspace hint: only meaningful on the apex host (default brand). On
+    // tenant/agency/super-admin hosts the host already implies the workspace,
+    // so an inbound `?workspace=` param is ignored to avoid a misleading hint.
+    if (this.brand.kind() === 'default') {
+      const raw = this.route.snapshot.queryParamMap.get('workspace');
+      if (raw) {
+        const sanitized = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (/^[a-z][a-z0-9-]{1,62}$/.test(sanitized)) {
+          this.workspaceParam.set(sanitized);
+        }
+      }
+    }
+
     await this.supabaseService.waitForSession();
     if (this.supabaseService.session()) {
       this.router.navigate(['/']);
