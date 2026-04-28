@@ -8,6 +8,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { TenantService } from '../../core/services/tenant.service';
@@ -29,6 +30,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     InputText,
     Select,
     MessageModule,
+    CheckboxModule,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -194,6 +196,112 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </ng-template>
       </p-table>
 
+      <!-- Access (owner-only) -->
+      @if (currentUserIsOwner()) {
+        <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
+          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Access
+          </h2>
+          <p class="mt-1 text-xs text-slate-500">
+            Allow employees with email addresses on approved domains to join this
+            workspace automatically when they sign in on this subdomain.
+          </p>
+
+          @if (accessLoading()) {
+            <p class="mt-4 text-xs text-slate-400">Loading access settings...</p>
+          } @else {
+            <div class="mt-4 flex items-center gap-2">
+              <p-checkbox
+                inputId="self-join-toggle"
+                [(ngModel)]="selfJoinEnabled"
+                [binary]="true"
+              />
+              <label for="self-join-toggle" class="cursor-pointer text-xs text-slate-700">
+                Enable self-join from approved email domains
+              </label>
+            </div>
+
+            @if (selfJoinEnabled) {
+              <div class="mt-4">
+                <label
+                  for="domain-input"
+                  class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Approved email domains
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    pInputText
+                    id="domain-input"
+                    class="flex-1"
+                    placeholder="acme.com"
+                    [(ngModel)]="newDomain"
+                    (keydown.enter)="addDomain(); $event.preventDefault()"
+                    [attr.aria-invalid]="domainError() ? 'true' : null"
+                    aria-describedby="domain-input-help"
+                  />
+                  <button
+                    pButton
+                    type="button"
+                    label="Add"
+                    size="small"
+                    [outlined]="true"
+                    (click)="addDomain()"
+                  ></button>
+                </div>
+                <p id="domain-input-help" class="mt-1 text-[11px] text-slate-400">
+                  Lowercase domain like <code class="font-mono">acme.com</code>. Press
+                  Enter or Add to include it.
+                </p>
+                @if (domainError()) {
+                  <p class="mt-1 text-[11px] text-red-600" role="alert">
+                    {{ domainError() }}
+                  </p>
+                }
+
+                @if (allowlist().length > 0) {
+                  <ul
+                    class="mt-3 flex flex-wrap gap-1.5"
+                    aria-label="Approved email domains"
+                  >
+                    @for (domain of allowlist(); track domain) {
+                      <li
+                        class="inline-flex items-center gap-1.5 border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] tabular-nums text-slate-700"
+                      >
+                        <span class="font-mono">{{ domain }}</span>
+                        <button
+                          type="button"
+                          class="text-slate-400 hover:text-red-600 focus:outline-none focus:text-red-600"
+                          (click)="removeDomain(domain)"
+                          [attr.aria-label]="'Remove ' + domain"
+                        >
+                          <i class="fa-solid fa-xmark text-[10px]"></i>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="mt-3 text-[11px] italic text-slate-400">
+                    No domains added yet. Self-join will be effectively disabled until
+                    at least one domain is approved.
+                  </p>
+                }
+              </div>
+            }
+
+            <div class="mt-5">
+              <p-button
+                label="Save access settings"
+                size="small"
+                [loading]="savingAccess()"
+                [disabled]="!accessChanged()"
+                (onClick)="saveAccess()"
+              />
+            </div>
+          }
+        </div>
+      }
+
       <!-- Danger zone (owner-only) -->
       @if (currentUserIsOwner()) {
         <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
@@ -293,6 +401,18 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   inviteRole: 'owner' | 'member' = 'member';
   orgName = '';
 
+  // Access settings
+  private static readonly DOMAIN_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+  accessLoading = signal(false);
+  savingAccess = signal(false);
+  selfJoinEnabled = false;
+  allowlist = signal<string[]>([]);
+  newDomain = '';
+  domainError = signal<string | null>(null);
+  // Snapshot of last-saved values for change detection
+  private savedSelfJoinEnabled = false;
+  private savedAllowlist: string[] = [];
+
   readonly roleOptions = [
     { label: 'Member', value: 'member' },
     { label: 'Owner', value: 'owner' },
@@ -321,6 +441,13 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     ]);
     await this.loadData();
     this.orgName = this.tenant()?.name ?? '';
+    // Load access settings best-effort: only owners (and agency owners /
+    // platform admins) are authorised by the RPC. The promise is awaited so
+    // the form initialises with current values, but a permission failure
+    // simply leaves the section in its empty default state.
+    if (this.currentUserIsOwner()) {
+      await this.loadAccessSettings();
+    }
   }
 
   ngOnDestroy(): void {
@@ -508,6 +635,93 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       this.menuCache.clear();
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadAccessSettings(): Promise<void> {
+    this.accessLoading.set(true);
+    try {
+      const settings = await this.tenantService.getTenantAccessSettings(this.tenantId);
+      this.selfJoinEnabled = settings.email_self_join_enabled;
+      const list = Array.from(settings.email_domain_allowlist ?? []);
+      this.allowlist.set(list);
+      this.savedSelfJoinEnabled = this.selfJoinEnabled;
+      this.savedAllowlist = [...list];
+    } catch (e) {
+      // permission denied or transient: leave defaults
+      console.error('tenant-settings: failed to load access settings', e);
+    } finally {
+      this.accessLoading.set(false);
+    }
+  }
+
+  accessChanged(): boolean {
+    if (this.selfJoinEnabled !== this.savedSelfJoinEnabled) return true;
+    const a = this.allowlist();
+    const b = this.savedAllowlist;
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return true;
+    }
+    return false;
+  }
+
+  addDomain(): void {
+    this.domainError.set(null);
+    const raw = (this.newDomain ?? '').trim().toLowerCase();
+    if (!raw) return;
+    if (!TenantSettingsComponent.DOMAIN_RE.test(raw)) {
+      this.domainError.set(
+        `"${raw}" is not a valid domain. Use lowercase letters, digits, dots, or hyphens (e.g. acme.com).`
+      );
+      return;
+    }
+    if (this.allowlist().includes(raw)) {
+      this.domainError.set(`"${raw}" is already in the list.`);
+      return;
+    }
+    this.allowlist.update((list) => [...list, raw]);
+    this.newDomain = '';
+  }
+
+  removeDomain(domain: string): void {
+    this.allowlist.update((list) => list.filter((d) => d !== domain));
+    this.domainError.set(null);
+  }
+
+  async saveAccess(): Promise<void> {
+    this.savingAccess.set(true);
+    this.domainError.set(null);
+    try {
+      const list = this.allowlist();
+      // Re-validate client-side; the RPC will reject server-side too.
+      for (const d of list) {
+        if (!TenantSettingsComponent.DOMAIN_RE.test(d)) {
+          this.domainError.set(`Invalid domain in list: ${d}`);
+          this.savingAccess.set(false);
+          return;
+        }
+      }
+      await this.tenantService.updateTenantAccess(this.tenantId, {
+        email_domain_allowlist: list,
+        email_self_join_enabled: this.selfJoinEnabled,
+      });
+      this.savedSelfJoinEnabled = this.selfJoinEnabled;
+      this.savedAllowlist = [...list];
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Access settings updated.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Failed to update access settings',
+        detail: e instanceof Error ? e.message : String(e),
+        life: 5000,
+      });
+    } finally {
+      this.savingAccess.set(false);
     }
   }
 }
