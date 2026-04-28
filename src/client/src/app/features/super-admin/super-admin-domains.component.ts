@@ -39,7 +39,8 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
         <div class="flex items-center gap-2 text-xs text-slate-700">
           <p-checkbox
             inputId="include-expired"
-            [(ngModel)]="includeExpired"
+            [ngModel]="includeExpired()"
+            (ngModelChange)="includeExpired.set($event)"
             (onChange)="load()"
             [binary]="true"
           />
@@ -175,7 +176,7 @@ export class SuperAdminDomainsComponent implements OnInit {
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
 
-  includeExpired = false;
+  readonly includeExpired = signal(false);
 
   readonly nowIso = computed(() => new Date().toISOString());
 
@@ -193,7 +194,7 @@ export class SuperAdminDomainsComponent implements OnInit {
     this.loading.set(true);
     this.loadError.set(null);
     try {
-      const data = await this.service.listRetiredHostnames(this.includeExpired);
+      const data = await this.service.listRetiredHostnames(this.includeExpired());
       this.rows.set(data);
     } catch (e) {
       this.loadError.set(

@@ -142,7 +142,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
               pInputText
               id="new-space-name"
               class="w-full"
-              [(ngModel)]="newSpaceName"
+              [ngModel]="newSpaceName()"
+              (ngModelChange)="newSpaceName.set($event)"
               name="spaceName"
               placeholder="e.g. SGLT2 Pipeline"
               required
@@ -156,7 +157,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
               pTextarea
               id="new-space-desc"
               class="w-full"
-              [(ngModel)]="newSpaceDesc"
+              [ngModel]="newSpaceDesc()"
+              (ngModelChange)="newSpaceDesc.set($event)"
               name="spaceDesc"
               rows="2"
               placeholder="Optional description"
@@ -289,8 +291,8 @@ export class AppShellComponent implements OnInit {
   readonly createSpaceDialogOpen = signal(false);
   readonly creatingSpace = signal(false);
   readonly createSpaceError = signal<string | null>(null);
-  newSpaceName = '';
-  newSpaceDesc = '';
+  readonly newSpaceName = signal('');
+  readonly newSpaceDesc = signal('');
 
   // Sidebar state
   readonly sidebarHovering = signal(false);
@@ -651,20 +653,20 @@ export class AppShellComponent implements OnInit {
   // --- Create space dialog ---
 
   resetCreateSpaceForm(): void {
-    this.newSpaceName = '';
-    this.newSpaceDesc = '';
+    this.newSpaceName.set('');
+    this.newSpaceDesc.set('');
     this.createSpaceError.set(null);
   }
 
   async createSpace(): Promise<void> {
-    if (!this.newSpaceName.trim()) return;
+    if (!this.newSpaceName().trim()) return;
     this.creatingSpace.set(true);
     this.createSpaceError.set(null);
     try {
       const space = await this.spaceService.createSpace(
         this.tenantId(),
-        this.newSpaceName.trim(),
-        this.newSpaceDesc.trim() || undefined
+        this.newSpaceName().trim(),
+        this.newSpaceDesc().trim() || undefined
       );
       this.createSpaceDialogOpen.set(false);
       this.resetCreateSpaceForm();

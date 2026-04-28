@@ -154,12 +154,18 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
             Primary brand color
           </label>
           <div class="flex items-center gap-3">
-            <p-colorpicker [(ngModel)]="primaryColorRaw" name="color" [inline]="false" />
+            <p-colorpicker
+              [ngModel]="primaryColorRaw()"
+              (ngModelChange)="onPrimaryColorRawChange($event)"
+              name="color"
+              [inline]="false"
+            />
             <input
               pInputText
               id="tenant-color"
               class="w-32 font-mono text-xs"
-              [(ngModel)]="primaryColorHash"
+              [ngModel]="primaryColorHash()"
+              (ngModelChange)="primaryColorHash.set($event)"
               name="colorText"
               maxlength="7"
             />
@@ -179,7 +185,8 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
             id="tenant-owner-email"
             type="email"
             class="w-full"
-            [(ngModel)]="firstUserEmail"
+            [ngModel]="firstUserEmail()"
+            (ngModelChange)="firstUserEmail.set($event)"
             name="firstUserEmail"
             placeholder="lead@pfizer.com"
           />
@@ -227,20 +234,16 @@ export class AgencyTenantNewComponent implements OnInit {
   readonly name = signal('');
   readonly subdomain = signal('');
   // PrimeNG colorpicker emits without leading "#"; mirror it as-is then normalize on submit.
-  primaryColorRaw = '0d9488';
-  // Synced text input that includes the leading "#".
-  private _primaryColorHash = '#0d9488';
-  get primaryColorHash(): string {
-    return this._primaryColorHash;
+  // Canonical color storage uses the leading "#"; the colorpicker emits/expects
+  // the bare hex, so we expose a derived view + a setter that re-adds the "#".
+  readonly primaryColorHash = signal('#0d9488');
+  readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
+  readonly firstUserEmail = signal('');
+
+  onPrimaryColorRawChange(raw: string): void {
+    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
+    this.primaryColorHash.set(stripped ? `#${stripped}` : '');
   }
-  set primaryColorHash(value: string) {
-    this._primaryColorHash = value;
-    const stripped = value.replace(/^#/, '').toLowerCase();
-    if (/^[0-9a-f]{6}$/.test(stripped)) {
-      this.primaryColorRaw = stripped;
-    }
-  }
-  firstUserEmail = '';
 
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -261,7 +264,7 @@ export class AgencyTenantNewComponent implements OnInit {
       const a = this.agency();
       if (a) {
         // Default to agency primary color so new tenants inherit the agency look.
-        this.primaryColorHash = a.primary_color || '#0d9488';
+        this.primaryColorHash.set(a.primary_color || '#0d9488');
       }
     } catch (e) {
       this.submitError.set(e instanceof Error ? e.message : 'Failed to load agency.');
@@ -314,9 +317,8 @@ export class AgencyTenantNewComponent implements OnInit {
     this.submitting.set(true);
     this.submitError.set(null);
     try {
-      const primary = this._primaryColorHash.startsWith('#')
-        ? this._primaryColorHash.toLowerCase()
-        : '#' + this._primaryColorHash.toLowerCase();
+      const hash = this.primaryColorHash();
+      const primary = hash.startsWith('#') ? hash.toLowerCase() : `#${hash.toLowerCase()}`;
       const result = await this.agencyService.provisionTenant(
         a.id,
         this.name().trim(),
@@ -328,7 +330,7 @@ export class AgencyTenantNewComponent implements OnInit {
       );
 
       // Optionally create the first-user invite. Failures here shouldn't block the success toast.
-      const email = this.firstUserEmail.trim();
+      const email = this.firstUserEmail().trim();
       if (email) {
         try {
           await this.agencyService.createTenantInvite(result.id, email, 'owner');

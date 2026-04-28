@@ -147,7 +147,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
             type="email"
             autocomplete="off"
             class="w-full text-sm"
-            [(ngModel)]="newEmail"
+            [ngModel]="newEmail()"
+            (ngModelChange)="newEmail.set($event)"
             name="email"
             placeholder="user@example.com"
             (blur)="onEmailBlur()"
@@ -170,7 +171,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
           <p-select
             inputId="add-role"
             [options]="roleOptions"
-            [(ngModel)]="newRole"
+            [ngModel]="newRole()"
+            (ngModelChange)="newRole.set($event)"
             name="role"
             optionLabel="label"
             optionValue="value"
@@ -213,8 +215,8 @@ export class AgencyMembersComponent implements OnInit {
   readonly adding = signal(false);
   readonly addError = signal<string | null>(null);
 
-  newEmail = '';
-  newRole: 'owner' | 'member' = 'member';
+  readonly newEmail = signal('');
+  readonly newRole = signal<'owner' | 'member'>('member');
   readonly resolvedUser = signal<{ user_id: string; display_name: string } | null>(null);
   readonly lookingUp = signal(false);
   readonly lookupError = signal<string | null>(null);
@@ -265,8 +267,8 @@ export class AgencyMembersComponent implements OnInit {
   }
 
   resetAddForm(): void {
-    this.newEmail = '';
-    this.newRole = 'member';
+    this.newEmail.set('');
+    this.newRole.set('member');
     this.addError.set(null);
     this.resolvedUser.set(null);
     this.lookupError.set(null);
@@ -274,7 +276,7 @@ export class AgencyMembersComponent implements OnInit {
   }
 
   async onEmailBlur(): Promise<void> {
-    const email = this.newEmail.trim();
+    const email = this.newEmail().trim();
     this.resolvedUser.set(null);
     this.lookupError.set(null);
     if (!email) return;
@@ -310,7 +312,7 @@ export class AgencyMembersComponent implements OnInit {
     this.adding.set(true);
     this.addError.set(null);
     try {
-      await this.agencyService.addAgencyMember(a.id, resolved.user_id, this.newRole);
+      await this.agencyService.addAgencyMember(a.id, resolved.user_id, this.newRole());
       this.addDialogOpen.set(false);
       this.resetAddForm();
       this.messageService.add({ severity: 'success', summary: 'Member added.', life: 3000 });

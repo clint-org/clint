@@ -87,7 +87,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             >
               Tenant name
             </label>
-            <input pInputText id="org-name" class="w-full" [(ngModel)]="orgName" />
+            <input
+              pInputText
+              id="org-name"
+              class="w-full"
+              [ngModel]="orgName()"
+              (ngModelChange)="orgName.set($event)"
+            />
             <div class="mt-3 flex items-center gap-3">
               <p-button
                 label="Save"
@@ -211,7 +217,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             <div class="mt-4 flex items-center gap-2">
               <p-checkbox
                 inputId="self-join-toggle"
-                [(ngModel)]="selfJoinEnabled"
+                [ngModel]="selfJoinEnabled()"
+                (ngModelChange)="selfJoinEnabled.set($event)"
                 [binary]="true"
               />
               <label for="self-join-toggle" class="cursor-pointer text-xs text-slate-700">
@@ -219,7 +226,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               </label>
             </div>
 
-            @if (selfJoinEnabled) {
+            @if (selfJoinEnabled()) {
               <div class="mt-4">
                 <label
                   for="domain-input"
@@ -233,7 +240,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
                     id="domain-input"
                     class="flex-1"
                     placeholder="acme.com"
-                    [(ngModel)]="newDomain"
+                    [ngModel]="newDomain()"
+                    (ngModelChange)="newDomain.set($event)"
                     (keydown.enter)="addDomain(); $event.preventDefault()"
                     [attr.aria-invalid]="domainError() ? 'true' : null"
                     aria-describedby="domain-input-help"
@@ -334,7 +342,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             pInputText
             id="invite-email"
             class="w-full"
-            [(ngModel)]="inviteEmail"
+            [ngModel]="inviteEmail()"
+            (ngModelChange)="inviteEmail.set($event)"
             name="email"
             type="email"
             required
@@ -347,7 +356,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           <p-select
             inputId="invite-role"
             [options]="roleOptions"
-            [(ngModel)]="inviteRole"
+            [ngModel]="inviteRole()"
+            (ngModelChange)="inviteRole.set($event)"
             name="role"
             optionLabel="label"
             optionValue="value"
@@ -393,17 +403,17 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   removeError = signal<string | null>(null);
   savingName = signal(false);
   deletingTenant = signal(false);
-  inviteEmail = '';
-  inviteRole: 'owner' | 'member' = 'member';
-  orgName = '';
+  readonly inviteEmail = signal('');
+  readonly inviteRole = signal<'owner' | 'member'>('member');
+  readonly orgName = signal('');
 
   // Access settings
   private static readonly DOMAIN_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/;
   accessLoading = signal(false);
   savingAccess = signal(false);
-  selfJoinEnabled = false;
+  readonly selfJoinEnabled = signal(false);
   allowlist = signal<string[]>([]);
-  newDomain = '';
+  readonly newDomain = signal('');
   domainError = signal<string | null>(null);
   // Snapshot of last-saved values for change detection
   private savedSelfJoinEnabled = false;
@@ -436,7 +446,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       },
     ]);
     await this.loadData();
-    this.orgName = this.tenant()?.name ?? '';
+    this.orgName.set(this.tenant()?.name ?? '');
     // Load access settings best-effort: only owners (and agency owners /
     // platform admins) are authorised by the RPC. The promise is awaited so
     // the form initialises with current values, but a permission failure
@@ -471,16 +481,16 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
 
   nameChanged(): boolean {
     const t = this.tenant();
-    return !!t && this.orgName.trim() !== t.name;
+    return !!t && this.orgName().trim() !== t.name;
   }
 
   async saveOrgName(): Promise<void> {
     const t = this.tenant();
-    if (!t || this.orgName.trim() === t.name) return;
+    if (!t || this.orgName().trim() === t.name) return;
     this.savingName.set(true);
     try {
       const updated = await this.tenantService.updateTenant(this.tenantId, {
-        name: this.orgName.trim(),
+        name: this.orgName().trim(),
       });
       this.tenant.set(updated);
       this.removeError.set(null);
@@ -536,18 +546,18 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   }
 
   async sendInvite(): Promise<void> {
-    if (!this.inviteEmail.trim()) return;
+    if (!this.inviteEmail().trim()) return;
     this.inviting.set(true);
     this.inviteError.set(null);
 
     try {
       await this.tenantService.createInvite(
         this.tenantId,
-        this.inviteEmail.trim(),
-        this.inviteRole
+        this.inviteEmail().trim(),
+        this.inviteRole()
       );
       this.inviteDialogOpen.set(false);
-      this.inviteEmail = '';
+      this.inviteEmail.set('');
       await this.loadData();
       this.messageService.add({ severity: 'success', summary: 'Invite sent.', life: 3000 });
     } catch (e) {
@@ -638,10 +648,10 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     this.accessLoading.set(true);
     try {
       const settings = await this.tenantService.getTenantAccessSettings(this.tenantId);
-      this.selfJoinEnabled = settings.email_self_join_enabled;
+      this.selfJoinEnabled.set(settings.email_self_join_enabled);
       const list = Array.from(settings.email_domain_allowlist ?? []);
       this.allowlist.set(list);
-      this.savedSelfJoinEnabled = this.selfJoinEnabled;
+      this.savedSelfJoinEnabled = this.selfJoinEnabled();
       this.savedAllowlist = [...list];
     } catch (e) {
       // permission denied or transient: leave defaults
@@ -652,7 +662,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   }
 
   accessChanged(): boolean {
-    if (this.selfJoinEnabled !== this.savedSelfJoinEnabled) return true;
+    if (this.selfJoinEnabled() !== this.savedSelfJoinEnabled) return true;
     const a = this.allowlist();
     const b = this.savedAllowlist;
     if (a.length !== b.length) return true;
@@ -664,7 +674,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
 
   addDomain(): void {
     this.domainError.set(null);
-    const raw = (this.newDomain ?? '').trim().toLowerCase();
+    const raw = (this.newDomain() ?? '').trim().toLowerCase();
     if (!raw) return;
     if (!TenantSettingsComponent.DOMAIN_RE.test(raw)) {
       this.domainError.set(
@@ -677,7 +687,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       return;
     }
     this.allowlist.update((list) => [...list, raw]);
-    this.newDomain = '';
+    this.newDomain.set('');
   }
 
   removeDomain(domain: string): void {
@@ -700,9 +710,9 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       }
       await this.tenantService.updateTenantAccess(this.tenantId, {
         email_domain_allowlist: list,
-        email_self_join_enabled: this.selfJoinEnabled,
+        email_self_join_enabled: this.selfJoinEnabled(),
       });
-      this.savedSelfJoinEnabled = this.selfJoinEnabled;
+      this.savedSelfJoinEnabled = this.selfJoinEnabled();
       this.savedAllowlist = [...list];
       this.messageService.add({
         severity: 'success',

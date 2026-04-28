@@ -50,7 +50,8 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               pInputText
               id="agency-display-name"
               class="w-full"
-              [(ngModel)]="appDisplayName"
+              [ngModel]="appDisplayName()"
+              (ngModelChange)="appDisplayName.set($event)"
               name="appDisplayName"
             />
           </div>
@@ -63,12 +64,17 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               Primary color
             </label>
             <div class="flex items-center gap-2">
-              <p-colorpicker [(ngModel)]="primaryColorRaw" name="primary" />
+              <p-colorpicker
+                [ngModel]="primaryColorRaw()"
+                (ngModelChange)="onPrimaryColorRawChange($event)"
+                name="primary"
+              />
               <input
                 pInputText
                 id="agency-primary"
                 class="flex-1 font-mono text-xs"
-                [(ngModel)]="primaryColorHash"
+                [ngModel]="primaryColorHash()"
+                (ngModelChange)="primaryColorHash.set($event)"
                 name="primaryText"
                 maxlength="7"
               />
@@ -83,12 +89,17 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               Accent color
             </label>
             <div class="flex items-center gap-2">
-              <p-colorpicker [(ngModel)]="accentColorRaw" name="accent" />
+              <p-colorpicker
+                [ngModel]="accentColorRaw()"
+                (ngModelChange)="onAccentColorRawChange($event)"
+                name="accent"
+              />
               <input
                 pInputText
                 id="agency-accent"
                 class="flex-1 font-mono text-xs"
-                [(ngModel)]="accentColorHash"
+                [ngModel]="accentColorHash()"
+                (ngModelChange)="accentColorHash.set($event)"
                 name="accentText"
                 maxlength="7"
                 placeholder="#optional"
@@ -107,7 +118,8 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               pInputText
               id="agency-logo"
               class="w-full"
-              [(ngModel)]="logoUrl"
+              [ngModel]="logoUrl()"
+              (ngModelChange)="logoUrl.set($event)"
               name="logoUrl"
               placeholder="https://..."
             />
@@ -125,7 +137,8 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               id="agency-contact"
               type="email"
               class="w-full"
-              [(ngModel)]="contactEmail"
+              [ngModel]="contactEmail()"
+              (ngModelChange)="contactEmail.set($event)"
               name="contactEmail"
             />
           </div>
@@ -177,49 +190,35 @@ export class AgencyBrandingComponent implements OnInit {
   readonly saveError = signal<string | null>(null);
   readonly saving = signal(false);
 
-  appDisplayName = '';
-  contactEmail = '';
-  logoUrl = '';
-  primaryColorRaw = '0d9488';
-  accentColorRaw = '';
+  readonly appDisplayName = signal('');
+  readonly contactEmail = signal('');
+  readonly logoUrl = signal('');
+  readonly primaryColorHash = signal('#0d9488');
+  readonly accentColorHash = signal('');
+  readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
+  readonly accentColorRaw = computed(() => this.accentColorHash().replace(/^#/, ''));
 
-  private _primaryColorHash = '#0d9488';
-  get primaryColorHash(): string {
-    return this._primaryColorHash;
-  }
-  set primaryColorHash(value: string) {
-    this._primaryColorHash = value;
-    const stripped = value.replace(/^#/, '').toLowerCase();
-    if (/^[0-9a-f]{6}$/.test(stripped)) {
-      this.primaryColorRaw = stripped;
-    }
+  onPrimaryColorRawChange(raw: string): void {
+    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
+    this.primaryColorHash.set(stripped ? `#${stripped}` : '');
   }
 
-  private _accentColorHash = '';
-  get accentColorHash(): string {
-    return this._accentColorHash;
-  }
-  set accentColorHash(value: string) {
-    this._accentColorHash = value;
-    const stripped = value.replace(/^#/, '').toLowerCase();
-    if (/^[0-9a-f]{6}$/.test(stripped)) {
-      this.accentColorRaw = stripped;
-    } else if (stripped === '') {
-      this.accentColorRaw = '';
-    }
+  onAccentColorRawChange(raw: string): void {
+    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
+    this.accentColorHash.set(stripped ? `#${stripped}` : '');
   }
 
   readonly hasChanges = computed(() => {
     const a = this.agency();
     if (!a) return false;
-    const primary = '#' + this._primaryColorHash.replace(/^#/, '').toLowerCase();
-    const accent = this._accentColorHash.trim()
-      ? '#' + this._accentColorHash.replace(/^#/, '').toLowerCase()
+    const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
+    const accent = this.accentColorHash().trim()
+      ? '#' + this.accentColorHash().replace(/^#/, '').toLowerCase()
       : null;
     return (
-      this.appDisplayName !== a.app_display_name ||
-      (this.logoUrl || null) !== (a.logo_url ?? null) ||
-      this.contactEmail !== a.contact_email ||
+      this.appDisplayName() !== a.app_display_name ||
+      (this.logoUrl() || null) !== (a.logo_url ?? null) ||
+      this.contactEmail() !== a.contact_email ||
       primary !== (a.primary_color || '#0d9488').toLowerCase() ||
       accent !== (a.accent_color ?? null)
     );
@@ -240,11 +239,11 @@ export class AgencyBrandingComponent implements OnInit {
         return;
       }
       this.agency.set(current);
-      this.appDisplayName = current.app_display_name;
-      this.contactEmail = current.contact_email;
-      this.logoUrl = current.logo_url ?? '';
-      this.primaryColorHash = (current.primary_color ?? '#0d9488').toLowerCase();
-      this.accentColorHash = (current.accent_color ?? '').toLowerCase();
+      this.appDisplayName.set(current.app_display_name);
+      this.contactEmail.set(current.contact_email);
+      this.logoUrl.set(current.logo_url ?? '');
+      this.primaryColorHash.set((current.primary_color ?? '#0d9488').toLowerCase());
+      this.accentColorHash.set((current.accent_color ?? '').toLowerCase());
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load agency.');
     }
@@ -257,26 +256,28 @@ export class AgencyBrandingComponent implements OnInit {
     this.saveError.set(null);
     try {
       const branding: AgencyBrandingUpdate = {};
-      if (this.appDisplayName !== a.app_display_name) {
-        branding.app_display_name = this.appDisplayName.trim() || a.name;
+      const displayName = this.appDisplayName();
+      if (displayName !== a.app_display_name) {
+        branding.app_display_name = displayName.trim() || a.name;
       }
-      const primary = '#' + this._primaryColorHash.replace(/^#/, '').toLowerCase();
+      const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
       if (primary !== (a.primary_color || '#0d9488').toLowerCase()) {
         branding.primary_color = primary;
       }
-      const accentInput = this._accentColorHash.trim();
+      const accentInput = this.accentColorHash().trim();
       const accent = accentInput
         ? '#' + accentInput.replace(/^#/, '').toLowerCase()
         : null;
       if (accent !== (a.accent_color ?? null)) {
         branding.accent_color = accent;
       }
-      const newLogo = this.logoUrl.trim() || null;
+      const newLogo = this.logoUrl().trim() || null;
       if (newLogo !== (a.logo_url ?? null)) {
         branding.logo_url = newLogo;
       }
-      if (this.contactEmail !== a.contact_email) {
-        branding.contact_email = this.contactEmail.trim();
+      const newContact = this.contactEmail();
+      if (newContact !== a.contact_email) {
+        branding.contact_email = newContact.trim();
       }
       if (Object.keys(branding).length === 0) {
         this.saving.set(false);
