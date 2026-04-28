@@ -61,9 +61,33 @@ export const routes: Routes = [
     path: 'super-admin',
     canActivate: [superAdminGuard, authGuard],
     loadComponent: () =>
-      import('./features/super-admin/super-admin-placeholder.component').then(
-        (m) => m.SuperAdminPlaceholderComponent
+      import('./features/super-admin/super-admin-shell.component').then(
+        (m) => m.SuperAdminShellComponent
       ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'agencies' },
+      {
+        path: 'agencies',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-agencies.component').then(
+            (m) => m.SuperAdminAgenciesComponent
+          ),
+      },
+      {
+        path: 'tenants',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-tenants.component').then(
+            (m) => m.SuperAdminTenantsComponent
+          ),
+      },
+      {
+        path: 'domains',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-domains.component').then(
+            (m) => m.SuperAdminDomainsComponent
+          ),
+      },
+    ],
   },
   {
     path: 'onboarding',
