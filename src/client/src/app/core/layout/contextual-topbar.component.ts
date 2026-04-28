@@ -282,6 +282,22 @@ export interface TopbarTab {
         padding: 0 16px;
         background: white;
         border-bottom: 1px solid #e2e8f0;
+        /* Tabs and section labels can be wider than the viewport on mobile.
+           Scroll them inside the topbar instead of stretching .main-area. */
+        overflow-x: auto;
+        overflow-y: hidden;
+        min-width: 0;
+        scrollbar-width: thin;
+      }
+      .topbar::-webkit-scrollbar {
+        height: 0;
+      }
+
+      @media (max-width: 767px) {
+        .topbar {
+          padding: 0 8px;
+          gap: 4px;
+        }
       }
 
       /* ---- Breadcrumb ---- */

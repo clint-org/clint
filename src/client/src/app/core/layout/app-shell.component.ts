@@ -196,13 +196,16 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       .main-area {
         flex: 1;
         min-width: 0;
+        max-width: 100%;
         display: flex;
         flex-direction: column;
         height: 100%;
+        overflow: hidden;
       }
 
       .content-area {
         flex: 1;
+        min-width: 0;
         min-height: 0;
         overflow: auto;
         background: #f8fafc;
