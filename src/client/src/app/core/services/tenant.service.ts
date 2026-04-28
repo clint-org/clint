@@ -93,26 +93,11 @@ export class TenantService {
   }
 
   async joinByCode(code: string): Promise<Tenant> {
-    const { data: invite, error: findError } = await this.supabase.client
-      .from('tenant_invites')
-      .select('*')
-      .eq('invite_code', code)
-      .is('accepted_at', null)
-      .single();
-    if (findError) throw new Error('Invalid or expired invite code');
-
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
-    const { error: memberError } = await this.supabase.client
-      .from('tenant_members')
-      .insert({ tenant_id: invite.tenant_id, user_id: userId, role: invite.role });
-    if (memberError) throw memberError;
-
-    await this.supabase.client
-      .from('tenant_invites')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('id', invite.id);
-
-    return this.getTenant(invite.tenant_id);
+    const { data, error } = await this.supabase.client.rpc('accept_invite', {
+      p_code: code,
+    });
+    if (error) throw error;
+    return data as Tenant;
   }
 
   async updateMemberRole(tenantId: string, userId: string, role: 'owner' | 'member'): Promise<void> {
