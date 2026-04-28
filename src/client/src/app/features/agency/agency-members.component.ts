@@ -134,22 +134,36 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     >
       <form (ngSubmit)="onAdd()" class="space-y-4">
         <p class="text-xs text-slate-500">
-          Adding a member requires their Supabase user id. They must already have an account in
-          the system.
+          Enter the email of an existing user. They must already have signed in to the platform
+          before they can be added.
         </p>
         <div>
-          <label for="add-user-id" class="mb-1 block text-sm font-medium text-slate-700">
-            User id
+          <label for="add-email" class="mb-1 block text-sm font-medium text-slate-700">
+            Email
           </label>
           <input
             pInputText
-            id="add-user-id"
-            class="w-full font-mono text-xs"
-            [(ngModel)]="newUserId"
-            name="userId"
-            placeholder="00000000-0000-0000-0000-000000000000"
+            id="add-email"
+            type="email"
+            autocomplete="off"
+            class="w-full text-sm"
+            [(ngModel)]="newEmail"
+            name="email"
+            placeholder="user@example.com"
+            (blur)="onEmailBlur()"
             required
           />
+          @if (lookingUp()) {
+            <p class="mt-1 text-xs text-slate-500">Looking up user&hellip;</p>
+          }
+          @if (resolvedUser()) {
+            <p class="mt-1 text-xs text-slate-600">
+              Found: <strong>{{ resolvedUser()!.display_name }}</strong>
+            </p>
+          }
+          @if (lookupError()) {
+            <p class="mt-1 text-xs text-rose-700">{{ lookupError() }}</p>
+          }
         </div>
         <div>
           <label for="add-role" class="mb-1 block text-sm font-medium text-slate-700">Role</label>
@@ -174,7 +188,12 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
           [outlined]="true"
           (onClick)="addDialogOpen.set(false)"
         />
-        <p-button label="Add member" (onClick)="onAdd()" [loading]="adding()" />
+        <p-button
+          label="Add member"
+          (onClick)="onAdd()"
+          [loading]="adding()"
+          [disabled]="!resolvedUser() || adding()"
+        />
       </ng-template>
     </p-dialog>
   `,
@@ -194,8 +213,12 @@ export class AgencyMembersComponent implements OnInit {
   readonly adding = signal(false);
   readonly addError = signal<string | null>(null);
 
-  newUserId = '';
+  newEmail = '';
   newRole: 'owner' | 'member' = 'member';
+  readonly resolvedUser = signal<{ user_id: string; display_name: string } | null>(null);
+  readonly lookingUp = signal(false);
+  readonly lookupError = signal<string | null>(null);
+  private lookupSeq = 0;
 
   readonly roleOptions = [
     { label: 'Owner', value: 'owner' },
@@ -242,23 +265,52 @@ export class AgencyMembersComponent implements OnInit {
   }
 
   resetAddForm(): void {
-    this.newUserId = '';
+    this.newEmail = '';
     this.newRole = 'member';
     this.addError.set(null);
+    this.resolvedUser.set(null);
+    this.lookupError.set(null);
+    this.lookingUp.set(false);
+  }
+
+  async onEmailBlur(): Promise<void> {
+    const email = this.newEmail.trim();
+    this.resolvedUser.set(null);
+    this.lookupError.set(null);
+    if (!email) return;
+    const seq = ++this.lookupSeq;
+    this.lookingUp.set(true);
+    try {
+      const found = await this.agencyService.lookupUserByEmail(email);
+      // Drop stale results if user typed again before the previous call returned.
+      if (seq !== this.lookupSeq) return;
+      if (found) {
+        this.resolvedUser.set(found);
+      } else {
+        this.lookupError.set(
+          'No user found with that email. Send them an invite to join first.'
+        );
+      }
+    } catch (e) {
+      if (seq !== this.lookupSeq) return;
+      this.lookupError.set(e instanceof Error ? e.message : 'Lookup failed.');
+    } finally {
+      if (seq === this.lookupSeq) this.lookingUp.set(false);
+    }
   }
 
   async onAdd(): Promise<void> {
     const a = this.agency();
     if (!a) return;
-    const userId = this.newUserId.trim();
-    if (!userId) {
-      this.addError.set('User id is required.');
+    const resolved = this.resolvedUser();
+    if (!resolved) {
+      this.addError.set('Resolve the email to a user before adding.');
       return;
     }
     this.adding.set(true);
     this.addError.set(null);
     try {
-      await this.agencyService.addAgencyMember(a.id, userId, this.newRole);
+      await this.agencyService.addAgencyMember(a.id, resolved.user_id, this.newRole);
       this.addDialogOpen.set(false);
       this.resetAddForm();
       this.messageService.add({ severity: 'success', summary: 'Member added.', life: 3000 });
