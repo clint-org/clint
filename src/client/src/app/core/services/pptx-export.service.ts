@@ -64,15 +64,16 @@ export class PptxExportService {
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
     const logoData = logoUrl ? await this.loadLogoAsBase64(logoUrl) : null;
-    // Hush unused locals while later commits wire them in.
-    void appDisplayName;
-    void primaryColorHex;
-    void logoData;
 
-    const slide = pptx.addSlide();
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
 
+    // Slide 1: branded cover.
+    const cover = pptx.addSlide();
+    this.renderCover(cover, appDisplayName, primaryColorHex, logoData);
+
+    // Slide 2: data slide.
+    const slide = pptx.addSlide();
     const rowH = Math.min(0.28, (SLIDE_H - DATA_Y - LEGEND_H) / rows.length);
     const { startYear, endYear, zoomLevel } = options;
 
@@ -83,6 +84,55 @@ export class PptxExportService {
     this.renderLegend(slide, companies);
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
+  }
+
+  private renderCover(
+    cover: PptxGenJS.Slide,
+    appDisplayName: string,
+    primaryColorHex: string,
+    logoData: string | null
+  ): void {
+    if (logoData) {
+      cover.addImage({
+        data: logoData,
+        x: 0.5,
+        y: 0.5,
+        w: 2,
+        h: 0.8,
+        sizing: { type: 'contain', w: 2, h: 0.8 },
+      });
+    }
+    cover.addText(appDisplayName, {
+      x: 0.5,
+      y: 2,
+      w: 12,
+      h: 0.6,
+      fontSize: 28,
+      fontFace: 'Arial',
+      bold: true,
+      color: primaryColorHex,
+    });
+    cover.addText('Clinical Trial Landscape', {
+      x: 0.5,
+      y: 2.7,
+      w: 12,
+      h: 0.4,
+      fontSize: 14,
+      fontFace: 'Arial',
+      color: '475569',
+    });
+    cover.addText(
+      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      {
+        x: 0.5,
+        y: 3.3,
+        w: 12,
+        h: 0.3,
+        fontSize: 11,
+        fontFace: 'Arial',
+        color: '64748b',
+      }
+    );
   }
 
   private async loadLogoAsBase64(url: string): Promise<string | null> {
