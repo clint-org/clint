@@ -36,7 +36,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
   ],
   template: `
     <app-manage-page-shell>
-      <div class="mb-6 flex items-end justify-between">
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="text-base font-semibold text-slate-900">Members</h1>
           <p class="mt-1 text-xs text-slate-500">

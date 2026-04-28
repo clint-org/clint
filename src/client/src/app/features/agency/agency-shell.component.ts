@@ -142,6 +142,37 @@ interface AgencyNavItem {
         min-width: 0;
         overflow: auto;
       }
+      @media (max-width: 767px) {
+        .agency-topbar {
+          padding: 10px 12px;
+          gap: 8px;
+        }
+        .agency-topbar > div:last-child {
+          gap: 8px;
+        }
+        .agency-topbar .text-xs {
+          max-width: 11rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .agency-body {
+          flex-direction: column;
+        }
+        .agency-sidenav {
+          width: 100%;
+          flex-direction: row;
+          border-right: none;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 8px 12px;
+          gap: 4px;
+          overflow-x: auto;
+        }
+        .agency-nav-item {
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+      }
     `,
   ],
 })

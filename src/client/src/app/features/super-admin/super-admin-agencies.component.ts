@@ -39,7 +39,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   ],
   template: `
     <div class="p-6">
-      <div class="mb-6 flex items-end justify-between">
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 class="text-base font-semibold text-slate-900">Agencies</h1>
           <p class="mt-1 text-xs text-slate-500">

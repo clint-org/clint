@@ -29,7 +29,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
   ],
   template: `
     <div class="p-6">
-      <div class="mb-6 flex items-end justify-between gap-4">
+      <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 class="text-base font-semibold text-slate-900">Retired hostnames</h1>
           <p class="mt-1 text-xs text-slate-500">
