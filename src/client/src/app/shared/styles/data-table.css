@@ -102,21 +102,27 @@
  * behavior on mobile, but density isn't the priority on phones anyway.
  */
 @media (max-width: 767px) {
+  /* PrimeNG sets display:flex on the scrollable wrapper to make
+     scrollHeight="flex" work; revert to block so it sizes to content
+     and the parent .content-area scroller handles vertical movement. */
   .data-table.p-datatable,
   .data-table .p-datatable,
-  .data-table.p-datatable-scrollable,
-  .data-table .p-datatable-table-container,
-  .data-table .p-datatable-wrapper {
-    overflow: visible !important;
+  .data-table.p-datatable-scrollable {
+    display: block !important;
     max-height: none !important;
     height: auto !important;
     min-height: 0 !important;
   }
-  /* PrimeNG sets display: flex on the scrollable wrapper to make
-     scrollHeight="flex" work; revert to block so the natural document
-     flow takes over and the parent .content-area scrolls. */
-  .data-table.p-datatable-scrollable {
-    display: block !important;
+  /* The inner table container keeps overflow-x:auto so wide tables can
+     scroll horizontally inside the page (sub-swipe). Height becomes
+     content-sized so there's no vertical overflow to trap the page
+     scroll gesture — the page handles vertical movement. */
+  .data-table .p-datatable-table-container,
+  .data-table .p-datatable-wrapper {
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow-y: visible !important;
   }
 }
 
