@@ -20,10 +20,10 @@ import { TenantService } from '../../core/services/tenant.service';
             Welcome
           </p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-            Set up your organization
+            Set up your tenant
           </h1>
           <p class="mt-1 text-xs text-slate-500">
-            Create a new organization, or join an existing one with an invite code.
+            Create a new tenant, or join an existing one with an invite code.
           </p>
         </div>
 
@@ -32,19 +32,19 @@ import { TenantService } from '../../core/services/tenant.service';
           <div class="p-6">
             <p-tabs [value]="initialTab">
               <p-tablist>
-                <p-tab value="0">Create Organization</p-tab>
+                <p-tab value="0">Create Tenant</p-tab>
                 <p-tab value="1">Join with Code</p-tab>
               </p-tablist>
               <p-tabpanels>
                 <p-tabpanel value="0">
                   <form (ngSubmit)="createTenant()" class="space-y-4 pt-4">
                     <p class="text-xs text-slate-500">
-                      An organization groups your team's clinical trial workspaces and controls
+                      A tenant groups your team's clinical trial workspaces and controls
                       member access.
                     </p>
                     <div>
                       <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
-                        >Organization Name</label
+                        >Tenant Name</label
                       >
                       <input
                         pInputText
@@ -65,7 +65,7 @@ import { TenantService } from '../../core/services/tenant.service';
                       }}</p-message>
                     }
                     <p-button
-                      label="Create Organization"
+                      label="Create Tenant"
                       type="submit"
                       [loading]="creating()"
                       [style]="{ width: '100%' }"
@@ -75,7 +75,7 @@ import { TenantService } from '../../core/services/tenant.service';
                 <p-tabpanel value="1">
                   <form (ngSubmit)="joinTenant()" class="space-y-4 pt-4">
                     <p class="text-xs text-slate-500">
-                      Ask your organization admin for an invite code to join an existing team.
+                      Ask your tenant admin for an invite code to join an existing team.
                     </p>
                     <div>
                       <label for="invite-code" class="block text-sm font-medium text-slate-700 mb-1"
@@ -100,7 +100,7 @@ import { TenantService } from '../../core/services/tenant.service';
                       }}</p-message>
                     }
                     <p-button
-                      label="Join Organization"
+                      label="Join Tenant"
                       type="submit"
                       [loading]="joining()"
                       [style]="{ width: '100%' }"
@@ -148,7 +148,7 @@ export class OnboardingComponent {
       this.createError.set(
         e instanceof Error
           ? e.message
-          : 'Could not create organization. Check your connection and try again.'
+          : 'Could not create tenant. Check your connection and try again.'
       );
     } finally {
       this.creating.set(false);

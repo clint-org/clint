@@ -57,7 +57,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               <img
                 [src]="tenant()!.logo_url"
                 class="h-16 w-16 rounded-xl object-cover border border-slate-200"
-                alt="Organization logo"
+                alt="Tenant logo"
               />
               <button
                 type="button"
@@ -85,7 +85,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               for="org-name"
               class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
             >
-              Organization name
+              Tenant name
             </label>
             <input pInputText id="org-name" class="w-full" [(ngModel)]="orgName" />
             <div class="mt-3 flex items-center gap-3">
@@ -113,7 +113,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         [value]="members()"
         [loading]="loading()"
         [tableStyle]="{ 'min-width': '48rem' }"
-        aria-label="Organization members"
+        aria-label="Tenant members"
       >
         <ng-template #header>
           <tr>
@@ -303,11 +303,11 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
           <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
           <p class="mt-1 text-xs text-slate-500">
-            Deleting an organization permanently removes every space, member, invite, and
+            Deleting a tenant permanently removes every space, member, invite, and
             data record inside it. This cannot be undone.
           </p>
           <p-button
-            label="Delete organization"
+            label="Delete tenant"
             severity="danger"
             [outlined]="true"
             size="small"
@@ -486,7 +486,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       this.removeError.set(null);
       this.messageService.add({
         severity: 'success',
-        summary: 'Organization name updated.',
+        summary: 'Tenant name updated.',
         life: 3000,
       });
     } catch (e) {
@@ -561,11 +561,11 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     const t = this.tenant();
     if (!t) return;
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete organization',
+      header: 'Delete tenant',
       message:
         `Delete "${t.name}"? Every space, member, invite, and data record in this ` +
-        `organization will be permanently removed. This cannot be undone.`,
-      acceptLabel: 'Delete organization',
+        `tenant will be permanently removed. This cannot be undone.`,
+      acceptLabel: 'Delete tenant',
     });
     if (!ok) return;
 
@@ -576,7 +576,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       // another tenant or onboarding, depending on what's left.
       this.router.navigate(['/']);
     } catch (e) {
-      this.removeError.set(e instanceof Error ? e.message : 'Failed to delete organization');
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to delete tenant');
     } finally {
       this.deletingTenant.set(false);
     }
@@ -585,7 +585,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   async removeMember(member: TenantMember): Promise<void> {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Remove member',
-      message: `Remove ${member.display_name} from this organization? They will lose access immediately.`,
+      message: `Remove ${member.display_name} from this tenant? They will lose access immediately.`,
       acceptLabel: 'Remove',
     });
     if (!ok) return;

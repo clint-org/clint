@@ -462,7 +462,7 @@ export class AppShellComponent implements OnInit {
       catalysts: 'Catalysts',
       'settings/taxonomies': 'Taxonomies',
       'settings/marker-types': 'Marker Types',
-      'settings/organization': 'Organization',
+      'settings/organization': 'Tenant',
       'settings/spaces': 'Spaces',
       'settings/general': 'General',
       'settings/members': 'Members',

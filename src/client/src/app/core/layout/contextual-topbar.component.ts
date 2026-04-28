@@ -26,7 +26,7 @@ export interface TopbarTab {
               (click)="toggleOrgDropdown()"
               [attr.aria-expanded]="orgDropdownOpen()"
               aria-haspopup="listbox"
-              aria-label="Switch organization"
+              aria-label="Switch tenant"
             >
               @if (tenantLogoUrl()) {
                 <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
@@ -37,7 +37,7 @@ export interface TopbarTab {
               <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
             </button>
             @if (orgDropdownOpen()) {
-              <div class="dropdown org-dropdown" role="listbox" aria-label="Organizations">
+              <div class="dropdown org-dropdown" role="listbox" aria-label="Tenants">
                 @for (t of tenants(); track t.id) {
                   <button
                     class="dropdown-item"
@@ -55,14 +55,14 @@ export interface TopbarTab {
                     class="dropdown-item dropdown-item--footer"
                     (click)="onOrgSettingsClick()"
                   >
-                    <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
+                    <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
                     (click)="onCreateOrgClick()"
                   >
-                    <i class="fa-solid fa-plus text-[10px]"></i> Create organization
+                    <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
                   </button>
                   <button
                     type="button"
@@ -97,14 +97,14 @@ export interface TopbarTab {
                     class="dropdown-item dropdown-item--footer"
                     (click)="onOrgSettingsClick()"
                   >
-                    <i class="fa-solid fa-gear text-[10px]"></i> Organization settings
+                    <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
                     (click)="onCreateOrgClick()"
                   >
-                    <i class="fa-solid fa-plus text-[10px]"></i> Create organization
+                    <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
                   </button>
                   <button
                     type="button"

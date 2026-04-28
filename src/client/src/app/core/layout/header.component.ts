@@ -52,7 +52,7 @@ import { NotificationBellComponent } from './notification-bell.component';
               optionValue="id"
               [style]="{ width: '10rem' }"
               size="small"
-              placeholder="Organization"
+              placeholder="Tenant"
             />
           } @else if (tenants().length === 1) {
             <span class="text-slate-200">/</span>
@@ -143,7 +143,7 @@ import { NotificationBellComponent } from './notification-bell.component';
             <a
               [routerLink]="['/t', tenantId(), 'settings']"
               class="flex h-7 w-7 items-center justify-center text-slate-400 transition-colors hover:text-slate-900"
-              aria-label="Organization settings"
+              aria-label="Tenant settings"
             >
               <i class="fa-solid fa-gear text-xs"></i>
             </a>

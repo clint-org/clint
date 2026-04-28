@@ -92,7 +92,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       [style]="{ width: '32rem' }"
     >
       <p class="mb-3 text-xs text-slate-500">
-        Add an existing organization member to this space. They must be invited to the organization
+        Add an existing tenant member to this space. They must be invited to the tenant
         first.
       </p>
       <div class="mb-3">

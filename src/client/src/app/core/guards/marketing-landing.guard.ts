@@ -3,6 +3,8 @@ import { CanActivateFn, Router } from '@angular/router';
 import { SupabaseService } from '../services/supabase.service';
 import { BrandContextService } from '../services/brand-context.service';
 import { TenantService } from '../services/tenant.service';
+import { AgencyService } from '../services/agency.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * Root-path guard. Routes based on host brand kind and auth state.
@@ -26,6 +28,7 @@ export const marketingLandingGuard: CanActivateFn = async () => {
   const supabaseService = inject(SupabaseService);
   const brand = inject(BrandContextService);
   const tenantService = inject(TenantService);
+  const agencyService = inject(AgencyService);
   const router = inject(Router);
 
   await supabaseService.waitForSession();
@@ -44,7 +47,19 @@ export const marketingLandingGuard: CanActivateFn = async () => {
     return router.createUrlTree(['/onboarding']);
   }
 
-  // default host: route to user's most recent tenant, or onboarding.
+  // default host: agency memberships take precedence (cross-host redirect to
+  // the agency portal); fall back to last-used tenant; fall back to onboarding.
+  try {
+    const agencies = await agencyService.listMyAgencies();
+    if (agencies.length > 0 && environment.apexDomain) {
+      const agency = agencies[0];
+      window.location.href = `${window.location.protocol}//${agency.subdomain}.${environment.apexDomain}/admin`;
+      return false;
+    }
+  } catch {
+    // ignore — fall through to tenant lookup.
+  }
+
   try {
     const tenants = await tenantService.listMyTenants();
     if (tenants.length === 0) {
