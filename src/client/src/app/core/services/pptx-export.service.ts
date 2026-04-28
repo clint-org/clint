@@ -4,6 +4,7 @@ import PptxGenJS from 'pptxgenjs';
 import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
+import { BrandContextService } from './brand-context.service';
 import { TimelineService } from './timeline.service';
 
 export interface ExportOptions {
@@ -46,29 +47,147 @@ const PRODUCT_W = 0.8;
 const TRIAL_X = 1.8;
 const TRIAL_W = 1.0;
 
+const FALLBACK_PRIMARY = '0d9488';
+
 @Injectable({ providedIn: 'root' })
 export class PptxExportService {
   private timeline = inject(TimelineService);
+  private brand = inject(BrandContextService);
 
   async exportDashboard(companies: Company[], options: ExportOptions): Promise<void> {
     const pptx = new PptxGenJS();
     pptx.defineLayout({ name: 'WIDE', width: SLIDE_W, height: SLIDE_H });
     pptx.layout = 'WIDE';
 
-    const slide = pptx.addSlide();
+    // Capture brand vars once at the start of the export.
+    const appDisplayName = this.brand.appDisplayName();
+    const logoUrl = this.brand.logoUrl();
+    const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
+    const logoData = logoUrl ? await this.loadLogoAsBase64(logoUrl) : null;
+
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
 
+    // Two slides total: cover + data slide.
+    const totalPages = 2;
+
+    // Slide 1: branded cover.
+    const cover = pptx.addSlide();
+    this.renderCover(cover, appDisplayName, primaryColorHex, logoData);
+    this.addFooter(cover, appDisplayName, 1, totalPages);
+
+    // Slide 2: data slide.
+    const slide = pptx.addSlide();
     const rowH = Math.min(0.28, (SLIDE_H - DATA_Y - LEGEND_H) / rows.length);
     const { startYear, endYear, zoomLevel } = options;
 
-    this.renderTitle(slide);
+    this.renderTitle(slide, appDisplayName, primaryColorHex);
     this.renderHeader(slide, startYear, endYear, zoomLevel);
     this.renderGridLines(slide, startYear, endYear, zoomLevel, rows.length, rowH);
-    this.renderRows(slide, rows, rowH, startYear, endYear);
+    this.renderRows(slide, rows, rowH, startYear, endYear, primaryColorHex);
     this.renderLegend(slide, companies);
+    this.addFooter(slide, appDisplayName, 2, totalPages);
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
+  }
+
+  private addFooter(
+    slide: PptxGenJS.Slide,
+    appDisplayName: string,
+    pageNum: number,
+    totalPages: number
+  ): void {
+    slide.addText(appDisplayName, {
+      x: 0.1,
+      y: SLIDE_H - 0.25,
+      w: 4,
+      h: 0.2,
+      fontSize: 8,
+      fontFace: 'Arial',
+      color: '94a3b8',
+    });
+    slide.addText(`${pageNum} / ${totalPages}`, {
+      x: SLIDE_W - 1.5,
+      y: SLIDE_H - 0.25,
+      w: 1.4,
+      h: 0.2,
+      fontSize: 8,
+      fontFace: 'Arial',
+      color: '94a3b8',
+      align: 'right',
+    });
+  }
+
+  private renderCover(
+    cover: PptxGenJS.Slide,
+    appDisplayName: string,
+    primaryColorHex: string,
+    logoData: string | null
+  ): void {
+    if (logoData) {
+      cover.addImage({
+        data: logoData,
+        x: 0.5,
+        y: 0.5,
+        w: 2,
+        h: 0.8,
+        sizing: { type: 'contain', w: 2, h: 0.8 },
+      });
+    }
+    cover.addText(appDisplayName, {
+      x: 0.5,
+      y: 2,
+      w: 12,
+      h: 0.6,
+      fontSize: 28,
+      fontFace: 'Arial',
+      bold: true,
+      color: primaryColorHex,
+    });
+    cover.addText('Clinical Trial Landscape', {
+      x: 0.5,
+      y: 2.7,
+      w: 12,
+      h: 0.4,
+      fontSize: 14,
+      fontFace: 'Arial',
+      color: '475569',
+    });
+    cover.addText(
+      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      {
+        x: 0.5,
+        y: 3.3,
+        w: 12,
+        h: 0.3,
+        fontSize: 11,
+        fontFace: 'Arial',
+        color: '64748b',
+      }
+    );
+  }
+
+  private async loadLogoAsBase64(url: string): Promise<string | null> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+      }
+      const base64 = btoa(binary);
+      const contentType = res.headers.get('content-type') || 'image/png';
+      return `data:${contentType};base64,${base64}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizeHex(value: string | null | undefined): string {
+    if (!value) return '';
+    return value.replace('#', '').trim().toLowerCase();
   }
 
   private flattenTrials(companies: Company[]): FlatRow[] {
@@ -94,8 +213,12 @@ export class PptxExportService {
     return rows;
   }
 
-  private renderTitle(slide: PptxGenJS.Slide): void {
-    slide.addText('Clinical Trial Dashboard', {
+  private renderTitle(
+    slide: PptxGenJS.Slide,
+    appDisplayName: string,
+    primaryColorHex: string
+  ): void {
+    slide.addText(appDisplayName, {
       x: 0.2,
       y: 0,
       w: SLIDE_W - 0.4,
@@ -103,7 +226,7 @@ export class PptxExportService {
       fontSize: 12,
       fontFace: 'Arial',
       bold: true,
-      color: '1e293b',
+      color: primaryColorHex,
     });
     slide.addText(
       new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -123,7 +246,7 @@ export class PptxExportService {
       y: TITLE_H - 0.02,
       w: SLIDE_W,
       h: 0,
-      line: { color: '14b8a6', width: 1.5 },
+      line: { color: primaryColorHex, width: 1.5 },
     });
   }
 
@@ -196,7 +319,8 @@ export class PptxExportService {
     rows: FlatRow[],
     rowH: number,
     startYear: number,
-    endYear: number
+    endYear: number,
+    primaryColorHex: string
   ): void {
     const fontSize = Math.max(5, Math.min(7, rowH * 28));
 
@@ -223,7 +347,7 @@ export class PptxExportService {
           fontSize: Math.max(4, fontSize - 1),
           fontFace: 'Arial',
           bold: true,
-          color: '94a3b8',
+          color: primaryColorHex,
           valign: 'middle',
           shrinkText: true,
         });
