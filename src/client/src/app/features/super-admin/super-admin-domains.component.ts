@@ -33,15 +33,17 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
             Hostnames in the holdback window. They cannot be re-claimed until they are released.
           </p>
         </div>
-        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+        <div class="flex items-center gap-2 text-xs text-slate-700">
           <p-checkbox
             inputId="include-expired"
             [(ngModel)]="includeExpired"
             (onChange)="load()"
             [binary]="true"
           />
-          Include expired (released)
-        </label>
+          <label for="include-expired" class="cursor-pointer">
+            Include expired (released)
+          </label>
+        </div>
       </div>
 
       @if (loadError()) {
