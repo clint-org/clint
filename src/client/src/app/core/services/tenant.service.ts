@@ -147,6 +147,53 @@ export class TenantService {
     }
   }
 
+  async getTenantAccessSettings(
+    tenantId: string
+  ): Promise<{ email_domain_allowlist: string[]; email_self_join_enabled: boolean }> {
+    const { data, error } = await this.supabase.client.rpc('get_tenant_access_settings', {
+      p_tenant_id: tenantId,
+    });
+    if (error) throw error;
+    return data as { email_domain_allowlist: string[]; email_self_join_enabled: boolean };
+  }
+
+  async updateTenantAccess(
+    tenantId: string,
+    settings: { email_domain_allowlist?: string[]; email_self_join_enabled?: boolean }
+  ): Promise<void> {
+    const { error } = await this.supabase.client.rpc('update_tenant_access', {
+      p_tenant_id: tenantId,
+      p_settings: settings,
+    });
+    if (error) throw error;
+  }
+
+  async selfJoinTenant(
+    subdomain: string
+  ): Promise<{ id: string; name: string; role: string }> {
+    const { data, error } = await this.supabase.client.rpc('self_join_tenant', {
+      p_subdomain: subdomain,
+    });
+    if (error) throw error;
+    return data as { id: string; name: string; role: string };
+  }
+
+  /**
+   * Best-effort check: tenant_members RLS lets a member read their own
+   * row + fellow members' rows. If we read 0 rows for a tenant, the caller
+   * is not a member. Returns false on any error to be safe (the caller
+   * will then attempt self-join, which is idempotent on conflict).
+   */
+  async checkIsTenantMember(tenantId: string): Promise<boolean> {
+    const { data, error } = await this.supabase.client
+      .from('tenant_members')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .limit(1);
+    if (error) return false;
+    return (data ?? []).length > 0;
+  }
+
   private generateCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
