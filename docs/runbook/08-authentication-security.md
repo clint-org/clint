@@ -50,6 +50,8 @@ storageKey = sb-auth
 
 This means a single sign-in is shared across all `*.yourproduct.com` subdomains — tenant, agency, and the auth callback — without URL-token handoff. The tenant switcher just `location.assign('https://gsk.yourproduct.com/')`; the destination subdomain reads the same cookie and is already authenticated.
 
+**Chunking.** Browsers cap a single cookie's `Set-Cookie` header at ~4096 bytes. A typical Supabase session JSON (access_token JWT + user object + provider tokens) is 3-5KB and exceeded that limit on real Google sign-ins, silently failing the cookie write. The storage adapter splits values >3000 raw bytes into `${key}.0`, `${key}.1`, ... chunks and writes a meta cookie `${key}=__chunked:N` carrying the chunk count. `getItem` reassembles them; missing chunks return `null` (forces a fresh sign-in rather than corrupting state). `setItem` always clears stragglers from a previous larger session before writing.
+
 **Custom domains are a separate trust boundary.** A tenant on `competitive.acme.com` does not share the apex cookie domain — users sign in fresh. Acceptable for v1 because custom domains are sales-led one-tenant deployments.
 
 **Why not localStorage + URL-hash handoff:** localStorage is per-origin and would require passing tokens through the URL fragment (browser history retains them, extensions can read them, OAuth 2.0 deprecated implicit grant for these reasons). Cookies cleanly handle the cross-subdomain boundary that's the whole point of this architecture.
