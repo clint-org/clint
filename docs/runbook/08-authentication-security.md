@@ -185,12 +185,6 @@ When a tenant owner enters `email_domain_allowlist`, the UI soft-validates each 
 
 Async guard that calls `waitForSession()` and redirects to `/login` if no session exists.
 
-### onboardingRedirectGuard
-
-Applied on the root path `/`. Checks if the user has any tenant memberships:
-- **No tenants** -- redirects to `/onboarding`
-- **Has tenants** -- retrieves `lastTenantId` from localStorage (or defaults to first tenant) and redirects to `/t/{tenantId}/spaces`
-
 ### agencyGuard
 
 Checks `BrandContextService.kind() === 'agency'`. Non-matching kind redirects to `/`. Combined with `authGuard` on `/admin/*`.
@@ -201,4 +195,13 @@ Checks `BrandContextService.kind() === 'super-admin'`. Non-matching kind redirec
 
 ### marketingLandingGuard
 
-Renders the marketing landing on `/` only when `BrandContextService.kind() === 'default'` and the user is unauthenticated. Authenticated visitors fall through to `onboardingRedirectGuard`.
+Sole guard on the root path `/`. Routes by host brand kind and auth state:
+
+| Brand kind | Unauthenticated | Authenticated |
+|---|---|---|
+| `default` | render marketing landing | last-used tenant if any, else `/onboarding` |
+| `agency` | `/login` | `/admin` |
+| `super-admin` | `/login` | `/super-admin` |
+| `tenant` | `/login` | `/t/{brand.id}/spaces` |
+
+The per-kind routing for authenticated users mirrors `auth-callback.component.ts:redirectAfterSignIn`, which only fires on fresh sign-in. Without this duplication, an apex-cookie session that lands on a branded host without going through the callback would fall through to the apex onboarding/last-tenant path, sending agency owners to `/onboarding` (which calls the legacy `create_tenant` RPC) instead of `/admin` (which calls `provision_tenant`). That mismatch is what produced agency-less tenants in early testing.

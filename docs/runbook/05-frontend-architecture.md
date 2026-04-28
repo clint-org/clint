@@ -168,10 +168,12 @@ Key decisions:
 All routes are lazy-loaded. Routes are host-aware: `agencyGuard`, `superAdminGuard`, and `marketingLandingGuard` short-circuit on `BrandContextService.kind()`. The legacy `/t/:tenantId/...` shape is preserved for direct customers on the apex during cutover.
 
 ```
-/                                   -> marketingLandingGuard | onboardingRedirectGuard
-                                       (default-host unauthed -> MarketingLandingComponent;
-                                        default-host authed   -> existing onboarding redirect;
-                                        tenant-host           -> last space within the tenant)
+/                                   -> marketingLandingGuard
+                                       (unauthed:  default -> MarketingLandingComponent; branded -> /login)
+                                       (authed:    default -> last tenant or /onboarding;
+                                                   agency  -> /admin;
+                                                   super-admin -> /super-admin;
+                                                   tenant  -> /t/{brand.id}/spaces)
 /login                              -> LoginComponent (brand-driven; reads ?workspace= hint on apex)
 /auth/callback                      -> AuthCallbackComponent (kind-aware redirect; attempts self-join on tenant subdomains)
 /onboarding                         -> OnboardingComponent (authGuard)
