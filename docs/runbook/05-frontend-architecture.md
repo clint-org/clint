@@ -15,7 +15,13 @@ src/client/
       app.config.ts             # App-level providers (router, animations, PrimeNG)
       core/
         guards/
-          auth.guard.ts         # authGuard + onboardingRedirectGuard
+          auth.guard.ts                  # authGuard + onboardingRedirectGuard
+          agency.guard.ts                # kind === 'agency' (gates /admin/*)
+          super-admin.guard.ts           # kind === 'super-admin' (gates /super-admin/*)
+          marketing-landing.guard.ts     # kind === 'default' + unauthenticated (gates /)
+        util/
+          color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math)
+          cookie-session-storage.ts      # Supabase JS storage adapter using document.cookie
         layout/
           app-shell.component.ts        # Layout wrapper: sidebar + topbar + router-outlet
           sidebar.component.ts          # Unified nav: 48px collapsed (icons) / 220px expanded (hover/pin), always pushes content
@@ -32,12 +38,27 @@ src/client/
           catalyst.model.ts     # Catalyst, CatalystDetail, CatalystFilters, CatalystGroup, FlatCatalyst
           event.model.ts        # AppEvent, FeedItem, EventDetail, EventsPageFilters
           dashboard.model.ts    # DashboardData, DashboardFilters, ZoomLevel
-          tenant.model.ts       # Tenant, TenantMember, TenantInvite
+          tenant.model.ts       # Tenant, TenantMember, TenantInvite, TenantAccessSettings
           space.model.ts        # Space, SpaceMember
+          agency.model.ts       # Agency, AgencyMember, AgencyTenantSummary
+          brand.model.ts        # Brand, BrandKind ('tenant'|'agency'|'super-admin'|'default')
         services/               # All business logic and API calls (16 services)
           topbar-state.service.ts # Lets pages contribute title, count, and actions to the topbar
       features/
-        auth/                   # login.component, auth-callback.component
+        auth/                   # login.component (brand-driven), auth-callback.component (kind-aware redirect + self-join)
+        marketing/              # marketing-landing.component (apex /, unauthenticated)
+        agency/                 # Agency portal (mounted at /admin/*; agencyGuard + authGuard)
+          agency-shell.component.ts             # Topbar + side nav (Tenants / Members / Branding) + <router-outlet>
+          agency-tenant-list.component.ts       # Filterable table; row click -> tenant detail
+          agency-tenant-new.component.ts        # Provisioning wizard with debounced subdomain availability check
+          agency-tenant-detail.component.ts     # Branding edit + members list + "Open tenant" cross-host redirect
+          agency-members.component.ts           # Add/remove agency members; lookup_user_by_email for email-based add
+          agency-branding.component.ts          # Edit the agency portal's own brand
+        super-admin/            # Super-admin portal (mounted at /super-admin/*; superAdminGuard + authGuard)
+          super-admin-shell.component.ts        # Topbar + side nav (Agencies / Tenants / Domains)
+          super-admin-agencies.component.ts     # All agencies + provision-agency dialog
+          super-admin-tenants.component.ts      # All tenants + register-custom-domain dialog
+          super-admin-domains.component.ts      # Retired-hostnames hold list
         dashboard/              # Main timeline grid + sub-components
         manage/                 # CRUD UIs for all entities
           companies/            # company-list, company-form
@@ -86,9 +107,9 @@ src/client/
           marker-icon.ts        # Shared marker shape-to-icon mapping
           grid-constants.ts     # Shared grid dimension constants
       config/
-        primeng-theme.ts        # Aura preset, teal primary, slate surface
+        primeng-theme.ts        # Aura preset, slate surface; exports buildBrandPreset(scale?: BrandScale)
     environments/
-      environment.ts            # Supabase URL + anon key
+      environment.ts            # Supabase URL + anon key + apexDomain (empty = disable cookie session storage)
     assets/                     # Static resources
     main.ts                     # Bootstrap file
     styles.css                  # Global Tailwind CSS + manage-table.css + catalyst-table.css
@@ -108,21 +129,30 @@ The frontend strictly follows Angular 19 patterns:
 - **Inline templates** -- most components use template literals in the decorator
 - **Async/await** -- all async operations use async/await, not RxJS Observables in services
 
-## App Configuration
+## App Configuration & Bootstrap
 
-`app.config.ts` provides:
+The bootstrap sequence is whitelabel-aware. `main.ts`:
+
+1. Reads `window.location.host` (or, in dev, the `?wl_kind=...&wl_id=...` query-string override)
+2. Calls the anon-callable RPC `supabase.rpc('get_brand_by_host', { p_host: host })` via a temporary Supabase client
+3. Synchronously applies side effects:
+   - `document.title = brand.app_display_name`
+   - Swaps the `<link rel="icon">` href to `brand.favicon_url`
+   - Sets `--brand-50` … `--brand-950` on `:root` from `generateBrandScale(brand.primary_color)`
+4. Builds the dynamic preset: `buildBrandPreset(scale)` and passes it to `providePrimeNG`
+5. Provides `BrandContextService` to DI with the brand pre-populated
+6. `bootstrapApplication(AppComponent, mergeApplicationConfig(appConfig, dynamicConfig))`
+
+If the RPC fails or the host doesn't match, `fetchBrand()` falls back to `DEFAULT_BRAND` (kind = `default`, teal scale, `auth_providers = ['google', 'microsoft']`). Bootstrap never blocks on the brand fetch beyond a single RPC round trip.
+
+`app.config.ts` provides the static config (no `providePrimeNG` block — that moved to `main.ts` so the preset can be brand-driven):
 
 ```typescript
 provideZoneChangeDetection({ eventCoalescing: true })
 provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' }))
 provideAnimationsAsync()
-providePrimeNG({
-  theme: {
-    preset: ClinicalTheme,
-    options: { prefix: 'p', darkModeSelector: false, cssLayer: false }
-  },
-  ripple: false
-})
+ConfirmationService
+MessageService
 ```
 
 App-level services: `ConfirmationService` (for `<p-confirmdialog>`) and `MessageService` (for `<p-toast>`).
@@ -131,16 +161,31 @@ Key decisions:
 - `paramsInheritanceStrategy: 'always'` -- child routes inherit parent route params (tenantId, spaceId)
 - `darkModeSelector: false` -- light mode only (no dark mode)
 - `ripple: false` -- no Material-style ripple effects
+- `buildBrandPreset(scale?)` lives in `config/primeng-theme.ts`; called with no argument it returns the existing teal-derived preset, with a scale it overrides `semantic.primary`. All other components (form fields, dialog, button, select, datatable, toast) reference `{primary.X}` so per-tenant overrides propagate transitively.
 
 ## Routing
 
-All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` as a layout wrapper (icon rail + sidebar + topbar), and all tenant/space routes render inside its `<router-outlet>`.
+All routes are lazy-loaded. Routes are host-aware: `agencyGuard`, `superAdminGuard`, and `marketingLandingGuard` short-circuit on `BrandContextService.kind()`. The legacy `/t/:tenantId/...` shape is preserved for direct customers on the apex during cutover.
 
 ```
-/login                              -> LoginComponent
-/auth/callback                      -> AuthCallbackComponent
+/                                   -> marketingLandingGuard | onboardingRedirectGuard
+                                       (default-host unauthed -> MarketingLandingComponent;
+                                        default-host authed   -> existing onboarding redirect;
+                                        tenant-host           -> last space within the tenant)
+/login                              -> LoginComponent (brand-driven; reads ?workspace= hint on apex)
+/auth/callback                      -> AuthCallbackComponent (kind-aware redirect; attempts self-join on tenant subdomains)
 /onboarding                         -> OnboardingComponent (authGuard)
-/t/:tenantId/                       -> AppShellComponent (layout wrapper)
+/admin/*                            -> AgencyShellComponent (agencyGuard + authGuard)
+  tenants                           -> AgencyTenantListComponent
+  tenants/new                       -> AgencyTenantNewComponent
+  tenants/:id                       -> AgencyTenantDetailComponent
+  members                           -> AgencyMembersComponent
+  branding                          -> AgencyBrandingComponent
+/super-admin/*                      -> SuperAdminShellComponent (superAdminGuard + authGuard)
+  agencies                          -> SuperAdminAgenciesComponent
+  tenants                           -> SuperAdminTenantsComponent
+  domains                           -> SuperAdminDomainsComponent
+/t/:tenantId/                       -> AppShellComponent (layout wrapper; preserved for legacy / direct apex customers)
   spaces                            -> SpaceListComponent
   settings                          -> TenantSettingsComponent
   s/:spaceId/
@@ -162,7 +207,6 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
     settings/marker-types           -> MarkerTypeListComponent
     settings/taxonomies             -> TaxonomiesPageComponent (Therapeutic Areas, MOA, ROA)
     events                          -> EventsPageComponent
-/                                   -> onboardingRedirectGuard (auto-redirect)
 /**                                 -> redirects to /
 ```
 
@@ -170,9 +214,12 @@ All routes are lazy-loaded. The `/t/:tenantId` route loads `AppShellComponent` a
 
 | Service | Responsibility |
 |---|---|
-| `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google sign-in/out |
+| `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `accentColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`. Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
+| `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google + Microsoft sign-in (`signInWithGoogle`, `signInWithMicrosoft`), sign-out. Conditionally uses cookie-based session storage (`createCookieStorage`) when `environment.apexDomain` is set and the current host is on the apex; otherwise localStorage. |
 | `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models, `seedDemoData()` |
-| `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow |
+| `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow, plus access settings (`getTenantAccessSettings`, `updateTenantAccess`), `selfJoinTenant`, `checkIsTenantMember` |
+| `AgencyService` | Agency portal data layer: list tenants, provision tenant, update tenant branding, list/add/remove members, update agency branding, lookup user by email |
+| `SuperAdminService` | Super-admin data layer: `listAllAgencies`, `listAllTenants`, `listRetiredHostnames`, `provisionAgency`, `registerCustomDomain`, `checkSubdomainAvailable`, `lookupUserByEmail` |
 | `SpaceService` | Space CRUD via `create_space()` RPC, member management, role updates |
 | `CompanyService` | Company CRUD within a space (with display_order) |
 | `ProductService` | Product CRUD linked to a company (with display_order) |
@@ -329,14 +376,36 @@ All support four fill styles via SVG `<defs>`: `filled`, `outline`, `striped`, `
 
 ## PrimeNG Theme
 
-The custom theme preset (`config/primeng-theme.ts`) configures:
+The custom theme preset (`config/primeng-theme.ts`) is brand-aware. It exports `buildBrandPreset(scale?: BrandScale)` — called with no argument it returns the default preset (teal-derived primary scale), with a scale it overrides `semantic.primary`. All component overrides reference `{primary.X}` (never `{teal.X}`) so the override propagates.
+
+Configured baseline:
 - **Base**: Aura preset
-- **Primary**: Teal (11 shade ramp: 50-950)
-- **Surface**: Slate neutrals
+- **Primary**: dynamic — defaults to teal (11 shade ramp: 50-950); per-tenant overrides via `BrandContextService.primaryColor()` -> `generateBrandScale()` -> `buildBrandPreset(scale)` in `main.ts`
+- **Surface**: Slate neutrals (never tenant-driven; structural)
 - **Dark mode**: Disabled
 - **Ripple**: Disabled
 - **CSS layers**: Disabled
 - **Prefix**: `p`
+
+## Brand-Aware Tailwind Tokens
+
+`styles.css` declares an `@theme` block with `--color-brand-50` … `--color-brand-950` mapped to CSS variables that default to the teal scale:
+
+```css
+@theme {
+  --color-brand-50:  var(--brand-50,  #f0fdfa);
+  --color-brand-100: var(--brand-100, #ccfbf1);
+  /* ... through 950 */
+}
+```
+
+The `var(--brand-X, <fallback>)` form means: when `main.ts` sets `--brand-X` on `:root` from `generateBrandScale(brand.primary_color)`, Tailwind picks it up. Otherwise it falls back to teal — existing tenants without a brand override render identically.
+
+**Convention:** use `bg-brand-*`, `text-brand-*`, `border-brand-*`, `ring-brand-*`, `from-brand-*`, `via-brand-*`, `to-brand-*` (and `outline-`, `decoration-`, `divide-`, `placeholder-`, `accent-`, `caret-`, `fill-`, `stroke-` variants) for any utility that should respect the tenant brand. Never reach for `bg-teal-*` — that locks the color to the platform default. Slate, red, amber, green, cyan, violet stay hard-coded — those are data colors (markers, phase bars, status indicators) and are not tenant-configurable.
+
+The codemod that landed during the whitelabel rollout swept `~73 occurrences` of `*-teal-*` → `*-brand-*` across the client. New code must follow the same convention.
+
+`generateBrandScale(seedHex: string): BrandScale` lives in `core/util/color-scale.ts`. It converts the seed hex to HSL, holds the hue and saturation roughly constant, and varies lightness across `[97, 93, 86, 76, 65, 54, 47, 39, 31, 23, 13]` — an approximation of the Tailwind v4 lightness curve. Not a 1:1 replication of Tailwind's algorithm, but produces a plausible 50→950 ramp from any sane seed.
 
 ## Toasts (save/action feedback)
 
