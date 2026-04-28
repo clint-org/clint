@@ -340,7 +340,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 pInputText
                 id="delete-confirm"
                 class="w-full"
-                [(ngModel)]="deleteConfirmText"
+                [ngModel]="deleteConfirmText()"
+                (ngModelChange)="deleteConfirmText.set($event)"
                 name="deleteConfirm"
                 spellcheck="false"
                 autocomplete="off"
@@ -403,7 +404,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   // Delete dialog state
   deleteDialogOpen = false;
-  deleteConfirmText = '';
+  readonly deleteConfirmText = signal('');
   readonly deleteTarget = signal<SuperAdminAgencySummary | null>(null);
   readonly deleting = signal(false);
   readonly deleteError = signal<string | null>(null);
@@ -422,10 +423,12 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   readonly canDelete = computed(() => {
     const target = this.deleteTarget();
+    const confirm = this.deleteConfirmText();
+    const isDeleting = this.deleting();
     if (!target) return false;
-    if (this.deleting()) return false;
+    if (isDeleting) return false;
     if (target.tenant_count > 0) return false;
-    return this.deleteConfirmText.trim() === target.name;
+    return confirm.trim() === target.name;
   });
 
   async ngOnInit(): Promise<void> {
@@ -530,14 +533,14 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   openDelete(agency: SuperAdminAgencySummary): void {
     this.deleteTarget.set(agency);
-    this.deleteConfirmText = '';
+    this.deleteConfirmText.set('');
     this.deleteError.set(null);
     this.deleteDialogOpen = true;
   }
 
   resetDelete(): void {
     this.deleteTarget.set(null);
-    this.deleteConfirmText = '';
+    this.deleteConfirmText.set('');
     this.deleteError.set(null);
     this.deleting.set(false);
   }
