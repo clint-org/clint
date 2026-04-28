@@ -55,6 +55,14 @@ export interface DeleteAgencyResult {
   invites_removed: number;
 }
 
+export interface ReleaseRetiredHostnameResult {
+  hostname: string;
+  previous_kind: 'tenant' | 'agency';
+  previous_id: string | null;
+  retired_at: string;
+  released_at: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SuperAdminService {
   private supabase = inject(SupabaseService);
@@ -200,6 +208,14 @@ export class SuperAdminService {
     });
     if (error) throw error;
     return data as DeleteAgencyResult;
+  }
+
+  async releaseRetiredHostname(hostname: string): Promise<ReleaseRetiredHostnameResult> {
+    const { data, error } = await this.supabase.client.rpc('release_retired_hostname', {
+      p_hostname: hostname,
+    });
+    if (error) throw error;
+    return data as ReleaseRetiredHostnameResult;
   }
 
   async registerCustomDomain(

@@ -162,7 +162,15 @@ provision_agency(p_name text, p_slug text, p_subdomain text, p_owner_email text,
 delete_agency(p_agency_id uuid) -> jsonb
 ```
 
-**Platform admins only.** Deletes an agency; cascades to `agency_members` and `agency_invites` via existing FK `on delete cascade`. Refuses with `foreign_key_violation` if any `tenants` rows still reference the agency (`tenants.agency_id` is `on delete set null` by design — the RPC blocks rather than silently orphan customer data). **Skips the `retired_hostnames` 90-day holdback** — this is a super-admin override path for cleanup and re-provisioning, not a customer decommission flow. Returns `members_removed` and `invites_removed` counts.
+**Platform admins only.** Deletes an agency; cascades to `agency_members` and `agency_invites` via existing FK `on delete cascade`. Refuses with `foreign_key_violation` if any `tenants` rows still reference the agency (`tenants.agency_id` is `on delete set null` by design — the RPC blocks rather than silently orphan customer data). **Does not skip the `retired_hostnames` holdback** — the AFTER DELETE trigger on `agencies` runs in the same transaction and inserts the subdomain into the holdback list. To re-use the subdomain immediately, follow up with `release_retired_hostname()`. Returns `members_removed` and `invites_removed` counts.
+
+### release_retired_hostname
+
+```
+release_retired_hostname(p_hostname text) -> jsonb
+```
+
+**Platform admins only.** Deletes the named hostname from `retired_hostnames` so it can be re-claimed immediately. Override path for super-admin cleanup; raises `P0002` if the hostname isn't in the holdback list (so typos don't silently no-op). Real customer decommissions should leave the 90-day holdback in place to prevent takeover via stale session cookies and bookmarked links.
 
 ### provision_tenant
 

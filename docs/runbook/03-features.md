@@ -211,7 +211,7 @@ The platform owner's UI for provisioning agencies, registering custom domains, a
 |---|---|---|
 | `/super-admin/agencies` | `super-admin-agencies` | All agencies; "Provision agency" dialog (name, slug, subdomain, owner email, contact email). Owner email need not be a registered user — if no `auth.users` row matches, an `agency_invites` row is held and `handle_new_user` promotes it on first sign-in. Per-row trash action opens a typed-name confirmation dialog and calls `delete_agency` (refused if any tenants are still attached) |
 | `/super-admin/tenants` | `super-admin-tenants` | All tenants across all agencies; filter by agency; register custom domain dialog |
-| `/super-admin/domains` | `super-admin-domains` | Retired-hostnames hold list (90-day decommissioning window) |
+| `/super-admin/domains` | `super-admin-domains` | Retired-hostnames hold list (90-day decommissioning window). Per-row "Release" action calls `release_retired_hostname` for super-admin override (use only after a deliberate super-admin delete; real customer decommissions should keep the holdback) |
 
 Bootstrap is `INSERT INTO platform_admins (user_id) VALUES ('<uuid>')` via SQL — there is no UI to add platform admins.
 

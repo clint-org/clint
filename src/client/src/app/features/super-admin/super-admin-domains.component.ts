@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
+import { MessageService } from 'primeng/api';
 
 import {
   SuperAdminService,
@@ -21,6 +23,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
     TableModule,
     ButtonModule,
     CheckboxModule,
+    Dialog,
     MessageModule,
     StatusTagComponent,
   ],
@@ -72,6 +75,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
             <th>Released</th>
             <th>Status</th>
             <th>Previous id</th>
+            <th class="text-right w-20"><span class="sr-only">Actions</span></th>
           </tr>
         </ng-template>
         <ng-template #body let-row>
@@ -93,21 +97,79 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
               }
             </td>
             <td class="col-identifier text-[10px] text-slate-500">{{ row.previous_id || '--' }}</td>
+            <td class="text-right">
+              <p-button
+                label="Release"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [attr.aria-label]="'Release hostname ' + row.hostname"
+                (onClick)="openRelease(row)"
+              />
+            </td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="6" class="text-center py-8 text-sm text-slate-500">
+            <td colspan="7" class="text-center py-8 text-sm text-slate-500">
               No hostnames are currently in the holdback window.
             </td>
           </tr>
         </ng-template>
       </p-table>
     </div>
+
+    <!-- Release confirmation dialog -->
+    <p-dialog
+      [(visible)]="releaseDialogOpen"
+      [modal]="true"
+      [closable]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '26rem' }"
+      header="Release hostname"
+      (onHide)="resetRelease()"
+    >
+      @if (releaseTarget(); as target) {
+        <div class="space-y-4">
+          <p class="text-sm text-slate-700">
+            Release
+            <code class="font-mono text-slate-900">{{ target.hostname }}</code>
+            from the holdback list. The hostname will be immediately re-claimable
+            via provisioning.
+          </p>
+          <p class="text-xs text-slate-500">
+            Use this only after a deliberate super-admin delete. For real customer
+            decommissions, leave the 90-day holdback in place — it prevents
+            takeover via stale session cookies and bookmarked links.
+          </p>
+          @if (releaseError()) {
+            <p-message severity="error" [closable]="false">{{ releaseError() }}</p-message>
+          }
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              type="button"
+              (onClick)="releaseDialogOpen = false"
+            />
+            <p-button
+              label="Release"
+              severity="danger"
+              type="button"
+              [loading]="releasing()"
+              (onClick)="onConfirmRelease()"
+            />
+          </div>
+        </div>
+      }
+    </p-dialog>
   `,
 })
 export class SuperAdminDomainsComponent implements OnInit {
   private readonly service = inject(SuperAdminService);
+  private readonly messageService = inject(MessageService);
 
   readonly rows = signal<RetiredHostname[]>([]);
   readonly loading = signal(true);
@@ -116,6 +178,12 @@ export class SuperAdminDomainsComponent implements OnInit {
   includeExpired = false;
 
   readonly nowIso = computed(() => new Date().toISOString());
+
+  // Release dialog state
+  releaseDialogOpen = false;
+  readonly releaseTarget = signal<RetiredHostname | null>(null);
+  readonly releasing = signal(false);
+  readonly releaseError = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -138,5 +206,39 @@ export class SuperAdminDomainsComponent implements OnInit {
 
   isReleased(row: RetiredHostname): boolean {
     return new Date(row.released_at).getTime() <= Date.now();
+  }
+
+  openRelease(row: RetiredHostname): void {
+    this.releaseTarget.set(row);
+    this.releaseError.set(null);
+    this.releaseDialogOpen = true;
+  }
+
+  resetRelease(): void {
+    this.releaseTarget.set(null);
+    this.releaseError.set(null);
+    this.releasing.set(false);
+  }
+
+  async onConfirmRelease(): Promise<void> {
+    const target = this.releaseTarget();
+    if (!target || this.releasing()) return;
+    this.releasing.set(true);
+    this.releaseError.set(null);
+    try {
+      const result = await this.service.releaseRetiredHostname(target.hostname);
+      this.messageService.add({
+        severity: 'success',
+        summary: `Released "${result.hostname}". Available for provisioning immediately.`,
+        life: 4000,
+      });
+      this.releaseDialogOpen = false;
+      this.resetRelease();
+      await this.load();
+    } catch (e) {
+      this.releaseError.set(e instanceof Error ? e.message : 'Failed to release hostname.');
+    } finally {
+      this.releasing.set(false);
+    }
   }
 }
