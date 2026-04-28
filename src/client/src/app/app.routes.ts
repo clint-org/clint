@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, onboardingRedirectGuard } from './core/guards/auth.guard';
+import { agencyGuard } from './core/guards/agency.guard';
+import { superAdminGuard } from './core/guards/super-admin.guard';
 
 export const routes: Routes = [
   {
@@ -10,6 +12,22 @@ export const routes: Routes = [
     path: 'auth/callback',
     loadComponent: () =>
       import('./features/auth/auth-callback.component').then((m) => m.AuthCallbackComponent),
+  },
+  {
+    path: 'admin',
+    canActivate: [agencyGuard, authGuard],
+    loadComponent: () =>
+      import('./features/agency/agency-placeholder.component').then(
+        (m) => m.AgencyPlaceholderComponent
+      ),
+  },
+  {
+    path: 'super-admin',
+    canActivate: [superAdminGuard, authGuard],
+    loadComponent: () =>
+      import('./features/super-admin/super-admin-placeholder.component').then(
+        (m) => m.SuperAdminPlaceholderComponent
+      ),
   },
   {
     path: 'onboarding',
