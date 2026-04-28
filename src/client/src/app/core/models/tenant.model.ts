@@ -3,6 +3,7 @@ export interface Tenant {
   name: string;
   slug: string;
   logo_url: string | null;
+  agency_id: string | null;
   created_at: string;
   updated_at: string;
 }

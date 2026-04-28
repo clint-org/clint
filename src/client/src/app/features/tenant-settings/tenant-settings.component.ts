@@ -48,64 +48,85 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </p-message>
       }
 
-      <!-- Org identity -->
-      <div class="mb-8 max-w-xl">
-        <div class="flex items-start gap-4">
-          <!-- Logo upload -->
-          <div class="flex flex-col items-center gap-2">
-            @if (tenant()?.logo_url) {
-              <img
-                [src]="tenant()!.logo_url"
-                class="h-16 w-16 rounded-xl object-cover border border-slate-200"
-                alt="Tenant logo"
-              />
-              <button
-                type="button"
-                class="text-[10px] text-slate-400 hover:text-red-500"
-                (click)="removeLogo()"
-              >
-                Remove
-              </button>
-            } @else {
-              <label
-                class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
-              >
-                Logo
-                <input
-                  type="file"
-                  class="hidden"
-                  accept="image/png,image/jpeg,image/svg+xml"
-                  (change)="onLogoSelect($event)"
+      <!-- Tenant identity (branding + name) -->
+      @if (!tenant()?.agency_id) {
+        <div class="mb-8 max-w-xl">
+          <div class="flex items-start gap-4">
+            <!-- Logo upload -->
+            <div class="flex flex-col items-center gap-2">
+              @if (tenant()?.logo_url) {
+                <img
+                  [src]="tenant()!.logo_url"
+                  class="h-16 w-16 rounded-xl object-cover border border-slate-200"
+                  alt="Tenant logo"
                 />
+                <button
+                  type="button"
+                  class="text-[10px] text-slate-400 hover:text-red-500"
+                  (click)="removeLogo()"
+                >
+                  Remove
+                </button>
+              } @else {
+                <label
+                  class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
+                >
+                  Logo
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept="image/png,image/jpeg,image/svg+xml"
+                    (change)="onLogoSelect($event)"
+                  />
+                </label>
+              }
+            </div>
+            <div class="flex-1">
+              <label
+                for="org-name"
+                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Tenant name
               </label>
-            }
-          </div>
-          <div class="flex-1">
-            <label
-              for="org-name"
-              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-            >
-              Tenant name
-            </label>
-            <input
-              pInputText
-              id="org-name"
-              class="w-full"
-              [ngModel]="orgName()"
-              (ngModelChange)="orgName.set($event)"
-            />
-            <div class="mt-3 flex items-center gap-3">
-              <p-button
-                label="Save"
-                size="small"
-                [loading]="savingName()"
-                [disabled]="!nameChanged()"
-                (onClick)="saveOrgName()"
+              <input
+                pInputText
+                id="org-name"
+                class="w-full"
+                [ngModel]="orgName()"
+                (ngModelChange)="orgName.set($event)"
               />
+              <div class="mt-3 flex items-center gap-3">
+                <p-button
+                  label="Save"
+                  size="small"
+                  [loading]="savingName()"
+                  [disabled]="!nameChanged()"
+                  (onClick)="saveOrgName()"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      } @else {
+        <div class="mb-8 max-w-xl rounded border border-slate-200 bg-slate-50 px-4 py-3">
+          <div class="flex items-start gap-3">
+            @if (tenant()?.logo_url) {
+              <img
+                [src]="tenant()!.logo_url"
+                class="h-10 w-10 rounded object-cover border border-slate-200"
+                alt="Tenant logo"
+              />
+            }
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-slate-900">{{ tenant()?.name }}</p>
+              <p class="mt-1 text-[11px] text-slate-500">
+                Branding (name and logo) is managed by your agency. Contact them to
+                update.
+              </p>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Members -->
       <div class="mb-3 flex items-baseline justify-between">
