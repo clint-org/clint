@@ -88,6 +88,33 @@
 }
 
 /* --------------------------------------------------------------------- */
+/* Mobile: disable PrimeNG's internal scroll container                    */
+/* --------------------------------------------------------------------- */
+/*
+ * Tables that use [scrollable]="true" + scrollHeight="flex" (catalysts,
+ * trial list, etc.) wrap their tbody in .p-datatable-table-container
+ * with overflow:auto. On iOS Safari this nested scroller swallows touch
+ * swipes — the outer page scroller never sees the gesture, so the user
+ * cannot scroll the table vertically.
+ *
+ * Below 768px we disable the inner scroll so the page-level scroller in
+ * .content-area handles vertical movement. Headers lose their sticky
+ * behavior on mobile, but density isn't the priority on phones anyway.
+ */
+@media (max-width: 767px) {
+  .data-table .p-datatable-table-container,
+  .data-table .p-datatable-wrapper,
+  .data-table.p-datatable-scrollable .p-datatable-table-container {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+  .data-table.p-datatable-scrollable {
+    overflow: visible !important;
+  }
+}
+
+/* --------------------------------------------------------------------- */
 /* Row group headers (catalyst-style time-bucket subheaders)              */
 /* --------------------------------------------------------------------- */
 
