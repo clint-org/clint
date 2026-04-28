@@ -119,6 +119,20 @@ Unique on `(agency_id, user_id)`.
 
 Not exposed via PostgREST. Managed via SQL only.
 
+#### `retired_hostnames`
+
+| Column | Type | Notes |
+|---|---|---|
+| hostname | varchar(255) PK | The retired subdomain or custom_domain |
+| retired_at | timestamptz default now() | |
+| released_at | timestamptz | Default `retired_at + interval '90 days'`; hostname is reusable on/after this date |
+| previous_kind | varchar(20) | `tenant` or `agency` |
+| previous_id | uuid nullable | Soft reference -- the original row may be gone |
+
+A trigger on `tenants` and `agencies` (`AFTER UPDATE OF subdomain`, `AFTER UPDATE OF custom_domain`, `AFTER DELETE`) inserts the old hostname. `provision_tenant`, `provision_agency`, and `register_custom_domain` reject hostnames present in `retired_hostnames` where `released_at > now()`. Prevents re-claim attacks where a malicious party re-provisions a recently-decommissioned subdomain to inherit residual trust artifacts.
+
+RLS: SELECT for platform admins only. Not exposed via PostgREST otherwise.
+
 ### Modified `tenants`
 
 Add columns:
@@ -155,6 +169,10 @@ $$ language sql security definer stable;
 - **Agency member of the parent agency:** passes only when `p_roles is null` or `'viewer' = any(p_roles)` (read-only).
 - **Platform admin:** passes regardless of `p_roles` for SELECT; for write checks, platform admins still must call write RPCs explicitly (RLS exception is read-only by design).
 
+### Tenant suspension enforcement
+
+The `tenants.suspended_at` column is enforced, not just informational. `has_space_access` and the tenant write policies short-circuit to `false` when the parent tenant has `suspended_at IS NOT NULL` AND the requested role set includes any write role. Read access continues to work so users can export their data and the UI can show a "this workspace is suspended" banner. Without this enforcement, suspension is a setting with no effect.
+
 ### RLS
 
 - `agencies` SELECT: `is_agency_member(id) OR is_platform_admin()`.
@@ -181,6 +199,20 @@ $$ language sql security definer stable;
 
 Per-table unique constraints don't prevent a tenant subdomain colliding with an agency subdomain (or any subdomain colliding with a custom domain). Enforce via two `BEFORE INSERT OR UPDATE` triggers (`enforce_subdomain_unique_across_tables`, `enforce_custom_domain_unique_across_tables`) on both `tenants` and `agencies` that raise if `NEW.subdomain` (or `NEW.custom_domain`) already exists in the *other* table. The reserved-list check stays in the RPCs.
 
+### Retired subdomain blocklist
+
+When a tenant or agency is decommissioned, its subdomain must not be immediately reusable -- otherwise an attacker who knows the customer relationship existed can re-provision the same subdomain and inherit any leftover trust (cached invite codes, bookmarked URLs, residual cookies on user devices). Add a `retired_hostnames` table:
+
+| Column | Type | Notes |
+|---|---|---|
+| hostname | varchar(255) PK | The retired subdomain or custom_domain |
+| retired_at | timestamptz | |
+| released_at | timestamptz | When the hostname becomes reusable; default `retired_at + interval '90 days'` |
+| previous_kind | varchar(20) | `tenant` or `agency` |
+| previous_id | uuid | Optional reference for support |
+
+`provision_tenant`, `provision_agency`, and `register_custom_domain` reject any hostname present in `retired_hostnames` where `released_at > now()`. A nightly job (or just a where-clause filter) lets entries age out automatically. When a tenant or agency row is deleted (or its subdomain is changed), a trigger inserts the old hostname.
+
 ### Backfill (single migration after column adds)
 
 - For each existing tenant: `subdomain = slug`, `app_display_name = name`, `primary_color = '#0d9488'`, all other new columns null/default.
@@ -192,7 +224,7 @@ Per-table unique constraints don't prevent a tenant subdomain colliding with an 
 
 ### Public (pre-auth)
 
-**`get_brand_by_host(p_host text) returns jsonb`** -- SECURITY DEFINER, callable by `anon` + `authenticated`. Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority over subdomain matches). Returns:
+**`get_brand_by_host(p_host text) returns jsonb`** -- SECURITY DEFINER, callable by `anon` + `authenticated`. Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority over subdomain matches). Returns only fields safe for unauthenticated readers:
 
 ```json
 {
@@ -204,11 +236,12 @@ Per-table unique constraints don't prevent a tenant subdomain colliding with an 
   "primary_color": "#hhhhhh",
   "accent_color": null,
   "auth_providers": ["google", "microsoft"],
-  "email_domain_allowlist": ["pfizer.com"] | null,
-  "email_self_join_enabled": false,
+  "has_self_join": false,
   "suspended": false
 }
 ```
+
+`has_self_join` is a *boolean* signal for the login UI ("show the self-join hint"). The actual `email_domain_allowlist` array is **never** returned to anon -- exposing it to anyone who hits a tenant subdomain would leak intelligence about the customer (it's an enumeration of which corporate email domains are recognized). The allowlist is read by authenticated tenant settings UIs through a separate authenticated RPC `get_tenant_access_settings(p_tenant_id)` gated by tenant-owner membership.
 
 If no match, returns `kind: "default"` with the Clint defaults. Never returns sensitive data.
 
@@ -228,7 +261,7 @@ If no match, returns `kind: "default"` with the Clint defaults. Never returns se
 
 **`register_custom_domain(p_tenant_id uuid, p_custom_domain text) returns jsonb`** -- SECURITY DEFINER. Platform admins only.
 
-**`self_join_tenant(p_subdomain text) returns jsonb`** -- SECURITY DEFINER. When the calling user's email is in `email_domain_allowlist` for that tenant and `email_self_join_enabled = true`, creates a `tenant_members` row at `viewer` role. Atomic, idempotent.
+**`self_join_tenant(p_subdomain text) returns jsonb`** -- SECURITY DEFINER. When the calling user's email is in `email_domain_allowlist` for that tenant and `email_self_join_enabled = true`, creates a `tenant_members` row at `viewer` role. Atomic, idempotent. **Returns the same generic error message for all failure modes** ("self-join not available for this workspace") -- distinguishing between "tenant doesn't exist," "self-join is off," "your email domain isn't allowed," and "the tenant is suspended" would let an attacker enumerate which subdomains exist and which corporate emails unlock them. Internally logs the actual reason for support diagnostics.
 
 ### Reserved subdomain list
 
@@ -320,15 +353,41 @@ Routes become host-aware -- `tenantId` is implicit from the host on tenant subdo
 - `/onboarding` -- existing create-tenant / join-by-code flow for legacy direct customers (preserved unchanged from today)
 - Legacy `/t/:tenantId/...` routes remain functional as redirect shims for 90 days post-cutover.
 
-### Cross-subdomain auth handoff
+### Cross-subdomain auth (cookie-based session storage)
 
-Sessions are scoped per host (Supabase JS uses localStorage). Tenant switcher flow:
+Switch Supabase JS from `localStorage` to **cookie-based session storage** with `Domain=.yourproduct.com`. The session cookie is shared across all subdomains under the apex (tenant subdomains, agency subdomains, the auth callback subdomain), so users sign in once and the session is automatically available everywhere. No URL token handoff is required.
 
-1. Source page calls `supabase.auth.getSession()` to grab `access_token` + `refresh_token`.
-2. Redirects to `https://gsk.yourproduct.com/#access_token=...&refresh_token=...&type=switch`.
-3. Destination's `auth-handoff.guard.ts` runs first on every route. If `location.hash` includes an `access_token`, it parses the hash, calls `supabase.auth.setSession({...})`, scrubs the hash via `history.replaceState`, then proceeds. Otherwise it's a no-op.
+Configuration in `src/client/src/app/core/services/supabase.service.ts`:
 
-Tokens go in the URL hash, not query string -- browsers do not include the hash in `Referer`. Tokens are short-lived (1h). Custom domains do not share session state with the apex; users sign in fresh on those.
+```typescript
+createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: cookieStorageAdapter, // implements get/set/remove against document.cookie
+    storageKey: 'sb-auth',
+    cookieOptions: {
+      domain: '.yourproduct.com',  // shared across subdomains
+      sameSite: 'lax',
+      secure: true,                 // https only
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30     // 30d, refresh-token-bound
+    },
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true        // for OAuth callback
+  }
+});
+```
+
+Tenant switcher just `location.assign('https://gsk.yourproduct.com/')` -- no token in URL, no hash. The destination subdomain reads the same cookie and is already authenticated.
+
+**Why not localStorage + URL-hash handoff:**
+- localStorage is scoped per-origin and would require passing tokens through the URL fragment (browser history retains them, browser extensions can read them, OAuth 2.0 deprecated implicit-grant for these reasons).
+- Cookies are `httpOnly`-eligible (not for Supabase JS today since it needs to read tokens, but the cookie is `Secure` + `SameSite=lax`, mitigating CSRF and casual XSS).
+- Cookies cleanly handle the cross-subdomain boundary that's the whole point of this architecture.
+
+**Custom domains:** A tenant on `competitive.acme.com` does not share the apex cookie domain. Users on a custom domain sign in fresh -- acceptable for v1, since custom domains are sales-led one-tenant deployments and users land on a single host.
+
+**XSS hardening:** Strict `Content-Security-Policy` header from Netlify (`default-src 'self'`, restrict `script-src` to self + a small allowlist, `frame-ancestors 'none'`) blocks token exfiltration via injected scripts. CSP is shipped alongside this change in phase 4.
 
 ### Branded login screen
 
@@ -432,13 +491,13 @@ Welcome, password reset, magic link -- keep on Supabase defaults with generic "S
 
 | # | Phase | Disruptive? | Verification |
 |---|---|---|---|
-| 1 | Migrations: new tables, RLS, helpers; add brand columns to `tenants`; backfill. | No | `supabase db reset` clean; existing UI unchanged |
+| 1 | Migrations: new tables (`agencies`, `agency_members`, `platform_admins`, `retired_hostnames`); brand columns on `tenants`; cross-table uniqueness triggers; retirement triggers; updated `has_space_access` with agency disjuncts and suspension short-circuit; helper RPCs (`is_agency_member`, `is_platform_admin`); backfill. | No | `supabase db reset` clean; existing UI unchanged; cross-tenant isolation test (`pfizer-user@example.com` cannot read `gsk-user@example.com`'s data, even with forged `space_id`) |
 | 2 | Theme refactor: `primeng-theme.ts` uses `{primary.X}`; Tailwind `@theme --color-brand-*` tokens; codemod `bg/text/border/ring-teal-*` -> `*-brand-*`. | Visual risk | Pixel diff on key screens |
 | 3 | `BrandContext` + pre-bootstrap host fetch + dynamic CSS vars + dynamic PrimeNG preset (color-scale generator). | No (defaults match teal) | Edit a test tenant's `primary_color`, hit subdomain, see new color |
-| 4 | Host-aware routing restructure; `/t/:tenantId/...` -> `/s/:spaceId/...` shim with redirects; cross-subdomain auth handoff. | Routing churn | Existing bookmarks redirect cleanly |
+| 4 | Host-aware routing restructure; `/t/:tenantId/...` -> `/s/:spaceId/...` shim with redirects; switch Supabase JS to cookie-based session storage with `Domain=.yourproduct.com`; ship CSP header from Netlify (`default-src 'self'`, restricted `script-src`, `frame-ancestors 'none'`). | Routing churn; auth storage swap | Existing bookmarks redirect cleanly; sign in on agency host, navigate to tenant host -- no re-auth |
 | 5 | Microsoft OAuth + branded login screen reading from `BrandContext`. | No | Sign in via MS on staging |
 | 6 | Agency portal: 6 components, `agency.guard`, `provision_tenant`, `check_subdomain_available`, `update_tenant_branding`, `update_agency_branding` RPCs. | New surface | End-to-end: provision a test agency via `psql` (`select provision_agency(...)`) since super-admin UI is phase 9 -> log in to agency portal -> provision tenant -> brand it -> invite user -> accept invite |
-| 7 | Branded emails: Resend + Edge Function + DB webhook; stop using Supabase invite emails. | New external dependency | Test invite renders in Gmail, Outlook, iOS Mail |
+| 7 | Branded emails: Resend + Edge Function (with webhook-secret verification) + DB webhook; service-role key in function secrets only; PII-minimized logging. | New external dependency | Test invite renders in Gmail, Outlook, iOS Mail; forged webhook calls without the signature header are rejected |
 | 8 | Branded PPT exports -- wire `BrandContext` into `pptx-export.service`. | No | Export from two tenants, diff |
 | 9 | Super-admin app on `admin.yourproduct.com`: agencies / tenants / domains tables; bootstrap your `platform_admins` row via SQL. | New surface, gated | Provision a new agency without touching DB directly |
 | 10 | Custom domain support: `register_custom_domain` RPC + super-admin UI; manual Netlify alias workflow documented. | No (sales-led) | Custom domain serves the right tenant |
@@ -458,15 +517,116 @@ Welcome, password reset, magic link -- keep on Supabase defaults with generic "S
 | Resend emails marked spam in pharma corporate inboxes | Warm up sender; document deliverability runbook; allow customers to allowlist |
 | Tenant brand changes don't propagate to logged-in users (cached preset) | `BrandContext.refresh()` on save; eventual consistency for other users |
 | Wildcard DNS / Netlify cost surprises | Confirm Netlify Pro plan and pricing before phase 1 |
-| Subdomain claim race between agencies | Unique constraint on `tenants.subdomain` + `agencies.subdomain` enforced in DB |
+| Subdomain claim race between agencies | Unique constraint on `tenants.subdomain` + `agencies.subdomain` enforced in DB; cross-table trigger; retired-hostname holdback |
+| Reserved-subdomain bypass enables phishing on a sibling subdomain (cookie scope) | Reserved list enforced in `provision_tenant`/`provision_agency`; CSP header on every page; `auth`/`admin` etc. permanently blocked |
+| Tenant suspension is set but not enforced | `has_space_access` short-circuits writes when `tenants.suspended_at IS NOT NULL`; RLS test verifies suspended tenants are read-only |
+| Tokens leaked via URL hash, browser history, or third-party analytics | No URL-token handoff -- session lives in `Domain=.yourproduct.com` cookies (`Secure`, `SameSite=lax`) |
+| OAuth callback used as open-redirect | `state` is validated against `tenants.subdomain` / `agencies.subdomain` before redirect; unknown values fall through to apex |
 
 ### Verification checkpoints
 
-- After phase 1: existing app fully works; only DB has new columns.
+- After phase 1: existing app fully works; only DB has new columns. Cross-tenant isolation test passes (RLS prevents `pfizer-user` from reading `gsk-user`'s data even with forged IDs); suspended tenants reject writes.
 - After phase 3: a staging tenant with non-default `primary_color` renders correctly.
+- After phase 4: sign in once on agency subdomain, navigate to tenant subdomain -- no re-auth required (cookie shared); navigate to a custom domain -- fresh sign-in required (cookie not shared); CSP header present on every response.
 - After phase 6: a brand-new agency can self-serve provision a pharma client tenant end-to-end.
+- After phase 7: forged webhook calls (without the `webhook-signature` header) to the email Edge Function are rejected; legitimate calls render correctly in Gmail, Outlook, iOS Mail.
 - After phase 9: you (platform admin) can provision a new agency without writing SQL.
-- After phase 11: a sample pharma deal can sign up via domain allowlist self-join.
+- After phase 11: a sample pharma deal can sign up via domain allowlist self-join; `self_join_tenant` returns the same generic error for every failure mode.
+
+---
+
+## Security
+
+This section is the threat model and the conventions every implementation task must follow. It supplements (does not replace) the project's `docs/supabase-guides/`.
+
+### SECURITY DEFINER conventions (mandatory for every new RPC)
+
+Every new RPC defined in this spec MUST follow the project's existing pattern, modeled on `accept_invite()` in `supabase/migrations/20260428021559_security_fixes_invites_and_tenant_quota.sql`:
+
+- `language plpgsql` (or `language sql` for read-only helpers)
+- `security definer`
+- `set search_path = ''` -- prevents schema-resolution attacks
+- All object references fully-qualified (`public.tenants`, `auth.uid()`, never bare `tenants`)
+- First-line authentication check: `if auth.uid() is null then raise exception 'Must be authenticated' using errcode = '28000'; end if;`
+- Authorization check uses helper functions (`is_agency_member`, `is_tenant_member`, `is_platform_admin`) -- never trust caller-supplied IDs without DB verification
+- Specific error codes: `28000` (auth), `42501` (permission), `P0001`/`P0002` (state), `53400` (quota), `23505` (uniqueness)
+- Permissions: `revoke execute ... from public; revoke ... from anon; grant execute ... to authenticated;` (or `to anon` only when explicitly intended, like `get_brand_by_host` and `check_subdomain_available`)
+- A `comment on function` documenting purpose and SECURITY DEFINER rationale
+
+### Row-level isolation (the core security guarantee)
+
+The product's central trust boundary is: a user in tenant A must never read or write data in tenant B unless they have an explicit cross-tenant role (agency owner / member / platform admin). RLS is the enforcement mechanism. Validation:
+
+- Every new RLS policy goes through `is_tenant_member`, `has_space_access`, `is_agency_member`, or `is_platform_admin` -- never inline `auth.uid() = ...` checks against tenancy.
+- Every column added to a tenant child table inherits existing tenant child-table policies (no new policies needed for child tables) -- but every NEW table needs four explicit policies (SELECT, INSERT, UPDATE, DELETE).
+- Test plan in phase 1 verification: a multi-tenant test (`pfizer-user@example.com` cannot read `gsk-user@example.com`'s companies, products, trials, markers, notes, even when sending a forged `space_id` in the URL).
+
+### Authenticated public surface (`anon` callable)
+
+Two RPCs are anon-callable: `get_brand_by_host` and `check_subdomain_available`. Both return only public-by-design information:
+- `get_brand_by_host`: brand visuals + auth provider list + `has_self_join` boolean. **Never** the email allowlist contents (would leak intelligence about which companies are customers and what email domains unlock them).
+- `check_subdomain_available`: just a boolean.
+
+Both are `STABLE` (no side effects). Rate limiting relies on Supabase's edge layer (Cloudflare) plus Postgres-level connection pooling for v1; if abused, add explicit rate limiting via Edge Functions later.
+
+### Enumeration resistance
+
+`self_join_tenant` returns the **same generic error** ("self-join not available for this workspace") for every failure mode (missing tenant, self-join off, allowlist mismatch, suspended). Differential errors would let an unauthenticated attacker enumerate which subdomains exist and which corporate emails unlock them. The actual reason is logged server-side (via `raise notice` to Postgres logs) for support diagnostics.
+
+### Cross-subdomain trust boundary
+
+Cookie-based session storage with `Domain=.yourproduct.com` is the trust boundary. Implications:
+
+- All `*.yourproduct.com` subdomains share the session. **The reserved subdomain list is therefore a security control, not just a UX one** -- if an attacker provisions a tenant with subdomain `auth` or `admin`, they could host a phishing page that has access to authenticated cookies. The reserved list MUST include every subdomain we use operationally (`www`, `app`, `api`, `admin`, `auth`, `mail`, `support`, `status`, `docs`, `blog`, `help`, `cdn`, `static`, `assets`, `noreply`, `email`, `smtp`).
+- Custom domains do not share cookies with the apex. This is intentional -- a tenant on `competitive.acme.com` is a separate trust boundary, and users sign in fresh.
+- Session cookies are `Secure` + `SameSite=Lax` + `Path=/` + 30-day max-age (refresh-token-bound). Strict CSRF protection via SameSite.
+
+### Subdomain takeover prevention
+
+`retired_hostnames` (described above) holds decommissioned subdomains and custom domains for 90 days before they're released back to the pool. Without this, an attacker could re-provision a recently-deleted subdomain and inherit:
+- Bookmarked URLs that include invite codes or recovery links
+- Cached browser auth state
+- Outbound emails from the old tenant that link back to the subdomain
+
+### Authorization model summary
+
+| Actor | Tenant data SELECT | Tenant data WRITE | Tenant settings | Agency portal | Platform admin |
+|---|---|---|---|---|---|
+| Pharma client end-user (tenant viewer) | own space (RLS) | none | none | none | none |
+| Pharma client end-user (tenant editor) | own space (RLS) | own space (RLS) | none | none | none |
+| Pharma client end-user (tenant owner) | own tenant | own tenant | own tenant | none | none |
+| Agency member | all tenants in agency | none | none | view-only | none |
+| Agency owner | all tenants in agency | all tenants in agency | all tenants in agency | full | none |
+| Platform admin | all (read) | only via write RPCs | all (via super-admin) | all (read) | all |
+
+### OAuth callback (state-based bounce-back)
+
+The single canonical OAuth callback at `auth.yourproduct.com/callback` accepts a `state` parameter containing the originating host. The callback validates that `state` is a known subdomain in `tenants.subdomain` or `agencies.subdomain` -- never blindly redirects to an attacker-supplied URL (open-redirect class). If `state` doesn't match a known host, redirect to the apex login.
+
+### Edge function authentication
+
+`send-invite-email` is invoked by a Supabase database webhook on `INSERT` into `tenant_invites`. The webhook is configured with a shared secret (HTTP header `webhook-signature`); the function rejects any request lacking the correct signature. Without this, anyone who knows the function URL could forge invite emails to any address.
+
+The function uses the Supabase service-role key (in function secrets) to read tenant brand fields. Never expose service-role to the client. The function logs the message ID, never the email body or the recipient address (PII minimization).
+
+### Custom domain ownership
+
+Custom domains are sales-led -- ops manually adds the domain alias in Netlify before super-admin sets `tenants.custom_domain`. The implicit assumption is that the customer owns the domain. For v1, validation is a manual ops checklist (verify CNAME points at us, verify the customer signed the request). Programmatic verification (TXT-record proof-of-ownership, similar to AWS ACM domain verification) is a v2 hardening step.
+
+### Audit logging
+
+Sensitive admin actions (`provision_agency`, `provision_tenant`, `register_custom_domain`, `update_tenant_branding`, `update_tenant_access`, suspending a tenant, adding a platform admin) are not yet logged in v1. This is consistent with the existing project non-goal but is called out here because once the platform serves multiple paying agencies, audit logs become an enterprise-tier feature and a SOC 2 prerequisite. Add as a v2 deliverable.
+
+### Domain allowlist hygiene
+
+When a tenant owner enters `email_domain_allowlist`, the UI soft-validates against a consumer-domain blocklist (`gmail.com`, `yahoo.com`, `outlook.com`, `hotmail.com`, `icloud.com`, ...) and warns -- a consumer email domain on a corporate allowlist would let any user with that mail provider self-join. Not enforced (some legitimate customers might want it), but warned.
+
+### Threat scenarios explicitly out of scope for v1
+
+- Compromised platform admin account (mitigated by deliberate manual provisioning + 2FA on the platform admin's Google account)
+- Insider threat (a malicious agency owner exfiltrating their pharma clients' data) -- mitigated by contracts, not technically prevented
+- Supply-chain attack on Supabase or Netlify -- accepted vendor risk
+- Quantum-cryptanalysis of TLS -- not relevant for v1
 
 ---
 
