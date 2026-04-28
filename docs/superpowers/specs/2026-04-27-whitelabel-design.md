@@ -261,7 +261,7 @@ If no match, returns `kind: "default"` with the Clint defaults. Never returns se
 
 **`register_custom_domain(p_tenant_id uuid, p_custom_domain text) returns jsonb`** -- SECURITY DEFINER. Platform admins only.
 
-**`self_join_tenant(p_subdomain text) returns jsonb`** -- SECURITY DEFINER. When the calling user's email is in `email_domain_allowlist` for that tenant and `email_self_join_enabled = true`, creates a `tenant_members` row at `viewer` role. Atomic, idempotent. **Returns the same generic error message for all failure modes** ("self-join not available for this workspace") -- distinguishing between "tenant doesn't exist," "self-join is off," "your email domain isn't allowed," and "the tenant is suspended" would let an attacker enumerate which subdomains exist and which corporate emails unlock them. Internally logs the actual reason for support diagnostics.
+**`self_join_tenant(p_subdomain text) returns jsonb`** -- SECURITY DEFINER. When the calling user's email is in `email_domain_allowlist` for that tenant and `email_self_join_enabled = true`, creates a `tenant_members` row at `member` role (the lowest tenant_members role -- the column is constrained to `owner | member`; tenant members get implicit editor/viewer space access via `has_space_access`). Atomic, idempotent. **Returns the same generic error message for all failure modes** ("self-join not available for this workspace") -- distinguishing between "tenant doesn't exist," "self-join is off," "your email domain isn't allowed," and "the tenant is suspended" would let an attacker enumerate which subdomains exist and which corporate emails unlock them. Internally logs the actual reason for support diagnostics.
 
 ### Reserved subdomain list
 
@@ -431,7 +431,7 @@ Under `src/client/src/app/features/super-admin/`. Intentionally minimal UI -- Pr
 
 - Tenant settings: "Allow @pfizer.com employees to self-join" toggle. When enabled, owner adds domain(s) to the allowlist.
 - On login, after auth, check: is the user already a member of this tenant? If not, but their email matches the allowlist and `email_self_join_enabled = true`, call `self_join_tenant(p_subdomain)` and continue.
-- New users created at `viewer` role by default; owners can promote in tenant member management.
+- New users created at `member` role on `tenant_members` (the least-privileged tenant role; provides implicit editor/viewer space access via `has_space_access`). Owners can promote to `owner` in tenant member management.
 
 ### Platform super-admin
 
