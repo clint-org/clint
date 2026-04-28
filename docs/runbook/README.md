@@ -35,7 +35,7 @@ The dashboard replaces static PowerPoint-based tracking workflows with a live, c
 |---|---|
 | [User Guide](10-user-guide.md) | End-user instructions for all features |
 | [Developer Guide](11-developer-guide.md) | Local setup, conventions, adding features |
-| [Deployment](12-deployment.md) | Netlify config, environment variables, schema deployment |
+| [Deployment](12-deployment.md) | Cloudflare Workers config, environment variables, schema deployment |
 
 ---
 

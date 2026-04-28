@@ -16,7 +16,7 @@
 | Edge runtime | Supabase Edge Functions (Deno) | `send-invite-email` handler triggered by a database webhook on `tenant_invites` insert |
 | Email | Resend | Branded transactional email (invite emails) via a single platform-wide sender domain with DKIM/SPF; per-tenant display name and brand in the body |
 | Export | pptxgenjs | Client-side PowerPoint generation; brand-aware cover, footer, and accent colors |
-| Deployment | Netlify (Pro plan for wildcard subdomain) | Static SPA hosting with zero-config builds; wildcard `*.yourproduct.com` cert; CSP header configured in `netlify.toml` |
+| Deployment | Cloudflare Workers (static assets binding via `src/client/wrangler.jsonc`) | Static SPA hosting with `not_found_handling: "single-page-application"` for client-side routing; free wildcard subdomain SSL on the `*.<apex>` zone; security headers via `src/client/public/_headers` |
 
 ## Full Version Inventory
 

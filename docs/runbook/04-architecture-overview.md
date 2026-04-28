@@ -46,8 +46,9 @@
                               ^
                               | wildcard *.<apex> + apex + custom domains
 +-------------------------------------------------------------------+
-|                         Netlify (Pro plan)                         |
-|  Wildcard cert, CSP header, /index.html catch-all, env apex domain |
+|                  Cloudflare Workers (free tier)                    |
+|  Wildcard SSL, CSP header (_headers), SPA fallback                 |
+|  (wrangler.jsonc not_found_handling), apex env var                 |
 +-------------------------------------------------------------------+
 ```
 
@@ -86,7 +87,7 @@ When `environment.apexDomain` is set and the current host is on the apex (e.g. `
 
 **Custom domains (`competitive.pfizer.com`) are a separate trust boundary** — users sign in fresh on each. Acceptable for v1 because custom domains are sales-led one-tenant deployments.
 
-A Content-Security-Policy header from `netlify.toml` (`default-src 'self'`, `frame-ancestors 'none'`, `connect-src 'self' https://*.supabase.co wss://*.supabase.co`) blocks token exfiltration via injected scripts.
+A Content-Security-Policy header from `src/client/public/_headers` (`default-src 'self'`, `frame-ancestors 'none'`, `connect-src 'self' https://*.supabase.co wss://*.supabase.co`) blocks token exfiltration via injected scripts. Cloudflare Workers' static-assets binding honors `_headers` natively.
 
 ## Retired-Hostname Holdback
 
@@ -94,7 +95,7 @@ When a tenant or agency is decommissioned, its subdomain or custom domain is ins
 
 ## Data Flow
 
-1. Browser hits `pfizer.yourproduct.com` -- Netlify serves the static SPA
+1. Browser hits `pfizer.yourproduct.com` -- Cloudflare's edge routes the wildcard `*.<apex>/*` to the `clint` Worker, which serves the static SPA from its assets binding
 2. `main.ts` calls `get_brand_by_host('pfizer.yourproduct.com')` (anon RPC) -- gets the brand
 3. CSS vars + favicon + title + dynamic PrimeNG preset applied; Angular bootstraps
 4. User signs in with Google or Microsoft -- Supabase Auth issues a JWT, stored in a `Domain=.yourproduct.com` cookie
@@ -113,5 +114,5 @@ When a tenant or agency is decommissioned, its subdomain or custom domain is ins
 - **Brand-as-data** -- per-tenant primary color + logo + favicon flow through CSS vars + a dynamic PrimeNG preset; data colors (slate, red, amber, green, cyan, violet) are never brand-driven.
 - **Cookie sessions on apex hosts** -- enables one-sign-in cross-subdomain UX without URL token handoff. Custom domains are intentionally separate trust boundaries.
 - **Client-side export** -- PowerPoint generation runs in the browser via `pptxgenjs`. No files are sent to a server.
-- **No SSR** -- Pure client-side SPA. Static files served from Netlify CDN.
+- **No SSR** -- Pure client-side SPA. Static files served from Cloudflare's global edge via the Worker's assets binding (`wrangler.jsonc`); SPA fallback is `not_found_handling: "single-page-application"`.
 - **Signals over Observables** -- Angular signals (`signal()`, `computed()`, `resource()`) are used for reactive state instead of RxJS Observables in services.

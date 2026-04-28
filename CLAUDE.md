@@ -1,7 +1,7 @@
 # Clint -- Competitive Intelligence for Pharma
 
 ## Tech Stack
-- **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Netlify
+- **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Cloudflare (Workers + static assets via `src/client/wrangler.jsonc`; SPA fallback handled by `not_found_handling: "single-page-application"`; security headers in `src/client/public/_headers`)
 - **Backend:** Supabase (Auth, Database)
 - **Database:** PostgreSQL via Supabase
 - **Auth:** Google OAuth via Supabase Auth

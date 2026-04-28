@@ -202,7 +202,7 @@ Caller must be agency owner or platform admin. Whitelist of fields: `app_display
 register_custom_domain(p_tenant_id uuid, p_custom_domain text) -> jsonb
 ```
 
-**Platform admins only.** Sets `tenants.custom_domain`. Validates uniqueness across `tenants.custom_domain` and `agencies.custom_domain`, plus retirement holdback. Manual ops checklist required first (Netlify domain alias + customer's CNAME).
+**Platform admins only.** Sets `tenants.custom_domain`. Validates uniqueness across `tenants.custom_domain` and `agencies.custom_domain`, plus retirement holdback. Manual ops checklist required first (Cloudflare Worker custom-domain registration on the customer's hostname + the customer's CNAME pointing at the Worker).
 
 ### self_join_tenant
 

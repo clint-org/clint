@@ -260,7 +260,7 @@ Agency owners get full read+write access across all tenants in the agency. Agenc
 
 ### Custom Domains
 
-Custom domains are sales-led. Contact the platform team — they'll set up the Netlify alias and wire `tenants.custom_domain` from the super-admin portal. You'll provide the CNAME from the customer's DNS.
+Custom domains are sales-led. Contact the platform team — they'll register the hostname as a Custom domain on the Cloudflare Worker and wire `tenants.custom_domain` from the super-admin portal. You'll provide the CNAME from the customer's DNS.
 
 ## PowerPoint Exports
 

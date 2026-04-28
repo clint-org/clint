@@ -6,72 +6,83 @@
 
 ## Architecture
 
-- **Frontend** -- Angular SPA deployed to Netlify (Pro plan, required for wildcard subdomain) as a static site
+- **Frontend** -- Angular SPA deployed to Cloudflare (Workers + static-assets binding) as a static site. Wildcard `*.<apex>` and apex are served by a single Worker.
 - **Backend** -- Supabase Cloud (managed PostgreSQL, Auth, PostgREST, Edge Functions)
 - **Email** -- Resend (transactional)
 - No server-side processes beyond one Edge Function (`send-invite-email`)
 
-## Netlify Setup
+## Cloudflare Setup
 
-```toml
-# netlify.toml
-[build]
-  base = "src/client"
-  command = "ng build"
-  publish = "dist/client/browser"
+The frontend is configured by a small set of files in `src/client/`:
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+```jsonc
+// src/client/wrangler.jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "clint",
+  "compatibility_date": "2026-04-28",
+  "assets": {
+    "directory": "./dist/clinical-trial-dashboard/browser",
+    "not_found_handling": "single-page-application"
+  }
+}
 ```
 
-The catch-all redirect is required for Angular's client-side routing. The CSP header is conservative — loosen if a specific integration breaks (see [08-authentication-security.md](08-authentication-security.md) for the full policy and rationale).
+```
+# src/client/public/_headers (security headers, honored by static-assets)
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+```
+
+`not_found_handling: "single-page-application"` is the Worker-level catch-all that hands every unknown route back to `/index.html`. There is no `_redirects` file -- Cloudflare's docs explicitly reject the Netlify-style `/* /index.html 200` rewrite as recursive.
+
+The Cloudflare Workers Builds dashboard wires the build:
+
+| Setting | Value |
+|---|---|
+| Root directory | `src/client` |
+| Build command | `node scripts/set-env.js && npm ci && npx ng build --configuration production` |
+| Deploy command | `npx wrangler deploy` |
+| Non-production branch deploy command | `npx wrangler versions upload` |
+| Env var: `NODE_VERSION` | `20` |
+
+The CSP is conservative -- loosen if a specific integration breaks (see [08-authentication-security.md](08-authentication-security.md) for the full policy and rationale).
 
 ## Whitelabel Infrastructure
 
 The whitelabel rollout requires several pieces of external infrastructure to be set up before the platform can serve real customers. This is one-time pre-work.
 
-### 1. Netlify Pro plan + wildcard domain
+### 1. Cloudflare zone + wildcard DNS + wildcard route
 
-- [ ] Upgrade the Netlify site to the Pro plan (required for wildcard subdomain certs)
-- [ ] Add the apex domain (`yourproduct.com`) to Netlify
-- [ ] Add the wildcard domain (`*.yourproduct.com`) — Netlify will provision a wildcard cert
+Cloudflare's free tier gives you wildcard subdomain SSL automatically (no Pro plan required, unlike Netlify). Routing requires three pieces in the Cloudflare dashboard:
+
+- [ ] Add the apex zone (`yourproduct.com`) to your Cloudflare account; update the registrar's nameservers to Cloudflare's
+- [ ] **DNS -> Records:** add an `A` record `name=*` pointing to `192.0.2.1` (RFC 5737 placeholder -- never used because the proxy intercepts), Proxy status = **Proxied** (orange cloud ON)
+- [ ] **Workers & Pages -> `clint` worker -> Settings -> Domains & Routes:**
+  - Add Custom domain `yourproduct.com` (apex)
+  - Add Custom domain `www.yourproduct.com`
+  - Add Route `*.yourproduct.com/*` mapped to the `clint` worker (wildcard custom domains are not supported in the Custom-domain UI; use a Route + the wildcard DNS record above)
 - [ ] **Verify:** `curl -sI https://test-tenant-name.yourproduct.com/` returns 200 and the cert SAN list includes `*.yourproduct.com`
 
-### 2. Wildcard DNS
-
-In your DNS provider:
-
-- [ ] `A` or `CNAME` for the apex pointing at Netlify
-- [ ] `CNAME` `*` (wildcard) pointing at the same Netlify load balancer
-- [ ] Optional: a separate `CNAME` for the auth callback (`auth.yourproduct.com`)
-- [ ] **Verify:** `dig pfizer.yourproduct.com` resolves to the Netlify edge
-
-### 3. Resend account + sender domain
+### 2. Resend account + sender domain
 
 - [ ] Create a Resend account
 - [ ] Add `yourproduct.com` (or a chosen sender subdomain) and verify DKIM + SPF DNS records
 - [ ] Note the API key for the `send-invite-email` function secrets
 - [ ] **Verify:** Resend dashboard shows the sender domain as "verified"
 
-### 4. Microsoft Azure AD app registration
+### 3. Microsoft Azure AD app registration
 
 - [ ] In Azure Portal: **Azure AD > App registrations > New registration**
 - [ ] Set the redirect URI to the Supabase callback (`https://<project-ref>.supabase.co/auth/v1/callback` for production, `http://localhost:54321/auth/v1/callback` for local)
 - [ ] **Certificates & secrets:** create a client secret; note the value (only shown once)
 - [ ] Note the Application (client) ID and Directory (tenant) ID
-- [ ] **Verify:** the redirect URI is exactly the Supabase callback — no per-host URIs
+- [ ] **Verify:** the redirect URI is exactly the Supabase callback -- no per-host URIs
 
-### 5. Supabase secrets (function + auth provider)
+### 4. Supabase secrets (function + auth provider)
 
 ```bash
 # Microsoft OAuth (referenced from supabase/config.toml)
@@ -91,13 +102,17 @@ In production, mirror the Microsoft OAuth values via the Supabase Dashboard unde
 
 - [ ] **Verify:** `supabase secrets list` shows all six.
 
-### 6. Single canonical OAuth callback
+### 5. Single canonical OAuth callback
 
 Both Google and Microsoft use the Supabase project's auth callback (`https://<project-ref>.supabase.co/auth/v1/callback`). Supabase then redirects to the app at the originating host. The callback validates the `state` parameter against `tenants.subdomain` and `agencies.subdomain` before redirecting (open-redirect prevention).
 
-- [ ] **Verify:** sign in once on `pfizer.yourproduct.com`, you get bounced through the Supabase callback and back to `pfizer.yourproduct.com`. Forge an unknown `state` (e.g. `https://attacker.example/`) — the callback redirects to apex login, not the attacker.
+In **Supabase Dashboard > Authentication > URL Configuration:**
 
-### 7. Environment configuration
+- [ ] Site URL: `https://www.yourproduct.com`
+- [ ] Redirect URLs: add `https://yourproduct.com/auth/callback` AND `https://*.yourproduct.com/auth/callback` (the wildcard covers every tenant/agency/admin subdomain)
+- [ ] **Verify:** sign in once on `pfizer.yourproduct.com`, you get bounced through the Supabase callback and back to `pfizer.yourproduct.com`. Forge an unknown `state` (e.g. `https://attacker.example/`) -- the callback redirects to apex login, not the attacker.
+
+### 6. Environment configuration
 
 In `src/client/src/environments/environment.ts` (production), set:
 
@@ -112,18 +127,18 @@ export const environment = {
 
 `apexDomain: ''` in dev keeps the localStorage path. With `apexDomain` set, Supabase JS uses `Domain=.yourproduct.com` cookies on apex hosts and falls back to localStorage on custom domains (which are a separate trust boundary).
 
-### 8. Deploy the Edge Function
+### 7. Deploy the Edge Function
 
 ```bash
 cd /Users/aadityamadala/Documents/code/clint-v2
 supabase functions deploy send-invite-email
 ```
 
-The function ships a Deno-runtime handler under `supabase/functions/send-invite-email/index.ts`. URL imports only — no `npm install` step.
+The function ships a Deno-runtime handler under `supabase/functions/send-invite-email/index.ts`. URL imports only -- no `npm install` step.
 
 - [ ] **Verify:** `supabase functions list` shows `send-invite-email` as `ACTIVE`.
 
-### 9. Configure the database webhook
+### 8. Configure the database webhook
 
 In **Supabase Dashboard > Database > Webhooks** (this cannot be expressed in `config.toml`):
 
@@ -132,7 +147,7 @@ In **Supabase Dashboard > Database > Webhooks** (this cannot be expressed in `co
 - [ ] Add HTTP header: `webhook-signature: <same value as EMAIL_WEBHOOK_SECRET>`
 - [ ] **Verify:** issue a test invite from the agency portal; check Resend dashboard for delivery and recipient inbox for the branded email. Forged calls without the header should return 401.
 
-### 10. Bootstrap the first platform admin
+### 9. Bootstrap the first platform admin
 
 `platform_admins` has no UI. After signing in once via the deployed app, find your `auth.uid()`:
 
@@ -146,11 +161,11 @@ Then via the Supabase SQL editor or `psql`:
 INSERT INTO public.platform_admins (user_id) VALUES ('<your-uuid>');
 ```
 
-Once inserted, you can navigate to the super-admin host (e.g. `https://admin.yourproduct.com`) and provision agencies through the UI.
+Once inserted, you can navigate to the super-admin host (`https://admin.<apex>`) and provision agencies through the UI. The `get_brand_by_host` RPC recognizes the reserved `admin.*` subdomain and returns `kind: "super-admin"` so the guard lets you in.
 
 - [ ] **Verify:** `https://admin.yourproduct.com/super-admin/agencies` loads (instead of redirecting away).
 
-### 11. Provision the first agency
+### 10. Provision the first agency
 
 From psql, before the super-admin UI is wired (or as a smoke test of the RPC):
 
@@ -165,19 +180,19 @@ SELECT public.provision_agency(
 
 After this, the agency owner can sign in at `https://zs.yourproduct.com`, land on `/admin/tenants`, and provision pharma client tenants self-serve.
 
-### 12. Provisioning a custom domain (manual ops checklist, sales-led)
+### 11. Provisioning a custom domain (manual ops checklist, sales-led)
 
 Custom domains are sales-led. There's no self-serve path. When a customer requests `competitive.pfizer.com`:
 
-1. **Customer side:** add a `CNAME` from `competitive.pfizer.com` to the Netlify load balancer
-2. **Ops side, in Netlify:** add `competitive.pfizer.com` as a domain alias on the site (Netlify provisions a Let's Encrypt cert; takes a few minutes)
+1. **Customer side:** add a `CNAME` from `competitive.pfizer.com` pointing at the `clint` worker's `workers.dev` hostname (e.g. `clint.<account>.workers.dev`)
+2. **Ops side, Cloudflare Workers & Pages -> `clint` worker -> Settings -> Domains & Routes:** add `competitive.pfizer.com` as a Custom domain. Cloudflare will validate the CNAME and provision a Let's Encrypt cert (takes a few minutes; the customer's zone does NOT need to be on your Cloudflare account)
 3. **Ops side, super-admin portal:** at `/super-admin/tenants`, find the tenant and use the "Register custom domain" dialog. This calls `register_custom_domain(p_tenant_id, p_custom_domain)` which validates uniqueness across `tenants.custom_domain` and `agencies.custom_domain` plus the retired-hostname holdback
 4. **Verify:** `curl -sI https://competitive.pfizer.com/` returns 200; `get_brand_by_host('competitive.pfizer.com')` returns the right tenant's brand
 5. **Note:** custom domains do NOT share the apex session cookie. Users sign in fresh on the custom domain
 
 ## Build Output
 
-The Angular build produces static files in `dist/client/browser/`. Netlify serves these from its CDN. No SSR is configured -- this is a pure client-side SPA.
+The Angular build produces static files in `src/client/dist/clinical-trial-dashboard/browser/`. Cloudflare's Worker static-assets binding (configured in `wrangler.jsonc`) serves these from the global edge. No SSR is configured -- this is a pure client-side SPA. The `public/` directory contents (favicon, `_headers`) are copied into the dist by the Angular build's `assets` entry in `angular.json`.
 
 ## Deploying Schema Changes
 
@@ -187,6 +202,8 @@ supabase db push
 ```
 
 Migrations are applied in timestamp order. This is the only supported way to make schema changes -- never modify the database directly via the Supabase dashboard.
+
+If a local migration's timestamp is older than the latest applied remote migration (e.g. you authored it earlier and other migrations were applied to remote in the meantime), Supabase will refuse with a "Found local migration files to be inserted before the last migration on remote database" message. Use `supabase db push --include-all` after confirming the migration is idempotent (e.g. `create or replace function`) or otherwise safe to apply out of order.
 
 For fresh databases or reset to migration state: `supabase db reset` (local only).
 

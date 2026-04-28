@@ -56,12 +56,12 @@ This means a single sign-in is shared across all `*.yourproduct.com` subdomains 
 
 ## Content-Security-Policy
 
-Shipped from `netlify.toml` on every response:
+Shipped from `src/client/public/_headers` (honored by Cloudflare Workers' static-assets binding) on every response:
 
 ```
 default-src 'self';
-connect-src 'self' https://*.supabase.co wss://*.supabase.co;
-script-src 'self' 'unsafe-inline';   /* Angular bootstrap inline scripts */
+connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com;
+script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;   /* Angular bootstrap + CF Web Analytics beacon */
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' data: https://fonts.gstatic.com;
 img-src 'self' data: https: blob:;   /* tenant logos on Supabase Storage public URLs */
@@ -173,7 +173,7 @@ When a tenant owner enters `email_domain_allowlist`, the UI soft-validates each 
 
 - Compromised platform admin account (mitigated by deliberate manual provisioning + 2FA on the admin's Google account)
 - Insider threat (a malicious agency owner exfiltrating their pharma clients' data) — mitigated by contracts, not technically prevented
-- Supply-chain attack on Supabase or Netlify — accepted vendor risk
+- Supply-chain attack on Supabase or Cloudflare — accepted vendor risk
 - Per-tenant SAML/SSO — deferred to enterprise tier
 - Audit logging of sensitive admin actions (`provision_*`, `register_custom_domain`, `update_tenant_branding`, `update_tenant_access`, suspending, adding a platform admin) — v2 deliverable; required for SOC 2
 

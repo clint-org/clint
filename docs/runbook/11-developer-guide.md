@@ -196,7 +196,7 @@ The reserved-subdomain blocklist lives inline in `provision_tenant` and `provisi
 www app api admin auth mail support status docs blog help cdn static assets noreply email smtp
 ```
 
-If you add a new operational subdomain (e.g. `metrics`, `api-v2`, `cdn-eu`) anywhere — DNS, Netlify, marketing, anything — you MUST add it to the reserved list in both `provision_tenant` and `provision_agency` via a new migration. Without this, a tenant could register the same subdomain and host a phishing page that reads authenticated cookies (apex-scoped session storage means all `*.<apex>` subdomains share the session).
+If you add a new operational subdomain (e.g. `metrics`, `api-v2`, `cdn-eu`) anywhere — DNS, Cloudflare Worker custom domains, marketing, anything — you MUST add it to the reserved list in both `provision_tenant` and `provision_agency` via a new migration. Without this, a tenant could register the same subdomain and host a phishing page that reads authenticated cookies (apex-scoped session storage means all `*.<apex>` subdomains share the session).
 
 ## Verification
 
