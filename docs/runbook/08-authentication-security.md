@@ -199,9 +199,11 @@ Sole guard on the root path `/`. Routes by host brand kind and auth state:
 
 | Brand kind | Unauthenticated | Authenticated |
 |---|---|---|
-| `default` | render marketing landing | last-used tenant if any, else `/onboarding` |
+| `default` | render marketing landing | agency membership → cross-host redirect to `https://{agency.subdomain}.{apex}/admin`; else last-used tenant; else `/onboarding` |
 | `agency` | `/login` | `/admin` |
 | `super-admin` | `/login` | `/super-admin` |
 | `tenant` | `/login` | `/t/{brand.id}/spaces` |
 
 The per-kind routing for authenticated users mirrors `auth-callback.component.ts:redirectAfterSignIn`, which only fires on fresh sign-in. Without this duplication, an apex-cookie session that lands on a branded host without going through the callback would fall through to the apex onboarding/last-tenant path, sending agency owners to `/onboarding` (which calls the legacy `create_tenant` RPC) instead of `/admin` (which calls `provision_tenant`). That mismatch is what produced agency-less tenants in early testing.
+
+The default-host authenticated branch additionally checks agency memberships before tenant memberships and does a cross-host redirect (`window.location.href = ...`) when the user owns or belongs to an agency. This handles the common case where OAuth callback lands on the apex (Supabase's `redirectTo` is `${window.location.origin}/auth/callback`, so the host the user signs in from determines where the callback runs) but the user actually belongs on an agency's portal. Falls back to the existing tenant-lookup behavior when no agency memberships exist.
