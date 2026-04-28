@@ -14,7 +14,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
       <!-- Panel header -->
       <div class="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div class="min-w-0 flex-1">
-          <p class="text-[10px] font-semibold uppercase tracking-widest text-teal-600">
+          <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-600">
             {{ categoryLabel() }}
           </p>
         </div>
@@ -22,7 +22,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
           @if (detail()) {
             <button
               type="button"
-              class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
               (click)="edit.emit()"
               aria-label="Edit event"
             >
@@ -31,7 +31,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
           }
           <button
             type="button"
-            class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
             (click)="panelClose.emit()"
             aria-label="Close detail panel"
           >
@@ -86,7 +86,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
                       [href]="src.url"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
+                      class="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-800 hover:underline"
                     >
                       {{ src.label || src.url }}
                       <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
@@ -120,7 +120,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
                   <li
                     class="text-[11px] leading-snug"
                     [class.font-semibold]="te.id === d.id"
-                    [class.text-teal-700]="te.id === d.id"
+                    [class.text-brand-700]="te.id === d.id"
                     [class.text-slate-500]="te.id !== d.id"
                   >
                     {{ te.event_date | date:'mediumDate' }} &mdash; {{ te.title }}

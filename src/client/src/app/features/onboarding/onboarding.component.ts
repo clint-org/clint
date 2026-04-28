@@ -28,7 +28,7 @@ import { TenantService } from '../../core/services/tenant.service';
         </div>
 
         <div class="border border-slate-200 bg-white">
-          <div class="h-0.5 bg-teal-500"></div>
+          <div class="h-0.5 bg-brand-500"></div>
           <div class="p-6">
             <p-tabs [value]="initialTab">
               <p-tablist>

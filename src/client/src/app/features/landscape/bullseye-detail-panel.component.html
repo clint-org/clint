@@ -31,7 +31,7 @@
           <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">COMPANY</div>
           <button
             type="button"
-            class="cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium text-slate-900 hover:text-teal-600"
+            class="cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium text-slate-900 hover:text-brand-600"
             (click)="onCompanyClick()"
           >
             {{ product.company_name }} &rarr;
@@ -47,8 +47,8 @@
             @for (moa of product.moas; track moa.id) {
               <span
                 class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-teal-100]="isScopedMoa(moa.id)"
-                [class.text-teal-800]="isScopedMoa(moa.id)"
+                [class.bg-brand-100]="isScopedMoa(moa.id)"
+                [class.text-brand-800]="isScopedMoa(moa.id)"
                 [class.font-semibold]="isScopedMoa(moa.id)"
                 [class.bg-slate-100]="!isScopedMoa(moa.id)"
                 [class.text-slate-700]="!isScopedMoa(moa.id)"
@@ -66,8 +66,8 @@
             @for (roa of product.roas; track roa.id) {
               <span
                 class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-teal-100]="isScopedRoa(roa.id)"
-                [class.text-teal-800]="isScopedRoa(roa.id)"
+                [class.bg-brand-100]="isScopedRoa(roa.id)"
+                [class.text-brand-800]="isScopedRoa(roa.id)"
                 [class.font-semibold]="isScopedRoa(roa.id)"
                 [class.bg-slate-100]="!isScopedRoa(roa.id)"
                 [class.text-slate-700]="!isScopedRoa(roa.id)"
@@ -104,7 +104,7 @@
                       <span>{{ trial.phase }}</span>
                     }
                     @if (trial.recruitment_status) {
-                      <span [class]="isTerminalStatus(trial.recruitment_status) ? 'text-slate-400' : 'text-teal-600'">{{ trial.recruitment_status }}</span>
+                      <span [class]="isTerminalStatus(trial.recruitment_status) ? 'text-slate-400' : 'text-brand-600'">{{ trial.recruitment_status }}</span>
                     }
                   </span>
                 </button>
@@ -114,7 +114,7 @@
           @if (hasMoreTrials()) {
             <button
               type="button"
-              class="mt-2 cursor-pointer border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-center text-xs text-slate-500 hover:border-teal-600 hover:text-teal-600"
+              class="mt-2 cursor-pointer border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-center text-xs text-slate-500 hover:border-brand-600 hover:text-brand-600"
               (click)="onShowAllTrials()"
             >
               Show all {{ product.trials.length }} trials

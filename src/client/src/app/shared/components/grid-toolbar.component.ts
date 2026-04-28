@@ -49,13 +49,13 @@ import type { GridState } from '../grids/filter-types';
           @for (chip of state().activeFilters(); track chip.field) {
             <span
               role="listitem"
-              class="inline-flex items-center gap-1.5 border border-slate-200 border-l-[3px] border-l-teal-600 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-800"
+              class="inline-flex items-center gap-1.5 border border-slate-200 border-l-[3px] border-l-brand-600 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-800"
             >
               <span class="text-slate-500">{{ chip.header }}:</span>
               <span>{{ chip.label }}</span>
               <button
                 type="button"
-                class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 [attr.aria-label]="'Remove ' + chip.header + ' ' + chip.label + ' filter'"
                 (click)="state().clearFilter(chip.field)"
               >

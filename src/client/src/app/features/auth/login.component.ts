@@ -10,7 +10,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-sm border border-slate-200 bg-white">
-        <div class="h-0.5 bg-teal-500"></div>
+        <div class="h-0.5 bg-brand-500"></div>
         <div class="px-8 py-10">
           <div class="flex justify-center">
             <app-clint-logo [size]="48" />
@@ -34,7 +34,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
           <button
             (click)="signInWithGoogle()"
             [disabled]="loading()"
-            class="mt-8 flex w-full items-center justify-center gap-3 border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-teal-400 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+            class="mt-8 flex w-full items-center justify-center gap-3 border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-400 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Sign in with Google"
           >
             @if (loading()) {

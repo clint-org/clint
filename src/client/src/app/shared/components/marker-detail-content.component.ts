@@ -108,7 +108,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
             [href]="d.catalyst.source_url"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-xs text-teal-700 hover:text-teal-800 hover:underline"
+            class="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-800 hover:underline"
           >
             {{ extractDomain(d.catalyst.source_url) }}
             <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
@@ -125,7 +125,7 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
           <ul class="space-y-1">
             @for (um of d.upcoming_markers; track um.marker_id) {
               <li
-                class="cursor-pointer border-b border-slate-100 py-1.5 text-[11px] text-slate-600 hover:text-teal-700"
+                class="cursor-pointer border-b border-slate-100 py-1.5 text-[11px] text-slate-600 hover:text-brand-700"
                 (click)="markerClick.emit(um.marker_id)"
                 (keydown.enter)="markerClick.emit(um.marker_id)"
                 tabindex="0"

@@ -86,7 +86,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
           <td colspan="5">
             <div
               class="flex items-baseline gap-2 px-1 py-1 text-[10px] font-bold uppercase tracking-widest"
-              [class.text-teal-700]="catalyst.time_bucket === 'This Week'"
+              [class.text-brand-700]="catalyst.time_bucket === 'This Week'"
               [class.text-slate-500]="catalyst.time_bucket !== 'This Week'"
             >
               {{ catalyst.time_bucket }}

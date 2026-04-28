@@ -66,7 +66,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               </button>
             } @else {
               <label
-                class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-teal-400 hover:text-teal-500 transition-colors"
+                class="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-[10px] text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
               >
                 Logo
                 <input

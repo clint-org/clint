@@ -214,7 +214,7 @@ interface SourceRow {
         }
         <button
           type="button"
-          class="text-xs text-teal-700 hover:text-teal-800"
+          class="text-xs text-brand-700 hover:text-brand-800"
           (click)="addSource()"
         >
           + Add source

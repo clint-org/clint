@@ -14,13 +14,13 @@ import { SupabaseService } from '../../core/services/supabase.service';
           <p class="text-sm font-medium text-slate-900">{{ error() }}</p>
           <a
             routerLink="/login"
-            class="mt-3 inline-block text-xs text-teal-700 hover:text-teal-800 hover:underline"
+            class="mt-3 inline-block text-xs text-brand-700 hover:text-brand-800 hover:underline"
           >
             Return to sign in
           </a>
         } @else {
           <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600"
+            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
             role="status"
             aria-label="Completing sign in"
           ></div>
