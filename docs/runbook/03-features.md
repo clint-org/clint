@@ -159,14 +159,94 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
 
 See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
 
-- Each **tenant** represents an organization (e.g., a pharma company or consulting firm)
+- Each **agency** is an optional consulting-firm parent that resells the platform to pharma clients
+- Each **tenant** represents an organization (a pharma client of an agency, or a direct customer)
 - Each **space** within a tenant is a separate project/pipeline workspace
-- Members can be invited to tenants via invite codes (7-day expiry)
-- Spaces have role-based access: owner, editor, viewer
-- Data is fully isolated between spaces
+- Members can be invited to tenants via invite codes (7-day expiry); branded HTML invite emails are delivered via Resend
+- Tenants have role-based access: owner, member; spaces have owner, editor, viewer
+- Data is fully isolated between spaces; agency owners get implicit access to all tenants in their agency
+
+## Whitelabel Brand Resolution
+
+Every request resolves the visitor's identity from the host header before bootstrap, via the anon-callable RPC `get_brand_by_host(p_host)`:
+
+| Host | Kind | Effect |
+|---|---|---|
+| `pfizer.yourproduct.com` (matches `tenants.subdomain`) | `tenant` | Renders tenant app, branded with that tenant |
+| `competitive.pfizer.com` (matches `tenants.custom_domain`) | `tenant` | Same, via sales-led custom domain |
+| `zs.yourproduct.com` (matches `agencies.subdomain`) | `agency` | Renders agency portal at `/admin/*` |
+| `admin.yourproduct.com` | `super-admin` | Reserved subdomain, super-admin only |
+| `yourproduct.com` (apex) | `default` | Marketing landing for unauthenticated visitors; legacy onboarding for direct customers |
+
+`main.ts` synchronously sets `--brand-50..950` CSS vars, swaps the favicon, sets `document.title`, and builds a dynamic PrimeNG preset before bootstrapping Angular. The Tailwind `@theme` block in `styles.css` declares `--color-brand-*` tokens that fall back to the teal scale, so tenants without a brand override render identically to today.
+
+## Branded Login
+
+Single login component at `/login`, rendered on every host. Reads from `BrandContextService`:
+- Logo + `app_display_name` headline ("Sign in to {{ brand.appDisplayName() }}")
+- One button per provider in `brand.auth_providers` (Google, Microsoft)
+- Self-join hint copy when `brand.has_self_join` is true ("Use your work email to join automatically")
+
+The default-host login also surfaces a workspace hint when navigated to with `?workspace=<subdomain>` — used by the marketing landing's "Find your workspace" form.
+
+## Agency Portal
+
+A self-serve portal where consulting firms manage their pharma client tenants. Mounted at `/admin/*` on agency subdomains; gated by `agencyGuard` (kind === `agency`) + `authGuard`.
+
+| Route | Component | Purpose |
+|---|---|---|
+| `/admin/tenants` | `agency-tenant-list` | Filterable table of all tenants in the agency (logo, name, subdomain, member count, status) |
+| `/admin/tenants/new` | `agency-tenant-new` | Provisioning wizard: name, subdomain (debounced live availability), primary color picker, first-user invite |
+| `/admin/tenants/:id` | `agency-tenant-detail` | View / edit tenant branding, list members, "Open tenant" cross-host redirect |
+| `/admin/members` | `agency-members` | Add agency members (email lookup via `lookup_user_by_email`), change roles, remove |
+| `/admin/branding` | `agency-branding` | Edit the agency portal's own brand (display name, primary/accent color, contact email) |
+
+All writes go through SECURITY DEFINER RPCs; agency owners do all writes, agency members get read-only visibility across the agency's tenants.
+
+## Super-Admin Portal
+
+The platform owner's UI for provisioning agencies, registering custom domains, and supervising the install. Mounted at `/super-admin/*`; gated by `superAdminGuard` (kind === `super-admin`) + `authGuard`. Non-admins get a 404-equivalent redirect (do not leak existence of the area).
+
+| Route | Component | Purpose |
+|---|---|---|
+| `/super-admin/agencies` | `super-admin-agencies` | All agencies; "Provision agency" dialog (name, slug, subdomain, owner via `lookup_user_by_email`, contact email) |
+| `/super-admin/tenants` | `super-admin-tenants` | All tenants across all agencies; filter by agency; register custom domain dialog |
+| `/super-admin/domains` | `super-admin-domains` | Retired-hostnames hold list (90-day decommissioning window) |
+
+Bootstrap is `INSERT INTO platform_admins (user_id) VALUES ('<uuid>')` via SQL — there is no UI to add platform admins.
+
+## Domain-Allowlist Self-Join
+
+Tenant owners can configure `email_domain_allowlist` (e.g., `pfizer.com`) and toggle `email_self_join_enabled`. When a user signs in to a tenant subdomain whose allowlist matches their email and self-join is enabled, the auth callback calls `self_join_tenant(p_subdomain)` and the user is auto-added at `member` role. UI lives in **Tenant Settings → Access**.
+
+The RPC returns the **same generic error** for every failure mode (missing tenant, self-join off, allowlist mismatch, suspended tenant) to prevent enumeration of which subdomains exist and which corporate emails unlock them.
+
+## Branded Invite Emails
+
+When `tenantService.inviteMember()` inserts a row into `tenant_invites`, a Supabase database webhook triggers the `send-invite-email` Edge Function (Deno), which:
+- Verifies the `webhook-signature` header against `EMAIL_WEBHOOK_SECRET`
+- Reads tenant brand fields (`app_display_name`, `logo_url`, `primary_color`, `email_from_name`, `subdomain`/`custom_domain`) via the service-role client
+- Composes HTML + plain-text bodies with brand color tinting and the tenant logo
+- POSTs to Resend (`https://api.resend.com/emails`) with sender `noreply@yourproduct.com` and per-tenant display name
+- The accept URL points at the tenant subdomain or custom domain: `https://{subdomain}.{apex}/onboarding?code={invite_code}`
+
+The existing manual code-sharing flow stays functional — agency owners can copy invite codes from tenant settings if delivery fails.
+
+## Branded PowerPoint Exports
+
+`PptxExportService` reads from `BrandContextService`:
+- **Cover slide** with tenant logo (downloaded as base64 once at slide build), `app_display_name` as title (28pt bold, primary color), "Clinical Trial Landscape" subtitle, today's date
+- **Title bar accent** and trial label labels tinted with `brand.primary_color`
+- **Per-slide footer** with `app_display_name` left, page number right
+- Phase-bar fills, marker colors, slate / amber / red / green / cyan / violet stay hard-coded — those are data colors, not brand
+- Logo download failure falls back to text-only header without failing the export
+
+## Marketing Landing
+
+Placeholder page at `/` on the default host (apex) for unauthenticated visitors. Includes a "Find your workspace" form that takes a subdomain and redirects to `https://{subdomain}.{apex}/login` (production) or `/login?workspace={subdomain}` (dev where `apexDomain` is empty). Authenticated visitors continue through the existing `onboardingRedirectGuard`. Gated by `marketingLandingGuard`.
 
 ## Authentication
 
 See [Authentication & Security](08-authentication-security.md) for full details.
 
-Google OAuth via Supabase Auth. Users sign in with their Google account; no password management required.
+Google OAuth and Microsoft (Azure AD) OAuth via Supabase Auth. Users sign in with one of the providers exposed by their tenant's `brand.auth_providers`; no password management required. Cross-subdomain session is shared via cookies on the apex domain.

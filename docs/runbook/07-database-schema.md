@@ -41,6 +41,9 @@ All schema changes are in `supabase/migrations/` as timestamped SQL files.
 | 40 | `20260428030352_fix_member_views_auth_users_access.sql` | Fixes `tenant_members_view` / `space_members_view` failing with `42501 permission denied for table users`. Drops `security_invoker = true` so the views can read `auth.users` as owner, and moves the access check into the view body via `is_tenant_member()` / `has_space_access()` (both SECURITY DEFINER helpers that key off `auth.uid()`) |
 | 41 | `20260428031938_disable_auto_provision_add_demo_rpc.sql` | Replaces `handle_new_user()` trigger body with a no-op so signups no longer auto-create Boehringer Ingelheim + Azurity tenants. New `provision_demo_workspace()` SECURITY DEFINER RPC creates the same demo orgs on demand for the calling user (idempotent). Frontend exposes this via the new `/provision-demo` route |
 | 42 | `20260428033206_tenant_members_implicit_space_access.sql` | Extends `has_space_access()` so tenant members get implicit access to all spaces in their tenant. Tenant `owner` satisfies any role check (unchanged); tenant `member` satisfies `editor`/`viewer` checks (so they can read + write data but not admin the space). Explicit `space_members` rows still take precedence |
+| 43-66 | `20260428040000`-`20260428042300_whitelabel_*.sql` | Whitelabel foundation schema (24 migrations). New tables: `agencies`, `agency_members`, `platform_admins`, `retired_hostnames`. Brand + access columns on `tenants`. Cross-table host uniqueness triggers, hostname retirement triggers. Helpers: `is_agency_member`, `is_platform_admin`. Extended `is_tenant_member` and `has_space_access` with agency / platform-admin disjuncts and tenant-suspension short-circuit. RLS on new tables; `tenants` policies extended for agency owner/member + platform admin; direct `tenants` INSERT denied. RPCs: `get_brand_by_host`, `check_subdomain_available`, `provision_agency`, `provision_tenant`, `update_tenant_branding`, `update_tenant_access`, `get_tenant_access_settings`, `update_agency_branding`, `register_custom_domain`, `self_join_tenant`. Backfill of legacy tenants (`subdomain = slug`, `app_display_name = name`, `primary_color = '#0d9488'`). Cross-tenant isolation smoke-test migration |
+| 67 | `20260428060000_agency_members_view.sql` | `agency_members_view` joining `agency_members` + `auth.users` (mirrors `tenant_members_view` pattern; SECURITY INVOKER) |
+| 68 | `20260428200000_lookup_user_by_email.sql` | `lookup_user_by_email(p_email)` SECURITY DEFINER RPC for agency add-member and super-admin provision-agency UX. Caller must be a platform admin or own at least one agency. Returns `found: true` + user_id + display_name, or `found: false`; never raises on missing email |
 
 ## Core Data Tables
 
@@ -204,18 +207,79 @@ therapeutic_areas (
 ## Multi-Tenant Tables
 
 ```sql
--- Top-level organizations
-tenants (
-  id          uuid PRIMARY KEY,
-  name        text NOT NULL,
-  slug        text UNIQUE,
-  logo_url    text,
-  created_by  uuid,
-  created_at  timestamptz,
-  updated_at  timestamptz
+-- Consultancy partners (optional parent of tenants)
+agencies (
+  id                uuid PRIMARY KEY,
+  name              varchar(255) NOT NULL,
+  slug              varchar(100) UNIQUE NOT NULL,
+  subdomain         varchar(63)  UNIQUE NOT NULL,    -- DNS-safe ^[a-z][a-z0-9-]{1,62}$
+  logo_url          text,
+  favicon_url       text,
+  app_display_name  varchar(100) NOT NULL,
+  primary_color     varchar(7)   NOT NULL DEFAULT '#0d9488',
+  accent_color      varchar(7),
+  contact_email     varchar(255) NOT NULL,
+  plan_tier         varchar(50)  NOT NULL DEFAULT 'starter',  -- 'starter'|'growth'|'enterprise'
+  max_tenants       int          NOT NULL DEFAULT 5,           -- 0 = unlimited
+  custom_domain     varchar(255) UNIQUE,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now()
 )
 
--- Organization membership with roles
+-- Users acting on behalf of an agency
+agency_members (
+  id          uuid PRIMARY KEY,
+  agency_id   uuid REFERENCES agencies(id) ON DELETE CASCADE NOT NULL,
+  user_id     uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  role        varchar(20) NOT NULL CHECK (role IN ('owner','member')),
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (agency_id, user_id)
+)
+
+-- Platform owner's super-admin role; bootstrapped via SQL only
+platform_admins (
+  user_id    uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+)
+-- Not exposed via PostgREST: revoke all on public.platform_admins from anon, authenticated;
+
+-- Holdback list of recently-decommissioned subdomains and custom domains
+retired_hostnames (
+  hostname       varchar(255) PRIMARY KEY,
+  retired_at     timestamptz NOT NULL DEFAULT now(),
+  released_at    timestamptz NOT NULL DEFAULT now() + interval '90 days',
+  previous_kind  varchar(20) NOT NULL CHECK (previous_kind IN ('tenant','agency')),
+  previous_id    uuid                                             -- soft reference; original row may be gone
+)
+
+-- Top-level pharma client organizations (whitelabel-extended)
+tenants (
+  id                       uuid PRIMARY KEY,
+  name                     text NOT NULL,
+  slug                     text UNIQUE,
+  logo_url                 text,
+  -- whitelabel: optional agency parent
+  agency_id                uuid REFERENCES agencies(id),       -- null = direct customer
+  -- whitelabel: host identity
+  subdomain                varchar(63)  UNIQUE,                 -- required for live tenants; null for legacy apex customers
+  custom_domain            varchar(255) UNIQUE,                 -- set by super-admin (sales-led upgrade)
+  -- whitelabel: brand fields
+  app_display_name         varchar(100),                        -- defaults to name
+  primary_color            varchar(7)   DEFAULT '#0d9488',
+  accent_color             varchar(7),
+  favicon_url              text,
+  email_from_name          varchar(100),                        -- defaults to app_display_name
+  -- whitelabel: access control
+  email_domain_allowlist   text[],                              -- when set, only these email domains can self-join
+  email_self_join_enabled  boolean DEFAULT false,
+  -- whitelabel: lifecycle
+  suspended_at             timestamptz,                         -- read-only mode for non-payment / abuse
+  created_by               uuid,
+  created_at               timestamptz,
+  updated_at               timestamptz
+)
+
+-- Organization membership with roles (constraint: 'owner' | 'member' only — never 'viewer')
 tenant_members (
   tenant_id   uuid REFERENCES tenants(id),
   user_id     uuid REFERENCES auth.users(id),
@@ -235,6 +299,7 @@ tenant_invites (
   accepted_at timestamptz,
   expires_at  timestamptz     -- default: 7 days from creation
 )
+-- Database webhook on INSERT triggers send-invite-email Edge Function (configured in Supabase Dashboard)
 
 -- Project workspaces within a tenant
 spaces (
@@ -256,6 +321,46 @@ space_members (
   PRIMARY KEY (space_id, user_id)
 )
 ```
+
+### Whitelabel Indexes
+
+- `tenants(subdomain)` unique partial where `subdomain is not null`
+- `tenants(custom_domain)` unique partial where `custom_domain is not null`
+- `agencies(subdomain)` unique
+- `agencies(custom_domain)` unique partial where `custom_domain is not null`
+- `tenants(agency_id)` btree
+- `agency_members(user_id)` btree
+- `agencies_subdomain_idx`, `agencies_custom_domain_idx` for host-resolution lookups
+
+### Cross-Table Host Uniqueness Triggers
+
+Per-table unique constraints don't prevent a `tenants.subdomain` colliding with an `agencies.subdomain` (or any subdomain colliding with a custom domain across tables). Two `BEFORE INSERT OR UPDATE` triggers enforce this:
+
+- `enforce_subdomain_unique_across_tables` — on both `tenants` and `agencies`. Raises if `NEW.subdomain` exists in the *other* table.
+- `enforce_custom_domain_unique_across_tables` — on both `tenants` and `agencies`. Raises if `NEW.custom_domain` exists in the *other* table.
+
+The reserved-list check stays in the RPCs (`provision_tenant`, `provision_agency`, `register_custom_domain`).
+
+### Hostname Retirement Triggers
+
+When a tenant or agency is decommissioned, its old hostnames are inserted into `retired_hostnames` with a 90-day default hold:
+
+- `AFTER UPDATE OF subdomain` — when `OLD.subdomain IS NOT NULL` and changed, insert old value
+- `AFTER UPDATE OF custom_domain` — same shape for custom domains
+- `AFTER DELETE` — insert both subdomain and custom_domain (if present) on tenant or agency deletion
+
+`provision_tenant`, `provision_agency`, and `register_custom_domain` reject any hostname present in `retired_hostnames` where `released_at > now()`. Entries age out automatically — no nightly job required.
+
+### Reserved Subdomain List
+
+Hardcoded in `provision_tenant` / `provision_agency` validation. Subdomains rejected at provisioning time:
+
+```
+www app api admin auth mail support status docs blog help
+cdn static assets noreply email smtp
+```
+
+This list is a **security control**, not just UX. With cookie-based session storage scoped to `Domain=.<apex>`, all subdomains share the session. Allowing a tenant to register `auth` or `admin` would let them host a phishing page that has access to authenticated cookies.
 
 ## System Marker Types
 

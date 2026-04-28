@@ -8,10 +8,20 @@
 
 ### Signing In
 
-1. Navigate to the application URL
-2. Click **Sign in with Google**
-3. Authenticate with your Google account
-4. On first sign-in, you'll be taken to the Onboarding screen
+The login screen is brand-aware. The logo, app display name, and the buttons that appear ("Sign in with Google" and/or "Sign in with Microsoft") are determined by the host you visited.
+
+1. Navigate to your workspace URL (e.g. `https://pfizer.yourproduct.com`, your agency portal, or the apex `https://yourproduct.com`)
+2. Click **Sign in with Google** or **Sign in with Microsoft** (whichever your workspace allows)
+3. Authenticate with the provider
+4. On first sign-in:
+   - **Tenant subdomain with self-join enabled and your email matches the allowlist** -- you're auto-added to the workspace at `member` role, no further action needed
+   - **Tenant subdomain via invite** -- you'll land on the invite acceptance page (visit the invite link `https://<workspace>.yourproduct.com/onboarding?code=<8-char-code>`)
+   - **Agency portal** -- you'll land on the tenant list at `/admin/tenants`
+   - **Apex (default host)** -- you'll be taken to the Onboarding screen
+
+### Finding Your Workspace
+
+If you don't remember your workspace subdomain, navigate to the apex domain (e.g. `https://yourproduct.com`). The marketing landing has a "Find your workspace" form — enter your subdomain and you'll be redirected to your branded login.
 
 ### First-Time Onboarding
 
@@ -199,11 +209,76 @@ The export renders phase bars and markers with visual fidelity matching the dash
 **Navigate:** Gear icon in header
 
 Tenant owners can:
-- **Edit organization name** -- Change the name and click **Save**
-- **View members** -- Table showing all members with name, email, and role
-- **Remove members** -- Click remove button (with confirmation)
-- **Invite members** -- Generate an invite code by entering email and role
-- **View pending invites** -- See codes, emails, roles, and expiration dates
+- **Branding** -- Edit display name, upload a logo, set primary and accent colors, set the email sender display name (`email_from_name`). Changes propagate to every page after refresh and to all subsequent invite emails and PPT exports
+- **Members** -- Table showing all members with name, email, and role; remove button (with confirmation)
+- **Pending invites** -- Codes, emails, roles, and expiration dates
+- **Invite a new member** -- Generate an invite code by entering email and role. A branded invite email is sent automatically (subject from your `email_from_name`, accept-button tinted with your `primary_color`, link to `https://<your-subdomain>.yourproduct.com/onboarding?code=...`). The code is also visible in the pending-invites table for manual sharing if email delivery fails.
+
+### Access (self-join via domain allowlist)
+
+Tenant owners see an **Access** section that controls who can join the workspace without an invite:
+
+- **Allow employees to self-join this workspace** toggle -- when on, anyone signing in with an email at one of the allowlisted domains is added automatically at `member` role
+- **Allowed email domains** -- chip editor (e.g. `pfizer.com`). Each domain validated against `^[a-z0-9.-]+\.[a-z]{2,}$` before saving
+- The UI warns when a consumer domain (`gmail.com`, `yahoo.com`, etc.) is added — these are easy to abuse for self-join
+- Save with **Save access settings**
+
+Self-join failures are intentionally generic ("self-join not available for this workspace") regardless of cause — the workspace owner can see the actual reason in the Supabase logs but the user does not.
+
+## Agency Portal (consulting partners)
+
+Agency owners and members at consulting firms log in to the agency portal at their own subdomain (e.g. `https://zs.yourproduct.com`). The portal is mounted at `/admin/*`.
+
+### Provisioning a New Pharma Client Tenant (owners only)
+
+**Navigate:** `/admin/tenants` -> "Provision new tenant"
+
+1. Enter the pharma client's organization name
+2. Pick a subdomain (live availability check shows green/red as you type; debounced)
+3. Pick a primary brand color (will be used as the tenant's accent throughout the UI)
+4. Optional: enter the first user's email to issue an invite
+
+On submit, the platform creates the tenant + a default space named "Workspace" + (if email provided) a `tenant_invites` row whose insert triggers a branded invite email.
+
+### Managing a Tenant
+
+**Navigate:** `/admin/tenants/:id`
+
+- **Branding** -- display name, logo URL, primary color, accent color, email_from_name. Saved via `update_tenant_branding`
+- **Members** -- read-only list of the tenant's members (agency owners can also use the tenant's own settings page for write actions, via the "Open tenant" button)
+- **Open tenant** -- cross-host redirect to the tenant subdomain. Your session cookie is shared on the apex, so you don't re-authenticate.
+
+### Agency Members
+
+**Navigate:** `/admin/members`
+
+- **Add member** -- enter email; the platform looks up the user and adds them to your agency. Owners can add other owners or members.
+- **Change role** -- promote/demote between owner and member
+- **Remove member** -- with confirmation
+
+Agency owners get full read+write access across all tenants in the agency. Agency members get read-only across the same set.
+
+### Custom Domains
+
+Custom domains are sales-led. Contact the platform team — they'll set up the Netlify alias and wire `tenants.custom_domain` from the super-admin portal. You'll provide the CNAME from the customer's DNS.
+
+## PowerPoint Exports
+
+Exports are branded with your tenant's logo and primary color:
+- **Cover slide** with your logo, app display name in primary color, and today's date
+- **Per-slide footer** with your app display name and page numbers
+- Phase bars and marker colors stay as designed (data colors are part of the visualization)
+- If the logo URL fails to download, the cover falls back to a text-only header — the export never fails
+
+## Tenant Suspension
+
+If your tenant is suspended (non-payment, abuse), the workspace becomes read-only:
+- All data remains visible — you can still export to PPT
+- A "this workspace is suspended" banner appears on every page
+- New writes (creating trials, editing companies, inviting members, etc.) are blocked at the database level
+- Self-join is also blocked — new users see the generic "self-join not available" error
+
+Contact the platform team or your agency owner to resolve.
 
 ---
 

@@ -115,7 +115,86 @@ Use PrimeNG form components over native HTML:
 - `p-inputnumber` for numeric inputs
 - `pTextarea` for textareas
 
-The custom theme preset (`config/primeng-theme.ts`) configures Aura base with teal primary (11 shade ramp: 50-950) and slate surface neutrals.
+The theme preset (`config/primeng-theme.ts`) is brand-aware. It exports `buildBrandPreset(scale?: BrandScale)` — called with no arg, returns the default teal-derived preset; called with a scale, overrides `semantic.primary`. All component overrides reference `{primary.X}` (never `{teal.X}`) so the override propagates.
+
+## Theme Conventions
+
+The app is whitelabel — primary color is per-tenant at runtime. There are three layers:
+
+- **CSS variables on `:root`.** `main.ts` sets `--brand-50` … `--brand-950` from `generateBrandScale(brand.primary_color)` before bootstrapping Angular.
+- **Tailwind brand-* utilities.** `styles.css` declares `@theme { --color-brand-50: var(--brand-50, #f0fdfa); ... }`. Use `bg-brand-*`, `text-brand-*`, `border-brand-*`, `ring-brand-*`, `from-brand-*`, `via-brand-*`, `to-brand-*` (and the rest of the tailwind color modifiers). Never use `bg-teal-*` or any literal teal class — that pins to the platform default.
+- **`BrandContextService`.** Inject when you need the brand fields directly (logo URL, app display name, accent color, kind, has_self_join, suspended). Read via `brand.appDisplayName()`, `brand.logoUrl()`, etc. — all signals.
+
+Slate, red, amber, green, cyan, violet remain hard-coded. Those are *data* colors (markers, phase bars, status indicators) and are not tenant-configurable. The codemod that swept the codebase during the rollout intentionally left them alone.
+
+## Dev Brand Override
+
+In non-production builds, `main.ts` honors a query-string override so you can smoke-test agency / super-admin / tenant flows on `localhost:4200` without DNS:
+
+```
+http://localhost:4200/?wl_kind=agency&wl_id=<agency-uuid>
+http://localhost:4200/?wl_kind=tenant&wl_id=<tenant-uuid>
+http://localhost:4200/?wl_kind=super-admin
+```
+
+When the param is present, `fetchBrand()` short-circuits to a synthetic `Brand` and skips the `get_brand_by_host` RPC. `kind === 'super-admin'` does NOT auto-elevate platform-admin status — you still need a real `platform_admins` row. The override only changes brand resolution.
+
+## Platform Admin Bootstrap
+
+`platform_admins` is not exposed via PostgREST. There is no UI to add platform admins. To bootstrap yourself locally:
+
+```bash
+psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -c "
+  INSERT INTO public.platform_admins (user_id) VALUES ('<your-auth-uid>')
+  ON CONFLICT DO NOTHING;
+"
+```
+
+Find your auth uid by signing in once, then:
+
+```sql
+SELECT id, email FROM auth.users ORDER BY created_at DESC LIMIT 5;
+```
+
+For production, run the same INSERT against the remote database via the Supabase SQL editor or `supabase db remote sql ...`.
+
+## Membership Tables Reference
+
+There are three membership tables. Pay attention to the role constraints:
+
+| Table | Roles | Purpose |
+|---|---|---|
+| `agency_members` | `owner` \| `member` | Cross-tenant access. Owners do all writes and provisioning; members get read-only across the agency's tenants |
+| `tenant_members` | `owner` \| `member` (NOT `viewer`) | Tenant-level membership. Tenant members get implicit editor/viewer space access via `has_space_access` |
+| `space_members` | `owner` \| `editor` \| `viewer` | Per-space role. Where `viewer` actually lives. Explicit space rows take precedence over implicit tenant-member access |
+
+If you find yourself wanting to write `tenant_members.role = 'viewer'`, use `space_members.role = 'viewer'` instead, and add the user to `tenant_members` at `member` role.
+
+## Adding a New SECURITY DEFINER RPC
+
+Pattern reference: `supabase/migrations/20260428021559_security_fixes_invites_and_tenant_quota.sql` (`accept_invite()` is the canonical example). Every whitelabel RPC follows this pattern.
+
+Required:
+
+- `language plpgsql` (or `language sql` for read-only helpers)
+- `security definer`
+- `set search_path = ''` (prevents schema-resolution attacks)
+- All object references fully-qualified (`public.tenants`, `auth.uid()`, never bare `tenants`)
+- First-line auth check: `if auth.uid() is null then raise exception 'Must be authenticated' using errcode = '28000'; end if;` (skip only for intentionally anon-callable RPCs like `get_brand_by_host` and `check_subdomain_available`)
+- Authorization via helper functions (`is_agency_member`, `is_tenant_member`, `has_space_access`, `is_platform_admin`) — never trust caller-supplied IDs without DB verification
+- Specific error codes: `28000` (auth), `42501` (permission), `P0001`/`P0002` (state), `53400` (quota), `23505` (uniqueness)
+- Permissions: `revoke execute ... from public; revoke ... from anon; grant execute ... to authenticated;` (or `to anon` only when explicitly intended)
+- A `comment on function` documenting purpose + SECURITY DEFINER rationale
+
+## Reserved Subdomain List Maintenance
+
+The reserved-subdomain blocklist lives inline in `provision_tenant` and `provision_agency`. Current entries:
+
+```
+www app api admin auth mail support status docs blog help cdn static assets noreply email smtp
+```
+
+If you add a new operational subdomain (e.g. `metrics`, `api-v2`, `cdn-eu`) anywhere — DNS, Netlify, marketing, anything — you MUST add it to the reserved list in both `provision_tenant` and `provision_agency` via a new migration. Without this, a tenant could register the same subdomain and host a phishing page that reads authenticated cookies (apex-scoped session storage means all `*.<apex>` subdomains share the session).
 
 ## Verification
 
@@ -129,3 +208,9 @@ Both must pass before committing.
 ## Environment Configuration
 
 The app uses Supabase environment variables defined in `src/environments/environment.ts`. For production, these are baked into the build via Angular's environment system. The production environment points to the hosted Supabase project.
+
+| Field | Dev default | Prod | Purpose |
+|---|---|---|---|
+| `supabaseUrl` | local emulator URL | hosted Supabase URL | API target |
+| `supabaseAnonKey` | local anon key | hosted anon key | Anon JWT |
+| `apexDomain` | `''` (empty = disable cookie session storage; localStorage path) | `'yourproduct.com'` (e.g.) | Enables `Domain=.<apex>` cookie storage when current host is on the apex; required for cross-subdomain auth in production |

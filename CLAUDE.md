@@ -127,5 +127,20 @@ docs/
 cd src/client && ng lint && ng build
 ```
 
+## Whitelabel Architecture (host-aware brand resolution)
+
+The app is a multi-tenant whitelabel platform. Hierarchy: **agency** (consultancy) → **tenant** (pharma client) → **space** (engagement).
+
+- **Pre-bootstrap brand fetch.** `main.ts` reads `window.location.host`, calls the anon-callable RPC `public.get_brand_by_host(p_host)`, sets `--brand-50..950` CSS vars + `document.title` + favicon, builds a dynamic PrimeNG preset via `buildBrandPreset(scale)`, then bootstraps Angular. `BrandContextService` holds the brand record after bootstrap.
+- **Brand kinds.** `tenant` (matches `tenants.subdomain` or `tenants.custom_domain`), `agency` (matches `agencies.subdomain`), `super-admin` (e.g. `admin.yourproduct.com`), `default` (apex / unknown — falls back to the static teal preset).
+- **Tenant role constraint.** `tenant_members.role` is `owner | member` — never `viewer`. Space-level roles (`owner | editor | viewer`) live on `space_members`. Tenant members get implicit editor/viewer space access via `has_space_access()`.
+- **Feature areas.** Agency portal at `/admin/*` (gated by `agencyGuard`); super-admin at `/super-admin/*` (gated by `superAdminGuard`, kind === `super-admin`); marketing landing at `/` on default host.
+- **Theme conventions.** Use Tailwind `bg-brand-*` / `text-brand-*` / `border-brand-*` / `ring-brand-*` utilities — never `bg-teal-*`. PrimeNG tokens reference `{primary.X}`, never `{teal.X}`. Slate / red / amber / green / cyan / violet stay hard-coded — those are data colors, not brand.
+- **Dev brand override.** In non-prod, append `?wl_kind=tenant&wl_id=<uuid>`, `?wl_kind=agency&wl_id=<uuid>`, or `?wl_kind=super-admin` to the URL to short-circuit `fetchBrand()` to a synthetic brand for local smoke testing without DNS.
+- **Cross-subdomain auth.** When `environment.apexDomain` is set and the current host is on the apex, Supabase JS uses cookie-based session storage with `Domain=.<apex>`. Otherwise localStorage (dev default). Custom domains are a separate trust boundary — fresh sign-in on each.
+- **Whitelabel RPCs.** `get_brand_by_host`, `check_subdomain_available`, `provision_agency`, `provision_tenant`, `update_tenant_branding`, `update_tenant_access`, `get_tenant_access_settings`, `update_agency_branding`, `register_custom_domain`, `self_join_tenant`, `lookup_user_by_email` — all SECURITY DEFINER, modeled on `accept_invite()`.
+- **Reserved subdomains.** `www app api admin auth mail support status docs blog help cdn static assets noreply email smtp` — enforced in `provision_tenant` / `provision_agency`.
+
 ## Spec Location
 - Active spec: `docs/specs/clinical-trial-dashboard/spec.md`
+- Whitelabel design: `docs/superpowers/specs/2026-04-27-whitelabel-design.md`
