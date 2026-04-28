@@ -31,7 +31,7 @@ export const marketingLandingGuard: CanActivateFn = async () => {
     return router.createUrlTree(['/login']);
   }
 
-  // Authenticated path: legacy onboarding redirect (matches onboardingRedirectGuard).
+  // Authenticated path: route to the user's most recent tenant, or onboarding.
   try {
     const tenants = await tenantService.listMyTenants();
     if (tenants.length === 0) {

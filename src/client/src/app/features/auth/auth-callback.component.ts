@@ -79,7 +79,7 @@ export class AuthCallbackComponent implements OnInit {
    *   - tenant host       -> /t/{tenantId}/spaces (brand.id is the tenant uuid)
    *     - if brand.has_self_join is true, attempt self_join_tenant first;
    *       on failure, surface a generic error on the login screen.
-   *   - default host      -> /  (the existing onboardingRedirectGuard takes over)
+   *   - default host      -> /  (marketingLandingGuard takes over from there)
    */
   private async redirectAfterSignIn(): Promise<void> {
     const kind = this.brand.kind();

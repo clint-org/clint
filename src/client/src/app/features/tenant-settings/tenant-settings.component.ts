@@ -572,7 +572,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     this.deletingTenant.set(true);
     try {
       await this.tenantService.deleteTenant(this.tenantId);
-      // landing on `/` triggers onboardingRedirectGuard which routes to
+      // landing on `/` triggers marketingLandingGuard which routes to
       // another tenant or onboarding, depending on what's left.
       this.router.navigate(['/']);
     } catch (e) {
