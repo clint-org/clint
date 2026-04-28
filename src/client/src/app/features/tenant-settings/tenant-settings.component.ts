@@ -240,14 +240,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
                     [attr.aria-invalid]="domainError() ? 'true' : null"
                     aria-describedby="domain-input-help"
                   />
-                  <button
-                    pButton
-                    type="button"
+                  <p-button
                     label="Add"
                     size="small"
                     [outlined]="true"
-                    (click)="addDomain()"
-                  ></button>
+                    (onClick)="addDomain()"
+                  />
                 </div>
                 <p id="domain-input-help" class="mt-1 text-[11px] text-slate-400">
                   Lowercase domain like <code class="font-mono">acme.com</code>. Press
