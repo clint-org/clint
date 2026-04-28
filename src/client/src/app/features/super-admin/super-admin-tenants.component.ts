@@ -268,8 +268,10 @@ export class SuperAdminTenantsComponent implements OnInit {
   });
 
   readonly canSubmit = computed(() => {
+    const notSubmitting = !this.submitting();
+    const hasSelection = !!this.selected();
     const v = this.customDomain.trim().toLowerCase();
-    return HOSTNAME_REGEX.test(v) && !this.submitting() && !!this.selected();
+    return notSubmitting && hasSelection && HOSTNAME_REGEX.test(v);
   });
 
   async ngOnInit(): Promise<void> {

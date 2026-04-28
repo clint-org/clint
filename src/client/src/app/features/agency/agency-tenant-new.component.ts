@@ -243,12 +243,11 @@ export class AgencyTenantNewComponent implements OnInit {
 
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
-  readonly canSubmit = computed(
-    () =>
-      this.name.trim().length > 0 &&
-      this.subdomainStatus().kind === 'available' &&
-      !this.submitting()
-  );
+  readonly canSubmit = computed(() => {
+    const subdomainAvailable = this.subdomainStatus().kind === 'available';
+    const notSubmitting = !this.submitting();
+    return subdomainAvailable && notSubmitting && this.name.trim().length > 0;
+  });
 
   async ngOnInit(): Promise<void> {
     try {

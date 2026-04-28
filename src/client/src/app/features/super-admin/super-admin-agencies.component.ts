@@ -335,12 +335,15 @@ export class SuperAdminAgenciesComponent implements OnInit {
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   readonly canSubmit = computed(() => {
+    const subdomainAvailable = this.subdomainStatus().kind === 'available';
+    const ownerResolved = this.resolvedOwner() !== null;
+    const notSubmitting = !this.submitting();
     return (
+      subdomainAvailable &&
+      ownerResolved &&
+      notSubmitting &&
       this.name.trim().length > 0 &&
-      SLUG_REGEX.test(this.slug.trim()) &&
-      this.subdomainStatus().kind === 'available' &&
-      this.resolvedOwner() !== null &&
-      !this.submitting()
+      SLUG_REGEX.test(this.slug.trim())
     );
   });
 
