@@ -32,7 +32,20 @@ async function fetchBrand(): Promise<Brand> {
   }
 
   try {
-    const supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
+    // This pre-bootstrap client only makes one anon RPC call. Disable all
+    // auth side effects so it doesn't fight the SupabaseService client over
+    // the OAuth callback: detectSessionInUrl=true (default) would race to
+    // consume the ?code= fragment on /auth/callback into THIS client's
+    // default-localStorage session (key: sb-{ref}-auth-token), leaving the
+    // cookie-storage SupabaseService with no session and bouncing the user
+    // back to /login.
+    const supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
     const { data, error } = await supabase.rpc('get_brand_by_host', {
       p_host: window.location.host,
     });

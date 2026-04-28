@@ -134,7 +134,7 @@ The frontend strictly follows Angular 19 patterns:
 The bootstrap sequence is whitelabel-aware. `main.ts`:
 
 1. Reads `window.location.host` (or, in dev, the `?wl_kind=...&wl_id=...` query-string override)
-2. Calls the anon-callable RPC `supabase.rpc('get_brand_by_host', { p_host: host })` via a temporary Supabase client
+2. Calls the anon-callable RPC `supabase.rpc('get_brand_by_host', { p_host: host })` via a temporary Supabase client created with `{ auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }` — disabling auth side effects is critical, otherwise this client's default `detectSessionInUrl: true` would race to consume the `?code=` fragment on `/auth/callback` into its own default-localStorage session (key `sb-{ref}-auth-token`) before `SupabaseService` (cookie storage, key `sb-auth`) can claim it, leaving the user with the session in the wrong storage and bouncing back to `/login`
 3. Synchronously applies side effects:
    - `document.title = brand.app_display_name`
    - Swaps the `<link rel="icon">` href to `brand.favicon_url`
