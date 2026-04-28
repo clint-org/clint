@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
+import { TenantService } from '../../core/services/tenant.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -35,6 +36,7 @@ export class AuthCallbackComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
   private readonly brand = inject(BrandContextService);
+  private readonly tenantService = inject(TenantService);
   error = signal<string | null>(null);
 
   ngOnInit() {
@@ -45,7 +47,7 @@ export class AuthCallbackComponent implements OnInit {
     } = this.supabase.client.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         subscription.unsubscribe();
-        this.redirectAfterSignIn();
+        void this.redirectAfterSignIn();
       } else if (event === 'SIGNED_OUT') {
         subscription.unsubscribe();
         this.router.navigate(['/login']);
@@ -57,7 +59,7 @@ export class AuthCallbackComponent implements OnInit {
       const { data } = await this.supabase.client.auth.getSession();
       if (data.session) {
         subscription.unsubscribe();
-        this.redirectAfterSignIn();
+        void this.redirectAfterSignIn();
       }
     }, 500);
 
@@ -72,12 +74,14 @@ export class AuthCallbackComponent implements OnInit {
 
   /**
    * Routes the user post-sign-in based on the host brand kind:
-   *   - agency host       -> /admin (real UI in plan 6)
-   *   - super-admin host  -> /super-admin (real UI in plan 9)
+   *   - agency host       -> /admin
+   *   - super-admin host  -> /super-admin
    *   - tenant host       -> /t/{tenantId}/spaces (brand.id is the tenant uuid)
+   *     - if brand.has_self_join is true, attempt self_join_tenant first;
+   *       on failure, surface a generic error on the login screen.
    *   - default host      -> /  (the existing onboardingRedirectGuard takes over)
    */
-  private redirectAfterSignIn(): void {
+  private async redirectAfterSignIn(): Promise<void> {
     const kind = this.brand.kind();
     const id = this.brand.brand().id;
     switch (kind) {
@@ -89,6 +93,31 @@ export class AuthCallbackComponent implements OnInit {
         return;
       case 'tenant':
         if (id) {
+          if (this.brand.hasSelfJoin()) {
+            // Try self-join. The RPC is idempotent (on conflict do nothing)
+            // for users who are already a member, so no pre-check needed.
+            // On failure, the RPC raises a generic error; surface it on the
+            // login screen via sessionStorage and sign the user out so they
+            // can re-attempt or contact the workspace owner.
+            const subdomain = window.location.host.split('.')[0];
+            try {
+              await this.tenantService.selfJoinTenant(subdomain);
+            } catch (e: unknown) {
+              const msg =
+                e instanceof Error
+                  ? e.message
+                  : 'self-join not available for this workspace';
+              try {
+                sessionStorage.setItem('login_error', msg);
+              } catch {
+                // sessionStorage not available; the login screen will just
+                // not show a message.
+              }
+              await this.supabase.signOut();
+              this.router.navigate(['/login']);
+              return;
+            }
+          }
           this.router.navigate(['/t', id, 'spaces']);
           return;
         }

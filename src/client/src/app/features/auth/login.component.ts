@@ -96,6 +96,19 @@ export class LoginComponent implements OnInit {
   protected readonly hasSelfJoin = this.brand.hasSelfJoin;
 
   async ngOnInit() {
+    // Surface a self-join failure stashed by the auth-callback flow. The
+    // RPC returns a single generic message for every failure mode (allowlist
+    // mismatch, suspended tenant, missing tenant, etc.) to prevent
+    // enumeration -- so we just display whatever was stored.
+    try {
+      const stored = sessionStorage.getItem('login_error');
+      if (stored) {
+        this.error.set(stored);
+        sessionStorage.removeItem('login_error');
+      }
+    } catch {
+      // sessionStorage unavailable; nothing to surface.
+    }
     await this.supabaseService.waitForSession();
     if (this.supabaseService.session()) {
       this.router.navigate(['/']);
