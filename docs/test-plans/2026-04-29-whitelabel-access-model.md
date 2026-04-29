@@ -23,6 +23,35 @@ Every step below should be performed against **prod** unless otherwise noted.
 
 ---
 
+## Test accounts and browser setup
+
+To avoid creating multiple real Gmail accounts, this plan uses Gmail `+alias` addresses. Gmail delivers `aadi529+anything@gmail.com` to the same inbox as `aadi529@gmail.com`, but Supabase auth treats each alias as a distinct user. All three aliases below pass a `gmail.com` email-domain lock, so you can run the full positive path under Path A in Section 1.
+
+| Role | Email | Used in |
+|---|---|---|
+| Primary owner | `aadi529@gmail.com` | All sections (Stout owner, Pfizer owner, Workspace owner) |
+| Second tenant owner | `aadi529+ownerB@gmail.com` | Sections 2, 3, 4, 7 |
+| Space reader | `aadi529+reader@gmail.com` | Section 5 |
+| Negative-test (rejected by lock) | anything @ a non-gmail temp-mail domain | Section 2 negative path only — no sign-in needed |
+
+**Browser sessions** (so you can be signed in as two users simultaneously):
+- Chrome normal profile -> `aadi529@gmail.com`
+- Chrome Incognito (or a second Chrome profile / Firefox) -> the alias under test
+- Reuse the Incognito window across `+ownerB` and `+reader` -- just sign out between them
+
+**Critical: verify the alias landed in auth.users.** Google's OAuth screens sometimes collapse `+alias` visually. After creating each new user, run this in the Supabase prod SQL editor to confirm the row exists with the full aliased email:
+
+```sql
+select id, email, created_at
+from auth.users
+where email like 'aadi529+%@gmail.com'
+order by created_at desc;
+```
+
+If a row shows up as plain `aadi529@gmail.com` instead of the aliased form, the alias collapsed and the firewall test in Section 3 is meaningless -- stop and triage before continuing.
+
+---
+
 ## Section 0: Pre-flight
 
 - [ ] Sign in to `admin.clintapp.com` as `aadi529@gmail.com` (super-admin). Confirm Stout agency and Pfizer tenant are both listed and active (not suspended).
@@ -38,10 +67,8 @@ If any of the above fails, fix before proceeding -- the rest of the plan assumes
 The Stout agency was backfilled with `email_domain = 'gmail.com'`. Decide what you want it to be before testing tenant-owner adds.
 
 - [ ] On `stout.clintapp.com/admin/branding`, scroll to "Member email domain (lock)". Confirm it's pre-populated with `gmail.com`.
-- [ ] **Pick one path:**
-   - Path A (keep gmail.com lock): all later "add tenant owner" and "add agency member" tests will need gmail.com emails. Easiest with multiple personal Gmail accounts.
-   - Path B (blank it out): clears the lock; any email is allowed. Use this if you only have one Gmail and want to test cross-domain adds.
-   - Path C (set to a real test domain, e.g. one you own): closest to real enterprise use.
+- [ ] **Default for this run: Path A (keep `gmail.com`).** All `aadi529+...@gmail.com` aliases pass; the negative test in Section 2 uses a non-gmail temp-mail address.
+   - (Alternatives: Path B blanks the lock to allow any domain; Path C sets a real domain you own. Skip unless deliberately testing those.)
 - [ ] Save and verify "Agency branding updated" toast appears.
 
 ---
@@ -50,14 +77,13 @@ The Stout agency was backfilled with `email_domain = 'gmail.com'`. Decide what y
 
 Goal: prove `add_tenant_owner` works and the UI surfaces both the "user already exists" and "invite held" branches.
 
-Setup: pick a second email matching whatever lock you set in Section 1.
+Account: `aadi529+ownerB@gmail.com` (does not yet exist in `auth.users`, so this exercises the "invite held" branch).
 
 - [ ] On `stout.clintapp.com/admin/tenants`, click into Pfizer.
-- [ ] Click "Add owner". Enter the second email.
-- [ ] If that email already has an auth.users row → expect green message "<email> added as tenant owner."
-- [ ] If that email is brand new → expect green message "Invite held for <email>. Code: <32-char hex>".
-- [ ] Members table refreshes and shows the new owner (or doesn't, if invite-held; that's expected).
-- [ ] **Negative test (only if you have a non-matching domain available):** Try to add an email on a domain that doesn't match the lock. Expect a red error like "Email domain (xxx.com) does not match agency domain (yyy.com)".
+- [ ] Click "Add owner". Enter `aadi529+ownerB@gmail.com`.
+- [ ] Expected (since the alias has never signed in): green message `Invite held for aadi529+ownerB@gmail.com. Code: <32-char hex>`. **Copy the code** -- you'll paste it after first sign-in in Section 3.
+- [ ] Members table refreshes; the new owner does NOT yet appear (invite is held until first sign-in). That's expected.
+- [ ] **Negative test:** Click "Add owner" again, enter a non-gmail address (e.g. `test@mailinator.com`). Expect a red error like `Email domain (mailinator.com) does not match agency domain (gmail.com)`. No sign-in for this address is required.
 
 ---
 
@@ -65,9 +91,14 @@ Setup: pick a second email matching whatever lock you set in Section 1.
 
 This is the architectural test that justifies migration 75. Tenant ownership must NOT grant space data access.
 
-- [ ] Sign out as `aadi529@gmail.com`.
-- [ ] Sign in as the second user (the one you just added in Section 2). If they were invite-held, paste the invite code at `stout.clintapp.com/onboarding?tab=join` (or any host's `/onboarding`) after signing in.
-- [ ] Navigate (or be auto-redirected) to `pfizer.clintapp.com`. Confirm the user lands on the spaces list.
+- [ ] In **Chrome Incognito**, go to `stout.clintapp.com` (or any host) and sign in with Google as `aadi529+ownerB@gmail.com`. Choose "Use another account" if Google offers the primary -- you must pick the alias explicitly.
+- [ ] After landing, run this SQL in Supabase prod to confirm the alias landed correctly:
+  ```sql
+  select id, email from auth.users where email = 'aadi529+ownerB@gmail.com';
+  ```
+  If zero rows or the row's email is plain `aadi529@gmail.com`, Google collapsed the alias -- stop and triage.
+- [ ] Navigate to `stout.clintapp.com/onboarding?tab=join`, paste the invite code from Section 2, submit. Expected: redirect into Pfizer's tenant scope.
+- [ ] You should now be on `pfizer.clintapp.com` viewing the spaces list (or the tenant root).
 - [ ] Click into the Workspace space.
 - [ ] **Expected:** the catalysts/landscape pages load but show NO data, OR a permission error. The user is a tenant owner but NOT a space member, so `has_space_access` returns false.
 - [ ] Open `pfizer.clintapp.com/t/<id>/settings` (tenant settings) -- expected: works (they're a tenant owner). Members table should show both owners.
@@ -80,26 +111,27 @@ If the second user CAN see catalysts data, the migration's authority cascade did
 
 Goal: prove `invite_to_space` adds an existing user directly and they can edit data.
 
-- [ ] Sign back in as `aadi529@gmail.com` (the original owner with space access).
-- [ ] Navigate to `pfizer.clintapp.com/t/<id>/s/<workspaceId>/settings/members` (or open the space, then Settings -> Members).
-- [ ] Click "Invite to space". Enter the second user's email, role = Contributor. Submit.
-- [ ] Expected: green message "<email> added to space."
-- [ ] Sign out, sign in as the second user, return to Pfizer Workspace.
+- [ ] In your **primary Chrome profile** as `aadi529@gmail.com`, navigate to `pfizer.clintapp.com/t/<id>/s/<workspaceId>/settings/members` (or open the space, then Settings -> Members).
+- [ ] Click "Invite to space". Enter `aadi529+ownerB@gmail.com`, role = Contributor. Submit.
+- [ ] Expected: green message `aadi529+ownerB@gmail.com added to space.` (Direct add, not invite-held -- the user already exists from Section 3.)
+- [ ] Switch to **Incognito** (still signed in as `+ownerB`). Hard-refresh Pfizer Workspace.
 - [ ] Catalysts data is now visible.
-- [ ] As the second user, edit a catalyst (change status or add a marker) -- expected: write succeeds (Contributor role allows writes).
+- [ ] As `+ownerB`, edit a catalyst (change status or add a marker) -- expected: write succeeds (Contributor role allows writes).
 
 ---
 
-## Section 5: Space invite (new user, Reader role, any domain)
+## Section 5: Space invite (new user, Reader role)
 
-Goal: prove invites hold for unknown emails AND that spaces accept any email domain (no enforcement at space level).
+Goal: prove invites hold for unknown emails AND that spaces accept invites independent of agency-level domain locks.
 
-- [ ] As `aadi529@gmail.com`, on Workspace's space-members page, click "Invite to space".
-- [ ] Enter an email on a non-gmail domain (e.g. a `+something@gmail.com` alias counts; or use a temp-mail address). Role = Reader.
-- [ ] Expected: green message "Invite held for <email>. Code: <hex>." Copy the code.
-- [ ] Sign out. Sign up as the new email (Google/Microsoft OAuth). After landing, go to `/onboarding?tab=join` and paste the code.
+- [ ] In your **primary Chrome profile** as `aadi529@gmail.com`, on Workspace's space-members page, click "Invite to space".
+- [ ] Enter `aadi529+reader@gmail.com`, role = Reader. Submit.
+- [ ] Expected: green message `Invite held for aadi529+reader@gmail.com. Code: <hex>.` **Copy the code.**
+- [ ] In **Incognito**, sign out from `+ownerB`. Sign in with Google as `aadi529+reader@gmail.com` (use "Use another account" if needed).
+- [ ] Verify the alias landed: `select email from auth.users where email = 'aadi529+reader@gmail.com';`
+- [ ] Go to `pfizer.clintapp.com/onboarding?tab=join` (or any host's onboarding), paste the code, submit.
 - [ ] Expected: redirected to `pfizer.clintapp.com/t/<id>/s/<workspaceId>` and catalysts data is visible (read-only).
-- [ ] As the Reader, try to edit a catalyst -- expected: edit fails (Reader is view-only).
+- [ ] As `+reader`, try to edit a catalyst -- expected: edit fails (Reader is view-only).
 
 ---
 
@@ -119,10 +151,10 @@ If the user is bounced to /login on the new host, the apex cookie isn't being se
 
 Goal: prove migration 73 still works under the new owner-only model.
 
-- [ ] On `pfizer.clintapp.com/t/<id>/settings`, with two tenant owners present, find your own row -- expected: no row-actions menu (you can't remove yourself).
-- [ ] Open the row-actions for the OTHER owner -- "Remove owner" should be available.
-- [ ] **Don't actually remove them yet.** Try a SQL-level removal of your own row through the Supabase dashboard SQL editor: `delete from tenant_members where tenant_id = '<pfizer-id>' and user_id = '<your-uid>';` Expected: error `42501 You cannot remove yourself from this tenant. Ask another owner to remove you.`
-- [ ] Then have the OTHER owner sign in and try to remove themselves -- expected: same self-removal block from the UI side.
+- [ ] In primary Chrome as `aadi529@gmail.com`, on `pfizer.clintapp.com/t/<id>/settings`, with `aadi529@gmail.com` and `aadi529+ownerB@gmail.com` both listed as tenant owners: find your own row -- expected: no row-actions menu (you can't remove yourself).
+- [ ] Open the row-actions for `+ownerB` -- "Remove owner" should be available.
+- [ ] **Don't actually remove them yet.** Try a SQL-level removal of your own row in the Supabase prod SQL editor: `delete from tenant_members where tenant_id = '<pfizer-id>' and user_id = '<aadi529-uid>';` Expected: error `42501 You cannot remove yourself from this tenant. Ask another owner to remove you.`
+- [ ] In Incognito as `+ownerB`, navigate to the same tenant settings page and attempt to remove the `+ownerB` row -- expected: row-actions menu is suppressed for their own row (UI-side self-removal block).
 
 ---
 
@@ -160,7 +192,11 @@ The member-guard triggers should NOT block a legit tenant deletion (cascade flag
 
 After QA:
 
-- [ ] Decide what to do with the test users created during Sections 2-5. If you don't want them lying around in prod auth.users, delete them via Supabase dashboard -> Authentication -> Users.
+- [ ] Delete the alias users from prod auth.users so they don't linger:
+  ```sql
+  delete from auth.users where email in ('aadi529+ownerB@gmail.com', 'aadi529+reader@gmail.com');
+  ```
+  (Or via Supabase dashboard -> Authentication -> Users.) Cascading deletes will clean up `tenant_members` / `space_members` rows automatically.
 - [ ] If you used a throwaway tenant in Section 10, decide whether to release its subdomain via the super-admin domains page.
 
 ---
