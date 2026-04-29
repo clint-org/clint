@@ -8,7 +8,7 @@ import { Toast } from 'primeng/toast';
   standalone: true,
   imports: [RouterOutlet, ConfirmDialog, Toast],
   template: `
-    <div class="h-screen bg-slate-50">
+    <div class="app-root-shell bg-slate-50">
       <router-outlet />
     </div>
     <p-confirmdialog />
@@ -20,5 +20,18 @@ import { Toast } from 'primeng/toast';
       [hideTransitionOptions]="'180ms ease-in'"
     />
   `,
+  styles: [
+    `
+      .app-root-shell {
+        height: 100vh;
+      }
+      @media (max-width: 767px) {
+        .app-root-shell {
+          height: auto;
+          min-height: 100vh;
+        }
+      }
+    `,
+  ],
 })
 export class AppComponent {}

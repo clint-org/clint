@@ -211,6 +211,28 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         background: #f8fafc;
       }
 
+      /* On mobile, ditch the bounded inner-scroller in favor of natural
+         body scroll. iOS Safari handles momentum scrolling on body well;
+         a bounded inner scroller inside an h-screen shell intercepts
+         vertical swipes when the inner content is dramatically taller. */
+      @media (max-width: 767px) {
+        :host {
+          height: auto;
+          min-height: 100vh;
+        }
+        .shell {
+          height: auto;
+          min-height: 100vh;
+        }
+        .main-area {
+          height: auto;
+          overflow: visible;
+        }
+        .content-area {
+          overflow: visible;
+        }
+      }
+
       .account-backdrop {
         position: fixed;
         inset: 0;
