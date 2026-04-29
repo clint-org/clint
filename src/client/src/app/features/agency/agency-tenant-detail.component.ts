@@ -66,7 +66,12 @@ import { environment } from '../../../environments/environment';
       </div>
 
       @if (loadError()) {
-        <p-message severity="error" [closable]="true" (onClose)="loadError.set(null)" styleClass="mb-4">
+        <p-message
+          severity="error"
+          [closable]="true"
+          (onClose)="loadError.set(null)"
+          styleClass="mb-4"
+        >
           {{ loadError() }}
         </p-message>
       }
@@ -116,32 +121,6 @@ import { environment } from '../../../environments/environment';
                   (ngModelChange)="primaryColorHash.set($event)"
                   name="primaryColorText"
                   maxlength="7"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                for="accent-color"
-                class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-              >
-                Accent color
-              </label>
-              <div class="flex items-center gap-2">
-                <p-colorpicker
-                  [ngModel]="accentColorRaw()"
-                  (ngModelChange)="onAccentColorRawChange($event)"
-                  name="accentColor"
-                />
-                <input
-                  pInputText
-                  id="accent-color"
-                  class="flex-1 font-mono text-xs"
-                  [ngModel]="accentColorHash()"
-                  (ngModelChange)="accentColorHash.set($event)"
-                  name="accentColorText"
-                  maxlength="7"
-                  placeholder="#optional"
                 />
               </div>
             </div>
@@ -263,9 +242,7 @@ export class AgencyTenantDetailComponent implements OnInit {
   // Canonical color storage uses the leading "#"; the colorpicker emits/expects the
   // bare hex, so we expose a derived view + a setter that re-adds the "#".
   readonly primaryColorHash = signal('#0d9488');
-  readonly accentColorHash = signal('');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
-  readonly accentColorRaw = computed(() => this.accentColorHash().replace(/^#/, ''));
 
   private tenantId = '';
 
@@ -273,26 +250,17 @@ export class AgencyTenantDetailComponent implements OnInit {
     const t = this.tenant();
     if (!t) return false;
     const primary = this.normalizeHash(this.primaryColorHash());
-    const accent = this.accentColorHash().trim()
-      ? this.normalizeHash(this.accentColorHash())
-      : null;
     return (
       this.appDisplayName() !== (t.app_display_name ?? '') ||
       (this.logoUrl() || null) !== (t.logo_url ?? null) ||
       (this.emailFromName() || null) !== (t.email_from_name ?? null) ||
-      primary !== (t.primary_color ?? '#0d9488').toLowerCase() ||
-      accent !== (t.accent_color ?? null)
+      primary !== (t.primary_color ?? '#0d9488').toLowerCase()
     );
   });
 
   onPrimaryColorRawChange(raw: string): void {
     const stripped = (raw || '').replace(/^#/, '').toLowerCase();
     this.primaryColorHash.set(stripped ? `#${stripped}` : '');
-  }
-
-  onAccentColorRawChange(raw: string): void {
-    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
-    this.accentColorHash.set(stripped ? `#${stripped}` : '');
   }
 
   async ngOnInit(): Promise<void> {
@@ -308,7 +276,6 @@ export class AgencyTenantDetailComponent implements OnInit {
       this.logoUrl.set(t.logo_url ?? '');
       this.emailFromName.set(t.email_from_name ?? '');
       this.primaryColorHash.set((t.primary_color ?? '#0d9488').toLowerCase());
-      this.accentColorHash.set((t.accent_color ?? '').toLowerCase());
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load tenant.');
     }
@@ -339,11 +306,6 @@ export class AgencyTenantDetailComponent implements OnInit {
       const primary = this.normalizeHash(this.primaryColorHash());
       if (primary !== (t.primary_color ?? '#0d9488').toLowerCase()) {
         branding.primary_color = primary;
-      }
-      const accentInput = this.accentColorHash().trim();
-      const accent = accentInput ? this.normalizeHash(accentInput) : null;
-      if (accent !== (t.accent_color ?? null)) {
-        branding.accent_color = accent;
       }
       const newLogo = this.logoUrl().trim() || null;
       if (newLogo !== (t.logo_url ?? null)) {

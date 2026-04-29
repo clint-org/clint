@@ -32,7 +32,12 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
       </div>
 
       @if (loadError()) {
-        <p-message severity="error" [closable]="true" (onClose)="loadError.set(null)" styleClass="mb-4">
+        <p-message
+          severity="error"
+          [closable]="true"
+          (onClose)="loadError.set(null)"
+          styleClass="mb-4"
+        >
           {{ loadError() }}
         </p-message>
       }
@@ -77,32 +82,6 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
                 (ngModelChange)="primaryColorHash.set($event)"
                 name="primaryText"
                 maxlength="7"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              for="agency-accent"
-              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-            >
-              Accent color
-            </label>
-            <div class="flex items-center gap-2">
-              <p-colorpicker
-                [ngModel]="accentColorRaw()"
-                (ngModelChange)="onAccentColorRawChange($event)"
-                name="accent"
-              />
-              <input
-                pInputText
-                id="agency-accent"
-                class="flex-1 font-mono text-xs"
-                [ngModel]="accentColorHash()"
-                (ngModelChange)="accentColorHash.set($event)"
-                name="accentText"
-                maxlength="7"
-                placeholder="#optional"
               />
             </div>
           </div>
@@ -194,33 +173,22 @@ export class AgencyBrandingComponent implements OnInit {
   readonly contactEmail = signal('');
   readonly logoUrl = signal('');
   readonly primaryColorHash = signal('#0d9488');
-  readonly accentColorHash = signal('');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
-  readonly accentColorRaw = computed(() => this.accentColorHash().replace(/^#/, ''));
 
   onPrimaryColorRawChange(raw: string): void {
     const stripped = (raw || '').replace(/^#/, '').toLowerCase();
     this.primaryColorHash.set(stripped ? `#${stripped}` : '');
   }
 
-  onAccentColorRawChange(raw: string): void {
-    const stripped = (raw || '').replace(/^#/, '').toLowerCase();
-    this.accentColorHash.set(stripped ? `#${stripped}` : '');
-  }
-
   readonly hasChanges = computed(() => {
     const a = this.agency();
     if (!a) return false;
     const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
-    const accent = this.accentColorHash().trim()
-      ? '#' + this.accentColorHash().replace(/^#/, '').toLowerCase()
-      : null;
     return (
       this.appDisplayName() !== a.app_display_name ||
       (this.logoUrl() || null) !== (a.logo_url ?? null) ||
       this.contactEmail() !== a.contact_email ||
-      primary !== (a.primary_color || '#0d9488').toLowerCase() ||
-      accent !== (a.accent_color ?? null)
+      primary !== (a.primary_color || '#0d9488').toLowerCase()
     );
   });
 
@@ -243,7 +211,6 @@ export class AgencyBrandingComponent implements OnInit {
       this.contactEmail.set(current.contact_email);
       this.logoUrl.set(current.logo_url ?? '');
       this.primaryColorHash.set((current.primary_color ?? '#0d9488').toLowerCase());
-      this.accentColorHash.set((current.accent_color ?? '').toLowerCase());
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load agency.');
     }
@@ -263,13 +230,6 @@ export class AgencyBrandingComponent implements OnInit {
       const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
       if (primary !== (a.primary_color || '#0d9488').toLowerCase()) {
         branding.primary_color = primary;
-      }
-      const accentInput = this.accentColorHash().trim();
-      const accent = accentInput
-        ? '#' + accentInput.replace(/^#/, '').toLowerCase()
-        : null;
-      if (accent !== (a.accent_color ?? null)) {
-        branding.accent_color = accent;
       }
       const newLogo = this.logoUrl().trim() || null;
       if (newLogo !== (a.logo_url ?? null)) {

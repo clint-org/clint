@@ -7,7 +7,6 @@ export interface Brand {
   logo_url: string | null;
   favicon_url: string | null;
   primary_color: string;
-  accent_color: string | null;
   auth_providers: string[];
   has_self_join: boolean;
   suspended: boolean;

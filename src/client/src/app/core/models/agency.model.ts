@@ -7,7 +7,6 @@ export interface Agency {
   favicon_url: string | null;
   app_display_name: string;
   primary_color: string;
-  accent_color: string | null;
   contact_email: string;
   plan_tier: string;
   max_tenants: number;
@@ -44,7 +43,6 @@ export interface AgencyBrandingUpdate {
   logo_url?: string | null;
   favicon_url?: string | null;
   primary_color?: string;
-  accent_color?: string | null;
   contact_email?: string;
 }
 
@@ -53,7 +51,6 @@ export interface TenantBrandingUpdate {
   logo_url?: string | null;
   favicon_url?: string | null;
   primary_color?: string;
-  accent_color?: string | null;
   email_from_name?: string;
 }
 
@@ -66,7 +63,6 @@ export interface TenantBrandFields {
   logo_url: string | null;
   favicon_url: string | null;
   primary_color: string;
-  accent_color: string | null;
   email_from_name: string | null;
   suspended_at: string | null;
 }

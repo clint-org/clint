@@ -8,7 +8,6 @@ export const DEFAULT_BRAND: Brand = {
   logo_url: null,
   favicon_url: null,
   primary_color: '#0d9488',
-  accent_color: null,
   auth_providers: ['google', 'microsoft'],
   has_self_join: false,
   suspended: false,
@@ -24,7 +23,6 @@ export class BrandContextService {
   readonly logoUrl = computed(() => this._brand().logo_url);
   readonly faviconUrl = computed(() => this._brand().favicon_url);
   readonly primaryColor = computed(() => this._brand().primary_color);
-  readonly accentColor = computed(() => this._brand().accent_color);
   readonly authProviders = computed(() => this._brand().auth_providers);
   readonly hasSelfJoin = computed(() => this._brand().has_self_join);
   readonly suspended = computed(() => this._brand().suspended);

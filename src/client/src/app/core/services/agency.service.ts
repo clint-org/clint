@@ -87,10 +87,7 @@ export class AgencyService {
   }
 
   async removeAgencyMember(memberId: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('agency_members')
-      .delete()
-      .eq('id', memberId);
+    const { error } = await this.supabase.client.from('agency_members').delete().eq('id', memberId);
     if (error) throw error;
   }
 
@@ -210,7 +207,7 @@ export class AgencyService {
     const { data, error } = await this.supabase.client
       .from('tenants')
       .select(
-        'id, name, subdomain, custom_domain, app_display_name, logo_url, favicon_url, primary_color, accent_color, email_from_name, suspended_at'
+        'id, name, subdomain, custom_domain, app_display_name, logo_url, favicon_url, primary_color, email_from_name, suspended_at'
       )
       .eq('id', tenantId)
       .single();
@@ -226,15 +223,13 @@ export class AgencyService {
     const code = this.generateCode();
     const userId = (await this.supabase.client.auth.getUser()).data.user?.id;
     if (!userId) throw new Error('Not authenticated');
-    const { error } = await this.supabase.client
-      .from('tenant_invites')
-      .insert({
-        tenant_id: tenantId,
-        email,
-        role,
-        invite_code: code,
-        created_by: userId,
-      });
+    const { error } = await this.supabase.client.from('tenant_invites').insert({
+      tenant_id: tenantId,
+      email,
+      role,
+      invite_code: code,
+      created_by: userId,
+    });
     if (error) throw error;
   }
 
