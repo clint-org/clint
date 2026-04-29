@@ -138,7 +138,7 @@ All whitelabel RPCs follow the project's SECURITY DEFINER convention modeled on 
 get_brand_by_host(p_host text) -> jsonb
 ```
 
-**Anon-callable.** Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, the reserved `admin.<anything>` subdomain (returns `kind: "super-admin"` — requires the host to have at least two segments so bare `admin` doesn't match), `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority over the magic admin subdomain). Returns a public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `auth_providers[]`, `has_self_join` (boolean — never the actual allowlist), `suspended`. Returns `kind: "default"` with Clint defaults if no match.
+**Anon-callable.** Looks up `p_host` against `tenants.custom_domain`, `agencies.custom_domain`, the reserved `admin.<anything>` subdomain (returns `kind: "super-admin"` — requires the host to have at least two segments so bare `admin` doesn't match), `tenants.subdomain`, `agencies.subdomain` in that order (custom domains take priority over the magic admin subdomain). Returns a public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `auth_providers[]`, `has_self_join` (boolean — never the actual allowlist), `suspended`. Returns `kind: "default"` with Clint defaults if no match.
 
 ### check_subdomain_available
 
@@ -186,7 +186,7 @@ Caller must be agency owner of `p_agency_id` or platform admin. Validates `agenc
 update_tenant_branding(p_tenant_id uuid, p_branding jsonb) -> jsonb
 ```
 
-Caller must be tenant owner, agency owner of the parent agency, or platform admin. Whitelist of fields: `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `email_from_name`. Validates color hex shape and URL shape. Other fields (subdomain, custom_domain, agency_id, suspension, allowlist) are managed by separate RPCs and rejected if present.
+Caller must be tenant owner, agency owner of the parent agency, or platform admin. Whitelist of fields: `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `email_from_name`. Validates color hex shape and URL shape. Other fields (subdomain, custom_domain, agency_id, suspension, allowlist) are managed by separate RPCs and rejected if present.
 
 ### update_tenant_access
 
@@ -210,7 +210,7 @@ Authenticated read of the allowlist for tenant settings UI. Caller must be tenan
 update_agency_branding(p_agency_id uuid, p_branding jsonb) -> jsonb
 ```
 
-Caller must be agency owner or platform admin. Whitelist of fields: `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `contact_email`. Subdomain / custom_domain / plan_tier / max_tenants are not editable here.
+Caller must be agency owner or platform admin. Whitelist of fields: `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `contact_email`. Subdomain / custom_domain / plan_tier / max_tenants are not editable here.
 
 ### register_custom_domain
 

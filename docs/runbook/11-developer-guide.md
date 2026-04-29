@@ -140,7 +140,7 @@ The app is whitelabel — primary color is per-tenant at runtime. There are thre
 
 - **CSS variables on `:root`.** `main.ts` sets `--brand-50` … `--brand-950` from `generateBrandScale(brand.primary_color)` before bootstrapping Angular.
 - **Tailwind brand-* utilities.** `styles.css` declares `@theme { --color-brand-50: var(--brand-50, #f0fdfa); ... }`. Use `bg-brand-*`, `text-brand-*`, `border-brand-*`, `ring-brand-*`, `from-brand-*`, `via-brand-*`, `to-brand-*` (and the rest of the tailwind color modifiers). Never use `bg-teal-*` or any literal teal class — that pins to the platform default.
-- **`BrandContextService`.** Inject when you need the brand fields directly (logo URL, app display name, accent color, kind, has_self_join, suspended). Read via `brand.appDisplayName()`, `brand.logoUrl()`, etc. — all signals.
+- **`BrandContextService`.** Inject when you need the brand fields directly (logo URL, app display name, primary color, kind, has_self_join, suspended). Read via `brand.appDisplayName()`, `brand.logoUrl()`, etc. — all signals.
 
 Slate, red, amber, green, cyan, violet remain hard-coded. Those are *data* colors (markers, phase bars, status indicators) and are not tenant-configurable. The codemod that swept the codebase during the rollout intentionally left them alone.
 

@@ -199,7 +199,7 @@ A self-serve portal where consulting firms manage their pharma client tenants. M
 | `/admin/tenants/new` | `agency-tenant-new` | Provisioning wizard: name, subdomain (debounced live availability), primary color picker, first-user invite |
 | `/admin/tenants/:id` | `agency-tenant-detail` | View / edit tenant branding, list members, "Open tenant" cross-host redirect |
 | `/admin/members` | `agency-members` | Add agency members (email lookup via `lookup_user_by_email`), change roles, remove |
-| `/admin/branding` | `agency-branding` | Edit the agency portal's own brand (display name, primary/accent color, contact email) |
+| `/admin/branding` | `agency-branding` | Edit the agency portal's own brand (display name, primary color, contact email) |
 
 All writes go through SECURITY DEFINER RPCs; agency owners do all writes, agency members get read-only visibility across the agency's tenants.
 

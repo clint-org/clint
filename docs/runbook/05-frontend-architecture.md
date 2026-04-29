@@ -216,7 +216,7 @@ All routes are lazy-loaded. Routes are host-aware: `agencyGuard`, `superAdminGua
 
 | Service | Responsibility |
 |---|---|
-| `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `accentColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`. Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
+| `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`. Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
 | `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google + Microsoft sign-in (`signInWithGoogle`, `signInWithMicrosoft`), sign-out. Conditionally uses cookie-based session storage (`createCookieStorage`) when `environment.apexDomain` is set and the current host is on the apex; otherwise localStorage. |
 | `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models, `seedDemoData()` |
 | `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow, plus access settings (`getTenantAccessSettings`, `updateTenantAccess`), `selfJoinTenant`, `checkIsTenantMember` |

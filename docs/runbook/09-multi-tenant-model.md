@@ -106,7 +106,7 @@ The `TenantSettingsComponent` provides:
 - **Pending invites table**: shows invite code, email, role, expiration
 - **Invite dialog**: email + role dropdown to generate new invite codes (triggers branded email via the `send-invite-email` Edge Function)
 
-**Ownership boundary:** for agency-managed tenants, the agency owns branding (display name, logo, primary/accent color, email_from_name — all editable via `update_tenant_branding` from the agency portal) and the tenant team owns access (members, invites, self-join, danger zone — editable from tenant settings). Both roles still call the same RPCs; the split is enforced in the UI, not in the data model.
+**Ownership boundary:** for agency-managed tenants, the agency owns branding (display name, logo, primary color, email_from_name — all editable via `update_tenant_branding` from the agency portal) and the tenant team owns access (members, invites, self-join, danger zone — editable from tenant settings). Both roles still call the same RPCs; the split is enforced in the UI, not in the data model.
 
 ## Data Isolation
 

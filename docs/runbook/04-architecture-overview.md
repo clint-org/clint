@@ -62,7 +62,7 @@ Every page load runs `get_brand_by_host(p_host text) returns jsonb` (anon-callab
 4. `tenants.subdomain`
 5. `agencies.subdomain`
 
-It returns a small public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `accent_color`, `auth_providers[]`, `has_self_join`, `suspended`. The full `email_domain_allowlist` is **never** returned to anon (would leak which corporate email domains unlock the workspace) — authenticated tenant owners read it through `get_tenant_access_settings`.
+It returns a small public-safe shape: `kind`, `id`, `app_display_name`, `logo_url`, `favicon_url`, `primary_color`, `auth_providers[]`, `has_self_join`, `suspended`. The full `email_domain_allowlist` is **never** returned to anon (would leak which corporate email domains unlock the workspace) — authenticated tenant owners read it through `get_tenant_access_settings`.
 
 If no match, returns `kind: "default"` with the Clint defaults — the app falls back to the static teal preset and a marketing landing on `/`.
 

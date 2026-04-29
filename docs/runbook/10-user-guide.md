@@ -209,7 +209,7 @@ The export renders phase bars and markers with visual fidelity matching the dash
 **Navigate:** Gear icon in header
 
 Tenant owners can:
-- **Branding** -- Edit display name, upload a logo, set primary and accent colors, set the email sender display name (`email_from_name`). Changes propagate to every page after refresh and to all subsequent invite emails and PPT exports
+- **Branding** -- Edit display name, upload a logo, set the primary color, set the email sender display name (`email_from_name`). Changes propagate to every page after refresh and to all subsequent invite emails and PPT exports
 - **Members** -- Table showing all members with name, email, and role; remove button (with confirmation)
 - **Pending invites** -- Codes, emails, roles, and expiration dates
 - **Invite a new member** -- Generate an invite code by entering email and role. A branded invite email is sent automatically (subject from your `email_from_name`, accept-button tinted with your `primary_color`, link to `https://<your-subdomain>.yourproduct.com/onboarding?code=...`). The code is also visible in the pending-invites table for manual sharing if email delivery fails.
@@ -244,7 +244,7 @@ On submit, the platform creates the tenant + a default space named "Workspace" +
 
 **Navigate:** `/admin/tenants/:id`
 
-- **Branding** -- display name, logo URL, primary color, accent color, email_from_name. Saved via `update_tenant_branding`
+- **Branding** -- display name, logo URL, primary color, email_from_name. Saved via `update_tenant_branding`
 - **Members** -- read-only list of the tenant's members (agency owners can also use the tenant's own settings page for write actions, via the "Open tenant" button)
 - **Open tenant** -- cross-host redirect to the tenant subdomain. Your session cookie is shared on the apex, so you don't re-authenticate.
 
