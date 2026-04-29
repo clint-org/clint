@@ -110,6 +110,45 @@
   .cover .big-logo .stout-cover-logo { width: auto; height: 36px; }
   .cover .big-logo-sep { width: 1px; height: 28px; background: var(--slate-300); }
   .wordmark .stout-mini { height: 14px; width: auto; }
+  @media (max-width: 768px) {
+    .deck { height: 100dvh; }
+    .slide { padding: 36px 20px 64px; }
+    .slide-inner { max-width: 100%; }
+    .wordmark { margin-bottom: 18px; gap: 8px; flex-wrap: wrap; }
+    .wordmark .stout-mini { height: 12px; }
+    .label { margin-bottom: 10px; font-size: 10px; }
+    h1.slide-title { font-size: 24px; margin-bottom: 12px; max-width: 100%; }
+    h2.slide-title { font-size: 22px; margin-bottom: 12px; }
+    .lede { font-size: 14px; margin-bottom: 18px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 14px; }
+    .card { padding: 16px 18px; }
+    .card h3 { font-size: 14px; }
+    .card p { font-size: 13px; }
+    ul.points li { font-size: 14px; padding: 10px 0 10px 18px; }
+    ul.points li::before { top: 17px; }
+    ul.dense li { font-size: 13px; padding: 8px 0 8px 16px; }
+    ul.dense li::before { top: 15px; }
+    table.data { font-size: 11.5px; }
+    table.data thead th { padding: 8px 6px; font-size: 9px; letter-spacing: 0.1em; }
+    table.data tbody td { padding: 8px 6px; }
+    .pricing-row { grid-template-columns: 80px 1fr 80px; gap: 10px; font-size: 11px; }
+    .pricing-row .vendor { font-size: 10px; }
+    .pricing-row .price { font-size: 11px; }
+    .cover { padding: 0 24px; }
+    .cover .big-logo { gap: 10px; margin-bottom: 32px; flex-wrap: wrap; }
+    .cover .big-logo svg { width: 32px; height: 32px; }
+    .cover .big-logo .stout-cover-logo { height: 24px; }
+    .cover .big-logo .wordmark-large { font-size: 14px; letter-spacing: 0.18em; }
+    .cover .big-logo-sep { height: 20px; }
+    .cover .kicker { font-size: 10px; margin-bottom: 12px; }
+    .cover h1 { font-size: 30px; margin-bottom: 16px; line-height: 1.1; }
+    .cover .sub { font-size: 14px; margin-bottom: 32px; }
+    .cover .footer-line { font-size: 10px; gap: 10px; flex-wrap: wrap; }
+    .chrome { padding: 0 12px; bottom: 12px; }
+    .hint { display: none; }
+    .counter { font-size: 10px; }
+    .nav-btn { width: 36px; height: 36px; font-size: 16px; }
+  }
   @media print {
     body { background: white; overflow: visible; }
     .deck { width: auto; height: auto; overflow: visible; }
@@ -487,6 +526,21 @@
     });
     prevBtn.addEventListener('click', () => go(-1));
     nextBtn.addEventListener('click', () => go(1));
+    let touchStartX = 0, touchStartY = 0;
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        go(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
     const initial = parseInt((location.hash || '').replace('#', ''), 10);
     show(Number.isFinite(initial) && initial > 0 ? initial - 1 : 0);
   })();
