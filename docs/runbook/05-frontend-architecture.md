@@ -441,6 +441,22 @@ All user-facing success feedback uses PrimeNG `p-toast` via `MessageService`. A 
 
 **Do not** use inline `<span>` text next to buttons or `<p-message severity="success">` banners for save confirmations. Those patterns were removed in favor of the unified toast system. `<p-message>` is still used for inline error display within forms.
 
+## Surfacing error messages from Supabase
+
+Supabase RPC and query errors come back as `PostgrestError` -- a plain object with a `.message` field, **not** a JS `Error` instance. The naive catch pattern `e instanceof Error ? e.message : 'fallback'` silently masks the real reason (e.g. domain-mismatch from `add_tenant_owner`) with a generic fallback.
+
+**Use `extractErrorMessage(err, fallback)` from `core/util/error-message.ts`** in any catch that surfaces a message to the user. It handles `Error`, string, and plain-object-with-`.message` shapes. Example:
+
+```ts
+try {
+  await this.tenantService.addTenantOwner(id, email);
+} catch (e) {
+  this.addOwnerError.set(extractErrorMessage(e, 'Failed to add owner'));
+}
+```
+
+Many older catches still use the buggy `instanceof Error` pattern; convert them when you touch nearby code, but don't sweep them in unrelated changes.
+
 ## Grids and list pages
 
 All five manage-section list pages (companies, products, trials, therapeutic-areas, marker-types) share a single filtering, sorting, and pagination pattern built on PrimeNG `p-table`. Do not add new grids without following this pattern.
