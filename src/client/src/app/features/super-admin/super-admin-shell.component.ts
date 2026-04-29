@@ -18,7 +18,7 @@ interface SuperAdminNavItem {
   standalone: true,
   imports: [RouterOutlet, RouterLink, ButtonModule],
   template: `
-    <div class="sa-shell">
+    <div class="sa-shell admin-brand-scope">
       <!-- Topbar with super-admin badge -->
       <header class="sa-topbar">
         <div class="flex items-center gap-3">

@@ -1,0 +1,40 @@
+/*
+ * Admin chrome brand scope.
+ *
+ * The super-admin and agency portals are platform UI -- chrome the operator
+ * uses to manage other tenants. They should NOT inherit a tenant's or
+ * agency's branded primary color (which can be a pale tint that washes out
+ * primary buttons and active states). Apply `.admin-brand-scope` on the
+ * shell host to lock the scale to the platform's standard teal palette.
+ *
+ * Both --brand-* (Tailwind utilities like bg-brand-600) and --p-primary-*
+ * (PrimeNG component tokens like {primary.600}) cascade from the scope, so
+ * everything inside the shell renders with the same darker teal regardless
+ * of what BrandContextService picked up at bootstrap.
+ */
+
+.admin-brand-scope {
+  --brand-50:  #f0fdfa;
+  --brand-100: #ccfbf1;
+  --brand-200: #99f6e4;
+  --brand-300: #5eead4;
+  --brand-400: #2dd4bf;
+  --brand-500: #14b8a6;
+  --brand-600: #0d9488;
+  --brand-700: #0f766e;
+  --brand-800: #115e59;
+  --brand-900: #134e4a;
+  --brand-950: #042f2e;
+
+  --p-primary-50:  #f0fdfa;
+  --p-primary-100: #ccfbf1;
+  --p-primary-200: #99f6e4;
+  --p-primary-300: #5eead4;
+  --p-primary-400: #2dd4bf;
+  --p-primary-500: #14b8a6;
+  --p-primary-600: #0d9488;
+  --p-primary-700: #0f766e;
+  --p-primary-800: #115e59;
+  --p-primary-900: #134e4a;
+  --p-primary-950: #042f2e;
+}

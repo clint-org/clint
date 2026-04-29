@@ -20,7 +20,7 @@ interface AgencyNavItem {
   standalone: true,
   imports: [RouterOutlet, RouterLink, ButtonModule],
   template: `
-    <div class="agency-shell">
+    <div class="agency-shell admin-brand-scope">
       <!-- Topbar -->
       <header class="agency-topbar">
         <div class="flex items-center gap-3">
