@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow, noarchive">
+<title>Clint -- Partner Notes (Stout)</title>
+<style>
+  :root {
+    --slate-50:  #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --brand-50:  #f0fdfa;
+    --brand-100: #ccfbf1;
+    --brand-200: #99f6e4;
+    --brand-300: #5eead4;
+    --brand-400: #2dd4bf;
+    --brand-500: #14b8a6;
+    --brand-600: #0d9488;
+    --brand-700: #0f766e;
+    --brand-800: #115e59;
+    --brand-900: #134e4a;
+    --red-50:    #fef2f2;
+    --red-600:   #dc2626;
+    --red-700:   #b91c1c;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --green-600: #16a34a;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: var(--font-sans); background: var(--slate-50); color: var(--slate-700); line-height: 1.55; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  .slide { position: absolute; inset: 0; display: none; padding: 56px 72px 72px; background: var(--slate-50); }
+  .slide.active { display: flex; flex-direction: column; }
+  .slide-inner { width: 100%; max-width: 1180px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--amber-600); }
+  .wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .wordmark .logo { width: 22px; height: 22px; }
+  .wordmark .name { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-700); letter-spacing: 0.18em; text-transform: uppercase; }
+  .wordmark .sep { width: 1px; height: 12px; background: var(--slate-300); }
+  .wordmark .meta { font-family: var(--font-mono); font-size: 11px; color: var(--amber-600); letter-spacing: 0.08em; text-transform: uppercase; }
+  .label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 14px; }
+  h1.slide-title { font-size: 38px; font-weight: 700; color: var(--slate-900); line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 18px; max-width: 980px; }
+  h1.slide-title .accent { color: var(--brand-700); }
+  h2.slide-title { font-size: 30px; font-weight: 700; color: var(--slate-900); line-height: 1.2; letter-spacing: -0.005em; margin-bottom: 16px; }
+  .lede { font-size: 16px; color: var(--slate-600); max-width: 880px; margin-bottom: 28px; }
+  .body { flex: 1; min-height: 0; overflow: auto; }
+  ul.points { list-style: none; padding: 0; }
+  ul.points li { position: relative; padding: 12px 0 12px 22px; border-top: 1px solid var(--slate-200); font-size: 15px; color: var(--slate-700); }
+  ul.points li:first-child { border-top: 0; }
+  ul.points li::before { content: ''; position: absolute; left: 0; top: 20px; width: 8px; height: 1px; background: var(--brand-600); }
+  ul.points li strong { color: var(--slate-900); font-weight: 600; }
+  ul.dense { list-style: none; padding: 0; }
+  ul.dense li { padding: 8px 0 8px 18px; position: relative; font-size: 14px; color: var(--slate-700); }
+  ul.dense li::before { content: ''; position: absolute; left: 0; top: 16px; width: 6px; height: 1px; background: var(--slate-400); }
+  ul.dense li strong { color: var(--slate-900); font-weight: 600; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: white; border: 1px solid var(--slate-200); padding: 20px 22px; }
+  .card .card-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--slate-900); margin-bottom: 8px; letter-spacing: -0.005em; }
+  .card p { font-size: 13.5px; color: var(--slate-600); }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data thead th { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--slate-300); background: var(--slate-50); vertical-align: bottom; }
+  table.data tbody td { padding: 11px 12px; border-bottom: 1px solid var(--slate-100); vertical-align: top; color: var(--slate-700); }
+  table.data tbody td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--slate-900); white-space: nowrap; }
+  table.data tbody td strong { color: var(--slate-900); font-weight: 600; }
+  table.data tbody tr.recommended { background: var(--brand-50); }
+  table.data tbody tr.recommended td:first-child { box-shadow: inset 2px 0 0 var(--brand-600); }
+  .pill { display: inline-block; padding: 2px 8px; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--slate-300); color: var(--slate-600); }
+  .pill.brand { border-color: var(--brand-600); color: var(--brand-700); }
+  .pill.amber { border-color: var(--amber-600); color: var(--amber-600); }
+  .pill.red { border-color: var(--red-600); color: var(--red-700); }
+  .quote { border-left: 2px solid var(--brand-600); padding: 6px 0 6px 14px; margin: 12px 0; font-size: 13.5px; color: var(--slate-700); font-style: italic; }
+  .quote cite { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 10.5px; font-style: normal; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; }
+  ol.steps { list-style: none; padding: 0; counter-reset: step; }
+  ol.steps li { position: relative; padding: 14px 0 14px 50px; border-top: 1px solid var(--slate-200); counter-increment: step; font-size: 14px; color: var(--slate-700); }
+  ol.steps li:first-child { border-top: 0; }
+  ol.steps li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 14px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.08em; }
+  ol.steps li strong { color: var(--slate-900); font-weight: 600; }
+  ol.steps li .said { display: block; margin-top: 6px; font-size: 13px; color: var(--slate-600); font-style: italic; padding-left: 12px; border-left: 1px solid var(--brand-300); }
+  ul.anti { list-style: none; padding: 0; }
+  ul.anti li { position: relative; padding: 12px 0 12px 22px; border-top: 1px solid var(--slate-200); font-size: 14.5px; color: var(--slate-700); }
+  ul.anti li:first-child { border-top: 0; }
+  ul.anti li::before { content: '\00d7'; position: absolute; left: 0; top: 11px; font-family: var(--font-mono); font-size: 14px; color: var(--red-600); font-weight: 700; }
+  ul.anti li strong { color: var(--red-700); font-weight: 600; }
+  .pricing-row { display: grid; grid-template-columns: 130px 1fr 130px; align-items: center; gap: 14px; padding: 8px 0; border-top: 1px solid var(--slate-100); font-size: 13px; }
+  .pricing-row:first-child { border-top: 0; }
+  .pricing-row .vendor { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-700); letter-spacing: 0.1em; text-transform: uppercase; }
+  .pricing-row .bar-wrap { position: relative; height: 18px; background: var(--slate-100); }
+  .pricing-row .bar { position: absolute; top: 0; bottom: 0; background: var(--slate-400); }
+  .pricing-row .bar.brand { background: var(--brand-600); }
+  .pricing-row .price { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--slate-900); text-align: right; }
+  .cover { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0 96px; }
+  .cover .big-logo { display: flex; align-items: center; gap: 16px; margin-bottom: 56px; }
+  .cover .big-logo svg { width: 44px; height: 44px; }
+  .cover .big-logo .wordmark-large { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--slate-900); letter-spacing: 0.22em; text-transform: uppercase; }
+  .cover .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--amber-600); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 16px; }
+  .cover h1 { font-size: 56px; font-weight: 700; color: var(--slate-900); line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 24px; max-width: 900px; }
+  .cover h1 .accent { color: var(--brand-700); }
+  .cover .sub { font-size: 18px; color: var(--slate-600); max-width: 720px; margin-bottom: 64px; }
+  .cover .footer-line { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.12em; text-transform: uppercase; }
+  .cover .footer-line .dot { width: 4px; height: 4px; background: var(--slate-300); }
+  .checklist { list-style: none; padding: 0; counter-reset: cl; }
+  .checklist li { counter-increment: cl; display: grid; grid-template-columns: 32px 1fr; gap: 16px; padding: 12px 0; border-top: 1px solid var(--slate-200); font-size: 14px; color: var(--slate-700); }
+  .checklist li:first-child { border-top: 0; }
+  .checklist li::before { content: counter(cl, decimal-leading-zero); font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.08em; padding-top: 2px; }
+  .checklist li strong { color: var(--slate-900); font-weight: 600; }
+  .internal-stripe { position: fixed; top: 3px; left: 0; right: 0; padding: 4px 24px; background: #fef3c7; color: var(--amber-600); font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; text-align: center; z-index: 5; border-bottom: 1px solid #fcd34d; }
+  .chrome { position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; pointer-events: none; z-index: 10; }
+  .chrome > * { pointer-events: auto; }
+  .counter { font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.12em; }
+  .hint { font-family: var(--font-mono); font-size: 10px; color: var(--slate-400); letter-spacing: 0.1em; text-transform: uppercase; }
+  .nav-btns { display: flex; gap: 6px; }
+  .nav-btn { width: 28px; height: 28px; background: white; border: 1px solid var(--slate-300); color: var(--slate-600); font-family: var(--font-mono); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover { border-color: var(--brand-600); color: var(--brand-700); }
+  .nav-btn:disabled { opacity: 0.4; cursor: default; }
+  @media print {
+    body { background: white; overflow: visible; }
+    .deck { width: auto; height: auto; overflow: visible; }
+    .chrome, .internal-stripe { display: none; }
+    .slide { display: flex !important; position: relative; inset: auto; page-break-after: always; width: 11in; height: 8.5in; padding: 36px 48px 48px; }
+    .slide:last-child { page-break-after: auto; }
+    h1.slide-title { font-size: 30px; }
+    h2.slide-title { font-size: 24px; }
+    .cover h1 { font-size: 44px; }
+    .body { overflow: visible; }
+  }
+  @page { size: 11in 8.5in landscape; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="internal-stripe">Internal &middot; Partner notes &middot; Do not share with the MD</div>
+
+<div class="deck" id="deck">
+
+<!-- ============ SLIDE 1: COVER ============ -->
+<section class="slide active">
+  <div class="accent-bar"></div>
+  <div class="cover">
+    <div class="big-logo">
+      <svg viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark-large">Clint</span>
+    </div>
+    <div class="kicker">Internal &middot; Partner notes &middot; Do not share with the MD</div>
+    <h1>Partner brief: <span class="accent">prep for the Stout MD conversation</span>.</h1>
+    <p class="sub">Talking points, what to disclose, what not to say, and how to handle pricing or exclusivity if they come up. This is the prep doc for the partner. The MD sees the briefing deck; the MD does not see this.</p>
+    <div class="footer-line">
+      <span>Prepared 2026-04-29</span>
+      <span class="dot"></span>
+      <span>Confidential</span>
+      <span class="dot"></span>
+      <span>Internal</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2: ORIGIN AND IP ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">01 / Origin and IP</div>
+    <h2 class="slide-title">What was built, by whom, with what.</h2>
+    <p class="lede">This needs to be airtight before the MD conversation, because the COI disclosure is only credible if the IP picture is clean.</p>
+    <div class="body">
+      <div class="grid-2">
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--slate-500);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">Origin</div>
+          <ul class="dense">
+            <li>The partner (CI practice, ownership stake in Stout) flagged recurring pain points and suggested someone build a tool around them.</li>
+            <li>The founder built Clint independently. Code, platform, brand, and IP belong to the founder.</li>
+            <li>The partner contributes ideas, validation, and ongoing advisory. Not co-development.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--slate-500);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">IP ownership</div>
+          <ul class="dense">
+            <li><strong>Code, copyright, trademarks, and data model belong to the founder.</strong></li>
+            <li>Ideas aren't protectable IP under US law &mdash; implementation is. Nothing the partner contributed creates a Stout claim on the asset.</li>
+            <li><strong>Required before any Stout-side conversation:</strong> founder/advisor agreement. Formalizes the partner's stake. Confirms in writing that no Stout time, systems, client data, or deliverables were used to build the platform.</li>
+            <li>This is cheap insurance. It's also what makes the COI disclosure on the next slide credible.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3: COI ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">02 / Conflict of interest</div>
+    <h2 class="slide-title">Disclose, don't conceal.</h2>
+    <p class="lede">The partner has Stout equity (existing) and will have Clint upside (new). The COI is real, and the way to handle it is full disclosure on the record.</p>
+    <div class="body">
+      <ul class="points" style="margin-bottom: 24px;">
+        <li><strong>Disclose the Clint stake to the MD on the record</strong> &mdash; in the first three minutes of the conversation. Not buried, not hinted at.</li>
+        <li><strong>Don't negotiate Stout-side pricing or terms.</strong> Make the introduction. The founder (or a third party) handles negotiation.</li>
+        <li><strong>Recuse from internal Stout meetings</strong> where the Clint deal is being evaluated for purchase.</li>
+      </ul>
+      <div class="quote">
+        "I have a stake in this and I'm bringing it to you anyway because I think it's right for the firm" is a stronger opening than a salesperson cold-calling. The MD is being told this is an insider's recommendation, made transparently. That's a feature, not a problem to manage.
+        <cite>The framing</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4: THE FLOW ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">03 / The MD conversation, in seven steps</div>
+    <h2 class="slide-title">Exploratory, peer-to-peer, honest about state.</h2>
+    <div class="body">
+      <ol class="steps">
+        <li><strong>Open with the gap, not the product.</strong>
+          <span class="said">"We've talked before about how much time the CI team burns on assembly before we get to the strategic read. Same pattern across engagements."</span>
+        </li>
+        <li><strong>Frame the origin honestly. This is the COI disclosure.</strong>
+          <span class="said">"I floated the idea a while back. [Founder] is the one who actually built it. He owns the IP. I'll have a small stake in it &mdash; want to be upfront before I show you anything."</span>
+        </li>
+        <li><strong>What it is, in one sentence.</strong>
+          <span class="said">"A pharma CI platform with structured pipelines, catalysts, and trial data &mdash; analyst time on the strategic read, whitelabel for client deliverables."</span>
+        </li>
+        <li><strong>What's built today.</strong> Live multi-tenant platform. Whitelabel agency / tenant / engagement branding plus custom domains. Structured event model. AI-ready data shape. <em>Be honest about gaps: data coverage, therapeutic depth, SOC 2 status.</em></li>
+        <li><strong>Where it fits at Stout.</strong> Internal: assembly compression. Client-facing: branded live environment, not a static deck. Strategic: ahead of the advisory market on AI-ready CI.</li>
+        <li><strong>The ask.</strong> 30-minute walkthrough with the founder. If it lands, scope a paid pilot on one live engagement.</li>
+        <li><strong>Soft "why now."</strong> "He's going to keep building this. Wanted Stout to have first look." Don't threaten. Just signal the optionality is real.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5: WHAT NOT TO SAY ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">04 / What NOT to say in the first conversation</div>
+    <h2 class="slide-title">Four things to keep off the table.</h2>
+    <div class="body">
+      <ul class="anti">
+        <li><strong>No price.</strong> If asked, redirect: "Pricing is shaped from how Stout would actually use it. Let's get through the walkthrough first." The MD will benchmark to Evaluate ($20&ndash;50K/seat, $100K+/yr enterprise) the moment a number lands. Don't hand them that comparison.</li>
+        <li><strong>No exclusivity offer.</strong> That's a structured discussion after the pilot, with the right people in the room. Don't promise it in the hallway.</li>
+        <li><strong>No downplaying the COI.</strong> Disclose, on the record, in the first three minutes. If it surfaces later, the deal is contaminated.</li>
+        <li><strong>No "we're talking to your competitors."</strong> Even if it's true. The whole point of the partner channel is that this is offered to Stout first.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6: ENGAGEMENT OPTIONS ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">05 / Engagement options if pricing comes up</div>
+    <h2 class="slide-title">Six structures, ranked. Recommend category-exclusive license.</h2>
+    <p class="lede">Reference for the partner only &mdash; do not walk the MD through this in the first conversation.</p>
+    <div class="body">
+      <table class="data">
+        <thead>
+          <tr>
+            <th style="width:38px;">#</th>
+            <th>Option</th>
+            <th>Cost to Stout</th>
+            <th>What founder keeps</th>
+            <th>COI / IP notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">01</td>
+            <td><strong>Annual license, non-exclusive</strong></td>
+            <td class="num">$75K&ndash;500K / yr</td>
+            <td>Right to sell to anyone</td>
+            <td>Cleanest. Lowest COI exposure. Stout's competitors can also buy it.</td>
+          </tr>
+          <tr class="recommended">
+            <td class="num">02</td>
+            <td><strong>Category-exclusive license</strong> <span class="pill brand">Recommended</span><br><span style="font-size:12px;color:var(--slate-500);">Advisory category, 2&ndash;3 yr</span></td>
+            <td class="num">+ $150K&ndash;500K / yr<br><span style="color:var(--slate-500);">premium</span></td>
+            <td>Pharma/biotech direct sales remain open</td>
+            <td>Solves Stout's competitive concern without surrendering pharma TAM. IP stays with founder. Carve-out language matters.</td>
+          </tr>
+          <tr>
+            <td class="num">03</td>
+            <td><strong>Vertical-exclusive</strong> &middot; consulting + IB + PE</td>
+            <td class="num">Higher than #2</td>
+            <td>Pharma direct only</td>
+            <td>Over-broad. PE and IB shops don't compete with Stout on CI engagements.</td>
+          </tr>
+          <tr>
+            <td class="num">04</td>
+            <td><strong>Strategic investment + preferred license</strong></td>
+            <td class="num">Equity check + reduced license</td>
+            <td>Operational control, sell broadly</td>
+            <td>Aligns long-term incentives. Increases COI surface but it's already disclosed. Cash-for-equity, never IP-for-equity.</td>
+          </tr>
+          <tr>
+            <td class="num">05</td>
+            <td><strong>Acquisition / acquihire</strong></td>
+            <td class="num">$X&ndash;Y total</td>
+            <td>Cash + earnout, role at Stout</td>
+            <td>Clean post-deal. Worst for upside (one buyer's ceiling). Loses pharma-direct optionality. Almost certainly the wrong move pre-revenue.</td>
+          </tr>
+          <tr>
+            <td class="num">06</td>
+            <td><strong>Joint venture</strong></td>
+            <td class="num">Setup + revenue split</td>
+            <td>50% upside, partial control</td>
+            <td>Slow, expensive to structure, governance complexity. Skip.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7: RECOMMENDED SEQUENCE ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">06 / Recommended sequence</div>
+    <h2 class="slide-title">Pilot, then license with an exclusivity option. Defer acquisition.</h2>
+    <div class="body">
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-label">Step 01 &middot; Months 1&ndash;3</div>
+          <h3>Paid pilot</h3>
+          <p style="margin-bottom:10px;">Fixed-fee, 60&ndash;90 days, on one live Stout engagement. Surfaces real value and real gaps. Both sides have something concrete to negotiate against.</p>
+          <span class="pill brand">$25K &ndash; $50K</span>
+        </div>
+        <div class="card">
+          <div class="card-label">Step 02 &middot; After the pilot</div>
+          <h3>License + exclusivity option</h3>
+          <p style="margin-bottom:10px;">Convert to a non-exclusive annual license. Attach a 90-day option for Stout to elect category exclusivity at a defined premium. They choose whether to lock out peers, and they know the price upfront.</p>
+          <span class="pill brand">License + option</span>
+        </div>
+        <div class="card">
+          <div class="card-label">Step 03 &middot; Year 2+</div>
+          <h3>Acquisition (only if)</h3>
+          <p style="margin-bottom:10px;">Defer until Year 2 at the earliest. Pre-revenue acquisition pricing anchors on cost-to-build, not strategic value. Bad trade for the founder.</p>
+          <span class="pill amber">Defer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8: EXCLUSIVITY PLAYBOOK ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">07 / Exclusivity without giving up IP</div>
+    <h2 class="slide-title">Stout gets a moat. The founder keeps the asset.</h2>
+    <div class="body">
+      <ul class="points">
+        <li><strong>License the right to use, not the IP itself.</strong> Standard SaaS framing. Clint retains all IP. Stout gets a non-transferable, non-sublicensable right to use within agreed scope.</li>
+        <li><strong>Whitelabel isn't IP transfer.</strong> Stout's branding sits on the surface clients see. The platform, code, data model, and brand below the whitelabel stay with Clint.</li>
+        <li><strong>Exclusivity is a contract term, not an IP transfer.</strong> Time-bound, category-bound, fully reversible. "Clint will not license to other firms in [defined advisory category] during the [2&ndash;3 year] term."</li>
+        <li><strong>Reverse termination right.</strong> If Stout fails to renew or hit a usage minimum, exclusivity lapses immediately. Protects against Stout buying exclusivity, parking the asset, and killing its market.</li>
+        <li><strong>Define the category narrowly.</strong> "Global advisory firms whose primary offering includes pharma transaction support, valuation, or CI consulting." Pharma and biotech direct sales are explicitly carved out.</li>
+        <li><strong>No source code, no data ownership transfer.</strong> Even under exclusivity. Stout gets to use the platform, not to fork it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9: PRICING REFERENCES ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">08 / Pricing reference points</div>
+    <h2 class="slide-title">What buyers say they pay for the incumbents.</h2>
+    <p class="lede">Useful for the partner to know if the MD pushes on price during the meeting. Self-reported by buyers on a public r/biotech thread &mdash; ranges only.</p>
+    <div class="body">
+      <div style="background:white;border:1px solid var(--slate-200);padding:24px;">
+        <div class="pricing-row">
+          <span class="vendor">Evaluate</span>
+          <div class="bar-wrap"><div class="bar" style="left:1%;width:14%;"></div></div>
+          <span class="price">"five digits" &middot; sub-500 co.</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">GlobalData</span>
+          <div class="bar-wrap"><div class="bar" style="left:14%;width:46%;"></div></div>
+          <span class="price">"six digits" &middot; same co.</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">Per seat</span>
+          <div class="bar-wrap"><div class="bar" style="left:3%;width:8%;"></div></div>
+          <span class="price">$20K &ndash; $50K / seat / yr</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">Enterprise</span>
+          <div class="bar-wrap"><div class="bar" style="left:30%;width:65%;"></div></div>
+          <span class="price">$100K &ndash; $1M+ &middot; major pharma</span>
+        </div>
+        <div class="pricing-row" style="border-top:1px solid var(--slate-200);margin-top:6px;padding-top:14px;">
+          <span class="vendor" style="color:var(--brand-700);">Clint &middot; recommended</span>
+          <div class="bar-wrap"><div class="bar brand" style="left:8%;width:18%;"></div></div>
+          <span class="price" style="color:var(--brand-700);">$75K &ndash; $150K practice</span>
+        </div>
+      </div>
+      <div class="quote" style="margin-top:20px;">
+        "Pricing seems far from transparent and I can't tell if I'm getting a great deal on Evaluate or getting ripped off."
+        <cite>r/biotech buyer</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10: PRE-MEETING CHECKLIST ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Partner notes</span>
+    </div>
+    <div class="label">09 / Before the meeting</div>
+    <h2 class="slide-title">Eight things to lock down first.</h2>
+    <div class="body">
+      <ol class="checklist">
+        <li><div><strong>Sign the founder/advisor agreement</strong> between the founder and the partner. Formalizes IP ownership, the partner's stake, and the disclosure framework. Has to happen first.</div></li>
+        <li><div><strong>Practice the disclosure script</strong> from slide 4 step 2. It needs to land in the first three minutes and feel natural, not rehearsed.</div></li>
+        <li><div><strong>Decide pilot scope and price</strong> &mdash; fixed-fee, 60&ndash;90 days, $25K&ndash;$50K. So if the MD asks "what would a trial look like," there's an answer ready.</div></li>
+        <li><div><strong>Identify the right MD.</strong> Name, practice focus, recent pharma CI / valuation / M&amp;A engagements they've worked on.</div></li>
+        <li><div><strong>Pick the demo landscape.</strong> A therapeutic area or competitor set Stout has live work in &mdash; so the walkthrough lands on something the MD already cares about.</div></li>
+        <li><div><strong>Prepare the data coverage answer.</strong> Which sources are in, which are gaps, what the gap-fill plan is. The MD will ask.</div></li>
+        <li><div><strong>Prepare the SOC 2 / provenance answer.</strong> What's true today vs. what's on the roadmap. Advisory firms always ask.</div></li>
+        <li><div><strong>Confirm the MD-facing briefing URL works</strong> on the partner's laptop and phone before the meeting. <code>/internal/stout-briefing.html</code></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</div> <!-- /deck -->
+
+<div class="chrome">
+  <span class="counter" id="counter">01 / 10</span>
+  <span class="hint">&larr; &rarr; &middot; SPACE &middot; P to print</span>
+  <div class="nav-btns">
+    <button class="nav-btn" id="prev">&larr;</button>
+    <button class="nav-btn" id="next">&rarr;</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('counter');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    let idx = 0;
+    const pad = (n) => String(n).padStart(2, '0');
+    function show(i) {
+      idx = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+      counter.textContent = pad(idx + 1) + ' / ' + pad(slides.length);
+      prevBtn.disabled = idx === 0;
+      nextBtn.disabled = idx === slides.length - 1;
+      const body = slides[idx].querySelector('.body');
+      if (body) body.scrollTop = 0;
+      history.replaceState(null, '', '#' + (idx + 1));
+    }
+    function go(delta) { show(idx + delta); }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') { e.preventDefault(); go(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') { e.preventDefault(); go(-1); }
+      else if (e.key === 'Home') { show(0); }
+      else if (e.key === 'End') { show(slides.length - 1); }
+      else if (e.key === 'p' || e.key === 'P') { window.print(); }
+    });
+    prevBtn.addEventListener('click', () => go(-1));
+    nextBtn.addEventListener('click', () => go(1));
+    const initial = parseInt((location.hash || '').replace('#', ''), 10);
+    show(Number.isFinite(initial) && initial > 0 ? initial - 1 : 0);
+  })();
+</script>
+
+</body>
+</html>

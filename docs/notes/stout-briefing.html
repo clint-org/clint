@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow, noarchive">
+<title>Clint -- Stout Briefing</title>
+<style>
+  :root {
+    --slate-50:  #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --brand-50:  #f0fdfa;
+    --brand-100: #ccfbf1;
+    --brand-200: #99f6e4;
+    --brand-300: #5eead4;
+    --brand-400: #2dd4bf;
+    --brand-500: #14b8a6;
+    --brand-600: #0d9488;
+    --brand-700: #0f766e;
+    --brand-800: #115e59;
+    --brand-900: #134e4a;
+    --red-50:    #fef2f2;
+    --red-600:   #dc2626;
+    --red-700:   #b91c1c;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --green-600: #16a34a;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: var(--font-sans); background: var(--slate-50); color: var(--slate-700); line-height: 1.55; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  .slide { position: absolute; inset: 0; display: none; padding: 56px 72px 72px; background: var(--slate-50); }
+  .slide.active { display: flex; flex-direction: column; }
+  .slide-inner { width: 100%; max-width: 1180px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--brand-600); }
+  .wordmark { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .wordmark .logo { width: 22px; height: 22px; }
+  .wordmark .name { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-700); letter-spacing: 0.18em; text-transform: uppercase; }
+  .wordmark .sep { width: 1px; height: 12px; background: var(--slate-300); }
+  .wordmark .meta { font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; }
+  .label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 14px; }
+  h1.slide-title { font-size: 38px; font-weight: 700; color: var(--slate-900); line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 18px; max-width: 980px; }
+  h1.slide-title .accent { color: var(--brand-700); }
+  h2.slide-title { font-size: 30px; font-weight: 700; color: var(--slate-900); line-height: 1.2; letter-spacing: -0.005em; margin-bottom: 16px; }
+  .lede { font-size: 16px; color: var(--slate-600); max-width: 880px; margin-bottom: 28px; }
+  .body { flex: 1; min-height: 0; overflow: auto; }
+  ul.points { list-style: none; padding: 0; }
+  ul.points li { position: relative; padding: 12px 0 12px 22px; border-top: 1px solid var(--slate-200); font-size: 15px; color: var(--slate-700); }
+  ul.points li:first-child { border-top: 0; }
+  ul.points li::before { content: ''; position: absolute; left: 0; top: 20px; width: 8px; height: 1px; background: var(--brand-600); }
+  ul.points li strong { color: var(--slate-900); font-weight: 600; }
+  ul.dense { list-style: none; padding: 0; }
+  ul.dense li { padding: 8px 0 8px 18px; position: relative; font-size: 14px; color: var(--slate-700); }
+  ul.dense li::before { content: ''; position: absolute; left: 0; top: 16px; width: 6px; height: 1px; background: var(--slate-400); }
+  ul.dense li strong { color: var(--slate-900); font-weight: 600; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: white; border: 1px solid var(--slate-200); padding: 20px 22px; }
+  .card .card-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--slate-900); margin-bottom: 8px; letter-spacing: -0.005em; }
+  .card p { font-size: 13.5px; color: var(--slate-600); }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data thead th { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--slate-300); background: var(--slate-50); vertical-align: bottom; }
+  table.data tbody td { padding: 11px 12px; border-bottom: 1px solid var(--slate-100); vertical-align: top; color: var(--slate-700); }
+  table.data tbody td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--slate-900); white-space: nowrap; }
+  table.data tbody td strong { color: var(--slate-900); font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 8px; font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--slate-300); color: var(--slate-600); }
+  .pill.brand { border-color: var(--brand-600); color: var(--brand-700); }
+  .pill.amber { border-color: var(--amber-600); color: var(--amber-600); }
+  .pill.red { border-color: var(--red-600); color: var(--red-700); }
+  .quote { border-left: 2px solid var(--brand-600); padding: 6px 0 6px 14px; margin: 12px 0; font-size: 13.5px; color: var(--slate-700); font-style: italic; }
+  .quote cite { display: block; margin-top: 4px; font-family: var(--font-mono); font-size: 10.5px; font-style: normal; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; }
+  .pricing-row { display: grid; grid-template-columns: 130px 1fr 130px; align-items: center; gap: 14px; padding: 8px 0; border-top: 1px solid var(--slate-100); font-size: 13px; }
+  .pricing-row:first-child { border-top: 0; }
+  .pricing-row .vendor { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-700); letter-spacing: 0.1em; text-transform: uppercase; }
+  .pricing-row .bar-wrap { position: relative; height: 18px; background: var(--slate-100); }
+  .pricing-row .bar { position: absolute; top: 0; bottom: 0; background: var(--slate-400); }
+  .pricing-row .bar.brand { background: var(--brand-600); }
+  .pricing-row .price { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--slate-900); text-align: right; }
+  .cover { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0 96px; }
+  .cover .big-logo { display: flex; align-items: center; gap: 16px; margin-bottom: 56px; }
+  .cover .big-logo svg { width: 44px; height: 44px; }
+  .cover .big-logo .wordmark-large { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--slate-900); letter-spacing: 0.22em; text-transform: uppercase; }
+  .cover .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--brand-700); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 16px; }
+  .cover h1 { font-size: 56px; font-weight: 700; color: var(--slate-900); line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 24px; max-width: 900px; }
+  .cover h1 .accent { color: var(--brand-700); }
+  .cover .sub { font-size: 18px; color: var(--slate-600); max-width: 720px; margin-bottom: 64px; }
+  .cover .footer-line { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.12em; text-transform: uppercase; }
+  .cover .footer-line .dot { width: 4px; height: 4px; background: var(--slate-300); }
+  .chrome { position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; pointer-events: none; z-index: 10; }
+  .chrome > * { pointer-events: auto; }
+  .counter { font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.12em; }
+  .hint { font-family: var(--font-mono); font-size: 10px; color: var(--slate-400); letter-spacing: 0.1em; text-transform: uppercase; }
+  .nav-btns { display: flex; gap: 6px; }
+  .nav-btn { width: 28px; height: 28px; background: white; border: 1px solid var(--slate-300); color: var(--slate-600); font-family: var(--font-mono); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover { border-color: var(--brand-600); color: var(--brand-700); }
+  .nav-btn:disabled { opacity: 0.4; cursor: default; }
+  @media print {
+    body { background: white; overflow: visible; }
+    .deck { width: auto; height: auto; overflow: visible; }
+    .chrome { display: none; }
+    .slide { display: flex !important; position: relative; inset: auto; page-break-after: always; width: 11in; height: 8.5in; padding: 36px 48px 48px; }
+    .slide:last-child { page-break-after: auto; }
+    h1.slide-title { font-size: 30px; }
+    h2.slide-title { font-size: 24px; }
+    .cover h1 { font-size: 44px; }
+    .body { overflow: visible; }
+  }
+  @page { size: 11in 8.5in landscape; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ============ SLIDE 1: COVER ============ -->
+<section class="slide active">
+  <div class="accent-bar"></div>
+  <div class="cover">
+    <div class="big-logo">
+      <svg viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="wordmark-large">Clint</span>
+    </div>
+    <div class="kicker">For Stout &middot; Competitive Intelligence Practice</div>
+    <h1>A competitive intelligence platform <span class="accent">for pharma</span>.</h1>
+    <p class="sub">A briefing on Clint &mdash; what it is, where it could fit alongside Stout's competitive and market intelligence work, and what a first engagement could look like.</p>
+    <div class="footer-line">
+      <span>Prepared 2026-04-29</span>
+      <span class="dot"></span>
+      <span>For discussion</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2: THE OPPORTUNITY ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">01 / What Clint is, in three pieces</div>
+    <h1 class="slide-title">Three things this could do for Stout's pharma practice.</h1>
+    <div class="body">
+      <div class="grid-3" style="margin-top: 16px;">
+        <div class="card">
+          <div class="card-label">Analyst time</div>
+          <h3>Time goes to interpretation, not assembly</h3>
+          <p>Pipelines, catalysts, trials, and competitor events come pre-structured and source-cited. Hours that today get spent gathering and formatting can shift to interpreting what the data means.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">Whitelabel</div>
+          <h3>A Stout-branded site per client</h3>
+          <p>Each engagement can run as a Stout-branded Clint instance at a custom domain. Agency, tenant, and per-engagement branding are built in.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">AI integration</div>
+          <h3>Structured for AI workflows from day one</h3>
+          <p>Events are stored as normalized, source-cited records &mdash; the prerequisite any AI workflow needs on this data, already done. Tenant API and MCP access are on the roadmap so Claude or Copilot can query Clint directly. Clint-native generation comes after that.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3: WHAT CLINT IS ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">02 / How it's built</div>
+    <h2 class="slide-title">The data model is pharma-shaped, not generic.</h2>
+    <div class="body">
+      <ul class="points">
+        <li><strong>Structured records, not free text.</strong> Pipelines, assets, clinical trials, catalysts, and portfolios are stored as structured records. Not notes, not PDFs.</li>
+        <li><strong>Events attach to assets.</strong> Every change &mdash; readouts, regulatory actions, approvals, label changes, deal activity &mdash; lands on the right asset as a typed, dated, source-cited record.</li>
+        <li><strong>Visual hierarchy.</strong> Phase bars, color-coded markers, and a company-and-product hierarchy let a reader find the competitive read in seconds.</li>
+        <li><strong>One data source, multiple consumers.</strong> The interface is one consumer of the data. Exports, briefing decks, client notices, and AI workflows are others. All read from the same source.</li>
+        <li><strong>Citations on every event.</strong> Source URLs and dates are attached at ingest, so anything generated from the data can be traced back. This is what API access, MCP integration, and Clint-native AI all build on.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4: WHAT IT MEANS FOR STOUT ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">03 / What this changes for Stout</div>
+    <h2 class="slide-title">Five concrete shifts.</h2>
+    <div class="body">
+      <ul class="points">
+        <li><strong>Live data.</strong> The competitive landscape on any asset or therapeutic area is current to the last event ingested. The strategic read sits on data that's current, not on a research sprint from two weeks ago.</li>
+        <li><strong>AI workflows.</strong> Today, Stout analysts can export structured data from Clint into Claude, Copilot, or whatever AI tool the firm is using. On the roadmap: a tenant API and an MCP server so those tools can query Clint directly. After that: brief generation and scenario analysis built into Clint itself.</li>
+        <li><strong>Whitelabel deliverable.</strong> Each client engagement can run as a Stout-branded Clint site at a custom domain. Agency, tenant, and per-engagement branding are all supported.</li>
+        <li><strong>Engagement model.</strong> Today, recurring CI work is delivered as a quarterly deck. With Clint, the deliverable is a Stout-branded environment the client uses through the quarter, with Stout's analysis and recommendations layered into it.</li>
+        <li><strong>Position.</strong> Evaluate, Citeline, and GlobalData are flat data sources. Other advisory firms still deliver CI as decks. No one in advisory is delivering CI as a whitelabel, AI-ready platform yet. Stout would be first.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5: WHERE IT FITS ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">04 / Where Clint shows up at Stout</div>
+    <h2 class="slide-title">Internal use, client deliverable, market position.</h2>
+    <div class="body">
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-label">Internal use</div>
+          <h3>Less assembly, more analysis</h3>
+          <p>The competitive read on a program is already structured when the engagement starts. Junior analyst time on assembly drops; senior analyst time on interpretation grows. The mix shifts toward higher-margin work.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">Client deliverable</div>
+          <h3>Stout-branded site, not a deck</h3>
+          <p>The deliverable is a Stout-branded site the client logs into through the engagement. Stout's curation, annotations, and recommendations sit alongside the underlying data, so the client sees the analysis attached to the events.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">Market position</div>
+          <h3>Differentiated offering</h3>
+          <p>No advisory firm delivers CI this way today. The platform itself becomes part of Stout's pitchbook differentiation, and clients are stickier than they would be on a recurring deck cadence.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6: COMPETITOR PRICING ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">05 / What the incumbents charge</div>
+    <h2 class="slide-title">Pricing reference points from pharma buyers.</h2>
+    <p class="lede">Self-reported by buyers in pharma BD, R&amp;D, and commercial roles, on a public r/biotech thread. Published prices don't exist for these tools &mdash; every deal is bespoke. Ranges only.</p>
+    <div class="body">
+      <div style="background:white;border:1px solid var(--slate-200);padding:24px;">
+        <div class="pricing-row">
+          <span class="vendor">Evaluate</span>
+          <div class="bar-wrap"><div class="bar" style="left:1%;width:14%;"></div></div>
+          <span class="price">"five digits" &middot; sub-500 co.</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">GlobalData</span>
+          <div class="bar-wrap"><div class="bar" style="left:14%;width:46%;"></div></div>
+          <span class="price">"six digits" &middot; same co.</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">Per seat</span>
+          <div class="bar-wrap"><div class="bar" style="left:3%;width:8%;"></div></div>
+          <span class="price">$20K &ndash; $50K / seat / yr</span>
+        </div>
+        <div class="pricing-row">
+          <span class="vendor">Enterprise</span>
+          <div class="bar-wrap"><div class="bar" style="left:30%;width:65%;"></div></div>
+          <span class="price">$100K &ndash; $1M+ &middot; major pharma</span>
+        </div>
+      </div>
+      <div class="quote" style="margin-top:20px;">
+        "Pricing seems far from transparent and I can't tell if I'm getting a great deal on Evaluate or getting ripped off."
+        <cite>r/biotech buyer</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7: COMPETITOR FOCUS ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">06 / What each one focuses on</div>
+    <h2 class="slide-title">Each platform has a different focus. None of them offer whitelabel or AI-ready data.</h2>
+    <div class="body">
+      <table class="data">
+        <thead>
+          <tr><th>Platform</th><th>Primary focus</th><th>Notable</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Evaluate</strong></td><td>Sales forecasts, commercial data, competitor insights, epi data</td><td>Most commercial-leaning of the big three</td></tr>
+          <tr><td><strong>Citeline</strong> <span style="color:var(--slate-500);">(formerly Pharma Intelligence)</span></td><td>R&amp;D, clinical trials, early research</td><td>PinkSheet "unparalleled" for regulatory milestones (approvals, amendments, CRLs)</td></tr>
+          <tr><td><strong>GlobalData</strong></td><td>Broad coverage overlapping Evaluate + Citeline</td><td><span class="pill red">Quality issues</span> "inaccurate or out of date"</td></tr>
+          <tr><td><strong>Cortellis</strong></td><td>Preclinical + clinical, dev status, patents, regulatory</td><td>Closer to Citeline; multiple ownership changes</td></tr>
+          <tr><td><strong>DRG</strong></td><td>BD deal comps, search &amp; eval, NPV, market sizing</td><td>Specifically for BD workflows</td></tr>
+          <tr><td><strong>TA Scan</strong></td><td>Competitive landscape, site identification, strategic feasibility</td><td>Lesser-known, better data quality than the incumbents</td></tr>
+          <tr><td><strong>Hanson Wade</strong></td><td>Niche modality databases (ADC, bispecific)</td><td>Deep but narrow</td></tr>
+          <tr><td><strong>BioWorld</strong></td><td>News-leaning</td><td>Good for ongoing coverage</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8: PAIN POINTS & WEDGE ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">07 / What buyers already complain about</div>
+    <h2 class="slide-title">The pain points buyers report &mdash; and where Clint sits against them.</h2>
+    <div class="body">
+      <div class="grid-2">
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--slate-500);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">Buyer complaints</div>
+          <ul class="dense">
+            <li><strong>Clunky interfaces.</strong> Said about all three big platforms.</li>
+            <li><strong>Stale or inaccurate data.</strong> GlobalData by name. One commenter: "miss at least 20% of updated information if you trust just one platform."</li>
+            <li><strong>Multi-platform redundancy.</strong> Buyers pay for two or more and manually cross-check.</li>
+            <li><strong>Aggressive sales.</strong> GlobalData &mdash; "the most aggressive, obnoxious salesforce in our biz."</li>
+            <li><strong>Opaque pricing.</strong> No published prices, every deal is bespoke.</li>
+            <li><strong>Vendor instability.</strong> Cortellis has changed hands multiple times.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--brand-700);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">Where Clint sits against this</div>
+          <ul class="dense">
+            <li><strong>Coverage.</strong> Clint isn't pitched as a replacement for Evaluate or Citeline. It's where Stout's curated and annotated view sits on top of those sources, with the strategic read attached.</li>
+            <li><strong>Interface.</strong> Buyers themselves describe the incumbents as clunky. That's a real opening, not marketing language.</li>
+            <li><strong>Provenance.</strong> Source citations on every event. Required for output that gets attached to a fairness opinion or a board memo.</li>
+            <li><strong>The combination.</strong> No incumbent offers whitelabel and AI-ready data together. That's the gap Clint fills.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9: HOW THIS CHANGES THE DELIVERABLE ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">08 / What the client deliverable looks like</div>
+    <h2 class="slide-title">Decks don't go away. They get shorter and more strategic.</h2>
+    <p class="lede">The data review portion is already continuous in the platform, so the quarterly briefing becomes "here is what we recommend you do" instead of "here is what happened."</p>
+    <div class="body">
+      <div class="grid-2">
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--slate-500);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">What's in the platform</div>
+          <ul class="dense">
+            <li><strong>Curation.</strong> Watchlist, competitor set, asset prioritization, therapeutic-area framing &mdash; Stout's domain expertise applied.</li>
+            <li><strong>Annotation.</strong> Each meaningful event carries a Stout note: why it matters, what it shifts, what it implies.</li>
+            <li><strong>Strategy.</strong> Scenario analysis, deal implications, recommendations &mdash; alongside the events that triggered them, all branded as Stout's work.</li>
+            <li><strong>Switching cost.</strong> Watchlists, annotations, history, and scenario models live inside the Stout-branded environment. Leaving means losing institutional memory &mdash; which doesn't happen with static decks.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-label" style="font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--brand-700);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;">What changes for Stout</div>
+          <ul class="dense">
+            <li><strong>Cadence.</strong> Quarterly bursts become continuous presence in the client's workflow. Stout doesn't go dark for ten weeks at a time.</li>
+            <li><strong>Briefings.</strong> Shorter and more strategic. The data review is already continuous in the platform, so the meeting is for recommendations and decisions.</li>
+            <li><strong>Engagements.</strong> Recurring deck cadence is fragile &mdash; clients judge the relationship by one artifact per quarter. A live branded environment is harder to walk away from.</li>
+            <li><strong>Margin mix.</strong> Junior assembly time compresses. Senior strategic time fills the engagement, and that's the higher-margin work.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10: RECOMMENDED PATH ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">09 / How an engagement could start</div>
+    <h2 class="slide-title">Pilot first, then a structured engagement.</h2>
+    <div class="body">
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-label">Step 01 &middot; Months 1&ndash;3</div>
+          <h3>Paid pilot</h3>
+          <p>Fixed-fee, time-bounded, on a single live Stout engagement. Both sides see what works and where the gaps are. The pilot ends with a real client deliverable.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">Step 02 &middot; After the pilot</div>
+          <h3>Annual engagement</h3>
+          <p>Convert into a practice license shaped to how Stout actually used Clint during the pilot. Pricing and scope are built from observed use, not pitched in advance.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">Step 03 &middot; Optional</div>
+          <h3>Exclusivity</h3>
+          <p>If Stout wants to keep this out of competing advisory firms' hands, a structured discussion about category exclusivity in advisory &mdash; on terms that work for both sides. Not a Day-1 conversation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 11: NEXT STEP ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <span class="meta">Stout Briefing</span>
+    </div>
+    <div class="label">10 / Next step</div>
+    <h1 class="slide-title">A 30-minute walkthrough on <span class="accent">a landscape Stout cares about</span>.</h1>
+    <p class="lede">Pick a therapeutic area or competitor set Stout has live work in. We'll build the Clint view of it ahead of the call and walk through it together.</p>
+    <div class="body">
+      <ul class="points">
+        <li><strong>Format.</strong> 30 minutes, screen share, live platform. No slides.</li>
+        <li><strong>Content.</strong> A real competitive landscape on something Stout actually works on &mdash; pre-built so the conversation is about what Clint shows, not how to drive it.</li>
+        <li><strong>Outcome.</strong> If the walkthrough lands, we scope a paid pilot on one current engagement.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div> <!-- /deck -->
+
+<div class="chrome">
+  <span class="counter" id="counter">01 / 11</span>
+  <span class="hint">&larr; &rarr; &middot; SPACE to advance &middot; P to print</span>
+  <div class="nav-btns">
+    <button class="nav-btn" id="prev">&larr;</button>
+    <button class="nav-btn" id="next">&rarr;</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('counter');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    let idx = 0;
+    const pad = (n) => String(n).padStart(2, '0');
+    function show(i) {
+      idx = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+      counter.textContent = pad(idx + 1) + ' / ' + pad(slides.length);
+      prevBtn.disabled = idx === 0;
+      nextBtn.disabled = idx === slides.length - 1;
+      const body = slides[idx].querySelector('.body');
+      if (body) body.scrollTop = 0;
+      history.replaceState(null, '', '#' + (idx + 1));
+    }
+    function go(delta) { show(idx + delta); }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'j') { e.preventDefault(); go(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') { e.preventDefault(); go(-1); }
+      else if (e.key === 'Home') { show(0); }
+      else if (e.key === 'End') { show(slides.length - 1); }
+      else if (e.key === 'p' || e.key === 'P') { window.print(); }
+    });
+    prevBtn.addEventListener('click', () => go(-1));
+    nextBtn.addEventListener('click', () => go(1));
+    const initial = parseInt((location.hash || '').replace('#', ''), 10);
+    show(Number.isFinite(initial) && initial > 0 ? initial - 1 : 0);
+  })();
+</script>
+
+</body>
+</html>

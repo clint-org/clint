@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="googlebot" content="noindex, nofollow, noarchive" />
-    <title>Clint -- Stout Briefing</title>
+    <title>Clint -- Partner Notes (Stout)</title>
     <style>
       :root {
         --slate-50: #f8fafc;
@@ -86,7 +86,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: var(--brand-600);
+        background: var(--amber-600);
       }
       .wordmark {
         display: flex;
@@ -114,7 +114,7 @@
       .wordmark .meta {
         font-family: var(--font-mono);
         font-size: 11px;
-        color: var(--slate-500);
+        color: var(--amber-600);
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
@@ -277,6 +277,12 @@
         color: var(--slate-900);
         font-weight: 600;
       }
+      table.data tbody tr.recommended {
+        background: var(--brand-50);
+      }
+      table.data tbody tr.recommended td:first-child {
+        box-shadow: inset 2px 0 0 var(--brand-600);
+      }
       .pill {
         display: inline-block;
         padding: 2px 8px;
@@ -317,6 +323,74 @@
         color: var(--slate-500);
         letter-spacing: 0.08em;
         text-transform: uppercase;
+      }
+      ol.steps {
+        list-style: none;
+        padding: 0;
+        counter-reset: step;
+      }
+      ol.steps li {
+        position: relative;
+        padding: 14px 0 14px 50px;
+        border-top: 1px solid var(--slate-200);
+        counter-increment: step;
+        font-size: 14px;
+        color: var(--slate-700);
+      }
+      ol.steps li:first-child {
+        border-top: 0;
+      }
+      ol.steps li::before {
+        content: counter(step, decimal-leading-zero);
+        position: absolute;
+        left: 0;
+        top: 14px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.08em;
+      }
+      ol.steps li strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      ol.steps li .said {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--slate-600);
+        font-style: italic;
+        padding-left: 12px;
+        border-left: 1px solid var(--brand-300);
+      }
+      ul.anti {
+        list-style: none;
+        padding: 0;
+      }
+      ul.anti li {
+        position: relative;
+        padding: 12px 0 12px 22px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 14.5px;
+        color: var(--slate-700);
+      }
+      ul.anti li:first-child {
+        border-top: 0;
+      }
+      ul.anti li::before {
+        content: '\00d7';
+        position: absolute;
+        left: 0;
+        top: 11px;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        color: var(--red-600);
+        font-weight: 700;
+      }
+      ul.anti li strong {
+        color: var(--red-700);
+        font-weight: 600;
       }
       .pricing-row {
         display: grid;
@@ -387,7 +461,7 @@
       .cover .kicker {
         font-family: var(--font-mono);
         font-size: 11px;
-        color: var(--brand-700);
+        color: var(--amber-600);
         letter-spacing: 0.18em;
         text-transform: uppercase;
         margin-bottom: 16px;
@@ -424,6 +498,54 @@
         width: 4px;
         height: 4px;
         background: var(--slate-300);
+      }
+      .checklist {
+        list-style: none;
+        padding: 0;
+        counter-reset: cl;
+      }
+      .checklist li {
+        counter-increment: cl;
+        display: grid;
+        grid-template-columns: 32px 1fr;
+        gap: 16px;
+        padding: 12px 0;
+        border-top: 1px solid var(--slate-200);
+        font-size: 14px;
+        color: var(--slate-700);
+      }
+      .checklist li:first-child {
+        border-top: 0;
+      }
+      .checklist li::before {
+        content: counter(cl, decimal-leading-zero);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.08em;
+        padding-top: 2px;
+      }
+      .checklist li strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      .internal-stripe {
+        position: fixed;
+        top: 3px;
+        left: 0;
+        right: 0;
+        padding: 4px 24px;
+        background: #fef3c7;
+        color: var(--amber-600);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-align: center;
+        z-index: 5;
+        border-bottom: 1px solid #fcd34d;
       }
       .chrome {
         position: fixed;
@@ -488,7 +610,8 @@
           height: auto;
           overflow: visible;
         }
-        .chrome {
+        .chrome,
+        .internal-stripe {
           display: none;
         }
         .slide {
@@ -523,6 +646,10 @@
     </style>
   </head>
   <body>
+    <div class="internal-stripe">
+      Internal &middot; Partner notes &middot; Do not share with the MD
+    </div>
+
     <div class="deck" id="deck">
       <!-- ============ SLIDE 1: COVER ============ -->
       <section class="slide active">
@@ -557,21 +684,26 @@
             </svg>
             <span class="wordmark-large">Clint</span>
           </div>
-          <div class="kicker">For Stout &middot; Competitive Intelligence Practice</div>
-          <h1>A competitive intelligence platform <span class="accent">for pharma</span>.</h1>
+          <div class="kicker">
+            Internal &middot; Partner notes &middot; Do not share with the MD
+          </div>
+          <h1>Partner brief: <span class="accent">prep for the Stout MD conversation</span>.</h1>
           <p class="sub">
-            A briefing on Clint &mdash; what it is, where it could fit alongside Stout's competitive
-            and market intelligence work, and what a first engagement could look like.
+            Talking points, what to disclose, what not to say, and how to handle pricing or
+            exclusivity if they come up. This is the prep doc for the partner. The MD sees the
+            briefing deck; the MD does not see this.
           </p>
           <div class="footer-line">
             <span>Prepared 2026-04-29</span>
             <span class="dot"></span>
-            <span>For discussion</span>
+            <span>Confidential</span>
+            <span class="dot"></span>
+            <span>Internal</span>
           </div>
         </div>
       </section>
 
-      <!-- ============ SLIDE 2: THE OPPORTUNITY ============ -->
+      <!-- ============ SLIDE 2: ORIGIN AND IP ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -604,45 +736,88 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">01 / What Clint is, in three pieces</div>
-          <h1 class="slide-title">Three things this could do for Stout's pharma practice.</h1>
+          <div class="label">01 / Origin and IP</div>
+          <h2 class="slide-title">What was built, by whom, with what.</h2>
+          <p class="lede">
+            This needs to be airtight before the MD conversation, because the COI disclosure is only
+            credible if the IP picture is clean.
+          </p>
           <div class="body">
-            <div class="grid-3" style="margin-top: 16px">
-              <div class="card">
-                <div class="card-label">Analyst time</div>
-                <h3>Time goes to interpretation, not assembly</h3>
-                <p>
-                  Pipelines, catalysts, trials, and competitor events come pre-structured and
-                  source-cited. Hours that today get spent gathering and formatting can shift to
-                  interpreting what the data means.
-                </p>
+            <div class="grid-2">
+              <div>
+                <div
+                  class="card-label"
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: var(--slate-500);
+                    letter-spacing: 0.16em;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                  "
+                >
+                  Origin
+                </div>
+                <ul class="dense">
+                  <li>
+                    The partner (CI practice, ownership stake in Stout) flagged recurring pain
+                    points and suggested someone build a tool around them.
+                  </li>
+                  <li>
+                    The founder built Clint independently. Code, platform, brand, and IP belong to
+                    the founder.
+                  </li>
+                  <li>
+                    The partner contributes ideas, validation, and ongoing advisory. Not
+                    co-development.
+                  </li>
+                </ul>
               </div>
-              <div class="card">
-                <div class="card-label">Whitelabel</div>
-                <h3>A Stout-branded site per client</h3>
-                <p>
-                  Each engagement can run as a Stout-branded Clint instance at a custom domain.
-                  Agency, tenant, and per-engagement branding are built in.
-                </p>
-              </div>
-              <div class="card">
-                <div class="card-label">AI integration</div>
-                <h3>Structured for AI workflows from day one</h3>
-                <p>
-                  Events are stored as normalized, source-cited records &mdash; the prerequisite any
-                  AI workflow needs on this data, already done. Tenant API and MCP access are on the
-                  roadmap so Claude or Copilot can query Clint directly. Clint-native generation
-                  comes after that.
-                </p>
+              <div>
+                <div
+                  class="card-label"
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: var(--slate-500);
+                    letter-spacing: 0.16em;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                  "
+                >
+                  IP ownership
+                </div>
+                <ul class="dense">
+                  <li>
+                    <strong
+                      >Code, copyright, trademarks, and data model belong to the founder.</strong
+                    >
+                  </li>
+                  <li>
+                    Ideas aren't protectable IP under US law &mdash; implementation is. Nothing the
+                    partner contributed creates a Stout claim on the asset.
+                  </li>
+                  <li>
+                    <strong>Required before any Stout-side conversation:</strong> founder/advisor
+                    agreement. Formalizes the partner's stake. Confirms in writing that no Stout
+                    time, systems, client data, or deliverables were used to build the platform.
+                  </li>
+                  <li>
+                    This is cheap insurance. It's also what makes the COI disclosure on the next
+                    slide credible.
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ============ SLIDE 3: WHAT CLINT IS ============ -->
+      <!-- ============ SLIDE 3: COI ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -675,42 +850,189 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">02 / How it's built</div>
-          <h2 class="slide-title">The data model is pharma-shaped, not generic.</h2>
+          <div class="label">02 / Conflict of interest</div>
+          <h2 class="slide-title">Disclose, don't conceal.</h2>
+          <p class="lede">
+            The partner has Stout equity (existing) and will have Clint upside (new). The COI is
+            real, and the way to handle it is full disclosure on the record.
+          </p>
           <div class="body">
-            <ul class="points">
+            <ul class="points" style="margin-bottom: 24px">
               <li>
-                <strong>Structured records, not free text.</strong> Pipelines, assets, clinical
-                trials, catalysts, and portfolios are stored as structured records. Not notes, not
-                PDFs.
+                <strong>Disclose the Clint stake to the MD on the record</strong> &mdash; in the
+                first three minutes of the conversation. Not buried, not hinted at.
               </li>
               <li>
-                <strong>Events attach to assets.</strong> Every change &mdash; readouts, regulatory
-                actions, approvals, label changes, deal activity &mdash; lands on the right asset as
-                a typed, dated, source-cited record.
+                <strong>Don't negotiate Stout-side pricing or terms.</strong> Make the introduction.
+                The founder (or a third party) handles negotiation.
               </li>
               <li>
-                <strong>Visual hierarchy.</strong> Phase bars, color-coded markers, and a
-                company-and-product hierarchy let a reader find the competitive read in seconds.
+                <strong>Recuse from internal Stout meetings</strong> where the Clint deal is being
+                evaluated for purchase.
+              </li>
+            </ul>
+            <div class="quote">
+              "I have a stake in this and I'm bringing it to you anyway because I think it's right
+              for the firm" is a stronger opening than a salesperson cold-calling. The MD is being
+              told this is an insider's recommendation, made transparently. That's a feature, not a
+              problem to manage.
+              <cite>The framing</cite>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SLIDE 4: THE FLOW ============ -->
+      <section class="slide">
+        <div class="accent-bar"></div>
+        <div class="slide-inner">
+          <div class="wordmark">
+            <svg class="logo" viewBox="0 0 140 140" fill="none">
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="#0d9488"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="name">Clint</span>
+            <span class="sep"></span>
+            <span class="meta">Partner notes</span>
+          </div>
+          <div class="label">03 / The MD conversation, in seven steps</div>
+          <h2 class="slide-title">Exploratory, peer-to-peer, honest about state.</h2>
+          <div class="body">
+            <ol class="steps">
+              <li>
+                <strong>Open with the gap, not the product.</strong>
+                <span class="said"
+                  >"We've talked before about how much time the CI team burns on assembly before we
+                  get to the strategic read. Same pattern across engagements."</span
+                >
               </li>
               <li>
-                <strong>One data source, multiple consumers.</strong> The interface is one consumer
-                of the data. Exports, briefing decks, client notices, and AI workflows are others.
-                All read from the same source.
+                <strong>Frame the origin honestly. This is the COI disclosure.</strong>
+                <span class="said"
+                  >"I floated the idea a while back. [Founder] is the one who actually built it. He
+                  owns the IP. I'll have a small stake in it &mdash; want to be upfront before I
+                  show you anything."</span
+                >
               </li>
               <li>
-                <strong>Citations on every event.</strong> Source URLs and dates are attached at
-                ingest, so anything generated from the data can be traced back. This is what API
-                access, MCP integration, and Clint-native AI all build on.
+                <strong>What it is, in one sentence.</strong>
+                <span class="said"
+                  >"A pharma CI platform with structured pipelines, catalysts, and trial data
+                  &mdash; analyst time on the strategic read, whitelabel for client
+                  deliverables."</span
+                >
+              </li>
+              <li>
+                <strong>What's built today.</strong> Live multi-tenant platform. Whitelabel agency /
+                tenant / engagement branding plus custom domains. Structured event model. AI-ready
+                data shape.
+                <em>Be honest about gaps: data coverage, therapeutic depth, SOC 2 status.</em>
+              </li>
+              <li>
+                <strong>Where it fits at Stout.</strong> Internal: assembly compression.
+                Client-facing: branded live environment, not a static deck. Strategic: ahead of the
+                advisory market on AI-ready CI.
+              </li>
+              <li>
+                <strong>The ask.</strong> 30-minute walkthrough with the founder. If it lands, scope
+                a paid pilot on one live engagement.
+              </li>
+              <li>
+                <strong>Soft "why now."</strong> "He's going to keep building this. Wanted Stout to
+                have first look." Don't threaten. Just signal the optionality is real.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SLIDE 5: WHAT NOT TO SAY ============ -->
+      <section class="slide">
+        <div class="accent-bar"></div>
+        <div class="slide-inner">
+          <div class="wordmark">
+            <svg class="logo" viewBox="0 0 140 140" fill="none">
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="#0d9488"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="name">Clint</span>
+            <span class="sep"></span>
+            <span class="meta">Partner notes</span>
+          </div>
+          <div class="label">04 / What NOT to say in the first conversation</div>
+          <h2 class="slide-title">Four things to keep off the table.</h2>
+          <div class="body">
+            <ul class="anti">
+              <li>
+                <strong>No price.</strong> If asked, redirect: "Pricing is shaped from how Stout
+                would actually use it. Let's get through the walkthrough first." The MD will
+                benchmark to Evaluate ($20&ndash;50K/seat, $100K+/yr enterprise) the moment a number
+                lands. Don't hand them that comparison.
+              </li>
+              <li>
+                <strong>No exclusivity offer.</strong> That's a structured discussion after the
+                pilot, with the right people in the room. Don't promise it in the hallway.
+              </li>
+              <li>
+                <strong>No downplaying the COI.</strong> Disclose, on the record, in the first three
+                minutes. If it surfaces later, the deal is contaminated.
+              </li>
+              <li>
+                <strong>No "we're talking to your competitors."</strong> Even if it's true. The
+                whole point of the partner channel is that this is offered to Stout first.
               </li>
             </ul>
           </div>
         </div>
       </section>
 
-      <!-- ============ SLIDE 4: WHAT IT MEANS FOR STOUT ============ -->
+      <!-- ============ SLIDE 6: ENGAGEMENT OPTIONS ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -743,45 +1065,94 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">03 / What this changes for Stout</div>
-          <h2 class="slide-title">Five concrete shifts.</h2>
+          <div class="label">05 / Engagement options if pricing comes up</div>
+          <h2 class="slide-title">Six structures, ranked. Recommend category-exclusive license.</h2>
+          <p class="lede">
+            Reference for the partner only &mdash; do not walk the MD through this in the first
+            conversation.
+          </p>
           <div class="body">
-            <ul class="points">
-              <li>
-                <strong>Live data.</strong> The competitive landscape on any asset or therapeutic
-                area is current to the last event ingested. The strategic read sits on data that's
-                current, not on a research sprint from two weeks ago.
-              </li>
-              <li>
-                <strong>AI workflows.</strong> Today, Stout analysts can export structured data from
-                Clint into Claude, Copilot, or whatever AI tool the firm is using. On the roadmap: a
-                tenant API and an MCP server so those tools can query Clint directly. After that:
-                brief generation and scenario analysis built into Clint itself.
-              </li>
-              <li>
-                <strong>Whitelabel deliverable.</strong> Each client engagement can run as a
-                Stout-branded Clint site at a custom domain. Agency, tenant, and per-engagement
-                branding are all supported.
-              </li>
-              <li>
-                <strong>Engagement model.</strong> Today, recurring CI work is delivered as a
-                quarterly deck. With Clint, the deliverable is a Stout-branded environment the
-                client uses through the quarter, with Stout's analysis and recommendations layered
-                into it.
-              </li>
-              <li>
-                <strong>Position.</strong> Evaluate, Citeline, and GlobalData are flat data sources.
-                Other advisory firms still deliver CI as decks. No one in advisory is delivering CI
-                as a whitelabel, AI-ready platform yet. Stout would be first.
-              </li>
-            </ul>
+            <table class="data">
+              <thead>
+                <tr>
+                  <th style="width: 38px">#</th>
+                  <th>Option</th>
+                  <th>Cost to Stout</th>
+                  <th>What founder keeps</th>
+                  <th>COI / IP notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="num">01</td>
+                  <td><strong>Annual license, non-exclusive</strong></td>
+                  <td class="num">$75K&ndash;500K / yr</td>
+                  <td>Right to sell to anyone</td>
+                  <td>Cleanest. Lowest COI exposure. Stout's competitors can also buy it.</td>
+                </tr>
+                <tr class="recommended">
+                  <td class="num">02</td>
+                  <td>
+                    <strong>Category-exclusive license</strong>
+                    <span class="pill brand">Recommended</span><br /><span
+                      style="font-size: 12px; color: var(--slate-500)"
+                      >Advisory category, 2&ndash;3 yr</span
+                    >
+                  </td>
+                  <td class="num">
+                    + $150K&ndash;500K / yr<br /><span style="color: var(--slate-500)"
+                      >premium</span
+                    >
+                  </td>
+                  <td>Pharma/biotech direct sales remain open</td>
+                  <td>
+                    Solves Stout's competitive concern without surrendering pharma TAM. IP stays
+                    with founder. Carve-out language matters.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="num">03</td>
+                  <td><strong>Vertical-exclusive</strong> &middot; consulting + IB + PE</td>
+                  <td class="num">Higher than #2</td>
+                  <td>Pharma direct only</td>
+                  <td>Over-broad. PE and IB shops don't compete with Stout on CI engagements.</td>
+                </tr>
+                <tr>
+                  <td class="num">04</td>
+                  <td><strong>Strategic investment + preferred license</strong></td>
+                  <td class="num">Equity check + reduced license</td>
+                  <td>Operational control, sell broadly</td>
+                  <td>
+                    Aligns long-term incentives. Increases COI surface but it's already disclosed.
+                    Cash-for-equity, never IP-for-equity.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="num">05</td>
+                  <td><strong>Acquisition / acquihire</strong></td>
+                  <td class="num">$X&ndash;Y total</td>
+                  <td>Cash + earnout, role at Stout</td>
+                  <td>
+                    Clean post-deal. Worst for upside (one buyer's ceiling). Loses pharma-direct
+                    optionality. Almost certainly the wrong move pre-revenue.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="num">06</td>
+                  <td><strong>Joint venture</strong></td>
+                  <td class="num">Setup + revenue split</td>
+                  <td>50% upside, partial control</td>
+                  <td>Slow, expensive to structure, governance complexity. Skip.</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      <!-- ============ SLIDE 5: WHERE IT FITS ============ -->
+      <!-- ============ SLIDE 7: RECOMMENDED SEQUENCE ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -814,45 +1185,48 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">04 / Where Clint shows up at Stout</div>
-          <h2 class="slide-title">Internal use, client deliverable, market position.</h2>
+          <div class="label">06 / Recommended sequence</div>
+          <h2 class="slide-title">
+            Pilot, then license with an exclusivity option. Defer acquisition.
+          </h2>
           <div class="body">
             <div class="grid-3">
               <div class="card">
-                <div class="card-label">Internal use</div>
-                <h3>Less assembly, more analysis</h3>
-                <p>
-                  The competitive read on a program is already structured when the engagement
-                  starts. Junior analyst time on assembly drops; senior analyst time on
-                  interpretation grows. The mix shifts toward higher-margin work.
+                <div class="card-label">Step 01 &middot; Months 1&ndash;3</div>
+                <h3>Paid pilot</h3>
+                <p style="margin-bottom: 10px">
+                  Fixed-fee, 60&ndash;90 days, on one live Stout engagement. Surfaces real value and
+                  real gaps. Both sides have something concrete to negotiate against.
                 </p>
+                <span class="pill brand">$25K &ndash; $50K</span>
               </div>
               <div class="card">
-                <div class="card-label">Client deliverable</div>
-                <h3>Stout-branded site, not a deck</h3>
-                <p>
-                  The deliverable is a Stout-branded site the client logs into through the
-                  engagement. Stout's curation, annotations, and recommendations sit alongside the
-                  underlying data, so the client sees the analysis attached to the events.
+                <div class="card-label">Step 02 &middot; After the pilot</div>
+                <h3>License + exclusivity option</h3>
+                <p style="margin-bottom: 10px">
+                  Convert to a non-exclusive annual license. Attach a 90-day option for Stout to
+                  elect category exclusivity at a defined premium. They choose whether to lock out
+                  peers, and they know the price upfront.
                 </p>
+                <span class="pill brand">License + option</span>
               </div>
               <div class="card">
-                <div class="card-label">Market position</div>
-                <h3>Differentiated offering</h3>
-                <p>
-                  No advisory firm delivers CI this way today. The platform itself becomes part of
-                  Stout's pitchbook differentiation, and clients are stickier than they would be on
-                  a recurring deck cadence.
+                <div class="card-label">Step 03 &middot; Year 2+</div>
+                <h3>Acquisition (only if)</h3>
+                <p style="margin-bottom: 10px">
+                  Defer until Year 2 at the earliest. Pre-revenue acquisition pricing anchors on
+                  cost-to-build, not strategic value. Bad trade for the founder.
                 </p>
+                <span class="pill amber">Defer</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ============ SLIDE 6: COMPETITOR PRICING ============ -->
+      <!-- ============ SLIDE 8: EXCLUSIVITY PLAYBOOK ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -885,14 +1259,86 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">05 / What the incumbents charge</div>
-          <h2 class="slide-title">Pricing reference points from pharma buyers.</h2>
+          <div class="label">07 / Exclusivity without giving up IP</div>
+          <h2 class="slide-title">Stout gets a moat. The founder keeps the asset.</h2>
+          <div class="body">
+            <ul class="points">
+              <li>
+                <strong>License the right to use, not the IP itself.</strong> Standard SaaS framing.
+                Clint retains all IP. Stout gets a non-transferable, non-sublicensable right to use
+                within agreed scope.
+              </li>
+              <li>
+                <strong>Whitelabel isn't IP transfer.</strong> Stout's branding sits on the surface
+                clients see. The platform, code, data model, and brand below the whitelabel stay
+                with Clint.
+              </li>
+              <li>
+                <strong>Exclusivity is a contract term, not an IP transfer.</strong> Time-bound,
+                category-bound, fully reversible. "Clint will not license to other firms in [defined
+                advisory category] during the [2&ndash;3 year] term."
+              </li>
+              <li>
+                <strong>Reverse termination right.</strong> If Stout fails to renew or hit a usage
+                minimum, exclusivity lapses immediately. Protects against Stout buying exclusivity,
+                parking the asset, and killing its market.
+              </li>
+              <li>
+                <strong>Define the category narrowly.</strong> "Global advisory firms whose primary
+                offering includes pharma transaction support, valuation, or CI consulting." Pharma
+                and biotech direct sales are explicitly carved out.
+              </li>
+              <li>
+                <strong>No source code, no data ownership transfer.</strong> Even under exclusivity.
+                Stout gets to use the platform, not to fork it.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SLIDE 9: PRICING REFERENCES ============ -->
+      <section class="slide">
+        <div class="accent-bar"></div>
+        <div class="slide-inner">
+          <div class="wordmark">
+            <svg class="logo" viewBox="0 0 140 140" fill="none">
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="#0d9488"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="name">Clint</span>
+            <span class="sep"></span>
+            <span class="meta">Partner notes</span>
+          </div>
+          <div class="label">08 / Pricing reference points</div>
+          <h2 class="slide-title">What buyers say they pay for the incumbents.</h2>
           <p class="lede">
-            Self-reported by buyers in pharma BD, R&amp;D, and commercial roles, on a public
-            r/biotech thread. Published prices don't exist for these tools &mdash; every deal is
-            bespoke. Ranges only.
+            Useful for the partner to know if the MD pushes on price during the meeting.
+            Self-reported by buyers on a public r/biotech thread &mdash; ranges only.
           </p>
           <div class="body">
             <div style="background: white; border: 1px solid var(--slate-200); padding: 24px">
@@ -916,6 +1362,20 @@
                 <div class="bar-wrap"><div class="bar" style="left: 30%; width: 65%"></div></div>
                 <span class="price">$100K &ndash; $1M+ &middot; major pharma</span>
               </div>
+              <div
+                class="pricing-row"
+                style="border-top: 1px solid var(--slate-200); margin-top: 6px; padding-top: 14px"
+              >
+                <span class="vendor" style="color: var(--brand-700)"
+                  >Clint &middot; recommended</span
+                >
+                <div class="bar-wrap">
+                  <div class="bar brand" style="left: 8%; width: 18%"></div>
+                </div>
+                <span class="price" style="color: var(--brand-700)"
+                  >$75K &ndash; $150K practice</span
+                >
+              </div>
             </div>
             <div class="quote" style="margin-top: 20px">
               "Pricing seems far from transparent and I can't tell if I'm getting a great deal on
@@ -926,7 +1386,7 @@
         </div>
       </section>
 
-      <!-- ============ SLIDE 7: COMPETITOR FOCUS ============ -->
+      <!-- ============ SLIDE 10: PRE-MEETING CHECKLIST ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -959,435 +1419,64 @@
             </svg>
             <span class="name">Clint</span>
             <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
+            <span class="meta">Partner notes</span>
           </div>
-          <div class="label">06 / What each one focuses on</div>
-          <h2 class="slide-title">
-            Each platform has a different focus. None of them offer whitelabel or AI-ready data.
-          </h2>
+          <div class="label">09 / Before the meeting</div>
+          <h2 class="slide-title">Eight things to lock down first.</h2>
           <div class="body">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>Platform</th>
-                  <th>Primary focus</th>
-                  <th>Notable</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Evaluate</strong></td>
-                  <td>Sales forecasts, commercial data, competitor insights, epi data</td>
-                  <td>Most commercial-leaning of the big three</td>
-                </tr>
-                <tr>
-                  <td>
-                    <strong>Citeline</strong>
-                    <span style="color: var(--slate-500)">(formerly Pharma Intelligence)</span>
-                  </td>
-                  <td>R&amp;D, clinical trials, early research</td>
-                  <td>
-                    PinkSheet "unparalleled" for regulatory milestones (approvals, amendments, CRLs)
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>GlobalData</strong></td>
-                  <td>Broad coverage overlapping Evaluate + Citeline</td>
-                  <td><span class="pill red">Quality issues</span> "inaccurate or out of date"</td>
-                </tr>
-                <tr>
-                  <td><strong>Cortellis</strong></td>
-                  <td>Preclinical + clinical, dev status, patents, regulatory</td>
-                  <td>Closer to Citeline; multiple ownership changes</td>
-                </tr>
-                <tr>
-                  <td><strong>DRG</strong></td>
-                  <td>BD deal comps, search &amp; eval, NPV, market sizing</td>
-                  <td>Specifically for BD workflows</td>
-                </tr>
-                <tr>
-                  <td><strong>TA Scan</strong></td>
-                  <td>Competitive landscape, site identification, strategic feasibility</td>
-                  <td>Lesser-known, better data quality than the incumbents</td>
-                </tr>
-                <tr>
-                  <td><strong>Hanson Wade</strong></td>
-                  <td>Niche modality databases (ADC, bispecific)</td>
-                  <td>Deep but narrow</td>
-                </tr>
-                <tr>
-                  <td><strong>BioWorld</strong></td>
-                  <td>News-leaning</td>
-                  <td>Good for ongoing coverage</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ SLIDE 8: PAIN POINTS & WEDGE ============ -->
-      <section class="slide">
-        <div class="accent-bar"></div>
-        <div class="slide-inner">
-          <div class="wordmark">
-            <svg class="logo" viewBox="0 0 140 140" fill="none">
-              <polyline
-                points="112,24 24,24 24,116 112,116"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="96,40 40,40 40,100 96,100"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="80,56 56,56 56,84 80,84"
-                stroke="#0d9488"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="name">Clint</span>
-            <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
-          </div>
-          <div class="label">07 / What buyers already complain about</div>
-          <h2 class="slide-title">
-            The pain points buyers report &mdash; and where Clint sits against them.
-          </h2>
-          <div class="body">
-            <div class="grid-2">
-              <div>
-                <div
-                  class="card-label"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: var(--slate-500);
-                    letter-spacing: 0.16em;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                  "
-                >
-                  Buyer complaints
-                </div>
-                <ul class="dense">
-                  <li><strong>Clunky interfaces.</strong> Said about all three big platforms.</li>
-                  <li>
-                    <strong>Stale or inaccurate data.</strong> GlobalData by name. One commenter:
-                    "miss at least 20% of updated information if you trust just one platform."
-                  </li>
-                  <li>
-                    <strong>Multi-platform redundancy.</strong> Buyers pay for two or more and
-                    manually cross-check.
-                  </li>
-                  <li>
-                    <strong>Aggressive sales.</strong> GlobalData &mdash; "the most aggressive,
-                    obnoxious salesforce in our biz."
-                  </li>
-                  <li>
-                    <strong>Opaque pricing.</strong> No published prices, every deal is bespoke.
-                  </li>
-                  <li>
-                    <strong>Vendor instability.</strong> Cortellis has changed hands multiple times.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <div
-                  class="card-label"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: var(--brand-700);
-                    letter-spacing: 0.16em;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                  "
-                >
-                  Where Clint sits against this
-                </div>
-                <ul class="dense">
-                  <li>
-                    <strong>Coverage.</strong> Clint isn't pitched as a replacement for Evaluate or
-                    Citeline. It's where Stout's curated and annotated view sits on top of those
-                    sources, with the strategic read attached.
-                  </li>
-                  <li>
-                    <strong>Interface.</strong> Buyers themselves describe the incumbents as clunky.
-                    That's a real opening, not marketing language.
-                  </li>
-                  <li>
-                    <strong>Provenance.</strong> Source citations on every event. Required for
-                    output that gets attached to a fairness opinion or a board memo.
-                  </li>
-                  <li>
-                    <strong>The combination.</strong> No incumbent offers whitelabel and AI-ready
-                    data together. That's the gap Clint fills.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ SLIDE 9: HOW THIS CHANGES THE DELIVERABLE ============ -->
-      <section class="slide">
-        <div class="accent-bar"></div>
-        <div class="slide-inner">
-          <div class="wordmark">
-            <svg class="logo" viewBox="0 0 140 140" fill="none">
-              <polyline
-                points="112,24 24,24 24,116 112,116"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="96,40 40,40 40,100 96,100"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="80,56 56,56 56,84 80,84"
-                stroke="#0d9488"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="name">Clint</span>
-            <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
-          </div>
-          <div class="label">08 / What the client deliverable looks like</div>
-          <h2 class="slide-title">Decks don't go away. They get shorter and more strategic.</h2>
-          <p class="lede">
-            The data review portion is already continuous in the platform, so the quarterly briefing
-            becomes "here is what we recommend you do" instead of "here is what happened."
-          </p>
-          <div class="body">
-            <div class="grid-2">
-              <div>
-                <div
-                  class="card-label"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: var(--slate-500);
-                    letter-spacing: 0.16em;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                  "
-                >
-                  What's in the platform
-                </div>
-                <ul class="dense">
-                  <li>
-                    <strong>Curation.</strong> Watchlist, competitor set, asset prioritization,
-                    therapeutic-area framing &mdash; Stout's domain expertise applied.
-                  </li>
-                  <li>
-                    <strong>Annotation.</strong> Each meaningful event carries a Stout note: why it
-                    matters, what it shifts, what it implies.
-                  </li>
-                  <li>
-                    <strong>Strategy.</strong> Scenario analysis, deal implications, recommendations
-                    &mdash; alongside the events that triggered them, all branded as Stout's work.
-                  </li>
-                  <li>
-                    <strong>Switching cost.</strong> Watchlists, annotations, history, and scenario
-                    models live inside the Stout-branded environment. Leaving means losing
-                    institutional memory &mdash; which doesn't happen with static decks.
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <div
-                  class="card-label"
-                  style="
-                    font-family: var(--font-mono);
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: var(--brand-700);
-                    letter-spacing: 0.16em;
-                    text-transform: uppercase;
-                    margin-bottom: 10px;
-                  "
-                >
-                  What changes for Stout
-                </div>
-                <ul class="dense">
-                  <li>
-                    <strong>Cadence.</strong> Quarterly bursts become continuous presence in the
-                    client's workflow. Stout doesn't go dark for ten weeks at a time.
-                  </li>
-                  <li>
-                    <strong>Briefings.</strong> Shorter and more strategic. The data review is
-                    already continuous in the platform, so the meeting is for recommendations and
-                    decisions.
-                  </li>
-                  <li>
-                    <strong>Engagements.</strong> Recurring deck cadence is fragile &mdash; clients
-                    judge the relationship by one artifact per quarter. A live branded environment
-                    is harder to walk away from.
-                  </li>
-                  <li>
-                    <strong>Margin mix.</strong> Junior assembly time compresses. Senior strategic
-                    time fills the engagement, and that's the higher-margin work.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ SLIDE 10: RECOMMENDED PATH ============ -->
-      <section class="slide">
-        <div class="accent-bar"></div>
-        <div class="slide-inner">
-          <div class="wordmark">
-            <svg class="logo" viewBox="0 0 140 140" fill="none">
-              <polyline
-                points="112,24 24,24 24,116 112,116"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="96,40 40,40 40,100 96,100"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="80,56 56,56 56,84 80,84"
-                stroke="#0d9488"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="name">Clint</span>
-            <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
-          </div>
-          <div class="label">09 / How an engagement could start</div>
-          <h2 class="slide-title">Pilot first, then a structured engagement.</h2>
-          <div class="body">
-            <div class="grid-3">
-              <div class="card">
-                <div class="card-label">Step 01 &middot; Months 1&ndash;3</div>
-                <h3>Paid pilot</h3>
-                <p>
-                  Fixed-fee, time-bounded, on a single live Stout engagement. Both sides see what
-                  works and where the gaps are. The pilot ends with a real client deliverable.
-                </p>
-              </div>
-              <div class="card">
-                <div class="card-label">Step 02 &middot; After the pilot</div>
-                <h3>Annual engagement</h3>
-                <p>
-                  Convert into a practice license shaped to how Stout actually used Clint during the
-                  pilot. Pricing and scope are built from observed use, not pitched in advance.
-                </p>
-              </div>
-              <div class="card">
-                <div class="card-label">Step 03 &middot; Optional</div>
-                <h3>Exclusivity</h3>
-                <p>
-                  If Stout wants to keep this out of competing advisory firms' hands, a structured
-                  discussion about category exclusivity in advisory &mdash; on terms that work for
-                  both sides. Not a Day-1 conversation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============ SLIDE 11: NEXT STEP ============ -->
-      <section class="slide">
-        <div class="accent-bar"></div>
-        <div class="slide-inner">
-          <div class="wordmark">
-            <svg class="logo" viewBox="0 0 140 140" fill="none">
-              <polyline
-                points="112,24 24,24 24,116 112,116"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="96,40 40,40 40,100 96,100"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                points="80,56 56,56 56,84 80,84"
-                stroke="#0d9488"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <span class="name">Clint</span>
-            <span class="sep"></span>
-            <span class="meta">Stout Briefing</span>
-          </div>
-          <div class="label">10 / Next step</div>
-          <h1 class="slide-title">
-            A 30-minute walkthrough on <span class="accent">a landscape Stout cares about</span>.
-          </h1>
-          <p class="lede">
-            Pick a therapeutic area or competitor set Stout has live work in. We'll build the Clint
-            view of it ahead of the call and walk through it together.
-          </p>
-          <div class="body">
-            <ul class="points">
-              <li><strong>Format.</strong> 30 minutes, screen share, live platform. No slides.</li>
+            <ol class="checklist">
               <li>
-                <strong>Content.</strong> A real competitive landscape on something Stout actually
-                works on &mdash; pre-built so the conversation is about what Clint shows, not how to
-                drive it.
+                <div>
+                  <strong>Sign the founder/advisor agreement</strong> between the founder and the
+                  partner. Formalizes IP ownership, the partner's stake, and the disclosure
+                  framework. Has to happen first.
+                </div>
               </li>
               <li>
-                <strong>Outcome.</strong> If the walkthrough lands, we scope a paid pilot on one
-                current engagement.
+                <div>
+                  <strong>Practice the disclosure script</strong> from slide 4 step 2. It needs to
+                  land in the first three minutes and feel natural, not rehearsed.
+                </div>
               </li>
-            </ul>
+              <li>
+                <div>
+                  <strong>Decide pilot scope and price</strong> &mdash; fixed-fee, 60&ndash;90 days,
+                  $25K&ndash;$50K. So if the MD asks "what would a trial look like," there's an
+                  answer ready.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Identify the right MD.</strong> Name, practice focus, recent pharma CI /
+                  valuation / M&amp;A engagements they've worked on.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Pick the demo landscape.</strong> A therapeutic area or competitor set
+                  Stout has live work in &mdash; so the walkthrough lands on something the MD
+                  already cares about.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Prepare the data coverage answer.</strong> Which sources are in, which are
+                  gaps, what the gap-fill plan is. The MD will ask.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Prepare the SOC 2 / provenance answer.</strong> What's true today vs.
+                  what's on the roadmap. Advisory firms always ask.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Confirm the MD-facing briefing URL works</strong> on the partner's laptop
+                  and phone before the meeting. <code>/internal/stout-briefing.html</code>
+                </div>
+              </li>
+            </ol>
           </div>
         </div>
       </section>
@@ -1395,8 +1484,8 @@
     <!-- /deck -->
 
     <div class="chrome">
-      <span class="counter" id="counter">01 / 11</span>
-      <span class="hint">&larr; &rarr; &middot; SPACE to advance &middot; P to print</span>
+      <span class="counter" id="counter">01 / 10</span>
+      <span class="hint">&larr; &rarr; &middot; SPACE &middot; P to print</span>
       <div class="nav-btns">
         <button class="nav-btn" id="prev">&larr;</button>
         <button class="nav-btn" id="next">&rarr;</button>
