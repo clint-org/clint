@@ -89,11 +89,11 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
-          (orgSettingsClick)="onOrgSettingsClick()"
+          (tenantSettingsClick)="onTenantSettingsClick()"
           (spaceSettingsClick)="onSpaceSettingsClick()"
           (newSpaceClick)="onNewSpaceClick()"
-          (createOrgClick)="onCreateOrgClick()"
-          (joinOrgClick)="onJoinOrgClick()"
+          (createTenantClick)="onCreateTenantClick()"
+          (joinTenantClick)="onJoinTenantClick()"
         >
           <div topbar-actions class="flex items-center gap-3">
             @if (spaceId()) {
@@ -490,7 +490,6 @@ export class AppShellComponent implements OnInit {
       catalysts: 'Catalysts',
       'settings/taxonomies': 'Taxonomies',
       'settings/marker-types': 'Marker Types',
-      'settings/organization': 'Tenant',
       'settings/spaces': 'Spaces',
       'settings/general': 'General',
       'settings/members': 'Members',
@@ -670,7 +669,7 @@ export class AppShellComponent implements OnInit {
 
   // --- Topbar dropdown actions ---
 
-  onOrgSettingsClick(): void {
+  onTenantSettingsClick(): void {
     this.router.navigate(['/t', this.tenantId(), 'settings']);
   }
 
@@ -684,11 +683,11 @@ export class AppShellComponent implements OnInit {
     this.createSpaceDialogOpen.set(true);
   }
 
-  onCreateOrgClick(): void {
+  onCreateTenantClick(): void {
     this.router.navigate(['/onboarding']);
   }
 
-  onJoinOrgClick(): void {
+  onJoinTenantClick(): void {
     this.router.navigate(['/onboarding'], { queryParams: { tab: 'join' } });
   }
 

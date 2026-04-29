@@ -44,12 +44,12 @@ import { SpaceService } from '../../core/services/space.service';
                       member access.
                     </p>
                     <div>
-                      <label for="org-name" class="block text-sm font-medium text-slate-700 mb-1"
+                      <label for="tenant-name" class="block text-sm font-medium text-slate-700 mb-1"
                         >Tenant Name</label
                       >
                       <input
                         pInputText
-                        id="org-name"
+                        id="tenant-name"
                         class="w-full"
                         [(ngModel)]="tenantName"
                         name="tenantName"
@@ -57,11 +57,11 @@ import { SpaceService } from '../../core/services/space.service';
                         required
                         aria-required="true"
                         [attr.aria-invalid]="createError() ? true : null"
-                        aria-describedby="org-name-error"
+                        aria-describedby="tenant-name-error"
                       />
                     </div>
                     @if (createError()) {
-                      <p-message id="org-name-error" severity="error" [closable]="false">{{
+                      <p-message id="tenant-name-error" severity="error" [closable]="false">{{
                         createError()
                       }}</p-message>
                     }

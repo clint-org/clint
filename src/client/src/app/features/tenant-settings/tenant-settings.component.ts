@@ -81,17 +81,17 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             </div>
             <div class="flex-1">
               <label
-                for="org-name"
+                for="tenant-name"
                 class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
               >
                 Tenant name
               </label>
               <input
                 pInputText
-                id="org-name"
+                id="tenant-name"
                 class="w-full"
-                [ngModel]="orgName()"
-                (ngModelChange)="orgName.set($event)"
+                [ngModel]="tenantNameDraft()"
+                (ngModelChange)="tenantNameDraft.set($event)"
               />
               <div class="mt-3 flex items-center gap-3">
                 <p-button
@@ -301,7 +301,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   savingName = signal(false);
   deletingTenant = signal(false);
   readonly inviteEmail = signal('');
-  readonly orgName = signal('');
+  readonly tenantNameDraft = signal('');
 
   readonly currentUserIsOwner = computed(() => {
     const userId = this.supabase.currentUser()?.id;
@@ -329,7 +329,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       },
     ]);
     await this.loadData();
-    this.orgName.set(this.tenant()?.name ?? '');
+    this.tenantNameDraft.set(this.tenant()?.name ?? '');
   }
 
   ngOnDestroy(): void {
@@ -357,16 +357,16 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
 
   nameChanged(): boolean {
     const t = this.tenant();
-    return !!t && this.orgName().trim() !== t.name;
+    return !!t && this.tenantNameDraft().trim() !== t.name;
   }
 
   async saveOrgName(): Promise<void> {
     const t = this.tenant();
-    if (!t || this.orgName().trim() === t.name) return;
+    if (!t || this.tenantNameDraft().trim() === t.name) return;
     this.savingName.set(true);
     try {
       const updated = await this.tenantService.updateTenant(this.tenantId, {
-        name: this.orgName().trim(),
+        name: this.tenantNameDraft().trim(),
       });
       this.tenant.set(updated);
       this.removeError.set(null);

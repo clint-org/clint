@@ -16,28 +16,28 @@ export interface TopbarTab {
   imports: [ButtonModule],
   template: `
     <div class="topbar" role="banner">
-      <!-- Org/Space breadcrumb -->
+      <!-- Tenant/Space breadcrumb -->
       <div class="breadcrumb">
-        <!-- Org badge + name -->
-        <div class="org-trigger" [class.interactive]="tenants().length > 1">
+        <!-- Tenant badge + name -->
+        <div class="tenant-trigger" [class.interactive]="tenants().length > 1">
           @if (tenants().length > 1) {
             <button
-              class="org-button"
-              (click)="toggleOrgDropdown()"
-              [attr.aria-expanded]="orgDropdownOpen()"
+              class="tenant-button"
+              (click)="toggleTenantDropdown()"
+              [attr.aria-expanded]="tenantDropdownOpen()"
               aria-haspopup="listbox"
               aria-label="Switch tenant"
             >
               @if (tenantLogoUrl()) {
-                <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
+                <img [src]="tenantLogoUrl()" class="tenant-badge-img" alt="" />
               } @else {
-                <span class="org-badge" aria-hidden="true">{{ orgInitial() }}</span>
+                <span class="tenant-badge" aria-hidden="true">{{ tenantInitial() }}</span>
               }
-              <span class="org-name">{{ tenantName() }}</span>
+              <span class="tenant-display-name">{{ tenantName() }}</span>
               <span class="dropdown-chevron" aria-hidden="true">&#9662;</span>
             </button>
-            @if (orgDropdownOpen()) {
-              <div class="dropdown org-dropdown" role="listbox" aria-label="Tenants">
+            @if (tenantDropdownOpen()) {
+              <div class="dropdown tenant-dropdown" role="listbox" aria-label="Tenants">
                 @for (t of tenants(); track t.id) {
                   <button
                     class="dropdown-item"
@@ -53,21 +53,21 @@ export interface TopbarTab {
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onOrgSettingsClick()"
+                    (click)="onTenantSettingsClick()"
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onCreateOrgClick()"
+                    (click)="onCreateTenantClick()"
                   >
                     <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onJoinOrgClick()"
+                    (click)="onJoinTenantClick()"
                   >
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Join with code
                   </button>
@@ -75,41 +75,41 @@ export interface TopbarTab {
               </div>
             }
           } @else {
-            <div class="org-switcher">
+            <div class="tenant-switcher">
               <button
                 type="button"
-                class="org-btn"
-                (click)="orgDropdownOpen.set(!orgDropdownOpen())"
-                [attr.aria-expanded]="orgDropdownOpen()"
+                class="tenant-btn"
+                (click)="tenantDropdownOpen.set(!tenantDropdownOpen())"
+                [attr.aria-expanded]="tenantDropdownOpen()"
               >
                 @if (tenantLogoUrl()) {
-                  <img [src]="tenantLogoUrl()" class="org-badge-img" alt="" />
+                  <img [src]="tenantLogoUrl()" class="tenant-badge-img" alt="" />
                 } @else {
-                  <span class="org-badge">{{ orgInitial() }}</span>
+                  <span class="tenant-badge">{{ tenantInitial() }}</span>
                 }
-                <span class="org-name">{{ tenantName() }}</span>
+                <span class="tenant-display-name">{{ tenantName() }}</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
-              @if (orgDropdownOpen()) {
+              @if (tenantDropdownOpen()) {
                 <div class="dropdown" role="listbox">
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onOrgSettingsClick()"
+                    (click)="onTenantSettingsClick()"
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onCreateOrgClick()"
+                    (click)="onCreateTenantClick()"
                   >
                     <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
                   </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onJoinOrgClick()"
+                    (click)="onJoinTenantClick()"
                   >
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Join with code
                   </button>
@@ -332,15 +332,15 @@ export interface TopbarTab {
         user-select: none;
       }
 
-      /* Org */
+      /* Tenant */
 
-      .org-trigger {
+      .tenant-trigger {
         position: relative;
         display: flex;
         align-items: center;
       }
 
-      .org-button {
+      .tenant-button {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -351,16 +351,16 @@ export interface TopbarTab {
         border-radius: 4px;
       }
 
-      .org-button:hover {
+      .tenant-button:hover {
         background: #f8fafc;
       }
 
-      .org-button:focus-visible {
+      .tenant-button:focus-visible {
         outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
 
-      .org-badge {
+      .tenant-badge {
         width: 20px;
         height: 20px;
         border-radius: 4px;
@@ -375,7 +375,7 @@ export interface TopbarTab {
         flex-shrink: 0;
       }
 
-      .org-name {
+      .tenant-display-name {
         font-size: 11px;
         color: #64748b;
         max-width: 160px;
@@ -654,7 +654,7 @@ export interface TopbarTab {
         color: #0f172a;
       }
 
-      .org-badge-img {
+      .tenant-badge-img {
         width: 20px;
         height: 20px;
         border-radius: 5px;
@@ -664,13 +664,13 @@ export interface TopbarTab {
 
       /* Single-tenant switcher */
 
-      .org-switcher {
+      .tenant-switcher {
         position: relative;
         display: flex;
         align-items: center;
       }
 
-      .org-btn {
+      .tenant-btn {
         display: flex;
         align-items: center;
         gap: 4px;
@@ -681,11 +681,11 @@ export interface TopbarTab {
         border-radius: 4px;
       }
 
-      .org-btn:hover {
+      .tenant-btn:hover {
         background: #f8fafc;
       }
 
-      .org-btn:focus-visible {
+      .tenant-btn:focus-visible {
         outline: 2px solid var(--brand-600);
         outline-offset: 2px;
       }
@@ -698,7 +698,7 @@ export interface TopbarTab {
   ],
 })
 export class ContextualTopbarComponent {
-  // ---- Org/Space inputs ----
+  // ---- Tenant/Space inputs ----
   readonly tenantName = input<string>('');
   readonly tenantLogoUrl = input<string | null>(null);
   readonly tenants = input<{ id: string; name: string }[]>([]);
@@ -734,17 +734,17 @@ export class ContextualTopbarComponent {
   readonly backClick = output<void>();
   readonly tenantChange = output<string>();
   readonly spaceChange = output<string>();
-  readonly orgSettingsClick = output<void>();
+  readonly tenantSettingsClick = output<void>();
   readonly spaceSettingsClick = output<void>();
   readonly newSpaceClick = output<void>();
-  readonly createOrgClick = output<void>();
-  readonly joinOrgClick = output<void>();
+  readonly createTenantClick = output<void>();
+  readonly joinTenantClick = output<void>();
 
   // ---- Internal state ----
-  readonly orgDropdownOpen = signal(false);
+  readonly tenantDropdownOpen = signal(false);
   readonly spaceDropdownOpen = signal(false);
 
-  readonly orgInitial = computed(() => {
+  readonly tenantInitial = computed(() => {
     const name = this.tenantName();
     return name ? name.charAt(0).toUpperCase() : '';
   });
@@ -756,18 +756,18 @@ export class ContextualTopbarComponent {
 
   // ---- Methods ----
 
-  toggleOrgDropdown(): void {
+  toggleTenantDropdown(): void {
     this.spaceDropdownOpen.set(false);
-    this.orgDropdownOpen.update((v) => !v);
+    this.tenantDropdownOpen.update((v) => !v);
   }
 
   toggleSpaceDropdown(): void {
-    this.orgDropdownOpen.set(false);
+    this.tenantDropdownOpen.set(false);
     this.spaceDropdownOpen.update((v) => !v);
   }
 
   selectTenant(id: string): void {
-    this.orgDropdownOpen.set(false);
+    this.tenantDropdownOpen.set(false);
     this.tenantChange.emit(id);
   }
 
@@ -788,9 +788,9 @@ export class ContextualTopbarComponent {
     this.backClick.emit();
   }
 
-  onOrgSettingsClick(): void {
-    this.orgDropdownOpen.set(false);
-    this.orgSettingsClick.emit();
+  onTenantSettingsClick(): void {
+    this.tenantDropdownOpen.set(false);
+    this.tenantSettingsClick.emit();
   }
 
   onSpaceSettingsClick(): void {
@@ -803,13 +803,13 @@ export class ContextualTopbarComponent {
     this.newSpaceClick.emit();
   }
 
-  onCreateOrgClick(): void {
-    this.orgDropdownOpen.set(false);
-    this.createOrgClick.emit();
+  onCreateTenantClick(): void {
+    this.tenantDropdownOpen.set(false);
+    this.createTenantClick.emit();
   }
 
-  onJoinOrgClick(): void {
-    this.orgDropdownOpen.set(false);
-    this.joinOrgClick.emit();
+  onJoinTenantClick(): void {
+    this.tenantDropdownOpen.set(false);
+    this.joinTenantClick.emit();
   }
 }
