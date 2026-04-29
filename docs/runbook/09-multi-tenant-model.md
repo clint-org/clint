@@ -68,6 +68,8 @@ Tenant identity is resolved from the host before Angular bootstraps. There is no
 
 See [Architecture Overview](04-architecture-overview.md) for the full host-resolution flow.
 
+**Switching tenants from the topbar dropdown.** Because the brand is bound to the host (CSS vars + PrimeNG preset are set on `:root` *before* Angular boots), an SPA-only navigation between tenants leaves the previous tenant's brand applied. `AppShellComponent.switchTenant()` therefore inspects the target tenant's `custom_domain ?? subdomain.<apexDomain>` and, when it differs from `window.location.host`, performs a full-page navigation (`window.location.href`) so the bootstrap re-runs against the new host. Same-host picks (e.g. an apex user with multiple tenants on the apex during cutover) still go through `router.navigate`. The `Tenant` interface exposes `subdomain` and `custom_domain` for this lookup; the data was already returned by `select('*')` and is RLS-scoped to the user's tenant memberships.
+
 ## Auto-Provisioning (handle_new_user trigger)
 
 The `handle_new_user` trigger on `auth.users` was retired during the whitelabel rollout (migration 41) and re-extended in migration 69 with one job: consume any pending `agency_invites` rows matching the new user's email. If a super-admin provisioned an agency to an email that had not yet signed in, the invite is held in `agency_invites`; on that user's first sign-in, the trigger promotes it to an `agency_members` `owner` row and marks the invite accepted. The trigger does not provision tenants or spaces — those stay opt-in. Tenant invites are unchanged: still code-based via `accept_invite(p_code)`.
