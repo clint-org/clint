@@ -7,6 +7,7 @@ import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
 
 import { TenantService } from '../../core/services/tenant.service';
+import { SpaceService } from '../../core/services/space.service';
 
 @Component({
   selector: 'app-onboarding',
@@ -117,6 +118,7 @@ import { TenantService } from '../../core/services/tenant.service';
 })
 export class OnboardingComponent {
   private tenantService = inject(TenantService);
+  private spaceService = inject(SpaceService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -156,14 +158,34 @@ export class OnboardingComponent {
   }
 
   async joinTenant(): Promise<void> {
-    if (!this.inviteCode.trim()) return;
+    const code = this.inviteCode.trim();
+    if (!code) return;
     this.joining.set(true);
     this.joinError.set(null);
 
+    // Try tenant invite first; on "Invalid invite code" fall back to space invite.
+    // Codes from the two paths look different (8-char alphanumeric vs. 32-char
+    // hex) but the user only sees a single field, so we try both transparently.
     try {
-      const tenant = await this.tenantService.joinByCode(this.inviteCode.trim());
+      const tenant = await this.tenantService.joinByCode(code);
       localStorage.setItem('lastTenantId', tenant.id);
       this.router.navigate(['/t', tenant.id, 'spaces']);
+      return;
+    } catch (tenantErr) {
+      const msg = tenantErr instanceof Error ? tenantErr.message : '';
+      const isInvalidTenantCode = /Invalid invite code/i.test(msg);
+      if (!isInvalidTenantCode) {
+        this.joinError.set(msg || 'Could not accept invite');
+        this.joining.set(false);
+        return;
+      }
+    }
+
+    try {
+      const space = await this.spaceService.acceptSpaceInviteByCode(code);
+      localStorage.setItem('lastTenantId', space.tenant_id);
+      localStorage.setItem('lastSpaceId', space.id);
+      this.router.navigate(['/t', space.tenant_id, 's', space.id]);
     } catch (e) {
       this.joinError.set(e instanceof Error ? e.message : 'Invalid or expired invite code');
     } finally {

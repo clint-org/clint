@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import { Space, SpaceMember } from '../models/space.model';
+import { Space, SpaceMember, SpaceInvite } from '../models/space.model';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
@@ -97,5 +97,64 @@ export class SpaceService {
       .eq('space_id', spaceId)
       .eq('user_id', userId);
     if (error) throw error;
+  }
+
+  /**
+   * Add or invite a user to a space at the given role. If the email matches
+   * an existing auth.users row, the user is added directly (role updated if
+   * already a member). Otherwise a pending invite is held; the user accepts
+   * by passing invite_code through accept_space_invite() after sign-in.
+   */
+  async inviteToSpace(
+    spaceId: string,
+    email: string,
+    role: 'owner' | 'editor' | 'viewer'
+  ): Promise<{
+    invited: boolean;
+    user_id?: string;
+    invite_id?: string;
+    invite_code?: string;
+    email?: string;
+  }> {
+    const { data, error } = await this.supabase.client.rpc('invite_to_space', {
+      p_space_id: spaceId,
+      p_email: email,
+      p_role: role,
+    });
+    if (error) throw error;
+    return data as {
+      invited: boolean;
+      user_id?: string;
+      invite_id?: string;
+      invite_code?: string;
+      email?: string;
+    };
+  }
+
+  async listInvites(spaceId: string): Promise<SpaceInvite[]> {
+    const { data, error } = await this.supabase.client
+      .from('space_invites')
+      .select('*')
+      .eq('space_id', spaceId)
+      .is('accepted_at', null)
+      .order('created_at');
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  async deleteInvite(inviteId: string): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('space_invites')
+      .delete()
+      .eq('id', inviteId);
+    if (error) throw error;
+  }
+
+  async acceptSpaceInviteByCode(code: string): Promise<{ id: string; name: string; tenant_id: string }> {
+    const { data, error } = await this.supabase.client.rpc('accept_space_invite', {
+      p_code: code,
+    });
+    if (error) throw error;
+    return data as { id: string; name: string; tenant_id: string };
   }
 }

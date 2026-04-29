@@ -17,3 +17,16 @@ export interface SpaceMember {
   email?: string;
   display_name?: string;
 }
+
+export interface SpaceInvite {
+  id: string;
+  space_id: string;
+  email: string;
+  role: 'owner' | 'editor' | 'viewer';
+  invite_code: string;
+  created_by: string | null;
+  accepted_at: string | null;
+  accepted_by: string | null;
+  expires_at: string;
+  created_at: string;
+}

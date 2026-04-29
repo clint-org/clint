@@ -50,6 +50,7 @@ All schema changes are in `supabase/migrations/` as timestamped SQL files.
 | 72 | `20260428215813_fix_agency_members_view_and_contact_email.sql` | Recreates `agency_members_view` without `security_invoker = true`, with an inline `is_agency_member()` / `is_platform_admin()` WHERE clause — same fix migration 40 applied to `tenant_members_view` and `space_members_view`. Previously the view tried to read `auth.users` as the calling `authenticated` role, failed with 42501, and the agency service silently fell back to raw `agency_members` so the Members table rendered "--" for name and the user_id under email. `provision_agency` now defaults `contact_email` to `p_owner_email` when not supplied, instead of writing the literal placeholder `unknown@unknown.invalid` (which surfaced verbatim on the branding page). Backfills any existing agencies still holding the placeholder using the owner row from `agency_members` |
 | 73 | `20260428220000_member_self_protection_guards.sql` | Defense-in-depth row triggers on `tenant_members`, `space_members`, and `agency_members` that block (a) deletes targeting `auth.uid()`'s own membership row -- another member must remove you -- and (b) any DELETE or role UPDATE that would leave the parent entity with zero owners. Errors raise as `42501` with a user-readable message. Cascading deletes from `tenants`, `spaces`, `agencies`, and `auth.users` still work via statement-level BEFORE/AFTER DELETE triggers on each parent that flip a transaction-local `clint.member_guard_cascade` flag; the row-level guard short-circuits when that flag is `'on'`. The agency-members UI already hid these controls for self -- this migration extends the same protection to tenant and space members and makes the rule authoritative regardless of client. |
 | 74 | `20260429000000_remove_accent_color.sql` | Drops the unused `accent_color` column from `tenants` and `agencies`. Was plumbed end-to-end (validation, RPC whitelists, brand projection, BrandContextService signal, branding form inputs) but never consumed at render -- no CSS variable was set from it. Recreates `update_tenant_branding`, `update_agency_branding`, `provision_tenant`, and `get_brand_by_host` without the column references first, then drops the column from both tables. Easy to re-introduce when a specific surface needs a second brand color. |
+| 75 | `20260429010000_owner_only_explicit_space_access.sql` | Collapses the access model to match how the product is actually used. **Schema:** `agency_members.role` and `tenant_members.role` constrained to `owner` only; `tenant_invites.role` same; new `agencies.email_domain` (optional lock) with regex check; new `space_invites` table (mirrors tenant_invites). **Triggers:** `enforce_member_email_domain` BEFORE INSERT/UPDATE on agency_members and tenant_members rejects users whose email domain doesn't match `agencies.email_domain` (when set; platform admin bypass). **Functions:** `has_space_access` rewritten -- only explicit `space_members` rows grant data access; tenant/agency owners get NO implicit cascade. `provision_tenant` auto-adds the calling user as tenant owner + space owner of the default Workspace. New RPCs: `add_tenant_owner(uuid, text)`, `invite_to_space(uuid, text, text)`, `accept_space_invite(text)`. `update_agency_branding` whitelist gains `email_domain`. **Data:** wipes existing non-owner rows from agency_members + tenant_members, backfills agency-owner -> tenant-owner -> space-owner across existing data so prior visibility is preserved, backfills `agencies.email_domain` from each agency owner's email when null. |
 
 ## Core Data Tables
 
@@ -224,6 +225,7 @@ agencies (
   app_display_name  varchar(100) NOT NULL,
   primary_color     varchar(7)   NOT NULL DEFAULT '#0d9488',
   contact_email     varchar(255) NOT NULL,
+  email_domain      varchar(253),                              -- optional lock; gates agency + tenant owner adds. Null = no enforcement
   plan_tier         varchar(50)  NOT NULL DEFAULT 'starter',  -- 'starter'|'growth'|'enterprise'
   max_tenants       int          NOT NULL DEFAULT 5,           -- 0 = unlimited
   custom_domain     varchar(255) UNIQUE,
@@ -231,15 +233,17 @@ agencies (
   updated_at        timestamptz NOT NULL DEFAULT now()
 )
 
--- Users acting on behalf of an agency
+-- Users acting on behalf of an agency. Owner-only after migration 75.
 agency_members (
   id          uuid PRIMARY KEY,
   agency_id   uuid REFERENCES agencies(id) ON DELETE CASCADE NOT NULL,
   user_id     uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role        varchar(20) NOT NULL CHECK (role IN ('owner','member')),
+  role        varchar(20) NOT NULL CHECK (role = 'owner'),
   created_at  timestamptz NOT NULL DEFAULT now(),
   UNIQUE (agency_id, user_id)
 )
+-- BEFORE INSERT/UPDATE trigger enforce_member_email_domain rejects users
+-- whose email domain doesn't match agencies.email_domain when set.
 
 -- Platform owner's super-admin role; bootstrapped via SQL only
 platform_admins (
@@ -283,21 +287,22 @@ tenants (
   updated_at               timestamptz
 )
 
--- Organization membership with roles (constraint: 'owner' | 'member' only — never 'viewer')
+-- Tenant owners. Owner-only after migration 75; emails must match the
+-- parent agency's email_domain when set (BEFORE INSERT/UPDATE trigger).
 tenant_members (
   tenant_id   uuid REFERENCES tenants(id),
   user_id     uuid REFERENCES auth.users(id),
-  role        text,           -- 'owner' | 'member'
+  role        text,           -- 'owner' (constrained)
   joined_at   timestamptz,
   PRIMARY KEY (tenant_id, user_id)
 )
 
--- Invite codes for joining tenants
+-- Invite codes for adding tenant owners. Role constrained to 'owner'.
 tenant_invites (
   id          uuid PRIMARY KEY,
   tenant_id   uuid REFERENCES tenants(id),
   email       text,
-  role        text,
+  role        text,           -- 'owner' (constrained)
   invite_code text UNIQUE,
   created_by  uuid,
   accepted_at timestamptz,
@@ -316,13 +321,29 @@ spaces (
   updated_at  timestamptz
 )
 
--- Space membership with roles
+-- Space membership with roles (rendered as Owner / Contributor / Reader in UI)
 space_members (
   space_id    uuid REFERENCES spaces(id),
   user_id     uuid REFERENCES auth.users(id),
   role        text,           -- 'owner' | 'editor' | 'viewer'
   joined_at   timestamptz,
   PRIMARY KEY (space_id, user_id)
+)
+
+-- Pending space-level invites. Email + role + unique code. Code-based
+-- acceptance via accept_space_invite(p_code). No domain restriction --
+-- spaces include both agency colleagues and pharma client emails.
+space_invites (
+  id          uuid PRIMARY KEY,
+  space_id    uuid REFERENCES spaces(id) ON DELETE CASCADE,
+  email       text NOT NULL,
+  role        varchar(20) NOT NULL CHECK (role IN ('owner','editor','viewer')),
+  invite_code text NOT NULL UNIQUE,
+  created_by  uuid,
+  accepted_at timestamptz,
+  accepted_by uuid,
+  expires_at  timestamptz NOT NULL DEFAULT now() + interval '7 days',
+  created_at  timestamptz NOT NULL DEFAULT now()
 )
 ```
 

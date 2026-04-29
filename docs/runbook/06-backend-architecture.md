@@ -94,13 +94,11 @@ Populates a space with pharmaceutical demo data -- companies (AstraZeneca, Eli L
 has_space_access(p_space_id uuid, p_roles text[]) -> boolean
 ```
 
-Helper function used in RLS policies. Returns true if the calling user is any of:
-- A member of the space with one of the given roles
-- An owner of the parent tenant (any role)
-- A member of the parent tenant (satisfies `editor`/`viewer` checks; gets implicit space access)
-- An owner of the parent tenant's parent agency (any role)
-- A member of the parent tenant's parent agency (satisfies `viewer`-only — read-only across the agency)
-- A platform admin (read-only — write checks short-circuit through write RPCs)
+Helper function used in RLS policies. Rewritten in migration 75 to be **explicit-only** -- no implicit cascade from tenant or agency level. Returns true if the calling user is:
+- An explicit `space_members` row at one of the given roles, OR
+- A platform admin (read-only -- writes still go through write RPCs)
+
+Tenant owners and agency owners get NO implicit space access. To see space data they must be added to that space explicitly. This is the firewall between engagements: a Stout consultant on the Pfizer space does not see Boehringer's data just because Stout owns both tenants.
 
 Short-circuits to `false` for write-role checks when `tenants.suspended_at IS NOT NULL` (suspended-tenant enforcement).
 
@@ -178,7 +176,31 @@ release_retired_hostname(p_hostname text) -> jsonb
 provision_tenant(p_agency_id uuid, p_name text, p_subdomain text, p_brand jsonb) -> jsonb
 ```
 
-Caller must be agency owner of `p_agency_id` or platform admin. Validates `agencies.max_tenants` quota, subdomain regex/reserved/uniqueness/retirement, applies branding fields from `p_brand`, creates one default space named "Workspace" so the tenant has somewhere to land on first login.
+Caller must be agency owner of `p_agency_id` or platform admin. Validates `agencies.max_tenants` quota, subdomain regex/reserved/uniqueness/retirement, applies branding fields from `p_brand`. Creates one default space named "Workspace" so the tenant has somewhere to land on first login. **Auto-adds the calling user as both tenant owner and space owner** so the agency operator who provisions a tenant can immediately see and manage it without needing a separate add-self step.
+
+### add_tenant_owner
+
+```
+add_tenant_owner(p_tenant_id uuid, p_email text) -> jsonb
+```
+
+Adds an existing user as tenant owner, or holds an invite when the email has no `auth.users` row. Caller must be tenant owner, agency owner of the parent agency, or platform admin. When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). Returns `{ owner_invited: boolean, ... }` so the UI can distinguish "added directly" from "code-based invite held". The invite is consumed via `accept_invite(p_code)` after the recipient signs in.
+
+### invite_to_space
+
+```
+invite_to_space(p_space_id uuid, p_email text, p_role text) -> jsonb
+```
+
+Adds or invites a user to a space at `owner | editor | viewer` (rendered Owner / Contributor / Reader in the UI). Caller must be a space owner (or platform admin). Existing users get an immediate `space_members` row (or role-update on conflict); unknown emails get a `space_invites` row consumed via `accept_space_invite(p_code)`. **No domain restriction** -- spaces include both agency colleagues and pharma client emails.
+
+### accept_space_invite
+
+```
+accept_space_invite(p_code text) -> jsonb
+```
+
+Atomically validates and consumes a space invite. Validates the code, expiry, unused state, and that the invite email matches the caller's authenticated email. Inserts the `space_members` row and marks the invite consumed. Returns `{ id, name, tenant_id }` so the UI can route to `/t/:tenantId/s/:spaceId`. SECURITY DEFINER so callers don't need direct read access to `space_invites`.
 
 ### update_tenant_branding
 

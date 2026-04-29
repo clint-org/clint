@@ -1,33 +1,43 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Select } from 'primeng/select';
+import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
-import { SpaceMember } from '../../core/models/space.model';
-import { TenantMember } from '../../core/models/tenant.model';
+import { SpaceMember, SpaceInvite } from '../../core/models/space.model';
 import { SpaceService } from '../../core/services/space.service';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
+type SpaceRole = 'owner' | 'editor' | 'viewer';
+
+const ROLE_LABEL: Record<SpaceRole, string> = {
+  owner: 'Owner',
+  editor: 'Contributor',
+  viewer: 'Reader',
+};
+
 @Component({
   selector: 'app-space-members',
   standalone: true,
   imports: [
+    DatePipe,
     FormsModule,
     TableModule,
     ButtonModule,
     Dialog,
     Select,
+    InputText,
     MessageModule,
     ManagePageShellComponent,
     RowActionsComponent,
@@ -40,6 +50,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           {{ error() }}
         </p-message>
       }
+
+      <p class="mb-4 text-[11px] text-slate-500 max-w-2xl">
+        Space members can see and (with Contributor or Owner role) edit data in this
+        space. Invite anyone by email &mdash; agency colleagues or pharma client
+        users. Owners can manage members; Contributors can edit data; Readers have
+        read-only access.
+      </p>
 
       <p-table
         styleClass="data-table"
@@ -63,12 +80,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             <td>
               @if (isSelf(member)) {
                 <app-status-tag
-                  [label]="member.role"
+                  [label]="roleLabel(member.role)"
                   [tone]="member.role === 'owner' ? 'teal' : 'slate'"
                 />
               } @else {
                 <p-select
-                  [options]="spaceRoleOptions"
+                  [options]="roleOptions"
                   [ngModel]="member.role"
                   (ngModelChange)="changeRole(member, $event)"
                   optionLabel="label"
@@ -94,58 +111,119 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           </tr>
         </ng-template>
       </p-table>
+
+      <!-- Pending invites -->
+      <div class="mt-10 mb-3 flex items-baseline justify-between">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Pending invites
+        </h2>
+        <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
+      </div>
+      <p-table
+        styleClass="data-table"
+        [value]="invites()"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        aria-label="Pending invites"
+      >
+        <ng-template #header>
+          <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Code</th>
+            <th>Expires</th>
+            <th class="col-actions"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-invite>
+          <tr>
+            <td>{{ invite.email }}</td>
+            <td>
+              <app-status-tag
+                [label]="roleLabel(invite.role)"
+                [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
+              />
+            </td>
+            <td class="col-identifier">{{ invite.invite_code }}</td>
+            <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
+            <td class="col-actions">
+              <app-row-actions
+                [items]="inviteMenu(invite)"
+                [ariaLabel]="'Actions for invite ' + invite.email"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="5">No pending invites.</td>
+          </tr>
+        </ng-template>
+      </p-table>
     </app-manage-page-shell>
 
-    <!-- Add member dialog -->
+    <!-- Invite dialog -->
     <p-dialog
-      header="Add member to space"
+      header="Invite to space"
       [(visible)]="addDialogOpen"
       [modal]="true"
       [style]="{ width: '32rem' }"
+      (onHide)="resetInviteForm()"
     >
       <p class="mb-3 text-xs text-slate-500">
-        Add an existing tenant member to this space. They must be invited to the tenant
-        first.
+        Invite by email. Existing users are added immediately; otherwise an invite
+        code is held for them to accept after sign-in.
       </p>
       <div class="mb-3">
-        <label for="add-member" class="mb-1 block text-sm font-medium text-slate-700">
-          Member
+        <label for="invite-email" class="mb-1 block text-sm font-medium text-slate-700">
+          Email
         </label>
-        <p-select
-          inputId="add-member"
-          [options]="availableMembers()"
-          [(ngModel)]="selectedUserId"
-          optionLabel="label"
-          optionValue="value"
-          [filter]="true"
-          filterPlaceholder="Search by email..."
-          placeholder="Select a member"
-          [style]="{ width: '100%' }"
+        <input
+          pInputText
+          id="invite-email"
+          class="w-full"
+          type="email"
+          [ngModel]="inviteEmail()"
+          (ngModelChange)="inviteEmail.set($event)"
+          name="email"
+          required
         />
       </div>
       <div>
-        <label for="add-role" class="mb-1 block text-sm font-medium text-slate-700"> Role </label>
+        <label for="invite-role" class="mb-1 block text-sm font-medium text-slate-700">
+          Role
+        </label>
         <p-select
-          inputId="add-role"
-          [options]="spaceRoleOptions"
-          [(ngModel)]="selectedRole"
+          inputId="invite-role"
+          [options]="roleOptions"
+          [ngModel]="inviteRole()"
+          (ngModelChange)="inviteRole.set($event)"
           optionLabel="label"
           optionValue="value"
           [style]="{ width: '100%' }"
         />
       </div>
+      @if (inviteResult()) {
+        <p-message severity="success" [closable]="false" styleClass="mt-3">
+          {{ inviteResult() }}
+        </p-message>
+      }
+      @if (inviteError()) {
+        <p-message severity="error" [closable]="false" styleClass="mt-3">
+          {{ inviteError() }}
+        </p-message>
+      }
       <ng-template #footer>
         <p-button
-          label="Cancel"
+          label="Close"
           severity="secondary"
           [outlined]="true"
           (onClick)="addDialogOpen.set(false)"
         />
         <p-button
-          label="Add member"
-          (onClick)="addMember()"
+          label="Send invite"
+          (onClick)="sendInvite()"
           [loading]="adding()"
-          [disabled]="!selectedUserId"
+          [disabled]="!inviteEmail().trim()"
         />
       </ng-template>
     </p-dialog>
@@ -154,39 +232,52 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 export class SpaceMembersComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private spaceService = inject(SpaceService);
-  private tenantService = inject(TenantService);
   private supabase = inject(SupabaseService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
+  private readonly inviteMenuCache = new Map<string, MenuItem[]>();
 
   members = signal<SpaceMember[]>([]);
-  orgMembers = signal<TenantMember[]>([]);
+  invites = signal<SpaceInvite[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
   addDialogOpen = signal(false);
   adding = signal(false);
-  selectedUserId = '';
-  selectedRole: 'owner' | 'editor' | 'viewer' = 'viewer';
+  readonly inviteEmail = signal('');
+  readonly inviteRole = signal<SpaceRole>('viewer');
+  readonly inviteResult = signal<string | null>(null);
+  readonly inviteError = signal<string | null>(null);
 
-  private tenantId = '';
   private spaceId = '';
 
-  readonly spaceRoleOptions = [
-    { label: 'Owner', value: 'owner' },
-    { label: 'Editor', value: 'editor' },
-    { label: 'Viewer', value: 'viewer' },
+  readonly roleOptions = [
+    { label: ROLE_LABEL.owner, value: 'owner' as SpaceRole },
+    { label: ROLE_LABEL.editor, value: 'editor' as SpaceRole },
+    { label: ROLE_LABEL.viewer, value: 'viewer' as SpaceRole },
   ];
 
-  readonly availableMembers = signal<{ label: string; value: string }[]>([]);
+  readonly currentUserIsOwner = computed(() => {
+    const userId = this.supabase.currentUser()?.id;
+    if (!userId) return false;
+    return this.members().some((m) => m.user_id === userId && m.role === 'owner');
+  });
+
+  roleLabel(role: SpaceRole): string {
+    return ROLE_LABEL[role] ?? role;
+  }
 
   async ngOnInit(): Promise<void> {
-    this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.topbarState.actions.set([
-      { label: 'Add member', icon: 'fa-solid fa-plus', text: true, callback: () => this.openAddDialog() },
+      {
+        label: 'Invite to space',
+        icon: 'fa-solid fa-user-plus',
+        text: true,
+        callback: () => this.openInviteDialog(),
+      },
     ]);
     await this.loadData();
   }
@@ -214,7 +305,22 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     return items;
   }
 
-  async changeRole(member: SpaceMember, newRole: 'owner' | 'editor' | 'viewer'): Promise<void> {
+  inviteMenu(invite: SpaceInvite): MenuItem[] {
+    const cached = this.inviteMenuCache.get(invite.id);
+    if (cached) return cached;
+    const items: MenuItem[] = [
+      {
+        label: 'Revoke invite',
+        icon: 'fa-solid fa-trash',
+        styleClass: 'row-actions-danger',
+        command: () => this.revokeInvite(invite),
+      },
+    ];
+    this.inviteMenuCache.set(invite.id, items);
+    return items;
+  }
+
+  async changeRole(member: SpaceMember, newRole: SpaceRole): Promise<void> {
     try {
       await this.spaceService.updateMemberRole(this.spaceId, member.user_id, newRole);
       await this.loadData();
@@ -240,40 +346,79 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     }
   }
 
-  async openAddDialog(): Promise<void> {
-    const orgMembers = await this.tenantService.listMembers(this.tenantId);
-    this.orgMembers.set(orgMembers);
-    const spaceUserIds = new Set(this.members().map((m) => m.user_id));
-    this.availableMembers.set(
-      orgMembers
-        .filter((m) => !spaceUserIds.has(m.user_id))
-        .map((m) => ({ label: m.email ?? m.display_name ?? m.user_id, value: m.user_id }))
-    );
-    this.selectedUserId = '';
-    this.selectedRole = 'viewer';
+  openInviteDialog(): void {
+    this.resetInviteForm();
     this.addDialogOpen.set(true);
   }
 
-  async addMember(): Promise<void> {
-    if (!this.selectedUserId) return;
+  resetInviteForm(): void {
+    this.inviteEmail.set('');
+    this.inviteRole.set('viewer');
+    this.inviteResult.set(null);
+    this.inviteError.set(null);
+  }
+
+  async sendInvite(): Promise<void> {
+    const email = this.inviteEmail().trim();
+    if (!email) return;
     this.adding.set(true);
+    this.inviteResult.set(null);
+    this.inviteError.set(null);
     try {
-      await this.spaceService.addMember(this.spaceId, this.selectedUserId, this.selectedRole);
-      this.addDialogOpen.set(false);
+      const result = await this.spaceService.inviteToSpace(this.spaceId, email, this.inviteRole());
+      if (result.invited) {
+        this.inviteResult.set(`Invite held for ${email}. Code: ${result.invite_code}`);
+      } else {
+        this.inviteResult.set(`${email} added to space.`);
+      }
       await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Member added.', life: 3000 });
+      this.inviteEmail.set('');
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to add member');
+      this.inviteError.set(e instanceof Error ? e.message : 'Failed to invite');
     } finally {
       this.adding.set(false);
+    }
+  }
+
+  async revokeInvite(invite: SpaceInvite): Promise<void> {
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Revoke invite',
+      message: `Revoke the pending invite for ${invite.email}?`,
+      acceptLabel: 'Revoke',
+    });
+    if (!ok) return;
+    try {
+      await this.spaceService.deleteInvite(invite.id);
+      await this.loadData();
+      this.messageService.add({ severity: 'success', summary: 'Invite revoked.', life: 3000 });
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : 'Failed to revoke invite');
     }
   }
 
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      this.members.set(await this.spaceService.listMembers(this.spaceId));
+      const [membersResult, invitesResult] = await Promise.allSettled([
+        this.spaceService.listMembers(this.spaceId),
+        this.spaceService.listInvites(this.spaceId),
+      ]);
+
+      if (membersResult.status === 'fulfilled') {
+        this.members.set(membersResult.value);
+      } else {
+        console.error('space-members: failed to load members', membersResult.reason);
+      }
+
+      if (invitesResult.status === 'fulfilled') {
+        this.invites.set(invitesResult.value);
+      } else {
+        // RLS blocks invites read for non-owners; that's expected, surface nothing.
+        this.invites.set([]);
+      }
+
       this.menuCache.clear();
+      this.inviteMenuCache.clear();
     } finally {
       this.loading.set(false);
     }

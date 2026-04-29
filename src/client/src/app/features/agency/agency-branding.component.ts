@@ -121,6 +121,30 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               name="contactEmail"
             />
           </div>
+
+          <div class="sm:col-span-2">
+            <label
+              for="agency-email-domain"
+              class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
+              Member email domain (lock)
+            </label>
+            <input
+              pInputText
+              id="agency-email-domain"
+              class="w-full font-mono text-xs"
+              [ngModel]="emailDomain()"
+              (ngModelChange)="emailDomain.set($event)"
+              name="emailDomain"
+              placeholder="e.g. acme.com"
+            />
+            <p class="mt-1 text-[11px] text-slate-500">
+              When set, every agency member and every tenant owner under this
+              agency must have an email on this domain. Leave blank to allow any
+              domain. Editing this does NOT remove existing members; it only
+              gates future additions.
+            </p>
+          </div>
         </div>
 
         <div class="mt-6 max-w-2xl flex items-center gap-3 pt-4 border-t border-slate-200">
@@ -172,6 +196,7 @@ export class AgencyBrandingComponent implements OnInit {
   readonly appDisplayName = signal('');
   readonly contactEmail = signal('');
   readonly logoUrl = signal('');
+  readonly emailDomain = signal('');
   readonly primaryColorHash = signal('#0d9488');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
 
@@ -184,11 +209,13 @@ export class AgencyBrandingComponent implements OnInit {
     const a = this.agency();
     if (!a) return false;
     const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
+    const domain = (this.emailDomain() || '').trim().toLowerCase() || null;
     return (
       this.appDisplayName() !== a.app_display_name ||
       (this.logoUrl() || null) !== (a.logo_url ?? null) ||
       this.contactEmail() !== a.contact_email ||
-      primary !== (a.primary_color || '#0d9488').toLowerCase()
+      primary !== (a.primary_color || '#0d9488').toLowerCase() ||
+      domain !== (a.email_domain ?? null)
     );
   });
 
@@ -210,6 +237,7 @@ export class AgencyBrandingComponent implements OnInit {
       this.appDisplayName.set(current.app_display_name);
       this.contactEmail.set(current.contact_email);
       this.logoUrl.set(current.logo_url ?? '');
+      this.emailDomain.set(current.email_domain ?? '');
       this.primaryColorHash.set((current.primary_color ?? '#0d9488').toLowerCase());
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load agency.');
@@ -238,6 +266,10 @@ export class AgencyBrandingComponent implements OnInit {
       const newContact = this.contactEmail();
       if (newContact !== a.contact_email) {
         branding.contact_email = newContact.trim();
+      }
+      const domain = (this.emailDomain() || '').trim().toLowerCase() || null;
+      if (domain !== (a.email_domain ?? null)) {
+        branding.email_domain = domain;
       }
       if (Object.keys(branding).length === 0) {
         this.saving.set(false);

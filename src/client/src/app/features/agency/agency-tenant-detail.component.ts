@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { ColorPicker } from 'primeng/colorpicker';
+import { Dialog } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
@@ -24,6 +25,7 @@ import { environment } from '../../../environments/environment';
     ButtonModule,
     InputText,
     ColorPicker,
+    Dialog,
     TableModule,
     MessageModule,
     ManagePageShellComponent,
@@ -175,36 +177,55 @@ import { environment } from '../../../environments/environment';
           </div>
         </section>
 
-        <!-- Members section -->
+        <!-- Tenant owners section -->
         <section>
           <div class="mb-3 flex items-baseline justify-between">
             <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-              Tenant members
+              Tenant owners
             </h2>
-            <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
+              <p-button
+                label="Add owner"
+                icon="fa-solid fa-plus"
+                size="small"
+                [text]="true"
+                (onClick)="openAddOwnerDialog()"
+              />
+            </div>
           </div>
+          <p class="mb-3 text-[11px] text-slate-500 max-w-xl">
+            Tenant owners can manage this tenant and add/remove other owners.
+            They do NOT automatically see space data &mdash; they must be added
+            to a space explicitly.
+          </p>
           <p-table
             styleClass="data-table"
             [value]="members()"
             [loading]="membersLoading()"
             [tableStyle]="{ 'min-width': '40rem' }"
-            aria-label="Tenant members"
+            aria-label="Tenant owners"
           >
             <ng-template #header>
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th class="col-actions"></th>
               </tr>
             </ng-template>
             <ng-template #body let-member>
               <tr>
                 <td>{{ member.display_name || '--' }}</td>
                 <td class="col-identifier">{{ member.email || member.user_id }}</td>
-                <td>
-                  <app-status-tag
-                    [label]="member.role"
-                    [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                <td class="col-actions">
+                  <p-button
+                    icon="fa-solid fa-user-minus"
+                    size="small"
+                    severity="secondary"
+                    [text]="true"
+                    [rounded]="true"
+                    [ariaLabel]="'Remove ' + (member.email || member.user_id)"
+                    (onClick)="removeOwner(member)"
                   />
                 </td>
               </tr>
@@ -212,7 +233,7 @@ import { environment } from '../../../environments/environment';
             <ng-template #emptymessage>
               <tr>
                 <td colspan="3" class="text-center py-6 text-sm text-slate-500">
-                  No tenant members yet.
+                  No tenant owners yet.
                 </td>
               </tr>
             </ng-template>
@@ -220,6 +241,60 @@ import { environment } from '../../../environments/environment';
         </section>
       }
     </app-manage-page-shell>
+
+    <!-- Add tenant owner dialog -->
+    <p-dialog
+      header="Add tenant owner"
+      [(visible)]="addOwnerDialogOpen"
+      [modal]="true"
+      [style]="{ width: '32rem' }"
+      (onHide)="resetAddOwnerForm()"
+    >
+      <p class="mb-3 text-xs text-slate-500">
+        Enter the new owner's email. If your agency has an email-domain
+        restriction set, the email must be on that domain. Existing users are
+        added immediately; otherwise an invite code is held.
+      </p>
+      <div>
+        <label for="owner-email" class="mb-1 block text-sm font-medium text-slate-700">
+          Email
+        </label>
+        <input
+          pInputText
+          id="owner-email"
+          class="w-full"
+          type="email"
+          [ngModel]="newOwnerEmail()"
+          (ngModelChange)="newOwnerEmail.set($event)"
+          name="email"
+          required
+        />
+      </div>
+      @if (addOwnerResult()) {
+        <p-message severity="success" [closable]="false" styleClass="mt-3">
+          {{ addOwnerResult() }}
+        </p-message>
+      }
+      @if (addOwnerError()) {
+        <p-message severity="error" [closable]="false" styleClass="mt-3">
+          {{ addOwnerError() }}
+        </p-message>
+      }
+      <ng-template #footer>
+        <p-button
+          label="Close"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="addOwnerDialogOpen.set(false)"
+        />
+        <p-button
+          label="Add owner"
+          (onClick)="addOwner()"
+          [loading]="addingOwner()"
+          [disabled]="!newOwnerEmail().trim()"
+        />
+      </ng-template>
+    </p-dialog>
   `,
 })
 export class AgencyTenantDetailComponent implements OnInit {
@@ -243,6 +318,13 @@ export class AgencyTenantDetailComponent implements OnInit {
   // bare hex, so we expose a derived view + a setter that re-adds the "#".
   readonly primaryColorHash = signal('#0d9488');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
+
+  // Add-tenant-owner dialog state.
+  readonly addOwnerDialogOpen = signal(false);
+  readonly addingOwner = signal(false);
+  readonly newOwnerEmail = signal('');
+  readonly addOwnerResult = signal<string | null>(null);
+  readonly addOwnerError = signal<string | null>(null);
 
   private tenantId = '';
 
@@ -337,6 +419,67 @@ export class AgencyTenantDetailComponent implements OnInit {
 
   onBack(): void {
     this.router.navigate(['/admin/tenants']);
+  }
+
+  openAddOwnerDialog(): void {
+    this.resetAddOwnerForm();
+    this.addOwnerDialogOpen.set(true);
+  }
+
+  resetAddOwnerForm(): void {
+    this.newOwnerEmail.set('');
+    this.addOwnerResult.set(null);
+    this.addOwnerError.set(null);
+  }
+
+  async addOwner(): Promise<void> {
+    const email = this.newOwnerEmail().trim();
+    if (!email) return;
+    this.addingOwner.set(true);
+    this.addOwnerResult.set(null);
+    this.addOwnerError.set(null);
+    try {
+      const result = await this.tenantService.addTenantOwner(this.tenantId, email);
+      if (result.owner_invited) {
+        this.addOwnerResult.set(`Invite held for ${email}. Code: ${result.invite_code}`);
+      } else {
+        this.addOwnerResult.set(`${email} added as tenant owner.`);
+      }
+      this.newOwnerEmail.set('');
+      // Refresh members list.
+      try {
+        this.members.set(await this.tenantService.listMembers(this.tenantId));
+      } catch (e) {
+        console.warn('agency-tenant-detail: members refresh failed', e);
+      }
+    } catch (e) {
+      this.addOwnerError.set(e instanceof Error ? e.message : 'Failed to add owner');
+    } finally {
+      this.addingOwner.set(false);
+    }
+  }
+
+  async removeOwner(member: TenantMember): Promise<void> {
+    const ok = confirm(
+      `Remove ${member.email || member.user_id} as a tenant owner? They will lose access immediately.`
+    );
+    if (!ok) return;
+    try {
+      await this.tenantService.removeMember(this.tenantId, member.user_id);
+      this.members.set(await this.tenantService.listMembers(this.tenantId));
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Owner removed.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Failed to remove owner',
+        detail: e instanceof Error ? e.message : String(e),
+        life: 5000,
+      });
+    }
   }
 
   onOpenTenant(): void {

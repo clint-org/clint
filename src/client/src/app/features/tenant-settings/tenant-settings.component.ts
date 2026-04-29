@@ -1,14 +1,13 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
-import { Select } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
-import { CheckboxModule } from 'primeng/checkbox';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { TenantService } from '../../core/services/tenant.service';
@@ -23,14 +22,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
   selector: 'app-tenant-settings',
   standalone: true,
   imports: [
+    DatePipe,
     FormsModule,
     TableModule,
     ButtonModule,
     Dialog,
     InputText,
-    Select,
     MessageModule,
-    CheckboxModule,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -48,11 +46,11 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </p-message>
       }
 
-      <!-- Tenant identity (branding + name) -->
+      <!-- Tenant identity (branding + name): editable when direct customer,
+           read-only card when agency-managed -->
       @if (!tenant()?.agency_id) {
         <div class="mb-8 max-w-xl">
           <div class="flex items-start gap-4">
-            <!-- Logo upload -->
             <div class="flex flex-col items-center gap-2">
               @if (tenant()?.logo_url) {
                 <img
@@ -128,25 +126,29 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </div>
       }
 
-      <!-- Members -->
+      <!-- Tenant owners -->
       <div class="mb-3 flex items-baseline justify-between">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Members
+          Tenant owners
         </h2>
         <span class="text-[11px] text-slate-400 tabular-nums">{{ members().length }}</span>
       </div>
+      <p class="mb-3 text-[11px] text-slate-500 max-w-xl">
+        Tenant owners can rename the tenant, manage other owners, and provision spaces.
+        Data access is granted per-space &mdash; owners must add themselves to a space to
+        see its data.
+      </p>
       <p-table
         styleClass="data-table"
         [value]="members()"
         [loading]="loading()"
-        [tableStyle]="{ 'min-width': '48rem' }"
-        aria-label="Tenant members"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        aria-label="Tenant owners"
       >
         <ng-template #header>
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Role</th>
             <th class="col-actions"></th>
           </tr>
         </ng-template>
@@ -154,24 +156,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           <tr>
             <td>{{ member.display_name }}</td>
             <td class="col-identifier">{{ member.email }}</td>
-            <td>
-              @if (isSelf(member)) {
-                <app-status-tag
-                  [label]="member.role"
-                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
-                />
-              } @else {
-                <p-select
-                  [options]="roleOptions"
-                  [ngModel]="member.role"
-                  (ngModelChange)="changeMemberRole(member, $event)"
-                  optionLabel="label"
-                  optionValue="value"
-                  size="small"
-                  [style]="{ minWidth: '8rem' }"
-                />
-              }
-            </td>
             <td class="col-actions">
               @if (!isSelf(member)) {
                 <app-row-actions
@@ -184,12 +168,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="4">No members.</td>
+            <td colspan="3">No owners.</td>
           </tr>
         </ng-template>
       </p-table>
 
-      <!-- Invites -->
+      <!-- Pending owner invites -->
       <div class="mt-10 mb-3 flex items-baseline justify-between">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Pending invites
@@ -199,13 +183,12 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       <p-table
         styleClass="data-table"
         [value]="invites()"
-        [tableStyle]="{ 'min-width': '48rem' }"
-        aria-label="Pending invites"
+        [tableStyle]="{ 'min-width': '40rem' }"
+        aria-label="Pending owner invites"
       >
         <ng-template #header>
           <tr>
             <th>Email</th>
-            <th>Role</th>
             <th>Code</th>
             <th>Expires</th>
           </tr>
@@ -213,135 +196,23 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         <ng-template #body let-invite>
           <tr>
             <td>{{ invite.email }}</td>
-            <td>
-              <app-status-tag
-                [label]="invite.role"
-                [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
-              />
-            </td>
             <td class="col-identifier">{{ invite.invite_code }}</td>
-            <td class="col-identifier">{{ invite.expires_at }}</td>
+            <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="4">No pending invites.</td>
+            <td colspan="3">No pending invites.</td>
           </tr>
         </ng-template>
       </p-table>
 
-      <!-- Access (owner-only) -->
-      @if (currentUserIsOwner()) {
-        <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
-          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Access
-          </h2>
-          <p class="mt-1 text-xs text-slate-500">
-            Allow employees with email addresses on approved domains to join this
-            workspace automatically when they sign in on this subdomain.
-          </p>
-
-          @if (accessLoading()) {
-            <p class="mt-4 text-xs text-slate-400">Loading access settings...</p>
-          } @else {
-            <div class="mt-4 flex items-center gap-2">
-              <p-checkbox
-                inputId="self-join-toggle"
-                [ngModel]="selfJoinEnabled()"
-                (ngModelChange)="selfJoinEnabled.set($event)"
-                [binary]="true"
-              />
-              <label for="self-join-toggle" class="cursor-pointer text-xs text-slate-700">
-                Enable self-join from approved email domains
-              </label>
-            </div>
-
-            @if (selfJoinEnabled()) {
-              <div class="mt-4">
-                <label
-                  for="domain-input"
-                  class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                >
-                  Approved email domains
-                </label>
-                <div class="flex items-center gap-2">
-                  <input
-                    pInputText
-                    id="domain-input"
-                    class="flex-1"
-                    placeholder="acme.com"
-                    [ngModel]="newDomain()"
-                    (ngModelChange)="newDomain.set($event)"
-                    (keydown.enter)="addDomain(); $event.preventDefault()"
-                    [attr.aria-invalid]="domainError() ? 'true' : null"
-                    aria-describedby="domain-input-help"
-                  />
-                  <p-button
-                    label="Add"
-                    size="small"
-                    [outlined]="true"
-                    (onClick)="addDomain()"
-                  />
-                </div>
-                <p id="domain-input-help" class="mt-1 text-[11px] text-slate-400">
-                  Lowercase domain like <code class="font-mono">acme.com</code>. Press
-                  Enter or Add to include it.
-                </p>
-                @if (domainError()) {
-                  <p class="mt-1 text-[11px] text-red-600" role="alert">
-                    {{ domainError() }}
-                  </p>
-                }
-
-                @if (allowlist().length > 0) {
-                  <ul
-                    class="mt-3 flex flex-wrap gap-1.5"
-                    aria-label="Approved email domains"
-                  >
-                    @for (domain of allowlist(); track domain) {
-                      <li
-                        class="inline-flex items-center gap-1.5 border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] tabular-nums text-slate-700"
-                      >
-                        <span class="font-mono">{{ domain }}</span>
-                        <button
-                          type="button"
-                          class="text-slate-400 hover:text-red-600 focus:outline-none focus:text-red-600"
-                          (click)="removeDomain(domain)"
-                          [attr.aria-label]="'Remove ' + domain"
-                        >
-                          <i class="fa-solid fa-xmark text-[10px]"></i>
-                        </button>
-                      </li>
-                    }
-                  </ul>
-                } @else {
-                  <p class="mt-3 text-[11px] italic text-slate-400">
-                    No domains added yet. Self-join will be effectively disabled until
-                    at least one domain is approved.
-                  </p>
-                }
-              </div>
-            }
-
-            <div class="mt-5">
-              <p-button
-                label="Save access settings"
-                size="small"
-                [loading]="savingAccess()"
-                [disabled]="!accessChanged()"
-                (onClick)="saveAccess()"
-              />
-            </div>
-          }
-        </div>
-      }
-
-      <!-- Danger zone (owner-only) -->
-      @if (currentUserIsOwner()) {
+      <!-- Danger zone (owner-only, direct-customer tenants only) -->
+      @if (currentUserIsOwner() && !tenant()?.agency_id) {
         <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
           <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
           <p class="mt-1 text-xs text-slate-500">
-            Deleting a tenant permanently removes every space, member, invite, and
+            Deleting a tenant permanently removes every space, owner, invite, and
             data record inside it. This cannot be undone.
           </p>
           <p-button
@@ -358,11 +229,17 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     </app-manage-page-shell>
 
     <p-dialog
-      header="Invite member"
+      header="Add tenant owner"
       [(visible)]="inviteDialogOpen"
       [modal]="true"
       [style]="{ width: '32rem' }"
+      (onHide)="resetInviteForm()"
     >
+      <p class="mb-3 text-xs text-slate-500">
+        Enter the new owner's email. If the agency has an email-domain restriction,
+        the email must be on that domain. If the user already has an account they're
+        added immediately; otherwise an invite code is held for them.
+      </p>
       <form (ngSubmit)="sendInvite()" class="space-y-4">
         <div>
           <label for="invite-email" class="mb-1 block text-sm font-medium text-slate-700">
@@ -379,33 +256,23 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             required
           />
         </div>
-        <div>
-          <label for="invite-role" class="mb-1 block text-sm font-medium text-slate-700">
-            Role
-          </label>
-          <p-select
-            inputId="invite-role"
-            [options]="roleOptions"
-            [ngModel]="inviteRole()"
-            (ngModelChange)="inviteRole.set($event)"
-            name="role"
-            optionLabel="label"
-            optionValue="value"
-            [style]="{ width: '100%' }"
-          />
-        </div>
+        @if (inviteResult()) {
+          <p-message severity="success" [closable]="false">
+            {{ inviteResult() }}
+          </p-message>
+        }
         @if (inviteError()) {
           <p-message severity="error" [closable]="false">{{ inviteError() }}</p-message>
         }
       </form>
       <ng-template #footer>
         <p-button
-          label="Cancel"
+          label="Close"
           severity="secondary"
           [outlined]="true"
           (onClick)="inviteDialogOpen.set(false)"
         />
-        <p-button label="Send invite" (onClick)="sendInvite()" [loading]="inviting()" />
+        <p-button label="Add owner" (onClick)="sendInvite()" [loading]="inviting()" />
       </ng-template>
     </p-dialog>
   `,
@@ -419,7 +286,6 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   private readonly messageService = inject(MessageService);
 
-  // Stable menu-item references per member id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
   tenantId = '';
@@ -430,29 +296,12 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   inviteDialogOpen = signal(false);
   inviting = signal(false);
   inviteError = signal<string | null>(null);
+  inviteResult = signal<string | null>(null);
   removeError = signal<string | null>(null);
   savingName = signal(false);
   deletingTenant = signal(false);
   readonly inviteEmail = signal('');
-  readonly inviteRole = signal<'owner' | 'member'>('member');
   readonly orgName = signal('');
-
-  // Access settings
-  private static readonly DOMAIN_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/;
-  accessLoading = signal(false);
-  savingAccess = signal(false);
-  readonly selfJoinEnabled = signal(false);
-  allowlist = signal<string[]>([]);
-  readonly newDomain = signal('');
-  domainError = signal<string | null>(null);
-  // Snapshot of last-saved values for change detection
-  private savedSelfJoinEnabled = false;
-  private savedAllowlist: string[] = [];
-
-  readonly roleOptions = [
-    { label: 'Member', value: 'member' },
-    { label: 'Owner', value: 'owner' },
-  ];
 
   readonly currentUserIsOwner = computed(() => {
     const userId = this.supabase.currentUser()?.id;
@@ -474,20 +323,13 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
         callback: () => this.goBack(),
       },
       {
-        label: 'Invite member',
+        label: 'Add owner',
         icon: 'fa-solid fa-plus',
-        callback: () => this.inviteDialogOpen.set(true),
+        callback: () => this.openInviteDialog(),
       },
     ]);
     await this.loadData();
     this.orgName.set(this.tenant()?.name ?? '');
-    // Load access settings best-effort: only owners (and agency owners /
-    // platform admins) are authorised by the RPC. The promise is awaited so
-    // the form initialises with current values, but a permission failure
-    // simply leaves the section in its empty default state.
-    if (this.currentUserIsOwner()) {
-      await this.loadAccessSettings();
-    }
   }
 
   ngOnDestroy(): void {
@@ -499,7 +341,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     if (cached) return cached;
     const items: MenuItem[] = [
       {
-        label: 'Remove member',
+        label: 'Remove owner',
         icon: 'fa-solid fa-user-minus',
         styleClass: 'row-actions-danger',
         command: () => this.removeMember(member),
@@ -540,16 +382,6 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async changeMemberRole(member: TenantMember, newRole: 'owner' | 'member'): Promise<void> {
-    try {
-      await this.tenantService.updateMemberRole(this.tenantId, member.user_id, newRole);
-      await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Role updated.', life: 3000 });
-    } catch (e) {
-      this.removeError.set(e instanceof Error ? e.message : 'Failed to update role');
-    }
-  }
-
   async onLogoSelect(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -579,23 +411,37 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  openInviteDialog(): void {
+    this.resetInviteForm();
+    this.inviteDialogOpen.set(true);
+  }
+
+  resetInviteForm(): void {
+    this.inviteEmail.set('');
+    this.inviteError.set(null);
+    this.inviteResult.set(null);
+  }
+
   async sendInvite(): Promise<void> {
-    if (!this.inviteEmail().trim()) return;
+    const email = this.inviteEmail().trim();
+    if (!email) return;
     this.inviting.set(true);
     this.inviteError.set(null);
+    this.inviteResult.set(null);
 
     try {
-      await this.tenantService.createInvite(
-        this.tenantId,
-        this.inviteEmail().trim(),
-        this.inviteRole()
-      );
-      this.inviteDialogOpen.set(false);
-      this.inviteEmail.set('');
+      const result = await this.tenantService.addTenantOwner(this.tenantId, email);
+      if (result.owner_invited) {
+        this.inviteResult.set(
+          `Invite held for ${email}. Code: ${result.invite_code}`
+        );
+      } else {
+        this.inviteResult.set(`${email} added as tenant owner.`);
+      }
       await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Invite sent.', life: 3000 });
+      this.inviteEmail.set('');
     } catch (e) {
-      this.inviteError.set(e instanceof Error ? e.message : 'Failed to send invite');
+      this.inviteError.set(e instanceof Error ? e.message : 'Failed to add owner');
     } finally {
       this.inviting.set(false);
     }
@@ -607,7 +453,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete tenant',
       message:
-        `Delete "${t.name}"? Every space, member, invite, and data record in this ` +
+        `Delete "${t.name}"? Every space, owner, invite, and data record in this ` +
         `tenant will be permanently removed. This cannot be undone.`,
       acceptLabel: 'Delete tenant',
     });
@@ -616,8 +462,6 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     this.deletingTenant.set(true);
     try {
       await this.tenantService.deleteTenant(this.tenantId);
-      // landing on `/` triggers marketingLandingGuard which routes to
-      // another tenant or onboarding, depending on what's left.
       this.router.navigate(['/']);
     } catch (e) {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to delete tenant');
@@ -628,26 +472,23 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
 
   async removeMember(member: TenantMember): Promise<void> {
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Remove member',
-      message: `Remove ${member.display_name} from this tenant? They will lose access immediately.`,
+      header: 'Remove owner',
+      message: `Remove ${member.display_name} as a tenant owner? They will lose access immediately.`,
       acceptLabel: 'Remove',
     });
     if (!ok) return;
     try {
       await this.tenantService.removeMember(this.tenantId, member.user_id);
       await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Member removed.', life: 3000 });
+      this.messageService.add({ severity: 'success', summary: 'Owner removed.', life: 3000 });
     } catch (e) {
-      this.removeError.set(e instanceof Error ? e.message : 'Failed to remove member');
+      this.removeError.set(e instanceof Error ? e.message : 'Failed to remove owner');
     }
   }
 
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      // allSettled so a failure on one section (e.g. listMembers blowing up
-      // on a permissions issue) doesn't blank out the whole page. Each
-      // successful call still updates its slice.
       const [tenantResult, membersResult, invitesResult] = await Promise.allSettled([
         this.tenantService.getTenant(this.tenantId),
         this.tenantService.listMembers(this.tenantId),
@@ -675,93 +516,6 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       this.menuCache.clear();
     } finally {
       this.loading.set(false);
-    }
-  }
-
-  private async loadAccessSettings(): Promise<void> {
-    this.accessLoading.set(true);
-    try {
-      const settings = await this.tenantService.getTenantAccessSettings(this.tenantId);
-      this.selfJoinEnabled.set(settings.email_self_join_enabled);
-      const list = Array.from(settings.email_domain_allowlist ?? []);
-      this.allowlist.set(list);
-      this.savedSelfJoinEnabled = this.selfJoinEnabled();
-      this.savedAllowlist = [...list];
-    } catch (e) {
-      // permission denied or transient: leave defaults
-      console.error('tenant-settings: failed to load access settings', e);
-    } finally {
-      this.accessLoading.set(false);
-    }
-  }
-
-  accessChanged(): boolean {
-    if (this.selfJoinEnabled() !== this.savedSelfJoinEnabled) return true;
-    const a = this.allowlist();
-    const b = this.savedAllowlist;
-    if (a.length !== b.length) return true;
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) return true;
-    }
-    return false;
-  }
-
-  addDomain(): void {
-    this.domainError.set(null);
-    const raw = (this.newDomain() ?? '').trim().toLowerCase();
-    if (!raw) return;
-    if (!TenantSettingsComponent.DOMAIN_RE.test(raw)) {
-      this.domainError.set(
-        `"${raw}" is not a valid domain. Use lowercase letters, digits, dots, or hyphens (e.g. acme.com).`
-      );
-      return;
-    }
-    if (this.allowlist().includes(raw)) {
-      this.domainError.set(`"${raw}" is already in the list.`);
-      return;
-    }
-    this.allowlist.update((list) => [...list, raw]);
-    this.newDomain.set('');
-  }
-
-  removeDomain(domain: string): void {
-    this.allowlist.update((list) => list.filter((d) => d !== domain));
-    this.domainError.set(null);
-  }
-
-  async saveAccess(): Promise<void> {
-    this.savingAccess.set(true);
-    this.domainError.set(null);
-    try {
-      const list = this.allowlist();
-      // Re-validate client-side; the RPC will reject server-side too.
-      for (const d of list) {
-        if (!TenantSettingsComponent.DOMAIN_RE.test(d)) {
-          this.domainError.set(`Invalid domain in list: ${d}`);
-          this.savingAccess.set(false);
-          return;
-        }
-      }
-      await this.tenantService.updateTenantAccess(this.tenantId, {
-        email_domain_allowlist: list,
-        email_self_join_enabled: this.selfJoinEnabled(),
-      });
-      this.savedSelfJoinEnabled = this.selfJoinEnabled();
-      this.savedAllowlist = [...list];
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Access settings updated.',
-        life: 3000,
-      });
-    } catch (e) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Failed to update access settings',
-        detail: e instanceof Error ? e.message : String(e),
-        life: 5000,
-      });
-    } finally {
-      this.savingAccess.set(false);
     }
   }
 }

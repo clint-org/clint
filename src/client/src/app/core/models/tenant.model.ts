@@ -14,7 +14,7 @@ export interface TenantMember {
   id: string;
   tenant_id: string;
   user_id: string;
-  role: 'owner' | 'member';
+  role: 'owner';
   created_at: string;
   email?: string;
   display_name?: string;
@@ -24,7 +24,7 @@ export interface TenantInvite {
   id: string;
   tenant_id: string;
   email: string;
-  role: 'owner' | 'member';
+  role: 'owner';
   invite_code: string;
   created_by: string;
   accepted_at: string | null;

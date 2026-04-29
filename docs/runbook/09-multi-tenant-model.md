@@ -8,47 +8,50 @@
 
 ```
 Agency (Consultancy partner; optional)            e.g. ZS Associates -> zs.yourproduct.com
-  +-- AgencyMembers (role: owner | member)
+  +-- email_domain (optional lock; gates agency + tenant owner adds)
+  +-- AgencyMembers (role: owner only)
   +-- Tenants (Pharma client organizations)        e.g. Pfizer -> pfizer.yourproduct.com
-        +-- TenantMembers (role: owner | member)
-        +-- TenantInvites (7-day expiry invite codes; branded HTML email via Resend)
+        +-- TenantMembers (role: owner only -- agency-domain emails)
+        +-- TenantInvites (code-based, role=owner; consumed by accept_invite)
         +-- Spaces (Engagements / pipeline projects)
-              +-- SpaceMembers (role: owner | editor | viewer)
+              +-- SpaceMembers (role: owner | editor | viewer; ANY email)
+              +-- SpaceInvites (code-based; consumed by accept_space_invite)
               +-- Data (companies, products, trials, ...)
 ```
 
 `tenants.agency_id` is nullable. Direct customers (no agency) live on the apex (`yourproduct.com`) or claim their own subdomain via tenant settings; they keep working unchanged from the pre-whitelabel design.
 
-A user can be a member of multiple agencies AND multiple tenants directly.
+A user can be an owner of multiple agencies AND multiple tenants directly.
 
 ## Roles & Permissions
 
 | Role | Scope | Can Do |
 |---|---|---|
-| Agency Owner | Agency | Provision tenants, edit agency + tenant branding, invite agency members, full read+write on all tenants in the agency (equivalent to being a tenant owner on each) |
-| Agency Member | Agency | Read-only across all tenants in the agency; view-only access to the agency portal |
-| Tenant Owner | Tenant | Manage members, create spaces, manage invites, configure access (allowlist + self-join), full access to all spaces in the tenant |
-| Tenant Member | Tenant | View tenant, join spaces; gets implicit editor/viewer space access via `has_space_access` |
-| Space Owner | Space | Full CRUD on space data, manage space members |
-| Space Editor | Space | Create/edit/delete data within the space |
-| Space Viewer | Space | Read-only access to space data |
-| Platform Admin | Global | Cross-cutting read access; writes only via super-admin RPCs |
+| Agency Owner | Agency | Provision tenants, edit agency branding (incl. email_domain lock), add other agency owners, edit tenant branding, add tenant owners. Does NOT see space data unless explicitly added to a space. |
+| Tenant Owner | Tenant | Rename tenant, manage other tenant owners, create spaces, delete tenant (direct customers only). Does NOT see space data unless explicitly added to a space. |
+| Space Owner | Space | Full CRUD on space data, manage space members + invites, change member roles |
+| Space Editor (Contributor in UI) | Space | Create/edit/delete data within the space |
+| Space Viewer (Reader in UI) | Space | Read-only access to space data |
+| Platform Admin | Global | Cross-cutting read access; writes only via super-admin RPCs; bypasses agency.email_domain enforcement |
 
-`tenant_members.role` is constrained to `owner | member` — never `viewer`. Space-level read-only roles live on `space_members`.
+`tenant_members.role` and `agency_members.role` are both constrained to `owner` only -- non-owner roles at those levels carry no surface area in the product. Space-level access uses the three-tier `owner | editor | viewer` (rendered as Owner / Contributor / Reader in the UI).
 
-Tenant owners automatically have access to all spaces within their tenant; agency owners get implicit access to all spaces in all tenants in their agency. Both are enforced by the `has_space_access()` function with disjuncts for tenant ownership, agency ownership (write-eligible), agency membership (read-only), and platform admin.
+**Authority cascade was removed in migration 75.** Tenant owners and agency owners get NO implicit space access. Data visibility is space-scoped, period. To see Pfizer's catalysts, you must hold a `space_members` row for the Pfizer/Workspace space -- being a tenant or agency owner is not enough. This protects firewalled engagements: a Stout consultant on the Pfizer engagement does not see Boehringer's data just because Stout owns both tenants.
+
+`agencies.email_domain` is an optional lock. When set, every `agency_members` and `tenant_members` insert under that agency must reference a user whose email is on that domain (enforced by the `enforce_member_email_domain` BEFORE-INSERT trigger). Platform admins bypass. Null = no enforcement.
 
 ## Role-Access Matrix
 
-| Actor | Tenant data SELECT | Tenant data WRITE | Tenant settings | Agency portal | Platform admin |
+| Actor | Space data SELECT | Space data WRITE | Tenant settings | Agency portal | Platform admin |
 |---|---|---|---|---|---|
-| Pharma user (tenant viewer/editor via space) | own space | scoped by space role | none | none | none |
-| Pharma user (tenant owner) | own tenant | own tenant | own tenant | none | none |
-| Agency member | all tenants in agency | none | none | view-only | none |
-| Agency owner | all tenants in agency | all tenants in agency | all tenants in agency | full | none |
+| Space viewer | own space | none | none | none | none |
+| Space editor | own space | own space | none | none | none |
+| Space owner | own space | own space | none | none | none |
+| Tenant owner | spaces they're members of | spaces they're members of | own tenant | none | none |
+| Agency owner | spaces they're members of | spaces they're members of | tenants under agency | full | none |
 | Platform admin | all (read) | only via write RPCs | all (via super-admin) | all (read) | all |
 
-Write access on tenant child tables (companies, products, trials, etc.) goes through `has_space_access(space_id, ['owner', 'editor'])` — agency *members* are not implicitly editors of child data, only agency *owners* are.
+Write access on tenant child tables (companies, products, trials, etc.) goes through `has_space_access(space_id, ['owner', 'editor'])` -- the row check enforces an explicit `space_members` membership.
 
 ## Tenant Suspension
 

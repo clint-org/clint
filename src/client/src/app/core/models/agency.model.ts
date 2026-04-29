@@ -8,6 +8,7 @@ export interface Agency {
   app_display_name: string;
   primary_color: string;
   contact_email: string;
+  email_domain: string | null;
   plan_tier: string;
   max_tenants: number;
   custom_domain: string | null;
@@ -19,7 +20,7 @@ export interface AgencyMember {
   id: string;
   agency_id: string;
   user_id: string;
-  role: 'owner' | 'member';
+  role: 'owner';
   created_at: string;
   email?: string;
   display_name?: string;
@@ -44,6 +45,7 @@ export interface AgencyBrandingUpdate {
   favicon_url?: string | null;
   primary_color?: string;
   contact_email?: string;
+  email_domain?: string | null;
 }
 
 export interface TenantBrandingUpdate {

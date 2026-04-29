@@ -76,20 +76,34 @@ export class TenantService {
     if (error) throw error;
   }
 
-  async createInvite(
+  /**
+   * Add or invite a tenant owner. Calls add_tenant_owner RPC, which validates
+   * the caller's permissions, enforces the agency.email_domain rule when set,
+   * and either inserts a tenant_members(owner) row directly or holds a
+   * tenant_invites row for code-based acceptance via accept_invite().
+   */
+  async addTenantOwner(
     tenantId: string,
-    email: string,
-    role: 'owner' | 'member'
-  ): Promise<TenantInvite> {
-    const code = this.generateCode();
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
-    const { data, error } = await this.supabase.client
-      .from('tenant_invites')
-      .insert({ tenant_id: tenantId, email, role, invite_code: code, created_by: userId })
-      .select()
-      .single();
+    email: string
+  ): Promise<{
+    owner_invited: boolean;
+    user_id?: string;
+    invite_id?: string;
+    invite_code?: string;
+    email?: string;
+  }> {
+    const { data, error } = await this.supabase.client.rpc('add_tenant_owner', {
+      p_tenant_id: tenantId,
+      p_email: email,
+    });
     if (error) throw error;
-    return data;
+    return data as {
+      owner_invited: boolean;
+      user_id?: string;
+      invite_id?: string;
+      invite_code?: string;
+      email?: string;
+    };
   }
 
   async listInvites(tenantId: string): Promise<TenantInvite[]> {
@@ -109,15 +123,6 @@ export class TenantService {
     });
     if (error) throw error;
     return data as Tenant;
-  }
-
-  async updateMemberRole(tenantId: string, userId: string, role: 'owner' | 'member'): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('tenant_members')
-      .update({ role })
-      .eq('tenant_id', tenantId)
-      .eq('user_id', userId);
-    if (error) throw error;
   }
 
   async uploadLogo(tenantId: string, file: File): Promise<string> {
@@ -194,12 +199,4 @@ export class TenantService {
     return (data ?? []).length > 0;
   }
 
-  private generateCode(): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
 }
