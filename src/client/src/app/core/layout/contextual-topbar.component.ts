@@ -180,77 +180,80 @@ export interface TopbarTab {
         </div>
       </div>
 
-      <!-- Page-specific content -->
-      @switch (pageType()) {
-        @case ('landscape') {
-          <div class="topbar-divider" aria-hidden="true"></div>
-          <span class="topbar-section-label">{{ sectionLabel() }}</span>
-          <div class="topbar-divider" aria-hidden="true"></div>
-          <div role="tablist" class="flex items-center">
-            @for (tab of tabs(); track tab.value) {
-              <button
-                role="tab"
-                [attr.aria-selected]="tab.active"
-                [class]="tab.active ? 'topbar-tab active' : 'topbar-tab'"
-                (click)="onTabClick(tab.value)"
-              >
-                @if (tab.icon) {
-                  <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
-                }
-                {{ tab.label }}
-              </button>
-            }
-          </div>
-          @if (subTabs().length) {
+      <!-- Page-specific content (horizontal scroll on overflow, kept in its
+           own container so .topbar itself can let dropdowns escape vertically) -->
+      <div class="topbar-scroll">
+        @switch (pageType()) {
+          @case ('landscape') {
             <div class="topbar-divider" aria-hidden="true"></div>
-            <div role="tablist" class="flex items-center" aria-label="View dimension">
-              @for (sub of subTabs(); track sub.value) {
+            <span class="topbar-section-label">{{ sectionLabel() }}</span>
+            <div class="topbar-divider" aria-hidden="true"></div>
+            <div role="tablist" class="flex items-center">
+              @for (tab of tabs(); track tab.value) {
                 <button
                   role="tab"
-                  [attr.aria-selected]="sub.active"
-                  [class]="sub.active ? 'topbar-subtab active' : 'topbar-subtab'"
-                  (click)="onSubTabClick(sub.value)"
+                  [attr.aria-selected]="tab.active"
+                  [class]="tab.active ? 'topbar-tab active' : 'topbar-tab'"
+                  (click)="onTabClick(tab.value)"
                 >
-                  {{ sub.label }}
+                  @if (tab.icon) {
+                    <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
+                  }
+                  {{ tab.label }}
                 </button>
               }
             </div>
-          }
-        }
-        @case ('list') {
-          <div class="topbar-divider" aria-hidden="true"></div>
-          @if (listIcon()) {
-            <i [class]="listIcon()" class="topbar-list-icon" aria-hidden="true"></i>
-          }
-          <span class="topbar-list-title">{{ listTitle() }}</span>
-          @if (recordCount()) {
-            <span class="topbar-record-count">{{ recordCount() }}</span>
-          }
-        }
-        @case ('detail') {
-          <div class="topbar-divider" aria-hidden="true"></div>
-          <button
-            class="topbar-back"
-            (click)="onBackClick()"
-            [attr.aria-label]="'Go back to ' + backLabel()"
-          >
-            <span aria-hidden="true">&larr;</span>
-            <span>{{ backLabel() }}</span>
-          </button>
-          <div class="topbar-divider" aria-hidden="true"></div>
-          <div class="flex flex-col justify-center">
-            @if (entityContext()) {
-              <span class="topbar-eyebrow">{{ entityContext() }}</span>
+            @if (subTabs().length) {
+              <div class="topbar-divider" aria-hidden="true"></div>
+              <div role="tablist" class="flex items-center" aria-label="View dimension">
+                @for (sub of subTabs(); track sub.value) {
+                  <button
+                    role="tab"
+                    [attr.aria-selected]="sub.active"
+                    [class]="sub.active ? 'topbar-subtab active' : 'topbar-subtab'"
+                    (click)="onSubTabClick(sub.value)"
+                  >
+                    {{ sub.label }}
+                  </button>
+                }
+              </div>
             }
-            @if (entityTitle()) {
-              <span class="topbar-detail-title">{{ entityTitle() }}</span>
+          }
+          @case ('list') {
+            <div class="topbar-divider" aria-hidden="true"></div>
+            @if (listIcon()) {
+              <i [class]="listIcon()" class="topbar-list-icon" aria-hidden="true"></i>
             }
-          </div>
+            <span class="topbar-list-title">{{ listTitle() }}</span>
+            @if (recordCount()) {
+              <span class="topbar-record-count">{{ recordCount() }}</span>
+            }
+          }
+          @case ('detail') {
+            <div class="topbar-divider" aria-hidden="true"></div>
+            <button
+              class="topbar-back"
+              (click)="onBackClick()"
+              [attr.aria-label]="'Go back to ' + backLabel()"
+            >
+              <span aria-hidden="true">&larr;</span>
+              <span>{{ backLabel() }}</span>
+            </button>
+            <div class="topbar-divider" aria-hidden="true"></div>
+            <div class="flex flex-col justify-center">
+              @if (entityContext()) {
+                <span class="topbar-eyebrow">{{ entityContext() }}</span>
+              }
+              @if (entityTitle()) {
+                <span class="topbar-detail-title">{{ entityTitle() }}</span>
+              }
+            </div>
+          }
+          @default {
+            <!-- blank: no page-specific content -->
+          }
         }
-        @default {
-          <!-- blank: no page-specific content -->
-        }
-      }
+      </div>
 
       <!-- Right-side actions -->
       <div class="topbar-actions">
@@ -273,6 +276,10 @@ export interface TopbarTab {
     `
       :host {
         display: block;
+        position: relative;
+        /* Above the content area below so breadcrumb dropdowns stack on top
+           rather than being covered by page content. */
+        z-index: 30;
       }
 
       .topbar {
@@ -282,14 +289,24 @@ export interface TopbarTab {
         padding: 0 16px;
         background: white;
         border-bottom: 1px solid #e2e8f0;
-        /* Tabs and section labels can be wider than the viewport on mobile.
-           Scroll them inside the topbar instead of stretching .main-area. */
+        min-width: 0;
+        /* No overflow here -- breadcrumb dropdowns must escape vertically.
+           Horizontal overflow is handled by .topbar-scroll below. */
+      }
+
+      /* Tabs and section labels can be wider than the viewport on mobile.
+         Scroll them inside this inner container so .topbar can stay
+         overflow:visible and dropdowns are not clipped. */
+      .topbar-scroll {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
-        min-width: 0;
         scrollbar-width: thin;
       }
-      .topbar::-webkit-scrollbar {
+      .topbar-scroll::-webkit-scrollbar {
         height: 0;
       }
 
@@ -601,6 +618,7 @@ export interface TopbarTab {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-shrink: 0;
       }
 
       .topbar-record-count {

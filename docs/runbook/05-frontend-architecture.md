@@ -389,6 +389,16 @@ Configured baseline:
 - **CSS layers**: Disabled
 - **Prefix**: `p`
 
+## Overlays (Select / MultiSelect / DatePicker / AutoComplete / Menu / OverlayPanel)
+
+`providePrimeNG` in `main.ts` sets `overlayOptions: { appendTo: 'body' }` globally. Every PrimeNG overlay component renders its panel as a direct child of `<body>`, so it ignores `overflow:hidden` and stacking contexts on its parent chain. Without this, dropdowns inside `p-table` / scroll containers / the topbar got clipped or hidden behind page content -- the original failure mode that motivated the change.
+
+**Implication for styling:** body-portaled panels are outside the host component's view encapsulation, so `:host` and component-scoped selectors do not reach them. Use design tokens (theme overrides in `primeng-theme.ts`) or pass a `panelStyleClass` that resolves to a global rule. Existing PrimeNG styling is token-driven, so this is rarely a problem in practice.
+
+**Custom (non-PrimeNG) dropdowns** -- e.g. the org/space breadcrumb in `ContextualTopbarComponent` -- are not covered by `appendTo`. Their host component must establish its own stacking context above the content area (`position: relative; z-index: 30` on `:host` in the topbar). Page content uses no z-index, so a small positive value is enough.
+
+`p-dialog`, `p-confirmdialog`, `p-toast` already render at the app root and were never affected.
+
 ## Brand-Aware Tailwind Tokens
 
 `styles.css` declares an `@theme` block with `--color-brand-50` … `--color-brand-950` mapped to CSS variables that default to the teal scale:

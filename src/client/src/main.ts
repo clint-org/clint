@@ -95,6 +95,13 @@ function applyBrandSideEffects(brand: Brand): void {
           },
         },
         ripple: false,
+        // Portal every overlay (Select, MultiSelect, DatePicker, AutoComplete,
+        // Menu, OverlayPanel...) to <body> so dropdowns escape parent
+        // stacking contexts and overflow:hidden ancestors -- otherwise tables
+        // and scroll containers clip them.
+        overlayOptions: {
+          appendTo: 'body',
+        },
       }),
       {
         provide: BrandContextService,
