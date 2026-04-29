@@ -17,6 +17,7 @@ import { RowActionsComponent } from '../../shared/components/row-actions.compone
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { extractErrorMessage } from '../../core/util/error-message';
 
 @Component({
   selector: 'app-tenant-settings',
@@ -441,7 +442,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       await this.loadData();
       this.inviteEmail.set('');
     } catch (e) {
-      this.inviteError.set(e instanceof Error ? e.message : 'Failed to add owner');
+      this.inviteError.set(extractErrorMessage(e, 'Failed to add owner'));
     } finally {
       this.inviting.set(false);
     }

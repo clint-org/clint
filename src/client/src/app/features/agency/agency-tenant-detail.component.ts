@@ -16,6 +16,7 @@ import { TenantMember } from '../../core/models/tenant.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { environment } from '../../../environments/environment';
+import { extractErrorMessage } from '../../core/util/error-message';
 
 @Component({
   selector: 'app-agency-tenant-detail',
@@ -453,7 +454,7 @@ export class AgencyTenantDetailComponent implements OnInit {
         console.warn('agency-tenant-detail: members refresh failed', e);
       }
     } catch (e) {
-      this.addOwnerError.set(e instanceof Error ? e.message : 'Failed to add owner');
+      this.addOwnerError.set(extractErrorMessage(e, 'Failed to add owner'));
     } finally {
       this.addingOwner.set(false);
     }
