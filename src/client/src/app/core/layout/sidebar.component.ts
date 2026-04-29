@@ -229,6 +229,21 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         transition: width 200ms ease-out;
       }
 
+      /* On mobile the shell uses natural body scroll (height: auto +
+         min-height: 100vh), so percentage heights collapse. Drop the
+         explicit height and let the flex container stretch the sidebar
+         to match the shell's actual height -- which grows with content. */
+      @media (max-width: 767px) {
+        :host {
+          height: auto;
+          align-self: stretch;
+        }
+        .sidebar {
+          height: auto;
+          min-height: 100%;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .sidebar {
           transition: none;
