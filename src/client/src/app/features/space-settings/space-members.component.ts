@@ -11,9 +11,11 @@ import { MessageModule } from 'primeng/message';
 import { SpaceMember } from '../../core/models/space.model';
 import { TenantMember } from '../../core/models/tenant.model';
 import { SpaceService } from '../../core/services/space.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
+import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
@@ -29,6 +31,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     MessageModule,
     ManagePageShellComponent,
     RowActionsComponent,
+    StatusTagComponent,
   ],
   template: `
     <app-manage-page-shell>
@@ -58,21 +61,30 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             <td>{{ member.display_name }}</td>
             <td class="col-identifier">{{ member.email }}</td>
             <td>
-              <p-select
-                [options]="spaceRoleOptions"
-                [ngModel]="member.role"
-                (ngModelChange)="changeRole(member, $event)"
-                optionLabel="label"
-                optionValue="value"
-                size="small"
-                [style]="{ minWidth: '8rem' }"
-              />
+              @if (isSelf(member)) {
+                <app-status-tag
+                  [label]="member.role"
+                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                />
+              } @else {
+                <p-select
+                  [options]="spaceRoleOptions"
+                  [ngModel]="member.role"
+                  (ngModelChange)="changeRole(member, $event)"
+                  optionLabel="label"
+                  optionValue="value"
+                  size="small"
+                  [style]="{ minWidth: '8rem' }"
+                />
+              }
             </td>
             <td class="col-actions">
-              <app-row-actions
-                [items]="memberMenu(member)"
-                [ariaLabel]="'Actions for ' + member.display_name"
-              />
+              @if (!isSelf(member)) {
+                <app-row-actions
+                  [items]="memberMenu(member)"
+                  [ariaLabel]="'Actions for ' + member.display_name"
+                />
+              }
             </td>
           </tr>
         </ng-template>
@@ -143,6 +155,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private spaceService = inject(SpaceService);
   private tenantService = inject(TenantService);
+  private supabase = inject(SupabaseService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
@@ -180,6 +193,10 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.topbarState.clear();
+  }
+
+  isSelf(member: SpaceMember): boolean {
+    return member.user_id === this.supabase.currentUser()?.id;
   }
 
   memberMenu(member: SpaceMember): MenuItem[] {

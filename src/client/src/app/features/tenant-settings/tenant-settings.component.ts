@@ -155,21 +155,30 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             <td>{{ member.display_name }}</td>
             <td class="col-identifier">{{ member.email }}</td>
             <td>
-              <p-select
-                [options]="roleOptions"
-                [ngModel]="member.role"
-                (ngModelChange)="changeMemberRole(member, $event)"
-                optionLabel="label"
-                optionValue="value"
-                size="small"
-                [style]="{ minWidth: '8rem' }"
-              />
+              @if (isSelf(member)) {
+                <app-status-tag
+                  [label]="member.role"
+                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                />
+              } @else {
+                <p-select
+                  [options]="roleOptions"
+                  [ngModel]="member.role"
+                  (ngModelChange)="changeMemberRole(member, $event)"
+                  optionLabel="label"
+                  optionValue="value"
+                  size="small"
+                  [style]="{ minWidth: '8rem' }"
+                />
+              }
             </td>
             <td class="col-actions">
-              <app-row-actions
-                [items]="memberMenu(member)"
-                [ariaLabel]="'Actions for ' + member.display_name"
-              />
+              @if (!isSelf(member)) {
+                <app-row-actions
+                  [items]="memberMenu(member)"
+                  [ariaLabel]="'Actions for ' + member.display_name"
+                />
+              }
             </td>
           </tr>
         </ng-template>
@@ -450,6 +459,10 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     if (!userId) return false;
     return this.members().some((m) => m.user_id === userId && m.role === 'owner');
   });
+
+  isSelf(member: TenantMember): boolean {
+    return member.user_id === this.supabase.currentUser()?.id;
+  }
 
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
