@@ -2,6 +2,8 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
+  subdomain: string;
+  custom_domain: string | null;
   logo_url: string | null;
   agency_id: string | null;
   created_at: string;

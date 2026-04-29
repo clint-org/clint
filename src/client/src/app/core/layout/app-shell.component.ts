@@ -7,6 +7,7 @@ import { SpaceService } from '../services/space.service';
 import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
+import { environment } from '../../../environments/environment';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
@@ -623,6 +624,22 @@ export class AppShellComponent implements OnInit {
 
   switchTenant(newTenantId: string): void {
     localStorage.setItem('lastTenantId', newTenantId);
+
+    // Brand resolves from window.location.host pre-bootstrap, so a
+    // same-host SPA navigation keeps the OLD tenant's brand when the
+    // user picks a tenant that lives on a different subdomain. Detect
+    // host change and do a full-page navigation in that case so the
+    // bootstrap re-runs against the target host.
+    const target = this.tenants().find((t) => t.id === newTenantId);
+    if (target && environment.apexDomain) {
+      const targetHost =
+        target.custom_domain ?? `${target.subdomain}.${environment.apexDomain}`;
+      if (targetHost && targetHost !== window.location.host) {
+        window.location.href = `${window.location.protocol}//${targetHost}/t/${newTenantId}/spaces`;
+        return;
+      }
+    }
+
     this.router.navigate(['/t', newTenantId, 'spaces']);
   }
 
