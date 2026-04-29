@@ -419,6 +419,15 @@ The codemod that landed during the whitelabel rollout swept `~73 occurrences` of
 
 `generateBrandScale(seedHex: string): BrandScale` lives in `core/util/color-scale.ts`. It converts the seed hex to HSL, holds the hue and saturation roughly constant, and varies lightness across `[97, 93, 86, 76, 65, 54, 47, 39, 31, 23, 13]` — an approximation of the Tailwind v4 lightness curve. Not a 1:1 replication of Tailwind's algorithm, but produces a plausible 50→950 ramp from any sane seed.
 
+### Platform chrome vs. whitelabel surface
+
+Two surfaces, two brand sources:
+
+- **Whitelabel surface** (`/t/:tenantId/...`, login on a branded host) — uses the host's brand: `--brand-*` (Tailwind utilities) and `--p-primary-*` (PrimeNG component tokens) come from `BrandContextService` via `main.ts` pre-bootstrap. This is what end users see; it should reflect the tenant or agency identity.
+- **Platform chrome** (`/admin/*`, `/super-admin/*`) — operator UI for managing other tenants. It must NOT inherit the host's brand, because a pale agency seed (or a super-admin host with no brand record) would wash out primary buttons and active nav states. `AgencyShellComponent` and `SuperAdminShellComponent` apply `.admin-brand-scope` on their root wrapper; the class lives in `shared/styles/admin-brand.css` and re-declares `--brand-50..950` and `--p-primary-50..950` to the standard teal scale (primary at teal-600). Both Tailwind utilities (`bg-brand-600`) and PrimeNG components (`{primary.600}`) inside the scope inherit the override via CSS variable cascade — no per-component changes needed.
+
+Add `.admin-brand-scope` to any new platform-operator shell. Don't add it to tenant-facing pages; those are the whitelabel surface.
+
 ## Toasts (save/action feedback)
 
 All user-facing success feedback uses PrimeNG `p-toast` via `MessageService`. A single `<p-toast position="top-right" />` lives in `app.component.ts` -- individual components never render their own toast element.
