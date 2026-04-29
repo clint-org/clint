@@ -8,7 +8,7 @@ Working document. Edit freely as we sharpen the pitch.
 
 ### Origin
 
-- Partner at Stout (Competitive Intelligence practice, ownership stake in the firm) flagged the recurring pain points in CI work and suggested someone should build a tool around them.
+- Partner at Stout Strategy, Health Care Practice (ownership stake in the firm) flagged the recurring pain points in their CI / market-intelligence work and suggested someone should build a tool around them.
 - User (me) took the suggestion and built Clint independently. Code, platform, brand, and IP belong to me.
 - Partner's contribution is ideation, domain validation, and ongoing advisory -- not co-development.
 
