@@ -25,38 +25,40 @@ Every step below should be performed against **prod** unless otherwise noted.
 
 ## Test accounts and browser setup
 
-To avoid creating multiple real Gmail accounts, this plan uses Gmail `+alias` addresses. Gmail delivers `aadi529+anything@gmail.com` to the same inbox as `aadi529@gmail.com`, but Supabase auth treats each alias as a distinct user. All three aliases below pass a `gmail.com` email-domain lock, so you can run the full positive path under Path A in Section 1.
+**Gmail `+alias` does NOT work with Google OAuth.** First test pass attempted aliases (`aadi529+ownerB@gmail.com` etc.) and Google's account picker rejected them with "Couldn't find your Google Account". The `+alias` is a Gmail-side delivery feature, not a Google account identifier. Distinct real Google accounts are required for any flow that involves sign-in.
 
 | Role | Email | Used in |
 |---|---|---|
 | Primary owner | `aadi529@gmail.com` | All sections (Stout owner, Pfizer owner, Workspace owner) |
-| Second tenant owner | `aadi529+ownerB@gmail.com` | Sections 2, 3, 4, 7 |
-| Space reader | `aadi529+reader@gmail.com` | Section 5 |
-| Negative-test (rejected by lock) | anything @ a non-gmail temp-mail domain | Section 2 negative path only — no sign-in needed |
+| Second tenant owner | `<TBD: real Gmail #2>` | Sections 2, 3, 4, 7 |
+| Space reader | `<TBD: real Gmail #3>` | Section 5 |
+| Negative-test (rejected by lock) | any non-gmail temp-mail address | Section 2 negative path only — no sign-in needed |
+
+Sections 2-5 already used the second account once they're filled in below; update the placeholders before resuming.
 
 **Browser sessions** (so you can be signed in as two users simultaneously):
 - Chrome normal profile -> `aadi529@gmail.com`
-- Chrome Incognito (or a second Chrome profile / Firefox) -> the alias under test
-- Reuse the Incognito window across `+ownerB` and `+reader` -- just sign out between them
+- Chrome Incognito (or a second Chrome profile / Firefox) -> the second account under test
+- Reuse the Incognito window across the second-tenant-owner and space-reader accounts -- just sign out between them
 
-**Critical: verify the alias landed in auth.users.** Google's OAuth screens sometimes collapse `+alias` visually. After creating each new user, run this in the Supabase prod SQL editor to confirm the row exists with the full aliased email:
+**Verify each new user landed in auth.users.** After creating a Google account and signing in for the first time, run this in the Supabase prod SQL editor to confirm the row exists:
 
 ```sql
 select id, email, created_at
 from auth.users
-where email like 'aadi529+%@gmail.com'
-order by created_at desc;
+order by created_at desc
+limit 5;
 ```
 
-If a row shows up as plain `aadi529@gmail.com` instead of the aliased form, the alias collapsed and the firewall test in Section 3 is meaningless -- stop and triage before continuing.
+The newly-created user should appear at the top of the list with the email address you signed in with.
 
 ---
 
 ## Section 0: Pre-flight
 
 - [x] Sign in to `admin.clintapp.com` as `aadi529@gmail.com` (super-admin). Confirm Stout agency and Pfizer tenant are both listed and active (not suspended).
-- [ ] Sign in to `stout.clintapp.com/admin` as the same user. Confirm Stout's agency portal reflects Stout's `primary_color` (the value set on `/admin/branding`). Primary buttons (e.g. "Provision tenant") and active nav items should match Stout's seed color, not platform teal.
-- [ ] Sign in to `pfizer.clintapp.com` as the same user. Confirm catalysts page loads and shows seeded data (catalysts table, not "no data").
+- [x] Sign in to `stout.clintapp.com/admin` as the same user. Confirm Stout's agency portal reflects Stout's `primary_color` (the value set on `/admin/branding`). Primary buttons (e.g. "Provision tenant") and active nav items should match Stout's seed color, not platform teal.
+- [x] Sign in to `pfizer.clintapp.com` as the same user. Confirm catalysts page loads and shows seeded data (catalysts table, not "no data"). [Note: desktop vertical scroll bug found and dispatched to a fork to fix; tracked separately, not blocking.]
 
 If any of the above fails, fix before proceeding -- the rest of the plan assumes this baseline.
 
@@ -66,8 +68,8 @@ If any of the above fails, fix before proceeding -- the rest of the plan assumes
 
 The Stout agency was backfilled with `email_domain = 'gmail.com'`. Decide what you want it to be before testing tenant-owner adds.
 
-- [ ] On `stout.clintapp.com/admin/branding`, scroll to "Member email domain (lock)". Confirm it's pre-populated with `gmail.com`.
-- [ ] **Default for this run: Path A (keep `gmail.com`).** All `aadi529+...@gmail.com` aliases pass; the negative test in Section 2 uses a non-gmail temp-mail address.
+- [x] On `stout.clintapp.com/admin/branding`, scroll to "Member email domain (lock)". Confirm it's pre-populated with `gmail.com`.
+- [x] **Default for this run: Path A (keep `gmail.com`).** All `aadi529+...@gmail.com` aliases pass; the negative test in Section 2 uses a non-gmail temp-mail address.
    - (Alternatives: Path B blanks the lock to allow any domain; Path C sets a real domain you own. Skip unless deliberately testing those.)
 - [ ] Save and verify "Agency branding updated" toast appears.
 
@@ -79,11 +81,11 @@ Goal: prove `add_tenant_owner` works and the UI surfaces both the "user already 
 
 Account: `aadi529+ownerB@gmail.com` (does not yet exist in `auth.users`, so this exercises the "invite held" branch).
 
-- [ ] On `stout.clintapp.com/admin/tenants`, click into Pfizer.
-- [ ] Click "Add owner". Enter `aadi529+ownerB@gmail.com`.
-- [ ] Expected (since the alias has never signed in): green message `Invite held for aadi529+ownerB@gmail.com. Code: <32-char hex>`. **Copy the code** -- you'll paste it after first sign-in in Section 3.
-- [ ] Members table refreshes; the new owner does NOT yet appear (invite is held until first sign-in). That's expected.
-- [ ] **Negative test:** Click "Add owner" again, enter a non-gmail address (e.g. `test@mailinator.com`). Expect a red error like `Email domain (mailinator.com) does not match agency domain (gmail.com)`. No sign-in for this address is required.
+- [x] On `stout.clintapp.com/admin/tenants`, click into Pfizer.
+- [x] Click "Add owner". Enter `aadi529+ownerB@gmail.com`.
+- [x] Expected (since the alias has never signed in): green message `Invite held for aadi529+ownerB@gmail.com. Code: <32-char hex>`. **Copy the code** -- you'll paste it after first sign-in in Section 3. (Code: `f8132fd124274eb2a2abfafdbedd8a90`)
+- [x] Members table refreshes; the new owner does NOT yet appear (invite is held until first sign-in). That's expected.
+- [x] **Negative test:** Click "Add owner" again, enter a non-gmail address (e.g. `test@mailinator.com`). Expect a red error like `Email domain (mailinator.com) does not match agency domain (gmail.com)`. No sign-in for this address is required.
 
 ---
 
