@@ -1,13 +1,11 @@
 <app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search catalysts..." />
 
-  <div class="md:flex-1 md:overflow-hidden">
-    <app-catalyst-table
-      [catalysts]="flatCatalysts()"
-      [selectedId]="state.selectedMarkerId()"
-      [gridFilters]="grid.primengFilters()"
-      (rowSelect)="onRowClick($event)"
-      (filterChange)="grid.onLazyLoad($event)"
-    />
-  </div>
+  <app-catalyst-table
+    [catalysts]="flatCatalysts()"
+    [selectedId]="state.selectedMarkerId()"
+    [gridFilters]="grid.primengFilters()"
+    (rowSelect)="onRowClick($event)"
+    (filterChange)="grid.onLazyLoad($event)"
+  />
 </app-manage-page-shell>
