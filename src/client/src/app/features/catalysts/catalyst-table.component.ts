@@ -15,8 +15,6 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
       [value]="catalysts()"
       [rowGroupMode]="'subheader'"
       groupRowsBy="time_bucket"
-      [scrollable]="true"
-      scrollHeight="flex"
       dataKey="marker_id"
       styleClass="data-table"
       [filters]="gridFilters()"
