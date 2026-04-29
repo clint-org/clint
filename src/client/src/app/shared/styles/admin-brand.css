@@ -1,16 +1,21 @@
 /*
- * Admin chrome brand scope.
+ * Platform chrome brand scope (super-admin only).
  *
- * The super-admin and agency portals are platform UI -- chrome the operator
- * uses to manage other tenants. They should NOT inherit a tenant's or
- * agency's branded primary color (which can be a pale tint that washes out
- * primary buttons and active states). Apply `.admin-brand-scope` on the
- * shell host to lock the scale to the platform's standard teal palette.
+ * The super-admin portal at admin.<apex> is platform infrastructure -- it
+ * sits above any agency or tenant. Locking it to the platform's standard
+ * teal palette keeps the platform-owner surface visually distinct from
+ * agency-branded portals (which DO reflect the agency's primary color)
+ * and tenant whitelabel surfaces (which reflect the tenant's color).
  *
  * Both --brand-* (Tailwind utilities like bg-brand-600) and --p-primary-*
  * (PrimeNG component tokens like {primary.600}) cascade from the scope, so
- * everything inside the shell renders with the same darker teal regardless
- * of what BrandContextService picked up at bootstrap.
+ * everything inside the shell renders with platform teal regardless of
+ * what BrandContextService picked up at bootstrap.
+ *
+ * Applied to SuperAdminShellComponent only. AgencyShellComponent intentionally
+ * inherits the agency's brand scale -- the agency portal is the surface the
+ * agency's consultants live in, and reflecting their brand there is part of
+ * what they're paying for.
  */
 
 .admin-brand-scope {

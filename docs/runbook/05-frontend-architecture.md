@@ -419,14 +419,17 @@ The codemod that landed during the whitelabel rollout swept `~73 occurrences` of
 
 `generateBrandScale(seedHex: string): BrandScale` lives in `core/util/color-scale.ts`. It converts the seed hex to HSL, holds the hue and saturation roughly constant, and varies lightness across `[97, 93, 86, 76, 65, 54, 47, 39, 31, 23, 13]` — an approximation of the Tailwind v4 lightness curve. Not a 1:1 replication of Tailwind's algorithm, but produces a plausible 50→950 ramp from any sane seed.
 
-### Platform chrome vs. whitelabel surface
+### Three brand surfaces
 
-Two surfaces, two brand sources:
+The app has three layers of branding, each with a distinct color source:
 
-- **Whitelabel surface** (`/t/:tenantId/...`, login on a branded host) — uses the host's brand: `--brand-*` (Tailwind utilities) and `--p-primary-*` (PrimeNG component tokens) come from `BrandContextService` via `main.ts` pre-bootstrap. This is what end users see; it should reflect the tenant or agency identity.
-- **Platform chrome** (`/admin/*`, `/super-admin/*`) — operator UI for managing other tenants. It must NOT inherit the host's brand, because a pale agency seed (or a super-admin host with no brand record) would wash out primary buttons and active nav states. `AgencyShellComponent` and `SuperAdminShellComponent` apply `.admin-brand-scope` on their root wrapper; the class lives in `shared/styles/admin-brand.css` and re-declares `--brand-50..950` and `--p-primary-50..950` to the standard teal scale (primary at teal-600). Both Tailwind utilities (`bg-brand-600`) and PrimeNG components (`{primary.600}`) inside the scope inherit the override via CSS variable cascade — no per-component changes needed.
+- **Tenant whitelabel surface** (`/t/:tenantId/...` on a tenant subdomain) — uses the tenant's `primary_color`. End users (the agency's pharma clients) see this; it must reflect the tenant identity.
+- **Agency portal** (`/admin/*` on an agency subdomain) — uses the agency's `primary_color`. The agency's consultants live in this surface; reflecting their brand here is part of the whitelabel value the agency is paying for. Agencies with a pale seed should pick something with enough contrast for primary buttons (the brand picker should warn, but ultimately the agency owns the choice).
+- **Super-admin portal** (`/super-admin/*` on `admin.<apex>`) — locked to the platform's standard teal palette via `.admin-brand-scope` on `SuperAdminShellComponent`. This is platform infrastructure, owned by the platform operator, not whitelabeled to anyone.
 
-Add `.admin-brand-scope` to any new platform-operator shell. Don't add it to tenant-facing pages; those are the whitelabel surface.
+The `.admin-brand-scope` class lives in `shared/styles/admin-brand.css` and re-declares `--brand-50..950` and `--p-primary-50..950` to the platform teal scale. Both Tailwind utilities (`bg-brand-600`) and PrimeNG components (`{primary.600}`) inside the scope inherit the override via CSS variable cascade.
+
+Apply `.admin-brand-scope` only to new super-admin shells. Don't add it to agency-portal or tenant-facing surfaces — those are whitelabel surfaces and must inherit their respective brand.
 
 ## Toasts (save/action feedback)
 

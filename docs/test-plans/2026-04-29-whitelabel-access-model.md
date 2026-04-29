@@ -9,7 +9,7 @@ What was shipped (commits on `main`, latest `ab070f8`):
 - Migration 74 (`20260429000000_remove_accent_color.sql`) -- dropped unused accent_color column. Applied prod.
 - Member self-protection guards (migration 73) -- can't self-remove or remove the last owner.
 - Cross-host tenant switching (commit `01f97e3`).
-- Brand-color isolation: super-admin and agency portals locked to platform teal regardless of host brand seed (commit `88dd157`).
+- Brand-color model (revised mid-test, see git log around test-plan commit): super-admin portal stays platform teal (locked); agency portal reflects agency `primary_color`; tenant surface reflects tenant `primary_color`.
 - Mobile fixes: catalysts vertical scroll on iOS, sidebar full-height on mobile, topbar dropdowns no longer clipped, all PrimeNG overlays portaled to `body`.
 - "Org" -> "Tenant" rename across the codebase (commit `ab070f8`).
 
@@ -54,8 +54,8 @@ If a row shows up as plain `aadi529@gmail.com` instead of the aliased form, the 
 
 ## Section 0: Pre-flight
 
-- [ ] Sign in to `admin.clintapp.com` as `aadi529@gmail.com` (super-admin). Confirm Stout agency and Pfizer tenant are both listed and active (not suspended).
-- [ ] Sign in to `stout.clintapp.com/admin` as the same user. Confirm Stout's agency portal renders with the platform teal accent (not whatever color Stout's brand seed is set to). Save buttons and active nav items should be teal-600.
+- [x] Sign in to `admin.clintapp.com` as `aadi529@gmail.com` (super-admin). Confirm Stout agency and Pfizer tenant are both listed and active (not suspended).
+- [ ] Sign in to `stout.clintapp.com/admin` as the same user. Confirm Stout's agency portal reflects Stout's `primary_color` (the value set on `/admin/branding`). Primary buttons (e.g. "Provision tenant") and active nav items should match Stout's seed color, not platform teal.
 - [ ] Sign in to `pfizer.clintapp.com` as the same user. Confirm catalysts page loads and shows seeded data (catalysts table, not "no data").
 
 If any of the above fails, fix before proceeding -- the rest of the plan assumes this baseline.
@@ -172,9 +172,11 @@ Quick visual pass. On a phone:
 
 ## Section 9: Brand-color isolation
 
-- [ ] On `admin.clintapp.com/super-admin`: every primary button, active nav item, and accent should be platform teal-600 (#0d9488).
-- [ ] On `stout.clintapp.com/admin`: same -- platform teal regardless of Stout's `primary_color`.
-- [ ] On `pfizer.clintapp.com` (any tenant page): primary color reflects Pfizer's `tenants.primary_color` (or default teal if not customized). The tenant-facing surface IS the whitelabel surface.
+Three surfaces, three sources:
+
+- [ ] On `admin.clintapp.com/super-admin`: every primary button, active nav item, and accent should be platform teal (#0d9488 / #14b8a6 family). Locked regardless of any other state. This is platform chrome.
+- [ ] On `stout.clintapp.com/admin`: primary buttons and active nav items reflect **Stout's** `agencies.primary_color`. Change Stout's color on `/admin/branding`, hard-refresh, confirm the portal repaints to the new color.
+- [ ] On `pfizer.clintapp.com` (any tenant page): primary color reflects **Pfizer's** `tenants.primary_color` (or default teal if not customized). Whitelabel surface for the agency's clients.
 
 ---
 
@@ -210,4 +212,5 @@ After QA:
 | Cross-host nav bounces to /login | Apex cookie not set | dev tools cookies, check Domain=.clintapp.com; `environment.apexDomain` setting |
 | Self-removal blocked from UI but allowed via SQL | `tenant_members_self_protection` trigger not present | `select tgname from pg_trigger where tgrelid = 'tenant_members'::regclass` |
 | Mobile dropdown clipped | `:host` z-index lost in `contextual-topbar.component.ts` | Inspect `.topbar` in dev tools |
-| Admin chrome shows agency's pale brand color | `.admin-brand-scope` class missing on shell wrapper | Inspect `<div class="agency-shell ...">` and `<div class="sa-shell ...">` |
+| Super-admin chrome shows non-teal color | `.admin-brand-scope` class missing on `SuperAdminShellComponent` wrapper | Inspect `<div class="sa-shell ...">` |
+| Agency portal stays teal after agency color change | Stale build, OR `.admin-brand-scope` was re-added to `agency-shell.component.ts` | `git log -p src/client/src/app/features/agency/agency-shell.component.ts` |
