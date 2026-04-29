@@ -64,7 +64,7 @@ This is the brief the partner uses, not the deck the MD reads. The MD-facing art
 - AI-ready data shape with exports available today and API/MCP integration on the roadmap.
 
 **5. Where it fits at Stout.**
-- *Internal:* less assembly, more analysis. Junior time on assembly compresses; senior time on interpretation grows.
+- *Internal:* less assembly, more analysis. Stout's analyst time on assembly compresses; time on interpretation grows.
 - *Client-facing:* the deliverable is a Stout-branded site the client uses through the engagement, not a deck that goes stale in three weeks.
 - *Strategic:* differentiated offering. No advisory firm delivers CI this way today.
 
@@ -236,7 +236,7 @@ Reference for the partner. Don't volunteer this; it's the answer if the MD pushe
 - Working product on Day 1. Free 90-day pilot. Discounted Year 1. Regular pricing Year 2+.
 - Founder owns the asset and runs the team; pharma domain expertise comes with it.
 - Co-creator partnership at Year 2 gives Stout exclusivity in advisory and a seat shaping the roadmap, without owning the engineering burden.
-- Stout's senior time stays on client work.
+- Stout's resources stay on client work.
 
 ### Bottom line
 
