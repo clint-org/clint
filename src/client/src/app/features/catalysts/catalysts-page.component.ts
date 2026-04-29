@@ -12,6 +12,30 @@ import { LandscapeStateService } from '../landscape/landscape-state.service';
   standalone: true,
   imports: [ManagePageShellComponent, GridToolbarComponent, CatalystTableComponent],
   templateUrl: './catalysts-page.component.html',
+  styles: [
+    `
+      /*
+       * The catalysts page is a tall, naturally-flowing list inside
+       * landscape-shell's bounded "overflow-hidden" container (which exists
+       * to clip the bullseye/positioning/timeline visualizations). Make the
+       * page host itself the desktop scroll container so list rows below
+       * the fold are reachable. On mobile the whole height chain in
+       * AppShell collapses to natural body scroll, so opt out there.
+       */
+      :host {
+        display: block;
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+      }
+      @media (max-width: 767px) {
+        :host {
+          height: auto;
+          overflow-y: visible;
+        }
+      }
+    `,
+  ],
 })
 export class CatalystsPageComponent {
   readonly state = inject(LandscapeStateService);
