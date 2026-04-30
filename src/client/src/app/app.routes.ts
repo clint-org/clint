@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { agencyGuard } from './core/guards/agency.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
+import { tenantGuard } from './core/guards/tenant.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
@@ -98,7 +99,7 @@ export const routes: Routes = [
   },
   {
     path: 't/:tenantId',
-    canActivate: [authGuard],
+    canActivate: [authGuard, tenantGuard],
     loadComponent: () =>
       import('./core/layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [

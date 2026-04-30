@@ -18,6 +18,7 @@ src/client/
           auth.guard.ts                  # authGuard + onboardingRedirectGuard
           agency.guard.ts                # kind === 'agency' AND (is_agency_member OR is_platform_admin) (gates /admin/*)
           super-admin.guard.ts           # kind === 'super-admin' AND is_platform_admin (gates /super-admin/*)
+          tenant.guard.ts                # is_tenant_member(:tenantId) OR is_platform_admin (gates /t/:tenantId/*)
           marketing-landing.guard.ts     # gates /; routes by kind + auth + role-on-host (cross-host redirect when user lacks role for current host)
         util/
           color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math)

@@ -236,14 +236,14 @@ Actor: `aadimadala@gmail.com` (Pfizer tenant owner only — not Stout agency own
 
   Color unchanged.
 
-**Scenario 3 — non-tenant-owner lands on `<tenant>.clintapp.com/t/<id>/settings`:**
+**Scenario 3 — non-tenant-member lands on `<tenant>.clintapp.com/t/<id>/...`:**
 
-Actor: `madaladodbele@gmail.com` (space reader of Pfizer Workspace, NOT tenant owner).
+Actor: `madaladodbele@gmail.com` (space reader of Pfizer Workspace, NOT tenant member). Or any signed-in user who isn't in `tenant_members` for Pfizer.
 
 - [ ] Sign in as `madaladodbele@gmail.com`. Visit `https://pfizer.clintapp.com/t/<pfizer-id>/settings`.
-- [ ] **Note:** there is currently no `tenantGuard` on this route, so the page chrome renders. RLS limits what data shows in the members table. This is an acknowledged gap — track as a follow-up to harden, but server-side enforcement is what protects the data.
-- [ ] Attempt "Add owner". Expected: error containing `Insufficient permissions`. SQL verify `tenant_members` count for Pfizer is unchanged.
-- [ ] Attempt to edit tenant branding. Expected: error containing `Insufficient permissions`.
+- [ ] **Expected (post-tenantGuard, 2026-04-30):** redirected away — typically to `/onboarding?tab=join` if the user has no other tenant, or to their actual home if they do. The tenant-settings chrome must NOT render.
+- [ ] Server enforcement check (defense in depth): use Recipe A from Section 7c with this user's JWT to call `add_tenant_owner(<pfizer-id>, 'foo@bar.com')`. Expected: `Insufficient permissions`. SQL verify `tenant_members` count for Pfizer is unchanged.
+- [ ] Same Recipe A, call `update_tenant_branding`. Expected: `Insufficient permissions`.
 
 **Scenario 4 — tenant owner tries to access space data (the firewall, already in Section 3):**
 

@@ -210,6 +210,10 @@ The per-kind routing for authenticated users mirrors `auth-callback.component.ts
 
 The default-host authenticated branch checks agency memberships before tenant memberships and does a cross-host redirect (`window.location.href = ...`) when the user owns or belongs to an agency. This handles the common case where OAuth callback lands on the apex (Supabase's `redirectTo` is `${window.location.origin}/auth/callback`, so the host the user signs in from determines where the callback runs) but the user actually belongs on an agency's portal. Falls back to the tenant-lookup behavior when no agency memberships exist.
 
+### tenantGuard
+
+Async guard. Verifies (1) the route has a `tenantId` param, (2) session exists, (3) the signed-in user is either a platform admin (`is_platform_admin()`) or a member of the tenant identified by `tenantId` (`is_tenant_member(p_tenant_id)`). Missing tenantId or lacking role redirects to `/`; missing session redirects to `/login`. Combined with `authGuard` on `/t/:tenantId/*`. The `marketingLandingGuard` tenant branch was extended to verify membership before redirecting to `/t/{id}/spaces` (and to fall through to `/onboarding?tab=join` when the user is signed in but not yet a tenant member, which is the dominant flow for invitees redeeming a code).
+
 ### Known guard gap
 
-There is no `tenantGuard` on `/t/:tenantId/*`. Routes activate on any authenticated session; data is filtered by RLS and per-RPC `is_tenant_member` / `has_space_access` checks. A non-tenant-member who navigates to `/t/<id>/settings` sees the page chrome but cannot mutate anything. Tracked as a follow-up to harden.
+There is no `spaceGuard` on `/t/:tenantId/s/:spaceId/*`. Routes activate when the user passes `tenantGuard` (i.e. is a tenant member or platform admin). Inside, `has_space_access()` and per-table RLS keep data filtered. A tenant member who navigates to a space they don't belong to sees the chrome but cannot read data — this is the firewall test in Section 3 of the access-model test plan, and is intentional for the data layer; only the UI shell leaks. Tracked as a follow-up to harden.

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
@@ -7,20 +7,33 @@ import { MessageModule } from 'primeng/message';
 
 import { TenantService } from '../../core/services/tenant.service';
 import { SpaceService } from '../../core/services/space.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
+import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [FormsModule, InputText, ButtonModule, MessageModule],
+  imports: [FormsModule, InputText, ButtonModule, MessageModule, ClintLogoComponent],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="w-full max-w-md">
-        <div class="mb-6 text-center">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+        <div class="mb-6 flex flex-col items-center text-center">
+          @if (logoUrl()) {
+            <img
+              [src]="logoUrl()"
+              [alt]="appName() + ' logo'"
+              class="h-12 w-auto object-contain"
+            />
+          } @else {
+            <app-clint-logo [size]="48" />
+          }
+          <p
+            class="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+          >
             Welcome
           </p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-            Join your team
+            {{ headerTitle() }}
           </h1>
           <p class="mt-1 text-xs text-slate-500">
             Enter the invite code your administrator sent you.
@@ -73,6 +86,17 @@ export class OnboardingComponent {
   private tenantService = inject(TenantService);
   private spaceService = inject(SpaceService);
   private router = inject(Router);
+  private brand = inject(BrandContextService);
+
+  readonly appName = this.brand.appDisplayName;
+  readonly logoUrl = this.brand.logoUrl;
+  readonly headerTitle = computed(() => {
+    const kind = this.brand.kind();
+    const name = this.appName();
+    if (kind === 'agency') return `Join ${name}`;
+    if (kind === 'tenant') return `Join the ${name} workspace`;
+    return 'Join your team';
+  });
 
   inviteCode = '';
   joining = signal(false);
