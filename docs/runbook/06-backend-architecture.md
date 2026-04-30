@@ -80,13 +80,9 @@ create_space(p_tenant_id uuid, p_name text, p_description text) -> uuid
 
 Creates a new space and adds the calling user as the space owner. Verifies the caller is a member of the parent tenant before creation. Uses `SECURITY DEFINER`.
 
-### seed_demo_data
+### seed_demo_data (removed)
 
-```
-seed_demo_data(p_space_id uuid)
-```
-
-Populates a space with pharmaceutical demo data -- companies (AstraZeneca, Eli Lilly, Novo Nordisk, etc.), products (Farxiga, Jardiance, Mounjaro, Ozempic), therapeutic areas, 8+ trials with phases and markers, and 20 events covering all entity levels, categories, threads, links, sources, and priorities. Idempotent (checks if user already has companies).
+Dropped on 2026-05-01 along with its `_seed_demo_*` helpers. The function was last called from `landscape-state.service.ts` as an auto-seed-on-empty-companies heuristic, which became wrong after migration 75 introduced the firewalled-engagement model: "empty from this user's view" can mean either the analyst hasn't populated yet OR the firewall hid every row, and auto-seeding in either case is destructive. The RPC also had no permission gate beyond `auth.uid() is not null`. If demo data is needed for sales/marketing in the future it should be a separate explicit flow with an `is_space_owner` check.
 
 ### has_space_access
 

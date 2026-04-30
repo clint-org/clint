@@ -169,11 +169,7 @@ export class LandscapeStateService {
         mechanismOfActionIds: null,
         routeOfAdministrationIds: null,
       };
-      let data = await this.dashboardService.getDashboardData(this.spaceId, nullFilters);
-      if (data.companies.length === 0) {
-        await this.dashboardService.seedDemoData(this.spaceId);
-        data = await this.dashboardService.getDashboardData(this.spaceId, nullFilters);
-      }
+      const data = await this.dashboardService.getDashboardData(this.spaceId, nullFilters);
       this.rawData.set(data);
     } catch (err) {
       this.dataError.set(err instanceof Error ? err.message : 'Failed to load data.');

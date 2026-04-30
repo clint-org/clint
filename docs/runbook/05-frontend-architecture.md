@@ -221,7 +221,7 @@ All routes are lazy-loaded. Routes are host-aware AND role-aware: `agencyGuard`,
 |---|---|
 | `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`, `agency()` (`{name, logo_url} \| null` — only populated for tenant brands whose `tenants.agency_id` is set). Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
 | `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google + Microsoft sign-in (`signInWithGoogle`, `signInWithMicrosoft`), sign-out. Conditionally uses cookie-based session storage (`createCookieStorage`) when `environment.apexDomain` is set and the current host is on the apex; otherwise localStorage. |
-| `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models, `seedDemoData()` |
+| `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models |
 | `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow, plus access settings (`getTenantAccessSettings`, `updateTenantAccess`), `selfJoinTenant`, `checkIsTenantMember` |
 | `AgencyService` | Agency portal data layer: list tenants, provision tenant, update tenant branding, list/add/remove members, update agency branding, lookup user by email |
 | `SuperAdminService` | Super-admin data layer: `listAllAgencies`, `listAllTenants`, `listRetiredHostnames`, `provisionAgency`, `registerCustomDomain`, `checkSubdomainAvailable`, `lookupUserByEmail` |
