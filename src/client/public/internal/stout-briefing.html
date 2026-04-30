@@ -110,6 +110,15 @@
   .cover .big-logo .stout-cover-logo { width: auto; height: 36px; }
   .cover .big-logo-sep { width: 1px; height: 28px; background: var(--slate-300); }
   .wordmark .stout-mini { height: 14px; width: auto; }
+  .hero-shot { margin-bottom: 22px; border: 1px solid var(--slate-200); background: white; }
+  .hero-shot img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; object-position: top left; }
+  .shot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .shot { display: flex; flex-direction: column; background: white; border: 1px solid var(--slate-200); }
+  .shot .img-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
+  .shot .img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+  .shot .caption { padding: 10px 12px 12px; }
+  .shot .caption-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; }
+  .shot .caption h4 { font-size: 13.5px; font-weight: 600; color: var(--slate-900); margin: 0; letter-spacing: -0.005em; }
   @media (max-width: 768px) {
     .deck { height: 100dvh; }
     .slide { padding: 36px 20px 64px; }
@@ -148,6 +157,11 @@
     .hint { display: none; }
     .counter { font-size: 10px; }
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
+    .hero-shot { margin-bottom: 14px; }
+    .hero-shot img { max-height: 160px; }
+    .shot-grid { grid-template-columns: 1fr; gap: 10px; }
+    .shot .caption { padding: 8px 10px 10px; }
+    .shot .caption h4 { font-size: 12.5px; }
   }
   @media print {
     body { background: white; overflow: visible; }
@@ -263,6 +277,9 @@
     <h2 class="slide-title">The working surface and deliverable layer for pharma CI.</h2>
     <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, and where clients see it in real time, all the time.</p>
     <div class="body">
+      <div class="hero-shot">
+        <img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars across years. Tenant chrome is Pfizer; the Stout agency mark sits in the platform-brand slot at the top of the sidebar.">
+      </div>
       <div class="grid-2">
         <div class="card">
           <div class="card-label">Live dashboard</div>
@@ -417,14 +434,50 @@
     <div class="label">05 / Demo</div>
     <h2 class="slide-title">What you'll see in the <span class="accent">demo</span>.</h2>
     <div class="body">
-      <ul class="points">
-        <li><strong>Landscape views.</strong> Bullseye, positioning, and timeline views of competitors against a product or therapeutic area. Filter by company, mechanism of action, route of administration, indication, and phase.</li>
-        <li><strong>Catalyst tracker.</strong> Upcoming readouts, regulatory dates, and approval milestones, sorted by date with a source on every record.</li>
-        <li><strong>Event feed.</strong> Dated events (data, regulatory, approval, deal activity) attached to products, trials, or companies. A source on every event.</li>
-        <li><strong>Trial notes.</strong> Notes attached to specific trials. Stout's commentary sits on the data, not in a separate document.</li>
-        <li><strong>Workspaces.</strong> Curated competitor sets per engagement, with Stout's framing and access controls.</li>
-        <li><strong>Whitelabel experience.</strong> A Stout-branded client site, with branding at the agency, client, and engagement level.</li>
-      </ul>
+      <div class="shot-grid">
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/bullseye.png" alt="Bullseye for Heart Failure -- competitors arranged radially by phase and company, with a Zelvox detail panel showing trials, MOA, and recent markers"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Bullseye</div>
+            <h4>Competitors by phase, around a therapeutic area</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/positioning.png" alt="Positioning by MOA -- mechanisms plotted by highest phase against competitor count, bubbles sized by trial volume"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Positioning</div>
+            <h4>Phase vs. competitive density, by MOA</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Catalysts</div>
+            <h4>Upcoming readouts, regulatory dates, milestones</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Event feed</div>
+            <h4>Dated events across the competitive set</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Trial markers</div>
+            <h4>Stout's commentary lives on the trial</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Whitelabel</div>
+            <h4>Tenant brand foreground, Stout attribution below</h4>
+          </figcaption>
+        </figure>
+      </div>
     </div>
   </div>
 </section>
