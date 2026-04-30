@@ -37,8 +37,9 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         <div class="border border-slate-200 bg-white px-8 py-16 text-center">
           <p class="text-base font-medium text-slate-700">No spaces yet</p>
           <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
-            Spaces are dedicated workspaces for tracking clinical trial pipelines. Create your first
-            one to get started.
+            Each space is a firewalled engagement &mdash; its own members, its own data. Use one
+            per piece of work: a pipeline read, a catalyst tracker, a portfolio review, an asset
+            deep-dive.
           </p>
           <div class="mt-6 inline-block">
             <p-button
