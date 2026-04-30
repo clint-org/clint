@@ -22,6 +22,13 @@ type SubdomainStatus =
 
 const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
 
+function urlValidationError(value: string): string | null {
+  const v = (value || '').trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) return 'Must start with http:// or https://';
+  return null;
+}
+
 @Component({
   selector: 'app-agency-tenant-new',
   standalone: true,
@@ -104,7 +111,11 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
               placeholder="pfizer-oncology"
               required
               aria-required="true"
-              [attr.aria-invalid]="subdomainStatus().kind === 'taken' || subdomainStatus().kind === 'invalid' ? 'true' : 'false'"
+              [attr.aria-invalid]="
+                subdomainStatus().kind === 'taken' || subdomainStatus().kind === 'invalid'
+                  ? 'true'
+                  : 'false'
+              "
               autocomplete="off"
               spellcheck="false"
             />
@@ -172,6 +183,71 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
           </div>
         </div>
 
+        <!-- Logo URL -->
+        <div>
+          <label
+            for="tenant-logo-url"
+            class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
+            Logo URL
+          </label>
+          <input
+            pInputText
+            id="tenant-logo-url"
+            type="url"
+            class="w-full"
+            [ngModel]="logoUrl()"
+            (ngModelChange)="logoUrl.set($event)"
+            name="logoUrl"
+            placeholder="https://example.com/logo.svg"
+            autocomplete="off"
+            spellcheck="false"
+            [attr.aria-invalid]="logoUrlError() ? 'true' : 'false'"
+          />
+          <p
+            class="mt-1 text-[11px] min-h-[1.2em]"
+            [class.text-slate-400]="!logoUrlError()"
+            [class.text-red-600]="!!logoUrlError()"
+            aria-live="polite"
+          >
+            {{
+              logoUrlError() ||
+                'Optional. Hosted URL; you can also upload later from tenant settings.'
+            }}
+          </p>
+        </div>
+
+        <!-- Favicon URL -->
+        <div>
+          <label
+            for="tenant-favicon-url"
+            class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
+            Favicon URL
+          </label>
+          <input
+            pInputText
+            id="tenant-favicon-url"
+            type="url"
+            class="w-full"
+            [ngModel]="faviconUrl()"
+            (ngModelChange)="faviconUrl.set($event)"
+            name="faviconUrl"
+            placeholder="https://example.com/favicon.ico"
+            autocomplete="off"
+            spellcheck="false"
+            [attr.aria-invalid]="faviconUrlError() ? 'true' : 'false'"
+          />
+          <p
+            class="mt-1 text-[11px] min-h-[1.2em]"
+            [class.text-slate-400]="!faviconUrlError()"
+            [class.text-red-600]="!!faviconUrlError()"
+            aria-live="polite"
+          >
+            {{ faviconUrlError() || 'Optional. 32x32 .ico or .png recommended.' }}
+          </p>
+        </div>
+
         <!-- First user email -->
         <div>
           <label
@@ -191,7 +267,8 @@ const SUBDOMAIN_REGEX = /^[a-z][a-z0-9-]{1,62}$/;
             placeholder="lead@pfizer.com"
           />
           <p class="mt-1 text-[11px] text-slate-400">
-            Optional. We'll create a tenant invite for this address; share the invite code with them.
+            Optional. We'll create a tenant invite for this address; share the invite code with
+            them.
           </p>
         </div>
 
@@ -238,7 +315,12 @@ export class AgencyTenantNewComponent implements OnInit {
   // the bare hex, so we expose a derived view + a setter that re-adds the "#".
   readonly primaryColorHash = signal('#0d9488');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
+  readonly logoUrl = signal('');
+  readonly faviconUrl = signal('');
   readonly firstUserEmail = signal('');
+
+  readonly logoUrlError = computed(() => urlValidationError(this.logoUrl()));
+  readonly faviconUrlError = computed(() => urlValidationError(this.faviconUrl()));
 
   onPrimaryColorRawChange(raw: string): void {
     const stripped = (raw || '').replace(/^#/, '').toLowerCase();
@@ -251,7 +333,9 @@ export class AgencyTenantNewComponent implements OnInit {
     return (
       this.subdomainStatus().kind === 'available' &&
       !this.submitting() &&
-      this.name().trim().length > 0
+      this.name().trim().length > 0 &&
+      !this.logoUrlError() &&
+      !this.faviconUrlError()
     );
   });
 
@@ -319,14 +403,19 @@ export class AgencyTenantNewComponent implements OnInit {
     try {
       const hash = this.primaryColorHash();
       const primary = hash.startsWith('#') ? hash.toLowerCase() : `#${hash.toLowerCase()}`;
+      const brand: Record<string, string> = {
+        app_display_name: this.name().trim(),
+        primary_color: primary,
+      };
+      const logo = this.logoUrl().trim();
+      if (logo) brand['logo_url'] = logo;
+      const favicon = this.faviconUrl().trim();
+      if (favicon) brand['favicon_url'] = favicon;
       const result = await this.agencyService.provisionTenant(
         a.id,
         this.name().trim(),
         this.subdomain(),
-        {
-          app_display_name: this.name().trim(),
-          primary_color: primary,
-        }
+        brand
       );
 
       // Optionally create the first-user invite. Failures here shouldn't block the success toast.
