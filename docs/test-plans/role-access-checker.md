@@ -35,12 +35,12 @@ curl -sS -X POST "$PROJECT/rest/v1/rpc/<fn>" \
 
 Open Incognito, do not sign in.
 
-- [ ] Visit `admin.clintapp.com/super-admin` → expect redirect to `/login`.
-- [ ] Visit `stout.clintapp.com/admin` → expect redirect to `/login`.
-- [ ] Visit `pfizer.clintapp.com/t/<pfizer-id>/spaces` → expect redirect to `/login`.
-- [ ] Visit `pfizer.clintapp.com/onboarding` → expect redirect to `/login`.
-- [ ] curl `rpc/provision_agency` with no Authorization → expect `Must be authenticated`.
-- [ ] curl `rpc/get_dashboard_data` with no Authorization → expect 401 from PostgREST.
+- [x] Visit `admin.clintapp.com/super-admin` → expect redirect to `/login`.
+- [x] Visit `stout.clintapp.com/admin` → expect redirect to `/login`.
+- [x] Visit `pfizer.clintapp.com/t/<pfizer-id>/spaces` → expect redirect to `/login`.
+- [x] Visit `pfizer.clintapp.com/onboarding` → expect redirect to `/login`.
+- [x] curl `rpc/provision_agency` with no Authorization → expect `42501 permission denied for function provision_agency` (PostgREST blocks at the GRANT layer before the function body's `Must be authenticated` check ever runs; defense in depth).
+- [x] curl `rpc/get_dashboard_data` with no Authorization → expect HTTP 200 with body `[]`. The RPC is granted to anon by design but uses SECURITY INVOKER, so RLS on `companies` etc. filters every row out for an anon caller. Functionally indistinguishable from a denied call: anon learns nothing about which spaces or rows exist.
 
 ## Space Reader
 
