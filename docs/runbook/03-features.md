@@ -243,7 +243,7 @@ The existing manual code-sharing flow stays functional — agency owners can cop
 
 ## Marketing Landing
 
-Placeholder page at `/` on the default host (apex) for unauthenticated visitors. Includes a "Find your workspace" form that takes a subdomain and redirects to `https://{subdomain}.{apex}/login` (production) or `/login?workspace={subdomain}` (dev where `apexDomain` is empty). Authenticated visitors continue through the existing `onboardingRedirectGuard`. Gated by `marketingLandingGuard`.
+One-page marketing landing at `/` on the default host (apex) for unauthenticated visitors. Pitched at consulting partners as the primary buyer (whitelabel CI work for pharma clients), with secondary positioning for in-house pharma teams. Sections, top to bottom: hero ("the working surface and deliverable layer for pharma CI"), what Clint is (4 cards), what changes for your firm (5 bullets), pitch tool for BD (4 cards), three layers of AI access (3 cards), and the "Find your workspace" form. The form takes a subdomain and redirects to `https://{subdomain}.{apex}/login` (production) or `/login?workspace={subdomain}` (dev where `apexDomain` is empty). Authenticated visitors continue through the existing `onboardingRedirectGuard`. Gated by `marketingLandingGuard`. Source-of-truth copy lives in `src/client/public/internal/stout-briefing.html`; the landing mirrors that deck in structure and language with "Stout" generalized to "your firm."
 
 ## Authentication
 
