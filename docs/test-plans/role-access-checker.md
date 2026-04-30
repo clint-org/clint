@@ -111,14 +111,14 @@ Sign in as an agency owner who never personally provisioned the tenant or accept
 
 Sign in as the platform admin.
 
-- [ ] Visit `admin.clintapp.com/super-admin` → expect chrome renders, agencies list visible.
-- [ ] Provision an agency → expect success.
-- [ ] Visit any tenant route, including data inside any space → expect read access (admin bypass).
-- [ ] Try writing to a space without being a `space_members` row → expect denial (admin bypass is read-only for write checks).
-- [ ] curl `rpc/provision_agency` → expect success.
-- [ ] curl `rpc/lookup_user_by_email` → expect success.
-- [ ] curl `rpc/register_custom_domain` → expect success.
-- [ ] curl `rpc/seed_demo_data` for any space → expect success (platform-admin disjunct).
+- [x] Visit `admin.clintapp.com/super-admin` → expect chrome renders, agencies list visible.
+- [x] Provision an agency → expect success.
+- [x] Visit any tenant route, including data inside any space → expect read access (admin bypass).
+- [x] Try writing to a space without being a `space_members` row → expect denial (admin bypass is read-only for write checks). Verified via trial-detail save: server rejected the write as expected. Note: the UI surfaces this rejection as a top-of-page banner instead of a toast (see follow-up #1).
+- [x] curl `rpc/provision_agency` → expect success. Verified, created `Phase2 Curl` agency.
+- [x] curl `rpc/lookup_user_by_email` → expect success. Verified, found `aadi529`.
+- [x] curl `rpc/register_custom_domain` → expect success. Verified, attached `phase2-curl-test.example.com` to Pfizer.
+- [x] curl `rpc/seed_demo_data` for any space → expect success (platform-admin disjunct). Verified HTTP 204.
 
 ## Cross-cutting checks
 
