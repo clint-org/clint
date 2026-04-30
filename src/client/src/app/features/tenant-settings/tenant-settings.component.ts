@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
@@ -33,6 +33,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    RouterLink,
   ],
   template: `
     <app-manage-page-shell>
@@ -240,6 +241,10 @@ import { extractErrorMessage } from '../../core/util/error-message';
         Enter the new owner's email. If the agency has an email-domain restriction,
         the email must be on that domain. If the user already has an account they're
         added immediately; otherwise an invite code is held for them.
+        <a
+          [routerLink]="rolesHelpLink()"
+          class="ml-1 text-brand-700 hover:underline"
+        >Roles and permissions</a>.
       </p>
       <form (ngSubmit)="sendInvite()" class="space-y-4">
         <div>
@@ -288,6 +293,10 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
+
+  rolesHelpLink(): string[] {
+    return ['/t', this.tenantId, 'help', 'roles'];
+  }
 
   tenantId = '';
   tenant = signal<Tenant | null>(null);

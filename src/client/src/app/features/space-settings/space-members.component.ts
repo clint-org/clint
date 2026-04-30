@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
@@ -42,6 +42,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    RouterLink,
   ],
   template: `
     <app-manage-page-shell>
@@ -52,10 +53,14 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
       }
 
       <p class="mb-4 text-[11px] text-slate-500 max-w-2xl">
-        Space members can see and (with Contributor or Owner role) edit data in this
-        space. Invite anyone by email &mdash; agency colleagues or pharma client
-        users. Owners can manage members; Contributors can edit data; Readers have
-        read-only access.
+        Space members can see and (with Contributor or Owner role) edit data in
+        this space. Invite anyone by email, agency colleagues or pharma client
+        users. Owners can manage members; Contributors can edit data; Readers
+        have read-only access.
+        <a
+          [routerLink]="rolesHelpLink()"
+          class="ml-1 text-brand-700 hover:underline"
+        >Roles and permissions</a>.
       </p>
 
       <p-table
@@ -189,9 +194,15 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
         />
       </div>
       <div>
-        <label for="invite-role" class="mb-1 block text-sm font-medium text-slate-700">
-          Role
-        </label>
+        <div class="mb-1 flex items-baseline justify-between">
+          <label for="invite-role" class="block text-sm font-medium text-slate-700">
+            Role
+          </label>
+          <a
+            [routerLink]="rolesHelpLink()"
+            class="text-[11px] text-brand-700 hover:underline"
+          >What does each role mean?</a>
+        </div>
         <p-select
           inputId="invite-role"
           [options]="roleOptions"
@@ -252,6 +263,11 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   readonly inviteError = signal<string | null>(null);
 
   private spaceId = '';
+  private tenantId = '';
+
+  rolesHelpLink(): string[] {
+    return ['/t', this.tenantId, 'help', 'roles'];
+  }
 
   readonly roleOptions = [
     { label: ROLE_LABEL.owner, value: 'owner' as SpaceRole },
@@ -270,6 +286,7 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.topbarState.actions.set([
       {

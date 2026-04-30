@@ -116,6 +116,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'help/roles',
+        loadComponent: () =>
+          import('./features/help/roles-help.component').then((m) => m.RolesHelpComponent),
+      },
+      {
         path: 's/:spaceId',
         children: [
           {
