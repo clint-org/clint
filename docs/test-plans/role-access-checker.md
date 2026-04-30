@@ -46,8 +46,8 @@ Open Incognito, do not sign in.
 
 Sign in as a Reader of the Survodutide Pipeline space.
 
-- [ ] Visit the space catalysts page → expect data visible.
-- [ ] Try editing a catalyst inline → expect either no edit affordance or RLS rejection on save.
+- [ ] Visit the space catalysts page → expect data visible (page is read-only by design for everyone; no edit affordance to test here).
+- [ ] Visit a trial detail page (Manage → Trials → click a trial) → attempt to edit any field, add a marker, or change phase data. Expect either no edit affordance rendered OR RLS rejection on save.
 - [ ] Visit the space's `/settings/general` → expect the chrome but Save button blocked, Delete-space button blocked.
 - [ ] Visit the space's `/settings/members` → expect chrome with read-only members table; no Invite-to-space button.
 - [ ] curl `rpc/seed_demo_data` with `p_space_id=<survodutide-id>` → expect `Insufficient permissions`.
@@ -58,9 +58,8 @@ Sign in as a Reader of the Survodutide Pipeline space.
 
 Sign in as a Contributor of the Survodutide Pipeline space.
 
-- [ ] Visit catalysts page → expect data visible.
-- [ ] Edit a catalyst, change a status, save → expect success.
-- [ ] Add a marker on a trial → expect success.
+- [ ] Visit catalysts page → expect data visible (read-only view, no edit affordance to test here).
+- [ ] On a trial detail page, edit a field (e.g. status), add a marker, save → expect success. (This is the actual catalyst edit surface; the catalysts page is a derived view.)
 - [ ] Edit an existing event → expect form populates AND save succeeds.
 - [ ] Open `/settings/general` → expect chrome but Save and Delete-space buttons blocked.
 - [ ] Open `/settings/members` → expect chrome but no Invite-to-space button, no Remove actions.
