@@ -92,7 +92,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (tenantSettingsClick)="onTenantSettingsClick()"
           (spaceSettingsClick)="onSpaceSettingsClick()"
           (newSpaceClick)="onNewSpaceClick()"
-          (createTenantClick)="onCreateTenantClick()"
           (joinTenantClick)="onJoinTenantClick()"
         >
           <div topbar-actions class="flex items-center gap-3">
@@ -681,10 +680,6 @@ export class AppShellComponent implements OnInit {
 
   onNewSpaceClick(): void {
     this.createSpaceDialogOpen.set(true);
-  }
-
-  onCreateTenantClick(): void {
-    this.router.navigate(['/onboarding']);
   }
 
   onJoinTenantClick(): void {

@@ -67,7 +67,7 @@ Tenant identity is resolved from the host before Angular bootstraps. There is no
 | `competitive.pfizer.com` | tenant | `tenants.custom_domain` |
 | `zs.yourproduct.com` | agency | `agencies.subdomain` |
 | `admin.yourproduct.com` | super-admin | reserved subdomain |
-| `yourproduct.com` (apex) | default | marketing landing or legacy onboarding |
+| `yourproduct.com` (apex) | default | marketing landing (signed-in users with no roles get bounced to `/onboarding` with a join-code-only form) |
 
 See [Architecture Overview](04-architecture-overview.md) for the full host-resolution flow.
 
@@ -75,9 +75,9 @@ See [Architecture Overview](04-architecture-overview.md) for the full host-resol
 
 ## Auto-Provisioning (handle_new_user trigger)
 
-The `handle_new_user` trigger on `auth.users` was retired during the whitelabel rollout (migration 41) and re-extended in migration 69 with one job: consume any pending `agency_invites` rows matching the new user's email. If a super-admin provisioned an agency to an email that had not yet signed in, the invite is held in `agency_invites`; on that user's first sign-in, the trigger promotes it to an `agency_members` `owner` row and marks the invite accepted. The trigger does not provision tenants or spaces — those stay opt-in. Tenant invites are unchanged: still code-based via `accept_invite(p_code)`.
+The `handle_new_user` trigger on `auth.users` was retired during the whitelabel rollout (migration 41) and re-extended in migration 69 with one job: consume any pending `agency_invites` rows matching the new user's email. If a super-admin provisioned an agency to an email that had not yet signed in, the invite is held in `agency_invites`; on that user's first sign-in, the trigger promotes it to an `agency_members` `owner` row and marks the invite accepted. The trigger does not provision tenants or spaces. Tenant invites are unchanged: still code-based via `accept_invite(p_code)`.
 
-For demo / testing, the `provision_demo_workspace()` SECURITY DEFINER RPC creates Boehringer Ingelheim + Azurity Pharmaceuticals on demand for the calling user (idempotent). The frontend exposes this via the `/provision-demo` route.
+Self-provisioning RPCs (`create_tenant`, `provision_demo_workspace`) and the `/provision-demo` route were dropped on 2026-04-30 — they let any authenticated user spawn an agency-less ("orphan") tenant, which broke the whitelabel hierarchy. All tenant creation now goes through `provision_tenant`, which requires the caller to be an agency owner or platform admin. Direct-customer (no-agency) provisioning is not currently exposed; it can be added later as a platform-admin-only branch on `provision_tenant` if needed.
 
 ## Onboarding Flow
 
@@ -87,12 +87,12 @@ New users land on `/onboarding` after first sign-in (when not auto-routed by sel
 
 - `/onboarding?code=...` accepts an invite via `accept_invite()` and routes into the tenant
 - If `brand.has_self_join` is true and the user's email matches the tenant's `email_domain_allowlist`, the auth callback short-circuits and calls `self_join_tenant(p_subdomain)` before navigating — user becomes a `tenant_members.role = 'member'` row
-- The "create tenant" path is **not** offered on tenant subdomains — that flow is reserved for the apex
+- The "create tenant" path is not offered (and is no longer offered anywhere — see below)
 
 ### Default host (`kind = default`, apex)
 
-- Existing legacy onboarding: create a new tenant via `create_tenant()`, or join with an 8-character invite code
-- Direct customers can opt into a subdomain later via tenant settings
+- The page renders a single "Join with Code" form. The user enters an invite code (tenant or space) and is routed into the corresponding tenant/space.
+- There is no self-serve "create tenant" path. Users without an invite see a hint to ask their administrator. New tenants are provisioned by an agency owner from `/admin/tenants` or by a platform admin from the super-admin portal.
 
 ### Agency subdomain (`kind = agency`)
 

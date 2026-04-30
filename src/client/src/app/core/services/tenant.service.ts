@@ -7,21 +7,6 @@ import { SupabaseService } from './supabase.service';
 export class TenantService {
   private supabase = inject(SupabaseService);
 
-  async createTenant(name: string, slug: string): Promise<Tenant> {
-    const { data, error } = await this.supabase.client.rpc('create_tenant', {
-      p_name: name,
-      p_slug: slug,
-    });
-    if (error) throw error;
-    return data as Tenant;
-  }
-
-  async provisionDemoWorkspace(): Promise<{ tenant_id: string; created: boolean }> {
-    const { data, error } = await this.supabase.client.rpc('provision_demo_workspace');
-    if (error) throw error;
-    return data as { tenant_id: string; created: boolean };
-  }
-
   async listMyTenants(): Promise<Tenant[]> {
     const { data, error } = await this.supabase.client
       .from('tenants')

@@ -60,13 +60,6 @@ export interface TopbarTab {
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
-                    (click)="onCreateTenantClick()"
-                  >
-                    <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
-                  </button>
-                  <button
-                    type="button"
-                    class="dropdown-item dropdown-item--footer"
                     (click)="onJoinTenantClick()"
                   >
                     <i class="fa-solid fa-user-plus text-[10px]"></i> Join with code
@@ -98,13 +91,6 @@ export interface TopbarTab {
                     (click)="onTenantSettingsClick()"
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
-                  </button>
-                  <button
-                    type="button"
-                    class="dropdown-item dropdown-item--footer"
-                    (click)="onCreateTenantClick()"
-                  >
-                    <i class="fa-solid fa-plus text-[10px]"></i> Create tenant
                   </button>
                   <button
                     type="button"
@@ -737,7 +723,6 @@ export class ContextualTopbarComponent {
   readonly tenantSettingsClick = output<void>();
   readonly spaceSettingsClick = output<void>();
   readonly newSpaceClick = output<void>();
-  readonly createTenantClick = output<void>();
   readonly joinTenantClick = output<void>();
 
   // ---- Internal state ----
@@ -801,11 +786,6 @@ export class ContextualTopbarComponent {
   onNewSpaceClick(): void {
     this.spaceDropdownOpen.set(false);
     this.newSpaceClick.emit();
-  }
-
-  onCreateTenantClick(): void {
-    this.tenantDropdownOpen.set(false);
-    this.createTenantClick.emit();
   }
 
   onJoinTenantClick(): void {
