@@ -112,7 +112,7 @@
   .wordmark .stout-mini { height: 14px; width: auto; }
   .hero-shot { margin-bottom: 22px; border: 1px solid var(--slate-200); background: white; }
   .hero-shot img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; object-position: top left; }
-  .shot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .shot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .shot { display: flex; flex-direction: column; background: white; border: 1px solid var(--slate-200); }
   .shot .img-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
   .shot .img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
@@ -435,6 +435,13 @@
     <h2 class="slide-title">What you'll see in the <span class="accent">demo</span>.</h2>
     <div class="body">
       <div class="shot-grid">
+        <figure class="shot">
+          <div class="img-wrap"><img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></div>
+          <figcaption class="caption">
+            <div class="caption-label">Timeline</div>
+            <h4>Multi-company pipeline with phases and markers</h4>
+          </figcaption>
+        </figure>
         <figure class="shot">
           <div class="img-wrap"><img src="img/bullseye.png" alt="Bullseye for Heart Failure -- competitors arranged radially by phase and company, with a Zelvox detail panel showing trials, MOA, and recent markers"></div>
           <figcaption class="caption">
