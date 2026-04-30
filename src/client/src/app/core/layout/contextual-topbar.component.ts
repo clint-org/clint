@@ -1,8 +1,7 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TopbarAction } from '../services/topbar-state.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
-import { BrandContextService } from '../services/brand-context.service';
 
 export interface TopbarTab {
   label: string;
@@ -19,22 +18,6 @@ export interface TopbarTab {
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
       <div class="breadcrumb">
-        <!--
-          Agency attribution: shown on tenant hosts that were provisioned
-          by an agency. Establishes provenance ("intelligence delivered by
-          {agency}") without competing with the tenant brand chrome.
-          Hidden on agency, super-admin, and default hosts.
-        -->
-        @if (agency(); as ag) {
-          <div class="agency-attribution" [title]="'Delivered by ' + ag.name">
-            @if (ag.logo_url) {
-              <img [src]="ag.logo_url" class="agency-badge-img" [alt]="ag.name + ' logo'" />
-            }
-            <span class="agency-name">{{ ag.name }}</span>
-          </div>
-          <span class="breadcrumb-sep" aria-hidden="true">/</span>
-        }
-
         <!-- Tenant badge + name -->
         <div class="tenant-trigger" [class.interactive]="tenants().length > 1">
           @if (tenants().length > 1) {
@@ -679,30 +662,6 @@ export interface TopbarTab {
         flex-shrink: 0;
       }
 
-      .agency-attribution {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 2px 4px 2px 0;
-        cursor: default;
-      }
-
-      .agency-badge-img {
-        width: 18px;
-        height: 18px;
-        border-radius: 4px;
-        object-fit: cover;
-        flex-shrink: 0;
-      }
-
-      .agency-name {
-        font-size: 10.5px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: #64748b;
-      }
-
       /* Single-tenant switcher */
 
       .tenant-switcher {
@@ -739,16 +698,6 @@ export interface TopbarTab {
   ],
 })
 export class ContextualTopbarComponent {
-  private readonly brand = inject(BrandContextService);
-
-  /**
-   * Agency descriptor for tenant hosts that were provisioned by an agency.
-   * Sourced from the brand context (set pre-bootstrap from window.location.host),
-   * not from the URL's tenant id -- the badge advertises who whitelabeled THIS
-   * surface, which always corresponds to the host brand.
-   */
-  protected readonly agency = this.brand.agency;
-
   // ---- Tenant/Space inputs ----
   readonly tenantName = input<string>('');
   readonly tenantLogoUrl = input<string | null>(null);

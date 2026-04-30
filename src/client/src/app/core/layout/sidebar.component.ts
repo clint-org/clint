@@ -1,7 +1,8 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
+import { BrandContextService } from '../services/brand-context.service';
 
 interface NavItem {
   label: string;
@@ -95,8 +96,21 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
     >
       <!-- Logo row -->
       <div class="sidebar__logo">
-        <button type="button" class="logo-btn" aria-label="Go to home" (click)="logoClick.emit()">
-          <app-clint-logo [size]="24" [dark]="true" />
+        <button
+          type="button"
+          class="logo-btn"
+          [attr.aria-label]="logoLabel()"
+          (click)="logoClick.emit()"
+        >
+          @if (agencyBrand(); as ag) {
+            @if (isExpanded() && ag.logo_url) {
+              <img [src]="ag.logo_url" [alt]="ag.name" class="agency-wordmark" />
+            } @else {
+              <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
+            }
+          } @else {
+            <app-clint-logo [size]="24" [dark]="true" />
+          }
         </button>
 
         @if (isExpanded()) {
@@ -289,6 +303,40 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         outline: 2px solid var(--brand-600);
         outline-offset: 2px;
         border-radius: 8px;
+      }
+
+      /* Agency mark in expanded sidebar: agency-uploaded wordmarks tend to
+         be dark-on-light, so render them on a near-white tile to stay
+         legible against the slate-900 sidebar. Cap height + width so any
+         aspect ratio fits the column without crowding the pin button. */
+      .agency-wordmark {
+        height: 24px;
+        max-width: 156px;
+        width: auto;
+        object-fit: contain;
+        background: #f8fafc;
+        border-radius: 4px;
+        padding: 2px 6px;
+        box-sizing: content-box;
+      }
+
+      /* Collapsed-state badge (and fallback when an agency has no logo).
+         Initial letter on a brand-tinted square -- the same visual idiom
+         tenant badges use elsewhere in the app. */
+      .agency-initial {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        background: rgb(from var(--brand-600) r g b / 0.15);
+        color: var(--brand-600);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        user-select: none;
       }
 
       .pin-btn {
@@ -527,12 +575,31 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
   ],
 })
 export class SidebarComponent {
+  private readonly brandContext = inject(BrandContextService);
+
   readonly expanded = input<boolean>(false);
   readonly pinned = input<boolean>(false);
   readonly activeRoute = input<string>('');
   readonly hasSpace = input<boolean>(false);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
+
+  /**
+   * On a tenant host whose tenant was provisioned by an agency, the agency
+   * occupies the platform-brand slot (this sidebar) -- they whitelabeled
+   * Clint, so they should sit where Clint would. Null on tenant hosts
+   * without an agency, and on default / super-admin hosts (the agency
+   * portal itself uses its own shell).
+   */
+  readonly agencyBrand = this.brandContext.agency;
+  readonly agencyInitial = computed(() => {
+    const name = this.agencyBrand()?.name?.trim() ?? '';
+    return name ? name.charAt(0).toUpperCase() : '?';
+  });
+  readonly logoLabel = computed(() => {
+    const ag = this.agencyBrand();
+    return ag ? `${ag.name} -- go to home` : 'Go to home';
+  });
 
   readonly pinToggle = output<void>();
   readonly navItemClick = output<string>();
