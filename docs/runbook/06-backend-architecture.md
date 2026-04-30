@@ -80,9 +80,17 @@ create_space(p_tenant_id uuid, p_name text, p_description text) -> uuid
 
 Creates a new space and adds the calling user as the space owner. Verifies the caller is a member of the parent tenant before creation. Uses `SECURITY DEFINER`.
 
-### seed_demo_data (removed)
+### seed_demo_data (restored, gated)
 
-Dropped on 2026-05-01 along with its `_seed_demo_*` helpers. The function was last called from `landscape-state.service.ts` as an auto-seed-on-empty-companies heuristic, which became wrong after migration 75 introduced the firewalled-engagement model: "empty from this user's view" can mean either the analyst hasn't populated yet OR the firewall hid every row, and auto-seeding in either case is destructive. The RPC also had no permission gate beyond `auth.uid() is not null`. If demo data is needed for sales/marketing in the future it should be a separate explicit flow with an `is_space_owner` check.
+```
+seed_demo_data(p_space_id uuid) -> void
+```
+
+Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 products across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 marker notifications). Idempotent: returns early if the space already has companies.
+
+Dropped briefly on 2026-05-01 (migration 81) when its sole caller, an auto-seed-on-empty-companies heuristic in `landscape-state.service.ts`, was removed. Resurrected the same day in migration 82 with a permission gate that the original version lacked: caller must hold a `space_members` row with `role='owner'` for the target space, OR be a platform admin. Tenant ownership alone is not sufficient (consistent with migration 75's firewall: tenant owners get no implicit space data access).
+
+Invoked only via the explicit URL `/t/:tenantId/s/:spaceId/seed-demo`, which routes to `SeedDemoComponent` and calls `dashboardService.seedDemoData(spaceId)`. There is no auto-trigger; the URL is the entire surface. The component shows a centered spinner while the RPC runs, then redirects to the catalysts page on success or shows the error message with a back link on failure (the most common error being `Insufficient permissions` for non-owners).
 
 ### has_space_access
 

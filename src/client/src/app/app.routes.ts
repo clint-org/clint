@@ -370,6 +370,11 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/events/events-page.component').then((m) => m.EventsPageComponent),
           },
+          {
+            path: 'seed-demo',
+            loadComponent: () =>
+              import('./features/spaces/seed-demo.component').then((m) => m.SeedDemoComponent),
+          },
         ],
       },
     ],

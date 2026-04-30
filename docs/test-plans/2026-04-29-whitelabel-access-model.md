@@ -440,6 +440,16 @@ After QA:
 
 ---
 
+## Section 12: Demo data population (post-test-pass)
+
+Goal: prove the resurrected `seed_demo_data` is reachable via its URL trigger and properly gated to space owners. Run this only after the core access-model assertions in Sections 1 through 7 pass; the seed itself is not access-model evidence.
+
+- [ ] As `aadi529@gmail.com` (space owner of the engagement space created in Section 0), navigate to `https://pfizer.clintapp.com/t/<pfizer-id>/s/<space-id>/seed-demo`. Expected: a centered "Seeding demo data" spinner, then automatic redirect to the catalysts page. The catalysts page should now show 26 trials, 8 pharma companies (AstraZeneca, BMS, Novo Nordisk, Pfizer, Merck, Bayer, Boehringer Ingelheim, GSK), and 55+ markers across the four therapeutic areas (HF, CKD, T2D, Obesity). Verify in SQL: `select count(*) from companies where space_id = '<space-id>';` returns 8.
+- [ ] **Negative test:** as `aadimadala@gmail.com` (Pfizer tenant owner only, NOT a space owner of the engagement space), open Incognito and visit the same `/seed-demo` URL. Expected: spinner briefly, then the error state renders with the message `Insufficient permissions: must be space owner to seed demo data` and a "Back to spaces" link. SQL verify nothing changed: `select count(*) from companies where space_id = '<space-id>';` is unchanged from the previous step. This proves the gate at the top of `seed_demo_data` rejects tenant-owners-without-space-ownership, closing the tenant-scope leak that existed before the gate was added.
+- [ ] Idempotency check: as `aadi529`, hit the `/seed-demo` URL a second time. Expected: spinner, immediate redirect to catalysts (no re-seeding). SQL: `select count(*) from companies where space_id = '<space-id>';` still returns 8, not 16.
+
+---
+
 ## Failure-triage cheat sheet
 
 | Symptom | Likely cause | First place to look |
