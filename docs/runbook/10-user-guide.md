@@ -238,7 +238,7 @@ Agency owners and members at consulting firms log in to the agency portal at the
 3. Pick a primary brand color (will be used as the tenant's accent throughout the UI)
 4. Optional: enter the first user's email to issue an invite
 
-On submit, the platform creates the tenant + a default space named "Workspace" + (if email provided) a `tenant_invites` row whose insert triggers a branded invite email.
+On submit, the platform creates the tenant and adds the agency operator as tenant owner. (The legacy auto-creation of a "Workspace" space at this point was removed on 2026-04-30 — engagement spaces are created explicitly later via the Create-space flow on the spaces list.) If an email was supplied, a `tenant_invites` row is also written, whose INSERT triggers a branded invite email.
 
 ### Managing a Tenant
 
