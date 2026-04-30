@@ -187,23 +187,29 @@ Async guard that calls `waitForSession()` and redirects to `/login` if no sessio
 
 ### agencyGuard
 
-Checks `BrandContextService.kind() === 'agency'`. Non-matching kind redirects to `/`. Combined with `authGuard` on `/admin/*`.
+Async guard. Verifies (1) `BrandContextService.kind() === 'agency'`, (2) session exists (`waitForSession()` + `session()`), (3) the signed-in user is either a platform admin (`is_platform_admin()`) or a member of the agency identified by `brand.brand().id` (`is_agency_member(p_agency_id)`). Non-matching host redirects to `/`; missing session redirects to `/login`; lacking role redirects to `/` (where `marketingLandingGuard` resolves the user's real home — see below). Combined with `authGuard` on `/admin/*`. Server-side enforcement remains the authoritative gate; this guard prevents the empty agency-portal chrome from rendering for non-members.
 
 ### superAdminGuard
 
-Checks `BrandContextService.kind() === 'super-admin'`. Non-matching kind redirects to `/` so the area's existence is not leaked to non-admins. Combined with `authGuard` on `/super-admin/*`.
+Async guard. Verifies (1) `BrandContextService.kind() === 'super-admin'`, (2) session exists, (3) the signed-in user is a platform admin (`is_platform_admin()`). Non-matching host or missing role redirects to `/`; missing session redirects to `/login`. Combined with `authGuard` on `/super-admin/*`. Without the role check the super-admin chrome would render for any signed-in user who navigated to `admin.{apex}`; mutations would still fail at the RPC layer, but the empty shell leaked the surface's existence.
 
 ### marketingLandingGuard
 
-Sole guard on the root path `/`. Routes by host brand kind and auth state:
+Sole guard on the root path `/`. Routes by host brand kind, auth state, AND (for branded hosts) whether the user has the role that host requires:
 
-| Brand kind | Unauthenticated | Authenticated |
-|---|---|---|
-| `default` | render marketing landing | agency membership → cross-host redirect to `https://{agency.subdomain}.{apex}/admin`; else last-used tenant; else `/onboarding` |
-| `agency` | `/login` | `/admin` |
-| `super-admin` | `/login` | `/super-admin` |
-| `tenant` | `/login` | `/t/{brand.id}/spaces` |
+| Brand kind | Unauthenticated | Authenticated + has role | Authenticated + lacks role |
+|---|---|---|---|
+| `default` | render marketing landing | agency membership → cross-host redirect to `https://{agency.subdomain}.{apex}/admin`; else last-used tenant; else `/onboarding` | n/a (no role gate on default host) |
+| `agency` | `/login` | `/admin` | falls through to the default-host resolution path below |
+| `super-admin` | `/login` | `/super-admin` | falls through |
+| `tenant` | `/login` | `/t/{brand.id}/spaces` | n/a (tenant role gating is enforced at the data layer, not at the route) |
+
+The "lacks role" fallthrough is what breaks the loop where a hardened `superAdminGuard` would redirect a non-admin to `/`, and `marketingLandingGuard` would in turn redirect them back to `/super-admin`. Instead, when a signed-in user lands on a branded host they don't belong to, the guard resolves their actual home: it checks `is_platform_admin()` and `is_agency_member()` for the host's brand id, and if neither passes it falls through to the same agency-membership/last-tenant/onboarding resolution used for the default host, including the cross-host `window.location.href = ...` redirect.
 
 The per-kind routing for authenticated users mirrors `auth-callback.component.ts:redirectAfterSignIn`, which only fires on fresh sign-in. Without this duplication, an apex-cookie session that lands on a branded host without going through the callback would fall through to the apex onboarding/last-tenant path, sending agency owners to `/onboarding` (which calls the legacy `create_tenant` RPC) instead of `/admin` (which calls `provision_tenant`). That mismatch is what produced agency-less tenants in early testing.
 
-The default-host authenticated branch additionally checks agency memberships before tenant memberships and does a cross-host redirect (`window.location.href = ...`) when the user owns or belongs to an agency. This handles the common case where OAuth callback lands on the apex (Supabase's `redirectTo` is `${window.location.origin}/auth/callback`, so the host the user signs in from determines where the callback runs) but the user actually belongs on an agency's portal. Falls back to the existing tenant-lookup behavior when no agency memberships exist.
+The default-host authenticated branch checks agency memberships before tenant memberships and does a cross-host redirect (`window.location.href = ...`) when the user owns or belongs to an agency. This handles the common case where OAuth callback lands on the apex (Supabase's `redirectTo` is `${window.location.origin}/auth/callback`, so the host the user signs in from determines where the callback runs) but the user actually belongs on an agency's portal. Falls back to the tenant-lookup behavior when no agency memberships exist.
+
+### Known guard gap
+
+There is no `tenantGuard` on `/t/:tenantId/*`. Routes activate on any authenticated session; data is filtered by RLS and per-RPC `is_tenant_member` / `has_space_access` checks. A non-tenant-member who navigates to `/t/<id>/settings` sees the page chrome but cannot mutate anything. Tracked as a follow-up to harden.

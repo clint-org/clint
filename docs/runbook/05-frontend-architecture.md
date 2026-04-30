@@ -16,9 +16,9 @@ src/client/
       core/
         guards/
           auth.guard.ts                  # authGuard + onboardingRedirectGuard
-          agency.guard.ts                # kind === 'agency' (gates /admin/*)
-          super-admin.guard.ts           # kind === 'super-admin' (gates /super-admin/*)
-          marketing-landing.guard.ts     # kind === 'default' + unauthenticated (gates /)
+          agency.guard.ts                # kind === 'agency' AND (is_agency_member OR is_platform_admin) (gates /admin/*)
+          super-admin.guard.ts           # kind === 'super-admin' AND is_platform_admin (gates /super-admin/*)
+          marketing-landing.guard.ts     # gates /; routes by kind + auth + role-on-host (cross-host redirect when user lacks role for current host)
         util/
           color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math)
           cookie-session-storage.ts      # Supabase JS storage adapter using document.cookie
@@ -165,15 +165,17 @@ Key decisions:
 
 ## Routing
 
-All routes are lazy-loaded. Routes are host-aware: `agencyGuard`, `superAdminGuard`, and `marketingLandingGuard` short-circuit on `BrandContextService.kind()`. The legacy `/t/:tenantId/...` shape is preserved for direct customers on the apex during cutover.
+All routes are lazy-loaded. Routes are host-aware AND role-aware: `agencyGuard`, `superAdminGuard`, and `marketingLandingGuard` short-circuit first on `BrandContextService.kind()`, then on the user's role for that host (`is_platform_admin` for super-admin, `is_agency_member` for agency). Server-side RPCs and RLS remain the authoritative gate; the guards prevent the empty privileged-shell from rendering for users who lack the role. The legacy `/t/:tenantId/...` shape is preserved for direct customers on the apex during cutover.
 
 ```
 /                                   -> marketingLandingGuard
                                        (unauthed:  default -> MarketingLandingComponent; branded -> /login)
-                                       (authed:    default -> last tenant or /onboarding;
-                                                   agency  -> /admin;
-                                                   super-admin -> /super-admin;
-                                                   tenant  -> /t/{brand.id}/spaces)
+                                       (authed + has role:    default -> last tenant or /onboarding;
+                                                              agency  -> /admin;
+                                                              super-admin -> /super-admin;
+                                                              tenant  -> /t/{brand.id}/spaces)
+                                       (authed + lacks role for branded host: cross-host redirect to user's real home,
+                                                                              or /onboarding if user has no agency/tenant)
 /login                              -> LoginComponent (brand-driven; reads ?workspace= hint on apex)
 /auth/callback                      -> AuthCallbackComponent (kind-aware redirect; attempts self-join on tenant subdomains)
 /onboarding                         -> OnboardingComponent (authGuard)

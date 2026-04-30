@@ -39,16 +39,31 @@ export const marketingLandingGuard: CanActivateFn = async () => {
     return router.createUrlTree(['/login']);
   }
 
-  if (kind === 'agency') return router.createUrlTree(['/admin']);
-  if (kind === 'super-admin') return router.createUrlTree(['/super-admin']);
-  if (kind === 'tenant') {
+  if (kind === 'super-admin') {
+    const { data } = await supabaseService.client.rpc('is_platform_admin');
+    if (data === true) return router.createUrlTree(['/super-admin']);
+    // Signed-in non-admin landed on admin host. Fall through to find them their real home.
+  } else if (kind === 'agency') {
+    const agencyId = brand.brand().id;
+    if (agencyId) {
+      const [adminR, memberR] = await Promise.all([
+        supabaseService.client.rpc('is_platform_admin'),
+        supabaseService.client.rpc('is_agency_member', { p_agency_id: agencyId }),
+      ]);
+      if (adminR.data === true || memberR.data === true) {
+        return router.createUrlTree(['/admin']);
+      }
+    }
+    // Signed in but not a member of this agency. Fall through.
+  } else if (kind === 'tenant') {
     const id = brand.brand().id;
     if (id) return router.createUrlTree(['/t', id, 'spaces']);
     return router.createUrlTree(['/onboarding']);
   }
 
-  // default host: agency memberships take precedence (cross-host redirect to
-  // the agency portal); fall back to last-used tenant; fall back to onboarding.
+  // Either default host, or a branded host the user has no role for. Resolve their
+  // real home: agency memberships take precedence (cross-host to the agency portal);
+  // fall back to last-used tenant; fall back to onboarding.
   try {
     const agencies = await agencyService.listMyAgencies();
     if (agencies.length > 0 && environment.apexDomain) {
