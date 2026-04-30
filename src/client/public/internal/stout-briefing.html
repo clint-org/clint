@@ -95,7 +95,6 @@
   .cover .big-logo .wordmark-large { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--slate-900); letter-spacing: 0.22em; text-transform: uppercase; }
   .cover h1 { font-size: 56px; font-weight: 700; color: var(--slate-900); line-height: 1.05; letter-spacing: -0.015em; margin-bottom: 24px; max-width: 900px; }
   .cover h1 .accent { color: var(--brand-700); }
-  .cover .sub { font-size: 18px; color: var(--slate-600); max-width: 720px; margin-bottom: 64px; }
   .cover .footer-line { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.12em; text-transform: uppercase; }
   .cover .footer-line .dot { width: 4px; height: 4px; background: var(--slate-300); }
   .chrome { position: fixed; bottom: 16px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; pointer-events: none; z-index: 10; }
@@ -109,25 +108,24 @@
   .cover .big-logo .stout-cover-logo { width: auto; height: 36px; }
   .cover .big-logo-sep { width: 1px; height: 28px; background: var(--slate-300); }
   .wordmark .stout-mini { height: 14px; width: auto; }
-  /* Cover hero: render the timeline ~15% wider than the container so the
-     right edge (sparser future-year columns) clips off via overflow:hidden,
-     leaving the data-dense left ~85% of the screenshot filling the frame. */
-  .cover-hero { margin: 28px 0 40px; border: 1px solid var(--slate-200); background: white; overflow: hidden; height: 320px; }
-  .cover-hero img { display: block; width: 117.65%; height: 100%; object-fit: cover; object-position: top left; }
-  /* Compact thumbnail tucked on the right of each card. Clickable -> lightbox. */
-  .card-thumb { width: 100%; aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border: 1px solid var(--slate-200); padding: 0; margin: 0; cursor: zoom-in; display: block; outline: none; transition: border-color 120ms ease; }
+  .cover-hero { margin: 8px 0 40px; border: 1px solid var(--slate-200); background: white; }
+  .cover-hero img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; object-position: top left; }
+  /* Compact thumbnail floated top-right so body text wraps around and
+     below it. Avoids the empty column the prior grid layout produced
+     under tall card bodies. Clickable -> lightbox. */
+  .card-thumb { width: 150px; aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border: 1px solid var(--slate-200); padding: 0; margin: 0; cursor: zoom-in; display: block; outline: none; transition: border-color 120ms ease; }
   .card-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
   .card-thumb:hover { border-color: var(--brand-600); }
   .card-thumb:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; }
-  /* :has() promotes only the cards that actually carry a thumb (slide 2) into a 2-col layout; cards without a thumb (slides 4, 5) keep the default block flow. */
-  .card:has(.card-thumb) { display: grid; grid-template-columns: 1fr 150px; gap: 6px 20px; align-items: start; }
-  .card:has(.card-thumb) > .card-thumb { grid-column: 2; grid-row: 1 / -1; align-self: start; }
+  .card > .card-thumb { float: right; margin: 4px 0 12px 18px; }
   .lightbox-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); display: flex; align-items: center; justify-content: center; z-index: 200; cursor: zoom-out; padding: 32px; animation: lightbox-fade 120ms ease-out; }
   .lightbox-backdrop img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6); }
   @keyframes lightbox-fade { from { opacity: 0; } to { opacity: 1; } }
   .shot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .shot { display: flex; flex-direction: column; background: white; border: 1px solid var(--slate-200); }
-  .shot .img-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
+  .shot .img-wrap { display: block; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border: none; border-bottom: 1px solid var(--slate-200); padding: 0; margin: 0; cursor: zoom-in; outline: none; transition: background-color 120ms ease; }
+  .shot .img-wrap:hover { background: var(--slate-100); }
+  .shot .img-wrap:focus-visible { outline: 2px solid var(--brand-600); outline-offset: -2px; }
   .shot .img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
   .shot .caption { padding: 10px 12px 12px; }
   .shot .caption-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; }
@@ -163,16 +161,15 @@
     .cover .big-logo .wordmark-large { font-size: 14px; letter-spacing: 0.18em; }
     .cover .big-logo-sep { height: 20px; }
     .cover h1 { font-size: 30px; margin-bottom: 16px; line-height: 1.1; }
-    .cover .sub { font-size: 14px; margin-bottom: 32px; }
     .cover .footer-line { font-size: 10px; gap: 10px; flex-wrap: wrap; }
     .chrome { padding: 0 12px; bottom: 12px; }
     .hint { display: none; }
     .counter { font-size: 10px; }
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
-    .cover-hero { margin: 16px 0 24px; height: 180px; }
-    /* Mobile: stack thumb above text instead of side-by-side. */
-    .card:has(.card-thumb) { grid-template-columns: 1fr; }
-    .card:has(.card-thumb) > .card-thumb { grid-column: 1; grid-row: auto; }
+    .cover-hero { margin: 4px 0 24px; }
+    .cover-hero img { max-height: 180px; }
+    /* Mobile: stack the thumb above text full-width instead of floating. */
+    .card > .card-thumb { float: none; width: 100%; margin: 0 0 12px 0; }
     .shot-grid { grid-template-columns: 1fr; gap: 10px; }
     .shot .caption { padding: 8px 10px 10px; }
     .shot .caption h4 { font-size: 12.5px; }
@@ -263,7 +260,6 @@
       <svg class="stout-cover-logo" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg>
     </div>
     <h1>Primary pharma intelligence, published live through <span class="accent">your brand</span>.</h1>
-    <p class="sub">What Clint is and what it changes for Stout.</p>
     <div class="cover-hero">
       <img src="img/timeline.png" alt="Pfizer-branded Clint timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar">
     </div>
@@ -289,8 +285,8 @@
       <span class="sep"></span>
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
-    <div class="label">01 / What Clint is</div>
-    <h2 class="slide-title">The working surface and deliverable layer for pharma CI.</h2>
+    <div class="label">01</div>
+    <h2 class="slide-title">Clint is the working surface and deliverable layer for pharma CI.</h2>
     <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, and where clients see it in real time, all the time.</p>
     <div class="body">
       <div class="grid-2">
@@ -337,8 +333,8 @@
       <span class="sep"></span>
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
-    <div class="label">02 / What changes for Stout</div>
-    <h2 class="slide-title">What changes for Stout.</h2>
+    <div class="label">02</div>
+    <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
     <div class="body">
       <ul class="points">
         <li><strong>Faster kickoff.</strong> The competitive baseline for the target therapeutic area is already in the platform when the engagement starts. Analysts begin from a working picture and add Stout's curation and framing on top, instead of assembling from scratch.</li>
@@ -365,8 +361,8 @@
       <span class="sep"></span>
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
-    <div class="label">03 / A pitch tool for BD</div>
-    <h2 class="slide-title">A pitch tool for BD.</h2>
+    <div class="label">03</div>
+    <h2 class="slide-title">Win the pitch with the surface you'll deliver on.</h2>
     <p class="lede">The platform isn't only for live engagements. Use it to win them.</p>
     <div class="body">
       <div class="grid-2">
@@ -409,7 +405,7 @@
       <span class="sep"></span>
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
-    <div class="label">04 / AI integration roadmap</div>
+    <div class="label">04</div>
     <h2 class="slide-title">Three ways to put AI on top of Clint's data.</h2>
     <p class="lede">Clint's data is already structured and cited, which is what AI needs to give reliable answers. Three ways to use it are on the roadmap.</p>
     <div class="body">
@@ -448,54 +444,54 @@
       <span class="sep"></span>
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
-    <div class="label">05 / Demo</div>
+    <div class="label">05</div>
     <h2 class="slide-title">What you'll see in the <span class="accent">demo</span>.</h2>
     <div class="body">
       <div class="shot-grid">
         <figure class="shot">
-          <div class="img-wrap"><img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></button>
           <figcaption class="caption">
             <div class="caption-label">Timeline</div>
             <h4>Multi-company pipeline with phases and markers</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/bullseye.png" alt="Bullseye for Heart Failure -- competitors arranged radially by phase and company, with a Zelvox detail panel showing trials, MOA, and recent markers"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/bullseye.png" alt="Bullseye for Heart Failure -- competitors arranged radially by phase and company, with a Zelvox detail panel showing trials, MOA, and recent markers"></button>
           <figcaption class="caption">
             <div class="caption-label">Bullseye</div>
             <h4>Competitors by phase, around a therapeutic area</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/positioning.png" alt="Positioning by MOA -- mechanisms plotted by highest phase against competitor count, bubbles sized by trial volume"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/positioning.png" alt="Positioning by MOA -- mechanisms plotted by highest phase against competitor count, bubbles sized by trial volume"></button>
           <figcaption class="caption">
             <div class="caption-label">Positioning</div>
             <h4>Phase vs. competitive density, by MOA</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></button>
           <figcaption class="caption">
             <div class="caption-label">Catalysts</div>
             <h4>Upcoming readouts, regulatory dates, milestones</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></button>
           <figcaption class="caption">
             <div class="caption-label">Event feed</div>
             <h4>Dated events across the competitive set</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></button>
           <figcaption class="caption">
             <div class="caption-label">Trial markers</div>
             <h4>Stout's commentary lives on the trial</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <div class="img-wrap"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></div>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
           <figcaption class="caption">
             <div class="caption-label">Whitelabel</div>
             <h4>Tenant brand foreground, Stout attribution below</h4>
