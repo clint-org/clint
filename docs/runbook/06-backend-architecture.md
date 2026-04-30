@@ -178,7 +178,7 @@ release_retired_hostname(p_hostname text) -> jsonb
 provision_tenant(p_agency_id uuid, p_name text, p_subdomain text, p_brand jsonb) -> jsonb
 ```
 
-Caller must be agency owner of `p_agency_id` or platform admin. Validates `agencies.max_tenants` quota, subdomain regex/reserved/uniqueness/retirement, applies branding fields from `p_brand`. Creates one default space named "Workspace" so the tenant has somewhere to land on first login. **Auto-adds the calling user as both tenant owner and space owner** so the agency operator who provisions a tenant can immediately see and manage it without needing a separate add-self step.
+Caller must be agency owner of `p_agency_id` or platform admin. Validates `agencies.max_tenants` quota, subdomain regex/reserved/uniqueness/retirement, applies branding fields from `p_brand`. **Auto-adds the calling user as tenant owner** so the agency operator who provisions a tenant can immediately see and manage it. **Does not** create any default space — under the agency-managed model, each space is a real engagement (e.g. "Survodutide Q2 2026 Pipeline") created explicitly via `create_space` by the analyst running the engagement. The spaces-list page renders an empty state with a Create-space CTA when a tenant has zero spaces. (The legacy auto-create of a "Workspace" space was removed on 2026-04-30; existing tenants with auto-created Workspace rows are unaffected.)
 
 ### add_tenant_owner
 

@@ -36,7 +36,9 @@ A user can be an owner of multiple agencies AND multiple tenants directly.
 
 `tenant_members.role` and `agency_members.role` are both constrained to `owner` only -- non-owner roles at those levels carry no surface area in the product. Space-level access uses the three-tier `owner | editor | viewer` (rendered as Owner / Contributor / Reader in the UI).
 
-**Authority cascade was removed in migration 75.** Tenant owners and agency owners get NO implicit space access. Data visibility is space-scoped, period. To see Pfizer's catalysts, you must hold a `space_members` row for the Pfizer/Workspace space -- being a tenant or agency owner is not enough. This protects firewalled engagements: a Stout consultant on the Pfizer engagement does not see Boehringer's data just because Stout owns both tenants.
+**Authority cascade was removed in migration 75.** Tenant owners and agency owners get NO implicit space access. Data visibility is space-scoped, period. To see a tenant's catalysts, you must hold a `space_members` row for the relevant space -- being a tenant or agency owner is not enough. This protects firewalled engagements: a Stout consultant on the Pfizer engagement does not see Boehringer's data just because Stout owns both tenants.
+
+**Tenants no longer auto-provision a default space (changed 2026-04-30).** `provision_tenant` creates the tenant + adds the caller as `tenant_members.role='owner'` only. Spaces are real engagements named by the analyst doing the work (e.g. "Survodutide Q2 Pipeline"), created explicitly via `create_space`. The spaces-list page handles the zero-spaces state with a Create-space CTA.
 
 `agencies.email_domain` is an optional lock. When set, every `agency_members` and `tenant_members` insert under that agency must reference a user whose email is on that domain (enforced by the `enforce_member_email_domain` BEFORE-INSERT trigger). Platform admins bypass. Null = no enforcement.
 

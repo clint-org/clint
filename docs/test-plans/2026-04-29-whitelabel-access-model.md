@@ -17,7 +17,7 @@ Prod state at start of test pass (after the 2026-04-30 reset — all prior agenc
 - Apex: `clintapp.com` (default brand, marketing landing).
 - Super-admin: `admin.clintapp.com`.
 - Agency: none yet — Section 0 re-provisions **Stout** at `stout.clintapp.com` with owner `aadi529@gmail.com` and `email_domain = gmail.com`.
-- Tenant: none yet — Section 0 re-provisions **Pfizer** under Stout at `pfizer.clintapp.com`. `provision_tenant` auto-adds caller as tenant + Workspace space owner.
+- Tenant: none yet — Section 0 re-provisions **Pfizer** under Stout at `pfizer.clintapp.com`. `provision_tenant` auto-adds caller as tenant owner. Spaces are then created explicitly (no auto-Workspace as of 2026-04-30).
 
 Every step below should be performed against **prod** unless otherwise noted.
 
@@ -30,7 +30,7 @@ Every step below should be performed against **prod** unless otherwise noted.
 | Role | Email | Used in |
 |---|---|---|
 | Platform admin (only super-admin operator) | `aadityamadala@gmail.com` | Section 0 (provisioning), Section 7 series (negative checks) |
-| Agency / tenant / space owner (the "customer" persona) | `aadi529@gmail.com` | All sections — owns Stout, Pfizer, and Workspace |
+| Agency / tenant / space owner (the "customer" persona) | `aadi529@gmail.com` | All sections — owns Stout, Pfizer, and the engagement space created in Section 0 |
 | Second tenant owner | `aadimadala@gmail.com` | Sections 2, 3, 4, 7 |
 | Space reader | `madaladodbele@gmail.com` | Section 5, plus negative-path role coverage in 7a-7e |
 | Negative-test (rejected by lock) | any non-gmail temp-mail address | Section 2 negative path only — no sign-in needed |
@@ -61,10 +61,12 @@ Performed by `aadityamadala@gmail.com` (the platform admin). `aadi529@gmail.com`
 
 - [ ] Sign in to `admin.clintapp.com` as **`aadityamadala@gmail.com`** (platform admin). Provision a new agency: name `Stout Strategy`, subdomain `stout`, **owner email `aadi529@gmail.com`**. Confirm it appears in the agencies list, active.
 - [ ] Sign out, then sign in as **`aadi529@gmail.com`** (agency owner). Visit `stout.clintapp.com/admin/branding`. Set `primary_color` to a non-teal value (e.g. `#4597d0`) so Section 9 brand-isolation is meaningful. Set `email_domain = gmail.com`. Save and confirm "Agency branding updated" toast.
-- [ ] Still as `aadi529@gmail.com`, on `stout.clintapp.com/admin/tenants`, provision tenant: name `Pfizer`, subdomain `pfizer`. Leave the `First user email` field BLANK on this tenant — Section 2 covers the held-invite flow via the standalone "Add owner" path. Confirm Pfizer appears in the tenants list. `provision_tenant` auto-adds `aadi529@gmail.com` as both tenant owner and Workspace space owner.
+- [ ] Still as `aadi529@gmail.com`, on `stout.clintapp.com/admin/tenants`, provision tenant: name `Pfizer`, subdomain `pfizer`. Leave the `First user email` field BLANK on this tenant — Section 2 covers the held-invite flow via the standalone "Add owner" path. Confirm Pfizer appears in the tenants list. `provision_tenant` auto-adds `aadi529@gmail.com` as tenant owner. (Note: as of 2026-04-30, `provision_tenant` no longer auto-creates a default "Workspace" space — spaces are real engagements created explicitly later.)
   - [ ] Fill the optional `Logo URL` field with a hosted Pfizer logo URL at provision time. After submit, verify `tenants.logo_url` is populated (`select logo_url from tenants where subdomain = 'pfizer';`) and the logo renders on `pfizer.clintapp.com` without needing a follow-up upload from the tenant detail page.
   - [ ] **Deferred — first-user-email path:** create a throwaway tenant under Stout (e.g. name `Throwaway`, subdomain `throwaway-fue`) and fill the `First user email` field with a real Gmail account that does NOT yet exist in `auth.users`. Expected: tenant is created, an invite is held (`select * from tenant_invites where tenant_id = '<id>';`), the form shows a copyable code or success toast. Tear down the throwaway tenant afterward (Section 11 cleanup logic). This exercises `createTenantInvite` at provision time, which is a different code path than `add_tenant_owner` from the tenant detail page.
-- [ ] Visit `pfizer.clintapp.com`. Confirm catalysts page loads (may be empty — seed data does not auto-populate for newly-provisioned tenants. That's fine for the access-model tests, except Section 3's "data visible vs not" test needs at least one row to discriminate. Seed at least one catalyst manually if Workspace is empty before starting Section 3).
+- [ ] Visit `pfizer.clintapp.com`. Confirm the spaces list renders the empty state ("No spaces yet" with a Create-space CTA), since `provision_tenant` no longer auto-creates a Workspace. The brand should resolve as Pfizer (logo + primary color).
+- [ ] Click "Create space" on the empty state. Name it something realistic for an engagement, e.g. `Survodutide Pipeline` (any name works for the test). The dialog should call `create_space`, which auto-adds `aadi529@gmail.com` as space owner. Confirm the new space appears in the list.
+- [ ] Click into the space, navigate to catalysts, and create at least one catalyst row. This row is the discriminator for Section 3's firewall test (aadimadala should NOT be able to see it).
 - [ ] Confirm `stout.clintapp.com/admin` reflects Stout's `primary_color` (primary buttons + active nav items, not platform teal).
 
 If any of the above fails, fix before proceeding -- the rest of the plan assumes this baseline.
@@ -108,8 +110,9 @@ This is the architectural test that justifies migration 75. Tenant ownership mus
   If zero rows, the OAuth flow didn't complete — stop and triage.
 - [ ] Navigate to `stout.clintapp.com/onboarding?tab=join`, paste the invite code from Section 2, submit. Expected: redirect into Pfizer's tenant scope.
 - [ ] You should now be on `pfizer.clintapp.com` viewing the spaces list (or the tenant root).
-- [ ] Click into the Workspace space.
-- [ ] **Expected:** the catalysts/landscape pages load but show NO data, OR a permission error. The user is a tenant owner but NOT a space member, so `has_space_access` returns false.
+- [ ] Spaces list: aadimadala should see the engagement space `aadi529` created in Section 0 (e.g. `Survodutide Pipeline`) listed — RLS lets tenant members enumerate spaces in their tenant. This is the "I see it but can't enter it" surface; the firewall is enforced one level deeper.
+- [ ] Click into the engagement space.
+- [ ] **Expected:** the catalysts/landscape pages load but show NO data — the catalyst row `aadi529` created in Section 0 must NOT be visible to aadimadala. The user is a tenant owner but NOT a space member, so `has_space_access` returns false and RLS hides every catalyst row.
 - [ ] Open `pfizer.clintapp.com/t/<id>/settings` (tenant settings) -- expected: works (they're a tenant owner). Members table should show both owners.
 
 If the second user CAN see catalysts data, the migration's authority cascade did not get fully removed. Check `supabase/migrations/20260429010000_owner_only_explicit_space_access.sql` step 5 (`has_space_access` body) and verify it ran on prod (`select prosrc from pg_proc where proname = 'has_space_access';` via Supabase SQL editor).
