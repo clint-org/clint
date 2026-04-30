@@ -77,9 +77,16 @@ src/client/
           catalyst-table.component   # p-table with rowGroupMode="subheader" for time buckets
           catalyst-table.css         # Global table chrome (imported from styles.css)
           group-catalysts.ts         # Pure utility: adaptive time-bucket grouping (used by LandscapeStateService)
-        spaces/                 # Space list and creation
-        onboarding/             # Create org / join with invite code
-        tenant-settings/        # Tenant management and member invites
+        spaces/                 # Space list, creation, and seed-demo URL trigger
+          space-list.component.ts          # Filterable card grid with empty-state Create-space CTA
+          seed-demo.component.ts           # Hits seed_demo_data RPC then redirects to catalysts; URL-only surface
+        onboarding/             # Join with code; create-tenant path removed 2026-04-30 (orphan-tenant fix)
+        tenant-settings/        # Tenant branding + members + access settings + danger zone
+        space-settings/         # Per-space settings: general (name, description, delete) + members
+          space-general.component.ts       # Name, description, danger zone (delete-space)
+          space-members.component.ts       # Invite to space, role picker, remove member
+        help/                   # User-facing role/permission docs
+          roles-help.component.ts          # Renders role/permission breakdown for agency and tenant owners
       shared/
         animations/
           slide-panel.animation.ts  # Reusable slide-in/out trigger (@slidePanel) for overlay detail panels (200ms enter, 150ms leave)
@@ -190,9 +197,11 @@ All routes are lazy-loaded. Routes are host-aware AND role-aware: `agencyGuard`,
   agencies                          -> SuperAdminAgenciesComponent
   tenants                           -> SuperAdminTenantsComponent
   domains                           -> SuperAdminDomainsComponent
-/t/:tenantId/                       -> AppShellComponent (layout wrapper; preserved for legacy / direct apex customers)
+/t/:tenantId/                       -> AppShellComponent (layout wrapper; preserved for legacy / direct apex customers; gated by authGuard + tenantGuard)
   spaces                            -> SpaceListComponent
   settings                          -> TenantSettingsComponent
+  help/roles                        -> RolesHelpComponent (user-facing role/permission breakdown; linked from space-members and tenant-settings invite dialogs)
+  s/:spaceId/seed-demo              -> SeedDemoComponent (URL-only trigger for seed_demo_data; space-owner gated server-side)
   s/:spaceId/
     (empty)                         -> LandscapeShellComponent -> TimelineViewComponent
     bullseye/by-therapy-area        -> LandscapeIndexComponent
