@@ -1,6 +1,6 @@
 # Role-Access Checker
 
-[Back to test plan](2026-04-29-whitelabel-access-model.md), [spec](ui-editability-matrix.md).
+[Back to test plan](2026-04-29-whitelabel-access-model.md), [spec](ui-editability-matrix.md), [follow-ups](follow-ups.md).
 
 ---
 

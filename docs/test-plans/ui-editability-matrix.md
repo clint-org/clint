@@ -1,6 +1,6 @@
 # Roles and Permissions: Spec
 
-[Back to test plan](2026-04-29-whitelabel-access-model.md)
+[Back to test plan](2026-04-29-whitelabel-access-model.md), [checker](role-access-checker.md), [follow-ups](follow-ups.md).
 
 ---
 
