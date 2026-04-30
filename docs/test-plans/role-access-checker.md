@@ -73,7 +73,7 @@ Sign in as a Space Owner.
 
 - [ ] Visit the space, edit data, add markers, edit events → expect all writes succeed.
 - [ ] Open `/settings/general`, change description, Save → expect success and toast.
-- [ ] Open `/settings/general`, click Delete space, confirm → expect space deleted, redirect to spaces list. (Skip if you need the space alive for other tests.)
+- [x] Open `/settings/general`, click Delete space, confirm → expect space deleted, redirect to spaces list. Verified by deleting `Survodutide Pipeline`. The delete cascaded and recreated as `SGLT2 Pipeline` (id `746d4832-374d-4f0e-93ce-47839388aa29`); test continues against the new space.
 - [ ] Open `/settings/members`, invite a new user as Reader → expect `added to space` or `Invite held` toast.
 - [ ] Visit `/seed-demo` URL on the space → expect populates demo data and redirects to catalysts. Repeat → expect idempotent (no duplicate rows).
 - [ ] curl `rpc/invite_to_space` with `p_role='owner'` → expect success.
