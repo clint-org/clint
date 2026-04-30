@@ -87,11 +87,12 @@ Goal: prove `add_tenant_owner` works and the UI surfaces both the "user already 
 
 Account: `aadimadala@gmail.com` (real Google account; if it has not yet signed into `clintapp.com`, this exercises the "invite held" branch — its row in `auth.users` won't exist until first OAuth sign-in).
 
-- [ ] On `stout.clintapp.com/admin/tenants`, click into Pfizer.
-- [ ] Click "Add owner". Enter `aadimadala@gmail.com`.
-- [ ] Expected (assuming the account has never signed into clintapp): green message `Invite held for aadimadala@gmail.com. Code: <32-char hex>`. **Copy the code** -- you'll paste it after first sign-in in Section 3. (Code: `__________`)
-- [ ] Members table refreshes; the new owner does NOT yet appear (invite is held until first sign-in). That's expected.
-- [ ] **Negative test:** Click "Add owner" again, enter a non-gmail address (e.g. `test@mailinator.com`). Expect a red error like `Email domain (mailinator.com) does not match agency domain (gmail.com)`. No sign-in for this address is required.
+- [x] On `stout.clintapp.com/admin/tenants`, click into Pfizer.
+- [x] Click "Add owner". Enter `aadimadala@gmail.com`.
+- [x] Expected (assuming the account has never signed into clintapp): green message `Invite held for aadimadala@gmail.com. Code: <32-char hex>`. **Copy the code** -- you'll paste it after first sign-in in Section 3. (Code: `72a871bd3b2b46a8bb60ea1ef44cba83`)
+- [x] Members table refreshes; the new owner does NOT yet appear (invite is held until first sign-in). That's expected.
+- [x] **Negative test:** Click "Add owner" again, enter a non-gmail address (e.g. `test@mailinator.com`). Expect a red error like `Email domain (mailinator.com) does not match agency domain (gmail.com)`. No sign-in for this address is required.
+- [ ] **Idempotency check (added after the dedup migration on 2026-04-30):** Click "Add owner" twice in a row with the same fresh email (e.g. `madaladodbele@gmail.com` — but plan to use this for Section 5; pick another throwaway gmail if you don't want to consume that slot). Expected: both calls return the same invite code, and `select count(*) from tenant_invites where email = '<email>' and accepted_at is null` shows exactly 1 row.
 
 ---
 

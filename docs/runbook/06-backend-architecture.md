@@ -186,7 +186,7 @@ Caller must be agency owner of `p_agency_id` or platform admin. Validates `agenc
 add_tenant_owner(p_tenant_id uuid, p_email text) -> jsonb
 ```
 
-Adds an existing user as tenant owner, or holds an invite when the email has no `auth.users` row. Caller must be tenant owner, agency owner of the parent agency, or platform admin. When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). Returns `{ owner_invited: boolean, ... }` so the UI can distinguish "added directly" from "code-based invite held". The invite is consumed via `accept_invite(p_code)` after the recipient signs in.
+Adds an existing user as tenant owner, or holds an invite when the email has no `auth.users` row. Caller must be tenant owner, agency owner of the parent agency, or platform admin. When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). Returns `{ owner_invited: boolean, ... }` so the UI can distinguish "added directly" from "code-based invite held". The invite is consumed via `accept_invite(p_code)` after the recipient signs in. **Idempotent (since 2026-04-30):** if a valid (unaccepted, unexpired) `tenant_invites` row already exists for the same `(tenant_id, email)`, the existing `invite_code` is returned — repeated clicks do not mint new credentials.
 
 ### invite_to_space
 
@@ -194,7 +194,7 @@ Adds an existing user as tenant owner, or holds an invite when the email has no 
 invite_to_space(p_space_id uuid, p_email text, p_role text) -> jsonb
 ```
 
-Adds or invites a user to a space at `owner | editor | viewer` (rendered Owner / Contributor / Reader in the UI). Caller must be a space owner (or platform admin). Existing users get an immediate `space_members` row (or role-update on conflict); unknown emails get a `space_invites` row consumed via `accept_space_invite(p_code)`. **No domain restriction** -- spaces include both agency colleagues and pharma client emails.
+Adds or invites a user to a space at `owner | editor | viewer` (rendered Owner / Contributor / Reader in the UI). Caller must be a space owner (or platform admin). Existing users get an immediate `space_members` row (or role-update on conflict); unknown emails get a `space_invites` row consumed via `accept_space_invite(p_code)`. **No domain restriction** -- spaces include both agency colleagues and pharma client emails. **Idempotent (since 2026-04-30):** if a valid (unaccepted, unexpired) `space_invites` row already exists for the same `(space_id, email, role)`, the existing `invite_code` is returned.
 
 ### accept_space_invite
 
