@@ -109,8 +109,10 @@
   .cover .big-logo .stout-cover-logo { width: auto; height: 36px; }
   .cover .big-logo-sep { width: 1px; height: 28px; background: var(--slate-300); }
   .wordmark .stout-mini { height: 14px; width: auto; }
-  .hero-shot { margin-bottom: 22px; border: 1px solid var(--slate-200); background: white; }
-  .hero-shot img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; object-position: top left; }
+  .cover-hero { margin: 28px 0 40px; border: 1px solid var(--slate-200); background: white; }
+  .cover-hero img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; object-position: top left; }
+  .card .card-thumb { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); margin: -20px -22px 14px; }
+  .card .card-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
   .shot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .shot { display: flex; flex-direction: column; background: white; border: 1px solid var(--slate-200); }
   .shot .img-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
@@ -155,8 +157,9 @@
     .hint { display: none; }
     .counter { font-size: 10px; }
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
-    .hero-shot { margin-bottom: 14px; }
-    .hero-shot img { max-height: 160px; }
+    .cover-hero { margin: 16px 0 24px; }
+    .cover-hero img { max-height: 180px; }
+    .card .card-thumb { margin: -16px -18px 12px; }
     .shot-grid { grid-template-columns: 1fr; gap: 10px; }
     .shot .caption { padding: 8px 10px 10px; }
     .shot .caption h4 { font-size: 12.5px; }
@@ -248,6 +251,9 @@
     </div>
     <h1>Primary pharma intelligence, published live through <span class="accent">your brand</span>.</h1>
     <p class="sub">What Clint is and what it changes for Stout.</p>
+    <div class="cover-hero">
+      <img src="img/timeline.png" alt="Pfizer-branded Clint timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar">
+    </div>
     <div class="footer-line">
       <span>Prepared 2026-04-29</span>
       <span class="dot"></span>
@@ -274,26 +280,27 @@
     <h2 class="slide-title">The working surface and deliverable layer for pharma CI.</h2>
     <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, and where clients see it in real time, all the time.</p>
     <div class="body">
-      <div class="hero-shot">
-        <img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars across years. Tenant chrome is Pfizer; the Stout agency mark sits in the platform-brand slot at the top of the sidebar.">
-      </div>
       <div class="grid-2">
         <div class="card">
+          <div class="card-thumb"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter"></div>
           <div class="card-label">Live dashboard</div>
           <h3>Always current</h3>
           <p>Trial data refreshes from ClinicalTrials.gov directly. New analyst-curated events show up in the dashboard the moment they're saved, and the client sees them at the same time. The competitive picture reflects the latest event, not the last quarterly briefing.</p>
         </div>
         <div class="card">
+          <div class="card-thumb"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; an analyst-curated leadership thread visible in the detail panel"></div>
           <div class="card-label">Stout's analysis</div>
           <h3>Primary intelligence, published live</h3>
           <p>Stout's analysts publish primary analysis and intelligence directly into the platform. As notes are written, the client sees them in real time. With assembly already handled by Clint, analysts spend their time on interpretation and strategic reads, not formatting.</p>
         </div>
         <div class="card">
+          <div class="card-thumb"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></div>
           <div class="card-label">Whitelabel</div>
           <h3>A Stout-branded site per client</h3>
           <p>Each client gets a Stout-branded site, with engagement spaces themed inside it. Agency, client, and engagement-level branding are all supported.</p>
         </div>
         <div class="card">
+          <div class="card-thumb"><img src="img/taxonomies-moa.png" alt="Mechanism-of-action taxonomy -- normalized list of MOAs (SGLT2 inhibitor, GLP-1 receptor agonist, GIP/GLP-1 dual agonist, sGC stimulator, TTR stabilizer, etc.) with descriptions, the structured vocabulary every other view reads from"></div>
           <div class="card-label">Data model</div>
           <h3>Built around pharma</h3>
           <p>Companies, products, trials, catalysts, and events are core entities, with a source on every record. Dashboard, briefings, exports, and AI all read from the same data. Nothing gets retyped, nothing falls out of sync.</p>
