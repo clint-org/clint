@@ -161,10 +161,10 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
 
 - Each **agency** is an optional consulting-firm parent that resells the platform to pharma clients
 - Each **tenant** represents an organization (a pharma client of an agency, or a direct customer)
-- Each **space** within a tenant is a separate project/pipeline workspace
+- Each **space** within a tenant is a firewalled engagement scoped to a domain (a therapy area, asset class, client team) — pipelines, catalysts, and portfolio reads all live inside, with their own members and data
 - Members can be invited to tenants via invite codes (7-day expiry); branded HTML invite emails are delivered via Resend
-- Tenants have role-based access: owner, member; spaces have owner, editor, viewer
-- Data is fully isolated between spaces; agency owners get implicit access to all tenants in their agency
+- `tenant_members` and `agency_members` are owner-only since migration 75; spaces use owner / editor / viewer (rendered Owner / Contributor / Reader)
+- Data isolation is per-space — no implicit cascade from tenant or agency level (firewall introduced in migration 75)
 
 ## Whitelabel Brand Resolution
 
