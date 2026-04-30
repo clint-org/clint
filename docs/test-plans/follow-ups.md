@@ -69,6 +69,15 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 9. Cross-surface "this lives elsewhere" hints (agency-managed tenant branding, and other split-ownership surfaces)
+- **Status:** open
+- **Scope:** `features/tenant-settings/tenant-settings.component.ts` is the immediate offender; pattern likely applies elsewhere
+- **Symptom:** when a tenant owner opens tenant settings on an agency-managed tenant (`tenants.agency_id IS NOT NULL`), tenant branding fields are not rendered. The runbook says they should be replaced by "a read-only identity card and a hint pointing to the agency" but no such surface exists today, leaving the user wondering whether branding doesn't exist or whether they're looking in the wrong place.
+- **General principle:** if a surface deliberately hides an action because it lives elsewhere, the page should at minimum say so and link there. Applies to agency-managed branding (link to `<agency>.clintapp.com/admin/tenants/<id>`), space-level access settings vs tenant-level access settings, and probably other split-ownership boundaries we'll find as the matrix gets walked.
+- **Fix shape (immediate, scoped to tenant branding):** in tenant-settings, when `tenant.agency_id IS NOT NULL`, render a read-only card showing the current logo, name, and primary color, with copy like "Branding for this workspace is managed by {agency.name}. To request changes, contact your agency or open the agency portal." Link to the agency portal if the user has agency-membership; otherwise show only the contact prompt.
+- **Estimate:** 1-2 hours including the cross-surface link audit
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 4 (Tenant Owner) check 5 by `aadimadala`
+
 ## Done
 
 (none yet for this session)
