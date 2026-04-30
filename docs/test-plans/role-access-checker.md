@@ -71,12 +71,12 @@ Sign in as a Contributor of the Survodutide Pipeline space.
 
 Sign in as a Space Owner.
 
-- [ ] Visit the space, edit data, add markers, edit events → expect all writes succeed.
-- [ ] Open `/settings/general`, change description, Save → expect success and toast.
+- [x] Visit the space, edit data, add markers, edit events → expect all writes succeed.
+- [x] Open `/settings/general`, change description, Save → expect success and toast.
 - [x] Open `/settings/general`, click Delete space, confirm → expect space deleted, redirect to spaces list. Verified by deleting `Survodutide Pipeline`. The delete cascaded and recreated as `SGLT2 Pipeline` (id `746d4832-374d-4f0e-93ce-47839388aa29`); test continues against the new space.
-- [ ] Open `/settings/members`, invite a new user as Reader → expect `added to space` or `Invite held` toast.
-- [ ] Visit `/seed-demo` URL on the space → expect populates demo data and redirects to catalysts. Repeat → expect idempotent (no duplicate rows).
-- [ ] curl `rpc/invite_to_space` with `p_role='owner'` → expect success.
+- [x] Open `/settings/members`, invite a new user as Reader → expect `added to space` or `Invite held` toast. Verified by inviting `madaladodbele@gmail.com` as Reader (also primes Phase 6).
+- [x] Visit `/seed-demo` URL on the space → expect populates demo data and redirects to catalysts. Repeat → expect idempotent (no duplicate rows).
+- [x] curl `rpc/invite_to_space` with `p_role='owner'` → expect success. Verified, returned held invite for throwaway email (cleaned up after).
 
 ## Tenant Owner (not in `space_members` for the space being tested)
 
