@@ -111,8 +111,17 @@
   .wordmark .stout-mini { height: 14px; width: auto; }
   .cover-hero { margin: 28px 0 40px; border: 1px solid var(--slate-200); background: white; }
   .cover-hero img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; object-position: top left; }
-  .card .card-thumb { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); margin: -20px -22px 14px; }
-  .card .card-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+  /* Compact thumbnail tucked on the right of each card. Clickable -> lightbox. */
+  .card-thumb { width: 100%; aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border: 1px solid var(--slate-200); padding: 0; margin: 0; cursor: zoom-in; display: block; outline: none; transition: border-color 120ms ease; }
+  .card-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+  .card-thumb:hover { border-color: var(--brand-600); }
+  .card-thumb:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; }
+  /* :has() promotes only the cards that actually carry a thumb (slide 2) into a 2-col layout; cards without a thumb (slides 4, 5) keep the default block flow. */
+  .card:has(.card-thumb) { display: grid; grid-template-columns: 1fr 150px; gap: 6px 20px; align-items: start; }
+  .card:has(.card-thumb) > .card-thumb { grid-column: 2; grid-row: 1 / -1; align-self: start; }
+  .lightbox-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); display: flex; align-items: center; justify-content: center; z-index: 200; cursor: zoom-out; padding: 32px; animation: lightbox-fade 120ms ease-out; }
+  .lightbox-backdrop img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6); }
+  @keyframes lightbox-fade { from { opacity: 0; } to { opacity: 1; } }
   .shot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .shot { display: flex; flex-direction: column; background: white; border: 1px solid var(--slate-200); }
   .shot .img-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: var(--slate-50); border-bottom: 1px solid var(--slate-200); }
@@ -159,7 +168,9 @@
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
     .cover-hero { margin: 16px 0 24px; }
     .cover-hero img { max-height: 180px; }
-    .card .card-thumb { margin: -16px -18px 12px; }
+    /* Mobile: stack thumb above text instead of side-by-side. */
+    .card:has(.card-thumb) { grid-template-columns: 1fr; }
+    .card:has(.card-thumb) > .card-thumb { grid-column: 1; grid-row: auto; }
     .shot-grid { grid-template-columns: 1fr; gap: 10px; }
     .shot .caption { padding: 8px 10px 10px; }
     .shot .caption h4 { font-size: 12.5px; }
@@ -282,25 +293,25 @@
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <div class="card-thumb"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter"></div>
+          <button type="button" class="card-thumb" aria-label="Expand: Always current screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter"></button>
           <div class="card-label">Live dashboard</div>
           <h3>Always current</h3>
           <p>Trial data refreshes from ClinicalTrials.gov directly. New analyst-curated events show up in the dashboard the moment they're saved, and the client sees them at the same time. The competitive picture reflects the latest event, not the last quarterly briefing.</p>
         </div>
         <div class="card">
-          <div class="card-thumb"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; an analyst-curated leadership thread visible in the detail panel"></div>
+          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; an analyst-curated leadership thread visible in the detail panel"></button>
           <div class="card-label">Stout's analysis</div>
           <h3>Primary intelligence, published live</h3>
           <p>Stout's analysts publish primary analysis and intelligence directly into the platform. As notes are written, the client sees them in real time. With assembly already handled by Clint, analysts spend their time on interpretation and strategic reads, not formatting.</p>
         </div>
         <div class="card">
-          <div class="card-thumb"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></div>
+          <button type="button" class="card-thumb" aria-label="Expand: Whitelabel screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
           <div class="card-label">Whitelabel</div>
           <h3>A Stout-branded site per client</h3>
           <p>Each client gets a Stout-branded site, with engagement spaces themed inside it. Agency, client, and engagement-level branding are all supported.</p>
         </div>
         <div class="card">
-          <div class="card-thumb"><img src="img/taxonomies-moa.png" alt="Mechanism-of-action taxonomy -- normalized list of MOAs (SGLT2 inhibitor, GLP-1 receptor agonist, GIP/GLP-1 dual agonist, sGC stimulator, TTR stabilizer, etc.) with descriptions, the structured vocabulary every other view reads from"></div>
+          <button type="button" class="card-thumb" aria-label="Expand: Data model screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/taxonomies-moa.png" alt="Mechanism-of-action taxonomy -- normalized list of MOAs (SGLT2 inhibitor, GLP-1 receptor agonist, GIP/GLP-1 dual agonist, sGC stimulator, TTR stabilizer, etc.) with descriptions, the structured vocabulary every other view reads from"></button>
           <div class="card-label">Data model</div>
           <h3>Built around pharma</h3>
           <p>Companies, products, trials, catalysts, and events are core entities, with a source on every record. Dashboard, briefings, exports, and AI all read from the same data. Nothing gets retyped, nothing falls out of sync.</p>
@@ -503,6 +514,29 @@
     <button class="nav-btn" id="next">&rarr;</button>
   </div>
 </div>
+
+<script>
+  // Lightbox: click any .card-thumb (or any element calling openLightbox) to
+  // expand the contained <img> over a dimmed backdrop. Click backdrop or
+  // press Escape to close. Kept at window scope so inline onclick handlers
+  // can reach it.
+  function openLightbox(img) {
+    if (!img) return;
+    const back = document.createElement('div');
+    back.className = 'lightbox-backdrop';
+    const big = document.createElement('img');
+    big.src = img.src;
+    big.alt = img.alt;
+    back.appendChild(big);
+    back.addEventListener('click', () => back.remove());
+    document.body.appendChild(back);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const lb = document.querySelector('.lightbox-backdrop');
+    if (lb) { lb.remove(); e.stopPropagation(); }
+  }, true);
+</script>
 
 <script>
   (function () {
