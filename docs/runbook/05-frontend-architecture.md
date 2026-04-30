@@ -216,7 +216,7 @@ All routes are lazy-loaded. Routes are host-aware: `agencyGuard`, `superAdminGua
 
 | Service | Responsibility |
 |---|---|
-| `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`. Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
+| `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`, `agency()` (`{name, logo_url} \| null` — only populated for tenant brands whose `tenants.agency_id` is set). Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
 | `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google + Microsoft sign-in (`signInWithGoogle`, `signInWithMicrosoft`), sign-out. Conditionally uses cookie-based session storage (`createCookieStorage`) when `environment.apexDomain` is set and the current host is on the apex; otherwise localStorage. |
 | `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models, `seedDemoData()` |
 | `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow, plus access settings (`getTenantAccessSettings`, `updateTenantAccess`), `selfJoinTenant`, `checkIsTenantMember` |
@@ -418,7 +418,9 @@ The `var(--brand-X, <fallback>)` form means: when `main.ts` sets `--brand-X` on 
 
 The codemod that landed during the whitelabel rollout swept `~73 occurrences` of `*-teal-*` → `*-brand-*` across the client. New code must follow the same convention.
 
-`generateBrandScale(seedHex: string): BrandScale` lives in `core/util/color-scale.ts`. It converts the seed hex to HSL, holds the hue and saturation roughly constant, and varies lightness across `[97, 93, 86, 76, 65, 54, 47, 39, 31, 23, 13]` — an approximation of the Tailwind v4 lightness curve. Not a 1:1 replication of Tailwind's algorithm, but produces a plausible 50→950 ramp from any sane seed.
+`generateBrandScale(seedHex: string): BrandScale` lives in `core/util/color-scale.ts`. It converts the seed hex to HSL and **anchors the seed at the 600 stop** (the dominant brand stop in the codebase — buttons, links, active accents). Other stops derive from the seed's lightness via fixed deltas (lighter for 50–500, darker for 700–950) while preserving the seed's hue. Saturation tapers at the lightest stops (50/100/200) and darkest stops (900/950) to prevent candy-colored tints and muddy darks.
+
+The seed-as-600 anchor means tenants get a "what you picked is what you see on buttons" experience. The trade-off: extreme seeds (very dark like `#08312a` at 11% lightness, or very light) cause the far end of the scale to clamp at the lightness floor (0.02) or ceiling (0.98), so layered dark surfaces or subtle background tints lose differentiation. Mid-tone seeds (lightness 0.30–0.55) produce the most balanced scales.
 
 ### Three brand surfaces
 
@@ -431,6 +433,17 @@ The app has three layers of branding, each with a distinct color source:
 The `.admin-brand-scope` class lives in `shared/styles/admin-brand.css` and re-declares `--brand-50..950` and `--p-primary-50..950` to the platform teal scale. Both Tailwind utilities (`bg-brand-600`) and PrimeNG components (`{primary.600}`) inside the scope inherit the override via CSS variable cascade.
 
 Apply `.admin-brand-scope` only to new super-admin shells. Don't add it to agency-portal or tenant-facing surfaces — those are whitelabel surfaces and must inherit their respective brand.
+
+### Agency attribution on tenant surfaces
+
+Tenant brands provisioned by an agency carry an `agency: { name, logo_url }` descriptor on the brand record (returned by `get_brand_by_host`). Two surfaces render it:
+
+- **Login footer** (`auth/login.component.ts`). When `kind === 'tenant' && agency`, the card grows a `border-t` footer beneath the sign-in buttons containing "Competitive intelligence by" plus the agency logo. The tenant logo + "Sign in to {tenant}" stays at the top — the workspace is the foreground, the provider is the provenance.
+- **App-shell topbar** (`core/layout/contextual-topbar.component.ts`). The agency badge (small logo + uppercase-tracked name) sits to the left of the tenant breadcrumb, separated by a `/`, on every page inside the workspace. Sourced from the brand context (host-derived), not from the URL's tenant id — the badge advertises who whitelabeled THIS surface, which always corresponds to the host brand.
+
+Both surfaces hide gracefully on agency, super-admin, and default brands (no agency descriptor → no chrome).
+
+The dev brand override at `main.ts` accepts `wl_agency_name` and `wl_agency_logo` query params (alongside `wl_kind=tenant`) for smoke-testing this attribution UI without a real tenant→agency row in the local DB.
 
 ## Toasts (save/action feedback)
 

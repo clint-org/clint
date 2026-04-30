@@ -8,25 +8,32 @@ import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 import { buildBrandPreset } from './app/config/primeng-theme';
 import { generateBrandScale } from './app/core/util/color-scale';
-import {
-  BrandContextService,
-  DEFAULT_BRAND,
-} from './app/core/services/brand-context.service';
+import { BrandContextService, DEFAULT_BRAND } from './app/core/services/brand-context.service';
 import { Brand } from './app/core/models/brand.model';
 
 async function fetchBrand(): Promise<Brand> {
   // Dev-only query-string override: ?wl_kind=agency&wl_id=<uuid> bypasses
   // host-based brand resolution so /admin can be smoke-tested locally where
-  // every host is `localhost`. Disabled in production builds.
+  // every host is `localhost`. Pass `wl_agency_name` and `wl_agency_logo`
+  // alongside `wl_kind=tenant` to also smoke-test the agency-attribution
+  // chrome ("Intelligence delivered by {agency}") without needing a real
+  // tenant->agency row in the local db. Disabled in production builds.
   if (!environment.production) {
     const params = new URLSearchParams(window.location.search);
     const overrideKind = params.get('wl_kind');
     if (overrideKind === 'agency' || overrideKind === 'super-admin' || overrideKind === 'tenant') {
+      const agencyName = params.get('wl_agency_name');
       return {
         ...DEFAULT_BRAND,
         kind: overrideKind,
         id: params.get('wl_id'),
         app_display_name: params.get('wl_name') ?? DEFAULT_BRAND.app_display_name,
+        primary_color: params.get('wl_primary') ?? DEFAULT_BRAND.primary_color,
+        logo_url: params.get('wl_logo'),
+        agency:
+          overrideKind === 'tenant' && agencyName
+            ? { name: agencyName, logo_url: params.get('wl_agency_logo') }
+            : null,
       } as Brand;
     }
   }
@@ -114,8 +121,5 @@ function applyBrandSideEffects(brand: Brand): void {
     ],
   };
 
-  await bootstrapApplication(
-    AppComponent,
-    mergeApplicationConfig(appConfig, dynamicConfig),
-  );
+  await bootstrapApplication(AppComponent, mergeApplicationConfig(appConfig, dynamicConfig));
 })().catch((err) => console.error('bootstrap failed', err));

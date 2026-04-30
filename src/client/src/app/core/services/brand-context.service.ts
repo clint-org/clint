@@ -11,6 +11,7 @@ export const DEFAULT_BRAND: Brand = {
   auth_providers: ['google', 'microsoft'],
   has_self_join: false,
   suspended: false,
+  agency: null,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +27,7 @@ export class BrandContextService {
   readonly authProviders = computed(() => this._brand().auth_providers);
   readonly hasSelfJoin = computed(() => this._brand().has_self_join);
   readonly suspended = computed(() => this._brand().suspended);
+  readonly agency = computed(() => this._brand().agency);
 
   setBrand(brand: Brand): void {
     this._brand.set(brand);

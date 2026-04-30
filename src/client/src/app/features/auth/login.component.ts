@@ -14,28 +14,60 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
       <div class="w-full max-w-sm border border-slate-200 bg-white">
         <div class="h-0.5 bg-brand-500"></div>
         <div class="px-8 py-10">
-          <div class="flex justify-center">
-            @if (logoUrl()) {
-              <img [src]="logoUrl()" [alt]="appName() + ' logo'" class="h-12 w-auto object-contain" />
-            } @else {
-              <app-clint-logo [size]="48" />
-            }
-          </div>
-          <h1 class="mt-2 text-center text-lg font-semibold tracking-tight text-slate-900">
-            Sign in to {{ appName() }}
-          </h1>
-          @if (workspaceHint()) {
-            <p class="mt-1 text-center text-xs text-slate-500">
-              Signing in to <span class="font-medium text-slate-700">{{ workspaceHint() }}</span>
-            </p>
+          <!--
+            Tenant hosts provisioned by an agency lead with the tenant
+            (workspace) identity at top -- that's who the user signs in
+            to -- and credit the agency at the bottom in a small "delivered
+            by" footer with their logo. The workspace is the foreground;
+            the provider is the provenance. Tenants without an agency,
+            agencies, super-admin, and the default host all use the
+            simpler "Sign in to {appName}" layout.
+          -->
+          @if (kind() === 'tenant' && agency()) {
+            <div class="flex justify-center">
+              @if (logoUrl()) {
+                <img
+                  [src]="logoUrl()"
+                  [alt]="appName() + ' logo'"
+                  class="h-12 w-auto object-contain"
+                />
+              } @else {
+                <app-clint-logo [size]="48" />
+              }
+            </div>
+            <h1 class="mt-3 text-center text-lg font-semibold tracking-tight text-slate-900">
+              Sign in to the {{ appName() }} workspace
+            </h1>
+            <p class="mt-1 text-center text-xs text-slate-500">Choose a sign-in method below.</p>
           } @else {
-            <p class="mt-1 text-center text-xs text-slate-500">
-              Choose a sign-in method below.
-            </p>
+            <div class="flex justify-center">
+              @if (logoUrl()) {
+                <img
+                  [src]="logoUrl()"
+                  [alt]="appName() + ' logo'"
+                  class="h-12 w-auto object-contain"
+                />
+              } @else {
+                <app-clint-logo [size]="48" />
+              }
+            </div>
+            <h1 class="mt-2 text-center text-lg font-semibold tracking-tight text-slate-900">
+              Sign in to {{ appName() }}
+            </h1>
+            @if (workspaceHint()) {
+              <p class="mt-1 text-center text-xs text-slate-500">
+                Signing in to <span class="font-medium text-slate-700">{{ workspaceHint() }}</span>
+              </p>
+            } @else {
+              <p class="mt-1 text-center text-xs text-slate-500">Choose a sign-in method below.</p>
+            }
           }
 
           @if (error()) {
-            <div class="mt-6 border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">
+            <div
+              class="mt-6 border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+              role="alert"
+            >
               {{ error() }}
             </div>
           }
@@ -51,12 +83,26 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
                     aria-label="Sign in with Google"
                   >
                     <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335"
+                      />
                     </svg>
-                    <span>{{ loading() === 'google' ? 'Signing in...' : 'Sign in with Google' }}</span>
+                    <span>{{
+                      loading() === 'google' ? 'Signing in...' : 'Sign in with Google'
+                    }}</span>
                   </button>
                 }
                 @case ('microsoft') {
@@ -72,7 +118,9 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
                       <rect x="1" y="12" width="10" height="10" fill="#05A6F0" />
                       <rect x="12" y="12" width="10" height="10" fill="#FFBA08" />
                     </svg>
-                    <span>{{ loading() === 'microsoft' ? 'Signing in...' : 'Sign in with Microsoft' }}</span>
+                    <span>{{
+                      loading() === 'microsoft' ? 'Signing in...' : 'Sign in with Microsoft'
+                    }}</span>
                   </button>
                 }
               }
@@ -85,6 +133,30 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             </p>
           }
         </div>
+
+        <!--
+          Agency attribution footer -- shown only on tenant hosts that
+          were provisioned by an agency. Establishes "delivered by" without
+          competing with the workspace identity above.
+        -->
+        @if (kind() === 'tenant' && agency(); as ag) {
+          <div
+            class="flex flex-col items-center gap-2 border-t border-slate-200 px-8 py-5 bg-slate-50/60"
+          >
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Competitive intelligence by
+            </p>
+            @if (ag.logo_url) {
+              <img
+                [src]="ag.logo_url"
+                [alt]="ag.name + ' logo'"
+                class="h-7 w-auto max-w-[140px] object-contain"
+              />
+            } @else {
+              <span class="text-sm font-semibold tracking-tight text-slate-700">{{ ag.name }}</span>
+            }
+          </div>
+        }
       </div>
     </div>
   `,
@@ -104,6 +176,8 @@ export class LoginComponent implements OnInit {
   protected readonly appName = this.brand.appDisplayName;
   protected readonly authProviders = this.brand.authProviders;
   protected readonly hasSelfJoin = this.brand.hasSelfJoin;
+  protected readonly kind = this.brand.kind;
+  protected readonly agency = this.brand.agency;
 
   /** Display string for the workspace hint (e.g. `acme.yourproduct.com`). */
   protected readonly workspaceHint = computed(() => {
