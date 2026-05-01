@@ -69,6 +69,15 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 12. Onboarding page has no sign-out option
+- **Status:** open
+- **Scope:** `src/client/src/app/features/onboarding/onboarding.component.ts`
+- **Symptom:** a signed-in user with no roles lands on `/onboarding` (the join-with-code form). There is no sign-out affordance on this page. If the user signed in with the wrong Google account, or just wants to switch accounts mid-flow, the only escapes are clearing cookies, closing the tab, or navigating to a URL the marketing-landing-guard handles. None of those are obvious.
+- **Why it matters:** especially relevant for the multi-account test pass, where signing in `madaladodbele` to create her `auth.users` row leaves her stuck on onboarding with no way out short of dev-tools intervention. A real new user who picked the wrong Google identity has the same problem.
+- **Fix shape:** add a small "Sign out" link or button at the bottom of the onboarding card (below the "Don't have an invite?" hint). Calls `supabaseService.signOut()` and routes to `/login`. Mirror the styling of the existing tertiary text in that area; small, low-emphasis, but discoverable.
+- **Estimate:** 15 minutes
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup with `madaladodbele`
+
 ### 11. Agency-member-add UI requires existing user; missing the held-invite branch
 - **Status:** open
 - **Scope:** `features/agency/agency-members.component.ts`, plus an RPC counterpart if one is needed (parallel to `add_tenant_owner` / `invite_to_space`)
