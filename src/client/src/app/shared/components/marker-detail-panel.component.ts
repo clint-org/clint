@@ -119,6 +119,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
       >
         <app-marker-detail-content
           [detail]="detail()"
+          [spaceId]="spaceId()"
           (markerClick)="markerClick.emit($event)"
         />
       </div>
@@ -127,6 +128,8 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
 })
 export class MarkerDetailPanelComponent {
   readonly detail = input<CatalystDetail | null>(null);
+  /** Optional space id, threaded through to the materials section. */
+  readonly spaceId = input<string | null>(null);
   readonly mode = input<'inline' | 'drawer'>('inline');
   readonly open = input<boolean>(true);
   readonly panelClose = output<void>();

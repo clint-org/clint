@@ -124,12 +124,7 @@
         />
       </div>
 
-      <!--
-        Materials section. Real component lives behind the
-        materials-registry spec (next branch). Keeping the section
-        skeleton here avoids merge conflicts in this file when that
-        branch lands -- it can drop its component into the inner div.
-      -->
+      <!-- Materials section: file uploads linked to this trial. -->
       <section
         id="materials"
         class="materials-section mb-4 border border-slate-200 bg-white"
@@ -142,9 +137,13 @@
             Materials
           </h2>
         </header>
-        <div class="materials-section__body px-4 py-3 text-xs text-slate-400">
-          Materials registry not yet wired.
-        </div>
+        @if (trial(); as t) {
+          <app-materials-section
+            entityType="trial"
+            [entityId]="t.id"
+            [spaceId]="t.space_id"
+          />
+        }
       </section>
 
       <!-- Basic info -->

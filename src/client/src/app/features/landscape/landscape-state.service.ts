@@ -46,6 +46,9 @@ export class LandscapeStateService {
   private storageKey = '';
   private spaceId = '';
 
+  /** Read-only signal exposing the bound space id (empty string before init). */
+  readonly spaceIdSig = signal('');
+
   // ─── Raw data ────────────────────────────────────────────────────────
   readonly rawData = signal<DashboardData | null>(null);
   readonly dataLoading = signal(false);
@@ -109,6 +112,7 @@ export class LandscapeStateService {
    */
   async init(spaceId: string): Promise<void> {
     this.spaceId = spaceId;
+    this.spaceIdSig.set(spaceId);
     this.storageKey = STORAGE_PREFIX + spaceId;
     this.restorePersistedState();
     await this.loadData();

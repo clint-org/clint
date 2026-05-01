@@ -7,9 +7,12 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { MessageModule } from 'primeng/message';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
+import { MATERIAL_DEFAULT_ALLOWED_MIME } from '../../core/models/material.model';
 import { Agency } from '../../core/models/agency.model';
 import { TenantService } from '../../core/services/tenant.service';
 import { AgencyService } from '../../core/services/agency.service';
@@ -33,6 +36,8 @@ import { extractErrorMessage } from '../../core/util/error-message';
     ButtonModule,
     Dialog,
     InputText,
+    InputNumberModule,
+    MultiSelectModule,
     MessageModule,
     ManagePageShellComponent,
     RowActionsComponent,
@@ -242,6 +247,80 @@ import { extractErrorMessage } from '../../core/util/error-message';
         </ng-template>
       </p-table>
 
+      <!-- Material upload limits (owner-only) -->
+      @if (currentUserIsOwner()) {
+        <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
+          <h3 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Material upload limits
+          </h3>
+          <p class="mt-1 text-[11px] text-slate-500">
+            Per-tenant caps applied to every engagement material upload. Files
+            exceeding the size limit or using a mime type outside the allowlist
+            are rejected by the server.
+          </p>
+
+          <div class="mt-4 space-y-4">
+            <div>
+              <label
+                for="material-max-size-mb"
+                class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Max file size (MB)
+              </label>
+              <p-inputnumber
+                inputId="material-max-size-mb"
+                [ngModel]="materialMaxSizeMb()"
+                (ngModelChange)="materialMaxSizeMb.set($event)"
+                [min]="1"
+                [max]="2048"
+                [showButtons]="true"
+                buttonLayout="horizontal"
+                inputStyleClass="w-32 text-right"
+                styleClass="w-44"
+              />
+            </div>
+
+            <div>
+              <label
+                for="material-mime-types"
+                class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+              >
+                Allowed mime types
+              </label>
+              <p-multiselect
+                inputId="material-mime-types"
+                [options]="materialMimeOptions"
+                [ngModel]="materialAllowedMimeTypes()"
+                (ngModelChange)="materialAllowedMimeTypes.set($event ?? [])"
+                optionLabel="label"
+                optionValue="value"
+                display="chip"
+                [showClear]="true"
+                placeholder="None selected"
+                styleClass="w-full"
+                appendTo="body"
+              />
+            </div>
+
+            @if (materialSettingsError()) {
+              <p-message severity="error" [closable]="false">
+                {{ materialSettingsError() }}
+              </p-message>
+            }
+
+            <div class="flex items-center gap-3">
+              <p-button
+                label="Save limits"
+                size="small"
+                [loading]="savingMaterialSettings()"
+                [disabled]="!materialSettingsChanged()"
+                (onClick)="saveMaterialSettings()"
+              />
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Danger zone (owner-only, direct-customer tenants only) -->
       @if (currentUserIsOwner() && !tenant()?.agency_id) {
         <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
@@ -348,6 +427,46 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   readonly inviteEmail = signal('');
   readonly tenantNameDraft = signal('');
 
+  // Material upload limit drafts (owner-only UI). Stored in MB on the
+  // client for legibility; converted to bytes on save.
+  readonly materialMaxSizeMb = signal<number>(50);
+  readonly materialAllowedMimeTypes = signal<string[]>([
+    ...MATERIAL_DEFAULT_ALLOWED_MIME,
+  ]);
+  readonly savingMaterialSettings = signal(false);
+  readonly materialSettingsError = signal<string | null>(null);
+
+  protected readonly materialMimeOptions = [
+    {
+      label: 'PowerPoint (.pptx)',
+      value:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    },
+    { label: 'PDF (.pdf)', value: 'application/pdf' },
+    {
+      label: 'Word (.docx)',
+      value:
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    },
+    { label: 'Word (legacy .doc)', value: 'application/msword' },
+    {
+      label: 'PowerPoint (legacy .ppt)',
+      value: 'application/vnd.ms-powerpoint',
+    },
+  ];
+
+  readonly materialSettingsChanged = computed(() => {
+    const t = this.tenant();
+    if (!t) return false;
+    const currentBytes = t.material_max_size_bytes ?? 52428800;
+    const draftBytes = Math.max(1, this.materialMaxSizeMb()) * 1024 * 1024;
+    if (draftBytes !== currentBytes) return true;
+    const currentMimes = (t.material_allowed_mime_types ?? []).slice().sort();
+    const draftMimes = this.materialAllowedMimeTypes().slice().sort();
+    if (currentMimes.length !== draftMimes.length) return true;
+    return currentMimes.some((m, i) => m !== draftMimes[i]);
+  });
+
   // Parent agency record, populated only when the current user is a member
   // of the tenant's parent agency. Drives the cross-host "Open agency portal"
   // link on the read-only branding card; null leaves only the contact prompt.
@@ -390,6 +509,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     ]);
     await this.loadData();
     this.tenantNameDraft.set(this.tenant()?.name ?? '');
+    this.seedMaterialSettingDrafts();
 
     // If the tenant has a parent agency AND the current user is a member of
     // that agency, surface a cross-host link to the agency portal in the
@@ -542,6 +662,43 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
       this.removeError.set(e instanceof Error ? e.message : 'Failed to delete tenant');
     } finally {
       this.deletingTenant.set(false);
+    }
+  }
+
+  private seedMaterialSettingDrafts(): void {
+    const t = this.tenant();
+    if (!t) return;
+    const bytes = t.material_max_size_bytes ?? 52428800;
+    this.materialMaxSizeMb.set(Math.max(1, Math.round(bytes / (1024 * 1024))));
+    this.materialAllowedMimeTypes.set(
+      t.material_allowed_mime_types ?? [...MATERIAL_DEFAULT_ALLOWED_MIME]
+    );
+    this.materialSettingsError.set(null);
+  }
+
+  async saveMaterialSettings(): Promise<void> {
+    if (!this.materialSettingsChanged()) return;
+    this.savingMaterialSettings.set(true);
+    this.materialSettingsError.set(null);
+    try {
+      const updated = await this.tenantService.updateTenant(this.tenantId, {
+        material_max_size_bytes:
+          Math.max(1, this.materialMaxSizeMb()) * 1024 * 1024,
+        material_allowed_mime_types: this.materialAllowedMimeTypes() ?? [],
+      });
+      this.tenant.set(updated);
+      this.seedMaterialSettingDrafts();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Material upload limits saved.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.materialSettingsError.set(
+        e instanceof Error ? e.message : 'Failed to save material limits.'
+      );
+    } finally {
+      this.savingMaterialSettings.set(false);
     }
   }
 

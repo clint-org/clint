@@ -2,11 +2,12 @@ import { Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
+import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
 @Component({
   selector: 'app-marker-detail-content',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, MaterialsSectionComponent],
   template: `
     @if (detail(); as d) {
       <!-- Title -->
@@ -158,11 +159,32 @@ import { CatalystDetail } from '../../core/models/catalyst.model';
           </ul>
         </div>
       }
+
+      <!-- Materials linked to this marker -->
+      @if (spaceId()) {
+        <div class="mb-2 border-t border-slate-100 pt-3">
+          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            Materials
+          </p>
+          <app-materials-section
+            entityType="marker"
+            [entityId]="d.catalyst.marker_id"
+            [spaceId]="spaceId()!"
+          />
+        </div>
+      }
     }
   `,
 })
 export class MarkerDetailContentComponent {
   readonly detail = input<CatalystDetail | null>(null);
+  /**
+   * Optional space id. When set, a small Materials section renders at the
+   * bottom of the panel for materials linked to this marker. Marker
+   * tooltips hosted outside a space context (e.g. in the agency portal
+   * preview) leave this unset and skip the section.
+   */
+  readonly spaceId = input<string | null>(null);
   readonly markerClick = output<string>();
 
   protected projectionLabel = computed(() => {
