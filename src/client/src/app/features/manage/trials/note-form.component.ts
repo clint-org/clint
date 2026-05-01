@@ -7,6 +7,11 @@ import { MessageModule } from 'primeng/message';
 
 import { TrialNote } from '../../../core/models/trial.model';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
+import { extractConstraintMessage } from '../../../core/util/db-error';
+
+const NOTE_FIELD_LABELS: Record<string, string> = {
+  content: 'Content',
+};
 
 @Component({
   selector: 'app-note-form',
@@ -19,7 +24,9 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
       }
 
       <div>
-        <label for="note-content" class="block text-sm font-medium text-slate-700">Content</label>
+        <label for="note-content" class="block text-sm font-medium text-slate-700">
+          Content <span aria-hidden="true" class="text-red-600">*</span>
+        </label>
         <textarea
           pTextarea
           id="note-content"
@@ -27,6 +34,7 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
           name="content"
           rows="4"
           required
+          aria-required="true"
           class="w-full mt-1"
           placeholder="Add a clinical observation, status update, or decision rationale..."
         ></textarea>
@@ -43,6 +51,7 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
           [label]="note() ? 'Update Note' : 'Add Note'"
           type="submit"
           [loading]="saving()"
+          [disabled]="!canSubmit"
         />
       </div>
     </form>
@@ -68,8 +77,12 @@ export class NoteFormComponent implements OnInit {
     }
   }
 
+  get canSubmit(): boolean {
+    return this.content.trim().length > 0;
+  }
+
   async onSubmit(): Promise<void> {
-    if (!this.content.trim()) return;
+    if (!this.canSubmit) return;
 
     this.saving.set(true);
     this.error.set(null);
@@ -87,9 +100,16 @@ export class NoteFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      this.error.set(
-        e instanceof Error ? e.message : 'Could not save note. Check your connection and try again.'
-      );
+      const constraint = extractConstraintMessage(e, NOTE_FIELD_LABELS);
+      if (constraint) {
+        this.error.set(constraint);
+      } else {
+        this.error.set(
+          e instanceof Error
+            ? e.message
+            : 'Could not save note. Check your connection and try again.'
+        );
+      }
     } finally {
       this.saving.set(false);
     }

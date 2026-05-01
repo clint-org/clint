@@ -315,7 +315,7 @@ Joins `space_members` with `auth.users` metadata to expose display name (from `r
 
 ### tenant_members_view
 
-Same pattern for tenant membership.
+Same pattern for tenant membership. Also exposes `is_agency_backed` (boolean): true when the row's user is also an owner of the tenant's parent agency. The tenant-settings UI hides the row-actions menu for these rows and renders a "via agency" tag, since deleting the explicit `tenant_members` row would be cosmetic — `is_tenant_member()` retains them via the agency-owner disjunct. The `enforce_tenant_member_guards` trigger blocks the delete at the database layer regardless of UI state; only platform admins can override.
 
 ### agency_members_view
 

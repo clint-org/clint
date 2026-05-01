@@ -18,6 +18,7 @@ export interface TenantMember {
   created_at: string;
   email?: string;
   display_name?: string;
+  is_agency_backed?: boolean;
 }
 
 export interface TenantInvite {

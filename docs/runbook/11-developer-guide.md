@@ -112,6 +112,16 @@ readonly canSubmit = computed(() => EMAIL_RE.test(this.email()));
 
 **Why:** `[(ngModel)]` writes to a plain class property. Plain properties are invisible to Angular's signal reactivity — any `computed()` that reads the property never re-evaluates when the user types, leaving Save/Submit buttons stuck at their initial value. Hit four times in this codebase before the rule was added. `scripts/check-no-banana-ngmodel.sh` (run by `npm run lint`) flags any `[(ngModel)]` in `src/`. Soft mode by default; flip to hard mode with `CHECK_NGMODEL_HARD=1` once the legacy files listed in the warning are migrated.
 
+### Required fields and constraint errors
+
+For every field that maps to a `NOT NULL` or FK column, do all three:
+
+1. **Visual + a11y.** Render an asterisk via `<app-form-field [required]="true">` (or, for inline-template forms, an inline `<span aria-hidden="true" class="text-red-600">*</span>` next to the label). On the input itself, set `[attr.aria-required]="true"`.
+2. **Block submit.** Expose a `canSubmit` getter or `computed()` that ANDs every required field, then bind it to the submit button's `disabled`. `FormActionsComponent` exposes a `[disabled]` input for the standard Cancel/Save pair; inline `<p-button>` instances bind `[disabled]="!canSubmit"` directly. The form's `onSubmit` should also short-circuit on `if (!canSubmit) return;` so Enter-key submits stay consistent.
+3. **Map DB errors as defense-in-depth.** Wrap the catch with `extractConstraintMessage` from `src/app/core/util/db-error.ts`. Pass a per-form column→label map (e.g. `{ product_id: 'Product', therapeutic_area_id: 'Therapeutic area' }`). The helper recognizes Postgres `23502` (NOT NULL) and `23503` (FK) and returns `"<Field> is required."`; fall through to the form's existing generic copy when it returns null. Catches future schema changes that add NOT NULL columns the client doesn't yet know about, and stale-FK picks (e.g. a deleted parent row).
+
+Surface the resulting message in the existing in-form `<p-message severity="error">` banner — banners are reserved for in-dialog validation; transient action errors elsewhere should toast (see follow-ups #1).
+
 ## PrimeNG Usage
 
 Import PrimeNG modules directly in component `imports` arrays:

@@ -62,7 +62,7 @@ Shipped from `src/client/public/_headers` (honored by Cloudflare Workers' static
 
 ```
 default-src 'self';
-connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com;
+connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cloudflareinsights.com https://clinicaltrials.gov;   /* clinicaltrials.gov for trial-form NCT sync */
 script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;   /* Angular bootstrap + CF Web Analytics beacon */
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' data: https://fonts.gstatic.com;

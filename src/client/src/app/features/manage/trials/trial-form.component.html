@@ -59,7 +59,7 @@
         />
       </app-form-field>
 
-      <app-form-field label="Product" fieldId="trial-product" spacing="">
+      <app-form-field label="Product" fieldId="trial-product" [required]="true" spacing="">
         <p-select
           inputId="trial-product"
           [options]="products()"
@@ -70,10 +70,11 @@
           placeholder="Select product"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [attr.aria-required]="true"
         />
       </app-form-field>
 
-      <app-form-field label="Therapeutic area" fieldId="trial-ta" spacing="">
+      <app-form-field label="Therapeutic area" fieldId="trial-ta" [required]="true" spacing="">
         <p-select
           inputId="trial-ta"
           [options]="therapeuticAreas()"
@@ -84,6 +85,7 @@
           placeholder="Select therapeutic area"
           [showClear]="true"
           [style]="{ width: '100%' }"
+          [attr.aria-required]="true"
         />
       </app-form-field>
 
@@ -402,6 +404,7 @@
   <app-form-actions
     [submitLabel]="trial() ? 'Update trial' : 'Create trial'"
     [loading]="saving()"
+    [disabled]="!canSubmit"
     (cancelled)="cancelled.emit()"
   />
 </form>
