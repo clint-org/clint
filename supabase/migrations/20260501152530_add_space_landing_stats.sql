@@ -5,7 +5,7 @@
 --                       trials with null recruitment_status are counted active.
 --   companies           distinct company_id referenced by products in the space.
 --   programs            count of products in the space.
---   catalysts_90d       count of trial_markers in the space whose event_date
+--   catalysts_90d       count of markers in the space whose event_date
 --                       falls between today and today + 90 days (inclusive).
 --   intelligence_total  always 0 in phase 1 -- the primary_intelligence table
 --                       does not exist yet. wired up in phase 2.
@@ -55,7 +55,7 @@ as $$
       ),
       'catalysts_90d', (
         select count(*)::int
-        from public.trial_markers m
+        from public.markers m
         where m.space_id = p_space_id
           and m.event_date between current_date and current_date + interval '90 days'
       ),
