@@ -69,6 +69,19 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 13. Gmail dot canonicalization across invite and lookup paths
+- **Status:** open
+- **Scope:** server-side normalization in `add_tenant_owner`, `invite_to_space`, `add_agency_member`, `accept_invite`, `accept_space_invite`, `lookup_user_by_email`, and the `handle_new_user` trigger; same canonicalization client-side as a UX hint
+- **Symptom:** for `@gmail.com` and `@googlemail.com`, periods in the local part are ignored by Google. `madaladodbele@gmail.com` and `madala.dodbele@gmail.com` route to the same Google account. Surfaced 2026-05-01: an admin typed the dotless form into the agency-member-add dialog; Google's account picker returned the dotted form; `auth.users.email` was stored with dots; the trigger lookup against the dotless `agency_invites.email` did not match; auto-claim silently failed.
+- **Industry practice:** for the two Gmail domains, canonicalize by lowercasing, stripping all dots from the local part, and stripping the `+tag` suffix. Slack, Linear, Notion, GitHub, and Stripe all follow this pattern. Other domains: lowercase only (no safe canonicalization without knowing the provider).
+- **Fix shape:**
+  1. Add a `public.canonicalize_email(text) returns text` SQL function. Body: lowercase, then if the domain is `gmail.com` or `googlemail.com`, strip dots from the local part and truncate at the first `+`.
+  2. Apply at every email-store and email-lookup site in the schema: invite-write RPCs canonicalize `p_email` before INSERT; trigger and lookup paths canonicalize before SELECT against `auth.users.email`.
+  3. Optionally store both forms: `email_canonical` column on `agency_invites` / `tenant_invites` / `space_invites` for indexing, alongside the user-typed `email` for display. (Or just canonicalize on the fly; existing volumes are tiny.)
+  4. Client-side: when the input loses focus on an invite dialog, show the canonical form below the field as a hint ("This will reach the same Google account as `name@gmail.com`"). Optional, but reduces user surprise.
+- **Estimate:** 3-4 hours including the cross-RPC sweep
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup, when madaladodbele could not be auto-claimed because the typed and stored email differed by a single period
+
 ### 12. Onboarding page has no sign-out option
 - **Status:** open
 - **Scope:** `src/client/src/app/features/onboarding/onboarding.component.ts`
