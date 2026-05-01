@@ -4,9 +4,27 @@
 
 ---
 
+## Engagement Landing (Default Space Surface)
+
+When a user opens an engagement (a space), the default page is the **Engagement Landing** at `/t/:tenantId/s/:spaceId`. The timeline now lives at `/t/:tenantId/s/:spaceId/timeline` and the engagement landing is the home base that frames everything else. Phase 1 of [docs/specs/engagement-landing/spec.md](../specs/engagement-landing/spec.md).
+
+**Composition:**
+
+- **Engagement context strip** (`<app-engagement-context-strip>`): the engagement title, an "active since YYYY-Q#" subline, and five header counts (active trials, companies, programs, catalysts in next 90 days, intelligence total). Counts come from a single `get_space_landing_stats(p_space_id)` RPC call.
+- **Latest from Stout** (main column): in phase 1 this renders as a placeholder slot. Wires up to `<app-intelligence-feed>` in phase 2 once primary intelligence ships.
+- **Recent materials** (main column): hidden in phase 1. Section is scaffolded behind a `visible` input on `<app-recent-materials-widget>`; flipped on once the materials registry ships.
+- **Your drafts** (side rail, agency-only): rendered only when the viewer is an agency member of the tenant's parent agency. Phase 1 shows an empty state so the placement is locked in.
+- **Next 14 days catalysts** (side rail): up to five upcoming markers within 14 days, derived client-side from the existing `get_dashboard_data` feed. Clicking a row opens the marker detail panel on the catalysts tab.
+
+**Onboarding tooltip.** First post-deploy load shows a one-time tooltip pinned to the Timeline tab in the topbar: "Your timeline is now under the Timeline tab." Dismissed by clicking the inline button or by clicking the Timeline tab itself. Persists in localStorage at `clint.engagement-landing.onboarding-tooltip-seen`.
+
+**Routing change details.** Inside the space-scoped router, the engagement landing matches the empty path with `pathMatch: 'full'`, and the LandscapeShellComponent stays mounted for `timeline`, `bullseye`, `positioning`, and `catalysts` as siblings. Existing bookmarks to the timeline keep working via the new `/timeline` route. The topbar nav for the Landscape section is now `Home / Timeline / Bullseye / Positioning / Catalysts`.
+
+**Stats RPC.** `get_space_landing_stats(p_space_id uuid)` returns a single jsonb object with `active_trials` (excludes recruitment_status in `completed`/`withdrawn`/`terminated`), `companies` (distinct company_id on products in the space), `programs` (count of products), `catalysts_90d` (trial_markers within today + 90 days), and `intelligence_total` (always 0 in phase 1; the primary_intelligence table is not yet shipped). Gated on `has_space_access`; security definer; language sql stable.
+
 ## Timeline Dashboard
 
-The primary view of the application. Displays a grid where rows represent clinical trials and columns represent time. The grid is organized hierarchically:
+The primary view of the engagement once the user clicks past the home page. Displays a grid where rows represent clinical trials and columns represent time. Reachable at `/t/:tenantId/s/:spaceId/timeline`. The grid is organized hierarchically:
 
 ```
 Company

@@ -243,7 +243,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     } else if (allSegments.includes('catalysts')) {
       this.viewMode.set('catalysts');
       this.entityId.set(null);
+    } else if (allSegments.includes('timeline')) {
+      this.viewMode.set('timeline');
+      this.entityId.set(null);
     } else {
+      // Shouldn't happen now that timeline has its own segment, but leave
+      // a sensible default in case the shell mounts without a child.
       this.viewMode.set('timeline');
       this.entityId.set(null);
     }

@@ -176,17 +176,39 @@ export interface TopbarTab {
             <div class="topbar-divider" aria-hidden="true"></div>
             <div role="tablist" class="flex items-center">
               @for (tab of tabs(); track tab.value) {
-                <button
-                  role="tab"
-                  [attr.aria-selected]="tab.active"
-                  [class]="tab.active ? 'topbar-tab active' : 'topbar-tab'"
-                  (click)="onTabClick(tab.value)"
-                >
-                  @if (tab.icon) {
-                    <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
+                <div class="topbar-tab-wrap">
+                  <button
+                    role="tab"
+                    [attr.aria-selected]="tab.active"
+                    [class]="tab.active ? 'topbar-tab active' : 'topbar-tab'"
+                    (click)="onTabClick(tab.value)"
+                  >
+                    @if (tab.icon) {
+                      <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
+                    }
+                    {{ tab.label }}
+                  </button>
+                  @if (tab.value === 'timeline' && timelineHintVisible()) {
+                    <div
+                      class="topbar-hint"
+                      role="status"
+                      aria-live="polite"
+                      aria-label="Onboarding hint"
+                    >
+                      <p class="topbar-hint__copy">
+                        Your timeline is now under the Timeline tab.
+                      </p>
+                      <button
+                        type="button"
+                        class="topbar-hint__dismiss"
+                        (click)="onTimelineHintDismiss()"
+                        aria-label="Dismiss"
+                      >
+                        Got it
+                      </button>
+                    </div>
                   }
-                  {{ tab.label }}
-                </button>
+                </div>
               }
             </div>
             @if (subTabs().length) {
@@ -514,6 +536,72 @@ export interface TopbarTab {
         outline-offset: 2px;
       }
 
+      /* Onboarding tooltip pinned to a topbar tab. Renders below the tab,
+         pointing up. Dismissed via the inline button or by clicking the
+         tab itself. Aria-live so screen readers announce it once. */
+      .topbar-tab-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .topbar-hint {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 40;
+        background: #0f172a;
+        color: white;
+        padding: 8px 10px 8px 12px;
+        border-radius: 4px;
+        box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+
+      .topbar-hint::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%) rotate(45deg);
+        width: 10px;
+        height: 10px;
+        background: #0f172a;
+      }
+
+      .topbar-hint__copy {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .topbar-hint__dismiss {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--brand-300, #5eead4);
+        background: none;
+        border: none;
+        padding: 2px 4px;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+
+      .topbar-hint__dismiss:hover {
+        color: white;
+      }
+
+      .topbar-hint__dismiss:focus-visible {
+        outline: 2px solid var(--brand-600);
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
       .topbar-subtab {
         font-size: 10px;
         padding: 3px 8px;
@@ -714,6 +802,9 @@ export class ContextualTopbarComponent {
   // ---- Actions ----
   readonly actionButtons = input<TopbarAction[]>([]);
 
+  // ---- Onboarding tooltip pinned to Timeline tab ----
+  readonly timelineHintVisible = input<boolean>(false);
+
   // ---- Outputs ----
   readonly tabClick = output<string>();
   readonly subTabClick = output<string>();
@@ -724,6 +815,7 @@ export class ContextualTopbarComponent {
   readonly spaceSettingsClick = output<void>();
   readonly newSpaceClick = output<void>();
   readonly joinTenantClick = output<void>();
+  readonly timelineHintDismiss = output<void>();
 
   // ---- Internal state ----
   readonly tenantDropdownOpen = signal(false);
@@ -762,7 +854,14 @@ export class ContextualTopbarComponent {
   }
 
   onTabClick(value: string): void {
+    if (value === 'timeline' && this.timelineHintVisible()) {
+      this.timelineHintDismiss.emit();
+    }
     this.tabClick.emit(value);
+  }
+
+  onTimelineHintDismiss(): void {
+    this.timelineHintDismiss.emit();
   }
 
   onSubTabClick(value: string): void {

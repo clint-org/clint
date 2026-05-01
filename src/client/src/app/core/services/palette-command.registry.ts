@@ -14,10 +14,17 @@ export class PaletteCommandRegistry {
   list(currentTenantId: string, currentSpaceId: string): PaletteCommand[] {
     const cmds: PaletteCommand[] = [
       {
+        id: 'go-home',
+        label: 'Go to Home',
+        hint: 'Navigation',
+        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}`),
+      },
+      {
         id: 'go-timeline',
         label: 'Go to Timeline',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}`),
+        run: () =>
+          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/timeline`),
       },
       {
         id: 'go-bullseye',
