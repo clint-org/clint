@@ -43,11 +43,22 @@ jobs:
       - name: Get Supabase keys
         id: supabase
         run: |
-          echo "anon_key=$(supabase status -o env | grep ANON_KEY | cut -d= -f2)" >> $GITHUB_OUTPUT
-          echo "service_role_key=$(supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2)" >> $GITHUB_OUTPUT
+          echo "anon_key=$(supabase status -o env | grep ANON_KEY | cut -d= -f2 | tr -d '\"')" >> $GITHUB_OUTPUT
+          echo "service_role_key=$(supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2 | tr -d '\"')" >> $GITHUB_OUTPUT
+          echo "jwt_secret=$(supabase status -o env | grep JWT_SECRET | cut -d= -f2 | tr -d '\"')" >> $GITHUB_OUTPUT
+          echo "db_url=$(supabase status -o env | grep DB_URL | cut -d= -f2 | tr -d '\"')" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         run: cd src/client && npm ci
+
+      - name: Run integration tests
+        run: cd src/client && npm run test:integration
+        env:
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_ANON_KEY: ${{ steps.supabase.outputs.anon_key }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ steps.supabase.outputs.service_role_key }}
+          SUPABASE_JWT_SECRET: ${{ steps.supabase.outputs.jwt_secret }}
+          SUPABASE_DB_URL: ${{ steps.supabase.outputs.db_url }}
 
       - name: Install Playwright browsers
         run: cd src/client && npx playwright install chromium --with-deps
