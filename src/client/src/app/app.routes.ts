@@ -271,9 +271,16 @@ export const routes: Routes = [
               {
                 path: 'intelligence',
                 loadComponent: () =>
-                  import(
-                    './shared/components/intelligence-browse/intelligence-browse.component'
-                  ).then((m) => m.IntelligenceBrowseComponent),
+                  import('./shared/components/intelligence-browse/intelligence-browse.component').then(
+                    (m) => m.IntelligenceBrowseComponent
+                  ),
+              },
+              {
+                path: 'materials',
+                loadComponent: () =>
+                  import('./features/materials-browse/materials-browse-page.component').then(
+                    (m) => m.MaterialsBrowsePageComponent
+                  ),
               },
             ],
           },

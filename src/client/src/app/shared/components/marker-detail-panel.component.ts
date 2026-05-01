@@ -57,7 +57,8 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
             <svg width="12" height="12" class="shrink-0 overflow-visible" aria-hidden="true">
               @switch (d.catalyst.marker_type_shape) {
                 @case ('circle') {
-                  <g app-circle-icon
+                  <g
+                    app-circle-icon
                     [size]="12"
                     [color]="d.catalyst.marker_type_color"
                     [fillStyle]="effectiveFillStyle()"
@@ -65,7 +66,8 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
                   />
                 }
                 @case ('diamond') {
-                  <g app-diamond-icon
+                  <g
+                    app-diamond-icon
                     [size]="12"
                     [color]="d.catalyst.marker_type_color"
                     [fillStyle]="effectiveFillStyle()"
@@ -73,21 +75,24 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
                   />
                 }
                 @case ('flag') {
-                  <g app-flag-icon
+                  <g
+                    app-flag-icon
                     [size]="12"
                     [color]="d.catalyst.marker_type_color"
                     [fillStyle]="effectiveFillStyle()"
                   />
                 }
                 @case ('triangle') {
-                  <g app-triangle-icon
+                  <g
+                    app-triangle-icon
                     [size]="12"
                     [color]="d.catalyst.marker_type_color"
                     [fillStyle]="effectiveFillStyle()"
                   />
                 }
                 @case ('square') {
-                  <g app-square-icon
+                  <g
+                    app-square-icon
                     [size]="12"
                     [color]="d.catalyst.marker_type_color"
                     [fillStyle]="effectiveFillStyle()"
@@ -119,6 +124,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
       >
         <app-marker-detail-content
           [detail]="detail()"
+          [spaceId]="spaceId()"
           (markerClick)="markerClick.emit($event)"
         />
       </div>
@@ -127,6 +133,8 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
 })
 export class MarkerDetailPanelComponent {
   readonly detail = input<CatalystDetail | null>(null);
+  /** Optional space id, threaded through to the materials section. */
+  readonly spaceId = input<string | null>(null);
   readonly mode = input<'inline' | 'drawer'>('inline');
   readonly open = input<boolean>(true);
   readonly panelClose = output<void>();

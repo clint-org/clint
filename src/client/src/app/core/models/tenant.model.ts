@@ -6,6 +6,10 @@ export interface Tenant {
   custom_domain: string | null;
   logo_url: string | null;
   agency_id: string | null;
+  /** Per-tenant maximum size (bytes) for engagement materials. */
+  material_max_size_bytes?: number;
+  /** Per-tenant allowlist of mime types accepted by register_material. */
+  material_allowed_mime_types?: string[];
   created_at: string;
   updated_at: string;
 }

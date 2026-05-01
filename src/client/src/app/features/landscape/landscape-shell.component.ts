@@ -60,6 +60,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
             <app-marker-detail-panel
               mode="drawer"
               [detail]="state.selectedDetail()"
+              [spaceId]="state.spaceIdSig()"
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"

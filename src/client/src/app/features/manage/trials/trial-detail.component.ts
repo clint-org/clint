@@ -26,6 +26,7 @@ import { IntelligenceBlockComponent } from '../../../shared/components/intellige
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
 import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
+import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -49,6 +50,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
     RecentActivityFeedComponent,
+    MaterialsSectionComponent,
   ],
   templateUrl: './trial-detail.component.html',
 })
@@ -77,7 +79,12 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'Edit trial', icon: 'fa-solid fa-pen', text: true, callback: () => this.editingTrial.set(true) },
+        {
+          label: 'Edit trial',
+          icon: 'fa-solid fa-pen',
+          text: true,
+          callback: () => this.editingTrial.set(true),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -139,7 +146,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.deleteMarker(marker.id),
-        },
+        }
       );
     }
     this.menuCache.set(key, items);
@@ -167,7 +174,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.deleteNote(note.id),
-        },
+        }
       );
     }
     this.menuCache.set(key, items);

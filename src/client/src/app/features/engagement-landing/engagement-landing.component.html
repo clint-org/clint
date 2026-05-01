@@ -24,13 +24,13 @@
         <div class="latest-empty">
           <p class="latest-empty-title">No published intelligence yet.</p>
           <p class="latest-empty-hint">
-            Once your agency publishes a primary intelligence read against this engagement, it
-            will appear here in recency order.
+            Once your agency publishes a primary intelligence read against this engagement, it will
+            appear here in recency order.
           </p>
         </div>
       </section>
 
-      <app-recent-materials-widget [visible]="false" />
+      <app-recent-materials-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
     </div>
 
     <aside class="col-side" aria-label="Engagement side rail">

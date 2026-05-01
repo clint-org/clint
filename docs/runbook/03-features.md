@@ -303,6 +303,51 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 
 **ProseMirror packages.** `prosemirror-state`, `prosemirror-view`, `prosemirror-model`, `prosemirror-schema-basic`, `prosemirror-schema-list`, `prosemirror-keymap`, `prosemirror-commands`, `prosemirror-history`, `prosemirror-markdown`. Pinned to current major versions in `package.json`.
 
+## Materials Registry
+
+The institutional memory layer. Every PPTX, PDF, and DOCX produced for an engagement is registered against the entities it talks about so files surface from any related entity detail page and a single cross-cutting browse view.
+
+**Data model.** `materials` table keyed on `space_id`, with `material_type in ('briefing', 'priority_notice', 'ad_hoc')`, the storage path, the original filename, mime type, size, and the uploader. `material_links` is a polymorphic many-to-many between materials and entities (`trial | marker | company | product | space`); a unique constraint on `(material_id, entity_type, entity_id)` blocks duplicate links.
+
+**Storage.** Private `materials` bucket. Convention: `materials/{space_id}/{material_id}/{file_name}`. Uploads land at a temp path `materials/{space_id}/{tmp_uuid}/{file_name}` first, then `register_material` issues the canonical id and the frontend repaths the object via `storage.move`. Bucket-level RLS gates reads on `has_space_access(space_id)` derived from the first folder segment; writes additionally require owner or editor role.
+
+**RLS.** `materials_view` allows any space member to see registered files. `materials_insert` requires editor or owner. `materials_update` and `materials_delete` further require `uploaded_by = auth.uid()`. `material_links` policies inherit from the parent material.
+
+**Tenant settings.** Two columns on `tenants`:
+- `material_max_size_bytes` (default 50 MB) caps individual uploads.
+- `material_allowed_mime_types` (default PPTX / PDF / DOCX) is the server-side allowlist.
+
+`register_material` reads both before insert and rejects with `file_too_large` or `mime_type_not_allowed` errors. The tenant settings page surfaces both as owner-editable inputs (PrimeNG `p-inputnumber` and `p-multiselect`).
+
+**RPCs.**
+- `register_material(p_space_id, p_file_path, p_file_name, p_file_size_bytes, p_mime_type, p_material_type, p_title, p_links jsonb)` -- editor-or-owner; validates limits; inserts row plus links.
+- `list_materials_for_entity(p_entity_type, p_entity_id, p_material_types, p_limit, p_offset)` -- recency-ordered list filtered by entity, with optional type filter.
+- `list_recent_materials_for_space(p_space_id, p_limit)` -- backs the engagement landing's recent feed.
+- `list_materials_for_space(p_space_id, p_material_types, p_entity_type, p_entity_id, p_limit, p_offset)` -- backs the cross-cutting "All materials" page; filters by type and entity.
+- `download_material(p_material_id)` -- validates `has_space_access` and returns the storage path. The frontend issues the signed URL via `supabase.storage.from('materials').createSignedUrl(path, 60, { download: file_name })`. Server-side signed URLs are not used because Supabase's Postgres surface in this project does not expose a signed-url helper; doing the validation in SQL and the signing in the SDK keeps the access check authoritative without pulling in a new extension.
+- `update_material(p_id, p_title, p_material_type, p_links jsonb)` -- uploader-only edits. Wholesale link replacement when an array is supplied.
+- `delete_material(p_id)` -- uploader-only. Returns the file path; the frontend then calls `storage.remove([path])`.
+
+**Frontend surfaces.**
+- `app-materials-section` is the entity-level list. Sits on trial detail and inside the marker detail panel (and is ready for company and product detail pages). Includes a chip filter strip (All / Briefing / Priority Notice / Ad Hoc), a recency-ordered list of `app-material-row` rows, and a drag-drop / browse upload zone at the bottom for owners and editors.
+- `app-material-row` renders one row: file-type badge (PPTX amber, PDF red, DOCX blue, other slate), title, type pill, upload date, link count, file size, and a hover-revealed download icon.
+- `app-material-upload-zone` is the drag-drop add slot plus the upload dialog. Dialog fields: file preview, type select, title input (defaults to filename without extension), and the linked-entities chip picker (current entity pre-selected when not space-level). Performs storage upload, `register_material`, and best-effort repath.
+- `app-material-preview-drawer` is the side drawer on row click. Shows file metadata, linked entities, a Download button, and a Delete affordance when the caller is the uploader.
+- `app-recent-materials-widget` (in `features/engagement-landing/recent-materials-widget/`) is the engagement-landing surface. Calls `list_recent_materials_for_space` and renders `app-material-row` cards plus an "All materials" link to the browse page.
+- `MaterialsBrowsePageComponent` at `/t/:tenant/s/:space/materials` is the cross-cutting list filterable by type and entity.
+
+**Trial detail page integration.** The materials skeleton from the primary-intelligence branch (the empty `<section id="materials">` block) is replaced inline with `<app-materials-section [entityType]="'trial'" [entityId]="trial.id" [spaceId]="trial.space_id" />`. The surrounding `<section>` element is preserved so future moves of the section don't churn this file.
+
+**Marker detail panel integration.** `MarkerDetailContentComponent` accepts an optional `[spaceId]` input. When provided, it renders a small Materials section anchored to the marker. `LandscapeShellComponent` threads `state.spaceIdSig()` through `MarkerDetailPanelComponent`. The events page reuses `MarkerDetailContentComponent` without setting `spaceId`, so it stays unchanged.
+
+**Upload flow recap.**
+1. Drop or browse selects a file.
+2. Dialog opens; user picks type, title, and linked entities.
+3. Frontend uploads to `materials/{space_id}/{tmp_uuid}/{file_name}`.
+4. Frontend calls `register_material`; receives the canonical id.
+5. Frontend issues `storage.move(temp_path, materials/{space_id}/{material_id}/{file_name})`. On success it calls `update materials set file_path = ...` so the row points at the canonical path; on failure it leaves the temp path.
+6. Section refreshes; the new row appears at the top.
+
 ## Branded PowerPoint Exports
 
 `PptxExportService` reads from `BrandContextService`:

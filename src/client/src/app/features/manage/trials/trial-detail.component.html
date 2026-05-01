@@ -24,347 +24,354 @@
           (cancelled)="editingTrial.set(false)"
         />
       } @else {
+        <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
+        <nav
+          aria-label="Sections on this trial"
+          class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
+        >
+          <a
+            href="#primary-intelligence"
+            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+          >
+            Primary intelligence
+          </a>
+          <span class="text-slate-300">|</span>
+          <a
+            href="#referenced-in"
+            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+          >
+            Referenced in
+          </a>
+          <span class="text-slate-300">|</span>
+          <a
+            href="#recent-activity"
+            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+          >
+            Recent activity
+          </a>
+          <span class="text-slate-300">|</span>
+          <a href="#materials" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
+            Materials
+          </a>
+          <span class="text-slate-300">|</span>
+          <a href="#markers" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
+            Markers
+          </a>
+        </nav>
 
-      <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
-      <nav
-        aria-label="Sections on this trial"
-        class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
-      >
-        <a href="#primary-intelligence" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
-          Primary intelligence
-        </a>
-        <span class="text-slate-300">|</span>
-        <a href="#referenced-in" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
-          Referenced in
-        </a>
-        <span class="text-slate-300">|</span>
-        <a href="#recent-activity" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
-          Recent activity
-        </a>
-        <span class="text-slate-300">|</span>
-        <a href="#materials" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
-          Materials
-        </a>
-        <span class="text-slate-300">|</span>
-        <a href="#markers" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
-          Markers
-        </a>
-      </nav>
+        <!-- Primary intelligence -->
+        <div id="primary-intelligence">
+          @if (hasIntelligence()) {
+            <app-intelligence-block
+              [published]="intelligence()?.published ?? null"
+              [draft]="intelligence()?.draft ?? null"
+              [agencyView]="spaceRole.canEdit()"
+              (edit)="onIntelligenceEdit()"
+            />
+          } @else {
+            <app-intelligence-empty
+              [canEdit]="spaceRole.canEdit()"
+              entityLabel="trial"
+              (add)="onIntelligenceEdit()"
+            />
+          }
+        </div>
 
-      <!-- Primary intelligence -->
-      <div id="primary-intelligence">
-        @if (hasIntelligence()) {
-          <app-intelligence-block
+        <!-- Referenced in -->
+        <section
+          id="referenced-in"
+          class="mb-4 border border-slate-200 bg-white"
+          aria-label="Reads referencing this trial"
+        >
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Referenced in
+            </h2>
+            <span class="font-mono text-[10px] text-slate-400">
+              {{ (intelligence()?.referenced_in ?? []).length }} reads
+            </span>
+          </header>
+          <div class="px-4 py-3">
+            @if ((intelligence()?.referenced_in ?? []).length === 0) {
+              <p class="text-xs text-slate-400">No published reads link to this trial yet.</p>
+            } @else {
+              <ul class="divide-y divide-slate-100">
+                @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
+                  <li class="flex flex-wrap items-baseline gap-2 py-2">
+                    <span
+                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+                    >
+                      {{ ref.entity_type }}
+                    </span>
+                    <span class="text-sm text-slate-800">{{ ref.headline }}</span>
+                    @if (ref.relationship_type) {
+                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                        {{ ref.relationship_type }}
+                      </span>
+                    }
+                    @if (ref.gloss) {
+                      <span class="text-xs text-slate-500">-- {{ ref.gloss }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+
+        <!-- Recent activity -->
+        <div id="recent-activity">
+          <app-recent-activity-feed
             [published]="intelligence()?.published ?? null"
             [draft]="intelligence()?.draft ?? null"
             [agencyView]="spaceRole.canEdit()"
-            (edit)="onIntelligenceEdit()"
           />
-        } @else {
-          <app-intelligence-empty
-            [canEdit]="spaceRole.canEdit()"
-            entityLabel="trial"
-            (add)="onIntelligenceEdit()"
-          />
-        }
-      </div>
+        </div>
 
-      <!-- Referenced in -->
-      <section
-        id="referenced-in"
-        class="mb-4 border border-slate-200 bg-white"
-        aria-label="Reads referencing this trial"
-      >
-        <header
-          class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+        <!-- Materials section: file uploads linked to this trial. -->
+        <section
+          id="materials"
+          class="materials-section mb-4 border border-slate-200 bg-white"
+          aria-label="Engagement materials"
         >
-          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Referenced in
-          </h2>
-          <span class="font-mono text-[10px] text-slate-400">
-            {{ (intelligence()?.referenced_in ?? []).length }} reads
-          </span>
-        </header>
-        <div class="px-4 py-3">
-          @if ((intelligence()?.referenced_in ?? []).length === 0) {
-            <p class="text-xs text-slate-400">
-              No published reads link to this trial yet.
-            </p>
-          } @else {
-            <ul class="divide-y divide-slate-100">
-              @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
-                <li class="flex flex-wrap items-baseline gap-2 py-2">
-                  <span
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
-                  >
-                    {{ ref.entity_type }}
-                  </span>
-                  <span class="text-sm text-slate-800">{{ ref.headline }}</span>
-                  @if (ref.relationship_type) {
-                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                      {{ ref.relationship_type }}
-                    </span>
-                  }
-                  @if (ref.gloss) {
-                    <span class="text-xs text-slate-500">-- {{ ref.gloss }}</span>
-                  }
-                </li>
-              }
-            </ul>
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Materials
+            </h2>
+          </header>
+          @if (trial(); as t) {
+            <app-materials-section entityType="trial" [entityId]="t.id" [spaceId]="t.space_id" />
           }
-        </div>
-      </section>
+        </section>
 
-      <!-- Recent activity -->
-      <div id="recent-activity">
-        <app-recent-activity-feed
-          [published]="intelligence()?.published ?? null"
-          [draft]="intelligence()?.draft ?? null"
-          [agencyView]="spaceRole.canEdit()"
-        />
-      </div>
-
-      <!--
-        Materials section. Real component lives behind the
-        materials-registry spec (next branch). Keeping the section
-        skeleton here avoids merge conflicts in this file when that
-        branch lands -- it can drop its component into the inner div.
-      -->
-      <section
-        id="materials"
-        class="materials-section mb-4 border border-slate-200 bg-white"
-        aria-label="Engagement materials"
-      >
-        <header
-          class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-        >
-          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Materials
-          </h2>
-        </header>
-        <div class="materials-section__body px-4 py-3 text-xs text-slate-400">
-          Materials registry not yet wired.
-        </div>
-      </section>
-
-      <!-- Basic info -->
-      <app-section-card title="Basic info">
-        <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Status</dt>
-            <dd class="mt-1">
-              <app-status-tag [label]="t.status" />
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Therapeutic area
-            </dt>
-            <dd class="mt-1 text-sm text-slate-900">{{ t.therapeutic_areas?.name || '--' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Sample size
-            </dt>
-            <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-              {{ t.sample_size !== null ? t.sample_size : '--' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Display order
-            </dt>
-            <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-              {{ t.display_order }}
-            </dd>
-          </div>
-        </dl>
-        @if (t.notes) {
-          <div class="mt-4 border-t border-slate-100 pt-4">
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Notes</dt>
-            <dd class="mt-1 text-sm text-slate-700">{{ t.notes }}</dd>
-          </div>
-        }
-      </app-section-card>
-
-      <!-- Phase info (read-only) -->
-      @if (t.phase_type) {
-        <app-section-card title="Phase">
-          <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+        <!-- Basic info -->
+        <app-section-card title="Basic info">
+          <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
             <div>
               <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                Phase type
+                Status
               </dt>
-              <dd class="mt-1 font-mono text-sm text-slate-900">{{ t.phase_type }}</dd>
-            </div>
-            <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                Start date
-              </dt>
-              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-                {{ t.phase_start_date || '--' }}
+              <dd class="mt-1">
+                <app-status-tag [label]="t.status" />
               </dd>
             </div>
             <div>
               <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                End date
+                Therapeutic area
+              </dt>
+              <dd class="mt-1 text-sm text-slate-900">{{ t.therapeutic_areas?.name || '--' }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Sample size
               </dt>
               <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-                {{ t.phase_end_date || '--' }}
+                {{ t.sample_size !== null ? t.sample_size : '--' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Display order
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                {{ t.display_order }}
               </dd>
             </div>
           </dl>
+          @if (t.notes) {
+            <div class="mt-4 border-t border-slate-100 pt-4">
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Notes</dt>
+              <dd class="mt-1 text-sm text-slate-700">{{ t.notes }}</dd>
+            </div>
+          }
         </app-section-card>
-      }
 
-      <div id="markers">
-        <app-section-card title="Markers">
+        <!-- Phase info (read-only) -->
+        @if (t.phase_type) {
+          <app-section-card title="Phase">
+            <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+              <div>
+                <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Phase type
+                </dt>
+                <dd class="mt-1 font-mono text-sm text-slate-900">{{ t.phase_type }}</dd>
+              </div>
+              <div>
+                <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Start date
+                </dt>
+                <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                  {{ t.phase_start_date || '--' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  End date
+                </dt>
+                <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                  {{ t.phase_end_date || '--' }}
+                </dd>
+              </div>
+            </dl>
+          </app-section-card>
+        }
+
+        <div id="markers">
+          <app-section-card title="Markers">
+            @if (spaceRole.canEdit()) {
+              <p-button
+                actions
+                label="Add marker"
+                icon="fa-solid fa-plus"
+                [text]="true"
+                size="small"
+                (onClick)="addingMarker.set(true); editingMarker.set(null)"
+              />
+            }
+
+            @if (addingMarker() || editingMarker()) {
+              <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
+                <app-marker-form
+                  [marker]="editingMarker()"
+                  [trialId]="trialId()"
+                  (saved)="onMarkerSaved()"
+                  (cancelled)="addingMarker.set(false); editingMarker.set(null)"
+                />
+              </div>
+            }
+
+            <p-table
+              styleClass="data-table"
+              [value]="t.markers ?? []"
+              [tableStyle]="{ 'min-width': '56rem' }"
+              sortField="event_date"
+              [sortOrder]="-1"
+              [filterDelay]="0"
+              aria-label="Trial markers"
+            >
+              <ng-template #header>
+                <tr>
+                  <th pSortableColumn="marker_types.marker_categories.name">
+                    Category <p-sortIcon field="marker_types.marker_categories.name" />
+                    <p-columnFilter
+                      type="text"
+                      field="marker_types.marker_categories.name"
+                      display="menu"
+                    />
+                  </th>
+                  <th pSortableColumn="marker_types.name">
+                    Type <p-sortIcon field="marker_types.name" />
+                    <p-columnFilter type="text" field="marker_types.name" display="menu" />
+                  </th>
+                  <th pSortableColumn="title">
+                    Title <p-sortIcon field="title" />
+                    <p-columnFilter type="text" field="title" display="menu" />
+                  </th>
+                  <th pSortableColumn="event_date">
+                    Event date <p-sortIcon field="event_date" />
+                    <p-columnFilter type="text" field="event_date" display="menu" />
+                  </th>
+                  <th pSortableColumn="projection">
+                    Projection <p-sortIcon field="projection" />
+                    <p-columnFilter type="text" field="projection" display="menu" />
+                  </th>
+                  <th class="col-actions"></th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-marker>
+                <tr>
+                  <td class="col-secondary">
+                    {{ marker.marker_types?.marker_categories?.name || '--' }}
+                  </td>
+                  <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
+                  <td class="col-secondary max-w-xs truncate">{{ marker.title }}</td>
+                  <td class="col-identifier">{{ marker.event_date }}</td>
+                  <td>
+                    @if (marker.projection && marker.projection !== 'actual') {
+                      <app-status-tag [label]="marker.projection" tone="amber" />
+                    } @else {
+                      <span class="font-mono text-xs text-slate-400">actual</span>
+                    }
+                  </td>
+                  <td class="col-actions">
+                    @if (spaceRole.canEdit()) {
+                      <app-row-actions
+                        [items]="markerMenu(marker)"
+                        [ariaLabel]="'Actions for marker ' + marker.title"
+                      />
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="6">No markers yet. Add one to get started.</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </app-section-card>
+        </div>
+
+        <!-- Notes -->
+        <app-section-card title="Notes">
           @if (spaceRole.canEdit()) {
             <p-button
               actions
-              label="Add marker"
+              label="Add note"
               icon="fa-solid fa-plus"
               [text]="true"
               size="small"
-              (onClick)="addingMarker.set(true); editingMarker.set(null)"
+              (onClick)="addingNote.set(true); editingNote.set(null)"
             />
           }
 
-          @if (addingMarker() || editingMarker()) {
+          @if (addingNote() || editingNote()) {
             <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
-              <app-marker-form
-                [marker]="editingMarker()"
+              <app-note-form
+                [note]="editingNote()"
                 [trialId]="trialId()"
-                (saved)="onMarkerSaved()"
-                (cancelled)="addingMarker.set(false); editingMarker.set(null)"
+                (saved)="onNoteSaved()"
+                (cancelled)="addingNote.set(false); editingNote.set(null)"
               />
             </div>
           }
 
-          <p-table
-            styleClass="data-table"
-            [value]="t.markers ?? []"
-            [tableStyle]="{ 'min-width': '56rem' }"
-            sortField="event_date"
-            [sortOrder]="-1"
-            [filterDelay]="0"
-            aria-label="Trial markers"
-          >
-            <ng-template #header>
-              <tr>
-                <th pSortableColumn="marker_types.marker_categories.name">
-                  Category <p-sortIcon field="marker_types.marker_categories.name" />
-                  <p-columnFilter type="text" field="marker_types.marker_categories.name" display="menu" />
-                </th>
-                <th pSortableColumn="marker_types.name">
-                  Type <p-sortIcon field="marker_types.name" />
-                  <p-columnFilter type="text" field="marker_types.name" display="menu" />
-                </th>
-                <th pSortableColumn="title">
-                  Title <p-sortIcon field="title" />
-                  <p-columnFilter type="text" field="title" display="menu" />
-                </th>
-                <th pSortableColumn="event_date">
-                  Event date <p-sortIcon field="event_date" />
-                  <p-columnFilter type="text" field="event_date" display="menu" />
-                </th>
-                <th pSortableColumn="projection">
-                  Projection <p-sortIcon field="projection" />
-                  <p-columnFilter type="text" field="projection" display="menu" />
-                </th>
-                <th class="col-actions"></th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-marker>
-              <tr>
-                <td class="col-secondary">
-                  {{ marker.marker_types?.marker_categories?.name || '--' }}
-                </td>
-                <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
-                <td class="col-secondary max-w-xs truncate">{{ marker.title }}</td>
-                <td class="col-identifier">{{ marker.event_date }}</td>
-                <td>
-                  @if (marker.projection && marker.projection !== 'actual') {
-                    <app-status-tag [label]="marker.projection" tone="amber" />
-                  } @else {
-                    <span class="font-mono text-xs text-slate-400">actual</span>
-                  }
-                </td>
-                <td class="col-actions">
+          @if (t.trial_notes && t.trial_notes.length > 0) {
+            <ul class="divide-y divide-slate-100 border border-slate-200">
+              @for (note of t.trial_notes; track note.id) {
+                <li class="flex items-start gap-3 px-4 py-3">
+                  <div class="min-w-0 flex-1">
+                    <p class="whitespace-pre-wrap text-sm text-slate-700">{{ note.content }}</p>
+                    <p class="mt-1 font-mono text-[11px] text-slate-400 tabular-nums">
+                      {{ note.updated_at }}
+                    </p>
+                  </div>
                   @if (spaceRole.canEdit()) {
-                    <app-row-actions
-                      [items]="markerMenu(marker)"
-                      [ariaLabel]="'Actions for marker ' + marker.title"
-                    />
+                    <app-row-actions [items]="noteMenu(note)" ariaLabel="Actions for note" />
                   }
-                </td>
-              </tr>
-            </ng-template>
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="6">No markers yet. Add one to get started.</td>
-              </tr>
-            </ng-template>
-          </p-table>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-sm text-slate-400">No notes yet. Add one to get started.</p>
+          }
         </app-section-card>
-      </div>
 
-      <!-- Notes -->
-      <app-section-card title="Notes">
-        @if (spaceRole.canEdit()) {
-          <p-button
-            actions
-            label="Add note"
-            icon="fa-solid fa-plus"
-            [text]="true"
-            size="small"
-            (onClick)="addingNote.set(true); editingNote.set(null)"
+        <!-- Authoring drawer -->
+        @if (spaceIdSig()) {
+          <app-intelligence-drawer
+            [visible]="intelligenceDrawerOpen()"
+            [spaceId]="spaceIdSig()"
+            entityType="trial"
+            [entityId]="trialId()"
+            (closed)="onIntelligenceClosed()"
+            (published)="onIntelligencePublished()"
           />
         }
-
-        @if (addingNote() || editingNote()) {
-          <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
-            <app-note-form
-              [note]="editingNote()"
-              [trialId]="trialId()"
-              (saved)="onNoteSaved()"
-              (cancelled)="addingNote.set(false); editingNote.set(null)"
-            />
-          </div>
-        }
-
-        @if (t.trial_notes && t.trial_notes.length > 0) {
-          <ul class="divide-y divide-slate-100 border border-slate-200">
-            @for (note of t.trial_notes; track note.id) {
-              <li class="flex items-start gap-3 px-4 py-3">
-                <div class="min-w-0 flex-1">
-                  <p class="whitespace-pre-wrap text-sm text-slate-700">{{ note.content }}</p>
-                  <p class="mt-1 font-mono text-[11px] text-slate-400 tabular-nums">
-                    {{ note.updated_at }}
-                  </p>
-                </div>
-                @if (spaceRole.canEdit()) {
-                  <app-row-actions [items]="noteMenu(note)" ariaLabel="Actions for note" />
-                }
-              </li>
-            }
-          </ul>
-        } @else {
-          <p class="text-sm text-slate-400">No notes yet. Add one to get started.</p>
-        }
-      </app-section-card>
-
-      <!-- Authoring drawer -->
-      @if (spaceIdSig()) {
-        <app-intelligence-drawer
-          [visible]="intelligenceDrawerOpen()"
-          [spaceId]="spaceIdSig()"
-          entityType="trial"
-          [entityId]="trialId()"
-          (closed)="onIntelligenceClosed()"
-          (published)="onIntelligencePublished()"
-        />
-      }
       }
     </app-manage-page-shell>
   }
