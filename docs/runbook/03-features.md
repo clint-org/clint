@@ -79,6 +79,8 @@ A full CRUD interface for managing all data within a space:
 
 A unified chronological feed showing analyst-created events and timeline markers together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial.
 
+**Route:** `/t/:tenantId/s/:spaceId/events`. Honors `?eventId=<id>` to deep-link a specific event into the detail panel on load (used by the command palette).
+
 **Layout:** Data table (p-table) with sortable/filterable columns + a right-side overlay detail panel (340px, absolute-positioned, `@slidePanel` animation) that slides in on row click and hides when nothing is selected.
 
 | Column | Content |
@@ -98,7 +100,7 @@ A unified chronological feed showing analyst-created events and timeline markers
 
 The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Catalysts**). Shows all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
 
-**Route:** `/t/:tenantId/s/:spaceId/catalysts` (child of landscape shell)
+**Route:** `/t/:tenantId/s/:spaceId/catalysts` (child of landscape shell). Honors `?markerId=<id>` to deep-link a specific marker into the detail panel on load (used by the command palette).
 
 **Layout:** Dense table (p-table with `rowGroupMode="subheader"`). No summary header -- straight to data. The detail panel is shared with other landscape views (see below).
 
