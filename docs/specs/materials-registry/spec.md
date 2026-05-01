@@ -17,12 +17,14 @@ In v1:
 - Three types: **Briefing**, **Priority Notice**, **Ad Hoc**.
 - Multi-entity linking: a single material can attach to many entities (trials, markers, companies, products, the engagement itself).
 - One flat list per entity, recency-ordered. Visible to everyone in the engagement (no visibility lanes).
-- Slide-1 thumbnail rendering for PPTX (server-side). PDF first-page thumbnail for PDFs. Generic icon for DOCX.
+- File-type icons in the materials list (PPTX amber, PDF red, DOCX blue). Click any row to open a preview drawer; download from there.
 - Engagement-level "All materials" page: cross-cutting list filterable by type and entity.
-- Audit log: who uploaded, when, file size, who accessed (agency-internal logging only).
+- Admin-configurable per-tenant settings: max file size and allowed mime types.
 
 Out of scope (deferred to v2):
-- Email-in upload (forward an attachment to a per-entity address).
+- Slide-1 / page-1 thumbnail rendering. v1 uses file-type icons; thumbnails are polish.
+- Access log (who viewed / downloaded which material).
+- Email-in upload.
 - Connectors to Google Drive, SharePoint, Box.
 - Text extraction and full-text search across material contents.
 - Slide carousel preview (in-app slide-by-slide view).
@@ -44,8 +46,6 @@ create table materials (
   mime_type text not null,
   material_type text not null check (material_type in ('briefing', 'priority_notice', 'ad_hoc')),
   title text not null,                 -- analyst-supplied or defaults to filename
-  thumbnail_path text,                 -- Supabase Storage path for slide-1 / page-1 thumbnail; null until rendered
-  page_count int,                      -- slides for PPTX, pages for PDF/DOCX; null until rendered
   uploaded_at timestamptz not null default now()
 );
 
@@ -72,22 +72,20 @@ create index on material_links (entity_type, entity_id);
 
 A material can link to as many entities as it relates to. The unique constraint prevents duplicate links to the same entity.
 
-### `material_access_log` (agency-internal audit)
+### Tenant-level upload settings
 
 ```sql
-create table material_access_log (
-  id uuid primary key default gen_random_uuid(),
-  material_id uuid not null references materials(id) on delete cascade,
-  accessed_by uuid not null references auth.users(id),
-  access_type text not null check (access_type in ('view', 'download')),
-  accessed_at timestamptz not null default now()
-);
-
-create index on material_access_log (material_id, accessed_at desc);
-create index on material_access_log (accessed_by, accessed_at desc);
+-- Add columns to existing tenants table; adjust if a tenant_settings table is preferred.
+alter table tenants
+  add column material_max_size_bytes bigint not null default 52428800,         -- 50 MB default
+  add column material_allowed_mime_types text[] not null default array[
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation', -- .pptx
+    'application/pdf',                                                            -- .pdf
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'    -- .docx
+  ];
 ```
 
-Optional in v1. If pharma audit / regulatory needs require it, ship with v1; otherwise defer.
+Tenant admins (or super-admins) can edit these from the agency portal under tenant settings. The `register_material` RPC reads these values and rejects uploads that exceed `material_max_size_bytes` or use a mime type not in `material_allowed_mime_types`.
 
 ## Storage
 
@@ -95,7 +93,6 @@ Files live in a Supabase Storage bucket called `materials`. Path convention:
 
 ```
 materials/{space_id}/{material_id}/{file_name}
-materials/{space_id}/{material_id}/thumb.png        -- slide-1 / page-1 thumbnail
 ```
 
 Bucket is private. Access controlled via signed URLs issued by RPCs that check space membership.
@@ -105,7 +102,6 @@ Bucket is private. Access controlled via signed URLs issued by RPCs that check s
 ```sql
 alter table materials enable row level security;
 alter table material_links enable row level security;
-alter table material_access_log enable row level security;
 
 -- Anyone in the space can view materials.
 create policy materials_view on materials for select
@@ -136,17 +132,6 @@ create policy material_links_write on material_links for all
     where m.id = material_links.material_id
       and m.uploaded_by = auth.uid()
   ));
-
--- Access log: agency only.
-create policy material_access_log_view on material_access_log for select
-  using (exists (
-    select 1 from materials m
-    where m.id = material_access_log.material_id
-      and is_agency_member_of_space(m.space_id)
-  ));
-
-create policy material_access_log_insert on material_access_log for insert
-  with check (accessed_by = auth.uid());
 ```
 
 Storage bucket policies:
@@ -173,9 +158,25 @@ security definer
 language plpgsql as $$
 declare
   v_id uuid;
+  v_max_size bigint;
+  v_allowed_types text[];
 begin
   if not has_space_access(p_space_id) then
     raise exception 'forbidden';
+  end if;
+
+  -- Read tenant upload limits (joined via space -> tenant).
+  select t.material_max_size_bytes, t.material_allowed_mime_types
+    into v_max_size, v_allowed_types
+  from spaces s join tenants t on t.id = s.tenant_id
+  where s.id = p_space_id;
+
+  if p_file_size_bytes > v_max_size then
+    raise exception 'file_too_large: limit is %', v_max_size;
+  end if;
+
+  if not (p_mime_type = any(v_allowed_types)) then
+    raise exception 'mime_type_not_allowed: %', p_mime_type;
   end if;
 
   insert into materials (
@@ -224,7 +225,7 @@ create function list_recent_materials_for_space(
 
 ### `download_material`
 
-Issues a time-bound signed URL for the file. Logs the access.
+Issues a time-bound signed URL for the file.
 
 ```sql
 create function download_material(p_material_id uuid)
@@ -235,10 +236,8 @@ declare
   v_path text;
   v_url text;
 begin
-  -- check access
-  -- ...
+  -- check access against has_space_access via materials.space_id
   -- issue signed URL via storage.create_signed_url() or similar
-  -- log access
   return v_url;
 end $$;
 ```
@@ -250,17 +249,6 @@ Edit title, type, or linked entities. Only the uploader can update their own.
 ### `delete_material`
 
 Hard-delete the row, the storage file, and cascade-delete links and access log entries. Only the uploader.
-
-## Thumbnail rendering
-
-Slide-1 / page-1 thumbnails are rendered server-side. Two options:
-
-1. **Cloudflare Worker with a headless converter.** Spawn LibreOffice headless or use a service like CloudConvert via API. Triggered by a Postgres trigger or via the upload completion handler. Outputs a PNG to the thumbnail_path slot.
-2. **Supabase Edge Function with the same setup.** Same as above but runs on Supabase's edge.
-
-Both have similar complexity. Recommend the Edge Function path because it's closer to the database and the storage bucket.
-
-If rendering fails, the `thumbnail_path` stays null and the UI falls back to a generic icon based on file type.
 
 ## Frontend
 
@@ -358,17 +346,27 @@ Per the engagement landing spec, this section can be hidden in Phase 1 if materi
 
 ## Branch
 
-`feat/materials-registry`. Two PRs:
+`feat/materials-registry`. One PR:
 
-- **PR 1:** Database (migrations, RLS, RPCs, storage bucket) + service layer + materials section on trial detail.
-- **PR 2:** Thumbnail rendering Edge Function + recent materials widget on engagement landing + materials section on company / product / marker detail pages.
+- Database (migrations, RLS, RPCs, storage bucket, tenant upload-limit columns) + service layer + materials section on trial detail + recent materials widget on engagement landing.
 
-Estimated diff: PR 1 ~700-900 lines, PR 2 ~500-600 lines plus the Edge Function.
+Estimated diff: ~800-1000 lines.
+
+## Migration plan
+
+1. Migration: `<timestamp>_materials.sql` with the two tables (materials, material_links), indexes, RLS, and the storage bucket.
+2. Migration: `<timestamp>_tenant_material_settings.sql` adding `material_max_size_bytes` and `material_allowed_mime_types` columns to `tenants`.
+3. Migration: `<timestamp>_material_rpcs.sql` with the RPCs above.
+4. Frontend: model, service, components.
+5. Wire into trial detail page.
+6. Wire into engagement landing.
+7. Wire into marker detail panel.
+8. Add tenant settings UI in the agency portal for max size and mime allowlist.
 
 ## Open questions
 
-- **Thumbnail renderer choice.** LibreOffice headless via Edge Function vs. CloudConvert API. Edge Function is cheaper to run; CloudConvert is easier to integrate. Confirm before building.
-- **Access log in v1 or v2?** If pharma audit needs require it, ship in v1. If not, defer.
-- **File size limit.** 50 MB default? Larger for big briefing decks? Confirm.
-- **Allowed mime types.** Restrict to PPTX, PDF, DOCX in v1, or allow more (XLSX, PNG, JPG)? Probably strict to start.
-- **Material visibility once uploaded by a client.** Client uploads a board pack: is it visible to Stout? Per the locked decision (no visibility lanes, everything in the engagement is shared), yes. Confirm this is still the call given that pharma legal may push back when they realize it.
+- **Thumbnail rendering.** Deferred to v2. v1 ships with file-type icons (PPTX amber, PDF red, DOCX blue) and a preview drawer with a Download button.
+- **Access log.** Deferred to v2. Reintroduce when pharma audit / regulatory demand surfaces.
+- **File size limit.** Per-tenant configurable, default 50 MB. Tenant admins edit via the agency portal.
+- **Allowed mime types.** Per-tenant configurable, default PPTX / PDF / DOCX. Tenant admins edit via the agency portal.
+- **Material visibility for client uploads.** Confirmed: visible to all members of the engagement. No visibility lanes. Pharma legal sensitive material stays in the client's own systems.
