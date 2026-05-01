@@ -22,6 +22,7 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -59,6 +60,21 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
+
+  // Surface "Add trial" only for space owners/editors. Effect re-runs when
+  // canEdit() flips (initial role fetch resolves, or navigation between
+  // spaces). Clears the action when the user lacks edit permission so the
+  // topbar reflects current capability.
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'Add trial', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   spaceId = '';
   tenantId = '';
@@ -161,9 +177,6 @@ export class TrialListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
-    this.topbarState.actions.set([
-      { label: 'Add trial', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
-    ]);
     await this.loadData();
   }
 
@@ -180,19 +193,23 @@ export class TrialListComponent implements OnInit, OnDestroy {
         icon: 'fa-solid fa-arrow-up-right-from-square',
         command: () => this.openDetail(row.trial),
       },
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(row.trial),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDelete(row.trial),
-      },
     ];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(row.trial),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDelete(row.trial),
+        },
+      );
+    }
     this.menuCache.set(row.trial.id, items);
     return items;
   }

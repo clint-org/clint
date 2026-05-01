@@ -8,6 +8,7 @@ import { Textarea } from 'primeng/textarea';
 
 import { Space } from '../../core/models/space.model';
 import { SpaceService } from '../../core/services/space.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
@@ -34,7 +35,13 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             >
               Space name
             </label>
-            <input pInputText id="space-name" class="w-full" [(ngModel)]="name" />
+            <input
+              pInputText
+              id="space-name"
+              class="w-full"
+              [(ngModel)]="name"
+              [readonly]="!spaceRole.isOwner()"
+            />
           </div>
 
           <div class="mb-6">
@@ -50,32 +57,39 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               class="w-full"
               [(ngModel)]="description"
               rows="3"
+              [readonly]="!spaceRole.isOwner()"
             ></textarea>
           </div>
 
-          <div class="mt-6 flex items-center gap-3">
-            <p-button
-              label="Save changes"
-              [loading]="saving()"
-              [disabled]="!hasChanges()"
-              (onClick)="saveIfChanged()"
-            />
-          </div>
+          @if (spaceRole.isOwner()) {
+            <div class="mt-6 flex items-center gap-3">
+              <p-button
+                label="Save changes"
+                [loading]="saving()"
+                [disabled]="!hasChanges()"
+                (onClick)="saveIfChanged()"
+              />
+            </div>
 
-          <div class="mt-12 border-t border-slate-200 pt-6">
-            <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
-            <p class="mt-1 text-xs text-slate-500">
-              Deleting a space removes all its data permanently. This cannot be undone.
+            <div class="mt-12 border-t border-slate-200 pt-6">
+              <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
+              <p class="mt-1 text-xs text-slate-500">
+                Deleting a space removes all its data permanently. This cannot be undone.
+              </p>
+              <p-button
+                label="Delete space"
+                severity="danger"
+                [outlined]="true"
+                size="small"
+                styleClass="mt-3"
+                (onClick)="confirmDelete()"
+              />
+            </div>
+          } @else {
+            <p class="mt-6 text-[11px] text-slate-500">
+              Read-only view. Space owners can edit these settings.
             </p>
-            <p-button
-              label="Delete space"
-              severity="danger"
-              [outlined]="true"
-              size="small"
-              styleClass="mt-3"
-              (onClick)="confirmDelete()"
-            />
-          </div>
+          }
         </div>
       }
     </app-manage-page-shell>
@@ -88,6 +102,7 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
 
   space = signal<Space | null>(null);
   loading = signal(true);

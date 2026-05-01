@@ -25,6 +25,7 @@ import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 
 @Component({
   selector: 'app-events-page',
@@ -55,6 +56,17 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'New Event', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   spaceId = '';
 
@@ -150,9 +162,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
-    this.topbarState.actions.set([
-      { label: 'New Event', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
-    ]);
     await this.loadInitialData();
   }
 

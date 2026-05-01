@@ -13,6 +13,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 @Component({
   selector: 'app-route-of-administration-list',
@@ -40,17 +41,25 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
 
   private readonly menuCache = new Map<string, MenuItem[]>();
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'Add route', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   private readonly countEffect = effect(() => {
     this.topbarState.recordCount.set(String(this.items().length || ''));
   });
 
   async ngOnInit(): Promise<void> {
-    this.topbarState.actions.set([
-      { label: 'Add route', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
-    ]);
     await this.loadItems();
   }
 
@@ -61,20 +70,23 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   rowMenu(item: RouteOfAdministration): MenuItem[] {
     const cached = this.menuCache.get(item.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(item),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDelete(item),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(item),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDelete(item),
+        },
+      );
+    }
     this.menuCache.set(item.id, items);
     return items;
   }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,6 +11,7 @@ import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
 import { SpaceMember, SpaceInvite } from '../../core/models/space.model';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { SpaceService } from '../../core/services/space.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -78,12 +79,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
             <td>{{ member.display_name }}</td>
             <td class="col-identifier">{{ member.email }}</td>
             <td>
-              @if (isSelf(member)) {
-                <app-status-tag
-                  [label]="roleLabel(member.role)"
-                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
-                />
-              } @else {
+              @if (!isSelf(member) && spaceRole.isOwner()) {
                 <p-select
                   [options]="roleOptions"
                   [ngModel]="member.role"
@@ -93,10 +89,15 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
                   size="small"
                   [style]="{ minWidth: '8rem' }"
                 />
+              } @else {
+                <app-status-tag
+                  [label]="roleLabel(member.role)"
+                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                />
               }
             </td>
             <td class="col-actions">
-              @if (!isSelf(member)) {
+              @if (!isSelf(member) && spaceRole.isOwner()) {
                 <app-row-actions
                   [items]="memberMenu(member)"
                   [ariaLabel]="'Actions for ' + member.display_name"
@@ -112,7 +113,8 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
         </ng-template>
       </p-table>
 
-      <!-- Pending invites -->
+      <!-- Pending invites: owner-only (invite codes are sensitive) -->
+      @if (spaceRole.isOwner()) {
       <div class="mt-10 mb-3 flex items-baseline justify-between">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Pending invites
@@ -159,6 +161,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
           </tr>
         </ng-template>
       </p-table>
+      }
     </app-manage-page-shell>
 
     <!-- Invite dialog -->
@@ -242,6 +245,25 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
+
+  // Surface the Invite topbar action only for owners. The effect re-runs
+  // when isOwner() flips (initial fetch resolves, or the user navigates
+  // between spaces with different roles).
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.isOwner()) {
+      this.topbarState.actions.set([
+        {
+          label: 'Invite to space',
+          icon: 'fa-solid fa-user-plus',
+          text: true,
+          callback: () => this.openInviteDialog(),
+        },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   private readonly menuCache = new Map<string, MenuItem[]>();
   private readonly inviteMenuCache = new Map<string, MenuItem[]>();
@@ -282,14 +304,6 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
-    this.topbarState.actions.set([
-      {
-        label: 'Invite to space',
-        icon: 'fa-solid fa-user-plus',
-        text: true,
-        callback: () => this.openInviteDialog(),
-      },
-    ]);
     await this.loadData();
   }
 

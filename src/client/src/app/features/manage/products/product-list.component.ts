@@ -20,6 +20,7 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 interface ProductRow {
   readonly product: Product;
@@ -61,6 +62,17 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'Add product', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   spaceId = '';
   tenantId = '';
@@ -105,9 +117,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
-    this.topbarState.actions.set([
-      { label: 'Add product', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
-    ]);
     await this.loadData();
   }
 
@@ -124,19 +133,23 @@ export class ProductListComponent implements OnInit, OnDestroy {
         icon: 'fa-solid fa-flask',
         command: () => this.openTrials(row.product.id),
       },
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(row.product),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDelete(row.product),
-      },
     ];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(row.product),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDelete(row.product),
+        },
+      );
+    }
     this.menuCache.set(row.product.id, items);
     return items;
   }

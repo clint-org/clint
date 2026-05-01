@@ -15,6 +15,7 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 @Component({
   selector: 'app-company-list',
@@ -44,6 +45,17 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'Add company', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
   spaceId = '';
   tenantId = '';
 
@@ -74,9 +86,6 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
-    this.topbarState.actions.set([
-      { label: 'Add company', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
-    ]);
     await this.loadCompanies();
   }
 
@@ -110,21 +119,23 @@ export class CompanyListComponent implements OnInit, OnDestroy {
         icon: 'fa-solid fa-box',
         command: () => this.openProducts(company.id),
       },
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(company),
-      },
-      {
-        separator: true,
-      },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDelete(company),
-      },
     ];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(company),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDelete(company),
+        },
+      );
+    }
     this.menuCache.set(company.id, items);
     return items;
   }

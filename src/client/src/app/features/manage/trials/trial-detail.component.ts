@@ -22,6 +22,7 @@ import { RowActionsComponent } from '../../../shared/components/row-actions.comp
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 @Component({
   selector: 'app-trial-detail',
@@ -50,6 +51,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
 
   // Stable menu-item references per row id, keyed with a prefix so markers
   // and notes don't collide (see CompanyListComponent comment).
@@ -61,11 +63,15 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     this.topbarState.entityContext.set(t?.identifier ?? '');
   });
 
-  constructor() {
-    this.topbarState.actions.set([
-      { label: 'Edit trial', icon: 'fa-solid fa-pen', text: true, callback: () => this.editingTrial.set(true) },
-    ]);
-  }
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        { label: 'Edit trial', icon: 'fa-solid fa-pen', text: true, callback: () => this.editingTrial.set(true) },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   trial = signal<Trial | null>(null);
   trialId = signal('');
@@ -93,23 +99,26 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     const key = `marker:${marker.id}`;
     const cached = this.menuCache.get(key);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => {
-          this.editingMarker.set(marker);
-          this.addingMarker.set(false);
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => {
+            this.editingMarker.set(marker);
+            this.addingMarker.set(false);
+          },
         },
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.deleteMarker(marker.id),
-      },
-    ];
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.deleteMarker(marker.id),
+        },
+      );
+    }
     this.menuCache.set(key, items);
     return items;
   }
@@ -118,23 +127,26 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     const key = `note:${note.id}`;
     const cached = this.menuCache.get(key);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => {
-          this.editingNote.set(note);
-          this.addingNote.set(false);
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => {
+            this.editingNote.set(note);
+            this.addingNote.set(false);
+          },
         },
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.deleteNote(note.id),
-      },
-    ];
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.deleteNote(note.id),
+        },
+      );
+    }
     this.menuCache.set(key, items);
     return items;
   }

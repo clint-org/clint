@@ -21,6 +21,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
 
@@ -262,18 +263,23 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   private readonly confirmation = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
 
   private spaceId = '';
 
   private readonly actionEffect = effect(() => {
-    this.topbarState.actions.set([
-      {
-        label: this.addButtonLabel(),
-        icon: 'fa-solid fa-plus',
-        text: true,
-        callback: () => this.openCreateModal(),
-      },
-    ]);
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        {
+          label: this.addButtonLabel(),
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
     this.topbarState.recordCount.set(String(this.activeCount() || ''));
   });
 
@@ -359,20 +365,23 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   areaRowMenu(area: TherapeuticArea): MenuItem[] {
     const cached = this.areaMenuCache.get(area.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditAreaModal(area),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDeleteArea(area),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditAreaModal(area),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDeleteArea(area),
+        },
+      );
+    }
     this.areaMenuCache.set(area.id, items);
     return items;
   }
@@ -380,20 +389,23 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   moaRowMenu(item: MechanismOfAction): MenuItem[] {
     const cached = this.moaMenuCache.get(item.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditMoaModal(item),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDeleteMoa(item),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditMoaModal(item),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDeleteMoa(item),
+        },
+      );
+    }
     this.moaMenuCache.set(item.id, items);
     return items;
   }
@@ -401,20 +413,23 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   roaRowMenu(item: RouteOfAdministration): MenuItem[] {
     const cached = this.roaMenuCache.get(item.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditRoaModal(item),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDeleteRoa(item),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditRoaModal(item),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDeleteRoa(item),
+        },
+      );
+    }
     this.roaMenuCache.set(item.id, items);
     return items;
   }

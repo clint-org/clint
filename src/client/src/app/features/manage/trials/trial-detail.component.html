@@ -95,14 +95,16 @@
         </app-section-card>
       }
       <app-section-card title="Markers">
-        <p-button
-          actions
-          label="Add marker"
-          icon="fa-solid fa-plus"
-          [text]="true"
-          size="small"
-          (onClick)="addingMarker.set(true); editingMarker.set(null)"
-        />
+        @if (spaceRole.canEdit()) {
+          <p-button
+            actions
+            label="Add marker"
+            icon="fa-solid fa-plus"
+            [text]="true"
+            size="small"
+            (onClick)="addingMarker.set(true); editingMarker.set(null)"
+          />
+        }
 
         @if (addingMarker() || editingMarker()) {
           <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
@@ -165,10 +167,12 @@
                 }
               </td>
               <td class="col-actions">
-                <app-row-actions
-                  [items]="markerMenu(marker)"
-                  [ariaLabel]="'Actions for marker ' + marker.title"
-                />
+                @if (spaceRole.canEdit()) {
+                  <app-row-actions
+                    [items]="markerMenu(marker)"
+                    [ariaLabel]="'Actions for marker ' + marker.title"
+                  />
+                }
               </td>
             </tr>
           </ng-template>
@@ -182,14 +186,16 @@
 
       <!-- Notes -->
       <app-section-card title="Notes">
-        <p-button
-          actions
-          label="Add note"
-          icon="fa-solid fa-plus"
-          [text]="true"
-          size="small"
-          (onClick)="addingNote.set(true); editingNote.set(null)"
-        />
+        @if (spaceRole.canEdit()) {
+          <p-button
+            actions
+            label="Add note"
+            icon="fa-solid fa-plus"
+            [text]="true"
+            size="small"
+            (onClick)="addingNote.set(true); editingNote.set(null)"
+          />
+        }
 
         @if (addingNote() || editingNote()) {
           <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
@@ -212,7 +218,9 @@
                     {{ note.updated_at }}
                   </p>
                 </div>
-                <app-row-actions [items]="noteMenu(note)" ariaLabel="Actions for note" />
+                @if (spaceRole.canEdit()) {
+                  <app-row-actions [items]="noteMenu(note)" ariaLabel="Actions for note" />
+                }
               </li>
             }
           </ul>

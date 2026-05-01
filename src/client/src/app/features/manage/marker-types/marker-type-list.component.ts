@@ -17,6 +17,7 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 @Component({
   selector: 'app-marker-type-list',
@@ -41,7 +42,23 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
   spaceId = '';
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        {
+          label: 'Add marker type',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   markerTypes = signal<MarkerType[]>([]);
   loading = signal(true);
@@ -76,14 +93,6 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
-    this.topbarState.actions.set([
-      {
-        label: 'Add marker type',
-        icon: 'fa-solid fa-plus',
-        text: true,
-        callback: () => this.openCreateModal(),
-      },
-    ]);
     this.loadMarkerTypes();
   }
 
@@ -94,20 +103,23 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
   rowMenu(mt: MarkerType): MenuItem[] {
     const cached = this.menuCache.get(mt.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(mt),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.deleteType(mt.id),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(mt),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.deleteType(mt.id),
+        },
+      );
+    }
     this.menuCache.set(mt.id, items);
     return items;
   }

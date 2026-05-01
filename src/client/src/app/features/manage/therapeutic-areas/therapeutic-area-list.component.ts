@@ -15,6 +15,7 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { createGridState } from '../../../shared/grids';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 @Component({
   selector: 'app-therapeutic-area-list',
@@ -43,7 +44,23 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  protected spaceRole = inject(SpaceRoleService);
   spaceId = '';
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([
+        {
+          label: 'Add therapeutic area',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
+      ]);
+    } else {
+      this.topbarState.actions.set([]);
+    }
+  });
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
@@ -65,14 +82,6 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
-    this.topbarState.actions.set([
-      {
-        label: 'Add therapeutic area',
-        icon: 'fa-solid fa-plus',
-        text: true,
-        callback: () => this.openCreateModal(),
-      },
-    ]);
     await this.loadAreas();
   }
 
@@ -83,20 +92,23 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   rowMenu(area: TherapeuticArea): MenuItem[] {
     const cached = this.menuCache.get(area.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Edit',
-        icon: 'fa-solid fa-pen',
-        command: () => this.openEditModal(area),
-      },
-      { separator: true },
-      {
-        label: 'Delete',
-        icon: 'fa-solid fa-trash',
-        styleClass: 'row-actions-danger',
-        command: () => this.confirmDelete(area),
-      },
-    ];
+    const items: MenuItem[] = [];
+    if (this.spaceRole.canEdit()) {
+      items.push(
+        {
+          label: 'Edit',
+          icon: 'fa-solid fa-pen',
+          command: () => this.openEditModal(area),
+        },
+        { separator: true },
+        {
+          label: 'Delete',
+          icon: 'fa-solid fa-trash',
+          styleClass: 'row-actions-danger',
+          command: () => this.confirmDelete(area),
+        },
+      );
+    }
     this.menuCache.set(area.id, items);
     return items;
   }

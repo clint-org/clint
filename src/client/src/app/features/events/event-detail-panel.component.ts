@@ -19,7 +19,7 @@ import { MarkerDetailContentComponent } from '../../shared/components/marker-det
           </p>
         </div>
         <div class="flex shrink-0 items-center gap-1">
-          @if (detail()) {
+          @if (detail() && canEdit()) {
             <button
               type="button"
               class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -164,6 +164,8 @@ export class EventDetailPanelComponent {
   readonly detail = input<EventDetail | null>(null);
   /** Full catalyst detail -- set when a row of source_type 'marker' is selected. */
   readonly catalystDetail = input<CatalystDetail | null>(null);
+  /** When false, the edit pen button is hidden (e.g., for space readers). */
+  readonly canEdit = input<boolean>(true);
 
   readonly edit = output<void>();
   readonly panelClose = output<void>();
