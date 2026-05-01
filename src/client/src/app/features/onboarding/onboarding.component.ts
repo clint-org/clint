@@ -8,6 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { TenantService } from '../../core/services/tenant.service';
 import { SpaceService } from '../../core/services/space.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 
 @Component({
@@ -76,6 +77,16 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             <p class="mt-4 text-center text-[11px] text-slate-400">
               Don't have an invite? Ask your administrator to send you one.
             </p>
+            <p class="mt-2 text-center text-[11px] text-slate-400">
+              Wrong account?
+              <button
+                type="button"
+                (click)="signOut()"
+                class="text-brand-600 underline-offset-2 hover:underline focus:outline-none focus-visible:underline"
+              >
+                Sign out
+              </button>
+            </p>
           </div>
         </div>
       </div>
@@ -87,6 +98,7 @@ export class OnboardingComponent {
   private spaceService = inject(SpaceService);
   private router = inject(Router);
   private brand = inject(BrandContextService);
+  private supabase = inject(SupabaseService);
 
   readonly appName = this.brand.appDisplayName;
   readonly logoUrl = this.brand.logoUrl;
@@ -136,5 +148,10 @@ export class OnboardingComponent {
     } finally {
       this.joining.set(false);
     }
+  }
+
+  async signOut(): Promise<void> {
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
   }
 }

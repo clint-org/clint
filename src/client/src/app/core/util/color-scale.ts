@@ -17,11 +17,11 @@ import type { BrandScale } from '../../config/primeng-theme';
  * scales; extreme seeds still produce coherent palettes but sacrifice
  * subtlety in the surface tints.
  */
-const STOPS: ReadonlyArray<{
+const STOPS: readonly {
   key: keyof BrandScale;
   lDelta: number;
   satCap?: number;
-}> = [
+}[] = [
   { key: 50, lDelta: +0.45, satCap: 0.4 },
   { key: 100, lDelta: +0.4, satCap: 0.45 },
   { key: 200, lDelta: +0.32, satCap: 0.55 },
