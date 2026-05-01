@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Future Catalysts feed Sketch</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --green-600: #16a34a;
+        --red-600: #dc2626;
+        --blue-600: #2563eb;
+        --amber-600: #d97706;
+        --violet-600: #7c3aed;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 56px 64px 96px;
+      }
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+
+      .head {
+        margin-bottom: 36px;
+      }
+      .head .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .head h1 {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--slate-900);
+        line-height: 1.2;
+        letter-spacing: -0.005em;
+        margin-bottom: 14px;
+        max-width: 800px;
+      }
+      .head p {
+        font-size: 15px;
+        color: var(--slate-600);
+        max-width: 780px;
+      }
+      .head p + p {
+        margin-top: 8px;
+      }
+
+      .bucket {
+        margin-top: 32px;
+      }
+      .bucket-head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        padding: 0 0 10px 0;
+        border-bottom: 1px solid var(--slate-200);
+        margin-bottom: 0;
+      }
+      .bucket-head h2 {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--slate-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .bucket-head .count {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-400);
+        letter-spacing: 0.08em;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 24px;
+        padding: 22px 0 22px 0;
+        border-bottom: 1px solid var(--slate-100);
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+
+      .date-rail {
+        font-family: var(--font-mono);
+      }
+      .date-rail .day {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.01em;
+        line-height: 1;
+      }
+      .date-rail .month {
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 6px;
+      }
+      .date-rail .dow {
+        font-size: 10px;
+        color: var(--slate-400);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+      .date-rail .projected {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 1px 6px;
+        border: 1px solid var(--slate-300);
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .body {
+        min-width: 0;
+      }
+
+      .row-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+      .kind-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border: 1px solid currentColor;
+      }
+      .kind-pill.data {
+        color: var(--green-600);
+      }
+      .kind-pill.regulatory {
+        color: var(--red-600);
+      }
+      .kind-pill.approval {
+        color: var(--blue-600);
+      }
+      .kind-pill.commercial {
+        color: var(--amber-600);
+      }
+      .kind-pill.corporate {
+        color: var(--violet-600);
+      }
+      .breadcrumb {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+      }
+      .breadcrumb .co {
+        font-weight: 700;
+        color: var(--slate-700);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .row h3 {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        line-height: 1.3;
+        margin: 4px 0 10px 0;
+      }
+
+      .read {
+        display: grid;
+        grid-template-columns: 3px 1fr;
+        gap: 14px;
+        margin-top: 12px;
+      }
+      .read .rail {
+        background: var(--brand-600);
+      }
+      .read .body-content {
+        padding: 0 0 2px 0;
+      }
+      .read .stamp {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-500);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .read .stamp .src {
+        color: var(--brand-700);
+        font-weight: 700;
+        letter-spacing: 0.16em;
+      }
+      .read .stamp .dot {
+        width: 3px;
+        height: 3px;
+        background: var(--slate-300);
+      }
+      .read p {
+        font-size: 14px;
+        color: var(--slate-700);
+        line-height: 1.55;
+      }
+      .read p + p {
+        margin-top: 8px;
+      }
+      .read p strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+
+      .watch {
+        margin-top: 12px;
+      }
+      .watch-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .watch ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .watch li {
+        position: relative;
+        padding-left: 16px;
+        font-size: 13.5px;
+        color: var(--slate-700);
+      }
+      .watch li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 9px;
+        width: 6px;
+        height: 1px;
+        background: var(--brand-600);
+      }
+
+      .comparators {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .comparators-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        font-size: 12px;
+        color: var(--slate-700);
+      }
+      .chip .chip-co {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-500);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .one-liner {
+        margin-top: 8px;
+        padding: 8px 0 0 14px;
+        border-left: 2px solid var(--brand-300);
+        font-size: 13.5px;
+        color: var(--slate-700);
+        font-style: normal;
+      }
+      .one-liner .src {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--brand-700);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-right: 8px;
+      }
+
+      .bare-note {
+        margin-top: 8px;
+        font-size: 12.5px;
+        color: var(--slate-400);
+        font-style: italic;
+      }
+
+      /* Marker icon used inline in row meta -- shows halo when commentary present */
+      .marker-icon {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+
+      .footnote {
+        margin-top: 36px;
+        padding: 18px 20px;
+        border-left: 2px solid var(--brand-600);
+        background: white;
+        font-size: 13.5px;
+        color: var(--slate-700);
+      }
+      .footnote strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+
+    <div class="page">
+      <div class="head">
+        <div class="label">Sketch -- Future Catalysts feed</div>
+        <h1>Future Catalysts feed with inline primary intelligence.</h1>
+        <p>
+          The Future Catalysts feed lists upcoming markers (clinical, regulatory, approval, data) in
+          date order. Each row carries inline primary intelligence on that marker: thesis, what to
+          watch, linked entities. Rows without primary intelligence stay bare, mirroring the halo
+          principle on the timeline.
+        </p>
+        <p>
+          Three patterns shown: <strong>full read</strong> (thesis paragraph plus what-to-watch plus
+          linked entities), <strong>one-liner</strong> (short editorial line), and
+          <strong>bare</strong> (marker shown without analyst layer yet).
+        </p>
+      </div>
+
+      <div class="bucket">
+        <div class="bucket-head">
+          <h2>This week</h2>
+          <span class="count">3 catalysts</span>
+        </div>
+
+        <!-- ROW 1: full read -->
+        <div class="row">
+          <div class="date-rail">
+            <div class="day">Apr 30</div>
+            <div class="month">2026</div>
+            <div class="dow">Wed</div>
+          </div>
+          <div class="body">
+            <div class="row-meta">
+              <span class="marker-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="5.5"
+                    fill="#16a34a"
+                    stroke="#16a34a"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </span>
+              <span class="kind-pill data">Interim readout</span>
+              <span class="breadcrumb"
+                ><span class="co">AstraZeneca</span> &nbsp;/&nbsp; Verzubrix &nbsp;/&nbsp; ECHO-HF
+                &nbsp;/&nbsp; Phase 3</span
+              >
+            </div>
+            <h3>ECHO-HF interim analysis (n=420 of 1,200)</h3>
+
+            <div class="read">
+              <div class="rail" aria-hidden="true"></div>
+              <div class="body-content">
+                <div class="stamp">
+                  <span class="src">Stout</span><span class="dot"></span
+                  ><span>Updated 2026-04-29 by Stout</span>
+                </div>
+                <p>
+                  The interim is powered for early stopping on efficacy.
+                  <strong>We expect the DSMB to continue, not stop.</strong> Verzubrix's Phase 2b
+                  separation curves were impressive but the underlying mortality signal was driven
+                  by the open-label arm; with blinding restored at this scale the effect size should
+                  compress to a level that doesn't cross the early-stop boundary.
+                </p>
+                <p>
+                  If the DSMB does halt for efficacy, that is the dominant cardiometabolic asset of
+                  2026 and resets pricing power conversations across the class. If it halts for
+                  futility, AstraZeneca pivots its 2027 launch sequencing onto the GLP-1 follow-on.
+                </p>
+
+                <div class="watch">
+                  <div class="watch-label">What to watch</div>
+                  <ul>
+                    <li>DSMB statement language on event accrual rate and conditional power.</li>
+                    <li>Whether AstraZeneca repeats their Q4 guidance or revises.</li>
+                    <li>Pfizer's response on the Zelvox CARDIO-SHIELD enrollment cadence.</li>
+                  </ul>
+                </div>
+
+                <div class="comparators">
+                  <span class="comparators-label">Linked</span>
+                  <span class="chip"><span class="chip-co">PFE</span> Zelvox / CARDIO-SHIELD</span>
+                  <span class="chip"><span class="chip-co">LLY</span> Trizenta / GLOW-2</span>
+                  <span class="chip"><span class="chip-co">NVO</span> Femozin (preclin)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 2: one-liner -->
+        <div class="row">
+          <div class="date-rail">
+            <div class="day">May 02</div>
+            <div class="month">2026</div>
+            <div class="dow">Fri</div>
+          </div>
+          <div class="body">
+            <div class="row-meta">
+              <span class="marker-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <polygon
+                    points="9,1.5 16.5,9 9,16.5 1.5,9"
+                    fill="#2563eb"
+                    stroke="#2563eb"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </span>
+              <span class="kind-pill approval">FDA decision</span>
+              <span class="breadcrumb"
+                ><span class="co">Novartis</span> &nbsp;/&nbsp; Cardexa &nbsp;/&nbsp; PDUFA</span
+              >
+            </div>
+            <h3>Cardexa PDUFA decision (HF with preserved EF)</h3>
+
+            <div class="one-liner">
+              <span class="src">Stout</span>Approval expected on label. Risk is a narrower
+              indication than Novartis is guiding to; class-of-2032 LoE pressure makes the wider
+              label commercially load-bearing.
+            </div>
+
+            <div class="comparators">
+              <span class="comparators-label">Comparators</span>
+              <span class="chip"><span class="chip-co">PFE</span> Zelvox</span>
+              <span class="chip"><span class="chip-co">AZN</span> Verzubrix</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 3: bare -->
+        <div class="row">
+          <div class="date-rail">
+            <div class="day">May 03</div>
+            <div class="month">2026</div>
+            <div class="dow">Sat</div>
+          </div>
+          <div class="body">
+            <div class="row-meta">
+              <span class="marker-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle cx="9" cy="9" r="5.5" fill="white" stroke="#dc2626" stroke-width="1.5" />
+                </svg>
+              </span>
+              <span class="kind-pill regulatory">EMA CHMP opinion</span>
+              <span class="breadcrumb"
+                ><span class="co">Boehringer</span> &nbsp;/&nbsp; Empacor &nbsp;/&nbsp; EU label
+                expansion</span
+              >
+            </div>
+            <h3>Empacor CHMP opinion on chronic kidney disease label</h3>
+            <div class="bare-note">
+              No analyst commentary yet. Synced from EMA agenda 2026-04-22.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bucket">
+        <div class="bucket-head">
+          <h2>This month</h2>
+          <span class="count">2 of 8 shown</span>
+        </div>
+
+        <!-- ROW 4: full read with projected date -->
+        <div class="row">
+          <div class="date-rail">
+            <div class="day">Q2</div>
+            <div class="month">2026</div>
+            <div class="dow">Quarter</div>
+            <div class="projected">Projected</div>
+          </div>
+          <div class="body">
+            <div class="row-meta">
+              <span class="marker-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <circle cx="9" cy="9" r="5.5" fill="white" stroke="#16a34a" stroke-width="1.5" />
+                </svg>
+              </span>
+              <span class="kind-pill data">Topline readout</span>
+              <span class="breadcrumb"
+                ><span class="co">Pfizer</span> &nbsp;/&nbsp; Zelvox &nbsp;/&nbsp; CARDIO-SHIELD
+                &nbsp;/&nbsp; Phase 3</span
+              >
+            </div>
+            <h3>CARDIO-SHIELD topline (window: late Q2)</h3>
+
+            <div class="read">
+              <div class="rail" aria-hidden="true"></div>
+              <div class="body-content">
+                <div class="stamp">
+                  <span class="src">Stout</span><span class="dot"></span
+                  ><span>Updated 2026-04-18 by Stout</span>
+                </div>
+                <p>
+                  Pfizer is guiding to "first half" but enrollment finished mid-2024 and event
+                  accrual has been faster than the protocol assumed.
+                  <strong>We're calling June, with a tail risk of late May.</strong> Pulled forward
+                  from our prior read of Q3.
+                </p>
+                <p>
+                  This sets up an awkward sequencing problem for AstraZeneca: if ECHO-HF interim
+                  continues (see Apr 30), Verzubrix's first commercial-relevant readout now lands
+                  after Zelvox's, not before, which inverts the narrative AstraZeneca's IR has been
+                  running on.
+                </p>
+
+                <div class="watch">
+                  <div class="watch-label">What to watch</div>
+                  <ul>
+                    <li>Pfizer pre-announcing the readout window at JPM 2026 sidebars.</li>
+                    <li>
+                      Whether Pfizer publishes the SAP amendment that loosened the secondary
+                      endpoint.
+                    </li>
+                    <li>Sell-side notes from CHF specialists in the next two weeks.</li>
+                  </ul>
+                </div>
+
+                <div class="comparators">
+                  <span class="comparators-label">Linked</span>
+                  <span class="chip"><span class="chip-co">AZN</span> Verzubrix / ECHO-HF</span>
+                  <span class="chip"><span class="chip-co">NVS</span> Cardexa (approved)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 5: corporate event with one-liner -->
+        <div class="row">
+          <div class="date-rail">
+            <div class="day">May 21</div>
+            <div class="month">2026</div>
+            <div class="dow">Thu</div>
+          </div>
+          <div class="body">
+            <div class="row-meta">
+              <span class="marker-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <rect
+                    x="3"
+                    y="3"
+                    width="12"
+                    height="12"
+                    fill="#7c3aed"
+                    stroke="#7c3aed"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </span>
+              <span class="kind-pill corporate">Investor day</span>
+              <span class="breadcrumb"
+                ><span class="co">AstraZeneca</span> &nbsp;/&nbsp; Cardiometabolic strategy
+                update</span
+              >
+            </div>
+            <h3>AstraZeneca cardiometabolic franchise day</h3>
+
+            <div class="one-liner">
+              <span class="src">Stout</span>Watch for explicit framing of Verzubrix vs. the GLP-1
+              portfolio. If Pascal opens with the GLP-1 follow-on first, that's a tell that internal
+              confidence in ECHO-HF dropped after the Apr 30 interim.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footnote">
+        <strong>Design notes.</strong> The brand-700 left rail on the primary intelligence block
+        matches the marker tooltip and the trial detail page idiom. Linked entity chips are the same
+        primitive that appears on trial detail and entity pages; clicking a chip lands on that
+        entity. Every commentary block carries the agency stamp ("Updated 2026-04-29 by Stout") in
+        the client view; the agency-internal view shows individual analyst initials. <br /><br />
+        <strong>Trigger parity with the timeline.</strong> The marker icon in each row's meta line
+        shows the halo if the row carries primary intelligence. Same field-driven trigger as the
+        timeline halo: presence of a description on the marker flips the halo on. A bare row gets no
+        halo, which is the visual contract for "data point, not yet curated."
+      </div>
+    </div>
+  </body>
+</html>

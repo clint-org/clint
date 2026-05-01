@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Trial Detail / Stout's Read Sketch</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --green-600: #16a34a;
+        --red-600: #dc2626;
+        --blue-600: #2563eb;
+        --amber-600: #d97706;
+        --violet-600: #7c3aed;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 56px 64px 96px;
+      }
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+
+      .head {
+        margin-bottom: 28px;
+      }
+      .head .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .head h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--slate-900);
+        line-height: 1.2;
+        letter-spacing: -0.005em;
+        margin-bottom: 8px;
+        max-width: 800px;
+      }
+      .head p {
+        font-size: 14px;
+        color: var(--slate-600);
+        max-width: 780px;
+      }
+
+      /* Page chrome -- breadcrumb, trial header */
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+      }
+      .breadcrumb .co {
+        font-weight: 700;
+        color: var(--slate-700);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .breadcrumb .sep {
+        color: var(--slate-300);
+      }
+
+      .trial-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 0 0 18px 0;
+        border-bottom: 1px solid var(--slate-200);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .trial-header .titles h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        line-height: 1.2;
+      }
+      .trial-header .titles .nct {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--slate-500);
+        letter-spacing: 0.04em;
+        margin-top: 4px;
+      }
+      .trial-header .pills {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1px solid var(--slate-300);
+        font-size: 11px;
+        color: var(--slate-600);
+        font-family: var(--font-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .pill.phase {
+        border-color: var(--brand-600);
+        color: var(--brand-700);
+      }
+      .pill.status {
+        border-color: var(--green-600);
+        color: var(--green-600);
+      }
+      .pill.loe {
+        border-color: var(--slate-400);
+        color: var(--slate-500);
+      }
+
+      /* Stout's read block */
+      .read-block {
+        display: grid;
+        grid-template-columns: 4px 1fr;
+        gap: 18px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        padding: 0;
+        margin-bottom: 28px;
+      }
+      .read-block .rail {
+        background: var(--brand-600);
+      }
+      .read-block .content {
+        padding: 24px 28px 24px 0;
+      }
+      .read-block .read-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .read-block .read-head .title {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .read-block .read-head .title .src {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .read-block .read-head .title h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+      }
+      .read-block .read-head .stamp {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .read-block .thesis p {
+        font-size: 15px;
+        color: var(--slate-700);
+        line-height: 1.6;
+      }
+      .read-block .thesis p + p {
+        margin-top: 10px;
+      }
+      .read-block .thesis p strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 28px;
+        margin-top: 22px;
+      }
+      @media (max-width: 900px) {
+        .grid-3 {
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+      }
+
+      .sub-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      .watch ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .watch li {
+        position: relative;
+        padding-left: 16px;
+        font-size: 13.5px;
+        color: var(--slate-700);
+      }
+      .watch li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 9px;
+        width: 6px;
+        height: 1px;
+        background: var(--brand-600);
+      }
+
+      .comparators ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .comparators li {
+        padding: 8px 10px;
+        background: var(--slate-50);
+        border: 1px solid var(--slate-200);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .comparators li .ent {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .comparators li .co {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .comparators li .name {
+        font-size: 13.5px;
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      .comparators li .gloss {
+        font-size: 12px;
+        color: var(--slate-600);
+        line-height: 1.4;
+      }
+
+      .implications ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .implications li {
+        padding: 6px 0 6px 14px;
+        border-left: 2px solid var(--slate-200);
+        font-size: 13px;
+        color: var(--slate-700);
+      }
+      .implications li strong {
+        color: var(--slate-900);
+        font-weight: 600;
+        display: block;
+        font-size: 11px;
+        font-family: var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+        margin-bottom: 2px;
+      }
+
+      /* Recent analyst activity */
+      .activity {
+        background: white;
+        border: 1px solid var(--slate-200);
+        padding: 22px 26px;
+        margin-bottom: 28px;
+      }
+      .activity .act-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .activity h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--slate-900);
+        font-family: var(--font-mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .activity .meta {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .activity ol {
+        list-style: none;
+        padding: 0;
+      }
+      .activity ol li {
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 18px;
+        padding: 12px 0;
+        border-top: 1px solid var(--slate-100);
+      }
+      .activity ol li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .activity .when {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+        padding-top: 1px;
+      }
+      .activity .what {
+        font-size: 13.5px;
+        color: var(--slate-700);
+      }
+      .activity .what .who {
+        color: var(--brand-700);
+        font-weight: 600;
+      }
+      .activity .what .verb {
+        color: var(--slate-500);
+      }
+
+      /* Markers table snippet */
+      .markers {
+        background: white;
+        border: 1px solid var(--slate-200);
+        padding: 0;
+      }
+      .markers .m-head {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--slate-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .markers .m-head h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--slate-900);
+        font-family: var(--font-mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .markers .m-head .meta {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .markers table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .markers thead th {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--slate-200);
+        background: var(--slate-50);
+      }
+      .markers tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--slate-100);
+        vertical-align: top;
+        color: var(--slate-700);
+      }
+      .markers tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      .markers .m-icon {
+        width: 22px;
+      }
+      .markers .m-date {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        white-space: nowrap;
+        color: var(--slate-700);
+      }
+      .markers .m-title {
+        font-size: 13.5px;
+        color: var(--slate-900);
+        font-weight: 500;
+      }
+      .markers .m-note {
+        font-size: 12px;
+        color: var(--slate-500);
+        margin-top: 4px;
+        line-height: 1.45;
+      }
+      .markers .m-proj {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border: 1px solid var(--slate-300);
+        display: inline-block;
+      }
+      .markers .m-proj.actual {
+        color: var(--green-600);
+        border-color: var(--green-600);
+      }
+      .markers .m-proj.stout {
+        color: var(--brand-700);
+        border-color: var(--brand-600);
+      }
+      .markers .m-proj.company {
+        color: var(--slate-500);
+      }
+
+      .footnote {
+        margin-top: 36px;
+        padding: 18px 20px;
+        border-left: 2px solid var(--brand-600);
+        background: white;
+        font-size: 13.5px;
+        color: var(--slate-700);
+      }
+      .footnote strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+
+    <div class="page">
+      <div class="head">
+        <div class="label">Sketch -- Trial Detail / Stout's Read</div>
+        <h1>The trial detail page opens with Stout's view, not with the markers table.</h1>
+        <p>
+          Today the trial detail is a markers grid with notes off to the side. This sketch leads
+          with Stout's read (thesis, what to watch, comparators, BD/strategy implications), follows
+          with recent analyst activity, then renders the markers table beneath. The structure
+          mirrors a sell-side research note: thesis first, supporting facts second.
+        </p>
+      </div>
+
+      <!-- Trial chrome -->
+      <div class="breadcrumb">
+        <span class="co">Pfizer</span><span class="sep">/</span> <span>Zelvox</span
+        ><span class="sep">/</span>
+        <span>CARDIO-SHIELD</span>
+      </div>
+
+      <div class="trial-header">
+        <div class="titles">
+          <h2>CARDIO-SHIELD</h2>
+          <div class="nct">NCT05123456 &nbsp;&middot;&nbsp; Heart failure with reduced EF</div>
+        </div>
+        <div class="pills">
+          <span class="pill phase">Phase 3 pivotal</span>
+          <span class="pill status">Recruiting</span>
+          <span class="pill loe">LoE 2032</span>
+        </div>
+      </div>
+
+      <!-- Stout's read block -->
+      <div class="read-block">
+        <div class="rail" aria-hidden="true"></div>
+        <div class="content">
+          <div class="read-head">
+            <div class="title">
+              <span class="src">Primary intelligence</span>
+              <h3>The pivotal that defines Pfizer's cardiometabolic franchise through 2030.</h3>
+            </div>
+            <div class="stamp">Updated 2026-04-21 by Stout</div>
+          </div>
+
+          <div class="thesis">
+            <p>
+              CARDIO-SHIELD is Pfizer's most consequential cardiometabolic readout this decade.
+              <strong
+                >The trial is over-enrolled, event accrual is running ahead of the protocol, and
+                topline lands in late Q2 2026 (pulled in from prior Q3 read).</strong
+              >
+              Pfizer has been guiding to "first half" but the cadence we're tracking points to June,
+              not May.
+            </p>
+            <p>
+              The base case is a positive primary endpoint with an effect size in line with the
+              Phase 2b confidence intervals. The interesting question is the secondary: an SAP
+              amendment in late 2024 loosened the composite definition, and Pfizer has not published
+              the rationale. That's the line in the readout where the bull and bear cases diverge.
+            </p>
+          </div>
+
+          <div class="grid-3">
+            <div class="watch">
+              <div class="sub-label">What to watch</div>
+              <ul>
+                <li>Event accrual rate vs. protocol (signal: was the SAP amendment defensive).</li>
+                <li>Pfizer pre-announcing the readout window at JPM 2026.</li>
+                <li>Sell-side notes from CHF specialists post Apr 30 ECHO-HF interim.</li>
+                <li>FDA pre-NDA meeting minutes (should land late Q2).</li>
+              </ul>
+            </div>
+
+            <div class="comparators">
+              <div class="sub-label">Comparators</div>
+              <ul>
+                <li>
+                  <div class="ent">
+                    <span class="co">AZN</span><span class="name">Verzubrix / ECHO-HF</span>
+                  </div>
+                  <div class="gloss">
+                    Direct competitor; interim Apr 30. If continues, Pfizer's launch window narrows.
+                  </div>
+                </li>
+                <li>
+                  <div class="ent">
+                    <span class="co">NVS</span><span class="name">Cardexa</span>
+                  </div>
+                  <div class="gloss">
+                    Approved in HF-pEF, not HF-rEF. Different patient pool but shared payer
+                    conversation.
+                  </div>
+                </li>
+                <li>
+                  <div class="ent">
+                    <span class="co">LLY</span><span class="name">Trizenta / GLOW-2</span>
+                  </div>
+                  <div class="gloss">
+                    Phase 3 readout 2027; Pfizer's window of exclusivity in HF-rEF runs ~14 months.
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="watch">
+              <div class="sub-label">Implications</div>
+              <ul>
+                <li>
+                  Asia-Pacific rights are unbundled in the current Pfizer co-promote with Sumitomo.
+                  A positive readout repositions that contract at renewal in 2027.
+                </li>
+                <li>
+                  If positive, resets the cardiometabolic narrative against AstraZeneca and pulls
+                  PFE's R&amp;D-to-launch productivity story back into the bull case for 2027 IR
+                  positioning.
+                </li>
+                <li>
+                  Three small-cap follow-ons (Tenaya, Cytokinetics, Cardurion) become more dilutive
+                  vs. acquirable depending on the secondary endpoint magnitude.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Referenced in -->
+      <div class="activity" style="margin-bottom: 28px">
+        <div class="act-head">
+          <h4>Referenced in</h4>
+          <span class="meta">3 reads link to this trial</span>
+        </div>
+        <ol style="display: flex; flex-direction: column; gap: 12px">
+          <li
+            style="
+              display: grid;
+              grid-template-columns: 110px 1fr auto;
+              gap: 18px;
+              padding: 12px 0;
+              border-top: 1px solid var(--slate-100);
+              align-items: flex-start;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 9.5px;
+                  font-weight: 700;
+                  color: var(--brand-700);
+                  letter-spacing: 0.14em;
+                  text-transform: uppercase;
+                "
+              >
+                Competitor
+              </div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10.5px;
+                  color: var(--slate-500);
+                  margin-top: 2px;
+                "
+              >
+                Apr 30, 2026
+              </div>
+            </div>
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  color: var(--slate-500);
+                  letter-spacing: 0.06em;
+                  margin-bottom: 4px;
+                "
+              >
+                From:
+                <span
+                  style="
+                    font-weight: 700;
+                    color: var(--slate-700);
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                  "
+                  >AZN</span
+                >
+                / Verzubrix / ECHO-HF
+              </div>
+              <div
+                style="
+                  font-size: 14px;
+                  font-weight: 600;
+                  color: var(--slate-900);
+                  line-height: 1.35;
+                "
+              >
+                ECHO-HF DSMB continued the trial. The thesis holds.
+              </div>
+              <div
+                style="
+                  font-size: 12.5px;
+                  color: var(--slate-600);
+                  margin-top: 4px;
+                  line-height: 1.5;
+                "
+              >
+                "...AstraZeneca's launch sequencing logic now shifts behind Pfizer's CARDIO-SHIELD,
+                not in front of it..."
+              </div>
+            </div>
+            <a
+              href="#"
+              style="
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--brand-700);
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                text-decoration: none;
+              "
+              >Read &rarr;</a
+            >
+          </li>
+
+          <li
+            style="
+              display: grid;
+              grid-template-columns: 110px 1fr auto;
+              gap: 18px;
+              padding: 12px 0;
+              border-top: 1px solid var(--slate-100);
+              align-items: flex-start;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 9.5px;
+                  font-weight: 700;
+                  color: var(--brand-700);
+                  letter-spacing: 0.14em;
+                  text-transform: uppercase;
+                "
+              >
+                Same class
+              </div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10.5px;
+                  color: var(--slate-500);
+                  margin-top: 2px;
+                "
+              >
+                Apr 22, 2026
+              </div>
+            </div>
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  color: var(--slate-500);
+                  letter-spacing: 0.06em;
+                  margin-bottom: 4px;
+                "
+              >
+                From:
+                <span
+                  style="
+                    font-weight: 700;
+                    color: var(--slate-700);
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                  "
+                  >NVS</span
+                >
+                / Cardexa
+              </div>
+              <div
+                style="
+                  font-size: 14px;
+                  font-weight: 600;
+                  color: var(--slate-900);
+                  line-height: 1.35;
+                "
+              >
+                Cardexa approved on the wider HF-pEF label.
+              </div>
+              <div
+                style="
+                  font-size: 12.5px;
+                  color: var(--slate-600);
+                  margin-top: 4px;
+                  line-height: 1.5;
+                "
+              >
+                "...resets the comparator pricing conversation for both Zelvox and Verzubrix at
+                launch..."
+              </div>
+            </div>
+            <a
+              href="#"
+              style="
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--brand-700);
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                text-decoration: none;
+              "
+              >Read &rarr;</a
+            >
+          </li>
+
+          <li
+            style="
+              display: grid;
+              grid-template-columns: 110px 1fr auto;
+              gap: 18px;
+              padding: 12px 0;
+              border-top: 1px solid var(--slate-100);
+              align-items: flex-start;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 9.5px;
+                  font-weight: 700;
+                  color: var(--brand-700);
+                  letter-spacing: 0.14em;
+                  text-transform: uppercase;
+                "
+              >
+                Thematic
+              </div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10.5px;
+                  color: var(--slate-500);
+                  margin-top: 2px;
+                "
+              >
+                Apr 27, 2026
+              </div>
+            </div>
+            <div>
+              <div
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  color: var(--slate-500);
+                  letter-spacing: 0.06em;
+                  margin-bottom: 4px;
+                "
+              >
+                From: thematic / Heart Failure landscape briefing
+              </div>
+              <div
+                style="
+                  font-size: 14px;
+                  font-weight: 600;
+                  color: var(--slate-900);
+                  line-height: 1.35;
+                "
+              >
+                Q2 2026 briefing -- the cardiometabolic sequencing problem.
+              </div>
+              <div
+                style="
+                  font-size: 12.5px;
+                  color: var(--slate-600);
+                  margin-top: 4px;
+                  line-height: 1.5;
+                "
+              >
+                "...CARDIO-SHIELD is now the asset that defines the 2027 narrative for Pfizer..."
+              </div>
+            </div>
+            <a
+              href="#"
+              style="
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                color: var(--brand-700);
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                text-decoration: none;
+              "
+              >Read &rarr;</a
+            >
+          </li>
+        </ol>
+      </div>
+
+      <!-- Recent analyst activity -->
+      <div class="activity">
+        <div class="act-head">
+          <h4>Recent analyst activity</h4>
+          <span class="meta">Last 30 days &nbsp;&middot;&nbsp; 5 entries</span>
+        </div>
+        <ol>
+          <li>
+            <div class="when">2026-04-21</div>
+            <div class="what">
+              <span class="who">Stout</span>
+              <span class="verb">revised the primary intelligence thesis</span>. Pulled the topline
+              window from Q3 to late Q2 after the protocol amendment trail came public.
+            </div>
+          </li>
+          <li>
+            <div class="when">2026-04-18</div>
+            <div class="what">
+              <span class="who">Stout</span> <span class="verb">added a new marker</span>: SAP
+              amendment trail (Pfizer 8-K reference). Tagged as <em>Stout estimate</em>.
+            </div>
+          </li>
+          <li>
+            <div class="when">2026-04-09</div>
+            <div class="what">
+              <span class="who">Stout</span> <span class="verb">updated marker commentary</span> on
+              the FDA pre-NDA meeting after sell-side coverage.
+            </div>
+          </li>
+          <li>
+            <div class="when">2026-04-02</div>
+            <div class="what">
+              <span class="who">Stout</span> <span class="verb">linked entity</span>: Trizenta /
+              GLOW-2 (LLY) as a future-window competitor.
+            </div>
+          </li>
+          <li>
+            <div class="when">2026-03-26</div>
+            <div class="what">
+              <span class="who">Stout</span> <span class="verb">added a watch item</span>: monitor
+              event accrual rate vs. protocol.
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Markers table snippet (existing layout, abbreviated) -->
+      <div class="markers">
+        <div class="m-head">
+          <h4>Markers</h4>
+          <span class="meta">12 events &nbsp;&middot;&nbsp; 4 with Stout commentary</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="m-icon"></th>
+              <th>Date</th>
+              <th>Event</th>
+              <th>Projection</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="m-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <circle cx="9" cy="9" r="5.5" fill="white" stroke="#16a34a" stroke-width="1.5" />
+                </svg>
+              </td>
+              <td class="m-date">Q2 '26</td>
+              <td>
+                <div class="m-title">CARDIO-SHIELD topline readout</div>
+                <div class="m-note">
+                  Window pulled to late Q2 from Q3. See thesis above for SAP amendment context and
+                  event accrual signal.
+                </div>
+              </td>
+              <td><span class="m-proj stout">Stout estimate</span></td>
+              <td class="m-date">stout</td>
+            </tr>
+            <tr>
+              <td class="m-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <circle cx="9" cy="9" r="5.5" fill="white" stroke="#16a34a" stroke-width="1.5" />
+                </svg>
+              </td>
+              <td class="m-date">2025-12</td>
+              <td>
+                <div class="m-title">SAP amendment (secondary endpoint composite loosened)</div>
+                <div class="m-note">
+                  Filed quietly; no rationale in the corresponding 8-K. Read: defensive amendment
+                  ahead of an interim DSMB look.
+                </div>
+              </td>
+              <td><span class="m-proj actual">Actual</span></td>
+              <td class="m-date">analyst</td>
+            </tr>
+            <tr>
+              <td class="m-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="5.5"
+                    fill="#16a34a"
+                    stroke="#16a34a"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </td>
+              <td class="m-date">2024-08</td>
+              <td>
+                <div class="m-title">Last patient enrolled (n=1,200)</div>
+              </td>
+              <td><span class="m-proj actual">Actual</span></td>
+              <td class="m-date">CT.gov</td>
+            </tr>
+            <tr>
+              <td class="m-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="5.5"
+                    fill="#16a34a"
+                    stroke="#16a34a"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </td>
+              <td class="m-date">2023-06</td>
+              <td>
+                <div class="m-title">First patient enrolled</div>
+              </td>
+              <td><span class="m-proj actual">Actual</span></td>
+              <td class="m-date">CT.gov</td>
+            </tr>
+            <tr>
+              <td class="m-icon">
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <circle
+                    cx="9"
+                    cy="9"
+                    r="7.5"
+                    fill="none"
+                    stroke="#0f766e"
+                    stroke-width="1"
+                    opacity="0.85"
+                  />
+                  <polygon
+                    points="9,1.5 16.5,9 9,16.5 1.5,9"
+                    fill="#2563eb"
+                    stroke="#2563eb"
+                    stroke-width="1.5"
+                  />
+                </svg>
+              </td>
+              <td class="m-date">2026-Q3</td>
+              <td>
+                <div class="m-title">FDA pre-NDA meeting</div>
+                <div class="m-note">
+                  Meeting minutes typically land within 30 days. Watch for FDA push-back on the
+                  loosened secondary composite.
+                </div>
+              </td>
+              <td><span class="m-proj">Company guidance</span></td>
+              <td class="m-date">analyst</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footnote">
+        <strong>Design notes.</strong> The page leads with the analyst voice. Pills, breadcrumb, and
+        trial title give just enough orientation to know what trial you're on; everything below the
+        fold is either Stout's interpretation or the structured facts that interpretation rests on.
+        The markers table stays, but moves below the read because it's the supporting layer, not the
+        headline. <br /><br />
+        <strong>Recent analyst activity</strong> is the visible heartbeat that proves the dashboard
+        is being maintained. Each entry is a line item with the analyst's initials. This is what a
+        client sees when they log in mid-quarter, and it is the strongest signal that "Stout
+        publishes here, in real time" is true and not just a slide. <br /><br />
+        <strong>Implications</strong> (BD / Strategy / Licensing) is the structured field set you
+        accepted. Three lanes, brand-700 lane labels, prose body. This is where the read crosses
+        from "here's what we think happens" to "here's what to do about it," which is the
+        deliverable a client is paying for.
+      </div>
+    </div>
+  </body>
+</html>

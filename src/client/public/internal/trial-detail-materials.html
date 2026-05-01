@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Trial Detail / Materials Sketch</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --green-600: #16a34a;
+        --red-600: #dc2626;
+        --blue-600: #2563eb;
+        --amber-600: #d97706;
+        --violet-600: #7c3aed;
+        --pf-blue: #0093d0;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 56px 64px 96px;
+      }
+
+      .head {
+        margin-bottom: 28px;
+      }
+      .head .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .head h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--slate-900);
+        line-height: 1.2;
+        letter-spacing: -0.005em;
+        margin-bottom: 8px;
+        max-width: 800px;
+      }
+      .head p {
+        font-size: 14px;
+        color: var(--slate-600);
+        max-width: 780px;
+      }
+
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+      }
+      .breadcrumb .co {
+        font-weight: 700;
+        color: var(--slate-700);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .breadcrumb .sep {
+        color: var(--slate-300);
+      }
+      .trial-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 0 0 18px 0;
+        border-bottom: 1px solid var(--slate-200);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+      }
+      .trial-header .titles h2 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        line-height: 1.2;
+      }
+      .trial-header .titles .nct {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--slate-500);
+        letter-spacing: 0.04em;
+        margin-top: 4px;
+      }
+      .trial-header .pills {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1px solid var(--slate-300);
+        font-size: 11px;
+        color: var(--slate-600);
+        font-family: var(--font-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .pill.phase {
+        border-color: var(--brand-600);
+        color: var(--brand-700);
+      }
+      .pill.status {
+        border-color: var(--green-600);
+        color: var(--green-600);
+      }
+      .pill.loe {
+        border-color: var(--slate-400);
+        color: var(--slate-500);
+      }
+
+      .nav-strip {
+        background: white;
+        border: 1px solid var(--slate-200);
+        padding: 10px 18px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+      }
+      .nav-strip .label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-right: 12px;
+      }
+      .nav-strip a {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 6px 10px;
+        text-decoration: none;
+      }
+      .nav-strip a:hover {
+        color: var(--slate-900);
+      }
+      .nav-strip a.active {
+        color: var(--brand-700);
+        border-bottom: 2px solid var(--brand-600);
+        padding-bottom: 4px;
+        margin-bottom: -2px;
+      }
+
+      .mat-block {
+        background: white;
+        border: 1px solid var(--slate-200);
+      }
+      .mat-head {
+        padding: 22px 26px;
+        border-bottom: 1px solid var(--slate-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .mat-head h3 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--slate-900);
+        font-family: var(--font-mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .mat-head .meta {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+      }
+      .mat-head .meta b {
+        color: var(--slate-700);
+        font-weight: 700;
+      }
+      .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        background: var(--brand-700);
+        color: white;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+      }
+      .add-btn:hover {
+        background: var(--brand-800);
+      }
+      .add-btn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .filters {
+        padding: 14px 26px;
+        border-bottom: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .filters .gl {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        min-width: 70px;
+      }
+      .filter-chip {
+        padding: 4px 10px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-600);
+        background: white;
+        border: 1px solid var(--slate-300);
+        cursor: pointer;
+      }
+      .filter-chip:hover {
+        border-color: var(--slate-400);
+      }
+      .filter-chip.active {
+        background: var(--slate-900);
+        color: white;
+        border-color: var(--slate-900);
+      }
+      .filter-chip .ct {
+        font-weight: 400;
+        opacity: 0.7;
+        margin-left: 5px;
+      }
+
+      .mat-list {
+        padding: 0;
+      }
+      .mat-row {
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 18px;
+        padding: 14px 26px;
+        border-bottom: 1px solid var(--slate-100);
+        align-items: flex-start;
+        transition: background 120ms ease;
+        cursor: pointer;
+      }
+      .mat-row:last-child {
+        border-bottom: 0;
+      }
+      .mat-row:hover {
+        background: var(--slate-50);
+      }
+
+      .mat-thumb {
+        width: 80px;
+        height: 56px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        position: relative;
+        overflow: hidden;
+        flex: none;
+      }
+      .mat-thumb .ext {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        font-family: var(--font-mono);
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        padding: 1px 4px;
+        background: white;
+      }
+      .mat-thumb.pptx .ext {
+        color: var(--amber-600);
+        border: 1px solid var(--amber-600);
+      }
+      .mat-thumb.pdf .ext {
+        color: var(--red-600);
+        border: 1px solid var(--red-600);
+      }
+      .mat-thumb.docx .ext {
+        color: var(--blue-600);
+        border: 1px solid var(--blue-600);
+      }
+      .mat-thumb svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .mat-info {
+        min-width: 0;
+      }
+      .mat-info .top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+      .mat-info .mtype {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        background: var(--slate-100);
+        color: var(--slate-600);
+      }
+      .mat-info .mtype.briefing {
+        background: var(--brand-100);
+        color: var(--brand-700);
+      }
+      .mat-info .mtype.priority {
+        background: var(--brand-700);
+        color: white;
+      }
+      .mat-info h5 {
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        line-height: 1.35;
+      }
+      .mat-info .stamp {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.04em;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .mat-info .stamp .who {
+        color: var(--slate-700);
+        font-weight: 600;
+      }
+      .mat-info .stamp .who.ext {
+        color: var(--pf-blue);
+        font-weight: 700;
+      }
+      .mat-info .stamp .dot {
+        width: 3px;
+        height: 3px;
+        background: var(--slate-300);
+      }
+      .mat-info .links {
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .mat-info .links .lk {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .mat-info .ent-chip {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        padding: 1px 7px;
+        border: 1px solid var(--slate-300);
+        color: var(--slate-600);
+      }
+      .mat-info .ent-chip.this {
+        background: var(--brand-50);
+        color: var(--brand-700);
+        border-color: var(--brand-600);
+      }
+
+      .mat-row .mat-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+      .mat-row .ago {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .add-slot {
+        padding: 20px 26px;
+        background: var(--slate-50);
+        border-top: 2px dashed var(--slate-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        cursor: pointer;
+        transition: background 120ms ease;
+      }
+      .add-slot:hover {
+        background: var(--slate-100);
+      }
+      .add-slot .add-text {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .add-slot .add-text strong {
+        color: var(--brand-700);
+      }
+
+      .footnote {
+        margin-top: 28px;
+        padding: 18px 20px;
+        border-left: 2px solid var(--brand-600);
+        background: white;
+        font-size: 13px;
+        color: var(--slate-700);
+      }
+      .footnote strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+
+    <div class="page">
+      <div class="head">
+        <div class="label">Sketch -- Trial Detail / Materials</div>
+        <h1>Every PPT, PDF, and doc Stout has produced about this trial, attached to the trial.</h1>
+        <p>
+          This is the entity-level companion to the engagement landing's Recent materials feed. The
+          same registry, filtered to one trial. One list, recency-ordered, visible to everyone in
+          the engagement. Three material types: <strong>Briefing</strong>,
+          <strong>Priority Notice</strong>, <strong>Ad Hoc</strong>. Each row carries the type,
+          uploader, linked entities, and a slide-1 thumbnail.
+        </p>
+      </div>
+
+      <!-- Trial chrome -->
+      <div class="breadcrumb">
+        <span class="co">Pfizer</span><span class="sep">/</span> <span>Zelvox</span
+        ><span class="sep">/</span>
+        <span>CARDIO-SHIELD</span>
+      </div>
+
+      <div class="trial-header">
+        <div class="titles">
+          <h2>CARDIO-SHIELD</h2>
+          <div class="nct">NCT05123456 &nbsp;&middot;&nbsp; Heart failure with reduced EF</div>
+        </div>
+        <div class="pills">
+          <span class="pill phase">Phase 3 pivotal</span>
+          <span class="pill status">Recruiting</span>
+          <span class="pill loe">LoE 2032</span>
+        </div>
+      </div>
+
+      <div class="nav-strip">
+        <span class="label">Sections</span>
+        <a href="trial-detail-stout-read.html#read">Primary intelligence</a>
+        <a href="trial-detail-stout-read.html#referenced">Referenced in</a>
+        <a href="trial-detail-stout-read.html#activity">Recent activity</a>
+        <a href="#" class="active">Materials</a>
+        <a href="trial-detail-stout-read.html#markers">Markers</a>
+      </div>
+
+      <div class="mat-block" id="materials">
+        <div class="mat-head">
+          <div>
+            <h3>Materials</h3>
+            <div class="meta">
+              <b>6 attached</b>
+            </div>
+          </div>
+          <button class="add-btn" type="button">
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M8 1v14M1 8h14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            Attach material
+          </button>
+        </div>
+
+        <!-- Type filters -->
+        <div class="filters">
+          <span class="gl">Type</span>
+          <button class="filter-chip active">All <span class="ct">6</span></button>
+          <button class="filter-chip">Briefing <span class="ct">1</span></button>
+          <button class="filter-chip">Priority Notice <span class="ct">2</span></button>
+          <button class="filter-chip">Ad Hoc <span class="ct">3</span></button>
+        </div>
+
+        <!-- Flat list, recency-ordered -->
+        <div class="mat-list">
+          <!-- Row 1: Briefing, 3d ago -->
+          <div class="mat-row">
+            <div class="mat-thumb pptx">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="0" y="0" width="80" height="3" fill="#0d9488" />
+                <rect x="6" y="10" width="40" height="3" fill="#0f172a" />
+                <rect x="6" y="17" width="60" height="2" fill="#94a3b8" />
+                <rect x="6" y="22" width="50" height="2" fill="#94a3b8" />
+                <rect x="6" y="32" width="20" height="14" fill="#0d9488" opacity="0.18" />
+                <rect x="30" y="32" width="20" height="14" fill="#0d9488" opacity="0.4" />
+                <rect x="54" y="32" width="20" height="14" fill="#0d9488" opacity="0.7" />
+              </svg>
+              <span class="ext">PPTX</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype briefing">Briefing</span>
+                <span class="mtype">Q2 2026</span>
+              </div>
+              <h5>Q2 2026 Heart Failure quarterly briefing</h5>
+              <div class="stamp">
+                <span><span class="who">JM, RS</span> &middot; Apr 27, 2026</span>
+                <span class="dot"></span>
+                <span>38 slides &middot; 12.4 MB</span>
+                <span class="dot"></span>
+                <span>v3 (last revised Apr 28)</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+                <span class="ent-chip">Zelvox</span>
+                <span class="ent-chip">ECHO-HF</span>
+                <span class="ent-chip">Cardexa</span>
+                <span class="ent-chip">+4 more</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">3d ago</span>
+            </div>
+          </div>
+
+          <!-- Row 2: Priority Notice, 5d ago -->
+          <div class="mat-row">
+            <div class="mat-thumb pdf">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="6" y="6" width="44" height="3" fill="#0f172a" />
+                <rect x="6" y="13" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="18" width="64" height="2" fill="#94a3b8" />
+                <rect
+                  x="6"
+                  y="26"
+                  width="68"
+                  height="6"
+                  fill="#fef3c7"
+                  stroke="#d97706"
+                  stroke-width="0.5"
+                />
+                <rect x="6" y="36" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="41" width="60" height="2" fill="#94a3b8" />
+                <rect x="6" y="46" width="40" height="2" fill="#94a3b8" />
+              </svg>
+              <span class="ext">PDF</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype priority">Priority Notice</span>
+              </div>
+              <h5>AstraZeneca franchise day pre-read (May 21)</h5>
+              <div class="stamp">
+                <span><span class="who">JM</span> &middot; Apr 25, 2026</span>
+                <span class="dot"></span>
+                <span>4 pages</span>
+                <span class="dot"></span>
+                <span>References CARDIO-SHIELD on slide 3</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip">Verzubrix</span>
+                <span class="ent-chip">ECHO-HF</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">5d ago</span>
+            </div>
+          </div>
+
+          <!-- Row 3: Priority Notice, 9d ago -->
+          <div class="mat-row">
+            <div class="mat-thumb pdf">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="6" y="6" width="50" height="3" fill="#0f172a" />
+                <rect x="6" y="13" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="18" width="60" height="2" fill="#94a3b8" />
+                <rect x="6" y="23" width="64" height="2" fill="#94a3b8" />
+                <rect x="6" y="28" width="52" height="2" fill="#94a3b8" />
+                <rect x="6" y="36" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="41" width="56" height="2" fill="#94a3b8" />
+                <rect x="6" y="46" width="48" height="2" fill="#94a3b8" />
+              </svg>
+              <span class="ext">PDF</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype priority">Priority Notice</span>
+              </div>
+              <h5>CARDIO-SHIELD topline window pulled to late Q2 (memo)</h5>
+              <div class="stamp">
+                <span><span class="who">JM</span> &middot; Apr 21, 2026</span>
+                <span class="dot"></span>
+                <span>3 pages</span>
+                <span class="dot"></span>
+                <span>Distributed via email Apr 21, 14:02</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+                <span class="ent-chip">Zelvox</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">9d ago</span>
+            </div>
+          </div>
+
+          <!-- Row 4: Ad Hoc (client board pack), 2w ago -->
+          <div class="mat-row">
+            <div class="mat-thumb pptx">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="0" y="0" width="80" height="3" fill="#0093d0" />
+                <rect x="6" y="10" width="40" height="3" fill="#0f172a" />
+                <rect x="6" y="17" width="50" height="2" fill="#94a3b8" />
+                <rect x="6" y="26" width="20" height="22" fill="#0093d0" opacity="0.15" />
+                <rect x="30" y="26" width="20" height="22" fill="#0093d0" opacity="0.3" />
+                <rect x="54" y="26" width="20" height="22" fill="#0093d0" opacity="0.6" />
+              </svg>
+              <span class="ext">PPTX</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype">Ad Hoc</span>
+              </div>
+              <h5>Pfizer Cardiometabolic Q1 board read (CARDIO-SHIELD section)</h5>
+              <div class="stamp">
+                <span
+                  >Uploaded by <span class="who ext">D. Reyes (Pfizer)</span> &middot; Apr 14,
+                  2026</span
+                >
+                <span class="dot"></span>
+                <span>12 slides</span>
+                <span class="dot"></span>
+                <span>Pfizer cardiometabolic SteerCo</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+                <span class="ent-chip">Zelvox</span>
+                <span class="ent-chip">Pfizer cardiometabolic franchise</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">2w ago</span>
+            </div>
+          </div>
+
+          <!-- Row 5: Ad Hoc, 3mo ago -->
+          <div class="mat-row">
+            <div class="mat-thumb docx">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="6" y="6" width="60" height="2" fill="#94a3b8" />
+                <rect x="6" y="11" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="16" width="56" height="2" fill="#94a3b8" />
+                <rect x="6" y="21" width="64" height="2" fill="#94a3b8" />
+                <rect x="6" y="29" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="34" width="60" height="2" fill="#94a3b8" />
+                <rect x="6" y="39" width="50" height="2" fill="#94a3b8" />
+                <rect x="6" y="44" width="64" height="2" fill="#94a3b8" />
+                <rect x="6" y="49" width="40" height="2" fill="#94a3b8" />
+              </svg>
+              <span class="ext">DOCX</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype">Ad Hoc</span>
+              </div>
+              <h5>Pfizer Q1 earnings call: annotated transcript</h5>
+              <div class="stamp">
+                <span><span class="who">JM</span> &middot; Feb 4, 2026</span>
+                <span class="dot"></span>
+                <span>11 pages</span>
+                <span class="dot"></span>
+                <span>3 callouts on CARDIO-SHIELD timing language</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip">Pfizer</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+                <span class="ent-chip">Zelvox</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">3mo ago</span>
+            </div>
+          </div>
+
+          <!-- Row 6: Ad Hoc, 20mo ago -->
+          <div class="mat-row">
+            <div class="mat-thumb docx">
+              <svg viewBox="0 0 80 56">
+                <rect x="0" y="0" width="80" height="56" fill="white" />
+                <rect x="6" y="6" width="40" height="3" fill="#0f172a" />
+                <rect x="6" y="13" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="18" width="64" height="2" fill="#94a3b8" />
+                <rect x="6" y="23" width="68" height="2" fill="#94a3b8" />
+                <rect x="6" y="31" width="20" height="2" fill="#7c3aed" />
+                <rect x="6" y="36" width="64" height="2" fill="#94a3b8" />
+                <rect x="6" y="41" width="56" height="2" fill="#94a3b8" />
+                <rect x="6" y="46" width="48" height="2" fill="#94a3b8" />
+              </svg>
+              <span class="ext">DOCX</span>
+            </div>
+            <div class="mat-info">
+              <div class="top">
+                <span class="mtype">Ad Hoc</span>
+              </div>
+              <h5>Original CARDIO-SHIELD diligence pack (engagement kickoff)</h5>
+              <div class="stamp">
+                <span><span class="who">RS</span> &middot; Aug 14, 2024</span>
+                <span class="dot"></span>
+                <span>34 pages</span>
+                <span class="dot"></span>
+                <span>Baseline thesis at engagement start; informs current read</span>
+              </div>
+              <div class="links">
+                <span class="lk">Linked:</span>
+                <span class="ent-chip this">CARDIO-SHIELD</span>
+                <span class="ent-chip">Zelvox</span>
+              </div>
+            </div>
+            <div class="mat-actions">
+              <span class="ago">20mo ago</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="add-slot">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v14M1 8h14" stroke="#0f766e" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="add-text">Drop a file here, or <strong>browse</strong></span>
+        </div>
+      </div>
+
+      <div class="footnote">
+        <strong>Design notes.</strong> One flat list, recency-ordered. Anything in the registry is
+        visible to everyone in the engagement; truly internal documents stay in the client's own
+        corporate systems, not in Clint. Each row carries enough metadata to decide whether to open
+        it: type, uploader, date, page or slide count, distribution stamp, linked entities. Slide-1
+        thumbnails are stylized placeholders here; in production they render server-side via
+        LibreOffice headless or CloudConvert. <br /><br />
+        <strong>Three types.</strong> <em>Briefing</em> (the cadence-driven analytical deliverable,
+        like the quarterly), <em>Priority Notice</em> (the interrupt-driven note Stout sends in
+        response to an event or thesis change), <em>Ad Hoc</em> (everything else: diligence,
+        transcripts, board reads, one-off memos, client-uploaded decks). Three is enough. We can
+        split if a fourth pattern emerges in real use. <br /><br />
+        <strong>Client-uploaded materials are first-class.</strong> The Pfizer board read (row 4) is
+        uploaded by D. Reyes at Pfizer, marked with a Pfizer-blue uploader name to distinguish it
+        from Stout-authored rows. Same registry, same surface, no second-class treatment. The client
+        owning their own analytical contributions to the engagement is what makes this a shared
+        workspace and not a one-way feed. <br /><br />
+        <strong>The "Linked" chips repeat across surfaces.</strong> The same primitive lives on the
+        trial-detail Stout's read, on catalysts, and here on materials. Clicking any chip lands on
+        that entity, where its own Stout's read and Materials section apply. The cross-linking is
+        the navigation structure that makes the registry feel like a graph rather than a folder
+        hierarchy.
+      </div>
+    </div>
+  </body>
+</html>

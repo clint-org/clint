@@ -1,0 +1,1165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Authoring Surface Sketch</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --green-600: #16a34a;
+        --red-600: #dc2626;
+        --blue-600: #2563eb;
+        --amber-600: #d97706;
+        --amber-100: #fef3c7;
+        --violet-600: #7c3aed;
+        --pf-blue: #0093d0;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+      .page {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 56px 32px 80px;
+      }
+
+      .head {
+        margin-bottom: 28px;
+        max-width: 820px;
+      }
+      .head .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .head h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--slate-900);
+        line-height: 1.2;
+        letter-spacing: -0.005em;
+        margin-bottom: 10px;
+      }
+      .head p {
+        font-size: 14px;
+        color: var(--slate-600);
+      }
+
+      /* The frame that shows the dimmed page + the floating drawer */
+      .frame {
+        position: relative;
+        border: 1px solid var(--slate-200);
+        height: 880px;
+        overflow: hidden;
+        background: var(--slate-50);
+      }
+
+      /* Dimmed underlying page silhouette, left side */
+      .under {
+        position: absolute;
+        inset: 0;
+        padding: 32px 36px;
+        background: white;
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      .under .ub {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+        letter-spacing: 0.06em;
+        margin-bottom: 14px;
+      }
+      .under .uh {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--slate-900);
+        margin-bottom: 6px;
+      }
+      .under .un {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--slate-500);
+        margin-bottom: 24px;
+      }
+      .under .upill {
+        display: inline-block;
+        padding: 4px 10px;
+        border: 1px solid var(--brand-600);
+        color: var(--brand-700);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+      }
+      .under .ublock {
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-left: 4px solid var(--brand-600);
+        padding: 18px 22px;
+        margin-bottom: 18px;
+        max-width: 540px;
+      }
+      .under .ublock .ulabel {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--brand-700);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .under .ublock .uhead {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--slate-900);
+        margin-bottom: 10px;
+      }
+      .under .ublock .urow {
+        height: 6px;
+        background: var(--slate-200);
+        margin-bottom: 6px;
+        border-radius: 1px;
+      }
+      .under .ublock .urow.short {
+        width: 80%;
+      }
+
+      /* Backdrop dim overlay */
+      .backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.32);
+      }
+
+      /* Drawer */
+      .drawer {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 720px;
+        background: white;
+        box-shadow: -16px 0 48px -8px rgba(15, 23, 42, 0.18);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .drawer-head {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--slate-200);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .drawer-head .crumbs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .drawer-head .crumbs .co {
+        color: var(--slate-700);
+        font-weight: 700;
+        letter-spacing: 0.12em;
+      }
+      .drawer-head .crumbs .sep {
+        color: var(--slate-300);
+      }
+      .drawer-head .crumbs .target {
+        color: var(--brand-700);
+        font-weight: 700;
+      }
+      .drawer-head .right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .drawer-head .save-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+      }
+      .drawer-head .save-state .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green-600);
+      }
+      .drawer-head .draft-pill {
+        padding: 3px 9px;
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--amber-600);
+        background: var(--amber-100);
+      }
+      .drawer-head .close {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--slate-500);
+        border: 1px solid var(--slate-200);
+        cursor: pointer;
+        background: white;
+      }
+      .drawer-head .close:hover {
+        color: var(--slate-900);
+        border-color: var(--slate-400);
+      }
+
+      /* Toolbar */
+      .toolbar {
+        padding: 8px 24px;
+        border-bottom: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .toolbar .group {
+        display: flex;
+        gap: 2px;
+      }
+      .toolbar .sep {
+        width: 1px;
+        height: 18px;
+        background: var(--slate-300);
+        margin: 0 6px;
+      }
+      .tb-btn {
+        width: 28px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--slate-600);
+        font-size: 12px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+      }
+      .tb-btn:hover {
+        background: white;
+        border-color: var(--slate-300);
+        color: var(--slate-900);
+      }
+      .tb-btn.active {
+        background: white;
+        border-color: var(--brand-600);
+        color: var(--brand-700);
+      }
+      .tb-btn b,
+      .tb-btn i,
+      .tb-btn s {
+        font-style: normal;
+        font-weight: 700;
+      }
+      .tb-btn i {
+        font-style: italic;
+      }
+      .tb-btn s {
+        text-decoration: underline;
+        text-decoration-thickness: 1.5px;
+        text-decoration-color: var(--slate-700);
+      }
+      .tb-btn-wide {
+        padding: 0 8px;
+        width: auto;
+        gap: 4px;
+        font-size: 10.5px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .tb-btn-wide.brand {
+        color: var(--brand-700);
+        border-color: var(--brand-300);
+        background: var(--brand-50);
+      }
+      .tb-btn-wide.brand:hover {
+        background: var(--brand-100);
+      }
+
+      /* Body */
+      .drawer-body {
+        flex: 1;
+        overflow: auto;
+        padding: 22px 28px 28px;
+      }
+
+      .field {
+        margin-bottom: 22px;
+      }
+      .field-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--slate-700);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .field-label .req {
+        color: var(--brand-700);
+      }
+      .field-label .hint {
+        font-weight: 400;
+        color: var(--slate-400);
+        letter-spacing: 0.05em;
+        text-transform: none;
+        font-size: 11px;
+      }
+
+      .input-line {
+        width: 100%;
+        padding: 10px 12px;
+        font: inherit;
+        font-size: 16px;
+        color: var(--slate-900);
+        border: 1px solid var(--slate-300);
+        background: white;
+        outline: none;
+      }
+      .input-line:focus,
+      .input-line.focused {
+        border-color: var(--brand-600);
+        box-shadow: 0 0 0 3px var(--brand-50);
+      }
+
+      .editor {
+        border: 1px solid var(--slate-300);
+        background: white;
+        padding: 14px 16px;
+        min-height: 80px;
+        font-size: 14px;
+        color: var(--slate-700);
+        line-height: 1.6;
+        position: relative;
+      }
+      .editor.focused {
+        border-color: var(--brand-600);
+        box-shadow: 0 0 0 3px var(--brand-50);
+      }
+      .editor p {
+        margin: 0;
+      }
+      .editor p + p {
+        margin-top: 10px;
+      }
+      .editor p strong {
+        color: var(--slate-900);
+        font-weight: 700;
+      }
+      .editor p em {
+        font-style: italic;
+        color: var(--slate-700);
+      }
+      .editor ul {
+        padding-left: 22px;
+        margin: 4px 0;
+      }
+      .editor li {
+        margin-bottom: 6px;
+      }
+
+      /* Inline entity-ref chip */
+      .eref {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 6px;
+        background: var(--brand-50);
+        color: var(--brand-700);
+        font-weight: 600;
+        border: 1px solid var(--brand-300);
+        border-radius: 3px;
+        font-size: 12.5px;
+        line-height: 1.4;
+        vertical-align: baseline;
+        cursor: pointer;
+      }
+      .eref .ek {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        opacity: 0.7;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .eref:hover {
+        background: var(--brand-100);
+      }
+      .eref.material {
+        background: #fef3c7;
+        color: var(--amber-600);
+        border-color: var(--amber-600);
+      }
+
+      /* Caret simulation */
+      .caret {
+        display: inline-block;
+        width: 1.5px;
+        height: 16px;
+        background: var(--brand-700);
+        margin: 0 1px;
+        vertical-align: middle;
+        animation: blink 1s step-end infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* Entity-ref autocomplete dropdown */
+      .ac {
+        position: absolute;
+        top: 110px;
+        left: 240px;
+        width: 320px;
+        background: white;
+        border: 1px solid var(--slate-300);
+        box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.18);
+        z-index: 5;
+      }
+      .ac-head {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--slate-100);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .ac-head .q {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--slate-700);
+      }
+      .ac-head .q .at {
+        color: var(--brand-700);
+        font-weight: 700;
+      }
+      .ac-head .hint {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+      }
+      .ac-list {
+        max-height: 280px;
+        overflow: auto;
+      }
+      .ac-item {
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        border-top: 1px solid var(--slate-100);
+      }
+      .ac-item:first-child {
+        border-top: 0;
+      }
+      .ac-item:hover,
+      .ac-item.sel {
+        background: var(--brand-50);
+      }
+      .ac-item .kind {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        width: 50px;
+        flex: none;
+      }
+      .ac-item .nm {
+        font-size: 13px;
+        color: var(--slate-900);
+        font-weight: 500;
+      }
+      .ac-item .nm .sub {
+        color: var(--slate-500);
+        font-size: 12px;
+        font-weight: 400;
+      }
+      .ac-item.sel .kind {
+        color: var(--brand-700);
+      }
+
+      /* Linked entities chip picker */
+      .chip-picker {
+        padding: 12px 14px;
+        border: 1px solid var(--slate-300);
+        background: white;
+        min-height: 60px;
+      }
+      .chip-picker.focused {
+        border-color: var(--brand-600);
+        box-shadow: 0 0 0 3px var(--brand-50);
+      }
+      .chip-picker .row {
+        display: grid;
+        grid-template-columns: 1fr 130px auto;
+        gap: 10px;
+        padding: 8px 0;
+        border-top: 1px solid var(--slate-100);
+        align-items: center;
+      }
+      .chip-picker .row:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+      .chip-picker .row .ent {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .chip-picker .row .co {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 700;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border: 1px solid var(--slate-300);
+      }
+      .chip-picker .row .nm {
+        font-size: 13.5px;
+        color: var(--slate-900);
+        font-weight: 500;
+      }
+      .chip-picker .row .rel {
+        padding: 4px 8px;
+        border: 1px solid var(--slate-300);
+        background: white;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--slate-700);
+        cursor: pointer;
+      }
+      .chip-picker .row .rm {
+        color: var(--slate-400);
+        cursor: pointer;
+        padding: 0 4px;
+      }
+      .chip-picker .row .rm:hover {
+        color: var(--red-600);
+      }
+      .chip-picker .add-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0 0;
+        border-top: 1px solid var(--slate-100);
+        margin-top: 4px;
+      }
+      .chip-picker .add-row .a-input {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px dashed var(--slate-300);
+        background: var(--slate-50);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        color: var(--slate-500);
+        outline: none;
+        cursor: text;
+      }
+
+      /* Implications: three lanes */
+      .lanes {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .lane-edit {
+        border: 1px solid var(--slate-200);
+        background: white;
+      }
+      .lane-edit .lh {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: var(--slate-50);
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .lane-edit .lh .nm {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+      }
+      .lane-edit .lh .toggle {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-400);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      .lane-edit .body {
+        padding: 12px 14px;
+        font-size: 13.5px;
+        color: var(--slate-700);
+        line-height: 1.55;
+        min-height: 50px;
+      }
+      .lane-edit .body.empty {
+        color: var(--slate-400);
+        font-style: italic;
+        font-size: 13px;
+      }
+      .lane-edit .body p strong {
+        color: var(--slate-900);
+        font-weight: 700;
+      }
+
+      /* Drawer footer */
+      .drawer-foot {
+        padding: 14px 24px;
+        border-top: 1px solid var(--slate-200);
+        background: white;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .drawer-foot .left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .drawer-foot .right {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .toggle-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--slate-700);
+        cursor: pointer;
+      }
+      .toggle-row input {
+        display: none;
+      }
+      .toggle-row .sw {
+        width: 32px;
+        height: 18px;
+        background: var(--slate-300);
+        border-radius: 99px;
+        position: relative;
+        transition: background 120ms ease;
+      }
+      .toggle-row .sw::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: white;
+        transition: left 120ms ease;
+      }
+      .toggle-row.on .sw {
+        background: var(--brand-600);
+      }
+      .toggle-row.on .sw::after {
+        left: 16px;
+      }
+      .toggle-row .lbl {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--slate-700);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .toggle-row .sublbl {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-400);
+        letter-spacing: 0.06em;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid;
+        cursor: pointer;
+      }
+      .btn.ghost {
+        background: white;
+        color: var(--slate-700);
+        border-color: var(--slate-300);
+      }
+      .btn.ghost:hover {
+        border-color: var(--slate-400);
+        color: var(--slate-900);
+      }
+      .btn.primary {
+        background: var(--brand-700);
+        color: white;
+        border-color: var(--brand-700);
+      }
+      .btn.primary:hover {
+        background: var(--brand-800);
+        border-color: var(--brand-800);
+      }
+
+      /* Lifecycle dropdown */
+      .lifecycle-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .lifecycle {
+        padding: 6px 12px 6px 10px;
+        background: white;
+        border: 1px solid var(--slate-300);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-700);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .lifecycle.monitoring {
+        color: var(--brand-700);
+        border-color: var(--brand-600);
+        background: var(--brand-50);
+      }
+      .lifecycle .caret-tri {
+        font-size: 9px;
+        color: var(--slate-400);
+      }
+
+      .footnote {
+        margin-top: 36px;
+        padding: 18px 20px;
+        border-left: 2px solid var(--brand-600);
+        background: white;
+        font-size: 13px;
+        color: var(--slate-700);
+        max-width: 1024px;
+      }
+      .footnote strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+
+    <div class="page">
+      <div class="head">
+        <div class="label">Sketch -- Authoring Surface</div>
+        <h1>The drawer where Stout's analysts write reads on entities.</h1>
+        <p>
+          Side drawer that opens from any entity (trial, catalyst, marker). Structured fields,
+          markdown bodies. Inline entity references autocomplete on @. Save state visible in the
+          header. Publish action carries an optional notify toggle that fires the Latest notices
+          flow when flipped on.
+        </p>
+      </div>
+
+      <div class="frame">
+        <!-- Dimmed underlying page -->
+        <div class="under" aria-hidden="true">
+          <div class="ub">PFIZER / ZELVOX / CARDIO-SHIELD</div>
+          <div class="uh">CARDIO-SHIELD</div>
+          <div class="un">NCT05123456 &middot; Heart failure with reduced EF</div>
+          <span class="upill">Phase 3 pivotal</span>
+          <div class="ublock">
+            <div class="ulabel">Stout's read</div>
+            <div class="uhead">
+              The pivotal that defines Pfizer's cardiometabolic franchise through 2030.
+            </div>
+            <div class="urow"></div>
+            <div class="urow"></div>
+            <div class="urow short"></div>
+          </div>
+          <div class="ublock">
+            <div class="ulabel">Markers</div>
+            <div class="urow"></div>
+            <div class="urow short"></div>
+          </div>
+        </div>
+
+        <div class="backdrop"></div>
+
+        <!-- The drawer -->
+        <aside class="drawer">
+          <div class="drawer-head">
+            <div class="crumbs">
+              <span>Editing</span>
+              <span class="sep">/</span>
+              <span class="co">Pfizer</span>
+              <span class="sep">/</span>
+              <span>Zelvox</span>
+              <span class="sep">/</span>
+              <span class="target">CARDIO-SHIELD</span>
+              <span class="sep">/</span>
+              <span class="target">Primary intelligence</span>
+            </div>
+            <div class="right">
+              <span class="draft-pill">Draft</span>
+              <span class="save-state"><span class="dot"></span> Saved 2s ago</span>
+              <button class="close" aria-label="Close">x</button>
+            </div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <div class="group">
+              <button class="tb-btn"><b>B</b></button>
+              <button class="tb-btn"><i>I</i></button>
+              <button class="tb-btn"><s>U</s></button>
+            </div>
+            <span class="sep"></span>
+            <div class="group">
+              <button class="tb-btn">H1</button>
+              <button class="tb-btn">H2</button>
+              <button class="tb-btn">&bull;</button>
+              <button class="tb-btn">1.</button>
+              <button class="tb-btn">"</button>
+            </div>
+            <span class="sep"></span>
+            <div class="group">
+              <button class="tb-btn-wide tb-btn brand active">@ Entity</button>
+              <button class="tb-btn-wide tb-btn">+ Material</button>
+              <button class="tb-btn-wide tb-btn">Link</button>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="drawer-body">
+            <!-- HEADLINE -->
+            <div class="field">
+              <div class="field-label">
+                <span>Headline</span>
+                <span class="req">Required</span>
+              </div>
+              <input
+                class="input-line focused"
+                type="text"
+                value="The pivotal that defines Pfizer's cardiometabolic franchise through 2030."
+              />
+            </div>
+
+            <!-- THESIS (with autocomplete dropdown overlay) -->
+            <div class="field">
+              <div class="field-label">
+                <span>Thesis</span><span class="req">Required</span
+                ><span class="hint">markdown supported, type @ for entity refs</span>
+              </div>
+              <div class="editor focused" style="position: relative">
+                <p>
+                  CARDIO-SHIELD is Pfizer's most consequential cardiometabolic readout this decade.
+                  <strong
+                    >The trial is over-enrolled, event accrual is running ahead of the protocol, and
+                    topline lands in late Q2 2026.</strong
+                  >
+                  Pfizer has been guiding to "first half" but the cadence we're tracking points to
+                  June, not May.
+                </p>
+                <p>
+                  The base case is a positive primary endpoint with an effect size in line with the
+                  <span class="eref"><span class="ek">trial</span> ECHO-HF</span> Phase 2b
+                  confidence intervals<span class="caret"></span>
+                </p>
+
+                <!-- Autocomplete dropdown -->
+                <div class="ac">
+                  <div class="ac-head">
+                    <span class="q"><span class="at">@</span>echo</span>
+                    <span class="hint">Esc to cancel</span>
+                  </div>
+                  <div class="ac-list">
+                    <div class="ac-item sel">
+                      <span class="kind">Trial</span>
+                      <span class="nm"
+                        >ECHO-HF <span class="sub">AZN / Verzubrix / Phase 3</span></span
+                      >
+                    </div>
+                    <div class="ac-item">
+                      <span class="kind">Marker</span>
+                      <span class="nm"
+                        >ECHO-HF interim analysis
+                        <span class="sub">Apr 30, 2026 &middot; data readout</span></span
+                      >
+                    </div>
+                    <div class="ac-item">
+                      <span class="kind">Material</span>
+                      <span class="nm"
+                        >ECHO-HF post-readout note
+                        <span class="sub">JM &middot; Apr 30 &middot; Priority Notice</span></span
+                      >
+                    </div>
+                    <div class="ac-item">
+                      <span class="kind">Trial</span>
+                      <span class="nm"
+                        >ECHOMORE-2 <span class="sub">NVS / Cardexa / Phase 2</span></span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WHAT TO WATCH -->
+            <div class="field">
+              <div class="field-label">
+                <span>What to watch</span><span class="hint">bulleted, optional</span>
+              </div>
+              <div class="editor">
+                <ul>
+                  <li>
+                    Event accrual rate vs. protocol (signal: was the SAP amendment defensive).
+                  </li>
+                  <li>Pfizer pre-announcing the readout window at JPM 2026.</li>
+                  <li>
+                    Sell-side notes from CHF specialists post
+                    <span class="eref"><span class="ek">marker</span> Apr 30 ECHO-HF interim</span>.
+                  </li>
+                  <li>
+                    FDA pre-NDA meeting minutes (should land late Q2). See
+                    <span class="eref material"><span class="ek">mat</span> Q2 2026 briefing</span>
+                    slide 14.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- LINKED ENTITIES -->
+            <div class="field">
+              <div class="field-label">
+                <span>Linked</span
+                ><span class="hint">entities and the relationship to this read</span>
+              </div>
+              <div class="chip-picker">
+                <div class="row">
+                  <div class="ent">
+                    <span class="co">AZN</span>
+                    <span class="nm">Verzubrix / ECHO-HF</span>
+                  </div>
+                  <button class="rel">Competitor v</button>
+                  <span class="rm">x</span>
+                </div>
+                <div class="row">
+                  <div class="ent">
+                    <span class="co">NVS</span>
+                    <span class="nm">Cardexa</span>
+                  </div>
+                  <button class="rel">Same class v</button>
+                  <span class="rm">x</span>
+                </div>
+                <div class="row">
+                  <div class="ent">
+                    <span class="co">LLY</span>
+                    <span class="nm">Trizenta / GLOW-2</span>
+                  </div>
+                  <button class="rel">Future window v</button>
+                  <span class="rm">x</span>
+                </div>
+                <div class="add-row">
+                  <span class="a-input">Search for a company, product, trial...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- IMPLICATIONS -->
+            <div class="field">
+              <div class="field-label">
+                <span>Implications</span><span class="hint">bulleted, optional</span>
+              </div>
+              <div class="editor">
+                <ul>
+                  <li>
+                    Asia-Pacific rights are unbundled in the current Pfizer co-promote with
+                    <strong>Sumitomo</strong>. A positive readout repositions that contract at
+                    renewal in 2027.
+                  </li>
+                  <li>
+                    If positive, resets the cardiometabolic narrative against AstraZeneca and pulls
+                    PFE's R&amp;D-to-launch productivity story back into the bull case for 2027 IR
+                    positioning.
+                  </li>
+                  <li>
+                    Three small-cap follow-ons (Tenaya, Cytokinetics, Cardurion) move from dilutive
+                    vs. acquirable depending on the secondary endpoint magnitude.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- CHANGE NOTE -->
+            <div class="field">
+              <div class="field-label">
+                <span>Change note</span
+                ><span class="hint">optional, one line, visible to everyone in the engagement</span>
+              </div>
+              <input
+                class="input-line"
+                type="text"
+                placeholder="What changed and why?"
+                value="Pulled the topline window from Q3 to late Q2 after the protocol amendment came public."
+              />
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="drawer-foot">
+            <div class="left">
+              <span
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  font-weight: 600;
+                  color: var(--slate-500);
+                  letter-spacing: 0.08em;
+                  line-height: 1.4;
+                "
+              >
+                <span
+                  style="
+                    color: var(--amber-600);
+                    font-weight: 700;
+                    letter-spacing: 0.14em;
+                    text-transform: uppercase;
+                  "
+                  >Draft</span
+                >
+                &nbsp;visible to Stout team only.
+                <br />
+                <span style="color: var(--slate-400)"
+                  >Publishing makes this visible to everyone in the engagement and adds it to Latest
+                  from Stout.</span
+                >
+              </span>
+            </div>
+            <div class="right">
+              <button class="btn ghost">Save draft</button>
+              <button class="btn primary">Publish</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="footnote">
+        <strong>Design notes.</strong> Side drawer at 720px wide. Underlying page stays visible
+        behind the dim so analysts maintain spatial context. Save state lives in the header
+        (auto-saving drafts every few seconds). Draft pill is amber to distinguish work-in-progress
+        from a published read; once published, the pill turns brand-700. <br /><br />
+        <strong>Markdown editor with structure.</strong> Each prose field is a markdown editor
+        (TipTap or ProseMirror in production), supporting bold, italic, lists, links, and custom
+        inline nodes for entity references and material references. The "@ Entity" toolbar action
+        and the @-typed autocomplete are the same primitive: a unified picker that ranges over
+        companies, products, trials, markers, materials. Result is inserted as a chip that stays
+        linked to the entity even if the entity is renamed. <br /><br />
+        <strong>Linked field is structured, not free text.</strong> The chip picker sits at the
+        bottom of the drawer body. Each row has the entity, its relationship type to this read
+        (Competitor, Same class, Predecessor, Combination, Future window, Partner, etc.), and a
+        remove action. The relationship type is what makes the cross-entity navigation meaningful
+        downstream. <br /><br />
+        <strong>Implications lanes can stay empty.</strong> Three lanes (BD, Strategy, Licensing).
+        Any subset can be filled. The "Licensing" lane in this sketch is empty, with a "+ Add"
+        affordance. This is the structured shell pattern: the slot exists so the data is queryable,
+        but it's not coercing the analyst to fabricate content. <br /><br />
+        <strong>Draft and published states are the only visibility lever.</strong> A draft is
+        visible to the Stout team only. Publishing flips the read to
+        visible-to-everyone-in-the-engagement and adds it to the Latest from Stout feed. There's no
+        separate notify-on-publish toggle; if Stout published it, the client sees it. Email
+        distribution to recipients is handled at the engagement subscription level (out of scope for
+        the drawer), not as a per-publish decision. Drafts are discoverable from the engagement
+        landing's "Your drafts" card (Stout team only) so analysts can pick up where they left off.
+      </div>
+    </div>
+  </body>
+</html>
