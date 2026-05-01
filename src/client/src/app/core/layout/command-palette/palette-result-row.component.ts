@@ -14,7 +14,7 @@ import { PaletteItem } from '../../models/palette.model';
       class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm"
       [class.bg-slate-100]="selected()"
       (mouseenter)="hover.emit()"
-      (click)="activate.emit()"
+      (click)="activated.emit()"
     >
       <span class="h-3.5 w-3.5 shrink-0 rounded-sm" [style.background-color]="kindColor()"></span>
       <span class="min-w-0 flex-1">
@@ -34,7 +34,7 @@ export class PaletteResultRowComponent {
   readonly selected = input<boolean>(false);
   readonly index = input<number>(0);
   readonly hover = output<void>();
-  readonly activate = output<void>();
+  readonly activated = output<void>();
 
   rowId() { return `palette-row-${this.index()}`; }
 
