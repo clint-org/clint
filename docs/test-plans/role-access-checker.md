@@ -52,7 +52,7 @@ Sign in as a Reader of the Survodutide Pipeline space.
 - [ ] Visit the space's `/settings/members` → expect chrome with read-only members table; no Invite-to-space button.
 - [ ] curl `rpc/seed_demo_data` with `p_space_id=<survodutide-id>` → expect `Insufficient permissions`.
 - [ ] curl POST on `events` with a valid body → expect RLS denial (`new row violates row-level security policy`).
-- [ ] Visit `/t/<pfizer-id>/settings` → expect `tenantGuard` redirect to `/onboarding?tab=join` (Reader holds no `tenant_members` row).
+- [ ] Visit `/t/<pfizer-id>/settings` → expect chrome renders (since 2026-05-01, `has_tenant_access` lets space-only members reach tenant routes for tenants whose spaces they belong to). RLS on `tenant_members` hides the owners list from her. All write actions on this page (Add owner, save branding) fail at the RPC layer because the strict `is_tenant_member` gate still applies for mutations.
 
 ## Space Contributor
 
@@ -65,7 +65,7 @@ Sign in as a Contributor of the Survodutide Pipeline space.
 - [ ] Open `/settings/members` → expect chrome but no Invite-to-space button, no Remove actions.
 - [ ] curl `rpc/seed_demo_data` → expect `Insufficient permissions`.
 - [ ] curl POST on `space_invites` with a valid body → expect RLS denial.
-- [ ] Visit `/t/<pfizer-id>/settings` → expect `tenantGuard` redirect.
+- [ ] Visit `/t/<pfizer-id>/settings` → expect chrome renders (post-2026-05-01 `has_tenant_access` includes space-only members). All write actions fail at the RPC layer (mutations use the strict `is_tenant_member`).
 
 ## Space Owner
 

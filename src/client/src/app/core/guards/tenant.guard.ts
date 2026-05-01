@@ -16,11 +16,10 @@ export const tenantGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) 
     return router.createUrlTree(['/login']);
   }
 
-  const [adminResult, memberResult] = await Promise.all([
-    supabase.client.rpc('is_platform_admin'),
-    supabase.client.rpc('is_tenant_member', { p_tenant_id: tenantId }),
-  ]);
-  if (adminResult.data === true || memberResult.data === true) {
+  const { data, error } = await supabase.client.rpc('has_tenant_access', {
+    p_tenant_id: tenantId,
+  });
+  if (!error && data === true) {
     return true;
   }
   return router.createUrlTree(['/']);

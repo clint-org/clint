@@ -58,16 +58,15 @@ export const marketingLandingGuard: CanActivateFn = async () => {
   } else if (kind === 'tenant') {
     const id = brand.brand().id;
     if (id) {
-      const [adminR, memberR] = await Promise.all([
-        supabaseService.client.rpc('is_platform_admin'),
-        supabaseService.client.rpc('is_tenant_member', { p_tenant_id: id }),
-      ]);
-      if (adminR.data === true || memberR.data === true) {
+      const { data } = await supabaseService.client.rpc('has_tenant_access', {
+        p_tenant_id: id,
+      });
+      if (data === true) {
         return router.createUrlTree(['/t', id, 'spaces']);
       }
-      // Signed in but not a member of this tenant. Most common case for the
-      // whitelabel flow: invitee just signed in for the first time and needs
-      // to redeem their code. Send them to onboarding rather than looping.
+      // Signed in but no access to this tenant. Most common case: invitee
+      // just signed in for the first time and needs to redeem their code.
+      // Send them to onboarding rather than looping.
       return router.createUrlTree(['/onboarding'], { queryParams: { tab: 'join' } });
     }
     return router.createUrlTree(['/onboarding']);

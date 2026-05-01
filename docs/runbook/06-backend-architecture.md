@@ -114,6 +114,19 @@ is_tenant_member(p_tenant_id uuid, p_roles text[]) -> boolean
 
 Helper for tenant-level RLS. Returns true if the calling user has the specified role in the tenant, OR is an agency owner of the parent agency, OR is a platform admin.
 
+### has_tenant_access
+
+```
+has_tenant_access(p_tenant_id uuid) -> boolean
+```
+
+Route-guard variant of `is_tenant_member`, added 2026-05-01 (migration 84). Returns true if any of:
+
+1. `is_tenant_member(p_tenant_id)` is true (covers explicit `tenant_members` row, agency owner of parent, platform admin), OR
+2. The caller holds a `space_members` row for any space whose `tenant_id = p_tenant_id` (covers pure space-only members invited directly via `invite_to_space` without ever joining the tenant proper).
+
+Used by `tenantGuard` and the tenant branch of `marketingLandingGuard` for route activation only. Do not use in RLS policies: broadening `is_tenant_member` to include space-only members would let a Reader enumerate tenant owners via `tenant_members` SELECT, an info leak. Keep RLS strict on `is_tenant_member`; route activation looser via `has_tenant_access`.
+
 ### is_agency_member
 
 ```
