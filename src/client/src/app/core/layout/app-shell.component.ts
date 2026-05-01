@@ -8,6 +8,7 @@ import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
 import { environment } from '../../../environments/environment';
+import { CommandPaletteComponent } from './command-palette/command-palette.component';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
@@ -32,6 +33,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
   standalone: true,
   imports: [
     RouterOutlet,
+    CommandPaletteComponent,
     SidebarComponent,
     ContextualTopbarComponent,
     NotificationBellComponent,
@@ -178,6 +180,8 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           <p-button label="Create space" (onClick)="createSpace()" [loading]="creatingSpace()" />
         </ng-template>
       </p-dialog>
+
+      <app-command-palette />
     </div>
   `,
   styles: [
