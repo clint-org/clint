@@ -63,6 +63,21 @@
 - No emojis anywhere (in code, comments, commit messages).
 - Do not attribute Claude in commits.
 
+## Schema Reality (corrections after Task 1 spike)
+
+The original spec assumed columns and a table that don't exist. Before continuing, internalize these mappings:
+
+- **There is no `catalysts` table.** "Catalyst" is the user-facing label; the underlying data is `public.markers`. The palette's `catalyst` kind reads from `markers`.
+- **Trials columns:** `trials.name` (not `title`), `trials.identifier` (not `nct_id`).
+- **Trial sponsor lookup:** trials link to a product via `trials.product_id`; product links to a company via `products.company_id`. There is no `trials.sponsor_id`.
+- **Product sponsor lookup:** `products.company_id` (not `sponsor_id`). Products do not have a 1:1 MoA/RoA suitable for the palette secondary line; keep the secondary simple (`<company.name> · <generic_name>`).
+- **Marker -> trial link:** via `public.marker_assignments(marker_id, trial_id)` (many-to-many). Pick the first assignment with `LIMIT 1`.
+- **Marker category lookup:** `marker_types.category_id -> marker_categories.name`.
+- **Event category lookup:** `events.category_id -> event_categories.name`.
+- **Company columns:** `companies(id, name, space_id, ...)` -- no `company_type` or `ticker`. Use a count of products as the secondary line for companies.
+- **Existing trigram indexes:** `companies_name_trgm`, `products_name_trgm`, `products_generic_name_trgm`, `markers_title_trgm` already exist; Task 1 adds `trials_name_trgm`, `trials_identifier_trgm`, `events_title_trgm`.
+- **Task 1 status:** committed at `c78e89c` with these schema corrections already applied. Tasks 2-onward use the corrected SQL below.
+
 ---
 
 ## Task 1: Tables, indexes, RLS migration
@@ -223,10 +238,9 @@ begin
     -- companies
     select 'company'::text as kind,
            c.id,
-           c.name,
-           coalesce(nullif(c.company_type, '') || ' &middot; ' || nullif(c.ticker, ''),
-                    nullif(c.ticker, ''),
-                    nullif(c.company_type, '')) as secondary,
+           c.name::text as name,
+           ((select count(*) from public.products pc
+             where pc.company_id = c.id and pc.space_id = p_space_id)::text || ' products') as secondary,
            similarity(c.name, v_q)
              + case when c.name ilike v_q || '%' then 0.3 else 0 end as score
     from public.companies c
@@ -238,15 +252,10 @@ begin
     -- products
     select 'product'::text,
            p.id,
-           p.name,
+           p.name::text,
            concat_ws(' &middot; ',
-             (select s.name from public.companies s where s.id = p.sponsor_id),
-             (select m.name from public.mechanisms_of_action m
-                join public.product_mechanisms_of_action pm on pm.moa_id = m.id
-                where pm.product_id = p.id limit 1),
-             (select r.name from public.routes_of_administration r
-                join public.product_routes_of_administration pr on pr.roa_id = r.id
-                where pr.product_id = p.id limit 1)
+             (select co.name::text from public.companies co where co.id = p.company_id),
+             nullif(p.generic_name, '')
            ) as secondary,
            greatest(similarity(p.name, v_q), similarity(coalesce(p.generic_name,''), v_q))
              + case when p.name ilike v_q || '%' or coalesce(p.generic_name,'') ilike v_q || '%' then 0.3 else 0 end as score
@@ -256,40 +265,46 @@ begin
       and (p.name % v_q or coalesce(p.generic_name,'') % v_q)
 
     union all
-    -- trials (search title + nct_id, with NCT exact match boost)
+    -- trials (search name + identifier, with identifier exact match boost)
     select 'trial'::text,
            t.id,
-           t.title as name,
+           t.name::text,
            concat_ws(' &middot; ',
-             nullif('Ph' || t.phase, 'Ph'),
-             t.indication,
-             (select s.name from public.companies s where s.id = t.sponsor_id),
-             t.nct_id
+             nullif('Ph' || coalesce(t.phase, ''), 'Ph'),
+             t.conditions[1],
+             (select co.name::text from public.companies co
+                join public.products pp on pp.company_id = co.id
+                where pp.id = t.product_id),
+             t.identifier
            ) as secondary,
-           greatest(similarity(t.title, v_q), similarity(coalesce(t.nct_id,''), v_q))
-             + case when t.title ilike v_q || '%' then 0.3 else 0 end
-             + case when upper(coalesce(t.nct_id,'')) = upper(v_q) then 0.5 else 0 end as score
+           greatest(similarity(t.name, v_q), similarity(coalesce(t.identifier,''), v_q))
+             + case when t.name ilike v_q || '%' then 0.3 else 0 end
+             + case when upper(coalesce(t.identifier,'')) = upper(v_q) then 0.5 else 0 end as score
     from public.trials t
     where t.space_id = p_space_id
       and (p_kind is null or p_kind = 'trial')
-      and (t.title % v_q or coalesce(t.nct_id,'') % v_q)
+      and (t.name % v_q or coalesce(t.identifier,'') % v_q)
 
     union all
-    -- catalysts
+    -- catalysts (= markers with optional linked trial)
     select 'catalyst'::text,
-           k.id,
-           k.title,
+           m.id,
+           m.title,
            concat_ws(' &middot; ',
-             k.expected_quarter,
-             k.indication,
-             (select t2.title from public.trials t2 where t2.id = k.trial_id)
+             to_char(m.event_date, 'YYYY-MM-DD'),
+             (select mc.name from public.marker_types mt
+                join public.marker_categories mc on mc.id = mt.category_id
+                where mt.id = m.marker_type_id),
+             (select t2.name::text from public.trials t2
+                join public.marker_assignments ma on ma.trial_id = t2.id
+                where ma.marker_id = m.id limit 1)
            ) as secondary,
-           similarity(k.title, v_q)
-             + case when k.title ilike v_q || '%' then 0.3 else 0 end as score
-    from public.catalysts k
-    where k.space_id = p_space_id
+           similarity(m.title, v_q)
+             + case when m.title ilike v_q || '%' then 0.3 else 0 end as score
+    from public.markers m
+    where m.space_id = p_space_id
       and (p_kind is null or p_kind = 'catalyst')
-      and k.title % v_q
+      and m.title % v_q
 
     union all
     -- events
@@ -299,7 +314,7 @@ begin
            concat_ws(' &middot; ',
              to_char(e.event_date, 'YYYY-MM-DD'),
              (select ec.name from public.event_categories ec where ec.id = e.category_id),
-             (select cc.name from public.companies cc where cc.id = e.company_id)
+             (select cc.name::text from public.companies cc where cc.id = e.company_id)
            ) as secondary,
            similarity(e.title, v_q)
              + case when e.title ilike v_q || '%' then 0.3 else 0 end as score
@@ -345,13 +360,15 @@ Write `supabase/tests/palette/run.sh`:
 ```bash
 #!/usr/bin/env bash
 # Run every .sql file in this directory against local Supabase Postgres.
+# Uses the supabase Docker container's bundled psql to avoid host PATH issues.
 # Each test file uses `raise exception` to fail; psql exits non-zero on first failure.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PSQL="${PSQL:-psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1}"
+CONTAINER="${PALETTE_DB_CONTAINER:-supabase_db_clint-v2}"
 for f in "$HERE"/*.sql; do
   echo "--- $f"
-  $PSQL -f "$f"
+  docker exec -i -e PSQLRC=/dev/null "$CONTAINER" \
+    psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f"
 done
 echo "All palette tests passed."
 ```
@@ -394,20 +411,20 @@ begin
     raise exception 'expected at least one trial matching KEYNOTE in space %', v_space;
   end if;
 
-  -- query an NCT id that exists in seed: pick the first trial's nct_id
+  -- query a trial identifier that exists in seed: pick the first trial's identifier
   declare
-    v_nct text;
+    v_ident text;
     v_trial_id uuid;
   begin
-    select nct_id, id into v_nct, v_trial_id
+    select identifier, id into v_ident, v_trial_id
     from public.trials
-    where space_id = v_space and nct_id is not null
+    where space_id = v_space and identifier is not null
     order by id limit 1;
-    if v_nct is not null then
+    if v_ident is not null then
       select kind, id::text into v_top_kind, v_top_name
-      from public.search_palette(v_space, v_nct, null, 1);
+      from public.search_palette(v_space, v_ident, null, 1);
       if v_top_kind is null or v_top_kind <> 'trial' then
-        raise exception 'expected NCT exact-match to return a trial, got % %', v_top_kind, v_top_name;
+        raise exception 'expected identifier exact-match to return a trial, got % %', v_top_kind, v_top_name;
       end if;
     end if;
   end;

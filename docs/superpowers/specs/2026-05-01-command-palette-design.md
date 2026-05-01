@@ -46,7 +46,9 @@ Default scope is the current space. The input shows a scope chip on the left ("O
 
 ### D3. Tier 1 entities are companies, products, trials, catalysts, events
 
-Trials are searchable both by title and by NCT ID (exact-match on NCT ID gets a +0.5 ranking boost). Markers, mechanisms of action, routes of administration, and therapeutic areas are explicitly **not** indexed as result rows. The palette is a finder, not a filter-applier.
+Trials are searchable both by name and by trial identifier (exact-match on `trials.identifier` gets a +0.5 ranking boost). Mechanisms of action, routes of administration, and therapeutic areas are explicitly **not** indexed as result rows. The palette is a finder, not a filter-applier.
+
+**Schema mapping note:** "Catalyst" is the user-facing label; the underlying data is `public.markers`. Every marker is a catalyst from the user's perspective, so palette searches under the catalyst kind hit `markers.title` and the secondary line shows the marker's category and linked trial. Trial titles live in `trials.name` and the identifier in `trials.identifier` (not the spec's earlier-named `title`/`nct_id`).
 
 ### D4. Empty state has Pinned, Recents, and Commands sections
 
@@ -125,13 +127,14 @@ The trade-off is per-keystroke latency. We mitigate with an 80ms input debounce 
 ```sql
 create extension if not exists pg_trgm;
 
-create index companies_name_trgm   on companies  using gin (name         gin_trgm_ops);
-create index products_name_trgm    on products   using gin (name         gin_trgm_ops);
-create index products_generic_trgm on products   using gin (generic_name gin_trgm_ops);
-create index trials_title_trgm     on trials     using gin (title        gin_trgm_ops);
-create index trials_nct_trgm       on trials     using gin (nct_id       gin_trgm_ops);
-create index catalysts_title_trgm  on catalysts  using gin (title        gin_trgm_ops);
-create index events_title_trgm     on events     using gin (title        gin_trgm_ops);
+-- Most of these indexes already exist from prior migrations; CREATE...IF NOT EXISTS is idempotent.
+create index if not exists companies_name_trgm    on companies using gin (name         gin_trgm_ops);
+create index if not exists products_name_trgm     on products  using gin (name         gin_trgm_ops);
+create index if not exists products_generic_trgm  on products  using gin (generic_name gin_trgm_ops);
+create index if not exists trials_name_trgm       on trials    using gin (name         gin_trgm_ops);
+create index if not exists trials_identifier_trgm on trials    using gin (identifier   gin_trgm_ops);
+create index if not exists markers_title_trgm     on markers   using gin (title        gin_trgm_ops);
+create index if not exists events_title_trgm      on events    using gin (title        gin_trgm_ops);
 
 create table palette_pinned (
   user_id    uuid not null references auth.users on delete cascade,
@@ -216,7 +219,7 @@ All five RPCs short-circuit on `not has_space_access(p_space_id)` and return emp
 
 - Base: `similarity(name, query)` from `pg_trgm`.
 - **Prefix boost:** `+0.3` if `name ILIKE query || '%'`.
-- **NCT exact match:** `+0.5` if `kind = 'trial' AND nct_id = upper(query)`.
+- **Trial identifier exact match:** `+0.5` if `kind = 'trial' AND upper(identifier) = upper(query)`.
 - **Pinned items** sort above all matches via a separate sort key; their score is preserved for ordering within the pinned group.
 - **Recency tiebreaker:** when scores are within 0.05, prefer the more recently opened item (`recent_at desc nulls last`).
 - Final order: `pinned desc, score desc, recent_at desc nulls last, name asc`.
@@ -224,13 +227,13 @@ All five RPCs short-circuit on `not has_space_access(p_space_id)` and return emp
 
 ### Secondary text (server-rendered)
 
-| Kind     | Secondary template                                                         |
-|----------|----------------------------------------------------------------------------|
-| company  | `<company_type> · <ticker>` (or `<count> trials` if neither is set)       |
-| product  | `<sponsor.name> · <moa.name> · <roa.name>`                                |
-| trial    | `Ph<phase> · <indication> · <sponsor> · <nct_id>`                         |
-| catalyst | `<expected_quarter> · <indication> · <linked_trial.short_name>`           |
-| event    | `<event_date> · <category.name> · <linked_company.name>`                  |
+| Kind     | Secondary template                                                         | Source                                                |
+|----------|----------------------------------------------------------------------------|-------------------------------------------------------|
+| company  | `<count> products` (computed)                                              | `products` joined on `company_id`                     |
+| product  | `<company.name> · <generic_name>`                                          | `products` join `companies`                           |
+| trial    | `Ph<phase> · <conditions[1]> · <product.company.name> · <identifier>`      | `trials` join `products` join `companies`             |
+| catalyst | `<event_date> · <marker_category.name> · <linked_trial.name>`              | `markers` join `marker_types` join `marker_categories` join `marker_assignments` join `trials` |
+| event    | `<event_date> · <event_category.name> · <linked_company.name>`             | `events` join `event_categories` (and optional `companies`) |
 
 `null` segments are dropped with their separator. Computed in SQL once per row, not per render.
 
