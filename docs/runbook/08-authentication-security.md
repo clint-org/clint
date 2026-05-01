@@ -6,23 +6,24 @@
 
 ## Auth Flow
 
-```
-1.  User navigates to /login on their tenant / agency host
-2.  Login screen renders branded buttons per brand.auth_providers (Google, Microsoft)
-3.  SupabaseService.signInWithGoogle() / signInWithMicrosoft() opens the OAuth redirect
-4.  User authenticates with Google or Microsoft (Azure AD)
-5.  Provider redirects to the Supabase callback (https://<project-ref>.supabase.co/auth/v1/callback)
-6.  Supabase redirects to /auth/callback on the app
-7.  AuthCallbackComponent: Supabase exchanges auth code for a session
-8.  Supabase issues a JWT containing auth.uid() (1-hour expiry, refresh token rotation)
-9.  Session is persisted to Domain=.<apex> cookies (apex hosts) or localStorage (dev / custom domains)
-10. AuthCallbackComponent inspects BrandContext.kind() to choose the redirect target:
-    - kind === 'tenant' + brand.has_self_join -> attempt self_join_tenant(subdomain), then tenant landing
-    - kind === 'tenant' -> tenant landing (last space)
-    - kind === 'agency' -> /admin
-    - kind === 'super-admin' -> /super-admin
-    - kind === 'default' -> existing onboardingRedirectGuard flow
-11. Subsequent navigations to other apex subdomains read the same session cookie -- no re-auth
+```mermaid
+sequenceDiagram
+  participant User
+  participant App as Angular SPA
+  participant Provider as Google / Microsoft
+  participant Supabase
+
+  User->>App: Navigate to /login on tenant or agency host
+  App->>App: Render branded buttons per brand.auth_providers
+  User->>App: Click "Sign in with Google" or "Sign in with Microsoft"
+  App->>Provider: signInWithGoogle / signInWithMicrosoft (OAuth redirect)
+  Provider->>Supabase: Redirect to {project-ref}.supabase.co/auth/v1/callback
+  Supabase->>App: Redirect to /auth/callback on app host
+  App->>Supabase: Exchange auth code for session
+  Supabase-->>App: JWT (1-hour expiry, refresh token rotation)
+  App->>App: Persist to Domain=.apex cookies (apex hosts)<br/>or localStorage (dev / custom domains)
+  App->>App: AuthCallbackComponent inspects BrandContext.kind()<br/>tenant + has_self_join → self_join_tenant, then tenant landing<br/>tenant → tenant landing (last space)<br/>agency → /admin<br/>super-admin → /super-admin<br/>default → onboardingRedirectGuard
+  Note over App,Supabase: Subsequent navigations to other apex subdomains<br/>read the same session cookie — no re-auth
 ```
 
 ## Auth Providers
@@ -221,3 +222,53 @@ Async guard on `/t/:tenantId/s/:spaceId/*`. Walks the route tree to read both `:
 ### tenantSettingsGuard
 
 Strict child guard on `/t/:tenantId/settings`. The parent `tenantGuard` uses `has_tenant_access` (loose; lets space-only members reach their space), which previously also let a space-only Reader reach the tenant settings page where RLS hid every row and every mutation got rejected at the RPC layer — a confusing empty/inert surface. This guard runs in addition to `tenantGuard`, requires explicit tenant membership via `is_tenant_member` RPC, and redirects non-members to `/t/:tenantId/spaces`. Loose parent activation still lets space-only members reach the space; the strict child blocks them only at the tenant-management surface.
+
+## RLS Coverage
+
+Auto-generated from `pg_class` and `pg_policy`. Every public table should have RLS enabled with at least one policy. A row marked **no** under "RLS enabled" is a security smell — investigate before merging.
+
+<!-- AUTO-GEN:RLS_COVERAGE -->
+| Table | RLS enabled | Policies |
+|---|---|---|
+| `agencies` | yes | 3 |
+| `agency_invites` | yes | 2 |
+| `agency_members` | yes | 4 |
+| `companies` | yes | 4 |
+| `event_categories` | yes | 4 |
+| `event_links` | yes | 3 |
+| `event_sources` | yes | 4 |
+| `event_threads` | yes | 4 |
+| `events` | yes | 4 |
+| `marker_assignments` | yes | 4 |
+| `marker_categories` | yes | 4 |
+| `marker_notifications` | yes | 3 |
+| `marker_types` | yes | 4 |
+| `markers` | yes | 4 |
+| `mechanisms_of_action` | yes | 4 |
+| `notification_reads` | yes | 3 |
+| `palette_pinned` | yes | 1 |
+| `palette_recents` | yes | 1 |
+| `platform_admins` | yes | 0 |
+| `product_mechanisms_of_action` | yes | 3 |
+| `product_routes_of_administration` | yes | 3 |
+| `products` | yes | 4 |
+| `retired_hostnames` | yes | 1 |
+| `routes_of_administration` | yes | 4 |
+| `space_invites` | yes | 1 |
+| `space_members` | yes | 4 |
+| `spaces` | yes | 4 |
+| `tenant_invites` | yes | 4 |
+| `tenant_members` | yes | 4 |
+| `tenants` | yes | 3 |
+| `therapeutic_areas` | yes | 4 |
+| `trial_notes` | yes | 4 |
+| `trials` | yes | 4 |
+<!-- /AUTO-GEN:RLS_COVERAGE -->
+
+## Documentation Drift
+
+Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` whose conventional name does not appear anywhere in this file.
+
+<!-- AUTO-GEN:DRIFT -->
+_All route guards documented._
+<!-- /AUTO-GEN:DRIFT -->

@@ -21,7 +21,7 @@ src/client/
           tenant.guard.ts                # is_tenant_member(:tenantId) OR is_platform_admin (gates /t/:tenantId/*)
           marketing-landing.guard.ts     # gates /; routes by kind + auth + role-on-host (cross-host redirect when user lacks role for current host)
         util/
-          color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math)
+          color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math); pickStopForSurface(scale, surfaceHex) -> stop with WCAG 4.5:1 contrast against the surface (drives --brand-on-dark/--brand-on-light)
           cookie-session-storage.ts      # Supabase JS storage adapter using document.cookie
         layout/
           app-shell.component.ts        # Layout wrapper: sidebar + topbar + router-outlet
@@ -147,6 +147,7 @@ The bootstrap sequence is whitelabel-aware. `main.ts`:
    - `document.title = brand.app_display_name`
    - Swaps the `<link rel="icon">` href to `brand.favicon_url`
    - Sets `--brand-50` … `--brand-950` on `:root` from `generateBrandScale(brand.primary_color)`
+   - Sets `--brand-on-dark` and `--brand-on-light` on `:root` via `pickStopForSurface(scale, surfaceHex)` — surface-aware foreground tokens that pick the brand stop with WCAG 4.5:1 contrast against the canonical dark chrome (`#0f172a`, used by `sidebar` and `icon-rail`) and against white. Components on dark surfaces reference `var(--brand-on-dark)` instead of `var(--brand-600)` so tenants whose seed is dark (deep navy, maroon) get bumped to a lighter stop (typically 400/300) for the logo, active markers, avatar text, focus outlines, and translucent washes; default teal-600 already clears the bar and stays on 600.
 4. Builds the dynamic preset: `buildBrandPreset(scale)` and passes it to `providePrimeNG`
 5. Provides `BrandContextService` to DI with the brand pre-populated
 6. `bootstrapApplication(AppComponent, mergeApplicationConfig(appConfig, dynamicConfig))`
@@ -175,54 +176,81 @@ Key decisions:
 
 All routes are lazy-loaded. Routes are host-aware AND role-aware: `agencyGuard`, `superAdminGuard`, and `marketingLandingGuard` short-circuit first on `BrandContextService.kind()`, then on the user's role for that host (`is_platform_admin` for super-admin, `is_agency_member` for agency). Server-side RPCs and RLS remain the authoritative gate; the guards prevent the empty privileged-shell from rendering for users who lack the role. The legacy `/t/:tenantId/...` shape is preserved for direct customers on the apex during cutover.
 
+The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. Run `npm run docs:arch` from `src/client/` to regenerate after editing routes.
+
+<!-- AUTO-GEN:ROUTES -->
 ```
-/                                   -> marketingLandingGuard
-                                       (unauthed:  default -> MarketingLandingComponent; branded -> /login)
-                                       (authed + has role:    default -> last tenant or /onboarding;
-                                                              agency  -> /admin;
-                                                              super-admin -> /super-admin;
-                                                              tenant  -> /t/{brand.id}/spaces)
-                                       (authed + lacks role for branded host: cross-host redirect to user's real home,
-                                                                              or /onboarding if user has no agency/tenant)
-/login                              -> LoginComponent (brand-driven; reads ?workspace= hint on apex)
-/auth/callback                      -> AuthCallbackComponent (kind-aware redirect; attempts self-join on tenant subdomains)
-/onboarding                         -> OnboardingComponent (authGuard)
-/admin/*                            -> AgencyShellComponent (agencyGuard + authGuard)
-  tenants                           -> AgencyTenantListComponent
-  tenants/new                       -> AgencyTenantNewComponent
-  tenants/:id                       -> AgencyTenantDetailComponent
-  members                           -> AgencyMembersComponent
-  branding                          -> AgencyBrandingComponent
-/super-admin/*                      -> SuperAdminShellComponent (superAdminGuard + authGuard)
-  agencies                          -> SuperAdminAgenciesComponent
-  tenants                           -> SuperAdminTenantsComponent
-  domains                           -> SuperAdminDomainsComponent
-/t/:tenantId/                       -> AppShellComponent (layout wrapper; preserved for legacy / direct apex customers; gated by authGuard + tenantGuard)
-  spaces                            -> SpaceListComponent
-  settings                          -> TenantSettingsComponent
-  help/roles                        -> RolesHelpComponent (user-facing role/permission breakdown; linked from space-members and tenant-settings invite dialogs)
-  s/:spaceId/seed-demo              -> SeedDemoComponent (URL-only trigger for seed_demo_data; space-owner gated server-side)
-  s/:spaceId/
-    (empty)                         -> LandscapeShellComponent -> TimelineViewComponent
-    bullseye/by-therapy-area        -> LandscapeIndexComponent
-    bullseye/by-therapy-area/:id    -> LandscapeComponent
-    bullseye/by-company             -> LandscapeIndexComponent
-    bullseye/by-company/:id         -> LandscapeComponent
-    bullseye/by-moa                 -> LandscapeIndexComponent
-    bullseye/by-moa/:id             -> LandscapeComponent
-    bullseye/by-roa                 -> LandscapeIndexComponent
-    bullseye/by-roa/:id             -> LandscapeComponent
-    positioning                     -> PositioningViewComponent
-    catalysts                       -> CatalystsPageComponent
-    manage/companies                -> CompanyListComponent
-    manage/products                 -> ProductListComponent
-    manage/trials                   -> TrialListComponent  (supports ?product=<id> filter)
-    manage/trials/:id               -> TrialDetailComponent
-    settings/marker-types           -> MarkerTypeListComponent
-    settings/taxonomies             -> TaxonomiesPageComponent (Therapeutic Areas, MOA, ROA)
-    events                          -> EventsPageComponent
-/**                                 -> redirects to /
+/login   LoginComponent
+/auth/callback   AuthCallbackComponent
+/admin   agencyGuard + authGuard | AgencyShellComponent
+  (empty)   -> tenants
+  /tenants   AgencyTenantListComponent
+  /tenants/new   AgencyTenantNewComponent
+  /tenants/:id   AgencyTenantDetailComponent
+  /members   AgencyMembersComponent
+  /branding   AgencyBrandingComponent
+/super-admin   superAdminGuard + authGuard | SuperAdminShellComponent
+  (empty)   -> agencies
+  /agencies   SuperAdminAgenciesComponent
+  /tenants   SuperAdminTenantsComponent
+  /domains   SuperAdminDomainsComponent
+/onboarding   authGuard | OnboardingComponent
+/t/:tenantId   authGuard + tenantGuard | AppShellComponent
+  /spaces   SpaceListComponent
+  /settings   tenantSettingsGuard | TenantSettingsComponent
+  /help/roles   RolesHelpComponent
+  /s/:spaceId   spaceGuard
+    (empty)   EngagementLandingComponent | exact
+    (empty)   LandscapeShellComponent
+      /timeline   TimelineViewComponent
+      /bullseye
+        (empty)   -> by-therapy-area
+        /by-therapy-area   LandscapeIndexComponent
+        /by-therapy-area/:entityId   LandscapeComponent
+        /by-company   LandscapeIndexComponent
+        /by-company/:entityId   LandscapeComponent
+        /by-moa   LandscapeIndexComponent
+        /by-moa/:entityId   LandscapeComponent
+        /by-roa   LandscapeIndexComponent
+        /by-roa/:entityId   LandscapeComponent
+      /positioning
+        (empty)   -> by-moa
+        /by-moa   PositioningViewComponent
+        /by-therapy-area   PositioningViewComponent
+        /by-moa-therapy-area   PositioningViewComponent
+        /by-company   PositioningViewComponent
+        /by-roa   PositioningViewComponent
+      /catalysts   CatalystsPageComponent
+      /intelligence   IntelligenceBrowseComponent
+      /materials   MaterialsBrowsePageComponent
+    /landscape   -> bullseye/by-therapy-area
+    /landscape/by-therapy-area   -> bullseye/by-therapy-area
+    /landscape/by-therapy-area/:entityId   -> bullseye/by-therapy-area/:entityId
+    /landscape/by-company   -> bullseye/by-company
+    /landscape/by-company/:entityId   -> bullseye/by-company/:entityId
+    /landscape/by-moa   -> bullseye/by-moa
+    /landscape/by-moa/:entityId   -> bullseye/by-moa/:entityId
+    /landscape/by-roa   -> bullseye/by-roa
+    /landscape/by-roa/:entityId   -> bullseye/by-roa/:entityId
+    /landscape/:therapeuticAreaId   -> bullseye/by-therapy-area/:therapeuticAreaId
+    /manage/companies   CompanyListComponent
+    /manage/products   ProductListComponent
+    /manage/trials   TrialListComponent
+    /manage/trials/:id   TrialDetailComponent
+    /settings/marker-types   MarkerTypeListComponent
+    /settings/taxonomies   TaxonomiesPageComponent
+    /settings/general   SpaceGeneralComponent
+    /settings/members   SpaceMembersComponent
+    /manage/marker-types   -> settings/marker-types
+    /manage/therapeutic-areas   -> settings/taxonomies
+    /manage/mechanisms-of-action   -> settings/taxonomies
+    /manage/routes-of-administration   -> settings/taxonomies
+    /events   EventsPageComponent
+    /seed-demo   SeedDemoComponent
+(empty)   marketingLandingGuard | MarketingLandingComponent | exact
+/**   -> /
 ```
+<!-- /AUTO-GEN:ROUTES -->
 
 ## Services
 
@@ -435,6 +463,8 @@ The codemod that landed during the whitelabel rollout swept `~73 occurrences` of
 
 The seed-as-600 anchor means tenants get a "what you picked is what you see on buttons" experience. The trade-off: extreme seeds (very dark like `#08312a` at 11% lightness, or very light) cause the far end of the scale to clamp at the lightness floor (0.02) or ceiling (0.98), so layered dark surfaces or subtle background tints lose differentiation. Mid-tone seeds (lightness 0.30–0.55) produce the most balanced scales.
 
+**Surface-aware foreground tokens.** `--brand-on-dark` and `--brand-on-light` (also set on `:root` from `main.ts`) are the legibility-safe foreground tokens for components that sit on the canonical dark chrome (`#0f172a`, used by `sidebar` and `icon-rail`) and on white surfaces respectively. They are derived by `pickStopForSurface(scale, surfaceHex, minRatio = 4.5)` in `core/util/color-scale.ts`, which walks the scale (lighter for dark surfaces, darker for light surfaces) and returns the first stop that clears WCAG 4.5:1; if nothing clears the bar, it returns the highest-contrast stop available. The default teal-600 already clears the bar, so existing branding is unchanged; dark seeds (deep navy, maroon) get bumped to a lighter stop in the chrome while still rendering at 600 on light surfaces. **Convention:** components on dark surfaces (currently `sidebar.component.ts` and `icon-rail.component.ts`) use `var(--brand-on-dark)` for *all* brand foreground references — solid uses (logo square, active indicator, avatar text/border), focus outlines, and translucent washes (`rgb(from var(--brand-on-dark) r g b / 0.15)`). Light-surface components (topbar, headers, content) keep using `var(--brand-600)`.
+
 ### Three brand surfaces
 
 The app has three layers of branding, each with a distinct color source:
@@ -515,3 +545,38 @@ All five manage-section list pages (companies, products, trials, therapeutic-are
 **`?selected=<id>` on companies and products lists:** the company and product list pages also honor `?selected=<id>` from the URL. On init they look up the entity by id and call `grid.onGlobalSearchInput(target.name)` so the grid filters to that single row. The `selected` param must be read from `route.snapshot.queryParamMap` BEFORE `await loadData()` because the grid's URL-sync effect rewrites query params to its own state during init, which would otherwise drop `selected`. Used by the command palette for company/product activation.
 
 **Why `$any($event)` on `onLazyLoad`:** PrimeNG's `TableLazyLoadEvent.sortField` type is `string | string[] | null`, which is wider than what our handler accepts. The `$any()` template helper bypasses the strict template type check at this single binding point. If you find a cleaner way to align the types, replace it — but do not narrow PrimeNG's type, that breaks bindings.
+
+## Documentation Drift
+
+Auto-generated. Lists Angular services, models, and SVG icon components whose conventional class name does not appear anywhere in this file. Add a row to the appropriate table (Services / Models / SVG Icon Components) for each flagged item, or document why it is intentionally excluded.
+
+<!-- AUTO-GEN:DRIFT -->
+**Services:**
+- `EventCategoryService`
+- `EventThreadService`
+- `EventService`
+- `LandscapeService`
+- `MarkerCategoryService`
+- `MarkerService`
+- `MaterialService`
+- `MechanismOfActionService`
+- `NotificationService`
+- `PaletteHotkeyService`
+- `PalettePinService`
+- `PaletteRecentsService`
+- `PaletteService`
+- `PrimaryIntelligenceService`
+- `ProseMirrorService`
+- `RouteOfAdministrationService`
+
+**Models:**
+- `MechanismOfAction`
+- `Palette`
+- `PrimaryIntelligence`
+- `RouteOfAdministration`
+
+**SVG icon components:**
+- `NleOverlayComponent`
+- `SquareIconComponent`
+- `TriangleIconComponent`
+<!-- /AUTO-GEN:DRIFT -->

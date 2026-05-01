@@ -6,50 +6,36 @@
 
 ## System Diagram
 
-```
-+---------------------------------------------------------------------+
-|                          Browser (User)                              |
-|                                                                     |
-|   +--------------------------------------------------------------+  |
-|   |              Angular 19 SPA (src/client/)                    |  |
-|   |                                                              |  |
-|   |  +-------------+  +--------------+  +-------------------+   |  |
-|   |  |  Dashboard  |  |    Manage    |  |  Auth / Onboard   |   |  |
-|   |  |  (timeline) |  |  (CRUD UI)   |  |  (login, spaces)  |   |  |
-|   |  +-------------+  +--------------+  +-------------------+   |  |
-|   |  +-------------+  +--------------+  +-------------------+   |  |
-|   |  |   Agency    |  | Super-admin  |  |    Marketing      |   |  |
-|   |  |  /admin/*   |  | /super-admin |  |   landing (apex)  |   |  |
-|   |  +-------------+  +--------------+  +-------------------+   |  |
-|   |                                                              |  |
-|   |  Pre-bootstrap: get_brand_by_host(host) -> CSS vars +        |  |
-|   |    favicon + title + dynamic PrimeNG preset                  |  |
-|   |                                                              |  |
-|   |  Services layer: SupabaseService, BrandContext, ...          |  |
-|   +--------------------------------------------------------------+  |
-|                         |  Supabase JS Client                       |
-+-------------------------+-------------------------------------------+
-                          | HTTPS (Domain=.<apex> session cookies on apex hosts)
-+-------------------------v-------------------------------------------+
-|                         Supabase (Cloud)                            |
-|                                                                     |
-|  +-----------+ +---------+ +-------------+ +-------------------+   |
-|  | PostgREST | |  Auth   | |  Postgres15 | |  Edge Functions   |   |
-|  | (auto API)| | (Google,| |  Tables,    | |  (Deno):          |   |
-|  |           | | Microsoft| |  Functions, | |  send-invite-email|   |
-|  |           | |  OAuth) | |   RLS, RPCs | |  -> Resend        |   |
-|  +-----------+ +---------+ +-------------+ +-------------------+   |
-|                                ^                                    |
-|                                | DB webhook on tenant_invites INSERT|
-+---------------------------------------------------------------------+
+```mermaid
+flowchart TB
+  CF["Cloudflare Workers (free tier)<br/>wildcard *.apex SSL<br/>SPA fallback (wrangler.jsonc)<br/>CSP via _headers"]
 
-                              ^
-                              | wildcard *.<apex> + apex + custom domains
-+-------------------------------------------------------------------+
-|                  Cloudflare Workers (free tier)                    |
-|  Wildcard SSL, CSP header (_headers), SPA fallback                 |
-|  (wrangler.jsonc not_found_handling), apex env var                 |
-+-------------------------------------------------------------------+
+  subgraph Browser["Browser (User)"]
+    direction TB
+    Bootstrap["main.ts pre-bootstrap:<br/>get_brand_by_host(host)<br/>→ CSS vars + favicon + title<br/>+ dynamic PrimeNG preset"]
+    subgraph SPA["Angular 19 SPA (src/client/)"]
+      direction LR
+      Dashboard["Dashboard<br/>(timeline)"]
+      Manage["Manage<br/>(CRUD UI)"]
+      Auth["Auth /<br/>Onboard"]
+      Agency["Agency<br/>/admin/*"]
+      SuperAdmin["Super-admin<br/>/super-admin"]
+      Marketing["Marketing<br/>landing (apex)"]
+    end
+    Services["Services layer:<br/>SupabaseService, BrandContextService, ..."]
+  end
+
+  subgraph Supabase["Supabase (Cloud)"]
+    direction LR
+    PostgREST["PostgREST<br/>(auto API)"]
+    SAuth["Supabase Auth<br/>(Google, Microsoft OAuth)"]
+    Postgres["Postgres 15<br/>Tables, Functions,<br/>RLS, RPCs"]
+    EdgeFns["Edge Functions (Deno)<br/>send-invite-email<br/>→ Resend"]
+  end
+
+  CF -- "serves wildcard *.apex + apex<br/>+ custom domains" --> Browser
+  Browser -- "HTTPS<br/>Domain=.apex session cookies on apex hosts" --> Supabase
+  Postgres -. "DB webhook on tenant_invites INSERT" .-> EdgeFns
 ```
 
 ## Host-Based Brand Resolution
@@ -68,15 +54,16 @@ If no match, returns `kind: "default"` with the Clint defaults — the app falls
 
 ## Three-Tier Hierarchy
 
-```
-agencies (consultancy partners)                e.g. zs.yourproduct.com
-  +-- agency_members (owner | member)
-  +-- tenants (pharma clients; agency_id nullable)
-        +-- tenant_members (owner | member)
-        +-- tenant_invites
-        +-- spaces (engagements / pipelines)
-              +-- space_members (owner | editor | viewer)
-              +-- companies, products, trials, ...
+```mermaid
+flowchart TD
+  agencies["agencies<br/>(consultancy partners)<br/>e.g. zs.yourproduct.com"]
+  agencies --> agency_members["agency_members<br/>(owner | member)"]
+  agencies --> tenants["tenants<br/>(pharma clients;<br/>agency_id nullable)"]
+  tenants --> tenant_members["tenant_members<br/>(owner | member)"]
+  tenants --> tenant_invites[tenant_invites]
+  tenants --> spaces["spaces<br/>(engagements / pipelines)"]
+  spaces --> space_members["space_members<br/>(owner | editor | viewer)"]
+  spaces --> space_data["companies, products,<br/>trials, ..."]
 ```
 
 Direct customers without an agency (`agency_id IS NULL`) keep working unchanged on the apex. See [Multi-Tenant Model](09-multi-tenant-model.md) for the role-access matrix.

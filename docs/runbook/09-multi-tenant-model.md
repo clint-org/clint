@@ -6,17 +6,18 @@
 
 ## Hierarchy
 
-```
-Agency (Consultancy partner; optional)            e.g. ZS Associates -> zs.yourproduct.com
-  +-- email_domain (optional lock; gates agency + tenant owner adds)
-  +-- AgencyMembers (role: owner only)
-  +-- Tenants (Pharma client organizations)        e.g. Pfizer -> pfizer.yourproduct.com
-        +-- TenantMembers (role: owner only -- agency-domain emails)
-        +-- TenantInvites (code-based, role=owner; consumed by accept_invite)
-        +-- Spaces (Engagements / pipeline projects)
-              +-- SpaceMembers (role: owner | editor | viewer; ANY email)
-              +-- SpaceInvites (code-based; consumed by accept_space_invite)
-              +-- Data (companies, products, trials, ...)
+```mermaid
+flowchart TD
+  Agency["Agency (consultancy partner; optional)<br/>e.g. ZS Associates → zs.yourproduct.com"]
+  Agency --> EmailDomain["email_domain (optional lock;<br/>gates agency + tenant owner adds)"]
+  Agency --> AgencyMembers["AgencyMembers<br/>(role: owner only)"]
+  Agency --> Tenants["Tenants (Pharma client organizations)<br/>e.g. Pfizer → pfizer.yourproduct.com"]
+  Tenants --> TenantMembers["TenantMembers<br/>(role: owner only — agency-domain emails)"]
+  Tenants --> TenantInvites["TenantInvites<br/>(code-based, role=owner;<br/>consumed by accept_invite)"]
+  Tenants --> Spaces["Spaces (Engagements /<br/>pipeline projects)"]
+  Spaces --> SpaceMembers["SpaceMembers<br/>(role: owner | editor | viewer; ANY email)"]
+  Spaces --> SpaceInvites["SpaceInvites<br/>(code-based; consumed by accept_space_invite)"]
+  Spaces --> Data["Data (companies, products,<br/>trials, ...)"]
 ```
 
 `tenants.agency_id` is nullable. Direct customers (no agency) live on the apex (`yourproduct.com`) or claim their own subdomain via tenant settings; they keep working unchanged from the pre-whitelabel design.
@@ -120,3 +121,17 @@ The `TenantSettingsComponent` provides:
 All data tables include a `space_id` column. RLS policies enforce that users can only access data in spaces where they (a) are explicit space members, (b) are owners or members of the parent tenant, (c) are owners of the parent tenant's parent agency, (d) are members of the parent tenant's parent agency (read-only), or (e) are platform admins (read-only). All other paths are denied.
 
 There is no way to query across spaces or tenants — isolation is enforced at the database level, validated by the cross-tenant isolation smoke test in migration 24 of the foundation schema (`20260428042300_whitelabel_isolation_smoke_tests.sql`).
+
+## Documentation Drift
+
+Auto-generated. Lists multi-tenant helper functions (`is_*`, `has_*`, `enforce_*`) in `pg_proc` whose name does not appear anywhere in this file. Add a sentence describing the helper's purpose and where it sits in the access model.
+
+<!-- AUTO-GEN:DRIFT -->
+- `enforce_agency_member_guards`
+- `enforce_custom_domain_unique_across_tables`
+- `enforce_space_member_guards`
+- `enforce_subdomain_unique_across_tables`
+- `has_tenant_access`
+- `is_agency_member`
+- `is_platform_admin`
+<!-- /AUTO-GEN:DRIFT -->

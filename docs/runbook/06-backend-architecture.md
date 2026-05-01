@@ -6,6 +6,79 @@
 
 The backend is managed by Supabase. The only non-database server-side code is one Edge Function (`send-invite-email`).
 
+## RPC -> Table Access Matrix
+
+Auto-generated from `pg_proc` and `information_schema.tables` against the local Supabase database. Run `npm run docs:arch` from `src/client/` to regenerate. The Writes column captures `INSERT/UPDATE/DELETE` against a table; the Reads column captures any other reference. The match is regex-based and may include over-counts when a table name appears in a comment or unused branch — treat as a structural reference, not a precise dataflow trace.
+
+<!-- AUTO-GEN:RPC_TABLE_MATRIX -->
+| RPC | Writes | Reads |
+|---|---|---|
+| `_seed_demo_companies` | companies | - |
+| `_seed_demo_events` | event_links, event_sources, event_threads, events | trials |
+| `_seed_demo_markers` | marker_assignments, markers | events |
+| `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
+| `_seed_demo_notifications` | marker_notifications | - |
+| `_seed_demo_products` | products | - |
+| `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
+| `_seed_demo_trial_notes` | trial_notes | - |
+| `_seed_demo_trials` | trials | - |
+| `accept_invite` | tenant_invites, tenant_members | tenants |
+| `accept_space_invite` | space_invites, space_members | spaces |
+| `add_agency_member` | agency_invites, agency_members | agencies |
+| `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
+| `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
+| `create_space` | space_members, spaces | tenant_members |
+| `delete_agency` | agencies | agency_invites, agency_members, tenants |
+| `enforce_agency_member_guards` | - | agency_members |
+| `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
+| `enforce_member_email_domain` | - | agencies, agency_members, tenant_members, tenants |
+| `enforce_space_member_guards` | - | space_members |
+| `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
+| `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
+| `get_brand_by_host` | - | agencies, tenants |
+| `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
+| `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
+| `get_bullseye_by_roa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
+| `get_bullseye_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
+| `get_catalyst_detail` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
+| `get_dashboard_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trial_notes, trials |
+| `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
+| `get_event_thread` | - | event_categories, event_threads, events |
+| `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
+| `get_landscape_index` | - | companies, products, therapeutic_areas, trials |
+| `get_landscape_index_by_company` | - | companies, products, trials |
+| `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
+| `get_landscape_index_by_roa` | - | companies, product_routes_of_administration, products, routes_of_administration, trials |
+| `get_notifications` | - | marker_assignments, marker_categories, marker_notifications, marker_types, markers, notification_reads, trials |
+| `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
+| `get_space_tags` | - | events |
+| `get_tenant_access_settings` | - | tenants |
+| `get_unread_notification_count` | - | marker_notifications, notification_reads |
+| `handle_new_user` | agency_invites, agency_members | - |
+| `has_space_access` | - | space_members, spaces, tenants |
+| `has_tenant_access` | - | space_members, spaces |
+| `invite_to_space` | space_invites, space_members | - |
+| `is_agency_member` | - | agency_members |
+| `is_platform_admin` | - | platform_admins |
+| `is_tenant_member` | - | agency_members, tenant_members, tenants |
+| `lookup_user_by_email` | - | agency_members |
+| `palette_empty_state` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
+| `palette_set_pinned` | palette_pinned | - |
+| `palette_touch_recent` | palette_recents | - |
+| `palette_unpin` | palette_pinned | - |
+| `provision_agency` | agencies, agency_invites, agency_members | - |
+| `provision_tenant` | tenant_members, tenants | agencies |
+| `register_custom_domain` | tenants | agencies, retired_hostnames |
+| `release_retired_hostname` | retired_hostnames | - |
+| `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
+| `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
+| `seed_demo_data` | - | companies, space_members |
+| `self_join_tenant` | tenant_members | tenants |
+| `update_agency_branding` | agencies | - |
+| `update_tenant_access` | tenants | - |
+| `update_tenant_branding` | tenants | - |
+<!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
+
 ## Supabase Services Used
 
 | Service | Purpose |
@@ -346,3 +419,68 @@ Deno-runtime handler triggered by a Supabase database webhook on `INSERT` into `
 **Idempotency:** the function accepts duplicate sends on webhook retries; sending an invite twice is acceptable for v1.
 
 **Local emulator:** the Supabase local emulator does not support the dashboard's database-webhook configuration 1:1, so local invite flows continue to surface the invite code in the UI. The email path is exercised in the remote project. See `docs/runbook/12-deployment.md` for the production setup checklist.
+
+## Documentation Drift
+
+Auto-generated. Lists public functions in `pg_proc` and edge functions in `supabase/functions/` whose name does not appear anywhere in this file. Add a section under Database Functions / Whitelabel RPCs / Edge Functions for each flagged item. Helpers (`is_*`, `has_*`, `enforce_*`) and demo seed helpers (`_seed_demo_*`) are tracked elsewhere and excluded here.
+
+<!-- AUTO-GEN:DRIFT -->
+**RPCs in `pg_proc` not documented:**
+- `get_bullseye_by_company`
+- `get_bullseye_by_moa`
+- `get_bullseye_by_roa`
+- `get_bullseye_data`
+- `get_catalyst_detail`
+- `get_event_detail`
+- `get_event_thread`
+- `get_events_page_data`
+- `get_landscape_index`
+- `get_landscape_index_by_company`
+- `get_landscape_index_by_moa`
+- `get_landscape_index_by_roa`
+- `get_notifications`
+- `get_positioning_data`
+- `get_space_tags`
+- `get_unread_notification_count`
+- `gin_extract_query_trgm`
+- `gin_extract_value_trgm`
+- `gin_trgm_consistent`
+- `gin_trgm_triconsistent`
+- `gtrgm_compress`
+- `gtrgm_consistent`
+- `gtrgm_decompress`
+- `gtrgm_distance`
+- `gtrgm_in`
+- `gtrgm_options`
+- `gtrgm_out`
+- `gtrgm_penalty`
+- `gtrgm_picksplit`
+- `gtrgm_same`
+- `gtrgm_union`
+- `member_guard_mark_cascade_end`
+- `member_guard_mark_cascade_start`
+- `palette_empty_state`
+- `palette_set_pinned`
+- `palette_touch_recent`
+- `palette_unpin`
+- `search_palette`
+- `set_limit`
+- `show_limit`
+- `show_trgm`
+- `similarity`
+- `similarity_dist`
+- `similarity_op`
+- `strict_word_similarity`
+- `strict_word_similarity_commutator_op`
+- `strict_word_similarity_dist_commutator_op`
+- `strict_word_similarity_dist_op`
+- `strict_word_similarity_op`
+- `word_similarity`
+- `word_similarity_commutator_op`
+- `word_similarity_dist_commutator_op`
+- `word_similarity_dist_op`
+- `word_similarity_op`
+
+**Edge functions in `supabase/functions/` not documented:**
+_All edge functions documented._
+<!-- /AUTO-GEN:DRIFT -->

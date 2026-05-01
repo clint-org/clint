@@ -368,3 +368,30 @@ Minimal page at `/` on the default host (apex) for unauthenticated visitors. Sho
 See [Authentication & Security](08-authentication-security.md) for full details.
 
 Google OAuth and Microsoft (Azure AD) OAuth via Supabase Auth. Users sign in with one of the providers exposed by their tenant's `brand.auth_providers`; no password management required. Cross-subdomain session is shared via cookies on the apex domain.
+
+## Documentation Drift
+
+Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts` whose path string does not appear anywhere in this file. Add a feature heading or sentence describing each flagged route, or mark it intentional if it is purely structural (a redirect, a guard sandbox, etc).
+
+<!-- AUTO-GEN:DRIFT -->
+- `auth/callback`
+- `by-company`
+- `by-company/:entityId`
+- `by-moa`
+- `by-moa-therapy-area`
+- `by-moa/:entityId`
+- `by-roa`
+- `by-roa/:entityId`
+- `by-therapy-area`
+- `by-therapy-area/:entityId`
+- `help/roles`
+- `manage/marker-types`
+- `manage/mechanisms-of-action`
+- `manage/routes-of-administration`
+- `manage/therapeutic-areas`
+- `seed-demo`
+- `settings/general`
+- `settings/marker-types`
+- `settings/members`
+- `settings/taxonomies`
+<!-- /AUTO-GEN:DRIFT -->

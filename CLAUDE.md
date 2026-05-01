@@ -130,6 +130,16 @@ docs/
 cd src/client && ng lint && ng build
 ```
 
+## Documentation Conventions
+
+The runbook at `docs/runbook/` is the single source of truth for architecture, schema, and operational knowledge. Two rules govern how it stays current:
+
+1. **All diagrams and charts use Mermaid.** Never ASCII box-drawing, never tree art with `+--` connectors. Mermaid renders natively in GitHub, VS Code, and the docs viewer; ASCII does not. File and route trees inside fenced code blocks (e.g. the `Project Structure` block in `05-frontend-architecture.md`) are listings, not diagrams, and may stay as text. Anything that depicts relationships, flows, or sequences is a diagram and must be Mermaid (`flowchart`, `erDiagram`, `sequenceDiagram`).
+
+2. **Auto-gen blocks are regenerated from live state.** Sections wrapped in `<!-- AUTO-GEN:NAME -->` ... `<!-- /AUTO-GEN:NAME -->` are produced by `src/client/scripts/gen-architecture.mjs` (run via `npm run docs:arch` from `src/client/`). Never hand-edit inside the markers — your edits will be overwritten on the next regen. Surrounding prose stays hand-written and is the canonical context for the generated block. Run `npm run docs:arch` after any change to `supabase/migrations/`, `src/client/src/app/app.routes.ts`, or `src/client/package.json`, and commit the regen in the same PR.
+
+The script regenerates: `02-tech-stack.md` (versions + drift), `03-features.md` (drift), `05-frontend-architecture.md` (route tree + drift), `06-backend-architecture.md` (RPC→table matrix + drift), `07-database-schema.md` (Mermaid ER + drift), `08-authentication-security.md` (RLS coverage + guard drift), `09-multi-tenant-model.md` (helper drift). It requires local Supabase to be running (`supabase start`).
+
 ## Whitelabel Architecture (host-aware brand resolution)
 
 The app is a multi-tenant whitelabel platform. Hierarchy: **agency** (consultancy) → **tenant** (pharma client) → **space** (engagement).

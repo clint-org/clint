@@ -20,22 +20,64 @@
 
 ## Full Version Inventory
 
-```
-Angular             19.x
-TypeScript          5.6
-RxJS                7.8
-PrimeNG             19.x
-@primeng/themes     19.x
-Tailwind CSS        4.x
-tailwindcss-primeui 0.6.1
-@angular/cdk        19.x
-Supabase JS         2.49
-Supabase Edge Fns   Deno runtime (URL imports only, no npm)
-Resend              transactional email API
-pptxgenjs           4.0.1
-FontAwesome Free    7.2
-Node.js             (LTS)
-PostgreSQL          15+ (via Supabase)
-zone.js             0.15
-tslib               2.6
-```
+The table below is auto-generated from `src/client/package.json`. Edit the curated list in `src/client/scripts/gen-architecture.mjs` to surface or hide a dep. Versions outside the package (Node LTS, PostgreSQL 15+ via Supabase, Resend, Supabase Edge Functions Deno runtime) are external and not tracked here.
+
+<!-- AUTO-GEN:VERSIONS -->
+| Package | Version |
+|---|---|
+| `@angular/core` | ^19.0.0 |
+| `@angular/cdk` | ^19.2.19 |
+| `typescript` | ~5.6.0 |
+| `rxjs` | ~7.8.0 |
+| `zone.js` | ~0.15.0 |
+| `tslib` | ^2.6.0 |
+| `primeng` | ^19.1.4 |
+| `@primeng/themes` | ^19.1.4 |
+| `tailwindcss` | ^4.0.0 |
+| `tailwindcss-primeui` | ^0.6.1 |
+| `@supabase/supabase-js` | ^2.49.0 |
+| `pptxgenjs` | ^4.0.1 |
+| `prosemirror-state` | ^1.4.4 |
+| `prosemirror-view` | ^1.41.8 |
+| `prosemirror-model` | ^1.25.4 |
+| `@fortawesome/fontawesome-free` | ^7.2.0 |
+<!-- /AUTO-GEN:VERSIONS -->
+
+## Documentation Drift
+
+Auto-generated. Lists top-level dependencies declared in `src/client/package.json` whose package name does not appear anywhere in this file. Add prose context for any flagged dependency, or remove it from `package.json` if unused. Angular sub-packages (other than `@angular/core` and `@angular/cdk`) are intentionally suppressed.
+
+<!-- AUTO-GEN:DRIFT -->
+- `@angular/cdk`
+- `@angular/core`
+- `@fortawesome/fontawesome-free`
+- `@primeng/themes`
+- `@supabase/supabase-js`
+- `primeng`
+- `prosemirror-commands`
+- `prosemirror-history`
+- `prosemirror-keymap`
+- `prosemirror-markdown`
+- `prosemirror-model`
+- `prosemirror-schema-basic`
+- `prosemirror-schema-list`
+- `prosemirror-state`
+- `prosemirror-view`
+- `rxjs`
+- `tailwindcss-primeui`
+- `tslib`
+- `zone.js`
+- `@playwright/test`
+- `@tailwindcss/postcss`
+- `@types/jsonwebtoken`
+- `@types/pg`
+- `angular-eslint`
+- `eslint`
+- `jsonwebtoken`
+- `pg`
+- `prettier`
+- `tailwindcss`
+- `typescript`
+- `typescript-eslint`
+- `vitest`
+<!-- /AUTO-GEN:DRIFT -->

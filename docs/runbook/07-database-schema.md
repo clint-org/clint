@@ -6,6 +6,64 @@
 
 All schema changes are in `supabase/migrations/` as timestamped SQL files.
 
+## Schema Diagram
+
+Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraints on the local Supabase database. Run `npm run docs:arch` from `src/client/` to regenerate. Tables without any FK relationship render as empty boxes so they remain visible.
+
+<!-- AUTO-GEN:ER -->
+```mermaid
+erDiagram
+  AGENCIES ||--o{ AGENCY_INVITES : "agency_id"
+  AGENCIES ||--o{ AGENCY_MEMBERS : "agency_id"
+  SPACES ||--o{ COMPANIES : "space_id"
+  SPACES ||--o{ EVENT_CATEGORIES : "space_id"
+  EVENTS ||--o{ EVENT_LINKS : "source_event_id"
+  EVENTS ||--o{ EVENT_LINKS : "target_event_id"
+  EVENTS ||--o{ EVENT_SOURCES : "event_id"
+  SPACES ||--o{ EVENT_THREADS : "space_id"
+  EVENT_CATEGORIES ||--o{ EVENTS : "category_id"
+  COMPANIES ||--o{ EVENTS : "company_id"
+  PRODUCTS ||--o{ EVENTS : "product_id"
+  SPACES ||--o{ EVENTS : "space_id"
+  EVENT_THREADS ||--o{ EVENTS : "thread_id"
+  TRIALS ||--o{ EVENTS : "trial_id"
+  MARKERS ||--o{ MARKER_ASSIGNMENTS : "marker_id"
+  TRIALS ||--o{ MARKER_ASSIGNMENTS : "trial_id"
+  SPACES ||--o{ MARKER_CATEGORIES : "space_id"
+  MARKERS ||--o{ MARKER_NOTIFICATIONS : "marker_id"
+  SPACES ||--o{ MARKER_NOTIFICATIONS : "space_id"
+  MARKER_CATEGORIES ||--o{ MARKER_TYPES : "category_id"
+  SPACES ||--o{ MARKER_TYPES : "space_id"
+  MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
+  SPACES ||--o{ MARKERS : "space_id"
+  SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
+  MARKER_NOTIFICATIONS ||--o{ NOTIFICATION_READS : "notification_id"
+  SPACES ||--o{ PALETTE_PINNED : "space_id"
+  SPACES ||--o{ PALETTE_RECENTS : "space_id"
+  MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
+  PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
+  PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
+  ROUTES_OF_ADMINISTRATION ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "roa_id"
+  COMPANIES ||--o{ PRODUCTS : "company_id"
+  SPACES ||--o{ PRODUCTS : "space_id"
+  SPACES ||--o{ ROUTES_OF_ADMINISTRATION : "space_id"
+  SPACES ||--o{ SPACE_INVITES : "space_id"
+  SPACES ||--o{ SPACE_MEMBERS : "space_id"
+  TENANTS ||--o{ SPACES : "tenant_id"
+  TENANTS ||--o{ TENANT_INVITES : "tenant_id"
+  TENANTS ||--o{ TENANT_MEMBERS : "tenant_id"
+  AGENCIES ||--o{ TENANTS : "agency_id"
+  SPACES ||--o{ THERAPEUTIC_AREAS : "space_id"
+  SPACES ||--o{ TRIAL_NOTES : "space_id"
+  TRIALS ||--o{ TRIAL_NOTES : "trial_id"
+  PRODUCTS ||--o{ TRIALS : "product_id"
+  SPACES ||--o{ TRIALS : "space_id"
+  THERAPEUTIC_AREAS ||--o{ TRIALS : "therapeutic_area_id"
+  PLATFORM_ADMINS { }
+  RETIRED_HOSTNAMES { }
+```
+<!-- /AUTO-GEN:ER -->
+
 ## Migration History
 
 | # | File | Purpose |
@@ -422,3 +480,89 @@ Indexes on frequently filtered/joined columns:
 - `trial_phases.trial_id`, `trial_markers.trial_id`, `trial_markers.marker_type_id`
 - `trial_notes.trial_id`
 - CT.gov filter columns: `trials.recruitment_status`, `trials.study_type`, `trials.phase`, `trials.intervention_type`
+
+## Documentation Drift
+
+Auto-generated. Lists tables in `information_schema` not mentioned anywhere in this file, and migration files in `supabase/migrations/` whose filename does not appear in the Migration History table. Add the missing prose entries before merging.
+
+<!-- AUTO-GEN:DRIFT -->
+**Tables in `public` schema not mentioned:**
+- `marker_assignments`
+- `marker_notifications`
+- `mechanisms_of_action`
+- `notification_reads`
+- `palette_pinned`
+- `palette_recents`
+- `product_mechanisms_of_action`
+- `product_routes_of_administration`
+- `routes_of_administration`
+
+**Migration files not in history table:**
+- `20260411120000_extend_phase_types.sql`
+- `20260411120100_add_trial_phase_rollup_index.sql`
+- `20260411120200_create_landscape_index_function.sql`
+- `20260411120300_create_bullseye_data_function.sql`
+- `20260411120400_extend_seed_demo_with_landscape.sql`
+- `20260411120500_auto_provision_user_workspace.sql`
+- `20260411130000_create_mechanisms_and_routes.sql`
+- `20260411130100_create_product_moa_roa_join_tables.sql`
+- `20260411130200_update_dashboard_and_bullseye_functions.sql`
+- `20260411130300_seed_demo_with_moa_roa.sql`
+- `20260412120000_update_landscape_rpcs_generalized.sql`
+- `20260412120100_create_landscape_index_by_dimension.sql`
+- `20260412120200_create_bullseye_by_company.sql`
+- `20260412120300_create_bullseye_by_moa.sql`
+- `20260412120400_create_bullseye_by_roa.sql`
+- `20260412130000_create_positioning_data_function.sql`
+- `20260412130100_marker_system_redesign.sql`
+- `20260412130200_update_rpcs_for_marker_redesign.sql`
+- `20260412130300_update_seed_demo_for_marker_redesign.sql`
+- `20260412130400_add_moa_abbreviation.sql`
+- `20260412130500_update_rpcs_moa_abbreviation.sql`
+- `20260414024141_marker_visual_redesign.sql`
+- `20260414120200_fix_seed_future_catalysts.sql`
+- `20260414200000_seed_data_redesign.sql`
+- `20260415120100_clear_old_seed_data.sql`
+- `20260415150000_fix_phase_filter_column.sql`
+- `20260415160000_seed_real_companies.sql`
+- `20260415170000_positioning_add_generic_name.sql`
+- `20260428040000_whitelabel_create_agency_tables.sql`
+- `20260428040100_whitelabel_add_brand_columns_to_tenants.sql`
+- `20260428040200_whitelabel_cross_table_host_uniqueness.sql`
+- `20260428040300_whitelabel_hostname_retirement_triggers.sql`
+- `20260428040400_whitelabel_helper_is_agency_member.sql`
+- `20260428040500_whitelabel_helper_is_platform_admin.sql`
+- `20260428040600_whitelabel_update_is_tenant_member.sql`
+- `20260428040700_whitelabel_update_has_space_access.sql`
+- `20260428040800_whitelabel_rls_agencies.sql`
+- `20260428040900_whitelabel_rls_agency_members.sql`
+- `20260428041000_whitelabel_rls_retired_hostnames.sql`
+- `20260428041100_whitelabel_rls_tenants_extend.sql`
+- `20260428041200_whitelabel_rpc_get_brand_by_host.sql`
+- `20260428041300_whitelabel_rpc_check_subdomain_available.sql`
+- `20260428041400_whitelabel_rpc_provision_agency.sql`
+- `20260428041500_whitelabel_rpc_provision_tenant.sql`
+- `20260428041600_whitelabel_rpc_update_tenant_branding.sql`
+- `20260428041700_whitelabel_rpc_update_tenant_access.sql`
+- `20260428041800_whitelabel_rpc_get_tenant_access_settings.sql`
+- `20260428041900_whitelabel_rpc_update_agency_branding.sql`
+- `20260428042000_whitelabel_rpc_register_custom_domain.sql`
+- `20260428042100_whitelabel_rpc_self_join_tenant.sql`
+- `20260428042200_whitelabel_backfill_existing_tenants.sql`
+- `20260428042300_whitelabel_isolation_smoke_tests.sql`
+- `20260428124819_whitelabel_rpc_get_brand_by_host_super_admin.sql`
+- `20260501050000_tenants_select_includes_space_only_members.sql`
+- `20260501060000_canonicalize_email.sql`
+- `20260501113857_primary_intelligence.sql`
+- `20260501113858_primary_intelligence_rpcs.sql`
+- `20260501115539_materials.sql`
+- `20260501115540_tenant_material_settings.sql`
+- `20260501115541_material_rpcs.sql`
+- `20260501120000_palette_tables_and_indexes.sql`
+- `20260501120100_palette_rpc_functions.sql`
+- `20260501123148_engagement_landing_phase_2.sql`
+- `20260501130000_palette_empty_state_enrich.sql`
+- `20260501130349_extend_seed_demo_intelligence_and_materials.sql`
+- `20260501132002_seed_demo_intelligence_security_definer.sql`
+- `20260501152530_add_space_landing_stats.sql`
+<!-- /AUTO-GEN:DRIFT -->

@@ -12,7 +12,8 @@
     "test:e2e:ui": "./e2e/run.sh --ui",
     "test:e2e:fast": "./e2e/run.sh --reporter=list",
     "test:integration": "vitest run --config integration/vitest.config.ts",
-    "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh"
+    "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh",
+    "docs:arch": "node scripts/gen-architecture.mjs"
   },
   "dependencies": {
     "@angular/animations": "^19.2.20",
