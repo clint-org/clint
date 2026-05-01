@@ -179,10 +179,20 @@ import { extractErrorMessage } from '../../core/util/error-message';
         </ng-template>
         <ng-template #body let-member>
           <tr>
-            <td>{{ member.display_name }}</td>
+            <td>
+              {{ member.display_name }}
+              @if (member.is_agency_backed) {
+                <span
+                  class="ml-2 inline-flex items-center rounded-sm bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-slate-500"
+                  title="This user has access via the parent agency. Manage their access from the agency portal."
+                >
+                  via agency
+                </span>
+              }
+            </td>
             <td class="col-identifier">{{ member.email }}</td>
             <td class="col-actions">
-              @if (!isSelf(member)) {
+              @if (!isSelf(member) && !member.is_agency_backed) {
                 <app-row-actions
                   [items]="memberMenu(member)"
                   [ariaLabel]="'Actions for ' + member.display_name"

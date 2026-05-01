@@ -151,17 +151,11 @@ Sweep: space-general (Save/Delete owner-only, fields readonly), space-members (I
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup with `madaladodbele`
 
 ### 10. Tenant settings shows "Remove owner" against agency-backed members; misleading UX and an open design question
-- **Status:** open (design question, not just UX)
-- **Scope:** `features/tenant-settings/tenant-settings.component.ts` members table, plus a possible RPC enforcement layer
-- **Symptom:** as `aadimadala` (Pfizer tenant owner only), the row-actions menu on `aadi529` (also a tenant owner of Pfizer, but reaches the tenant via her agency-owner role on Stout) shows "Remove owner." The button works at the row level: deleting the `tenant_members` row succeeds because the self-protection trigger only blocks self-removal and last-owner removal. But `is_tenant_member` has three disjuncts (explicit row OR agency owner of parent OR platform admin), so deleting the explicit row does not actually evict aadi529. She remains a tenant member via the agency disjunct. Net effect: tenant client believes they removed the agency from their tenant; the agency stayed in.
-- **Design question first:** should a tenant client be able to evict their parent agency from their own tenant?
-  - Argument for yes (current behavior): the tenant is "their tenant"; if they want to fire the agency mid-engagement, they should be able to. But the current model only lets them remove the explicit row, leaving the parenthood disjunct intact, so this isn't really happening today.
-  - Argument for no: the agency provisioned the tenant for them; removing the agency mid-engagement is a contractual matter that shouldn't be self-serve from the tenant settings UI. Eviction would be done at the agency level (transferring the tenant to a different agency, or platform admin re-parenting).
-- **Fix shape options (after the design question is settled):**
-  - (A) Hide row actions for any tenant member whose access has an agency-owner disjunct backing it. Show only "Last signed in" or similar passive metadata.
-  - (B) Rename to "Remove explicit access" and add a tooltip describing the parenthood disjunct.
-  - (C) Block removal of agency-backed members at the RPC layer. Self-protection trigger gets a third clause: if `target_user` has an `agency_members` row for the tenant's parent agency with role `owner`, only a platform admin can remove them.
-- **Surfaced:** 2026-05-01 access-model test pass, Phase 4 (Tenant Owner) by `aadimadala` reviewing tenant settings on Pfizer
+- **Status:** done (commit pending in this change set, migration 20260501080000). Design call: tenant clients cannot evict their parent agency from their own tenant -- it's a contractual matter that goes through a platform admin (option C with the option-A UI nuance). Implemented as both a UI gate AND a database guard so the rule holds whether the eviction is attempted from tenant settings, a stale tab, or curl.
+- **Implementation:**
+  - **Database (migration 20260501080000):** `tenant_members_view` recreated with an `is_agency_backed` boolean (true when the member is also an owner of the tenant's parent agency); `enforce_tenant_member_guards` trigger gained a third DELETE clause that raises `42501` when an agency-backed row is deleted by anyone other than a platform admin.
+  - **Client (tenant-settings.component):** the row-actions menu is hidden for agency-backed members (extends the existing `@if (!isSelf(member))` gate). A subtle "via agency" tag is rendered next to the display name on those rows, with a hover title pointing the user to the agency portal.
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 4 (Tenant Owner) by `aadimadala` reviewing tenant settings on Pfizer.
 
 ### 9. Cross-surface "this lives elsewhere" hints (agency-managed tenant branding, and other split-ownership surfaces)
 - **Status:** done (commit 67ebb0c, scoped to tenant-settings branding card). Read-only branding card now names the parent agency via brand context, displays the active primary color as a swatch + hex, and conditionally surfaces a cross-host link to the agency portal when the current user is a member of the parent agency.
