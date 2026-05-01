@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { agencyGuard } from './core/guards/agency.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
+import { spaceGuard } from './core/guards/space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
@@ -122,6 +123,7 @@ export const routes: Routes = [
       },
       {
         path: 's/:spaceId',
+        canActivate: [spaceGuard],
         children: [
           {
             path: '',
