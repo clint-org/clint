@@ -28,7 +28,7 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
           class="absolute inset-0 cursor-default bg-slate-900/40"
           (click)="close()"
         ></button>
-        <div class="absolute left-1/2 top-[15vh] w-[560px] max-w-[92vw] -translate-x-1/2 rounded-md border border-slate-200 bg-white shadow-2xl">
+        <div class="absolute left-1/2 top-[15vh] flex max-h-[70vh] w-[720px] max-w-[92vw] -translate-x-1/2 flex-col rounded-md border border-slate-200 bg-white shadow-2xl">
           <h2 id="palette-title" class="sr-only">Search</h2>
           <app-palette-search-input
             [query]="palette.query()"
@@ -43,23 +43,25 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
             (tab)="toggleScope()"
             (togglePin)="togglePinOnSelected()"
           />
-          @if (palette.query().length === 0) {
-            <app-palette-empty-state
-              [state]="palette.emptyState()"
-              [selectedFlatIndex]="palette.selectedIndex()"
-              (indexSelect)="palette.selectIndex($event)"
-              (activated)="onActivate($event)"
-            />
-          } @else {
-            <app-palette-result-list
-              [items]="palette.results()"
-              [selectedIndex]="palette.selectedIndex()"
-              [loading]="palette.isLoading()"
-              [scopeLabel]="spaceShortName()"
-              (indexSelect)="palette.selectIndex($event)"
-              (activated)="onActivate($event)"
-            />
-          }
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            @if (palette.query().length === 0) {
+              <app-palette-empty-state
+                [state]="palette.emptyState()"
+                [selectedFlatIndex]="palette.selectedIndex()"
+                (indexSelect)="palette.selectIndex($event)"
+                (activated)="onActivate($event)"
+              />
+            } @else {
+              <app-palette-result-list
+                [items]="palette.results()"
+                [selectedIndex]="palette.selectedIndex()"
+                [loading]="palette.isLoading()"
+                [scopeLabel]="spaceShortName()"
+                (indexSelect)="palette.selectIndex($event)"
+                (activated)="onActivate($event)"
+              />
+            }
+          </div>
           <div class="sr-only" aria-live="polite">{{ liveMessage() }}</div>
         </div>
       </div>
@@ -187,11 +189,9 @@ export class CommandPaletteComponent implements OnInit {
     const base = `/t/${this.tenantId}/s/${this.spaceId}`;
     switch (item.kind) {
       case 'trial':    return `${base}/manage/trials/${item.id}`;
-      // Companies have no detail page; the bullseye-by-company route gives a
-      // focused view of just that company. Best available "go to company" target.
-      case 'company':  return `${base}/bullseye/by-company/${item.id}`;
-      // Products have no detail page; the list page filters to the selected
-      // product when ?selected=<id> is present.
+      // Companies and products have no detail page; the list page reads
+      // ?selected=<id> on init and filters to that row.
+      case 'company':  return `${base}/manage/companies?selected=${item.id}`;
       case 'product':  return `${base}/manage/products?selected=${item.id}`;
       case 'event':    return `${base}/events?eventId=${item.id}`;
       case 'catalyst': return `${base}/catalysts?markerId=${item.id}`;

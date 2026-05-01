@@ -86,7 +86,16 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    // Capture ?selected=<id> before loadData runs because the grid's URL-sync
+    // effect rewrites query params with its own state during init.
+    const selectedId = this.route.snapshot.queryParamMap.get('selected');
     await this.loadCompanies();
+    if (selectedId) {
+      const target = this.companies().find((c) => c.id === selectedId);
+      if (target) {
+        this.grid.onGlobalSearchInput(target.name);
+      }
+    }
   }
 
   ngOnDestroy(): void {
