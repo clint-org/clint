@@ -69,6 +69,19 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 14. Tenant settings chrome reachable to space-only members but inert
+- **Status:** open
+- **Scope:** `features/tenant-settings/tenant-settings.component.ts`
+- **Symptom:** since the `has_tenant_access` fix on 2026-05-01 (migration 84), space-only members (e.g. a Reader who joined via space-invite code without becoming a tenant owner) pass `tenantGuard` and can reach `/t/<tenant-id>/settings`. The page renders, but RLS hides the members list (empty table), and every mutation (Add owner, save branding) is rejected by the strict `is_tenant_member` gate inside the RPCs. The user is left staring at an empty, non-functional surface with no explanation.
+- **Why this happened:** the route guard had to be loosened so space members could reach their space at `/t/<id>/s/<space-id>/...`. The `/t/<id>/settings` route inherits the same parent guard, so it activates too. There is no route-level discriminator between "tenant-scoped settings" and "any descendant of /t/:tenantId."
+- **Fix shape options:**
+  1. **Strict tenantGuard for `/settings` specifically.** Wrap `/t/:tenantId/settings` in a child route with a stricter guard that calls `is_tenant_member` (not `has_tenant_access`). Mirror the pattern for any other tenant-scoped admin route. Cleanest.
+  2. **In-page empty state.** When `tenant-settings.component` loads and detects the user has no `tenant_members` row, render a polite "you don't have access to manage this tenant; ask a tenant owner" page instead of the empty form. Cheaper but doesn't prevent the failed-fetch round trip.
+  3. **Hide the link to `/settings`** from any nav surface where the user is space-only. Prevents the user from clicking in but doesn't stop direct URL navigation.
+- **Recommended:** option 1, applied at the route level. Solves the issue at the cause and matches the pattern we used for `agencyGuard` vs the looser brand-kind check.
+- **Estimate:** 30 minutes
+- **Surfaced:** 2026-05-01 access-model test pass, immediately after the `has_tenant_access` fix landed for Phase 6
+
 ### 13. Gmail dot canonicalization across invite and lookup paths
 - **Status:** open
 - **Scope:** server-side normalization in `add_tenant_owner`, `invite_to_space`, `add_agency_member`, `accept_invite`, `accept_space_invite`, `lookup_user_by_email`, and the `handle_new_user` trigger; same canonicalization client-side as a UX hint
