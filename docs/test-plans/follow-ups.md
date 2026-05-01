@@ -69,6 +69,16 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 15. Tenants RLS too strict for space-only members; tenant dropdown empty
+- **Status:** open
+- **Scope:** RLS policy on `tenants` SELECT, plus the topbar tenant-dropdown query in `core/layout/contextual-topbar.component.ts` (uses `tenantService.listMyTenants` which does `select * from tenants`)
+- **Symptom:** a pure space-only member (e.g. `madala.dodbele` as Reader of SGLT2 Pipeline, no `tenant_members` row anywhere) sees an empty topbar tenant dropdown when she's inside her space. RLS on `tenants` SELECT currently allows: `is_tenant_member(id)` OR `is_agency_member(agency_id)` OR `is_platform_admin()`. None of those fire for a space-only member, so the tenant row gets filtered out. Verified via curl: `GET /rest/v1/tenants` returned `[]` for her, even though she has full access to SGLT2 inside Pfizer.
+- **Why this matters:** the user sees the space content but the tenant context (name, dropdown for switching) is missing or blank. Mirrors the same conceptual gap as follow-up #14 / the `has_tenant_access` issue, but at the data layer.
+- **Fix shape:** extend the `tenants` SELECT policy to include "user has a `space_members` row for any space whose `tenant_id` matches this row." A clean way: define `has_tenant_access(p_tenant_id)` (already shipped in migration 84) and inline its predicate into the SELECT policy. Roughly: `is_tenant_member(id) OR is_agency_member(agency_id) OR is_platform_admin() OR exists(select 1 from space_members sm join spaces s on s.id = sm.space_id where s.tenant_id = tenants.id and sm.user_id = auth.uid())`.
+- **Caveat:** broaden carefully. The tenants row exposes `name`, `subdomain`, `app_display_name`, `primary_color`, etc. None of those are sensitive to a space-only member (they already see the brand because they're inside the tenant), so the broadening is fine. But audit any other tenant-row column for sensitivity before shipping.
+- **Estimate:** 30 minutes for the policy migration, plus a quick scan of other places that read `tenants` to make sure the broader visibility doesn't surprise.
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 6 (Reader) when madala.dodbele's tenant dropdown rendered blank inside SGLT2 Pipeline
+
 ### 14. Tenant settings chrome reachable to space-only members but inert
 - **Status:** open
 - **Scope:** `features/tenant-settings/tenant-settings.component.ts`

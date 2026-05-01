@@ -4,6 +4,25 @@
 
 ---
 
+## Resume here (2026-05-01 pause point)
+
+Test pass paused mid-Phase 6 (Space Reader). Tally so far: **38 of 53 boxes passed plus 1 n/a**. Anonymous (6/6), Platform Admin (8/8), Space Owner (6/6), Tenant Owner (8/8 + 1 n/a), Agency Owner (10/10) all complete. Reader (0/7), Contributor (0/9), Cross-cutting (0/5) remaining.
+
+**Current prod state for the test:**
+- Stout agency at `stout.clintapp.com`, owner `aadi529@gmail.com`. Email-domain lock = `gmail.com`.
+- Pfizer tenant under Stout at `pfizer.clintapp.com`. id `a87a88ae-1b76-4c6b-85e0-1b53c926d0f2`. Tenant owners: `aadi529@gmail.com` and `aadimadala@gmail.com`.
+- One space under Pfizer: SGLT2 Pipeline. id `746d4832-374d-4f0e-93ce-47839388aa29`. Space owner: `aadi529`.
+- `madala.dodbele@gmail.com`: pure Space Reader of SGLT2 Pipeline, no other roles. (User row id `48990035-3b34-447d-abb6-c1af8c1da11f`.) She is set up for Phase 6.
+- `aadityamadala@gmail.com`: only platform admin in `platform_admins`.
+- Phase 6 is unblocked; the `has_tenant_access` fix (commit `1008726`, migration 84) is live. She can now reach `/t/<pfizer-id>/s/<sglt2-id>/...`.
+
+**To advance Phase 6 from here:** sign in to Incognito as `madala.dodbele@gmail.com` (Google OAuth). Walk the 7 Reader scenarios below. The first 6 are browser; the last (curl POST on events) needs her JWT pasted from DevTools. Then transition to Phase 7 by SQL: `update space_members set role='editor' where space_id='746d4832-374d-4f0e-93ce-47839388aa29' and user_id='48990035-3b34-447d-abb6-c1af8c1da11f';` and walk the 9 Contributor scenarios.
+
+Cleanup pending at end of run (Section 11 of `2026-04-29-whitelabel-access-model.md`):
+- delete `auth.users` rows for `aadimadala@gmail.com`, `madala.dodbele@gmail.com` (cascades to memberships)
+- the `agency-2` agency owned by `aadityamadala` looks like a stray from earlier experimentation; verify it is a throwaway before deleting
+- any held-invite rows for `phase4-throwaway@gmail.com` or similar test emails
+
 A short, runnable checklist that walks a fresh prod environment through the role boundaries in 30 minutes. One scenario per checkbox. Each row says: as <Actor>, do <action>, expect <observable result>. UI scenarios use a browser; API scenarios use curl with the actor's JWT.
 
 ## How to get a JWT for an actor
