@@ -98,16 +98,16 @@ Sign in as an agency owner who never personally provisioned the tenant or accept
 
 **Setup (post-2026-05-01):** the agency members page now uses `add_agency_member`, which has a held-invite branch. To set up an agency-owner-only actor, sign in as the existing agency owner (e.g. `aadi529` for Stout) and use the agency members page to add the new actor's email. If they have not yet signed in to the platform, the form returns `Invite held` and an `agency_invites` row is written. On the new actor's first sign-in via Google OAuth, the `handle_new_user` trigger auto-promotes the held invite into an `agency_members` row. They are then a clean Agency Owner, not in `tenant_members` anywhere. (Earlier notes about "the actor must sign in first before being added" no longer apply, see follow-up #11 in `follow-ups.md`.)
 
-- [ ] Visit `<agency>.clintapp.com/admin` → expect chrome renders, agency portal works.
-- [ ] Provision a new tenant under the agency → expect success.
-- [ ] Visit `<tenant>.clintapp.com/t/<id>/settings` → expect chrome renders (because `is_tenant_member` agency-disjunct), tenant branding editable.
-- [ ] Visit `<tenant>.clintapp.com/t/<id>/spaces` → expect spaces list visible.
-- [ ] Click into any space → expect data hidden (firewall: no `space_members` row, no agency disjunct in `has_space_access`).
-- [ ] Click "Create space" on the spaces page → expect `Not a member of this tenant` from `create_space` (RPC checks `tenant_members` directly, no agency disjunct).
-- [ ] Visit `/seed-demo` URL on a space → expect `Insufficient permissions`.
-- [ ] curl `rpc/update_agency_branding` for the agency → expect success.
-- [ ] curl `rpc/provision_agency` → expect `Platform admin only`.
-- [ ] curl `rpc/seed_demo_data` for any space → expect `Insufficient permissions`.
+- [x] Visit `<agency>.clintapp.com/admin` → expect chrome renders, agency portal works.
+- [x] Provision a new tenant under the agency → expect success. Verified, throwaway tenant `Phase5 Test` (`phase5-test`) created (cleanup pending).
+- [x] Visit `<tenant>.clintapp.com/t/<id>/settings` → expect chrome renders (because `is_tenant_member` agency-disjunct), tenant branding editable. Verified chrome renders; branding-edit moved to curl check 8 since the form isn't surfaced on this UI for agency-managed tenants (see follow-up #9).
+- [x] Visit `<tenant>.clintapp.com/t/<id>/spaces` → expect spaces list visible.
+- [x] Click into any space → expect data hidden (firewall: no `space_members` row, no agency disjunct in `has_space_access`).
+- [x] Click "Create space" on the spaces page → expect `Not a member of this tenant` from `create_space` (RPC checks `tenant_members` directly, no agency disjunct).
+- [x] Visit `/seed-demo` URL on a space → expect `Insufficient permissions`.
+- [x] curl `rpc/update_agency_branding` for the agency → expect success. Verified, HTTP 200, returned `{"id":"18669229-...","updated":true}`.
+- [x] curl `rpc/provision_agency` → expect `Platform admin only`. Verified, 42501.
+- [x] curl `rpc/seed_demo_data` for any space → expect `Insufficient permissions`. Verified, 42501 with the new gate text from migration 82: `Insufficient permissions: must be space owner to seed demo data`.
 
 ## Platform Admin
 
