@@ -127,6 +127,8 @@ Route-guard variant of `is_tenant_member`, added 2026-05-01 (migration 84). Retu
 
 Used by `tenantGuard` and the tenant branch of `marketingLandingGuard` for route activation only. Do not use in RLS policies: broadening `is_tenant_member` to include space-only members would let a Reader enumerate tenant owners via `tenant_members` SELECT, an info leak. Keep RLS strict on `is_tenant_member`; route activation looser via `has_tenant_access`.
 
+The one exception is the `tenants` SELECT policy itself. Since 2026-05-01 (migration `20260501050000_tenants_select_includes_space_only_members`) it includes the same fourth disjunct ("user has a `space_members` row for any space under this tenant") as inlined SQL — *not* a call to `has_tenant_access`. The reason is that the tenants row exposes only brand identity (name, subdomain, custom_domain, app_display_name, primary/brand colors, logo_url, agency_id, suspended_at), all of which is already visible to a space-only member through the brand bootstrap when they enter via the tenant subdomain. Without this, the topbar tenant dropdown rendered empty for space-only members. The disjunct is inlined rather than calling `has_tenant_access` because the function comment explicitly forbids RLS use; inlining keeps any future broadening of `has_tenant_access` from accidentally widening RLS on `tenant_members` or other tenant-internal tables.
+
 ### is_agency_member
 
 ```
