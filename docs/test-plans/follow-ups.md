@@ -11,7 +11,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 ## Open
 
 ### 16. Cold direct deep-link into space-scoped routes redirects to `/spaces`; affects ALL users (not just space-only members)
-- **Status:** in-progress (root cause unconfirmed; spaceGuard added as defense-in-depth)
+- **Status:** done (resolved 2026-05-01 by spaceGuard, commit f85ae3f). Verified with madala (Reader) -- direct deep-link to `/t/<tenant>/s/<space>/settings/general` now loads the page cleanly without redirect. Root cause was likely a downstream race the spaceGuard's explicit `has_space_access` RPC call short-circuited.
 - **Scope:** route guards/resolvers on `s/:spaceId` and any descendants; `features/spaces/space-list.component.ts` for the related empty-state symptom; `core/services/space.service.ts:20-28` (the underlying query is correct).
 - **Investigation log (2026-05-01):** searched all `router.navigate(['/t', _, 'spaces'])` and `createUrlTree(['/t', _, 'spaces'])` sites. None auto-fire on cold deep-link. The marketingLandingGuard is only on `path: ''` (apex). The wildcard route is `redirectTo: ''`. Angular Router *should* backtrack sibling routes when a parent's children fail (so `s/:spaceId/settings/general` should match the explicit `'settings/general'` sibling even though `path: ''` is the first child of `s/:spaceId`). Yet the user reproduces the redirect cleanly across three accounts (madala Reader, novaelevatellc Contributor, aadi529 Owner-of-everything). Strong residual hypothesis: a component-level ngOnInit or effect inside one of the deep-link target components (space-general, space-members, tenant-settings) is racing against an unset signal and triggering an early navigation. Needs DevTools Network+Console capture during reproduction.
 - **Defense-in-depth added 2026-05-01:** `spaceGuard` on `s/:spaceId` (commit f85ae3f) calls `has_space_access` directly. If the previous redirect was caused by a signal-race in a downstream component, having the guard make its own RPC call gates the route correctly regardless of signal state. This may incidentally resolve #16 if the race was in a guard chain that depended on AppShell's loaded-spaces signal; if the race was in a leaf component, this guard does not address it.
@@ -39,7 +39,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 2 (Platform Admin) UI check 4, when the expected save denial rendered as a banner instead of a toast
 
 ### 2. Event-form fails to populate when editing an existing event (data-integrity risk)
-- **Status:** open
+- **Status:** done (resolved 2026-05-01 by signals + reset-on-eventId-change, commit 4f10352). Verified with novaelevatellc (Contributor): added a new event, then opened an existing event for edit -- form populated with the existing event's actual values (not the previous form's payload). Re-opening "+ New event" rendered an empty form. Both stale-state cases eliminated.
 - **Scope:** `src/client/src/app/features/events/event-form.component.ts`
 - **Symptom:** Clicking edit on an existing event opens the dialog WITHOUT the existing event's values. Worse, if the user has already added or edited an event in this session, the dialog opens populated with the *previous* form's values (stale binding state retained from the last dialog session). Verified twice: 2026-05-01 by `aadimadala` (Phase 4) and `novaelevatellc` (Phase 7), each saw the prior new-event payload when opening an existing event for edit. New-event form works correctly.
 - **Why this matters (worse than originally noted):** if a user opens edit, sees the stale data and assumes it's the existing event's data, then clicks Save -- they overwrite the existing event with the previous form's payload. Server-side RLS lets editors and owners write to `events`, so the bad row goes through. This is a silent data-integrity risk, not just a UX leak. Until fixed, contributors should be warned not to use the edit-event flow.
@@ -91,7 +91,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Fix shape:** same as #6
 
 ### 15. Tenants RLS too strict for space-only members; tenant dropdown empty
-- **Status:** open
+- **Status:** done (resolved 2026-05-01 by migration 20260501050000, commit b733be9). Verified with madala (Reader): topbar now renders the Pfizer logo + name + dropdown showing the tenant; SGLT2 Pipeline visible in the spaces list inside the tenant.
 - **Scope:** RLS policy on `tenants` SELECT, plus the topbar tenant-dropdown query in `core/layout/contextual-topbar.component.ts` (uses `tenantService.listMyTenants` which does `select * from tenants`)
 - **Symptom:** a pure space-only member (e.g. `madala.dodbele` as Reader of SGLT2 Pipeline, no `tenant_members` row anywhere) sees an empty topbar tenant dropdown when she's inside her space. RLS on `tenants` SELECT currently allows: `is_tenant_member(id)` OR `is_agency_member(agency_id)` OR `is_platform_admin()`. None of those fire for a space-only member, so the tenant row gets filtered out. Verified via curl: `GET /rest/v1/tenants` returned `[]` for her, even though she has full access to SGLT2 inside Pfizer.
 - **Why this matters:** the user sees the space content but the tenant context (name, dropdown for switching) is missing or blank. Mirrors the same conceptual gap as follow-up #14 / the `has_tenant_access` issue, but at the data layer.
@@ -101,7 +101,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 6 (Reader) when madala.dodbele's tenant dropdown rendered blank inside SGLT2 Pipeline
 
 ### 14. Tenant settings chrome reachable to space-only members but inert
-- **Status:** open
+- **Status:** done (resolved 2026-05-01 by tenantSettingsGuard, commit 6988211). Verified with madala (Reader): direct navigation to `/t/<pfizer>/settings` now redirects to `/t/<pfizer>/spaces` instead of rendering the empty/inert tenant settings page.
 - **Scope:** `features/tenant-settings/tenant-settings.component.ts`
 - **Symptom:** since the `has_tenant_access` fix on 2026-05-01 (migration 84), space-only members (e.g. a Reader who joined via space-invite code without becoming a tenant owner) pass `tenantGuard` and can reach `/t/<tenant-id>/settings`. The page renders, but RLS hides the members list (empty table), and every mutation (Add owner, save branding) is rejected by the strict `is_tenant_member` gate inside the RPCs. The user is left staring at an empty, non-functional surface with no explanation.
 - **Why this happened:** the route guard had to be loosened so space members could reach their space at `/t/<id>/s/<space-id>/...`. The `/t/<id>/settings` route inherits the same parent guard, so it activates too. There is no route-level discriminator between "tenant-scoped settings" and "any descendant of /t/:tenantId."
@@ -127,7 +127,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup, when madaladodbele could not be auto-claimed because the typed and stored email differed by a single period
 
 ### 12. Onboarding page has no sign-out option
-- **Status:** open
+- **Status:** done (resolved 2026-05-01 by commit c0f3a87). Verified with novaepicestates (no memberships): "Wrong account? Sign out" link visible below the join-code form; click signs the user out and routes to `/login`.
 - **Scope:** `src/client/src/app/features/onboarding/onboarding.component.ts`
 - **Symptom:** a signed-in user with no roles lands on `/onboarding` (the join-with-code form). There is no sign-out affordance on this page. If the user signed in with the wrong Google account, or just wants to switch accounts mid-flow, the only escapes are clearing cookies, closing the tab, or navigating to a URL the marketing-landing-guard handles. None of those are obvious.
 - **Why it matters:** especially relevant for the multi-account test pass, where signing in `madaladodbele` to create her `auth.users` row leaves her stuck on onboarding with no way out short of dev-tools intervention. A real new user who picked the wrong Google identity has the same problem.
