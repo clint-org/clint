@@ -187,3 +187,44 @@ end;
 $$;
 
 grant execute on function public.palette_empty_state(uuid) to authenticated;
+
+-- ============================================================
+-- palette_touch_recent - upserts a recent open and trims to last 25
+-- ============================================================
+create or replace function public.palette_touch_recent (
+  p_space_id  uuid,
+  p_kind      text,
+  p_entity_id uuid
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then return; end if;
+  if not public.has_space_access(p_space_id) then return; end if;
+  if p_kind not in ('company','product','trial','catalyst','event') then
+    raise exception 'invalid kind %', p_kind;
+  end if;
+
+  insert into public.palette_recents(user_id, space_id, kind, entity_id, last_opened_at)
+  values (v_uid, p_space_id, p_kind, p_entity_id, now())
+  on conflict (user_id, space_id, kind, entity_id)
+  do update set last_opened_at = excluded.last_opened_at;
+
+  delete from public.palette_recents r
+  where r.user_id = v_uid
+    and r.space_id = p_space_id
+    and (r.kind, r.entity_id) not in (
+      select kind, entity_id
+      from public.palette_recents
+      where user_id = v_uid and space_id = p_space_id
+      order by last_opened_at desc
+      limit 25
+    );
+end;
+$$;
+
+grant execute on function public.palette_touch_recent(uuid, text, uuid) to authenticated;
