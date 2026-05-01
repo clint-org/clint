@@ -75,6 +75,30 @@ A full CRUD interface for managing all data within a space:
 | Marker Types | Custom marker types beyond the 10 system defaults (each assigned to a category) |
 | Therapeutic Areas | Medical indication categories (name, abbreviation) |
 
+## Command Palette (Cmd+K)
+
+A power-user finder/navigator/command runner. Mounted once in `AppShellComponent` so it is available on every space-level page. Not mounted in agency portal, super-admin, or marketing surfaces.
+
+**Open:** `Cmd+K` (or `Ctrl+K`); `/` also opens when focus is not in a text input.
+
+**Empty state** (no query): Pinned (top 10), Recents (top 8), Commands (filtered by `when()` predicates). Recents are bumped on entity navigation by both a Router-event listener (matches `/manage/(trials|products|companies)/:id`) and an explicit `recents.touch()` call after the palette activates an entity row.
+
+**Search:** debounced 80ms, minimum 2 chars. Backed by `search_palette` RPC which unions across companies, products, trials, markers (catalyst kind), and events using `pg_trgm` similarity + prefix-match boost + trial-identifier exact-match boost. When no prefix token is used, matching navigation commands are merged into the result list (typing `bullseye` finds the "Go to Bullseye" command without needing the `>` prefix).
+
+**Prefix tokens:** `>` commands, `@` companies, `#` trials, `!` catalysts. Backspacing the lone token returns to all-kinds.
+
+**Activation targets:**
+- trial -> `/manage/trials/:id` (detail page)
+- company -> `/manage/companies?selected=<id>` (list filtered to that company)
+- product -> `/manage/products?selected=<id>` (list filtered to that product)
+- catalyst -> `/catalysts?markerId=<id>` (detail panel opens on load)
+- event -> `/events?eventId=<id>` (detail panel opens on load)
+- command -> client-side `run()` handler (router navigate, sign-out, etc.)
+
+**Pinned/Recents storage:** `palette_pinned(user_id, space_id, kind, entity_id, position)` and `palette_recents(user_id, space_id, kind, entity_id, last_opened_at)`. Both RLS-scoped to `user_id = auth.uid()`. Recents trimmed to last 25 inside `palette_touch_recent`.
+
+**RPCs:** `search_palette`, `palette_empty_state`, `palette_touch_recent`, `palette_set_pinned`, `palette_unpin` -- all `SECURITY DEFINER`, all gate on `has_space_access(p_space_id)`.
+
 ## Events (Intelligence Feed)
 
 A unified chronological feed showing analyst-created events and timeline markers together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial.
