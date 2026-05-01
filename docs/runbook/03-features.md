@@ -120,9 +120,9 @@ A unified chronological feed showing analyst-created events and timeline markers
 
 **Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority.
 
-## Key Catalysts
+## Future Catalysts
 
-The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Catalysts**). Shows all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
+The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Future Catalysts**). Shows all upcoming markers (clinical trial milestones, data readouts, regulatory dates, approvals, LOE events) in chronological order, grouped into adaptive time buckets.
 
 **Route:** `/t/:tenantId/s/:spaceId/catalysts` (child of landscape shell). Honors `?markerId=<id>` to deep-link a specific marker into the detail panel on load (used by the command palette).
 

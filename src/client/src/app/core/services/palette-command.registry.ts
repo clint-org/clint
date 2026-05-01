@@ -33,7 +33,7 @@ export class PaletteCommandRegistry {
       },
       {
         id: 'go-catalysts',
-        label: 'Go to Catalysts',
+        label: 'Go to Future Catalysts',
         hint: 'Navigation',
         run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/catalysts`),
       },

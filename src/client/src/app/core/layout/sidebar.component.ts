@@ -47,7 +47,7 @@ const NAV_SECTIONS: NavSection[] = [
           { label: 'ROA', route: 'positioning/by-roa' },
         ],
       },
-      { label: 'Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
+      { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
     ],
   },
   {

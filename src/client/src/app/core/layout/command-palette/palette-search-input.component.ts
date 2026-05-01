@@ -52,7 +52,7 @@ export class PaletteSearchInputComponent implements AfterViewInit {
         case '>': return ' / Commands';
         case '@': return ' / Companies';
         case '#': return ' / Trials';
-        case '!': return ' / Catalysts';
+        case '!': return ' / Future Catalysts';
         default:  return '';
       }
     })();
