@@ -10,6 +10,24 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 
 ## Open
 
+### 16. Cold direct deep-link into space-scoped routes redirects to `/spaces`; affects ALL users (not just space-only members)
+- **Status:** open
+- **Scope:** route guards/resolvers on `s/:spaceId` and any descendants; `features/spaces/space-list.component.ts` for the related empty-state symptom; `core/services/space.service.ts:20-28` (the underlying query is correct).
+- **Symptom:** a pure space-only member (madala.dodbele as Reader of SGLT2 Pipeline) navigating to `pfizer.clintapp.com/t/<pfizer-id>/spaces` sees the empty-state ("No spaces yet") instead of her one space. Direct navigation to the space URL (`/t/<pfizer-id>/s/<sglt2-id>/catalysts`) works, so she has full data access. The empty-state CTA also renders a "Create space" button for her, which is a write affordance she does not have (`create_space` RPC rejects; cosmetic UX leak).
+- **Confirmed root cause is NOT RLS:** verified 2026-05-01 by reproducing the exact client query via curl with her JWT: `GET /rest/v1/spaces?tenant_id=eq.<pfizer-id>&select=*&order=created_at` returns SGLT2 correctly (one row, full payload). So the `spaces` SELECT policy (`has_space_access(id) OR is_tenant_member(tenant_id)`) is firing correctly for her. The bug is somewhere between the page activating and the response rendering.
+- **The deep-link redirect affects EVERY user, not just space-only members.** First seen with madala (Reader) and novaelevatellc (Contributor) -- assumed to be a space-only-member symptom. Then 2026-05-01 Phase 8 confirmed that aadi529 -- who is Space Owner AND Tenant Owner AND Agency Owner of the parent agency -- *also* gets redirected from a cold direct deep-link to `/t/<tenant>/s/<space>/settings/members` to `/t/<tenant>/spaces`, identical pathology. He has every access disjunct there is. So this is a 100%-of-users guard/resolver race: any cold deep-link into `s/:spaceId` or descendants redirects to the spaces list. After selecting the space via the topbar (which presumably sets a signal/observable somewhere), the same direct URL works fine. Production-blocker UX bug. Likely root cause: a `canActivate` or `resolve` on the `s/:spaceId` route reading a `currentSpace` (or similar) signal/observable that is empty until the topbar selects the space. The guard treats "empty" as "no access" and redirects.
+- **Likely client-side causes to investigate (in order):**
+  1. Auth race: the page query fires before the Supabase client has the JWT attached on `pfizer.clintapp.com` (the cross-subdomain cookie story for the apex). If the request goes out as anon, `has_space_access` returns false, the policy filters everything out, and the page caches an empty array.
+  2. Guard short-circuit: a guard upstream of `space-list.component` (tenantGuard? brand-context bootstrap?) clears or replaces the data when the user is not a `tenant_members` row holder. Worth grepping `space-list.component.ts` and the route configuration for any `tenantGuard`-like pre-resolve.
+  3. Component-side filter: confirm `space-list.component.ts` is not filtering the result client-side (e.g., on `is_tenant_member` info from a separate query).
+- **Why this matters:** a space-only member has no UI breadcrumb back to her own space from the tenant root. She has to know the direct URL.
+- **Fix shape:**
+  1. Reproduce in DevTools: open the spaces-list page as madala, watch the Network tab for the `spaces` request, compare its response to the curl-confirmed shape.
+  2. Once root cause is isolated, fix in the component / guard / session-attach path.
+  3. Separately, hide the "Create space" empty-state CTA when the user is not a tenant member -- rolls under #5 if the role-aware UI gating sweep covers spaces-list.
+- **Estimate:** 1 hour for diagnosis once you can put eyes on Network tab; sized on root cause.
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 6 (Reader) scenario 1; data-layer ruled out via curl during scenario 6.
+
 ### 1. Toast vs banner inconsistency for transient action feedback
 - **Status:** open
 - **Scope:** trial-detail.component, plus any other manage page that uses both patterns
@@ -18,19 +36,20 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Estimate:** ~1 hour sweep
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 2 (Platform Admin) UI check 4, when the expected save denial rendered as a banner instead of a toast
 
-### 2. Event-form opens empty when editing an existing event
+### 2. Event-form fails to populate when editing an existing event (data-integrity risk)
 - **Status:** open
 - **Scope:** `src/client/src/app/features/events/event-form.component.ts`
-- **Symptom:** Clicking edit on an existing event opens the dialog with no fields populated. New-event form still works.
-- **Suspected root cause:** form fields (title, description, eventDateValue, categoryId, priority, tags, sources, threadId, linkedEventIds at lines 302-314) are plain class properties bound via `[(ngModel)]`, not signals. `loadExisting()` writes to them after `getEventDetail` resolves, but the dialog has already rendered with empty values and change detection doesn't refresh the bindings.
-- **Fix shape:** convert the form fields to signals; bind via `[ngModel]="title()" (ngModelChange)="title.set($event)"`. Mirrors the pattern memory-rule "ANY plain prop bound via `[(ngModel)]` that participates in a computed() MUST be a signal."
+- **Symptom:** Clicking edit on an existing event opens the dialog WITHOUT the existing event's values. Worse, if the user has already added or edited an event in this session, the dialog opens populated with the *previous* form's values (stale binding state retained from the last dialog session). Verified twice: 2026-05-01 by `aadimadala` (Phase 4) and `novaelevatellc` (Phase 7), each saw the prior new-event payload when opening an existing event for edit. New-event form works correctly.
+- **Why this matters (worse than originally noted):** if a user opens edit, sees the stale data and assumes it's the existing event's data, then clicks Save -- they overwrite the existing event with the previous form's payload. Server-side RLS lets editors and owners write to `events`, so the bad row goes through. This is a silent data-integrity risk, not just a UX leak. Until fixed, contributors should be warned not to use the edit-event flow.
+- **Suspected root cause:** form fields (title, description, eventDateValue, categoryId, priority, tags, sources, threadId, linkedEventIds at lines 302-314) are plain class properties bound via `[(ngModel)]`, not signals. `loadExisting()` writes to them after `getEventDetail` resolves, but the dialog has already rendered with the previous values (empty on first open, stale on subsequent opens). Change detection doesn't refresh the bindings when `loadExisting` resolves later.
+- **Fix shape:** convert the form fields to signals; bind via `[ngModel]="title()" (ngModelChange)="title.set($event)"`. Reset all signals to empty in the dialog `onShow` lifecycle to clear stale state. Mirrors the pattern memory-rule "ANY plain prop bound via `[(ngModel)]` that participates in a computed() MUST be a signal."
 - **Estimate:** 30 minutes
-- **Surfaced:** 2026-05-01 access-model test pass, while exercising Section 4 Contributor write checks as `aadimadala`
+- **Surfaced:** 2026-05-01 access-model test pass; first as `aadimadala` (Section 4), confirmed and worsened by `novaelevatellc` Phase 7 scenario 3.
 
 ### 3. Space settings danger zone visible to all space members
 - **Status:** open
 - **Scope:** `src/client/src/app/features/space-settings/space-general.component.ts`
-- **Symptom:** Description textarea, Save button, AND the Danger Zone "Delete space" button render for any space member regardless of role. Server-side enforcement holds (RLS rejects updates and deletes for non-owners), so no data corruption, but the UI is a footgun. A Contributor or Reader sees a Delete button that is wired up and confirmation-gated, then nothing happens when they click through.
+- **Symptom:** Description textarea, Save button, AND the Danger Zone "Delete space" button render for any space member regardless of role. Server-side enforcement holds (RLS rejects updates and deletes for non-owners), so no data corruption, but the UI is a footgun. A Contributor or Reader sees a Delete button that is wired up and confirmation-gated. Save errors render as a top-of-page banner (interaction with #1). Delete is *worse* than originally noted: clicking through the confirm dialog **navigates away as if delete succeeded** (likely lands on `/spaces`, which renders empty for a space-only member per #16) even though the space still exists. The component is firing the navigation without awaiting the delete result, or swallowing the rejection. Verified 2026-05-01 by madala.dodbele on SGLT2.
 - **Fix shape:** part of the broader role-gating sweep (#5). Expose `currentUserRole` via the new `SpaceRoleService`, then `@if (canEdit())` around the form fields and `@if (isOwner())` around the danger zone.
 - **Surfaced:** 2026-05-01 access-model test pass, while exercising Section 4 Contributor as `aadimadala`
 

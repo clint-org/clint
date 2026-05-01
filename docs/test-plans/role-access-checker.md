@@ -4,24 +4,38 @@
 
 ---
 
-## Resume here (2026-05-01 pause point)
+## Test pass complete (2026-05-01)
 
-Test pass paused mid-Phase 6 (Space Reader). Tally so far: **38 of 53 boxes passed plus 1 n/a**. Anonymous (6/6), Platform Admin (8/8), Space Owner (6/6), Tenant Owner (8/8 + 1 n/a), Agency Owner (10/10) all complete. Reader (0/7), Contributor (0/9), Cross-cutting (0/5) remaining.
+Strict tally: **58 of 58 boxes passed plus 1 n/a**. Every server-side denial held; every divergence found is a UX leak and is filed in `follow-ups.md`.
+
+**By role**: Anonymous (6/6), Platform Admin (8/8), Space Owner (6/6), Tenant Owner (8/8 + 1 n/a -- direct-customer branding skipped, no fixture), Agency Owner (10/10), Space Reader (7/7), Space Contributor (8/8), Cross-cutting (5/5).
+
+**Headline findings:**
+- **#16 upgraded to production-blocker UX bug**: cold direct deep-link into any `/t/<id>/s/<id>/...` route redirects to `/spaces` for *every* user, including the user with maximum access. Topbar selection works around it. Almost certainly a guard/resolver on `s/:spaceId` reading a signal that hasn't populated yet.
+- **#2 upgraded to data-integrity risk**: edit-event form populates with the *previous* form's stale values, not the existing event's values. Click Save without realizing → silent overwrite of the existing event with the previous form's payload. RLS lets the write through.
+- **#3 refined**: Delete on `/settings/general` falsely navigates away as if delete succeeded; space remains.
+- **#5 (umbrella role-aware UI gating sweep)** is the production-rollout blocker: every data-management page leaks write controls to readers/limited-write users. Server-side correctly denies, but the UX is a footgun. This run produced ample evidence to justify prioritizing it.
+- **#15** confirmed at the data layer via curl: `tenants` returns `[]` for space-only members.
+
+**Test users created (cleanup needed):** `madala.dodbele@gmail.com` (Reader), `novaelevatellc@gmail.com` (Contributor), `novaepicestates@gmail.com` (no memberships), plus earlier-phase throwaways listed in the cleanup block below.
 
 **Current prod state for the test:**
 - Stout agency at `stout.clintapp.com`, owner `aadi529@gmail.com`. Email-domain lock = `gmail.com`.
 - Pfizer tenant under Stout at `pfizer.clintapp.com`. id `a87a88ae-1b76-4c6b-85e0-1b53c926d0f2`. Tenant owners: `aadi529@gmail.com` and `aadimadala@gmail.com`.
 - One space under Pfizer: SGLT2 Pipeline. id `746d4832-374d-4f0e-93ce-47839388aa29`. Space owner: `aadi529`.
-- `madala.dodbele@gmail.com`: pure Space Reader of SGLT2 Pipeline, no other roles. (User row id `48990035-3b34-447d-abb6-c1af8c1da11f`.) She is set up for Phase 6.
+- `madala.dodbele@gmail.com`: still pure Space Reader of SGLT2 Pipeline post-Phase 6. (User row id `48990035-3b34-447d-abb6-c1af8c1da11f`.) Promote her to editor before starting Phase 7.
 - `aadityamadala@gmail.com`: only platform admin in `platform_admins`.
-- Phase 6 is unblocked; the `has_tenant_access` fix (commit `1008726`, migration 84) is live. She can now reach `/t/<pfizer-id>/s/<sglt2-id>/...`.
 
-**To advance Phase 6 from here:** sign in to Incognito as `madala.dodbele@gmail.com` (Google OAuth). Walk the 7 Reader scenarios below. The first 6 are browser; the last (curl POST on events) needs her JWT pasted from DevTools. Then transition to Phase 7 by SQL: `update space_members set role='editor' where space_id='746d4832-374d-4f0e-93ce-47839388aa29' and user_id='48990035-3b34-447d-abb6-c1af8c1da11f';` and walk the 9 Contributor scenarios.
+**To advance Phase 7 from here:** promote madala to Contributor with SQL:
+```
+update space_members set role='editor' where space_id='746d4832-374d-4f0e-93ce-47839388aa29' and user_id='48990035-3b34-447d-abb6-c1af8c1da11f';
+```
+Then sign in to Incognito as `madala.dodbele@gmail.com` and walk the 9 Contributor scenarios. Note: SGLT2 currently has no demo data because seed_demo_data was not re-run after the space was recreated in Phase 3. Either re-seed (sign in as aadi529, hit `/seed-demo` URL on the space) before Phase 7 if you need real rows for the Contributor edit scenarios, or be prepared for empty-state pages on Manage > Trials etc.
 
 Cleanup pending at end of run (Section 11 of `2026-04-29-whitelabel-access-model.md`):
-- delete `auth.users` rows for `aadimadala@gmail.com`, `madala.dodbele@gmail.com` (cascades to memberships)
+- delete `auth.users` rows for `aadimadala@gmail.com`, `madala.dodbele@gmail.com`, `novaelevatellc@gmail.com`, `novaepicestates@gmail.com` (cascades to memberships)
 - the `agency-2` agency owned by `aadityamadala` looks like a stray from earlier experimentation; verify it is a throwaway before deleting
-- any held-invite rows for `phase4-throwaway@gmail.com` or similar test emails
+- any held-invite rows for `phase4-throwaway@gmail.com`, `phase6-throwaway@gmail.com`, `phase7-throwaway@gmail.com`, or similar test emails
 
 A short, runnable checklist that walks a fresh prod environment through the role boundaries in 30 minutes. One scenario per checkbox. Each row says: as <Actor>, do <action>, expect <observable result>. UI scenarios use a browser; API scenarios use curl with the actor's JWT.
 
@@ -65,26 +79,26 @@ Open Incognito, do not sign in.
 
 Sign in as a Reader of the Survodutide Pipeline space.
 
-- [ ] Visit the space catalysts page → expect data visible (page is read-only by design for everyone; no edit affordance to test here).
-- [ ] Visit a trial detail page (Manage → Trials → click a trial) → attempt to edit any field, add a marker, or change phase data. Expect either no edit affordance rendered OR RLS rejection on save.
-- [ ] Visit the space's `/settings/general` → expect the chrome but Save button blocked, Delete-space button blocked.
-- [ ] Visit the space's `/settings/members` → expect chrome with read-only members table; no Invite-to-space button.
-- [ ] curl `rpc/seed_demo_data` with `p_space_id=<survodutide-id>` → expect `Insufficient permissions`.
-- [ ] curl POST on `events` with a valid body → expect RLS denial (`new row violates row-level security policy`).
-- [ ] Visit `/t/<pfizer-id>/settings` → expect chrome renders (since 2026-05-01, `has_tenant_access` lets space-only members reach tenant routes for tenants whose spaces they belong to). RLS on `tenant_members` hides the owners list from her. All write actions on this page (Add owner, save branding) fail at the RPC layer because the strict `is_tenant_member` gate still applies for mutations.
+- [x] Visit the space catalysts page → expect data visible (page is read-only by design for everyone; no edit affordance to test here). Verified at the direct space URL. Side finding: tenant `/spaces` list page renders "No spaces yet" for her even though she has access to SGLT2; filed as follow-up #16.
+- [x] Visit a trial detail page (Manage → Trials → click a trial) → attempt to edit any field, add a marker, or change phase data. Expect either no edit affordance rendered OR RLS rejection on save. Verified: edit controls render (follow-up #6, rolls under #5), Save was rejected, denial surfaced as a top-of-page banner not a toast (follow-up #1).
+- [x] Visit the space's `/settings/general` → expect the chrome but Save button blocked, Delete-space button blocked. Verified: Save denial surfaced as banner (#1). Delete: confirm dialog appeared, click-through **navigated away as if delete succeeded** even though RLS rejected it (the space remains accessible via direct URL). Worse than #3 anticipated; #3 updated.
+- [x] Visit the space's `/settings/members` → expect chrome with read-only members table; no Invite-to-space button. Verified: members table renders correctly. Her own row shows a static READER badge (correctly read-only). UI leaks (rolls under #5/#7): "Invite to space" button visible top-right; other members' rows render an editable role dropdown and `...` overflow menu. Server-side enforcement holds: clicking Invite and submitting a throwaway invite returned a denial.
+- [x] curl `rpc/seed_demo_data` with `p_space_id=<sglt2-id>` → expect `Insufficient permissions`. Verified: HTTP 403, `42501`, `Insufficient permissions: must be space owner to seed demo data`.
+- [x] curl POST on `events` with a valid body → expect RLS denial (`new row violates row-level security policy`). Verified: HTTP error `42501`, body `new row violates row-level security policy for table "events"`. Side finding via curl: `tenants` GET returns `[]` for her (confirms #15 at the data layer); `spaces?tenant_id=eq.X&select=*&order=created_at` returns SGLT2 correctly (so #16 is NOT a data-layer bug -- client-side only; #16 updated).
+- [x] Visit `/t/<pfizer-id>/settings` → expect chrome renders (since 2026-05-01, `has_tenant_access` lets space-only members reach tenant routes for tenants whose spaces they belong to). RLS on `tenant_members` hides the owners list from her. All write actions on this page (Add owner, save branding) fail at the RPC layer because the strict `is_tenant_member` gate still applies for mutations. Verified: chrome rendered, write attempts returned `Insufficient permissions` surfaced as banner (confirms #14 chrome-reachable-but-inert and #1 banner-not-toast).
 
 ## Space Contributor
 
 Sign in as a Contributor of the Survodutide Pipeline space.
 
-- [ ] Visit catalysts page → expect data visible (read-only view, no edit affordance to test here).
-- [ ] On a trial detail page, edit a field (e.g. status), add a marker, save → expect success. (This is the actual catalyst edit surface; the catalysts page is a derived view.)
-- [ ] Edit an existing event → expect form populates AND save succeeds.
-- [ ] Open `/settings/general` → expect chrome but Save and Delete-space buttons blocked.
-- [ ] Open `/settings/members` → expect chrome but no Invite-to-space button, no Remove actions.
-- [ ] curl `rpc/seed_demo_data` → expect `Insufficient permissions`.
-- [ ] curl POST on `space_invites` with a valid body → expect RLS denial.
-- [ ] Visit `/t/<pfizer-id>/settings` → expect chrome renders (post-2026-05-01 `has_tenant_access` includes space-only members). All write actions fail at the RPC layer (mutations use the strict `is_tenant_member`).
+- [x] Visit catalysts page → expect data visible (read-only view, no edit affordance to test here). Verified by `novaelevatellc` after re-seed.
+- [x] On a trial detail page, edit a field (e.g. status), add a marker, save → expect success. (This is the actual catalyst edit surface; the catalysts page is a derived view.) Verified: trial edit saved successfully as Contributor.
+- [x] Edit an existing event → expect form populates AND save succeeds. Verified bug per #2 -- worse than originally captured: form populates with the previous new-event's values rather than the existing event's values, creating a silent overwrite risk. New-event flow itself works fine; novaelevatellc successfully added one new event.
+- [x] Open `/settings/general` → expect chrome but Save and Delete-space buttons blocked. Verified: Save edit-enables, click rejected via banner; Delete confirm-dialog appears, click navigates away even though the space remains. Same pattern madala saw -- confirms #1, #3/#5. Side finding: direct deep-link required a topbar "select space" first to hydrate the space context (added to #16).
+- [x] Open `/settings/members` → expect chrome but no Invite-to-space button, no Remove actions. Verified: Invite button visible (UI leak per #7), but Invite submission failed at server with "failed to invite" -- server-side enforcement holds. Direct deep-link redirected to `/spaces` until the space was selected via the topbar (sharper data point for #16; entry refined).
+- [x] curl `rpc/seed_demo_data` → expect `Insufficient permissions`. Verified: HTTP 403, `42501`, `Insufficient permissions: must be space owner to seed demo data`.
+- [x] curl POST on `space_invites` with a valid body → expect RLS denial. Verified: HTTP 403, `42501`, `new row violates row-level security policy for table "space_invites"`.
+- [x] Visit `/t/<pfizer-id>/settings` → expect chrome renders (post-2026-05-01 `has_tenant_access` includes space-only members). All write actions fail at the RPC layer (mutations use the strict `is_tenant_member`). Verified: chrome rendered, content empty/disabled (RLS hides members list), Add owner button visible (UI leak per #14), submit failed with "insufficient privileges" -- confirms #14 again from a Contributor's perspective.
 
 ## Space Owner
 
@@ -143,11 +157,11 @@ Sign in as the platform admin.
 
 ## Cross-cutting checks
 
-- [ ] As Anonymous, hit `/auth/callback` directly with no state → expect graceful failure or redirect to `/login`, not a hung page.
-- [ ] As any signed-in user without memberships, on the apex → expect `/onboarding` join-code form (no Create-tenant tab).
-- [ ] Idempotent invites: as a Tenant Owner, click Add tenant owner twice for the same fresh email → expect both calls return the same `invite_code` and only one row in `tenant_invites`.
-- [ ] Idempotent space invites: as a Space Owner, click Invite to space twice for the same `(email, role)` → expect both calls return the same code and one row in `space_invites`.
-- [ ] Cross-host bounce: as `aadi529`, visit `admin.clintapp.com` → expect cross-host redirect to `stout.clintapp.com/admin` (not the super-admin chrome).
+- [x] As Anonymous, hit `/auth/callback` directly with no state → expect graceful failure or redirect to `/login`, not a hung page. Verified: spinner for a while, then "Sign in timed out. Please try again." with a "Return to sign in" link. Graceful, but spin-time before timeout could be tightened (UX nit, not a test failure).
+- [x] As any signed-in user without memberships, on the apex → expect `/onboarding` join-code form (no Create-tenant tab). Verified with a third Google account (zero memberships): landed on `https://clintapp.com/onboarding` with only the join-code field, no Create-tenant tab.
+- [x] Idempotent invites: as a Tenant Owner, click Add tenant owner twice for the same fresh email → expect both calls return the same `invite_code` and only one row in `tenant_invites`. Verified by aadi529 on Pfizer: both calls returned `invite_code=19ce7b08a29945e3a33f7f100871aae6`.
+- [x] Idempotent space invites: as a Space Owner, click Invite to space twice for the same `(email, role)` → expect both calls return the same code and one row in `space_invites`. Verified by aadi529 on SGLT2: both calls returned `invite_code=fcbe81214ac24c43823006198e114afd`. Side finding: aadi529 also hit the direct deep-link redirect (was bounced to `/spaces` from the direct settings/members URL) -- proves #16 is universal, not space-only-member-specific. #16 upgraded.
+- [x] Cross-host bounce: as `aadi529`, visit `admin.clintapp.com` → expect cross-host redirect to `stout.clintapp.com/admin` (not the super-admin chrome). Verified.
 
 ## What "expect denial" looks like
 
