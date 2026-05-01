@@ -10,6 +10,26 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 
 ## Open
 
+### 18. NCT sync from CT.gov not working
+- **Status:** open
+- **Scope:** `src/client/src/app/core/services/ctgov-sync.service.ts` and the trial-form Sync-from-CT.gov button in `trial-form.component.html`
+- **Symptom:** clicking "Sync from CT.gov" inside the trial form does nothing observable -- no fields populated, no error surfaced. Suspected causes: CT.gov v2 API may have changed shape, our fetch mapping may be stale, or the request may be erroring silently in a catch that doesn't surface to the user.
+- **Surfaced:** 2026-05-01 retest of follow-up #5; novaelevatellc tried it while filling out a new trial and reported "nct sync isn't working at all".
+- **Fix shape:** open DevTools network tab, hit Sync, see what request fires (if any), what response comes back, and whether the response is being parsed correctly. Likely either an API-shape change or a silent exception in the parser.
+- **Estimate:** 30-90 min depending on root cause.
+
+### 17. Form validation: required fields not enforced; submit allowed with empty NOT NULL columns; generic error
+- **Status:** open
+- **Scope:** `src/client/src/app/features/manage/trials/trial-form.component.ts`, `marker-form.component.ts`, and likely the same pattern across product-form, note-form, others
+- **Symptom:** forms inconsistently mark required fields. Trial form has Name with a red asterisk but Product and Therapeutic Area (both DB-required `NOT NULL` FKs) without any visual indicator. Marker form has the same shape: some fields marked required, some not, no client-side blocking. Save submits anyway, the database raises a NOT NULL or FK violation, and the catch block renders a generic "Could not save..." banner -- pointing at the wrong cause and not the missing fields.
+- **Surfaced:** 2026-05-01 retest of follow-up #5. novaelevatellc tried to add a trial as a Contributor; save failed because Product and Therapeutic Area were empty, not because of any role issue. Confirmed by retrying with the dropdowns selected -- save succeeded. Then noted the same pattern on marker-form.
+- **Fix shape:**
+  1. For each form, list every field that maps to a NOT NULL or FK-required column. Add `required` + `aria-required` markers.
+  2. Block `Save` until all required fields are populated (mirror the existing `!hasChanges()` disable pattern for completeness).
+  3. On NOT NULL or FK constraint violation, surface the specific field name rather than the generic "check your connection" copy.
+  4. Cross-form audit: product-form should mark `company_id` required, marker-form should mark category/title/at-least-one-trial required, etc.
+- **Estimate:** 2-3 hours including the cross-form audit.
+
 ### 16. Cold direct deep-link into space-scoped routes redirects to `/spaces`; affects ALL users (not just space-only members)
 - **Status:** done (resolved 2026-05-01 by spaceGuard, commit f85ae3f). Verified with madala (Reader) -- direct deep-link to `/t/<tenant>/s/<space>/settings/general` now loads the page cleanly without redirect. Root cause was likely a downstream race the spaceGuard's explicit `has_space_access` RPC call short-circuited.
 - **Scope:** route guards/resolvers on `s/:spaceId` and any descendants; `features/spaces/space-list.component.ts` for the related empty-state symptom; `core/services/space.service.ts:20-28` (the underlying query is correct).
@@ -118,7 +138,7 @@ Sweep: space-general (Save/Delete owner-only, fields readonly), space-members (I
 - **Surfaced:** 2026-05-01 access-model test pass, immediately after the `has_tenant_access` fix landed for Phase 6
 
 ### 13. Gmail dot canonicalization across invite and lookup paths
-- **Status:** done (commit 167a8de, migration 20260501060000). New `public.canonicalize_email(text)` function. Every email-storing and email-looking-up site (add_tenant_owner, invite_to_space, add_agency_member, lookup_user_by_email, provision_agency, accept_invite, accept_space_invite, handle_new_user trigger) canonicalizes both sides of every comparison.
+- **Status:** done (commit 167a8de, migration 20260501060000). New `public.canonicalize_email(text)` function. Every email-storing and email-looking-up site (add_tenant_owner, invite_to_space, add_agency_member, lookup_user_by_email, provision_agency, accept_invite, accept_space_invite, handle_new_user trigger) canonicalizes both sides of every comparison. Verified live 2026-05-01 via curl: `canonicalize_email` reduced `madala.dodbele@gmail.com`, `madaladodbele@gmail.com`, and `madala.dodbele+phase8@gmail.com` all to `madaladodbele@gmail.com`; `lookup_user_by_email` resolved all three to the same `user_id`.
 - **Scope:** server-side normalization in `add_tenant_owner`, `invite_to_space`, `add_agency_member`, `accept_invite`, `accept_space_invite`, `lookup_user_by_email`, and the `handle_new_user` trigger; same canonicalization client-side as a UX hint
 - **Symptom:** for `@gmail.com` and `@googlemail.com`, periods in the local part are ignored by Google. `madaladodbele@gmail.com` and `madala.dodbele@gmail.com` route to the same Google account. Surfaced 2026-05-01: an admin typed the dotless form into the agency-member-add dialog; Google's account picker returned the dotted form; `auth.users.email` was stored with dots; the trigger lookup against the dotless `agency_invites.email` did not match; auto-claim silently failed.
 - **Industry practice:** for the two Gmail domains, canonicalize by lowercasing, stripping all dots from the local part, and stripping the `+tag` suffix. Slack, Linear, Notion, GitHub, and Stripe all follow this pattern. Other domains: lowercase only (no safe canonicalization without knowing the provider).
