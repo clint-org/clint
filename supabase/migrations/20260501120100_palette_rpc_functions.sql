@@ -142,3 +142,48 @@ end;
 $$;
 
 grant execute on function public.search_palette(uuid, text, text, int) to authenticated;
+
+-- ============================================================
+-- palette_empty_state - returns pinned and recents for the empty state
+-- ============================================================
+create or replace function public.palette_empty_state (
+  p_space_id uuid
+) returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_pinned jsonb;
+  v_recents jsonb;
+begin
+  if v_uid is null then return jsonb_build_object('pinned','[]'::jsonb,'recents','[]'::jsonb); end if;
+  if not public.has_space_access(p_space_id) then
+    return jsonb_build_object('pinned','[]'::jsonb,'recents','[]'::jsonb);
+  end if;
+
+  with pinned_ids as (
+    select kind, entity_id, position
+    from public.palette_pinned
+    where user_id = v_uid and space_id = p_space_id
+    order by position asc
+    limit 10
+  )
+  select coalesce(jsonb_agg(row_to_json(p)), '[]'::jsonb) into v_pinned from pinned_ids p;
+
+  with recent_ids as (
+    select kind, entity_id, last_opened_at
+    from public.palette_recents
+    where user_id = v_uid and space_id = p_space_id
+    order by last_opened_at desc
+    limit 8
+  )
+  select coalesce(jsonb_agg(row_to_json(r)), '[]'::jsonb) into v_recents from recent_ids r;
+
+  return jsonb_build_object('pinned', v_pinned, 'recents', v_recents);
+end;
+$$;
+
+grant execute on function public.palette_empty_state(uuid) to authenticated;
