@@ -1,4 +1,4 @@
-import { Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
@@ -59,23 +59,23 @@ interface SourceRow {
           <p-select
             inputId="event-level"
             [options]="entityLevelOptions"
-            [(ngModel)]="entityLevel"
+            [ngModel]="entityLevel()"
+            (ngModelChange)="onEntityLevelChange($event)"
             name="entityLevel"
             optionLabel="label"
             optionValue="value"
             placeholder="Select level"
             [style]="{ width: '100%' }"
-            (ngModelChange)="onEntityLevelChange()"
           />
         </div>
 
-        @if (entityLevel && entityLevel !== 'space') {
+        @if (entityLevel() && entityLevel() !== 'space') {
           <div>
             <label for="event-entity" class="mb-1 block text-xs font-medium text-slate-600">
               {{
-                entityLevel === 'company'
+                entityLevel() === 'company'
                   ? 'Company'
-                  : entityLevel === 'product'
+                  : entityLevel() === 'product'
                     ? 'Product'
                     : 'Trial'
               }}
@@ -83,7 +83,8 @@ interface SourceRow {
             <p-select
               inputId="event-entity"
               [options]="entityOptions()"
-              [(ngModel)]="entityId"
+              [ngModel]="entityId()"
+              (ngModelChange)="entityId.set($event)"
               name="entityId"
               optionLabel="name"
               optionValue="id"
@@ -104,7 +105,8 @@ interface SourceRow {
           <input
             pInputText
             id="event-title"
-            [(ngModel)]="title"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
             name="title"
             class="w-full"
             required
@@ -114,7 +116,8 @@ interface SourceRow {
           <label for="event-date" class="mb-1 block text-xs font-medium text-slate-600">Date</label>
           <p-datepicker
             inputId="event-date"
-            [(ngModel)]="eventDateValue"
+            [ngModel]="eventDateValue()"
+            (ngModelChange)="eventDateValue.set($event)"
             name="eventDate"
             dateFormat="yy-mm-dd"
             [style]="{ width: '100%' }"
@@ -132,7 +135,8 @@ interface SourceRow {
           <p-select
             inputId="event-category"
             [options]="categories()"
-            [(ngModel)]="categoryId"
+            [ngModel]="categoryId()"
+            (ngModelChange)="categoryId.set($event)"
             name="categoryId"
             optionLabel="name"
             optionValue="id"
@@ -147,7 +151,8 @@ interface SourceRow {
           <p-select
             inputId="event-priority"
             [options]="priorityOptions"
-            [(ngModel)]="priority"
+            [ngModel]="priority()"
+            (ngModelChange)="priority.set($event)"
             name="priority"
             optionLabel="label"
             optionValue="value"
@@ -164,7 +169,8 @@ interface SourceRow {
         <textarea
           pTextarea
           id="event-description"
-          [(ngModel)]="description"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
           name="description"
           rows="3"
           class="w-full"
@@ -176,7 +182,8 @@ interface SourceRow {
         <label for="event-tags" class="mb-1 block text-xs font-medium text-slate-600">Tags</label>
         <p-chips
           inputId="event-tags"
-          [(ngModel)]="tags"
+          [ngModel]="tags()"
+          (ngModelChange)="tags.set($event ?? [])"
           name="tags"
           placeholder="Add tags..."
           [style]="{ width: '100%' }"
@@ -186,18 +193,20 @@ interface SourceRow {
       <!-- Sources -->
       <div>
         <p class="mb-1 text-xs font-medium text-slate-600" id="source-urls-label">Source URLs</p>
-        @for (src of sources; track $index) {
+        @for (src of sources(); track $index) {
           <div class="mb-2 flex items-center gap-2">
             <input
               pInputText
-              [(ngModel)]="src.url"
+              [ngModel]="src.url"
+              (ngModelChange)="updateSourceField($index, 'url', $event)"
               [name]="'srcUrl' + $index"
               placeholder="URL"
               class="flex-1"
             />
             <input
               pInputText
-              [(ngModel)]="src.label"
+              [ngModel]="src.label"
+              (ngModelChange)="updateSourceField($index, 'label', $event)"
               [name]="'srcLabel' + $index"
               placeholder="Label (optional)"
               class="w-40"
@@ -230,7 +239,8 @@ interface SourceRow {
           <p-select
             inputId="event-thread"
             [options]="threads()"
-            [(ngModel)]="threadId"
+            [ngModel]="threadId()"
+            (ngModelChange)="threadId.set($event)"
             name="threadId"
             optionLabel="title"
             optionValue="id"
@@ -239,11 +249,12 @@ interface SourceRow {
             [style]="{ width: '100%' }"
           />
         </div>
-        @if (!threadId) {
+        @if (!threadId()) {
           <div class="mt-2 flex items-center gap-2">
             <input
               pInputText
-              [(ngModel)]="newThreadTitle"
+              [ngModel]="newThreadTitle()"
+              (ngModelChange)="newThreadTitle.set($event)"
               name="newThreadTitle"
               placeholder="Or start a new thread..."
               class="flex-1 text-sm"
@@ -299,40 +310,62 @@ export class EventFormComponent implements OnInit {
   trials = signal<Trial[]>([]);
   entityOptions = signal<{ id: string; name: string }[]>([]);
 
-  // Form fields
-  entityLevel: EntityLevel = 'space';
-  entityId = '';
-  title = '';
-  eventDateValue: Date | null = null;
-  categoryId = '';
-  priority: EventPriority = 'low';
-  description = '';
-  tags: string[] = [];
-  sources: SourceRow[] = [];
-  threadId: string | null = null;
-  newThreadTitle = '';
-  linkedEventIds: string[] = [];
+  // Form fields -- signals so writes from loadExisting trigger change detection
+  // and so reset() between edits clears stale state. Plain class properties
+  // with [(ngModel)] retained values across dialog opens (the dialog does not
+  // destroy on hide), causing edit-on-existing to show the previous form's data
+  // and risking silent overwrite on Save.
+  entityLevel = signal<EntityLevel>('space');
+  entityId = signal('');
+  title = signal('');
+  eventDateValue = signal<Date | null>(null);
+  categoryId = signal('');
+  priority = signal<EventPriority>('low');
+  description = signal('');
+  tags = signal<string[]>([]);
+  sources = signal<SourceRow[]>([]);
+  threadId = signal<string | null>(null);
+  newThreadTitle = signal('');
+  linkedEventIds = signal<string[]>([]);
 
   saving = signal(false);
   error = signal<string | null>(null);
+
+  constructor() {
+    // React to eventId changes: each time the parent passes a different id
+    // (or null for new), reset the form and reload. The dialog persists the
+    // component across opens, so this is the only place state can be cleared.
+    effect(() => {
+      const id = this.eventId();
+      untracked(() => {
+        this.resetForm();
+        if (id) {
+          this.loadExisting(id);
+        }
+      });
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.getSpaceId();
     await this.loadData(spaceId);
 
+    // If eventId was already set when the component initialized, reload now
+    // that reference data (categories, threads, etc.) is available.
     const id = this.eventId();
     if (id) {
       await this.loadExisting(id);
     }
   }
 
-  onEntityLevelChange(): void {
-    this.entityId = '';
-    if (this.entityLevel === 'company') {
+  onEntityLevelChange(level: EntityLevel): void {
+    this.entityLevel.set(level);
+    this.entityId.set('');
+    if (level === 'company') {
       this.entityOptions.set(this.companies().map((c) => ({ id: c.id, name: c.name })));
-    } else if (this.entityLevel === 'product') {
+    } else if (level === 'product') {
       this.entityOptions.set(this.products().map((p) => ({ id: p.id, name: p.name })));
-    } else if (this.entityLevel === 'trial') {
+    } else if (level === 'trial') {
       this.entityOptions.set(this.trials().map((t) => ({ id: t.id, name: t.name })));
     } else {
       this.entityOptions.set([]);
@@ -340,15 +373,21 @@ export class EventFormComponent implements OnInit {
   }
 
   addSource(): void {
-    this.sources = [...this.sources, { url: '', label: '' }];
+    this.sources.update((rows) => [...rows, { url: '', label: '' }]);
   }
 
   removeSource(index: number): void {
-    this.sources = this.sources.filter((_, i) => i !== index);
+    this.sources.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  updateSourceField(index: number, field: 'url' | 'label', value: string): void {
+    this.sources.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.title || !this.eventDateValue || !this.categoryId) return;
+    if (!this.title() || !this.eventDateValue() || !this.categoryId()) return;
 
     this.saving.set(true);
     this.error.set(null);
@@ -356,10 +395,10 @@ export class EventFormComponent implements OnInit {
     const spaceId = this.getSpaceId();
 
     // Resolve thread
-    let resolvedThreadId = this.threadId;
-    if (!resolvedThreadId && this.newThreadTitle.trim()) {
+    let resolvedThreadId = this.threadId();
+    if (!resolvedThreadId && this.newThreadTitle().trim()) {
       try {
-        const thread = await this.eventThreadService.create(spaceId, this.newThreadTitle.trim());
+        const thread = await this.eventThreadService.create(spaceId, this.newThreadTitle().trim());
         resolvedThreadId = thread.id;
       } catch (err) {
         this.error.set(err instanceof Error ? err.message : 'Could not create thread.');
@@ -371,27 +410,28 @@ export class EventFormComponent implements OnInit {
     // Compute thread_order if joining a thread
     let threadOrder: number | null = null;
     if (resolvedThreadId) {
-      // Put at end -- monotonically increasing timestamp for ordering
       threadOrder = Date.now();
     }
 
-    const eventDate = this.formatDate(this.eventDateValue);
+    const eventDate = this.formatDate(this.eventDateValue()!);
+    const level = this.entityLevel();
+    const entId = this.entityId();
 
     const payload: Partial<AppEvent> = {
-      category_id: this.categoryId,
-      title: this.title,
+      category_id: this.categoryId(),
+      title: this.title(),
       event_date: eventDate,
-      description: this.description || null,
-      priority: this.priority,
-      tags: this.tags,
+      description: this.description() || null,
+      priority: this.priority(),
+      tags: this.tags(),
       thread_id: resolvedThreadId,
       thread_order: threadOrder,
-      company_id: this.entityLevel === 'company' ? this.entityId : null,
-      product_id: this.entityLevel === 'product' ? this.entityId : null,
-      trial_id: this.entityLevel === 'trial' ? this.entityId : null,
+      company_id: level === 'company' ? entId : null,
+      product_id: level === 'product' ? entId : null,
+      trial_id: level === 'trial' ? entId : null,
     };
 
-    const validSources = this.sources.filter((s) => s.url.trim());
+    const validSources = this.sources().filter((s) => s.url.trim());
 
     try {
       const id = this.eventId();
@@ -399,7 +439,7 @@ export class EventFormComponent implements OnInit {
         await this.eventService.update(id, payload);
         await this.eventService.updateSources(id, validSources);
       } else {
-        await this.eventService.create(spaceId, payload, validSources, this.linkedEventIds);
+        await this.eventService.create(spaceId, payload, validSources, this.linkedEventIds());
       }
       this.saved.emit();
     } catch (err) {
@@ -407,6 +447,23 @@ export class EventFormComponent implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private resetForm(): void {
+    this.entityLevel.set('space');
+    this.entityId.set('');
+    this.title.set('');
+    this.eventDateValue.set(null);
+    this.categoryId.set('');
+    this.priority.set('low');
+    this.description.set('');
+    this.tags.set([]);
+    this.sources.set([]);
+    this.threadId.set(null);
+    this.newThreadTitle.set('');
+    this.linkedEventIds.set([]);
+    this.entityOptions.set([]);
+    this.error.set(null);
   }
 
   private async loadData(spaceId: string): Promise<void> {
@@ -431,36 +488,34 @@ export class EventFormComponent implements OnInit {
   private async loadExisting(eventId: string): Promise<void> {
     try {
       const detail = await this.eventService.getEventDetail(eventId);
-      this.title = detail.title;
-      this.eventDateValue = new Date(detail.event_date + 'T00:00:00');
-      this.categoryId = detail.category.id;
-      this.priority = detail.priority;
-      this.description = detail.description ?? '';
-      this.tags = detail.tags;
-      this.threadId = detail.thread_id;
+      this.title.set(detail.title);
+      this.eventDateValue.set(new Date(detail.event_date + 'T00:00:00'));
+      this.categoryId.set(detail.category.id);
+      this.priority.set(detail.priority);
+      this.description.set(detail.description ?? '');
+      this.tags.set(detail.tags);
+      this.threadId.set(detail.thread_id);
 
       // Determine entity level
       if (detail.entity_level === 'company' && detail.entity_id) {
-        this.entityLevel = 'company';
-        this.entityId = detail.entity_id;
+        this.entityLevel.set('company');
+        this.entityId.set(detail.entity_id);
         this.entityOptions.set(this.companies().map((c) => ({ id: c.id, name: c.name })));
       } else if (detail.entity_level === 'product' && detail.entity_id) {
-        this.entityLevel = 'product';
-        this.entityId = detail.entity_id;
+        this.entityLevel.set('product');
+        this.entityId.set(detail.entity_id);
         this.entityOptions.set(this.products().map((p) => ({ id: p.id, name: p.name })));
       } else if (detail.entity_level === 'trial' && detail.entity_id) {
-        this.entityLevel = 'trial';
-        this.entityId = detail.entity_id;
+        this.entityLevel.set('trial');
+        this.entityId.set(detail.entity_id);
         this.entityOptions.set(this.trials().map((t) => ({ id: t.id, name: t.name })));
       } else {
-        this.entityLevel = 'space';
+        this.entityLevel.set('space');
       }
 
-      // Load sources
-      this.sources = detail.sources.map((s) => ({ url: s.url, label: s.label ?? '' }));
-
-      // Linked events
-      this.linkedEventIds = detail.linked_events.map((le) => le.id);
+      // Sources + linked events
+      this.sources.set(detail.sources.map((s) => ({ url: s.url, label: s.label ?? '' })));
+      this.linkedEventIds.set(detail.linked_events.map((le) => le.id));
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not load event.');
     }
