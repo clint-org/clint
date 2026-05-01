@@ -69,6 +69,19 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
+### 10. Tenant settings shows "Remove owner" against agency-backed members; misleading UX and an open design question
+- **Status:** open (design question, not just UX)
+- **Scope:** `features/tenant-settings/tenant-settings.component.ts` members table, plus a possible RPC enforcement layer
+- **Symptom:** as `aadimadala` (Pfizer tenant owner only), the row-actions menu on `aadi529` (also a tenant owner of Pfizer, but reaches the tenant via her agency-owner role on Stout) shows "Remove owner." The button works at the row level: deleting the `tenant_members` row succeeds because the self-protection trigger only blocks self-removal and last-owner removal. But `is_tenant_member` has three disjuncts (explicit row OR agency owner of parent OR platform admin), so deleting the explicit row does not actually evict aadi529. She remains a tenant member via the agency disjunct. Net effect: tenant client believes they removed the agency from their tenant; the agency stayed in.
+- **Design question first:** should a tenant client be able to evict their parent agency from their own tenant?
+  - Argument for yes (current behavior): the tenant is "their tenant"; if they want to fire the agency mid-engagement, they should be able to. But the current model only lets them remove the explicit row, leaving the parenthood disjunct intact, so this isn't really happening today.
+  - Argument for no: the agency provisioned the tenant for them; removing the agency mid-engagement is a contractual matter that shouldn't be self-serve from the tenant settings UI. Eviction would be done at the agency level (transferring the tenant to a different agency, or platform admin re-parenting).
+- **Fix shape options (after the design question is settled):**
+  - (A) Hide row actions for any tenant member whose access has an agency-owner disjunct backing it. Show only "Last signed in" or similar passive metadata.
+  - (B) Rename to "Remove explicit access" and add a tooltip describing the parenthood disjunct.
+  - (C) Block removal of agency-backed members at the RPC layer. Self-protection trigger gets a third clause: if `target_user` has an `agency_members` row for the tenant's parent agency with role `owner`, only a platform admin can remove them.
+- **Surfaced:** 2026-05-01 access-model test pass, Phase 4 (Tenant Owner) by `aadimadala` reviewing tenant settings on Pfizer
+
 ### 9. Cross-surface "this lives elsewhere" hints (agency-managed tenant branding, and other split-ownership surfaces)
 - **Status:** open
 - **Scope:** `features/tenant-settings/tenant-settings.component.ts` is the immediate offender; pattern likely applies elsewhere
