@@ -163,7 +163,7 @@ export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
   { label: 'Positioning', value: 'positioning' },
-  { label: 'Catalysts', value: 'catalysts' },
+  { label: 'Future Catalysts', value: 'catalysts' },
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [

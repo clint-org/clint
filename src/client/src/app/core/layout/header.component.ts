@@ -132,7 +132,7 @@ import { NotificationBellComponent } from './notification-bell.component';
               routerLinkActive="nav-active"
               class="nav-link"
             >
-              Catalysts
+              Future Catalysts
             </a>
           </nav>
         }

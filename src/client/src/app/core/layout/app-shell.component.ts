@@ -438,7 +438,7 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['positioning'],
           },
           {
-            label: 'Catalysts',
+            label: 'Future Catalysts',
             value: 'catalysts',
             active: route === 'catalysts',
             icon: NAV_ICONS['catalysts'],
@@ -490,7 +490,7 @@ export class AppShellComponent implements OnInit {
       'manage/products': 'Products',
       'manage/trials': 'Trials',
       events: 'Events',
-      catalysts: 'Catalysts',
+      catalysts: 'Future Catalysts',
       'settings/taxonomies': 'Taxonomies',
       'settings/marker-types': 'Marker Types',
       'settings/spaces': 'Spaces',
