@@ -70,12 +70,22 @@ export class PaletteService {
       return;
     }
     if (parsed.term.length < MIN_QUERY) {
-      this.results.set([]);
+      // Restore the empty-state flat list so arrow nav and Enter still work.
+      this.results.set(this.emptyStateAsRows());
       this.isLoading.set(false);
       return;
     }
     this.isLoading.set(true);
     this.fire(q);
+  }
+
+  private emptyStateAsRows(): PaletteItem[] {
+    const s = this.emptyState();
+    return [
+      ...s.pinned,
+      ...s.recents,
+      ...s.commands.map((c) => ({ kind: 'command' as const, command: c })),
+    ];
   }
 
   moveSelection(delta: number) {
@@ -105,6 +115,10 @@ export class PaletteService {
       recents: payload.recents ?? [],
       commands: this.commandsProvider?.() ?? [],
     });
+    // Mirror flat list into results so arrow nav and Enter work in the empty state.
+    if (this.query().length === 0) {
+      this.results.set(this.emptyStateAsRows());
+    }
   }
 
   private async search(rawQuery: string) {

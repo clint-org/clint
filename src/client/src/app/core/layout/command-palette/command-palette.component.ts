@@ -187,10 +187,13 @@ export class CommandPaletteComponent implements OnInit {
     const base = `/t/${this.tenantId}/s/${this.spaceId}`;
     switch (item.kind) {
       case 'trial':    return `${base}/manage/trials/${item.id}`;
-      case 'product':  return `${base}/manage/products?selected=${item.id}`;
-      case 'company':  return `${base}/manage/companies?selected=${item.id}`;
+      // Companies have no detail page; the bullseye-by-company route gives a
+      // focused view of just that company. Best available "go to company" target.
+      case 'company':  return `${base}/bullseye/by-company/${item.id}`;
+      // Products have no detail or focused view; land on the list.
+      case 'product':  return `${base}/manage/products`;
       case 'event':    return `${base}/events?eventId=${item.id}`;
-      case 'catalyst': return `${base}/catalysts?id=${item.id}`;
+      case 'catalyst': return `${base}/catalysts?markerId=${item.id}`;
     }
   }
 }

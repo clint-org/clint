@@ -1,4 +1,5 @@
 import { Component, computed, DestroyRef, effect, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
@@ -41,6 +42,7 @@ export class CatalystsPageComponent {
   readonly state = inject(LandscapeStateService);
   private readonly topbarState = inject(TopbarStateService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
 
   readonly grid = createGridState<FlatCatalyst>({
     columns: [
@@ -62,6 +64,12 @@ export class CatalystsPageComponent {
 
   constructor() {
     this.destroyRef.onDestroy(() => this.topbarState.clear());
+
+    // Honor ?markerId=<id> from the URL (e.g. command-palette deep link).
+    const markerId = this.route.snapshot.queryParamMap.get('markerId');
+    if (markerId) {
+      this.state.selectMarker(markerId);
+    }
   }
 
   onRowClick(markerId: string): void {

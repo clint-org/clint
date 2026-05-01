@@ -163,6 +163,15 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
     await this.loadInitialData();
+
+    // If the URL has ?eventId=<id>, open that event's detail panel.
+    const eventId = this.route.snapshot.queryParamMap.get('eventId');
+    if (eventId) {
+      const item = this.feedItems().find((f) => f.id === eventId);
+      if (item) {
+        await this.onRowClick(item);
+      }
+    }
   }
 
   ngOnDestroy(): void {
