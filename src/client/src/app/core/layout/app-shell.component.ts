@@ -13,6 +13,7 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { NotificationBellComponent } from './notification-bell.component';
 import { TopbarStateService } from '../services/topbar-state.service';
+import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -86,6 +87,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [entityTitle]="topbarState.entityTitle()"
           [actionButtons]="topbarState.actions()"
           [tenantLogoUrl]="currentTenantLogoUrl()"
+          [timelineHintVisible]="onboardingTooltip.visible()"
           (tabClick)="onSectionTabClick($event)"
           (subTabClick)="onSubTabClick($event)"
           (backClick)="onBackClick()"
@@ -95,6 +97,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (spaceSettingsClick)="onSpaceSettingsClick()"
           (newSpaceClick)="onNewSpaceClick()"
           (joinTenantClick)="onJoinTenantClick()"
+          (timelineHintDismiss)="onboardingTooltip.dismiss()"
         >
           <div topbar-actions class="flex items-center gap-3">
             @if (spaceId()) {
@@ -309,6 +312,7 @@ export class AppShellComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly topbarState = inject(TopbarStateService);
+  readonly onboardingTooltip = inject(OnboardingTooltipService);
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -381,9 +385,10 @@ export class AppShellComponent implements OnInit {
     if (route.match(/^manage\/trials\/[^/]+$/)) {
       return 'detail';
     }
-    // Tab-based sections: landscape, intelligence, manage
+    // Tab-based sections: landscape (incl. engagement-landing home), intelligence, manage
     if (
       route === '' ||
+      route === 'timeline' ||
       route.startsWith('bullseye') ||
       route.startsWith('positioning') ||
       route === 'events' ||
@@ -420,9 +425,15 @@ export class AppShellComponent implements OnInit {
       case 'landscape':
         return [
           {
+            label: 'Home',
+            value: 'home',
+            active: route === '',
+            icon: NAV_ICONS['home'],
+          },
+          {
             label: 'Timeline',
             value: 'timeline',
-            active: route === '',
+            active: route === 'timeline',
             icon: NAV_ICONS['timeline'],
           },
           {
@@ -514,6 +525,11 @@ export class AppShellComponent implements OnInit {
       this.sidebarPinned.set(true);
     }
 
+    // First post-deploy load: surface the one-time hint pinned to the
+    // Timeline tab so existing users notice the new home for the timeline
+    // (engagement-landing-phase-1).
+    this.onboardingTooltip.requestIfUnseen();
+
     // Listen to route changes
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe((event) => {
       this.fullUrl.set((event as NavigationEnd).urlAfterRedirects);
@@ -588,8 +604,11 @@ export class AppShellComponent implements OnInit {
     switch (section) {
       case 'landscape':
         switch (tab) {
-          case 'timeline':
+          case 'home':
             this.navigateToSpaceRoute('');
+            break;
+          case 'timeline':
+            this.navigateToSpaceRoute('timeline');
             break;
           case 'bullseye':
             this.navigateToSpaceRoute('bullseye/by-therapy-area');

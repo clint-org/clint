@@ -7,6 +7,7 @@ export const NAV_ICONS: Record<string, string> = {
   settings: 'fa-solid fa-gear',
 
   // Landscape pages
+  home: 'fa-solid fa-house',
   timeline: 'fa-solid fa-timeline',
   bullseye: 'fa-solid fa-bullseye',
   positioning: 'fa-solid fa-crosshairs',

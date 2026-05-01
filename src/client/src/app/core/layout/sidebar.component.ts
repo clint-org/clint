@@ -23,7 +23,8 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'landscape',
     label: 'Landscape',
     items: [
-      { label: 'Timeline', route: '', icon: NAV_ICONS['timeline'] },
+      { label: 'Home', route: '', icon: NAV_ICONS['home'] },
+      { label: 'Timeline', route: 'timeline', icon: NAV_ICONS['timeline'] },
       {
         label: 'Bullseye',
         route: 'bullseye',

@@ -127,6 +127,19 @@ export const routes: Routes = [
         path: 's/:spaceId',
         canActivate: [spaceGuard],
         children: [
+          // Engagement landing: the default surface for /t/:tenantId/s/:spaceId.
+          // Phase 1 of docs/specs/engagement-landing/spec.md. Renders without
+          // the landscape shell so the filter bar / topbar tab strip stay
+          // landscape-only. pathMatch:'full' keeps the shell available for
+          // /timeline and the rest of the landscape routes below.
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./features/engagement-landing/engagement-landing.component').then(
+                (m) => m.EngagementLandingComponent
+              ),
+          },
           {
             path: '',
             loadComponent: () =>
@@ -135,7 +148,7 @@ export const routes: Routes = [
               ),
             children: [
               {
-                path: '',
+                path: 'timeline',
                 loadComponent: () =>
                   import('./features/landscape/timeline-view.component').then(
                     (m) => m.TimelineViewComponent
