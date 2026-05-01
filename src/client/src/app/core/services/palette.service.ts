@@ -139,7 +139,7 @@ export class PaletteService {
     });
     this.isLoading.set(false);
     if (error) { console.error('search_palette', error); this.results.set([]); return; }
-    const items: PaletteEntityItem[] = (data ?? []).map((r: Record<string, unknown>) => ({
+    const entities: PaletteItem[] = (data ?? []).map((r: Record<string, unknown>) => ({
       kind: r['kind'] as PaletteKind,
       id: r['id'] as string,
       name: r['name'] as string,
@@ -148,7 +148,12 @@ export class PaletteService {
       pinned: !!(r['pinned']),
       recentAt: r['recent_at'] as string | null,
     }));
-    this.results.set(items);
+    // When no prefix token, include matching commands so users can find
+    // "Go to Bullseye" by typing "bullseye" without remembering the > prefix.
+    const cmdRows: PaletteItem[] = parsed.token === null
+      ? this.commandsAsRows(term)
+      : [];
+    this.results.set([...cmdRows, ...entities]);
     this.selectedIndex.set(0);
   }
 
