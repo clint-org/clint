@@ -121,6 +121,18 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
           <p class="text-[11px] text-slate-500 leading-relaxed mt-1.5">{{ description() }}</p>
         }
 
+        <!-- Primary intelligence reference -->
+        @if (intelligenceHeadline()) {
+          <div class="mt-2 border-t border-slate-100 pt-2">
+            <p class="text-[9px] font-semibold uppercase tracking-wider text-brand-700">
+              Primary intelligence
+            </p>
+            <p class="mt-0.5 text-[11px] leading-snug text-slate-700">
+              {{ intelligenceHeadline() }}
+            </p>
+          </div>
+        }
+
         <!-- Source URL -->
         @if (sourceUrl()) {
           <a
@@ -157,6 +169,13 @@ export class MarkerTooltipComponent implements AfterViewInit {
   recruitmentStatus = input<string>('');
   companyName = input<string>('');
   productName = input<string>('');
+
+  /**
+   * Optional primary-intelligence headline to surface on the tooltip.
+   * The grid hosts this only when the marker has a published read; the
+   * tooltip stays lean and does not query for the read itself.
+   */
+  intelligenceHeadline = input<string | null>(null);
 
   tooltipX = signal(0);
   tooltipY = signal(0);

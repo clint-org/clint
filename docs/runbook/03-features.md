@@ -258,6 +258,33 @@ When `tenantService.inviteMember()` inserts a row into `tenant_invites`, a Supab
 
 The existing manual code-sharing flow stays functional — agency owners can copy invite codes from tenant settings if delivery fails.
 
+## Primary Intelligence
+
+Stout's primary analytical work product, attached to entities in an engagement. Surfaces the read on entity detail pages, the marker tooltip, the engagement landing's "Latest from Stout" feed, and the filterable browse view.
+
+**Data model.** Single polymorphic table `primary_intelligence` keyed on `(space_id, entity_type, entity_id)` where `entity_type in ('trial', 'marker', 'company', 'product', 'space')`. A unique partial index on `state = 'published'` enforces one published row per anchor; drafts can co-exist. Two child tables: `primary_intelligence_links` (cross-entity relations with `relationship_type` and optional gloss) and `primary_intelligence_revisions` (snapshot per save, written by trigger).
+
+**RLS.** Published reads are visible to anyone with `has_space_access(space_id)`. Drafts are visible only to agency members of the tenant's agency, gated by the `is_agency_member_of_space(space_id)` helper added in this branch (joins space → tenant → agency, calls existing `is_agency_member`). Revisions are agency-only.
+
+**RPCs.**
+- `upsert_primary_intelligence(p_id, p_space_id, p_entity_type, p_entity_id, headline, thesis_md, watch_md, implications_md, p_state, p_change_note, p_links jsonb)` — agency-only writes. Sets `app.change_note` session var so the revision trigger captures it. Replaces links wholesale.
+- `get_trial_detail_with_intelligence`, `get_marker_detail_with_intelligence`, `get_company_detail_with_intelligence`, `get_product_detail_with_intelligence`, `get_space_intelligence` — single round-trip detail bundles (published + draft + referenced_in).
+- `list_primary_intelligence(space, types, author, since, query, referencing_entity_type, referencing_entity_id, limit, offset)` — feed and browse view; same RPC backs the "Referenced in" sections.
+- `delete_primary_intelligence(id)` — agency-only; cascades to links and revisions.
+
+**Frontend surfaces.**
+- `app-intelligence-block` renders the read on entity detail pages. Bylines render two ways: agency-internal shows contributor initials and publisher (`Contributors: JM, RS — updated 2026-04-21 by JM`); client-facing shows just the agency byline (`Published by {agency}, updated 2026-04-21`). Agency name resolves through `BrandContextService` (`brand.agency.name` for tenant-branded hosts, falls back to `app_display_name`).
+- `app-intelligence-empty` is the agency-only "+ Add primary intelligence" placeholder.
+- `app-intelligence-drawer` is the single authoring surface (PrimeNG `p-drawer`). Loads the existing draft if any; falls back to seeding from published. Auto-saves on blur and on linked-entity edits, with a 1.5s debounce while typing in the editors. Optional change-note input attaches to the resulting revision row.
+- `app-prose-mirror-editor` wraps a ProseMirror EditorView in a thin Angular component. The editor schema, key bindings, and markdown serialisation live in `ProseMirrorService`; components only consume `createEditor` / `destroyEditor`.
+- `app-recent-activity-feed` renders read events derived from `primary_intelligence_revisions`. Linked / marker / material event categories are stubbed in v1 with a single hint row; later branches wire them up.
+- `app-intelligence-feed` is the recency-ordered list used by the engagement landing's "Latest from Stout" surface and the browse view.
+- `app-intelligence-browse` is the filterable expanded view at `/t/:tenant/s/:space/intelligence`. Filters by entity type, since-date, and free-text search across headline and thesis.
+
+**Trial detail page sections (top to bottom).** Section nav strip → primary intelligence block (or empty placeholder) → Referenced in → Recent activity → Materials placeholder (replaced by the materials-registry branch) → Basic info → Phase → Markers → Notes. Authoring drawer mounts at the bottom of the page and is shown via the empty-state add button or the block's Edit affordance.
+
+**ProseMirror packages.** `prosemirror-state`, `prosemirror-view`, `prosemirror-model`, `prosemirror-schema-basic`, `prosemirror-schema-list`, `prosemirror-keymap`, `prosemirror-commands`, `prosemirror-history`, `prosemirror-markdown`. Pinned to current major versions in `package.json`.
+
 ## Branded PowerPoint Exports
 
 `PptxExportService` reads from `BrandContextService`:

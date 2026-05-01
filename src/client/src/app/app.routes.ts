@@ -255,6 +255,13 @@ export const routes: Routes = [
                     (m) => m.CatalystsPageComponent
                   ),
               },
+              {
+                path: 'intelligence',
+                loadComponent: () =>
+                  import(
+                    './shared/components/intelligence-browse/intelligence-browse.component'
+                  ).then((m) => m.IntelligenceBrowseComponent),
+              },
             ],
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
