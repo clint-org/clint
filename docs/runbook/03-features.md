@@ -27,6 +27,8 @@ Company
 - Blue flags/bars -- Approval/Launch events
 - Orange/red arrows/X -- Change/status events
 
+**Analyst-curated halo.** Markers with a non-empty `description` render with a brand-700 ring around the shape on the timeline, distinguishing analyst-curated markers from raw data points. The marker tooltip's description block also gets a brand-700 left rail for the same visual cue across surfaces. Trigger is `marker.description` presence (no separate flag). Implementation in `marker.component.{ts,html}` (`hasDescription` and `haloOpacity` computed signals; SVG circle at `iconSize/2 + 3`, 1px stroke, 0.85 opacity). Dashed-line markers do not get the halo (different geometry).
+
 **Notes** -- free-text annotations attached to trials, displayed inline.
 
 ## Timeline Zoom

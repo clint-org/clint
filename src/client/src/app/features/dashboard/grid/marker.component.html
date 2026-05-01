@@ -29,6 +29,17 @@
     } @else {
       <svg [attr.width]="iconSize" [attr.height]="iconSize" class="overflow-visible drop-shadow-sm"
            [style.margin-left.px]="-iconSize / 2">
+        @if (hasDescription()) {
+          <circle
+            [attr.cx]="iconSize / 2"
+            [attr.cy]="iconSize / 2"
+            [attr.r]="iconSize / 2 + 3"
+            fill="none"
+            stroke="var(--brand-700)"
+            stroke-width="1"
+            [attr.opacity]="haloOpacity()"
+          />
+        }
         <g [attr.opacity]="nleOpacity()">
           @switch (mt.shape) {
             @case ('circle') {

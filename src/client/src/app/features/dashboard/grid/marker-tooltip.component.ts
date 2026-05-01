@@ -118,7 +118,9 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
         <!-- Description -->
         @if (description()) {
-          <p class="text-[11px] text-slate-500 leading-relaxed mt-1.5">{{ description() }}</p>
+          <div class="border-l-2 border-brand-600 pl-3 mt-1.5">
+            <p class="text-[11px] text-slate-500 leading-relaxed">{{ description() }}</p>
+          </div>
         }
 
         <!-- Source URL -->

@@ -70,6 +70,13 @@ export class MarkerComponent {
 
   nleOpacity = computed(() => this.isNle() ? 0.3 : 1);
 
+  hasDescription = computed(() => {
+    const desc = this.marker().description;
+    return !!desc && desc.trim().length > 0;
+  });
+
+  haloOpacity = computed(() => 0.85 * this.nleOpacity());
+
   shortDate = computed(() => {
     const d = new Date(this.marker().event_date);
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
