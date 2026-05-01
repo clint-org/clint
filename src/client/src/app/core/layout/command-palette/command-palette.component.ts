@@ -190,8 +190,9 @@ export class CommandPaletteComponent implements OnInit {
       // Companies have no detail page; the bullseye-by-company route gives a
       // focused view of just that company. Best available "go to company" target.
       case 'company':  return `${base}/bullseye/by-company/${item.id}`;
-      // Products have no detail or focused view; land on the list.
-      case 'product':  return `${base}/manage/products`;
+      // Products have no detail page; the list page filters to the selected
+      // product when ?selected=<id> is present.
+      case 'product':  return `${base}/manage/products?selected=${item.id}`;
       case 'event':    return `${base}/events?eventId=${item.id}`;
       case 'catalyst': return `${base}/catalysts?markerId=${item.id}`;
     }

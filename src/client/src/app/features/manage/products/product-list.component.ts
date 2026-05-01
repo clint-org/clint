@@ -118,6 +118,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
     await this.loadData();
+
+    // Honor ?selected=<id> by filtering the table to that product's name
+    // (used by command-palette deep links since products have no detail page).
+    const selectedId = this.route.snapshot.queryParamMap.get('selected');
+    if (selectedId) {
+      const target = this.products().find((p) => p.id === selectedId);
+      if (target) {
+        this.grid.onGlobalSearchInput(target.name);
+      }
+    }
   }
 
   ngOnDestroy(): void {
