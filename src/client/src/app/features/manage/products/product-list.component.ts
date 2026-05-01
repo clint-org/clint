@@ -117,11 +117,13 @@ export class ProductListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+
+    // Capture ?selected=<id> BEFORE loadData() runs because the grid's
+    // URL-sync effect rewrites query params with its own state during init.
+    const selectedId = this.route.snapshot.queryParamMap.get('selected');
+
     await this.loadData();
 
-    // Honor ?selected=<id> by filtering the table to that product's name
-    // (used by command-palette deep links since products have no detail page).
-    const selectedId = this.route.snapshot.queryParamMap.get('selected');
     if (selectedId) {
       const target = this.products().find((p) => p.id === selectedId);
       if (target) {
