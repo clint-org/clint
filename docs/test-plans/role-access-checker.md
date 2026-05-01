@@ -82,15 +82,15 @@ Sign in as a Space Owner.
 
 Sign in as a tenant owner who has not been added to any space in the tenant.
 
-- [ ] Visit `pfizer.clintapp.com` → expect spaces list visible with all spaces in the tenant.
-- [ ] Click into a space → expect data layer empty (RLS hides everything inside).
-- [ ] Visit `/t/<pfizer-id>/settings` → expect chrome renders, members table read+write.
-- [ ] Add a tenant owner via the Add owner dialog → expect `Invite held` or `added` toast.
+- [x] Visit `pfizer.clintapp.com` → expect spaces list visible with all spaces in the tenant.
+- [x] Click into a space → expect data layer empty (RLS hides everything inside).
+- [x] Visit `/t/<pfizer-id>/settings` → expect chrome renders, members table read+write.
+- [x] Add a tenant owner via the Add owner dialog → expect `Invite held` or `added` toast. Verified, invite held for `phase4-throwaway@gmail.com` (cleanup pending).
 - [x] Try editing tenant branding (managed tenant) → expect tenant branding form is NOT rendered on tenant settings (agency owns branding for agency-managed tenants per runbook 09; lives in `/admin/tenants/:id` on the agency host). Verified: form is absent. The runbook says a "read-only identity card with a hint pointing to the agency" should appear in its place; that hint is missing today (see follow-up #9).
 - [ ] Try editing tenant branding (direct customer, `agency_id IS NULL`) → expect Save succeeds. **Skip in this run** — Pfizer is agency-managed; we have no direct-customer tenant set up. Mark as `n/a` in this strict pass.
-- [ ] Click "Create space" on the spaces empty state → expect dialog opens, submission creates the space.
-- [ ] Visit `/seed-demo` URL on a space they are not a member of → expect `Insufficient permissions`.
-- [ ] curl `rpc/update_tenant_branding` → expect success.
+- [x] Click "Create space" on the spaces empty state → expect dialog opens, submission creates the space.
+- [x] Visit `/seed-demo` URL on a space they are not a member of → expect `Insufficient permissions`.
+- [x] curl `rpc/update_tenant_branding` → expect success. Verified, HTTP 200 returned `{"id":"a87a88ae-...","updated":true}`.
 
 ## Agency Owner (parent agency, NOT in `tenant_members` for the tenant)
 
