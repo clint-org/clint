@@ -4,6 +4,7 @@ import { agencyGuard } from './core/guards/agency.guard';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
 import { spaceGuard } from './core/guards/space.guard';
+import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
@@ -111,6 +112,7 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
+        canActivate: [tenantSettingsGuard],
         loadComponent: () =>
           import('./features/tenant-settings/tenant-settings.component').then(
             (m) => m.TenantSettingsComponent
