@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -12,6 +12,8 @@ import { Marker } from '../../../core/models/marker.model';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
+import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 
 import { TrialFormComponent } from './trial-form.component';
 import { MarkerFormComponent } from './marker-form.component';
@@ -20,6 +22,10 @@ import { SectionCardComponent } from '../../../shared/components/section-card.co
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
+import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
+import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
+import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -39,6 +45,10 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    IntelligenceBlockComponent,
+    IntelligenceEmptyComponent,
+    IntelligenceDrawerComponent,
+    RecentActivityFeedComponent,
   ],
   templateUrl: './trial-detail.component.html',
 })
@@ -48,6 +58,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   private trialService = inject(TrialService);
   private markerService = inject(MarkerService);
   private noteService = inject(TrialNoteService);
+  private intelligenceService = inject(PrimaryIntelligenceService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
@@ -84,11 +95,23 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   addingNote = signal(false);
   editingNote = signal<TrialNote | null>(null);
 
+  // Primary intelligence
+  intelligence = signal<IntelligenceDetailBundle | null>(null);
+  intelligenceDrawerOpen = signal(false);
+
+  protected readonly hasIntelligence = computed(() => {
+    const i = this.intelligence();
+    return !!(i?.published || i?.draft);
+  });
+
+  protected readonly spaceIdSig = computed(() => this.trial()?.space_id ?? '');
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.trialId.set(id);
       this.loadTrial();
+      this.loadIntelligence();
     } else {
       this.error.set('No trial ID provided');
       this.loading.set(false);
@@ -166,6 +189,17 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  async loadIntelligence(): Promise<void> {
+    try {
+      const bundle = await this.intelligenceService.getTrialDetail(this.trialId());
+      this.intelligence.set(bundle);
+    } catch {
+      // Intelligence load failures shouldn't block the trial page; the
+      // empty state simply renders. Real errors surface elsewhere.
+      this.intelligence.set(null);
+    }
+  }
+
   async onTrialSaved(): Promise<void> {
     this.editingTrial.set(false);
     await this.loadTrial();
@@ -224,6 +258,21 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
         life: 4000,
       });
     }
+  }
+
+  onIntelligenceEdit(): void {
+    this.intelligenceDrawerOpen.set(true);
+  }
+
+  async onIntelligenceClosed(): Promise<void> {
+    this.intelligenceDrawerOpen.set(false);
+    await this.loadIntelligence();
+  }
+
+  async onIntelligencePublished(): Promise<void> {
+    this.intelligenceDrawerOpen.set(false);
+    await this.loadIntelligence();
+    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
   }
 
   ngOnDestroy(): void {
