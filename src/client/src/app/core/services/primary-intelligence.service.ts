@@ -5,6 +5,7 @@ import {
   IntelligenceDetailBundle,
   IntelligenceEntityType,
   IntelligenceFeedResult,
+  IntelligenceFeedRow,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -57,6 +58,15 @@ export class PrimaryIntelligenceService {
     });
     if (error) throw error;
     return (data as IntelligenceDetailBundle | null) ?? null;
+  }
+
+  async listDraftsForSpace(spaceId: string, limit = 3): Promise<IntelligenceFeedRow[]> {
+    const { data, error } = await this.supabase.client.rpc('list_draft_intelligence_for_space', {
+      p_space_id: spaceId,
+      p_limit: limit,
+    });
+    if (error) throw error;
+    return (data as IntelligenceFeedRow[]) ?? [];
   }
 
   async list(opts: {

@@ -19,15 +19,33 @@
       <section aria-labelledby="latest-heading" class="latest">
         <header class="sect-head">
           <h2 id="latest-heading">Latest from Stout</h2>
-          <span class="meta">Notices, post-readouts, and thesis updates</span>
+          @if (latestIntelligence().length > 0) {
+            <a [routerLink]="intelligenceBrowseRoute()" class="meta meta-link">
+              View feed
+            </a>
+          } @else {
+            <span class="meta">Notices, post-readouts, and thesis updates</span>
+          }
         </header>
-        <div class="latest-empty">
-          <p class="latest-empty-title">No published intelligence yet.</p>
-          <p class="latest-empty-hint">
-            Once your agency publishes a primary intelligence read against this engagement, it will
-            appear here in recency order.
-          </p>
-        </div>
+        @if (latestLoading()) {
+          <div class="loading-row">
+            <p-progressSpinner strokeWidth="3" [style]="{ width: '20px', height: '20px' }" />
+          </div>
+        } @else if (latestIntelligence().length > 0) {
+          <app-intelligence-feed
+            [rows]="latestIntelligence()"
+            [tenantId]="tenantId()"
+            [spaceId]="spaceId()"
+          />
+        } @else {
+          <div class="latest-empty">
+            <p class="latest-empty-title">No published intelligence yet.</p>
+            <p class="latest-empty-hint">
+              Once your agency publishes a primary intelligence read against this engagement, it
+              will appear here in recency order.
+            </p>
+          </div>
+        }
       </section>
 
       <app-recent-materials-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
@@ -35,7 +53,11 @@
 
     <aside class="col-side" aria-label="Engagement side rail">
       @if (isAgency()) {
-        <app-drafts-widget />
+        <app-drafts-widget
+          [drafts]="drafts()"
+          [tenantId]="tenantId()"
+          [spaceId]="spaceId()"
+        />
       }
 
       @if (upcomingLoading()) {

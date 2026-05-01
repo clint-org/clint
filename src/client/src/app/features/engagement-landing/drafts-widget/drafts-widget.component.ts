@@ -1,31 +1,52 @@
-import { Component } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import {
+  ENTITY_TYPE_LABEL,
+  IntelligenceFeedRow,
+} from '../../../core/models/primary-intelligence.model';
 
 /**
- * Side rail "Your drafts" widget. Phase 1 placeholder: the primary
- * intelligence table is not shipped yet, so we render an empty state and
- * keep the placement so existing users see the slot for when the data
- * source ships in phase 2.
- *
- * The parent `EngagementLandingComponent` is responsible for hiding this
- * widget entirely for non-agency viewers; this component does not check
- * the role itself.
+ * Side rail "Your drafts" widget. Renders up to a few in-progress drafts
+ * authored by anyone in the viewer's agency on this engagement. The parent
+ * `EngagementLandingComponent` hides this widget entirely for non-agency
+ * viewers; this component does not check the role itself.
  */
 @Component({
   selector: 'app-drafts-widget',
   standalone: true,
+  imports: [RouterLink],
   template: `
     <section class="card" aria-labelledby="drafts-heading">
       <header class="card-head">
         <h2 id="drafts-heading">Your drafts</h2>
         <span class="agency-tag" aria-label="Visible to agency members only">Agency only</span>
       </header>
-      <div class="empty">
-        <p class="empty-line">No drafts yet.</p>
-        <p class="empty-hint">
-          Drafts of primary intelligence by your agency will appear here once an analyst starts
-          one.
-        </p>
-      </div>
+      @if (drafts().length === 0) {
+        <div class="empty">
+          <p class="empty-line">No drafts yet.</p>
+          <p class="empty-hint">
+            Drafts of primary intelligence by your agency will appear here once an analyst starts
+            one.
+          </p>
+        </div>
+      } @else {
+        <ul class="drafts-list">
+          @for (draft of drafts(); track draft.id) {
+            <li class="draft-row">
+              <a [routerLink]="draftRoute(draft)" class="draft-headline">{{ draft.headline }}</a>
+              <p class="draft-meta">
+                <span class="draft-entity">{{ entityLabel(draft) }}</span>
+                <span aria-hidden="true" class="dot">.</span>
+                <span class="draft-stamp">{{ formatStamp(draft.updated_at) }}</span>
+              </p>
+            </li>
+          }
+        </ul>
+        @if (allDraftsRoute()) {
+          <a [routerLink]="allDraftsRoute()" class="all-link">All drafts</a>
+        }
+      }
     </section>
   `,
   styles: [
@@ -85,7 +106,89 @@ import { Component } from '@angular/core';
         color: #64748b;
         line-height: 1.5;
       }
+      .drafts-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .draft-row {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .draft-headline {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #0f172a;
+        text-decoration: none;
+        line-height: 1.35;
+      }
+      .draft-headline:hover {
+        color: var(--brand-700);
+      }
+      .draft-meta {
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 10px;
+        color: #94a3b8;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dot {
+        font-size: 10px;
+        line-height: 1;
+        opacity: 0.6;
+      }
+      .all-link {
+        margin-top: 12px;
+        display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 10px;
+        color: var(--brand-700);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-decoration: none;
+      }
+      .all-link:hover {
+        text-decoration: underline;
+      }
     `,
   ],
 })
-export class DraftsWidgetComponent {}
+export class DraftsWidgetComponent {
+  readonly drafts = input<IntelligenceFeedRow[]>([]);
+  readonly tenantId = input<string | null>(null);
+  readonly spaceId = input<string | null>(null);
+
+  protected readonly allDraftsRoute = computed(() => {
+    const t = this.tenantId();
+    const s = this.spaceId();
+    if (!t || !s) return '';
+    return `/t/${t}/s/${s}/intelligence`;
+  });
+
+  protected entityLabel(draft: IntelligenceFeedRow): string {
+    return ENTITY_TYPE_LABEL[draft.entity_type] ?? draft.entity_type;
+  }
+
+  protected draftRoute(draft: IntelligenceFeedRow): unknown[] {
+    const t = this.tenantId();
+    const s = this.spaceId();
+    if (!t || !s) return [];
+    if (draft.entity_type === 'trial') {
+      return ['/t', t, 's', s, 'manage', 'trials', draft.entity_id];
+    }
+    return ['/t', t, 's', s, 'intelligence'];
+  }
+
+  protected formatStamp(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+}

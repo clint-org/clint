@@ -1,15 +1,17 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { Space } from '../../core/models/space.model';
 import { Company } from '../../core/models/company.model';
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
 import { Product } from '../../core/models/product.model';
+import { IntelligenceFeedRow } from '../../core/models/primary-intelligence.model';
 import {
   EngagementLandingService,
   SpaceLandingStats,
@@ -19,17 +21,17 @@ import { EngagementContextStripComponent } from './context-strip/context-strip.c
 import { DraftsWidgetComponent } from './drafts-widget/drafts-widget.component';
 import { UpcomingCatalystsWidgetComponent } from './upcoming-catalysts-widget/upcoming-catalysts-widget.component';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
+import { IntelligenceFeedComponent } from '../../shared/components/intelligence-feed/intelligence-feed.component';
 
 /**
- * Engagement landing page. Phase 1 of docs/specs/engagement-landing/spec.md.
+ * Engagement landing page (docs/specs/engagement-landing/spec.md).
  *
  * Sits at the space root (`/t/:tenantId/s/:spaceId`). Hosts:
  *   - Context strip: title, active-since subline, five header stats.
- *   - Latest from Stout: phase-1 placeholder; primary intelligence has not
- *     shipped yet so the section just frames the slot for phase 2.
- *   - Recent materials: hidden entirely until the materials registry ships.
- *   - Your drafts (agency only): empty state until primary intelligence
- *     ships; the slot is shown so the placement is locked in.
+ *   - Latest from Stout: most recent published primary intelligence rows.
+ *   - Recent materials: most recent registered materials in the engagement.
+ *   - Your drafts (agency only): up to 3 in-progress drafts from anyone in
+ *     the agency on this engagement. Hidden for non-agency viewers.
  *   - Next 14 days catalysts: derived client-side from `get_dashboard_data`,
  *     reusing the existing markers feed.
  */
@@ -37,12 +39,14 @@ import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent
   selector: 'app-engagement-landing',
   standalone: true,
   imports: [
+    RouterLink,
     ProgressSpinner,
     MessageModule,
     EngagementContextStripComponent,
     DraftsWidgetComponent,
     UpcomingCatalystsWidgetComponent,
     RecentMaterialsWidgetComponent,
+    IntelligenceFeedComponent,
   ],
   templateUrl: './engagement-landing.component.html',
   styleUrls: ['./engagement-landing.component.css'],
@@ -53,6 +57,7 @@ export class EngagementLandingComponent implements OnInit {
   private readonly engagementService = inject(EngagementLandingService);
   private readonly dashboardService = inject(DashboardService);
   private readonly spaceService = inject(SpaceService);
+  private readonly intelligenceService = inject(PrimaryIntelligenceService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -63,6 +68,16 @@ export class EngagementLandingComponent implements OnInit {
   readonly upcomingLoading = signal(true);
   readonly isAgency = signal(false);
   readonly loadError = signal<string | null>(null);
+  readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
+  readonly latestLoading = signal(true);
+  readonly drafts = signal<IntelligenceFeedRow[]>([]);
+
+  readonly intelligenceBrowseRoute = computed(() => {
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    if (!tid || !sid) return '';
+    return `/t/${tid}/s/${sid}/intelligence`;
+  });
 
   readonly catalystsRoute = computed(() => {
     const tid = this.tenantId();
@@ -112,14 +127,18 @@ export class EngagementLandingComponent implements OnInit {
 
     this.statsLoading.set(true);
     this.upcomingLoading.set(true);
+    this.latestLoading.set(true);
     this.loadError.set(null);
 
-    const [spaceRes, statsRes, dashRes, agencyRes] = await Promise.allSettled([
-      this.spaceService.getSpace(sid),
-      this.engagementService.getStats(sid),
-      this.dashboardService.getDashboardData(sid, emptyFilters()),
-      this.engagementService.isAgencyMemberOfTenant(tid),
-    ]);
+    const [spaceRes, statsRes, dashRes, agencyRes, latestRes, draftsRes] =
+      await Promise.allSettled([
+        this.spaceService.getSpace(sid),
+        this.engagementService.getStats(sid),
+        this.dashboardService.getDashboardData(sid, emptyFilters()),
+        this.engagementService.isAgencyMemberOfTenant(tid),
+        this.intelligenceService.list({ spaceId: sid, limit: 5 }),
+        this.intelligenceService.listDraftsForSpace(sid, 3),
+      ]);
 
     if (spaceRes.status === 'fulfilled') {
       this.space.set(spaceRes.value);
@@ -135,9 +154,16 @@ export class EngagementLandingComponent implements OnInit {
     if (agencyRes.status === 'fulfilled') {
       this.isAgency.set(agencyRes.value);
     }
+    if (latestRes.status === 'fulfilled') {
+      this.latestIntelligence.set(latestRes.value.rows);
+    }
+    if (draftsRes.status === 'fulfilled') {
+      this.drafts.set(draftsRes.value);
+    }
 
     this.statsLoading.set(false);
     this.upcomingLoading.set(false);
+    this.latestLoading.set(false);
   }
 }
 
