@@ -9,10 +9,6 @@ export default defineConfig({
     globals: true,
     pool: 'forks',
     fileParallel: false,
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    forks: { singleFork: true },
   },
 });

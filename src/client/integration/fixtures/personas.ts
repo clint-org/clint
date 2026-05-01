@@ -40,9 +40,17 @@ const SUBDOMAIN_PREFIX = 'pftest';
 const AGENCY_SUBDOMAIN = `${SUBDOMAIN_PREFIX}-agency`;
 const TENANT_SUBDOMAIN = `${SUBDOMAIN_PREFIX}-tenant`;
 
+/**
+ * Subdomain prefix tests should use when calling RPCs that create new
+ * agencies/tenants (e.g. provision_agency in the platform_admin section).
+ * The wipe sweeps these on every run.
+ */
+export const TEST_SUBDOMAIN_PREFIX = `${SUBDOMAIN_PREFIX}-tx-`;
+
 export type PersonaName =
   | 'platform_admin'
-  | 'agency_owner'
+  | 'agency_owner'    // Owns the test agency AND has an explicit tenant_members row (#10 setup).
+  | 'agency_only'     // Owns the test agency but has NO tenant_members row anywhere (firewall).
   | 'tenant_owner'
   | 'space_owner'
   | 'contributor'
@@ -61,6 +69,7 @@ export interface Personas {
 const PERSONA_ROLES: Exclude<PersonaName, 'anon'>[] = [
   'platform_admin',
   'agency_owner',
+  'agency_only',
   'tenant_owner',
   'space_owner',
   'contributor',
@@ -119,54 +128,44 @@ async function wipe(admin: SupabaseClient): Promise<void> {
   const personas = list.users.filter((u) => u.email?.endsWith(`@${EMAIL_SUFFIX}`));
   const personaIds = personas.map((u) => u.id);
 
-  if (personaIds.length === 0) {
-    // No prior state. Still wipe the well-known agency/tenant subdomains in
-    // case a previous run aborted before creating users.
-    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
-    await pg.connect();
-    try {
-      await pg.query(`set local clint.member_guard_cascade = 'on'`);
-      await pg.query(`delete from public.tenants where subdomain = $1`, [TENANT_SUBDOMAIN]);
-      await pg.query(`delete from public.agencies where subdomain = $1`, [AGENCY_SUBDOMAIN]);
-    } finally {
-      await pg.end();
-    }
-    return;
-  }
-
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   await pg.connect();
   try {
     await pg.query('begin');
     await pg.query(`set local clint.member_guard_cascade = 'on'`);
 
-    // Tables where personas left rows that don't cascade through tenant/agency
-    // deletion. These have to go before auth.users delete or the FK blocks it.
-    await pg.query(`delete from public.tenant_invites where created_by = any($1::uuid[])`, [personaIds]);
-    await pg.query(`delete from public.space_invites  where created_by = any($1::uuid[])`, [personaIds]);
-    await pg.query(`delete from public.agency_invites where invited_by  = any($1::uuid[]) or accepted_by = any($1::uuid[])`, [personaIds]);
+    if (personaIds.length > 0) {
+      // Tables where personas left rows that don't cascade through tenant/agency
+      // deletion. These have to go before auth.users delete or the FK blocks it.
+      await pg.query(`delete from public.tenant_invites where created_by = any($1::uuid[])`, [personaIds]);
+      await pg.query(`delete from public.space_invites  where created_by = any($1::uuid[])`, [personaIds]);
+      await pg.query(`delete from public.agency_invites where invited_by  = any($1::uuid[]) or accepted_by = any($1::uuid[])`, [personaIds]);
 
-    // Spaces, products, companies, trials, marker_types, therapeutic_areas
-    // all reference auth.users via created_by without cascade. Anything the
-    // personas authored has to go first. Easiest: delete every space that
-    // either belongs to our test tenant OR was created by a persona, which
-    // cascades to all the space-scoped data.
-    await pg.query(
-      `delete from public.spaces where created_by = any($1::uuid[]) or tenant_id in (select id from public.tenants where subdomain = $2)`,
-      [personaIds, TENANT_SUBDOMAIN],
-    );
+      // Spaces, products, companies, trials etc. reference auth.users via
+      // created_by without cascade. Delete every space the persona created
+      // (cascades to space-scoped data) plus everything under the test tenant.
+      await pg.query(
+        `delete from public.spaces where created_by = any($1::uuid[]) or tenant_id in (select id from public.tenants where subdomain = $2)`,
+        [personaIds, TENANT_SUBDOMAIN],
+      );
+    }
 
-    // Some user-data tables also have created_by FK without cascade and are
-    // tenant-scoped via space, but our space delete above cascades them.
-    // What's left: tenants/agencies themselves and direct auth.users refs.
+    // Test-created tenants (named with TEST_SUBDOMAIN_PREFIX by tests that
+    // call RPCs which create new tenants/agencies, e.g. provision_agency).
+    await pg.query(`delete from public.tenants where subdomain like $1`, [`${TEST_SUBDOMAIN_PREFIX}%`]);
 
-    // Delete the test tenant + agency (member rows now gone).
+    // Test-created agencies (provision_agency in platform_admin tests).
+    // Includes their cascading agency_members + agency_invites.
+    await pg.query(`delete from public.agencies where subdomain like $1`, [`${TEST_SUBDOMAIN_PREFIX}%`]);
+
+    // Well-known fixture entities.
     await pg.query(`delete from public.tenants where subdomain = $1`, [TENANT_SUBDOMAIN]);
     await pg.query(`delete from public.agencies where subdomain = $1`, [AGENCY_SUBDOMAIN]);
 
-    // Finally remove the persona auth.users rows. With all FK refs cleared,
-    // this succeeds.
-    await pg.query(`delete from auth.users where id = any($1::uuid[])`, [personaIds]);
+    if (personaIds.length > 0) {
+      // Finally remove the persona auth.users rows. FK refs are now cleared.
+      await pg.query(`delete from auth.users where id = any($1::uuid[])`, [personaIds]);
+    }
 
     await pg.query('commit');
   } catch (err) {
@@ -229,13 +228,14 @@ export async function buildPersonas(): Promise<Personas> {
     .single();
   if (agencyErr) throw new Error(`agencies insert: ${agencyErr.message}`);
 
-  // 4. Agency owner row.
+  // 4. Agency owner rows. Both agency_owner and agency_only own the agency.
+  //    The difference is below: agency_owner ALSO has a tenant_members row,
+  //    agency_only does not.
   {
-    const { error } = await admin.from('agency_members').insert({
-      agency_id: agency.id,
-      user_id: userByName.agency_owner!.id,
-      role: 'owner',
-    });
+    const { error } = await admin.from('agency_members').insert([
+      { agency_id: agency.id, user_id: userByName.agency_owner!.id, role: 'owner' },
+      { agency_id: agency.id, user_id: userByName.agency_only!.id, role: 'owner' },
+    ]);
     if (error) throw new Error(`agency_members insert: ${error.message}`);
   }
 
@@ -302,6 +302,7 @@ export async function buildPersonas(): Promise<Personas> {
   const jwts: Record<PersonaName, string> = {
     platform_admin: mintJwt(userByName.platform_admin!.id, userByName.platform_admin!.email),
     agency_owner: mintJwt(userByName.agency_owner!.id, userByName.agency_owner!.email),
+    agency_only: mintJwt(userByName.agency_only!.id, userByName.agency_only!.email),
     tenant_owner: mintJwt(userByName.tenant_owner!.id, userByName.tenant_owner!.email),
     space_owner: mintJwt(userByName.space_owner!.id, userByName.space_owner!.email),
     contributor: mintJwt(userByName.contributor!.id, userByName.contributor!.email),
@@ -315,6 +316,7 @@ export async function buildPersonas(): Promise<Personas> {
     ids: {
       platform_admin: userByName.platform_admin!.id,
       agency_owner: userByName.agency_owner!.id,
+      agency_only: userByName.agency_only!.id,
       tenant_owner: userByName.tenant_owner!.id,
       space_owner: userByName.space_owner!.id,
       contributor: userByName.contributor!.id,

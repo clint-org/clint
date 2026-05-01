@@ -38,17 +38,29 @@ In CI, `supabase status -o env` exposes the values; the workflow passes them thr
 ```
 integration/
   fixtures/
-    personas.ts       # buildPersonas() seeds 7 auth.users + an agency/tenant/space
+    personas.ts       # buildPersonas() seeds 8 auth.users + an agency/tenant/space
                       # graph + memberships, mints HS256 JWTs with the local secret,
                       # returns { jwts, ids, org }.
+                      # 8 personas: platform_admin, agency_owner (with explicit
+                      # tenant_members row), agency_only (strict firewall),
+                      # tenant_owner, space_owner, contributor, reader,
+                      # no_memberships. Plus the implicit `anon` (empty JWT).
   harness/
-    as.ts             # as(jwt) -> Supabase client preset with the JWT.
-                      # Plus assertion helpers: expectCode, expectOk, expectCount.
+    as.ts             # as(personas, name) -> Supabase client preset with that
+                      # persona's JWT.  Plus expectCode / expectOk / expectCount.
   tests/
-    role-access.spec.ts   # The matrix rows.
+    role-access.spec.ts   # 49 matrix rows (server-side surface).
 ```
 
-Each `.spec.ts` calls `buildPersonas()` in `beforeAll`. The fixture wipes prior test entities by email-suffix pattern so reruns are idempotent without `supabase db reset`.
+Each `.spec.ts` calls `buildPersonas()` in `beforeAll`. The fixture opens a direct pg connection, sets `clint.member_guard_cascade = 'on'`, and wipes prior test entities by email-suffix and subdomain-prefix patterns. Reruns are idempotent without `supabase db reset`.
+
+## What's covered, what's not
+
+**In scope (server-side):** RPC permission gates, RLS policies on read and write, trigger logic (member-self-protection, agency-backed eviction guard), idempotency contracts (add_tenant_owner / invite_to_space), view shape (tenant_members_view.is_agency_backed), platform-admin read/write asymmetry.
+
+**Out of scope (use Playwright):** route guard redirects, chrome rendering, button visibility, edit-form populate behavior, cross-host bounce. The persona fixture and JWT vault can be reused from Playwright via `page.context().addCookies` or localStorage stubs if/when those checks are encoded.
+
+**Out of scope (destructive in fixture):** delete-space test (would mid-test wipe the fixture), register_custom_domain (DNS plumbing not relevant in CI).
 
 ## Why direct JWT signing
 
