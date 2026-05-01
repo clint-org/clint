@@ -7,7 +7,7 @@ import { AppComponent } from './app/app.component';
 import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
 import { buildBrandPreset } from './app/config/primeng-theme';
-import { generateBrandScale } from './app/core/util/color-scale';
+import { generateBrandScale, pickStopForSurface } from './app/core/util/color-scale';
 import { BrandContextService, DEFAULT_BRAND } from './app/core/services/brand-context.service';
 import { Brand } from './app/core/models/brand.model';
 
@@ -83,6 +83,12 @@ function applyBrandSideEffects(brand: Brand): void {
   for (const [key, value] of Object.entries(scale)) {
     root.style.setProperty(`--brand-${key}`, value);
   }
+  // Surface-aware foreground tokens. Dark surface tokenized to the canonical
+  // sidebar/icon-rail bg (#0f172a); light to white. Tenants whose seed has
+  // poor contrast against the dark chrome get bumped to a lighter stop so
+  // the logo, active markers, and avatar text stay legible.
+  root.style.setProperty('--brand-on-dark', scale[pickStopForSurface(scale, '#0f172a')]);
+  root.style.setProperty('--brand-on-light', scale[pickStopForSurface(scale, '#ffffff')]);
 }
 
 (async () => {

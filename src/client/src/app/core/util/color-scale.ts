@@ -54,6 +54,59 @@ export function generateBrandScale(seedHex: string): BrandScale {
   return out;
 }
 
+/**
+ * Pick the brand stop that gives the best legibility against a given surface
+ * color. Used to derive `--brand-on-dark` / `--brand-on-light` so foreground
+ * uses of the brand color stay readable when a tenant picks a seed that
+ * collapses into the surface (e.g. a navy seed against the slate-900 sidebar).
+ *
+ * For a dark surface we prefer 600 and walk lighter (500, 400, ...) until WCAG
+ * contrast clears `minRatio`; for a light surface we walk darker (700, 800,
+ * ...). 4.5:1 is the AA threshold for normal text and is a safe single bar
+ * even for the small UI bits (active markers, avatar initials) that use this
+ * token. If nothing clears the bar (extreme seeds), we return whichever stop
+ * has the highest contrast so the result is at least the best available.
+ */
+export function pickStopForSurface(
+  scale: BrandScale,
+  surfaceHex: string,
+  minRatio = 4.5
+): keyof BrandScale {
+  const surfaceL = relativeLuminance(surfaceHex);
+  const preferLighter = surfaceL < 0.5;
+  const order: (keyof BrandScale)[] = preferLighter
+    ? [600, 500, 400, 300, 200, 100, 50]
+    : [600, 700, 800, 900, 950];
+  for (const key of order) {
+    if (contrastRatio(scale[key], surfaceHex) >= minRatio) {
+      return key;
+    }
+  }
+  return order.reduce(
+    (best, k) =>
+      contrastRatio(scale[k], surfaceHex) > contrastRatio(scale[best], surfaceHex) ? k : best,
+    order[0]
+  );
+}
+
+function relativeLuminance(hex: string): number {
+  const seed = hex.replace('#', '');
+  const r = parseInt(seed.slice(0, 2), 16) / 255;
+  const g = parseInt(seed.slice(2, 4), 16) / 255;
+  const b = parseInt(seed.slice(4, 6), 16) / 255;
+  const lin = (c: number): number =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const lighter = Math.max(la, lb);
+  const darker = Math.min(la, lb);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
 }
