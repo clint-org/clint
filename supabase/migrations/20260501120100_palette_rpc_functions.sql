@@ -228,3 +228,57 @@ end;
 $$;
 
 grant execute on function public.palette_touch_recent(uuid, text, uuid) to authenticated;
+
+-- ============================================================
+-- palette_set_pinned - upserts a pin at a given position
+-- ============================================================
+create or replace function public.palette_set_pinned (
+  p_space_id  uuid,
+  p_kind      text,
+  p_entity_id uuid,
+  p_position  int default 0
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then return; end if;
+  if not public.has_space_access(p_space_id) then return; end if;
+  if p_kind not in ('company','product','trial','catalyst','event') then
+    raise exception 'invalid kind %', p_kind;
+  end if;
+
+  insert into public.palette_pinned(user_id, space_id, kind, entity_id, position)
+  values (v_uid, p_space_id, p_kind, p_entity_id, p_position)
+  on conflict (user_id, space_id, kind, entity_id)
+  do update set position = excluded.position;
+end;
+$$;
+
+grant execute on function public.palette_set_pinned(uuid, text, uuid, int) to authenticated;
+
+-- ============================================================
+-- palette_unpin - deletes a pin
+-- ============================================================
+create or replace function public.palette_unpin (
+  p_space_id  uuid,
+  p_kind      text,
+  p_entity_id uuid
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then return; end if;
+  delete from public.palette_pinned
+  where user_id = v_uid and space_id = p_space_id and kind = p_kind and entity_id = p_entity_id;
+end;
+$$;
+
+grant execute on function public.palette_unpin(uuid, text, uuid) to authenticated;
