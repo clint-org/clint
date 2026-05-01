@@ -10,8 +10,12 @@ import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
+import { Agency } from '../../core/models/agency.model';
 import { TenantService } from '../../core/services/tenant.service';
+import { AgencyService } from '../../core/services/agency.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { environment } from '../../../environments/environment';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
@@ -119,9 +123,28 @@ import { extractErrorMessage } from '../../core/util/error-message';
             }
             <div class="flex-1">
               <p class="text-sm font-semibold text-slate-900">{{ tenant()?.name }}</p>
-              <p class="mt-1 text-[11px] text-slate-500">
-                Branding (name and logo) is managed by your agency. Contact them to
-                update.
+              @if (primaryColor()) {
+                <div class="mt-1.5 flex items-center gap-1.5">
+                  <span
+                    class="inline-block h-3 w-3 rounded-sm border border-slate-300"
+                    [style.background-color]="primaryColor()"
+                    [attr.aria-label]="'Primary color ' + primaryColor()"
+                  ></span>
+                  <span class="text-[10px] font-mono uppercase text-slate-400">{{ primaryColor() }}</span>
+                </div>
+              }
+              <p class="mt-2 text-[11px] text-slate-500">
+                Branding for this workspace is managed by
+                {{ agencyName() ?? 'your agency' }}.
+                @if (agencyPortalUrl()) {
+                  <a
+                    [href]="agencyPortalUrl()"
+                    class="text-brand-700 hover:underline"
+                  >Open the agency portal</a>
+                  to make changes.
+                } @else {
+                  Contact them to request changes.
+                }
               </p>
             </div>
           </div>
@@ -287,6 +310,8 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private tenantService = inject(TenantService);
+  private agencyService = inject(AgencyService);
+  private brand = inject(BrandContextService);
   private supabase = inject(SupabaseService);
   private confirmation = inject(ConfirmationService);
   private readonly topbarState = inject(TopbarStateService);
@@ -312,6 +337,21 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   deletingTenant = signal(false);
   readonly inviteEmail = signal('');
   readonly tenantNameDraft = signal('');
+
+  // Parent agency record, populated only when the current user is a member
+  // of the tenant's parent agency. Drives the cross-host "Open agency portal"
+  // link on the read-only branding card; null leaves only the contact prompt.
+  parentAgency = signal<Agency | null>(null);
+
+  readonly agencyPortalUrl = computed(() => {
+    const a = this.parentAgency();
+    if (!a || !environment.apexDomain) return null;
+    const host = a.custom_domain ?? `${a.subdomain}.${environment.apexDomain}`;
+    return `${window.location.protocol}//${host}/admin`;
+  });
+
+  readonly agencyName = computed(() => this.brand.agency()?.name ?? null);
+  readonly primaryColor = this.brand.primaryColor;
 
   readonly currentUserIsOwner = computed(() => {
     const userId = this.supabase.currentUser()?.id;
@@ -340,6 +380,21 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     ]);
     await this.loadData();
     this.tenantNameDraft.set(this.tenant()?.name ?? '');
+
+    // If the tenant has a parent agency AND the current user is a member of
+    // that agency, surface a cross-host link to the agency portal in the
+    // read-only branding card. listMyAgencies is RLS-filtered to my agencies
+    // only, so finding a match here implies membership without an extra RPC.
+    const agencyId = this.tenant()?.agency_id;
+    if (agencyId) {
+      try {
+        const mine = await this.agencyService.listMyAgencies();
+        const match = mine.find((a) => a.id === agencyId);
+        if (match) this.parentAgency.set(match);
+      } catch {
+        // Non-members get [] (RLS-filtered); leave parentAgency null.
+      }
+    }
   }
 
   ngOnDestroy(): void {
