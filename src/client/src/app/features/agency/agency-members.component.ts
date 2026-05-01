@@ -134,8 +134,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     >
       <form (ngSubmit)="onAdd()" class="space-y-4">
         <p class="text-xs text-slate-500">
-          Enter the email of an existing user. They must already have signed in to the platform
-          before they can be added.
+          Enter the email of the new agency member. Existing users are added immediately; new
+          users get a held invite that takes effect on their first sign-in.
         </p>
         <div>
           <label for="add-email" class="mb-1 block text-sm font-medium text-slate-700">
@@ -151,20 +151,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
             (ngModelChange)="newEmail.set($event)"
             name="email"
             placeholder="user@example.com"
-            (blur)="onEmailBlur()"
             required
           />
-          @if (lookingUp()) {
-            <p class="mt-1 text-xs text-slate-500">Looking up user&hellip;</p>
-          }
-          @if (resolvedUser()) {
-            <p class="mt-1 text-xs text-slate-600">
-              Found: <strong>{{ resolvedUser()!.display_name }}</strong>
-            </p>
-          }
-          @if (lookupError()) {
-            <p class="mt-1 text-xs text-rose-700">{{ lookupError() }}</p>
-          }
         </div>
         <div>
           <label for="add-role" class="mb-1 block text-sm font-medium text-slate-700">Role</label>
@@ -179,13 +167,16 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
             [style]="{ width: '100%' }"
           />
         </div>
+        @if (addResult()) {
+          <p-message severity="success" [closable]="false">{{ addResult() }}</p-message>
+        }
         @if (addError()) {
           <p-message severity="error" [closable]="false">{{ addError() }}</p-message>
         }
       </form>
       <ng-template #footer>
         <p-button
-          label="Cancel"
+          label="Close"
           severity="secondary"
           [outlined]="true"
           (onClick)="addDialogOpen.set(false)"
@@ -194,7 +185,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
           label="Add member"
           (onClick)="onAdd()"
           [loading]="adding()"
-          [disabled]="!resolvedUser() || adding()"
+          [disabled]="!newEmail().trim() || adding()"
         />
       </ng-template>
     </p-dialog>
@@ -214,13 +205,10 @@ export class AgencyMembersComponent implements OnInit {
   readonly addDialogOpen = signal(false);
   readonly adding = signal(false);
   readonly addError = signal<string | null>(null);
+  readonly addResult = signal<string | null>(null);
 
   readonly newEmail = signal('');
-  readonly newRole = signal<'owner' | 'member'>('member');
-  readonly resolvedUser = signal<{ user_id: string; display_name: string } | null>(null);
-  readonly lookingUp = signal(false);
-  readonly lookupError = signal<string | null>(null);
-  private lookupSeq = 0;
+  readonly newRole = signal<'owner' | 'member'>('owner');
 
   readonly roleOptions = [
     { label: 'Owner', value: 'owner' },
@@ -268,54 +256,29 @@ export class AgencyMembersComponent implements OnInit {
 
   resetAddForm(): void {
     this.newEmail.set('');
-    this.newRole.set('member');
+    this.newRole.set('owner');
     this.addError.set(null);
-    this.resolvedUser.set(null);
-    this.lookupError.set(null);
-    this.lookingUp.set(false);
-  }
-
-  async onEmailBlur(): Promise<void> {
-    const email = this.newEmail().trim();
-    this.resolvedUser.set(null);
-    this.lookupError.set(null);
-    if (!email) return;
-    const seq = ++this.lookupSeq;
-    this.lookingUp.set(true);
-    try {
-      const found = await this.agencyService.lookupUserByEmail(email);
-      // Drop stale results if user typed again before the previous call returned.
-      if (seq !== this.lookupSeq) return;
-      if (found) {
-        this.resolvedUser.set(found);
-      } else {
-        this.lookupError.set(
-          'No user found with that email. Send them an invite to join first.'
-        );
-      }
-    } catch (e) {
-      if (seq !== this.lookupSeq) return;
-      this.lookupError.set(e instanceof Error ? e.message : 'Lookup failed.');
-    } finally {
-      if (seq === this.lookupSeq) this.lookingUp.set(false);
-    }
+    this.addResult.set(null);
   }
 
   async onAdd(): Promise<void> {
     const a = this.agency();
     if (!a) return;
-    const resolved = this.resolvedUser();
-    if (!resolved) {
-      this.addError.set('Resolve the email to a user before adding.');
-      return;
-    }
+    const email = this.newEmail().trim();
+    if (!email) return;
     this.adding.set(true);
     this.addError.set(null);
+    this.addResult.set(null);
     try {
-      await this.agencyService.addAgencyMember(a.id, resolved.user_id, this.newRole());
-      this.addDialogOpen.set(false);
-      this.resetAddForm();
-      this.messageService.add({ severity: 'success', summary: 'Member added.', life: 3000 });
+      const result = await this.agencyService.addAgencyMemberByEmail(a.id, email, this.newRole());
+      if (result.member_invited) {
+        this.addResult.set(
+          `Invite held for ${email}. They will be added on first sign-in.`
+        );
+      } else {
+        this.addResult.set(`${email} added as agency member.`);
+      }
+      this.newEmail.set('');
       await this.loadAll();
     } catch (e) {
       this.addError.set(e instanceof Error ? e.message : 'Failed to add member.');

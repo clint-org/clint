@@ -86,6 +86,36 @@ export class AgencyService {
     return data as AgencyMember;
   }
 
+  /**
+   * Symmetric add-by-email. Calls `add_agency_member` RPC which handles both
+   * existing-user (direct insert into agency_members) and unknown-email (held
+   * agency_invites row, auto-promoted by handle_new_user on first sign-in).
+   * Mirrors `add_tenant_owner` shape.
+   */
+  async addAgencyMemberByEmail(
+    agencyId: string,
+    email: string,
+    role: 'owner' | 'member'
+  ): Promise<{
+    member_invited: boolean;
+    user_id?: string;
+    invite_id?: string;
+    email?: string;
+  }> {
+    const { data, error } = await this.supabase.client.rpc('add_agency_member', {
+      p_agency_id: agencyId,
+      p_email: email,
+      p_role: role,
+    });
+    if (error) throw error;
+    return data as {
+      member_invited: boolean;
+      user_id?: string;
+      invite_id?: string;
+      email?: string;
+    };
+  }
+
   async removeAgencyMember(memberId: string): Promise<void> {
     const { error } = await this.supabase.client.from('agency_members').delete().eq('id', memberId);
     if (error) throw error;

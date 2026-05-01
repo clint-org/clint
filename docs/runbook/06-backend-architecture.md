@@ -190,7 +190,17 @@ Caller must be agency owner of `p_agency_id` or platform admin. Validates `agenc
 add_tenant_owner(p_tenant_id uuid, p_email text) -> jsonb
 ```
 
-Adds an existing user as tenant owner, or holds an invite when the email has no `auth.users` row. Caller must be tenant owner, agency owner of the parent agency, or platform admin. When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). Returns `{ owner_invited: boolean, ... }` so the UI can distinguish "added directly" from "code-based invite held". The invite is consumed via `accept_invite(p_code)` after the recipient signs in. **Idempotent (since 2026-04-30):** if a valid (unaccepted, unexpired) `tenant_invites` row already exists for the same `(tenant_id, email)`, the existing `invite_code` is returned — repeated clicks do not mint new credentials.
+Adds an existing user as tenant owner, or holds an invite when the email has no `auth.users` row. Caller must be tenant owner, agency owner of the parent agency, or platform admin. When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). Returns `{ owner_invited: boolean, ... }` so the UI can distinguish "added directly" from "code-based invite held". The invite is consumed via `accept_invite(p_code)` after the recipient signs in. **Idempotent (since 2026-04-30):** if a valid (unaccepted, unexpired) `tenant_invites` row already exists for the same `(tenant_id, email)`, the existing `invite_code` is returned, repeated clicks do not mint new credentials.
+
+### add_agency_member
+
+```
+add_agency_member(p_agency_id uuid, p_email text, p_role text) -> jsonb
+```
+
+Symmetric with `add_tenant_owner`. Adds an existing user as agency member, or holds an invite when the email has no `auth.users` row. Caller must be an agency owner of `p_agency_id` (or platform admin). When `agencies.email_domain` is set, `p_email`'s domain must match (platform admin bypass). The existing-user branch inserts directly into `agency_members` with `on conflict do nothing`; the unknown-email branch inserts an `agency_invites` row that the `handle_new_user` trigger (migration 69) auto-promotes on first sign-in. Returns `{ member_invited: boolean, ... }`. Idempotent: returns the existing held invite if one already exists for `(agency_id, lower(email), role)`. Note that `agency_invites` does not carry a separate `invite_code` column the way `tenant_invites` and `space_invites` do, because the auto-claim mechanism keys off the user's first sign-in by email rather than a code the inviter shares; the return shape includes `invite_id` only.
+
+The pre-existing `lookup_user_by_email` RPC and the `addAgencyMember(userId, role)` direct-insert service method are kept for other surfaces (notably the agency-tenant-new first-user-email field), but the agency members page itself now goes through `add_agency_member` exclusively.
 
 ### invite_to_space
 

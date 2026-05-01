@@ -78,15 +78,6 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Estimate:** 15 minutes
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup with `madaladodbele`
 
-### 11. Agency-member-add UI requires existing user; missing the held-invite branch
-- **Status:** open
-- **Scope:** `features/agency/agency-members.component.ts`, plus an RPC counterpart if one is needed (parallel to `add_tenant_owner` / `invite_to_space`)
-- **Symptom:** the "Add agency member" dialog on the agency portal rejects unknown emails with `No user found with that email. Send them an invite to join first.` — i.e. the user must already exist in `auth.users`. Tenant invites (`add_tenant_owner`) and space invites (`invite_to_space`) both gracefully handle the unknown-email case by writing to `tenant_invites` / `space_invites` and surfacing a held code. Agency add-member doesn't.
-- **Why this is asymmetric:** migration 69 introduced `agency_invites` + the `handle_new_user` trigger that auto-promotes pending agency invites on first sign-in. That mechanism was wired up for the `provision_agency` flow (super-admin creating a brand-new agency for an owner who hasn't signed in yet) but NOT for the "add a member to an EXISTING agency" flow. Operationally this means an agency owner cannot pre-invite a colleague who hasn't yet signed up; they have to send the colleague a sign-in link out of band first, then add them.
-- **Fix shape:** mirror `add_tenant_owner`'s shape. Either (a) extend the existing add-member RPC to write to `agency_invites` when the email isn't in `auth.users`, then surface a held invite code in the toast just like the tenant flow; or (b) split into `add_agency_member` + `invite_agency_member` RPCs. The `handle_new_user` trigger already consumes pending `agency_invites` rows on first sign-in, so the auto-claim half is already done; only the write-into-agency_invites half is missing.
-- **Estimate:** 2-3 hours
-- **Surfaced:** 2026-05-01 access-model test pass, Phase 5 (Agency Owner) setup, while attempting to add `madaladodbele@gmail.com` to Stout
-
 ### 10. Tenant settings shows "Remove owner" against agency-backed members; misleading UX and an open design question
 - **Status:** open (design question, not just UX)
 - **Scope:** `features/tenant-settings/tenant-settings.component.ts` members table, plus a possible RPC enforcement layer
@@ -111,7 +102,10 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 
 ## Done
 
-(none yet for this session)
+### 11. Agency-member-add UI requires existing user; missing the held-invite branch
+- **Status:** done (commit pending in this change set)
+- **Fix:** symmetric with `add_tenant_owner`. New `add_agency_member(p_agency_id, p_email, p_role)` SECURITY DEFINER RPC in migration 83 (`20260501030000_add_agency_member_held_invite.sql`). Existing-user branch inserts directly into `agency_members` with `on conflict do nothing`. Unknown-email branch writes to `agency_invites`; the `handle_new_user` trigger from migration 69 already auto-promotes those on first sign-in. Idempotent dedup matching the tenant pattern. Agency members component rewritten to call the new RPC in a single step: dropped the lookup-then-add two-step, dropped the "user must already have signed in" copy, surfaces a held-invite confirmation message inline like the tenant Add-owner flow does. The pre-existing `addAgencyMember(userId, role)` and `lookupUserByEmail` are kept for other surfaces (notably agency-tenant-new first-user-email).
+- **Original entry:** the agency members dialog rejected unknown emails with `No user found with that email. Send them an invite to join first.`, while tenant and space add-member surfaces handle the unknown-email case gracefully. Asymmetric and operationally backwards (an invite is precisely for someone who has not yet signed up).
 
 ## How to use this doc
 

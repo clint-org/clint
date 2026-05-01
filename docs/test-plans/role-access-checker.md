@@ -96,6 +96,8 @@ Sign in as a tenant owner who has not been added to any space in the tenant.
 
 Sign in as an agency owner who never personally provisioned the tenant or accepted a tenant invite, so they hold no `tenant_members` row.
 
+**Setup (post-2026-05-01):** the agency members page now uses `add_agency_member`, which has a held-invite branch. To set up an agency-owner-only actor, sign in as the existing agency owner (e.g. `aadi529` for Stout) and use the agency members page to add the new actor's email. If they have not yet signed in to the platform, the form returns `Invite held` and an `agency_invites` row is written. On the new actor's first sign-in via Google OAuth, the `handle_new_user` trigger auto-promotes the held invite into an `agency_members` row. They are then a clean Agency Owner, not in `tenant_members` anywhere. (Earlier notes about "the actor must sign in first before being added" no longer apply, see follow-up #11 in `follow-ups.md`.)
+
 - [ ] Visit `<agency>.clintapp.com/admin` → expect chrome renders, agency portal works.
 - [ ] Provision a new tenant under the agency → expect success.
 - [ ] Visit `<tenant>.clintapp.com/t/<id>/settings` → expect chrome renders (because `is_tenant_member` agency-disjunct), tenant branding editable.
