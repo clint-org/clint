@@ -31,7 +31,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 6 (Reader) scenario 1; data-layer ruled out via curl during scenario 6.
 
 ### 1. Toast vs banner inconsistency for transient action feedback
-- **Status:** open
+- **Status:** done (commit 1ac3fef). trial-detail marker/note delete, space-general save/delete, space-members role-update/remove/revoke all now route transient action errors to toast. Vestigial banner templates removed. Banners reserved for persistent context (in-dialog validation, page-load failures).
 - **Scope:** trial-detail.component, plus any other manage page that uses both patterns
 - **Symptom:** save success uses `messageService.add({severity:'success',...})` toast, save error uses `error.set(msg)` rendering a `<p-message severity="error">` banner at the top. Same component, two different patterns for the same kind of action. Violates the "transient action gives me transient feedback" mental model the rest of the app sets.
 - **Fix shape:** grep `error.set(` vs `messageService.add({severity:'error'`) across `src/client/src/app/features/`. For transient action errors (save, delete, add), normalize to toast. Reserve banners for persistent context (suspended tenant, session expiring, access-revoked-mid-session).
@@ -49,14 +49,14 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass; first as `aadimadala` (Section 4), confirmed and worsened by `novaelevatellc` Phase 7 scenario 3.
 
 ### 3. Space settings danger zone visible to all space members
-- **Status:** open
+- **Status:** done (resolved by #5 umbrella, commit f861f79). Save and Delete on space-general only render for owners; description and name fields go readonly for non-owners. The false-success-delete navigation path is no longer reachable through the UI for non-owners.
 - **Scope:** `src/client/src/app/features/space-settings/space-general.component.ts`
 - **Symptom:** Description textarea, Save button, AND the Danger Zone "Delete space" button render for any space member regardless of role. Server-side enforcement holds (RLS rejects updates and deletes for non-owners), so no data corruption, but the UI is a footgun. A Contributor or Reader sees a Delete button that is wired up and confirmation-gated. Save errors render as a top-of-page banner (interaction with #1). Delete is *worse* than originally noted: clicking through the confirm dialog **navigates away as if delete succeeded** (likely lands on `/spaces`, which renders empty for a space-only member per #16) even though the space still exists. The component is firing the navigation without awaiting the delete result, or swallowing the rejection. Verified 2026-05-01 by madala.dodbele on SGLT2.
 - **Fix shape:** part of the broader role-gating sweep (#5). Expose `currentUserRole` via the new `SpaceRoleService`, then `@if (canEdit())` around the form fields and `@if (isOwner())` around the danger zone.
 - **Surfaced:** 2026-05-01 access-model test pass, while exercising Section 4 Contributor as `aadimadala`
 
 ### 4. No `spaceGuard` on `/t/:tenantId/s/:spaceId/*`
-- **Status:** open
+- **Status:** done (commit f85ae3f). New `core/guards/space.guard.ts` walks the route tree for both ids, calls `has_space_access`, redirects to `/t/:tenantId/spaces` on failure. Wired into `app.routes.ts`. Also incidentally resolved follow-up #16 (the cold-deep-link redirect bug).
 - **Scope:** new file `src/client/src/app/core/guards/space.guard.ts`, plus a one-line addition to the route in `app.routes.ts`
 - **Symptom:** A tenant member who is not a space member can navigate to a space URL and see the chrome (catalysts page renders empty since RLS hides every row). UI cosmetic only; data is protected by `has_space_access` and per-table RLS.
 - **Fix shape:** mirror the `tenantGuard` shape. Read `:spaceId` from route params, call `has_space_access(p_space_id)` (or directly check `space_members` membership), redirect to `/t/:tenantId/spaces` on failure. Add `spaceGuard` to the canActivate of the `s/:spaceId` block.
@@ -64,7 +64,11 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-04-30, noted in `08-authentication-security.md` as the next guard gap after `tenantGuard` shipped
 
 ### 5. Role-aware UI gating sweep (umbrella refactor)
-- **Status:** open
+- **Status:** done (commit f861f79). Closes #3, #6, #7, #8.
+
+New `SpaceRoleService` in `core/services/space-role.service.ts` watches NavigationEnd, extracts `:spaceId` from the URL, and queries `space_members` once per space change. Exposes `isOwner`, `canEdit` (owner or editor), `canRead` signals.
+
+Sweep: space-general (Save/Delete owner-only, fields readonly), space-members (Invite topbar, role dropdown, overflow menu, pending-invites table all owner-only), companies/products/trials lists (Add topbar gated, row Edit/Delete dropped for readers), trial-detail (Edit-trial topbar, inline Add-marker/Add-note buttons, marker/note row menus), events page (New-event + edit pen on detail panel), marker-types/MoA/RoA/therapeutic-areas/taxonomies-page (Add + row menus). Sub-form components unchanged -- their dialogs are no longer reachable from the UI for readers.
 - **Scope:** new `SpaceRoleService` (or extend an existing service) + template sweep across catalysts, companies, products, trials, trial-detail, events page, event-form, marker-types, taxonomies, space-general, space-members
 - **Symptom:** Most data-management pages render write controls (Add, Edit inline, Delete row-actions, form Save buttons) regardless of the current user's `space_members.role`. Server enforcement holds (RLS rejects writes for `viewer`), so a Reader who clicks Edit gets a save error instead of seeing no Edit affordance. UX leak, not a security issue.
 - **Fix shape:**
@@ -76,17 +80,17 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, surfaced by the editability matrix as patterns 2-5 of 6
 
 ### 6. Catalysts / companies / products / trials / trial-detail show write controls to Reader
-- **Status:** open (rolls up under #5)
+- **Status:** done (resolved by #5, commit f861f79).
 - **Scope:** `features/catalysts/`, `features/manage/companies/`, `features/manage/products/`, `features/manage/trials/`
 - **Fix shape:** template `@if (canEdit())` once `SpaceRoleService` lands
 
 ### 7. Events page and event-form show write controls to Reader
-- **Status:** open (rolls up under #5)
+- **Status:** done (resolved by #5, commit f861f79).
 - **Scope:** `features/events/events-page.component`, `features/events/event-form.component`
 - **Fix shape:** same as #6
 
 ### 8. Marker types and taxonomies show write controls to Reader
-- **Status:** open (rolls up under #5)
+- **Status:** done (resolved by #5, commit f861f79).
 - **Scope:** `features/manage/marker-types/`, `features/manage/taxonomies/`
 - **Fix shape:** same as #6
 
@@ -114,7 +118,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, immediately after the `has_tenant_access` fix landed for Phase 6
 
 ### 13. Gmail dot canonicalization across invite and lookup paths
-- **Status:** open
+- **Status:** done (commit 167a8de, migration 20260501060000). New `public.canonicalize_email(text)` function. Every email-storing and email-looking-up site (add_tenant_owner, invite_to_space, add_agency_member, lookup_user_by_email, provision_agency, accept_invite, accept_space_invite, handle_new_user trigger) canonicalizes both sides of every comparison.
 - **Scope:** server-side normalization in `add_tenant_owner`, `invite_to_space`, `add_agency_member`, `accept_invite`, `accept_space_invite`, `lookup_user_by_email`, and the `handle_new_user` trigger; same canonicalization client-side as a UX hint
 - **Symptom:** for `@gmail.com` and `@googlemail.com`, periods in the local part are ignored by Google. `madaladodbele@gmail.com` and `madala.dodbele@gmail.com` route to the same Google account. Surfaced 2026-05-01: an admin typed the dotless form into the agency-member-add dialog; Google's account picker returned the dotted form; `auth.users.email` was stored with dots; the trigger lookup against the dotless `agency_invites.email` did not match; auto-claim silently failed.
 - **Industry practice:** for the two Gmail domains, canonicalize by lowercasing, stripping all dots from the local part, and stripping the `+tag` suffix. Slack, Linear, Notion, GitHub, and Stripe all follow this pattern. Other domains: lowercase only (no safe canonicalization without knowing the provider).
@@ -149,7 +153,7 @@ Statuses: `open` (not started), `in-progress` (work begun in a branch but not la
 - **Surfaced:** 2026-05-01 access-model test pass, Phase 4 (Tenant Owner) by `aadimadala` reviewing tenant settings on Pfizer
 
 ### 9. Cross-surface "this lives elsewhere" hints (agency-managed tenant branding, and other split-ownership surfaces)
-- **Status:** open
+- **Status:** done (commit 67ebb0c, scoped to tenant-settings branding card). Read-only branding card now names the parent agency via brand context, displays the active primary color as a swatch + hex, and conditionally surfaces a cross-host link to the agency portal when the current user is a member of the parent agency.
 - **Scope:** `features/tenant-settings/tenant-settings.component.ts` is the immediate offender; pattern likely applies elsewhere
 - **Symptom:** when a tenant owner opens tenant settings on an agency-managed tenant (`tenants.agency_id IS NOT NULL`), tenant branding fields are not rendered. The runbook says they should be replaced by "a read-only identity card and a hint pointing to the agency" but no such surface exists today, leaving the user wondering whether branding doesn't exist or whether they're looking in the wrong place.
 - **General principle:** if a surface deliberately hides an action because it lives elsewhere, the page should at minimum say so and link there. Applies to agency-managed branding (link to `<agency>.clintapp.com/admin/tenants/<id>`), space-level access settings vs tenant-level access settings, and probably other split-ownership boundaries we'll find as the matrix gets walked.

@@ -199,6 +199,20 @@ provision_tenant(p_agency_id uuid, p_name text, p_subdomain text, p_brand jsonb)
 
 Caller must be agency owner of `p_agency_id` or platform admin. Validates `agencies.max_tenants` quota, subdomain regex/reserved/uniqueness/retirement, applies branding fields from `p_brand`. **Auto-adds the calling user as tenant owner** so the agency operator who provisions a tenant can immediately see and manage it. **Does not** create any default space — under the agency-managed model, each space is a real engagement (e.g. "Survodutide Q2 2026 Pipeline") created explicitly via `create_space` by the analyst running the engagement. The spaces-list page renders an empty state with a Create-space CTA when a tenant has zero spaces. (The legacy auto-create of a "Workspace" space was removed on 2026-04-30; existing tenants with auto-created Workspace rows are unaffected.)
 
+### canonicalize_email
+
+```
+canonicalize_email(p_email text) -> text
+```
+
+Returns the canonical form of an email for lookup and dedup. Lowercases. For `gmail.com` and `googlemail.com`, strips dots from the local part and truncates at the first `+`. Other domains: lowercase only (no safe canonicalization without knowing the provider).
+
+Used at every email-storing and email-looking-up site so user-typed dotted/+tag variants and the canonical form Google returns on OAuth always match. Sites that route through it (since 2026-05-01, migration 20260501060000): `add_tenant_owner`, `invite_to_space`, `add_agency_member`, `lookup_user_by_email`, `provision_agency`, `accept_invite`, `accept_space_invite`, the `handle_new_user` trigger.
+
+Backfill is unnecessary because the function is applied to *both sides* of every comparison: existing invite rows in the user-typed form still match incoming canonicalized lookups (and vice versa). New rows are stored in the canonical form going forward.
+
+Marked `immutable` so Postgres can use it in indexed expressions if a future migration wants to index `canonicalize_email(email)` for performance.
+
 ### add_tenant_owner
 
 ```
