@@ -35,7 +35,7 @@
     />
   </app-form-field>
 
-  <app-form-field label="Company" fieldId="product-company">
+  <app-form-field label="Company" fieldId="product-company" [required]="true">
     <p-select
       inputId="product-company"
       name="companyId"
@@ -44,7 +44,9 @@
       (ngModelChange)="companyId.set($event)"
       optionLabel="name"
       optionValue="id"
+      placeholder="Select company"
       [style]="{ width: '100%' }"
+      [attr.aria-required]="true"
     />
   </app-form-field>
 
@@ -109,6 +111,7 @@
   <app-form-actions
     [submitLabel]="isEdit ? 'Update Product' : 'Create Product'"
     [loading]="submitting()"
+    [disabled]="!canSubmit"
     (cancelled)="cancelled.emit()"
   />
 </form>

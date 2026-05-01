@@ -16,8 +16,14 @@ import { ProductService } from '../../../core/services/product.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
+import { extractConstraintMessage } from '../../../core/util/db-error';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+
+const PRODUCT_FIELD_LABELS: Record<string, string> = {
+  name: 'Name',
+  company_id: 'Company',
+};
 
 @Component({
   selector: 'app-product-form',
@@ -101,9 +107,13 @@ export class ProductFormComponent implements OnInit {
     return this.nameBlurred() && this.name().trim().length === 0;
   }
 
+  get canSubmit(): boolean {
+    return this.name().trim().length > 0 && this.companyId().trim().length > 0;
+  }
+
   async onSubmit(): Promise<void> {
     this.nameBlurred.set(true);
-    if (this.name().trim().length === 0) return;
+    if (!this.canSubmit) return;
 
     this.submitting.set(true);
     this.error.set(null);
@@ -141,11 +151,16 @@ export class ProductFormComponent implements OnInit {
       }
       this.saved.emit(result);
     } catch (err) {
-      this.error.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not save product. Check your connection and try again.'
-      );
+      const constraint = extractConstraintMessage(err, PRODUCT_FIELD_LABELS);
+      if (constraint) {
+        this.error.set(constraint);
+      } else {
+        this.error.set(
+          err instanceof Error
+            ? err.message
+            : 'Could not save product. Check your connection and try again.'
+        );
+      }
     } finally {
       this.submitting.set(false);
     }

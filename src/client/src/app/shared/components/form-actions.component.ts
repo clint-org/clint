@@ -19,6 +19,7 @@ import { ButtonModule } from 'primeng/button';
         type="submit"
         size="small"
         [loading]="loading()"
+        [disabled]="disabled()"
       />
     </div>
   `,
@@ -26,5 +27,6 @@ import { ButtonModule } from 'primeng/button';
 export class FormActionsComponent {
   readonly submitLabel = input('Save');
   readonly loading = input(false);
+  readonly disabled = input(false);
   readonly cancelled = output<void>();
 }

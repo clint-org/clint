@@ -16,6 +16,14 @@ import { MarkerCategoryService } from '../../../core/services/marker-category.se
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { TrialService } from '../../../core/services/trial.service';
+import { extractConstraintMessage } from '../../../core/util/db-error';
+
+const MARKER_FIELD_LABELS: Record<string, string> = {
+  marker_type_id: 'Marker type',
+  title: 'Title',
+  event_date: 'Event date',
+  trial_id: 'Assigned trial',
+};
 
 @Component({
   selector: 'app-marker-form',
@@ -40,7 +48,7 @@ import { TrialService } from '../../../core/services/trial.service';
         <!-- Category -->
         <div>
           <label for="marker-category" class="block text-sm font-medium text-slate-700">
-            Category
+            Category <span aria-hidden="true" class="text-red-600">*</span>
           </label>
           <p-select
             inputId="marker-category"
@@ -53,13 +61,14 @@ import { TrialService } from '../../../core/services/trial.service';
             [style]="{ width: '100%' }"
             class="mt-1"
             (ngModelChange)="onCategoryChange($event)"
+            [attr.aria-required]="true"
           />
         </div>
 
         <!-- Marker Type -->
         <div>
           <label for="marker-type" class="block text-sm font-medium text-slate-700">
-            Marker Type
+            Marker Type <span aria-hidden="true" class="text-red-600">*</span>
           </label>
           <p-select
             inputId="marker-type"
@@ -73,6 +82,7 @@ import { TrialService } from '../../../core/services/trial.service';
             class="mt-1"
             [disabled]="!categoryId"
             (ngModelChange)="onMarkerTypeChange($event)"
+            [attr.aria-required]="true"
           />
         </div>
 
@@ -276,6 +286,7 @@ import { TrialService } from '../../../core/services/trial.service';
           [label]="marker() ? 'Update Marker' : 'Add Marker'"
           type="submit"
           [loading]="saving()"
+          [disabled]="!canSubmit"
         />
       </div>
     </form>
@@ -432,12 +443,18 @@ export class MarkerFormComponent implements OnInit {
     }
   }
 
+  get canSubmit(): boolean {
+    return (
+      !!this.categoryId &&
+      !!this.markerTypeId &&
+      this.title.trim().length > 0 &&
+      !!this.eventDate &&
+      this.selectedTrialIds.length > 0
+    );
+  }
+
   async onSubmit(): Promise<void> {
-    if (!this.markerTypeId || !this.title || !this.eventDate) return;
-    if (this.selectedTrialIds.length === 0) {
-      this.error.set('At least one trial must be assigned.');
-      return;
-    }
+    if (!this.canSubmit) return;
 
     this.saving.set(true);
     this.error.set(null);
@@ -483,11 +500,16 @@ export class MarkerFormComponent implements OnInit {
 
       this.saved.emit();
     } catch (err) {
-      this.error.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not save marker. Check your connection and try again.'
-      );
+      const constraint = extractConstraintMessage(err, MARKER_FIELD_LABELS);
+      if (constraint) {
+        this.error.set(constraint);
+      } else {
+        this.error.set(
+          err instanceof Error
+            ? err.message
+            : 'Could not save marker. Check your connection and try again.'
+        );
+      }
     } finally {
       this.saving.set(false);
     }

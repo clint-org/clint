@@ -19,9 +19,16 @@ import { TrialService } from '../../../core/services/trial.service';
 import { ProductService } from '../../../core/services/product.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
 import { CtgovSyncService } from '../../../core/services/ctgov-sync.service';
+import { extractConstraintMessage } from '../../../core/util/db-error';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
+
+const TRIAL_FIELD_LABELS: Record<string, string> = {
+  name: 'Name',
+  product_id: 'Product',
+  therapeutic_area_id: 'Therapeutic area',
+};
 
 @Component({
   selector: 'app-trial-form',
@@ -268,8 +275,16 @@ export class TrialFormComponent implements OnInit {
     }
   }
 
+  get canSubmit(): boolean {
+    return (
+      this.name.trim().length > 0 &&
+      this.productId.trim().length > 0 &&
+      this.therapeuticAreaId.trim().length > 0
+    );
+  }
+
   async onSubmit(): Promise<void> {
-    if (!this.name.trim()) return;
+    if (!this.canSubmit) return;
 
     this.saving.set(true);
     this.error.set(null);
@@ -317,11 +332,16 @@ export class TrialFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (err) {
-      this.error.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not save trial. Check your connection and try again.'
-      );
+      const constraint = extractConstraintMessage(err, TRIAL_FIELD_LABELS);
+      if (constraint) {
+        this.error.set(constraint);
+      } else {
+        this.error.set(
+          err instanceof Error
+            ? err.message
+            : 'Could not save trial. Check your connection and try again.'
+        );
+      }
     } finally {
       this.saving.set(false);
     }
