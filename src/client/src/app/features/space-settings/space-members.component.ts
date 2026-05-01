@@ -46,11 +46,6 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
   ],
   template: `
     <app-manage-page-shell>
-      @if (error()) {
-        <p-message severity="error" [closable]="true" (onClose)="error.set(null)" styleClass="mb-4">
-          {{ error() }}
-        </p-message>
-      }
 
       <p class="mb-4 text-[11px] text-slate-500 max-w-2xl">
         Space members can see and (with Contributor or Owner role) edit data in
@@ -254,7 +249,6 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   members = signal<SpaceMember[]>([]);
   invites = signal<SpaceInvite[]>([]);
   loading = signal(true);
-  error = signal<string | null>(null);
   addDialogOpen = signal(false);
   adding = signal(false);
   readonly inviteEmail = signal('');
@@ -343,7 +337,12 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
       await this.loadData();
       this.messageService.add({ severity: 'success', summary: 'Role updated.', life: 3000 });
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to update role');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not update role',
+        detail: e instanceof Error ? e.message : 'Please try again.',
+        life: 4000,
+      });
     }
   }
 
@@ -359,7 +358,12 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
       await this.loadData();
       this.messageService.add({ severity: 'success', summary: 'Member removed.', life: 3000 });
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to remove member');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not remove member',
+        detail: e instanceof Error ? e.message : 'Please try again.',
+        life: 4000,
+      });
     }
   }
 
@@ -409,7 +413,12 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
       await this.loadData();
       this.messageService.add({ severity: 'success', summary: 'Invite revoked.', life: 3000 });
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to revoke invite');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not revoke invite',
+        detail: e instanceof Error ? e.message : 'Please try again.',
+        life: 4000,
+      });
     }
   }
 

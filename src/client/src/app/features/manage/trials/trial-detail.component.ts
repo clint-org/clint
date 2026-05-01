@@ -178,11 +178,12 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       await this.loadTrial();
       this.messageService.add({ severity: 'success', summary: 'Marker deleted.', life: 3000 });
     } catch (e) {
-      this.error.set(
-        e instanceof Error
-          ? e.message
-          : 'Could not delete marker. Check your connection and try again.'
-      );
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete marker',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
     }
   }
 
@@ -204,11 +205,12 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       await this.loadTrial();
       this.messageService.add({ severity: 'success', summary: 'Note deleted.', life: 3000 });
     } catch (e) {
-      this.error.set(
-        e instanceof Error
-          ? e.message
-          : 'Could not delete note. Check your connection and try again.'
-      );
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete note',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
     }
   }
 

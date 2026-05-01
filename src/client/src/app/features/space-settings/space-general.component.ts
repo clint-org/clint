@@ -5,7 +5,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
-import { MessageModule } from 'primeng/message';
 
 import { Space } from '../../core/models/space.model';
 import { SpaceService } from '../../core/services/space.service';
@@ -20,7 +19,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     ButtonModule,
     InputText,
     Textarea,
-    MessageModule,
     ManagePageShellComponent,
   ],
   template: `
@@ -28,16 +26,6 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       @if (loading()) {
         <p class="text-sm text-slate-400">Loading...</p>
       } @else if (space()) {
-        @if (error()) {
-          <p-message
-            severity="error"
-            [closable]="true"
-            (onClose)="error.set(null)"
-            styleClass="mb-4"
-          >
-            {{ error() }}
-          </p-message>
-        }
         <div class="max-w-xl">
           <div class="mb-6">
             <label
@@ -103,7 +91,6 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
 
   space = signal<Space | null>(null);
   loading = signal(true);
-  error = signal<string | null>(null);
   saving = signal(false);
   name = '';
   description = '';
@@ -139,14 +126,18 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
         description: this.description.trim() || null,
       });
       this.space.set(updated);
-      this.error.set(null);
       this.messageService.add({
         severity: 'success',
         summary: 'Space settings updated.',
         life: 3000,
       });
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to save');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not save',
+        detail: e instanceof Error ? e.message : 'Please try again.',
+        life: 4000,
+      });
     } finally {
       this.saving.set(false);
     }
@@ -170,7 +161,12 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
       await this.spaceService.deleteSpace(this.spaceId);
       this.router.navigate(['/t', this.tenantId, 'spaces']);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Failed to delete space');
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete space',
+        detail: e instanceof Error ? e.message : 'Please try again.',
+        life: 4000,
+      });
     }
   }
 
