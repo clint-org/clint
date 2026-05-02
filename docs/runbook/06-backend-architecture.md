@@ -33,16 +33,16 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | RPC | Writes | Reads |
 |---|---|---|
 | `_seed_demo_companies` | companies | - |
-| `_seed_demo_events` | event_links, event_sources, event_threads, events | trials |
-| `_seed_demo_markers` | marker_assignments, markers | events |
+| `_seed_demo_events` | events | - |
+| `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
 | `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
 | `_seed_demo_notifications` | marker_notifications | - |
-| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
+| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products, trials |
 | `_seed_demo_products` | products | - |
 | `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
 | `_seed_demo_trial_notes` | trial_notes | - |
-| `_seed_demo_trials` | trials | - |
+| `_seed_demo_trials` | trials | events |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |

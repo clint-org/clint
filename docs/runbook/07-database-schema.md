@@ -651,4 +651,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260501130349_extend_seed_demo_intelligence_and_materials.sql`
 - `20260501132002_seed_demo_intelligence_security_definer.sql`
 - `20260501152530_add_space_landing_stats.sql`
+- `20260502130000_seed_demo_realistic_cardiometabolic.sql`
 <!-- /AUTO-GEN:DRIFT -->
