@@ -15,6 +15,10 @@ import {
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import {
+  BrowseFilterBarComponent,
+  BrowseFilterChip,
+} from '../browse-filter-bar/browse-filter-bar.component';
 
 const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
@@ -54,6 +58,7 @@ const DRAFTS_LIMIT = 200;
     SelectButtonModule,
     IntelligenceFeedComponent,
     SkeletonComponent,
+    BrowseFilterBarComponent,
   ],
   template: `
     <div class="page-shell">
@@ -62,12 +67,16 @@ const DRAFTS_LIMIT = 200;
           <h1 class="text-lg font-semibold text-slate-900">{{ headingTitle() }}</h1>
           <p class="text-xs text-slate-500">{{ headingSubtitle() }}</p>
         </div>
-        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-          {{ totalLabel() }}
-        </span>
       </header>
 
-      <section class="mb-4 flex flex-wrap items-center gap-2 border border-slate-200 bg-white p-3">
+      <app-browse-filter-bar
+        ariaLabel="Intelligence filters"
+        [chips]="activeChips()"
+        [hasActive]="hasAnyActive()"
+        [resultLabel]="totalLabel()"
+        (chipRemove)="onChipRemove($event)"
+        (clearAll)="onClearAll()"
+      >
         <p-selectbutton
           [options]="statusOptions"
           [ngModel]="status()"
@@ -78,7 +87,7 @@ const DRAFTS_LIMIT = 200;
           size="small"
           aria-label="Filter by status"
         />
-        <div class="h-5 w-px bg-slate-200"></div>
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
         <input
           pInputText
           type="search"
@@ -86,7 +95,7 @@ const DRAFTS_LIMIT = 200;
           (ngModelChange)="query.set($event); resetAndLoad()"
           placeholder="Search headline / thesis"
           aria-label="Search"
-          class="!h-9 w-72"
+          class="!h-8 w-64"
         />
         <p-multiSelect
           [options]="entityTypeOptions"
@@ -94,9 +103,14 @@ const DRAFTS_LIMIT = 200;
           (ngModelChange)="entityTypes.set($event ?? []); resetAndLoad()"
           optionLabel="label"
           optionValue="value"
-          placeholder="Any entity type"
+          placeholder="Entity"
+          ariaLabel="Filter by entity type"
           [showClear]="true"
-          styleClass="!h-9 w-56"
+          appendTo="body"
+          [styleClass]="'w-fit' + (entityTypes().length ? ' has-value' : '')"
+          size="small"
+          [maxSelectedLabels]="0"
+          [selectedItemsLabel]="'Entity (' + entityTypes().length + ')'"
         />
         <p-datepicker
           [ngModel]="since()"
@@ -105,59 +119,63 @@ const DRAFTS_LIMIT = 200;
           dateFormat="yy-mm-dd"
           [showIcon]="true"
           [showClear]="true"
+          size="small"
+          appendTo="body"
         />
-      </section>
+      </app-browse-filter-bar>
 
-      @if (loading()) {
-        <ul
-          class="divide-y divide-slate-100 border border-slate-200 bg-white"
-          aria-busy="true"
-          aria-label="Loading reads"
-        >
-          @for (i of skeletonRows; track i) {
-            <li class="px-4 py-3" aria-hidden="true">
-              <div class="mb-1 flex items-baseline gap-2">
-                <app-skeleton w="44px" h="14px" />
-                <app-skeleton w="220px" h="14px" />
-                <span class="ml-auto inline-flex">
-                  <app-skeleton w="62px" h="10px" />
-                </span>
-              </div>
-              <div class="mt-1.5">
-                <app-skeleton [block]="true" w="100%" h="11px" />
-              </div>
-              <div class="mt-1">
-                <app-skeleton [block]="true" w="62%" h="11px" />
-              </div>
-              <div class="mt-2">
-                <app-skeleton w="84px" h="10px" />
-              </div>
-            </li>
-          }
-        </ul>
-      } @else if (rows().length === 0) {
-        <div class="border border-slate-200 bg-white px-4 py-8 text-center">
-          <p class="text-xs text-slate-500">{{ emptyMessage() }}</p>
-        </div>
-      } @else {
-        <app-intelligence-feed
-          [rows]="rows()"
-          [tenantId]="tenantId()"
-          [spaceId]="spaceId()"
-          [query]="query()"
-        />
-
-        @if (status() === 'published' && (total() > rows().length || offset() > 0)) {
-          <div class="mt-4">
-            <p-paginator
-              [rows]="PAGE_SIZE"
-              [totalRecords]="total()"
-              [first]="offset()"
-              (onPageChange)="onPage($event)"
-            />
+      <div class="mt-4">
+        @if (loading()) {
+          <ul
+            class="divide-y divide-slate-100 border border-slate-200 bg-white"
+            aria-busy="true"
+            aria-label="Loading reads"
+          >
+            @for (i of skeletonRows; track i) {
+              <li class="px-4 py-3" aria-hidden="true">
+                <div class="mb-1 flex items-baseline gap-2">
+                  <app-skeleton w="44px" h="14px" />
+                  <app-skeleton w="220px" h="14px" />
+                  <span class="ml-auto inline-flex">
+                    <app-skeleton w="62px" h="10px" />
+                  </span>
+                </div>
+                <div class="mt-1.5">
+                  <app-skeleton [block]="true" w="100%" h="11px" />
+                </div>
+                <div class="mt-1">
+                  <app-skeleton [block]="true" w="62%" h="11px" />
+                </div>
+                <div class="mt-2">
+                  <app-skeleton w="84px" h="10px" />
+                </div>
+              </li>
+            }
+          </ul>
+        } @else if (rows().length === 0) {
+          <div class="border border-slate-200 bg-white px-4 py-8 text-center">
+            <p class="text-xs text-slate-500">{{ emptyMessage() }}</p>
           </div>
+        } @else {
+          <app-intelligence-feed
+            [rows]="rows()"
+            [tenantId]="tenantId()"
+            [spaceId]="spaceId()"
+            [query]="query()"
+          />
+
+          @if (status() === 'published' && (total() > rows().length || offset() > 0)) {
+            <div class="mt-4">
+              <p-paginator
+                [rows]="PAGE_SIZE"
+                [totalRecords]="total()"
+                [first]="offset()"
+                (onPageChange)="onPage($event)"
+              />
+            </div>
+          }
         }
-      }
+      </div>
     </div>
   `,
 })
@@ -205,6 +223,45 @@ export class IntelligenceBrowseComponent implements OnInit {
     return 'No published reads match the current filters.';
   });
 
+  protected readonly hasAnyActive = computed(() => {
+    return (
+      this.query().trim().length > 0 ||
+      this.entityTypes().length > 0 ||
+      this.since() !== null
+    );
+  });
+
+  protected readonly activeChips = computed<BrowseFilterChip[]>(() => {
+    const chips: BrowseFilterChip[] = [];
+    const q = this.query().trim();
+    if (q) {
+      chips.push({ field: 'query', header: 'Search', value: q, id: 'query' });
+    }
+    const entityLabels = new Map(ENTITY_TYPES.map((o) => [o.value, o.label]));
+    for (const type of this.entityTypes()) {
+      chips.push({
+        field: 'entityTypes',
+        header: 'Entity',
+        value: entityLabels.get(type) ?? type,
+        id: type,
+      });
+    }
+    const sinceDate = this.since();
+    if (sinceDate) {
+      chips.push({
+        field: 'since',
+        header: 'Since',
+        value: sinceDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        id: 'since',
+      });
+    }
+    return chips;
+  });
+
   // Re-fetch when the route's spaceId changes.
   private readonly routeEffect = effect(() => {
     const sid = this.spaceId();
@@ -243,6 +300,26 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected onPage(event: { first?: number }): void {
     this.offset.set(event.first ?? 0);
     void this.load();
+  }
+
+  protected onChipRemove(chip: BrowseFilterChip): void {
+    if (chip.field === 'query') {
+      this.query.set('');
+    } else if (chip.field === 'entityTypes') {
+      this.entityTypes.update((types) =>
+        types.filter((t) => t !== (chip.id as IntelligenceEntityType))
+      );
+    } else if (chip.field === 'since') {
+      this.since.set(null);
+    }
+    this.resetAndLoad();
+  }
+
+  protected onClearAll(): void {
+    this.query.set('');
+    this.entityTypes.set([]);
+    this.since.set(null);
+    this.resetAndLoad();
   }
 
   private async load(): Promise<void> {
