@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TopbarAction } from '../services/topbar-state.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
@@ -817,9 +817,29 @@ export class ContextualTopbarComponent {
   readonly joinTenantClick = output<void>();
   readonly timelineHintDismiss = output<void>();
 
+  private readonly host = inject(ElementRef<HTMLElement>);
+
   // ---- Internal state ----
   readonly tenantDropdownOpen = signal(false);
   readonly spaceDropdownOpen = signal(false);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.tenantDropdownOpen() && !this.spaceDropdownOpen()) return;
+    const target = event.target as Node;
+    if (!this.host.nativeElement.contains(target)) {
+      this.tenantDropdownOpen.set(false);
+      this.spaceDropdownOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.tenantDropdownOpen() || this.spaceDropdownOpen()) {
+      this.tenantDropdownOpen.set(false);
+      this.spaceDropdownOpen.set(false);
+    }
+  }
 
   readonly tenantInitial = computed(() => {
     const name = this.tenantName();
