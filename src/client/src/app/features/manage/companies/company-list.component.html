@@ -36,7 +36,7 @@
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
             (click)="openProducts(company.id)"
           >
-            {{ company.name }}
+            <span [innerHTML]="company.name | highlight: grid.debouncedGlobalSearch()"></span>
           </button>
         </td>
         <td>

@@ -21,6 +21,7 @@ import { slidePanelAnimation } from '../../shared/animations/slide-panel.animati
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
+import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../shared/grids';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
@@ -45,6 +46,7 @@ import { SpaceRoleService } from '../../core/services/space-role.service';
     TableSkeletonBodyComponent,
     EventDetailPanelComponent,
     EventFormComponent,
+    HighlightPipe,
   ],
   templateUrl: './events-page.component.html',
   animations: [slidePanelAnimation],

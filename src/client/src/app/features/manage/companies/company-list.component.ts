@@ -13,6 +13,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
+import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
@@ -31,6 +32,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     RowActionsComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
+    HighlightPipe,
   ],
   templateUrl: './company-list.component.html',
 })

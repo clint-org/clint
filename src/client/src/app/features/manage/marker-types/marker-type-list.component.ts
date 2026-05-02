@@ -15,6 +15,7 @@ import { RowActionsComponent } from '../../../shared/components/row-actions.comp
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
+import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
@@ -35,6 +36,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     StatusTagComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
+    HighlightPipe,
   ],
   templateUrl: './marker-type-list.component.html',
 })

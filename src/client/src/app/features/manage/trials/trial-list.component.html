@@ -122,12 +122,18 @@
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
             (click)="openDetail(row.trial)"
           >
-            {{ row.trial.name }}
+            <span [innerHTML]="row.trial.name | highlight: grid.debouncedGlobalSearch()"></span>
           </button>
         </td>
-        <td class="col-identifier">{{ row.trial.identifier ?? '--' }}</td>
-        <td class="col-secondary">{{ row.productName }}</td>
-        <td class="col-secondary">{{ row.companyName }}</td>
+        <td class="col-identifier">
+          @if (row.trial.identifier) {
+            <span [innerHTML]="row.trial.identifier | highlight: grid.debouncedGlobalSearch()"></span>
+          } @else {
+            --
+          }
+        </td>
+        <td class="col-secondary"><span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary"><span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span></td>
         <td>
           <app-status-tag [label]="row.trial.status" />
         </td>

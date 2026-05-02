@@ -39,9 +39,9 @@
     </ng-template>
     <ng-template #body let-mt>
       <tr>
-        <td>{{ mt.name }}</td>
-        <td class="col-secondary">{{ mt.shape }}</td>
-        <td class="col-secondary">{{ mt.fill_style }}</td>
+        <td><span [innerHTML]="mt.name | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary"><span [innerHTML]="mt.shape | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary"><span [innerHTML]="mt.fill_style | highlight: grid.debouncedGlobalSearch()"></span></td>
         <td>
           <app-color-swatch [color]="mt.color" />
         </td>

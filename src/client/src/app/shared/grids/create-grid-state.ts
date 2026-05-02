@@ -247,6 +247,7 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
 
   return {
     globalSearch,
+    debouncedGlobalSearch,
     filters,
     sort,
     page,

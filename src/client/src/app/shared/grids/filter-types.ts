@@ -68,6 +68,12 @@ export interface ActiveFilterChip {
  */
 export interface GridState<T> {
   readonly globalSearch: WritableSignal<string>;
+  /**
+   * Debounced (200ms) form of `globalSearch`. Drives row filtering and is
+   * the value templates should bind to for search-term highlighting so
+   * highlighted matches stay in lockstep with the visible filtered rows.
+   */
+  readonly debouncedGlobalSearch: Signal<string>;
   readonly filters: WritableSignal<Record<string, FilterValue>>;
   readonly sort: WritableSignal<{ field: string; order: 1 | -1 } | null>;
   readonly page: WritableSignal<{ first: number; rows: number }>;

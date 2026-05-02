@@ -30,8 +30,14 @@
     </ng-template>
     <ng-template #body let-area>
       <tr>
-        <td>{{ area.name }}</td>
-        <td class="col-identifier">{{ area.abbreviation ?? '--' }}</td>
+        <td><span [innerHTML]="area.name | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-identifier">
+          @if (area.abbreviation) {
+            <span [innerHTML]="area.abbreviation | highlight: grid.debouncedGlobalSearch()"></span>
+          } @else {
+            --
+          }
+        </td>
         <td class="col-actions">
           <app-row-actions [items]="rowMenu(area)" [ariaLabel]="'Actions for ' + area.name" />
         </td>

@@ -122,7 +122,10 @@
             </td>
             <td class="max-w-xs">
               <div class="flex items-center gap-1.5">
-                <span class="truncate text-sm font-medium text-slate-900">{{ item.title }}</span>
+                <span
+                  class="truncate text-sm font-medium text-slate-900"
+                  [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
+                ></span>
                 @if (item.has_thread) {
                   <i
                     class="fa-solid fa-link shrink-0 text-[9px] text-slate-300"
@@ -131,8 +134,12 @@
                 }
               </div>
             </td>
-            <td class="col-secondary text-xs text-slate-500">{{ item.category_name }}</td>
-            <td class="col-secondary text-xs text-slate-500">{{ getEntityDisplay(item) }}</td>
+            <td class="col-secondary text-xs text-slate-500">
+              <span [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"></span>
+            </td>
+            <td class="col-secondary text-xs text-slate-500">
+              <span [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"></span>
+            </td>
             <td class="col-priority text-center">
               @if (item.priority === 'high') {
                 <span

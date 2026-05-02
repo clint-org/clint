@@ -6,11 +6,12 @@ import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
+import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
-  imports: [DatePipe, FormsModule, SelectModule, TableModule, TableSkeletonBodyComponent],
+  imports: [DatePipe, FormsModule, SelectModule, TableModule, TableSkeletonBodyComponent, HighlightPipe],
   template: `
     <p-table
       [value]="catalysts()"
@@ -124,15 +125,15 @@ import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/tab
                   catalyst.marker_type_shape === 'diamond' ? 'rotate(45deg)' : 'none'
                 "
               ></span>
-              <span class="text-xs text-slate-500">{{ catalyst.category_name }}</span>
+              <span class="text-xs text-slate-500" [innerHTML]="catalyst.category_name | highlight: query()"></span>
             </span>
           </td>
-          <td class="text-sm font-medium text-slate-900">{{ catalyst.title }}</td>
+          <td class="text-sm font-medium text-slate-900" [innerHTML]="catalyst.title | highlight: query()"></td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
-              <span class="uppercase">{{ catalyst.company_name }}</span>
+              <span class="uppercase" [innerHTML]="catalyst.company_name | highlight: query()"></span>
               @if (catalyst.product_name) {
-                <span> &middot; {{ catalyst.product_name }}</span>
+                <span> &middot; <span [innerHTML]="catalyst.product_name | highlight: query()"></span></span>
               }
             }
           </td>
@@ -182,6 +183,8 @@ export class CatalystTableComponent {
   readonly categoryOptions = input<{ label: string; value: string }[]>([]);
   readonly companyOptions = input<{ label: string; value: string }[]>([]);
   readonly gridFilters = input<Record<string, { value: unknown; matchMode: string }[]>>({});
+  /** Active global-search query; matches in text cells are wrapped in `<mark>`. */
+  readonly query = input<string>('');
   readonly rowSelect = output<string>();
   readonly filterChange = output<Record<string, unknown>>();
 }
