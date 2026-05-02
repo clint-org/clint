@@ -47,6 +47,7 @@ export class MaterialsSectionComponent implements OnInit {
   protected readonly typeFilters: { label: string; value: MaterialFilter }[] = [
     { label: 'All', value: 'all' },
     { label: MATERIAL_TYPE_LABEL.briefing, value: 'briefing' },
+    { label: MATERIAL_TYPE_LABEL.conference_report, value: 'conference_report' },
     { label: MATERIAL_TYPE_LABEL.priority_notice, value: 'priority_notice' },
     { label: MATERIAL_TYPE_LABEL.ad_hoc, value: 'ad_hoc' },
   ];
