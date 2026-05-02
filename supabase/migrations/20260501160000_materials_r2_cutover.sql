@@ -20,8 +20,12 @@ drop policy if exists "materials bucket update" on storage.objects;
 drop policy if exists "materials bucket delete" on storage.objects;
 
 -- the bucket is private and contains no data we care about; clean cutover.
--- set the local supabase safety guard that gates direct bucket deletion.
+-- delete storage.objects first to release the bucket FK reference, then
+-- the bucket. set the local supabase safety guard that gates direct
+-- bucket/object deletion (set local works inside the implicit migration
+-- transaction; supabase cli wraps each migration in BEGIN/COMMIT).
 set local storage.allow_delete_query = 'true';
+delete from storage.objects where bucket_id = 'materials';
 delete from storage.buckets where id = 'materials';
 
 -- =============================================================================
