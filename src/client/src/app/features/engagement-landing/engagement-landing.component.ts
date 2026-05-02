@@ -22,6 +22,7 @@ import { DraftsWidgetComponent } from './drafts-widget/drafts-widget.component';
 import { UpcomingCatalystsWidgetComponent } from './upcoming-catalysts-widget/upcoming-catalysts-widget.component';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { IntelligenceFeedComponent } from '../../shared/components/intelligence-feed/intelligence-feed.component';
+import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
 /**
  * Engagement landing page (docs/specs/engagement-landing/spec.md).
@@ -47,6 +48,7 @@ import { IntelligenceFeedComponent } from '../../shared/components/intelligence-
     UpcomingCatalystsWidgetComponent,
     RecentMaterialsWidgetComponent,
     IntelligenceFeedComponent,
+    WhatChangedWidgetComponent,
   ],
   templateUrl: './engagement-landing.component.html',
   styleUrls: ['./engagement-landing.component.css'],
