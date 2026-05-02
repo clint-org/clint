@@ -282,14 +282,14 @@ export const routes: Routes = [
                     (m) => m.MaterialsBrowsePageComponent
                   ),
               },
-              {
-                path: 'activity',
-                loadComponent: () =>
-                  import('./features/engagement-activity/engagement-activity-page.component').then(
-                    (m) => m.EngagementActivityPageComponent
-                  ),
-              },
             ],
+          },
+          {
+            path: 'activity',
+            loadComponent: () =>
+              import('./features/engagement-activity/engagement-activity-page.component').then(
+                (m) => m.EngagementActivityPageComponent
+              ),
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
           {
