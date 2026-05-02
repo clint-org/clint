@@ -194,24 +194,31 @@ comment on function public._compute_field_diffs(jsonb, jsonb, text[]) is
 -- 5. _classify_change: turns one field-level diff into 0..N typed events.
 --    one row out per logical event; multi-row for arms/interventions/
 --    outcome-measures because each added/removed/modified entry is its
---    own user-visible event. occurred_at defaults to now(); the caller
---    overrides with snapshot post_date when available.
+--    own user-visible event. occurred_at is supplied by the caller via
+--    p_occurred_at (defaulting to now() for ad-hoc invocations); the
+--    ingest RPC (Task 1.6) and recompute RPC (Task 1.9) pass the
+--    snapshot's last_update_post_date so events line up with the source
+--    of truth instead of wall-clock time at ingest.
 --
 --    payload shapes match the spec's "Event taxonomy" tables exactly.
 --    arrays of objects (armGroups, interventions, outcomes) are matched
 --    by their natural key: armGroups -> label, interventions -> name,
---    outcomes -> measure.
+--    outcomes -> measure. natural-key matching means null-keyed entries
+--    cannot be matched symmetrically and intentionally produce no events
+--    on either side.
 --
 create or replace function public._classify_change(
-  p_field_path text,
-  p_old        jsonb,
-  p_new        jsonb
+  p_field_path  text,
+  p_old         jsonb,
+  p_new         jsonb,
+  p_occurred_at timestamptz default now()
 ) returns table (
   event_type  text,
   payload     jsonb,
   occurred_at timestamptz
 )
 language plpgsql
+stable
 as $$
 declare
   v_old_date  date;
@@ -243,7 +250,7 @@ begin
       'from', case when p_old is null then null::text else p_old #>> '{}' end,
       'to',   case when p_new is null then null::text else p_new #>> '{}' end
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -261,6 +268,9 @@ begin
                end;
     v_old_date  := nullif(p_old #>> '{}', '')::date;
     v_new_date  := nullif(p_new #>> '{}', '')::date;
+    -- If either side is null or unparseable, days_diff and direction are
+    -- emitted as null. Downstream consumers filtering on days_diff > N
+    -- should handle null explicitly.
     if v_old_date is not null and v_new_date is not null then
       v_days_diff := v_new_date - v_old_date;
       v_direction := case when v_days_diff > 0 then 'slip' else 'accelerate' end;
@@ -276,7 +286,7 @@ begin
       'days_diff',  v_days_diff,
       'direction',  v_direction
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -285,10 +295,10 @@ begin
   if p_field_path = 'protocolSection.designModule.phases' then
     event_type  := 'phase_transitioned';
     payload     := jsonb_build_object(
-      'from', coalesce(p_old, 'null'::jsonb),
-      'to',   coalesce(p_new, 'null'::jsonb)
+      'from', coalesce(p_old, '[]'::jsonb),
+      'to',   coalesce(p_new, '[]'::jsonb)
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -308,13 +318,17 @@ begin
       'to',             v_new_count,
       'percent_change', v_pct
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
 
   -- armsInterventionsModule.armGroups -> arm_added / arm_removed
   -- compare by 'label'; one row per added arm and one per removed arm.
+  -- Assumes labels are unique within the array. Duplicate keys produce
+  -- undefined add/remove ordering. CT.gov v2 does not allow duplicates
+  -- in practice. Null-keyed entries are skipped on both sides since
+  -- they cannot be matched symmetrically.
   if p_field_path = 'protocolSection.armsInterventionsModule.armGroups' then
     select coalesce(array_agg(elem ->> 'label'), array[]::text[])
       into v_old_labels
@@ -327,8 +341,7 @@ begin
     for v_arm in
       select elem
         from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
-       where (elem ->> 'label') is null
-          or not ((elem ->> 'label') = any(v_old_labels))
+       where not ((elem ->> 'label') = any(v_old_labels))
     loop
       event_type  := 'arm_added';
       payload     := jsonb_build_object(
@@ -336,7 +349,7 @@ begin
         'arm_type',    v_arm ->> 'type',
         'description', v_arm ->> 'description'
       );
-      occurred_at := now();
+      occurred_at := p_occurred_at;
       return next;
     end loop;
 
@@ -344,15 +357,14 @@ begin
     for v_arm in
       select elem
         from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
-       where (elem ->> 'label') is null
-          or not ((elem ->> 'label') = any(v_new_labels))
+       where not ((elem ->> 'label') = any(v_new_labels))
     loop
       event_type  := 'arm_removed';
       payload     := jsonb_build_object(
         'arm_label', v_arm ->> 'label',
         'arm_type',  v_arm ->> 'type'
       );
-      occurred_at := now();
+      occurred_at := p_occurred_at;
       return next;
     end loop;
     return;
@@ -360,6 +372,10 @@ begin
 
   -- armsInterventionsModule.interventions -> intervention_changed
   -- one event with added/removed lists, matched by 'name'.
+  -- Assumes names are unique within the array. Duplicate keys produce
+  -- undefined add/remove ordering. CT.gov v2 does not allow duplicates
+  -- in practice. Null-keyed entries are skipped on both sides since
+  -- they cannot be matched symmetrically.
   if p_field_path = 'protocolSection.armsInterventionsModule.interventions' then
     select coalesce(array_agg(elem ->> 'name'), array[]::text[])
       into v_old_names
@@ -371,24 +387,26 @@ begin
     select coalesce(jsonb_agg(jsonb_build_object('name', elem ->> 'name', 'type', elem ->> 'type')), '[]'::jsonb)
       into v_added
       from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
-     where (elem ->> 'name') is null
-        or not ((elem ->> 'name') = any(v_old_names));
+     where not ((elem ->> 'name') = any(v_old_names));
 
     select coalesce(jsonb_agg(jsonb_build_object('name', elem ->> 'name', 'type', elem ->> 'type')), '[]'::jsonb)
       into v_removed
       from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
-     where (elem ->> 'name') is null
-        or not ((elem ->> 'name') = any(v_new_names));
+     where not ((elem ->> 'name') = any(v_new_names));
 
     event_type  := 'intervention_changed';
     payload     := jsonb_build_object('added', v_added, 'removed', v_removed);
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
 
   -- outcomesModule.{primary|secondary}Outcomes -> outcome_measure_changed
   -- one event with added/removed/modified, matched by 'measure' (outcome label).
+  -- Assumes measures are unique within the array. Duplicate keys produce
+  -- undefined add/remove ordering. CT.gov v2 does not allow duplicates
+  -- in practice. Null-keyed entries are skipped on both sides since
+  -- they cannot be matched symmetrically.
   if p_field_path in (
        'protocolSection.outcomesModule.primaryOutcomes',
        'protocolSection.outcomesModule.secondaryOutcomes'
@@ -409,15 +427,13 @@ begin
     select coalesce(jsonb_agg(elem), '[]'::jsonb)
       into v_added
       from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
-     where (elem ->> 'measure') is null
-        or not ((elem ->> 'measure') = any(v_old_keys));
+     where not ((elem ->> 'measure') = any(v_old_keys));
 
     -- removed: in old, not in new
     select coalesce(jsonb_agg(elem), '[]'::jsonb)
       into v_removed
       from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
-     where (elem ->> 'measure') is null
-        or not ((elem ->> 'measure') = any(v_new_keys));
+     where not ((elem ->> 'measure') = any(v_new_keys));
 
     -- modified: same measure, different other fields (description/timeFrame).
     select coalesce(jsonb_agg(jsonb_build_object('measure', n ->> 'measure', 'from', o, 'to', n)), '[]'::jsonb)
@@ -434,7 +450,7 @@ begin
       'removed',      v_removed,
       'modified',     v_modified
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -446,7 +462,7 @@ begin
       'from', p_old #>> '{}',
       'to',   p_new #>> '{}'
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -455,11 +471,10 @@ begin
   if p_field_path = 'protocolSection.eligibilityModule.eligibilityCriteria' then
     event_type  := 'eligibility_criteria_changed';
     payload     := jsonb_build_object(
-      'old_length',   coalesce(length(p_old #>> '{}'), 0),
-      'new_length',   coalesce(length(p_new #>> '{}'), 0),
-      'diff_summary', null::text
+      'old_length', coalesce(length(p_old #>> '{}'), 0),
+      'new_length', coalesce(length(p_new #>> '{}'), 0)
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -481,7 +496,7 @@ begin
       'from',        p_old #>> '{}',
       'to',          p_new #>> '{}'
     );
-    occurred_at := now();
+    occurred_at := p_occurred_at;
     return next;
     return;
   end if;
@@ -491,10 +506,10 @@ begin
 end;
 $$;
 
-revoke execute on function public._classify_change(text, jsonb, jsonb) from public;
+revoke execute on function public._classify_change(text, jsonb, jsonb, timestamptz) from public;
 
-comment on function public._classify_change(text, jsonb, jsonb) is
-  'Maps one ct.gov field-level diff to 0..N typed events. Multi-row for arms (one per added/removed). Payload shapes match the spec''s "Event taxonomy" tables. occurred_at defaults to now(); ingest RPC overrides with snapshot post_date.';
+comment on function public._classify_change(text, jsonb, jsonb, timestamptz) is
+  'Maps one ct.gov field-level diff to 0..N typed events. Multi-row for arms (one per added/removed). Payload shapes match the spec''s "Event taxonomy" tables. p_occurred_at stamps every emitted event; the ingest and recompute RPCs pass the snapshot last_update_post_date so events line up with the source of truth rather than wall-clock time at ingest. Stable: no side effects, output a pure function of inputs.';
 
 -- =============================================================================
 -- smoke tests: each helper exercised once. failures raise; happy paths
@@ -505,12 +520,13 @@ comment on function public._classify_change(text, jsonb, jsonb) is
 --
 do $$
 declare
-  v_diff_count    int;
-  v_diff_path     text;
-  v_class_count   int;
-  v_class_type    text;
-  v_class_payload jsonb;
-  v_phantom_id    uuid := gen_random_uuid();
+  v_diff_count       int;
+  v_diff_path        text;
+  v_class_count      int;
+  v_class_type       text;
+  v_class_payload    jsonb;
+  v_class_occurred   timestamptz;
+  v_phantom_id       uuid := gen_random_uuid();
 begin
   -- helper 1: _map_phase_array
   if public._map_phase_array('["PHASE2","PHASE3"]'::jsonb) is distinct from 'Phase 2/Phase 3' then
@@ -607,6 +623,18 @@ begin
   end if;
   if v_class_payload ->> 'which_date' <> 'primary_completion' then
     raise exception 'helper 5 FAIL: expected which_date=primary_completion, got %', v_class_payload ->> 'which_date';
+  end if;
+
+  -- helper 5b: explicit p_occurred_at is honored (instead of now())
+  select occurred_at into v_class_occurred
+    from public._classify_change(
+      'protocolSection.statusModule.overallStatus',
+      to_jsonb('RECRUITING'::text),
+      to_jsonb('COMPLETED'::text),
+      '2026-04-01 00:00:00+00'::timestamptz
+    );
+  if v_class_occurred is distinct from '2026-04-01 00:00:00+00'::timestamptz then
+    raise exception 'helper 5 FAIL: p_occurred_at override not honored, got %', v_class_occurred;
   end if;
   raise notice 'helper 5 ok: _classify_change';
 
