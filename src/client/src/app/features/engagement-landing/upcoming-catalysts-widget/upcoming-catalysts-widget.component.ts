@@ -90,7 +90,9 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           }
         </ul>
         @if (allCatalystsRoute()) {
-          <a class="all-link" [href]="allCatalystsRoute()">All catalysts</a>
+          <a class="section-action-link catalysts-all-link" [href]="allCatalystsRoute()">
+            All catalysts
+          </a>
         }
       }
     </section>
@@ -200,26 +202,11 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       .ctx-pending {
         color: var(--brand-700);
       }
-      .all-link {
+      .catalysts-all-link {
         display: block;
         margin-top: 12px;
         padding-top: 10px;
         border-top: 1px solid #f1f5f9;
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--brand-700);
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        text-decoration: none;
-      }
-      .all-link:hover {
-        text-decoration: underline;
-      }
-      .all-link:focus-visible {
-        outline: 2px solid var(--brand-600);
-        outline-offset: 2px;
-        border-radius: 2px;
       }
     `,
   ],
