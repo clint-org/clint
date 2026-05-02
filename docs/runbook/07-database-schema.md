@@ -36,10 +36,15 @@ erDiagram
   SPACES ||--o{ MARKER_TYPES : "space_id"
   MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
   SPACES ||--o{ MARKERS : "space_id"
+  MATERIALS ||--o{ MATERIAL_LINKS : "material_id"
+  SPACES ||--o{ MATERIALS : "space_id"
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
   MARKER_NOTIFICATIONS ||--o{ NOTIFICATION_READS : "notification_id"
   SPACES ||--o{ PALETTE_PINNED : "space_id"
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
+  SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_REVISIONS : "primary_intelligence_id"
   MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
   PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
   PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
@@ -119,6 +124,7 @@ erDiagram
 | 83 | `20260501030000_add_agency_member_held_invite.sql` | New `add_agency_member(p_agency_id, p_email, p_role)` SECURITY DEFINER RPC, symmetric with `add_tenant_owner` and `invite_to_space`. Existing-user branch inserts directly into `agency_members` with `on conflict do nothing`. Unknown-email branch inserts a held `agency_invites` row that the existing `handle_new_user` trigger (migration 69) auto-promotes on first sign-in. Idempotent: returns the existing held invite if one already exists for `(agency_id, lower(email), role)` instead of raising the partial-unique-index violation. Closes the asymmetry where the agency members page forced would-be members to sign in out of band before they could be added, while tenant and space invite paths handled the unknown-email case gracefully. The original `addAgencyMember(userId, role)` direct-insert service method is preserved; `lookup_user_by_email` likewise stays available for other surfaces. |
 | 84 | `20260501040000_has_tenant_access_function.sql` | New `has_tenant_access(p_tenant_id uuid) returns boolean` SECURITY DEFINER helper for route guards. Returns true if `is_tenant_member(p_tenant_id)` is true OR the caller holds a `space_members` row for any space whose `tenant_id = p_tenant_id`. The fourth disjunct (space-only membership) is what the old `is_tenant_member` lacked, which made `tenantGuard` block pure space-only members from reaching `/t/:tenantId/s/:spaceId/*` for spaces they belonged to. Surfaced 2026-05-01 when `madala.dodbele` (pure `space_members.viewer` of one space, no `tenant_members` row anywhere) was bounced from her own space to `/onboarding?tab=join`. Used only for route activation in `tenantGuard` and the tenant branch of `marketingLandingGuard`; not used in RLS, since broadening the tenant-membership predicate there would let space-only readers enumerate tenant owners, an info leak. `is_tenant_member` is unchanged. |
 | 85 | `20260501080000_block_remove_agency_owner_from_tenant_members.sql` | Blocks tenant clients from evicting agency owners from their own tenant. `tenant_members_view` recreated to add `is_agency_backed` boolean (true when the row's user is also an `agency_members` owner of the tenant's parent agency). `enforce_tenant_member_guards` gains a third DELETE clause: when the target row is agency-backed and the caller is not a platform admin, raise `42501`. Without this guard, the existing trigger only blocked self-removal and last-owner removal; deleting an agency-backed row succeeded but `is_tenant_member()` retained access via the agency-owner disjunct, so the tenant client believed they had fired the agency while access was still in place. Closes follow-up #10 from the access-model retest. The agency-tenant boundary is now enforced at the DB layer regardless of UI state; only platform admins can detach a tenant from its parent agency. |
+| 86 | `20260501160000_materials_r2_cutover.sql` | Cuts over engagement materials storage from Supabase Storage to Cloudflare R2. Deletes existing test materials rows and drops the `materials` Supabase Storage bucket and its RLS policies. Adds `finalized_at timestamptz` to `materials` (NULL until the file is confirmed in R2; all list/download RPCs filter on `finalized_at IS NOT NULL`) and `idx_materials_finalized` partial index. New RPCs: `prepare_material_upload(p_material_id)` (SECURITY DEFINER; verifies uploader ownership, editor space access, and non-finalized state; returns metadata for the Worker to sign a presigned PUT URL) and `finalize_material(p_material_id)` (SECURITY DEFINER; idempotent; sets `finalized_at = now()`). Recreates `list_materials_for_space`, `list_materials_for_entity`, `list_recent_materials_for_space`, and `download_material` with `finalized_at IS NOT NULL` filter. Updates `_seed_demo_materials` helper to set `finalized_at` so demo rows are visible in the landing feed. Includes an inline assertion test that verifies the register-prepare-finalize-list-download invariant. |
 
 ## Core Data Tables
 
@@ -472,6 +478,82 @@ This list is a **security control**, not just UX. With cookie-based session stor
 | 9 | Change from Prior Update | Arrow | Filled | Orange | Change |
 | 10 | Event No Longer Expected | X | Filled | Red | Change |
 
+## Materials Tables
+
+```sql
+-- Engagement materials registered against a space (files live in R2)
+materials (
+  id               uuid PRIMARY KEY,
+  space_id         uuid REFERENCES spaces(id) ON DELETE CASCADE NOT NULL,
+  uploaded_by      uuid REFERENCES auth.users(id) NOT NULL,
+  file_path        text NOT NULL,   -- R2 key: {space_id}/{material_id}/{file_name}
+  file_name        text NOT NULL,
+  file_size_bytes  bigint NOT NULL,
+  mime_type        text NOT NULL,
+  material_type    text NOT NULL    -- 'briefing' | 'priority_notice' | 'ad_hoc'
+    CHECK (material_type IN ('briefing', 'priority_notice', 'ad_hoc')),
+  title            text NOT NULL,
+  uploaded_at      timestamptz NOT NULL DEFAULT now(),
+  finalized_at     timestamptz       -- NULL until the file is confirmed uploaded to R2
+)
+
+-- Polymorphic links from a material to entities in the same space
+material_links (
+  id            uuid PRIMARY KEY,
+  material_id   uuid REFERENCES materials(id) ON DELETE CASCADE NOT NULL,
+  entity_type   text NOT NULL       -- 'trial' | 'marker' | 'company' | 'product' | 'space'
+    CHECK (entity_type IN ('trial', 'marker', 'company', 'product', 'space')),
+  entity_id     uuid NOT NULL,
+  display_order int NOT NULL DEFAULT 0,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (material_id, entity_type, entity_id)
+)
+```
+
+### finalized_at and the register-first upload flow
+
+`finalized_at` is `NULL` until the browser calls `finalize_material()` after successfully PUTting the file to R2. All list and download RPCs filter on `finalized_at IS NOT NULL`, so a registered but not-yet-uploaded row is invisible to readers. This prevents half-uploaded files from appearing in the UI if an upload is abandoned.
+
+The upload flow is:
+
+1. Client calls `register_material` (inserts the row, `finalized_at = NULL`).
+2. Client calls `POST /api/materials/sign-upload` on the Worker; Worker calls `prepare_material_upload(p_material_id)` to verify ownership and non-finalized state, then returns a presigned R2 PUT URL (5-min TTL).
+3. Client PUTs the file directly to R2 using the presigned URL.
+4. Client calls `finalize_material(p_material_id)` via Supabase; the row becomes visible.
+
+`idx_materials_finalized` is a partial index on `(space_id, finalized_at) WHERE finalized_at IS NOT NULL` to serve the list queries efficiently without scanning unfinalized rows.
+
+### Materials RPCs
+
+#### prepare_material_upload
+
+```
+prepare_material_upload(p_material_id uuid) -> jsonb
+```
+
+SECURITY DEFINER. Called by the Materials Worker, not directly by the client. Access checks (in order):
+
+1. Row must exist for `p_material_id`.
+2. Caller (`auth.uid()`) must be the `uploaded_by` user.
+3. Caller must have `owner | editor` space access via `has_space_access()`.
+4. `finalized_at` must be `NULL` (row must not already be finalized).
+
+Returns `{ space_id, material_id, file_name, mime_type }` for the Worker to construct the R2 object key and sign the PUT URL.
+
+#### finalize_material
+
+```
+finalize_material(p_material_id uuid) -> void
+```
+
+SECURITY DEFINER. Called by the client after a successful R2 PUT. Access checks:
+
+1. Row must exist for `p_material_id`.
+2. Caller must be the `uploaded_by` user.
+3. Caller must have `owner | editor` space access via `has_space_access()`.
+
+Idempotent: if `finalized_at` is already set, returns without error (safe for retry on transient failure). Sets `finalized_at = now()` on success.
+
 ## Indexes
 
 Indexes on frequently filtered/joined columns:
@@ -480,6 +562,7 @@ Indexes on frequently filtered/joined columns:
 - `trial_phases.trial_id`, `trial_markers.trial_id`, `trial_markers.marker_type_id`
 - `trial_notes.trial_id`
 - CT.gov filter columns: `trials.recruitment_status`, `trials.study_type`, `trials.phase`, `trials.intervention_type`
+- `idx_materials_finalized`: partial index on `materials(space_id, finalized_at) WHERE finalized_at IS NOT NULL` for list/download queries
 
 ## Documentation Drift
 
@@ -493,6 +576,9 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `notification_reads`
 - `palette_pinned`
 - `palette_recents`
+- `primary_intelligence`
+- `primary_intelligence_links`
+- `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`

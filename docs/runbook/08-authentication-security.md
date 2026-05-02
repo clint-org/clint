@@ -244,11 +244,16 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `marker_notifications` | yes | 3 |
 | `marker_types` | yes | 4 |
 | `markers` | yes | 4 |
+| `material_links` | yes | 2 |
+| `materials` | yes | 4 |
 | `mechanisms_of_action` | yes | 4 |
 | `notification_reads` | yes | 3 |
 | `palette_pinned` | yes | 1 |
 | `palette_recents` | yes | 1 |
 | `platform_admins` | yes | 0 |
+| `primary_intelligence` | yes | 5 |
+| `primary_intelligence_links` | yes | 4 |
+| `primary_intelligence_revisions` | yes | 1 |
 | `product_mechanisms_of_action` | yes | 3 |
 | `product_routes_of_administration` | yes | 3 |
 | `products` | yes | 4 |
