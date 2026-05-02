@@ -18,7 +18,9 @@ interface Stat {
     <div class="strip">
       <div class="left">
         <h1 class="title">{{ spaceName() || 'Engagement' }}</h1>
-        <p class="subline">{{ subline() }}</p>
+        @if (subline()) {
+          <p class="subline">{{ subline() }}</p>
+        }
       </div>
       <ul class="stats" role="list" aria-label="Engagement statistics">
         @for (stat of computedStats(); track stat.label) {
@@ -123,7 +125,7 @@ export class EngagementContextStripComponent {
 
   readonly subline = computed(() => {
     const since = this.activeSinceLabel();
-    return since ? `Engagement | active since ${since}` : 'Engagement';
+    return since ? `Active since ${since}` : '';
   });
 
   readonly computedStats = computed<Stat[]>(() => {
