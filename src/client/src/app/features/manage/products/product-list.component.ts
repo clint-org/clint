@@ -17,6 +17,7 @@ import { ProductFormComponent } from './product-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
@@ -42,6 +43,7 @@ interface ProductRow {
     ManagePageShellComponent,
     RowActionsComponent,
     GridToolbarComponent,
+    TableSkeletonBodyComponent,
   ],
   templateUrl: './product-list.component.html',
 })

@@ -5,14 +5,16 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
-  imports: [DatePipe, FormsModule, SelectModule, TableModule],
+  imports: [DatePipe, FormsModule, SelectModule, TableModule, TableSkeletonBodyComponent],
   template: `
     <p-table
       [value]="catalysts()"
+      [loading]="loading()"
       [rowGroupMode]="'subheader'"
       groupRowsBy="time_bucket"
       dataKey="marker_id"
@@ -152,6 +154,17 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
         </tr>
       </ng-template>
 
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[
+            { w: '52px', h: '11px' },
+            { w: '88px' },
+            { w: '60%' },
+            { w: '52%' },
+            { w: '64px', h: '14px', class: 'col-status' },
+          ]"
+        />
+      </ng-template>
       <ng-template #emptymessage>
         <tr>
           <td colspan="5" class="py-8 text-center text-sm text-slate-400">
@@ -164,6 +177,7 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
 })
 export class CatalystTableComponent {
   readonly catalysts = input.required<FlatCatalyst[]>();
+  readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);
   readonly categoryOptions = input<{ label: string; value: string }[]>([]);
   readonly companyOptions = input<{ label: string; value: string }[]>([]);

@@ -20,6 +20,7 @@ import { MarkerCategoryService } from '../../core/services/marker-category.servi
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
+import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { createGridState } from '../../shared/grids';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
@@ -41,6 +42,7 @@ import { SpaceRoleService } from '../../core/services/space-role.service';
     TableModule,
     ManagePageShellComponent,
     GridToolbarComponent,
+    TableSkeletonBodyComponent,
     EventDetailPanelComponent,
     EventFormComponent,
   ],

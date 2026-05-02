@@ -11,6 +11,7 @@ import { RouteOfAdministrationService } from '../../../core/services/route-of-ad
 import { RouteOfAdministrationFormComponent } from './route-of-administration-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -26,6 +27,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     RouteOfAdministrationFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    TableSkeletonBodyComponent,
   ],
   templateUrl: './route-of-administration-list.component.html',
 })

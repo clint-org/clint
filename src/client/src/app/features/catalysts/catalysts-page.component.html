@@ -3,6 +3,7 @@
 
   <app-catalyst-table
     [catalysts]="flatCatalysts()"
+    [loading]="state.dataLoading()"
     [selectedId]="state.selectedMarkerId()"
     [gridFilters]="grid.primengFilters()"
     (rowSelect)="onRowClick($event)"

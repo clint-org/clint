@@ -17,6 +17,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
+import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
@@ -43,6 +44,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    TableSkeletonBodyComponent,
     RouterLink,
   ],
   template: `
@@ -105,6 +107,16 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
               }
             </td>
           </tr>
+        </ng-template>
+        <ng-template #loadingbody>
+          <app-table-skeleton-body
+            [cells]="[
+              { w: '52%' },
+              { w: '64%', h: '11px' },
+              { w: '88px', h: '14px' },
+              { w: '14px', class: 'col-actions' },
+            ]"
+          />
         </ng-template>
         <ng-template #emptymessage>
           <tr>

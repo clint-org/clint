@@ -145,6 +145,18 @@
           </tr>
         </ng-template>
 
+        <ng-template #loadingbody>
+          <app-table-skeleton-body
+            [cells]="[
+              { w: '72px', h: '11px', class: 'col-date' },
+              { w: '40px', h: '14px', class: 'col-source' },
+              { w: '60%' },
+              { w: '52%' },
+              { w: '52%' },
+              { w: '8px', h: '8px', class: 'col-priority' },
+            ]"
+          />
+        </ng-template>
         <ng-template #emptymessage>
           <tr>
             <td colspan="6">

@@ -11,6 +11,7 @@ import { MechanismOfActionService } from '../../../core/services/mechanism-of-ac
 import { MechanismOfActionFormComponent } from './mechanism-of-action-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -26,6 +27,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     MechanismOfActionFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    TableSkeletonBodyComponent,
   ],
   templateUrl: './mechanism-of-action-list.component.html',
 })

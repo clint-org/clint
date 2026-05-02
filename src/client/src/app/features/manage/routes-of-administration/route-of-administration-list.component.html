@@ -21,6 +21,15 @@
         </td>
       </tr>
     </ng-template>
+    <ng-template #loadingbody>
+      <app-table-skeleton-body
+        [cells]="[
+          { w: '48%' },
+          { w: '44px', h: '11px' },
+          { w: '14px', class: 'col-actions' },
+        ]"
+      />
+    </ng-template>
     <ng-template #emptymessage>
       <tr>
         <td colspan="3">No routes of administration yet. Add one to get started.</td>

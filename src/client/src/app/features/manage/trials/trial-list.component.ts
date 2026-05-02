@@ -19,6 +19,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
@@ -48,6 +49,7 @@ interface TrialRow {
     RowActionsComponent,
     StatusTagComponent,
     GridToolbarComponent,
+    TableSkeletonBodyComponent,
   ],
   templateUrl: './trial-list.component.html',
 })

@@ -12,6 +12,7 @@ import { TherapeuticAreaFormComponent } from './therapeutic-area-form.component'
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { createGridState } from '../../../shared/grids';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
@@ -29,6 +30,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     ManagePageShellComponent,
     RowActionsComponent,
     GridToolbarComponent,
+    TableSkeletonBodyComponent,
   ],
   templateUrl: './therapeutic-area-list.component.html',
 })

@@ -19,6 +19,7 @@ import { MechanismOfActionFormComponent } from '../mechanisms-of-action/mechanis
 import { RouteOfAdministrationFormComponent } from '../routes-of-administration/route-of-administration-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -40,6 +41,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
     RouteOfAdministrationFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
+    TableSkeletonBodyComponent,
   ],
   template: `
     <app-manage-page-shell>
@@ -83,6 +85,15 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
               </td>
             </tr>
           </ng-template>
+          <ng-template #loadingbody>
+            <app-table-skeleton-body
+              [cells]="[
+                { w: '52%' },
+                { w: '52px', h: '11px' },
+                { w: '14px', class: 'col-actions' },
+              ]"
+            />
+          </ng-template>
           <ng-template #emptymessage>
             <tr>
               <td colspan="3">No therapeutic areas yet. Add one to get started.</td>
@@ -118,6 +129,15 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
               </td>
             </tr>
           </ng-template>
+          <ng-template #loadingbody>
+            <app-table-skeleton-body
+              [cells]="[
+                { w: '42%' },
+                { w: '72%' },
+                { w: '14px', class: 'col-actions' },
+              ]"
+            />
+          </ng-template>
           <ng-template #emptymessage>
             <tr>
               <td colspan="3">No mechanisms of action yet. Add one to get started.</td>
@@ -152,6 +172,15 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
                 />
               </td>
             </tr>
+          </ng-template>
+          <ng-template #loadingbody>
+            <app-table-skeleton-body
+              [cells]="[
+                { w: '48%' },
+                { w: '44px', h: '11px' },
+                { w: '14px', class: 'col-actions' },
+              ]"
+            />
           </ng-template>
           <ng-template #emptymessage>
             <tr>

@@ -87,6 +87,17 @@
   letter-spacing: 0.02em;
 }
 
+/*
+ * Loading state. We render skeleton rows via the table's #loadingbody
+ * template, so suppress PrimeNG's centered spinner overlay (.p-datatable-mask
+ * in PrimeNG 19) — the body itself signals the loading state.
+ */
+.data-table .p-datatable-mask,
+.data-table .p-datatable-loading-overlay,
+.data-table .p-datatable-loading-icon {
+  display: none !important;
+}
+
 /* --------------------------------------------------------------------- */
 /* Mobile: disable PrimeNG's internal scroll container                    */
 /* --------------------------------------------------------------------- */

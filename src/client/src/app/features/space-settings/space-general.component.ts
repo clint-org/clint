@@ -10,6 +10,7 @@ import { Space } from '../../core/models/space.model';
 import { SpaceService } from '../../core/services/space.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
@@ -21,11 +22,28 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     InputText,
     Textarea,
     ManagePageShellComponent,
+    SkeletonComponent,
   ],
   template: `
     <app-manage-page-shell [narrow]="true">
       @if (loading()) {
-        <p class="text-sm text-slate-400">Loading...</p>
+        <div class="max-w-xl" aria-busy="true" aria-label="Loading space settings">
+          <div class="mb-6">
+            <app-skeleton w="80px" h="10px" />
+            <div class="mt-1.5">
+              <app-skeleton [block]="true" w="100%" h="36px" />
+            </div>
+          </div>
+          <div class="mb-6">
+            <app-skeleton w="80px" h="10px" />
+            <div class="mt-1.5">
+              <app-skeleton [block]="true" w="100%" h="78px" />
+            </div>
+          </div>
+          <div class="mt-6">
+            <app-skeleton w="120px" h="32px" />
+          </div>
+        </div>
       } @else if (space()) {
         <div class="max-w-xl">
           <div class="mb-6">

@@ -37,6 +37,15 @@
         </td>
       </tr>
     </ng-template>
+    <ng-template #loadingbody>
+      <app-table-skeleton-body
+        [cells]="[
+          { w: '52%' },
+          { w: '52px', h: '11px' },
+          { w: '14px', class: 'col-actions' },
+        ]"
+      />
+    </ng-template>
     <ng-template #emptymessage>
       <tr>
         <td colspan="3">
