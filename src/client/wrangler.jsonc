@@ -11,9 +11,17 @@
 		"not_found_handling": "single-page-application",
 		"binding": "ASSETS"
 	},
+	// CTGOV_WORKER_SECRET is provisioned via `wrangler secret put` and is
+	// intentionally NOT listed here.
 	"vars": {
 		"ALLOWED_APEXES": "clintapp.com",
-		"R2_BUCKET": "clint-materials"
+		"R2_BUCKET": "clint-materials",
+		"CTGOV_BASE_URL": "https://clinicaltrials.gov",
+		"CTGOV_BATCH_SIZE": "100",
+		"CTGOV_PARALLEL_FETCHES": "10"
+	},
+	"triggers": {
+		"crons": ["0 7 * * *"]
 	},
 	"ratelimits": [
 		{

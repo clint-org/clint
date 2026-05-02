@@ -3,6 +3,7 @@ import { isAllowedOrigin, corsHeaders, preflight } from './cors';
 import { mapSupabaseError, errorResponse, type SupabaseRpcError } from './errors';
 import { callRpc } from './supabase';
 import { presignPut, presignGet } from './r2';
+import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
@@ -16,13 +17,21 @@ export interface Env {
   ALLOWED_APEXES: string; // comma-separated list, e.g. "clintapp.com"
   UPLOAD_LIMITER: RateLimit;
   DOWNLOAD_LIMITER: RateLimit;
+  // CT.gov sync configuration. CTGOV_WORKER_SECRET is provisioned via
+  // `wrangler secret put` and is NOT in wrangler.jsonc vars.
+  CTGOV_BASE_URL: string;
+  CTGOV_BATCH_SIZE: string;
+  CTGOV_PARALLEL_FETCHES: string;
+  CTGOV_WORKER_SECRET: string;
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    const apexes = env.ALLOWED_APEXES.split(',').map((s) => s.trim()).filter(Boolean);
+    const apexes = env.ALLOWED_APEXES.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const origin = request.headers.get('Origin');
 
     if (request.method === 'OPTIONS') {
@@ -37,6 +46,9 @@ export default {
     if (url.pathname === '/api/materials/sign-download' && request.method === 'POST') {
       return handleSignDownload(request, env, cors);
     }
+    if (url.pathname === '/admin/ctgov-backfill' && request.method === 'POST') {
+      return handleManualBackfill(request, env, cors);
+    }
 
     if (url.pathname.startsWith('/api/')) {
       return errorResponse(404, 'not_found', cors);
@@ -46,6 +58,14 @@ export default {
       return env.ASSETS.fetch(request);
     }
     return errorResponse(404, 'not_found', cors);
+  },
+
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      runScheduledSync(env).catch((err: unknown) => {
+        log({ route: 'scheduled', error: String(err) });
+      })
+    );
   },
 };
 
@@ -79,12 +99,9 @@ async function handleSignUpload(request: Request, env: Env, cors: Record<string,
       material_id: string;
       file_name: string;
       mime_type: string;
-    }>(
-      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
-      auth,
-      'prepare_material_upload',
-      { p_material_id: body.material_id }
-    );
+    }>({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }, auth, 'prepare_material_upload', {
+      p_material_id: body.material_id,
+    });
 
     const objectKey = `${meta.space_id}/${meta.material_id}/${meta.file_name}`;
     const url = await presignPut(
@@ -142,12 +159,9 @@ async function handleSignDownload(request: Request, env: Env, cors: Record<strin
       file_path: string;
       file_name: string;
       mime_type: string;
-    }>(
-      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
-      auth,
-      'download_material',
-      { p_material_id: body.material_id }
-    );
+    }>({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }, auth, 'download_material', {
+      p_material_id: body.material_id,
+    });
 
     const url = await presignGet(
       {
@@ -173,6 +187,71 @@ async function handleSignDownload(request: Request, env: Env, cors: Record<strin
     );
   } catch (e) {
     return handleError(e, 'sign-download', body.material_id, start, cors);
+  }
+}
+
+async function handleManualBackfill(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  const start = Date.now();
+  const auth = request.headers.get('Authorization');
+  if (!auth) {
+    log({ route: 'admin-ctgov-backfill', status: 401, duration_ms: Date.now() - start });
+    return errorResponse(401, 'unauthorized', cors);
+  }
+
+  // Gate via is_platform_admin(). The RPC reads auth.uid() from the
+  // forwarded JWT, so a valid bearer is required for the call to return
+  // anything truthy.
+  let isAdmin: boolean;
+  try {
+    isAdmin = await callRpc<boolean>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      auth,
+      'is_platform_admin',
+      {}
+    );
+  } catch {
+    log({ route: 'admin-ctgov-backfill', status: 401, duration_ms: Date.now() - start });
+    return errorResponse(401, 'unauthorized', cors);
+  }
+  if (!isAdmin) {
+    log({ route: 'admin-ctgov-backfill', status: 403, duration_ms: Date.now() - start });
+    return errorResponse(403, 'forbidden', cors);
+  }
+
+  let body: { nct_ids?: string[] };
+  try {
+    body = (await request.json()) as { nct_ids?: string[] };
+  } catch {
+    return errorResponse(400, 'invalid_json', cors);
+  }
+  if (!Array.isArray(body.nct_ids) || body.nct_ids.length === 0) {
+    return errorResponse(400, 'nct_ids_required', cors);
+  }
+
+  try {
+    const summary = await runManualBackfill(env, body.nct_ids);
+    log({
+      route: 'admin-ctgov-backfill',
+      status: 200,
+      duration_ms: Date.now() - start,
+      count: body.nct_ids.length,
+    });
+    return new Response(JSON.stringify(summary), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  } catch (e) {
+    log({
+      route: 'admin-ctgov-backfill',
+      status: 500,
+      duration_ms: Date.now() - start,
+      error: String(e),
+    });
+    return errorResponse(500, 'internal_error', cors);
   }
 }
 
