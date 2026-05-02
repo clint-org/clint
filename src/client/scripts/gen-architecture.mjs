@@ -239,6 +239,12 @@ async function genRPCMatrix(client) {
     join pg_namespace n on p.pronamespace = n.oid
     where n.nspname = 'public'
       and p.prokind = 'f'
+      -- Exclude functions installed by extensions (pg_trgm, pgcrypto, etc.).
+      -- pg_depend.deptype='e' marks an extension-owned object.
+      and not exists (
+        select 1 from pg_depend d
+        where d.objid = p.oid and d.deptype = 'e'
+      )
     order by p.proname
   `);
   const tablesQ = await client.query(`
@@ -392,7 +398,12 @@ async function genBackendDrift(client) {
     select p.proname as name
     from pg_proc p
     join pg_namespace n on p.pronamespace = n.oid
-    where n.nspname = 'public' and p.prokind = 'f'
+    where n.nspname = 'public'
+      and p.prokind = 'f'
+      and not exists (
+        select 1 from pg_depend d
+        where d.objid = p.oid and d.deptype = 'e'
+      )
     order by p.proname
   `);
   const rpcNames = procs.rows
@@ -488,6 +499,10 @@ async function genHelperDrift(client) {
     join pg_namespace n on p.pronamespace = n.oid
     where n.nspname = 'public' and p.prokind = 'f'
       and (p.proname like 'is\\_%' or p.proname like 'has\\_%' or p.proname like 'enforce\\_%')
+      and not exists (
+        select 1 from pg_depend d
+        where d.objid = p.oid and d.deptype = 'e'
+      )
     order by p.proname
   `);
   const helpers = procs.rows.map((r) => r.name);

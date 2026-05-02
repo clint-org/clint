@@ -36,10 +36,15 @@ erDiagram
   SPACES ||--o{ MARKER_TYPES : "space_id"
   MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
   SPACES ||--o{ MARKERS : "space_id"
+  MATERIALS ||--o{ MATERIAL_LINKS : "material_id"
+  SPACES ||--o{ MATERIALS : "space_id"
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
   MARKER_NOTIFICATIONS ||--o{ NOTIFICATION_READS : "notification_id"
   SPACES ||--o{ PALETTE_PINNED : "space_id"
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
+  SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_REVISIONS : "primary_intelligence_id"
   MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
   PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
   PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
@@ -489,10 +494,15 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 **Tables in `public` schema not mentioned:**
 - `marker_assignments`
 - `marker_notifications`
+- `material_links`
+- `materials`
 - `mechanisms_of_action`
 - `notification_reads`
 - `palette_pinned`
 - `palette_recents`
+- `primary_intelligence`
+- `primary_intelligence_links`
+- `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`

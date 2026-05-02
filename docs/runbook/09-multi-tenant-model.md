@@ -133,5 +133,6 @@ Auto-generated. Lists multi-tenant helper functions (`is_*`, `has_*`, `enforce_*
 - `enforce_subdomain_unique_across_tables`
 - `has_tenant_access`
 - `is_agency_member`
+- `is_agency_member_of_space`
 - `is_platform_admin`
 <!-- /AUTO-GEN:DRIFT -->
