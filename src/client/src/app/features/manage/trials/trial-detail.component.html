@@ -239,7 +239,7 @@
                   Start date
                 </dt>
                 <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-                  {{ t.phase_start_date || '--' }}
+                  {{ (t.phase_start_date | date: 'mediumDate') || '--' }}
                 </dd>
               </div>
               <div>
@@ -247,7 +247,7 @@
                   End date
                 </dt>
                 <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-                  {{ t.phase_end_date || '--' }}
+                  {{ (t.phase_end_date | date: 'mediumDate') || '--' }}
                 </dd>
               </div>
             </dl>
@@ -323,7 +323,7 @@
                   </td>
                   <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
                   <td class="col-secondary max-w-xs truncate">{{ marker.title }}</td>
-                  <td class="col-identifier">{{ marker.event_date }}</td>
+                  <td class="col-identifier">{{ marker.event_date | date: 'mediumDate' }}</td>
                   <td>
                     @if (marker.projection && marker.projection !== 'actual') {
                       <app-status-tag [label]="marker.projection" tone="amber" />
@@ -381,7 +381,7 @@
                   <div class="min-w-0 flex-1">
                     <p class="whitespace-pre-wrap text-sm text-slate-700">{{ note.content }}</p>
                     <p class="mt-1 font-mono text-[11px] text-slate-400 tabular-nums">
-                      {{ note.updated_at }}
+                      {{ note.updated_at | date: 'MMM d, y, h:mm a' }}
                     </p>
                   </div>
                   @if (spaceRole.canEdit()) {

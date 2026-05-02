@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
 import {
@@ -26,6 +27,7 @@ interface ActivityEntry {
 @Component({
   selector: 'app-recent-activity-feed',
   standalone: true,
+  imports: [DatePipe],
   template: `
     <section class="mb-4 border border-slate-200 bg-white">
       <header
@@ -47,7 +49,7 @@ interface ActivityEntry {
                   <span [class]="pillClass(entry.category)">{{ entry.pillLabel }}</span>
                   <span class="text-sm text-slate-700">{{ entry.subject }}</span>
                   <span class="ml-auto font-mono text-[11px] text-slate-400 tabular-nums">
-                    {{ entry.timestamp }}
+                    {{ entry.timestamp | date: 'MMM d, y, h:mm a' }}
                   </span>
                 </div>
                 @if (entry.changeNote) {
