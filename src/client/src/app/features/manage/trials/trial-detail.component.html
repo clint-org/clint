@@ -31,6 +31,7 @@
         >
           <a
             href="#primary-intelligence"
+            (click)="scrollToSection($event, 'primary-intelligence')"
             class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
           >
             Primary intelligence
@@ -38,6 +39,7 @@
           <span class="text-slate-300">|</span>
           <a
             href="#referenced-in"
+            (click)="scrollToSection($event, 'referenced-in')"
             class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
           >
             Referenced in
@@ -45,16 +47,25 @@
           <span class="text-slate-300">|</span>
           <a
             href="#recent-activity"
+            (click)="scrollToSection($event, 'recent-activity')"
             class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
           >
             Recent activity
           </a>
           <span class="text-slate-300">|</span>
-          <a href="#materials" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
+          <a
+            href="#materials"
+            (click)="scrollToSection($event, 'materials')"
+            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+          >
             Materials
           </a>
           <span class="text-slate-300">|</span>
-          <a href="#markers" class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700">
+          <a
+            href="#markers"
+            (click)="scrollToSection($event, 'markers')"
+            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+          >
             Markers
           </a>
         </nav>

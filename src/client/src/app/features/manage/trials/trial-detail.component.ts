@@ -289,4 +289,10 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   goBack(): void {
     this.location.back();
   }
+
+  scrollToSection(event: Event, id: string): void {
+    event.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState(null, '', `#${id}`);
+  }
 }
