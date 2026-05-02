@@ -1,0 +1,25 @@
+/**
+ * Shared "view all"-style action link used in section headers and card
+ * footers (e.g. "View feed", "All drafts", "All materials", "All catalysts").
+ * Mono, small-caps, brand color. Pair with a wrapper for separators or
+ * spacing — this class controls typography only.
+ */
+.section-action-link {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--brand-700);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.section-action-link:hover {
+  text-decoration: underline;
+}
+
+.section-action-link:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

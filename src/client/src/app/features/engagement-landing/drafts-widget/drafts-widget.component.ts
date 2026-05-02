@@ -44,7 +44,9 @@ import {
           }
         </ul>
         @if (allDraftsRoute()) {
-          <a [routerLink]="allDraftsRoute()" class="all-link">All drafts</a>
+          <a [routerLink]="allDraftsRoute()" class="section-action-link drafts-all-link">
+            All drafts
+          </a>
         }
       }
     </section>
@@ -145,18 +147,9 @@ import {
         line-height: 1;
         opacity: 0.6;
       }
-      .all-link {
+      .drafts-all-link {
         margin-top: 12px;
         display: inline-block;
-        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 10px;
-        color: var(--brand-700);
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        text-decoration: none;
-      }
-      .all-link:hover {
-        text-decoration: underline;
       }
     `,
   ],

@@ -31,10 +31,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
           <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Recent materials
           </h2>
-          <a
-            [href]="allMaterialsLink()"
-            class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
-          >
+          <a [href]="allMaterialsLink()" class="section-action-link">
             All materials
           </a>
         </header>
