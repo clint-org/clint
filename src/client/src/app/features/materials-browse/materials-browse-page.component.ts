@@ -14,6 +14,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 import { MaterialRowComponent } from '../../shared/components/material-row/material-row.component';
 import { MaterialPreviewDrawerComponent } from '../../shared/components/material-preview-drawer/material-preview-drawer.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { errorMessage } from '../../core/utils/error-message';
 
 type MaterialFilter = MaterialType | 'all';
 type EntityFilter = MaterialEntityType | 'all';
@@ -181,7 +182,7 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
       });
       this.rows.set(result.rows ?? []);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Could not load materials.');
+      this.error.set(errorMessage(e));
       this.rows.set([]);
     } finally {
       this.loading.set(false);
