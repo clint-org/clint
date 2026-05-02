@@ -47,8 +47,8 @@
             <app-material-row
               [material]="material"
               [showLinks]="true"
-              (rowClick)="onRowClick($event)"
               (downloadClick)="onDownloadClick($event)"
+              (deleteClick)="onDeleteClick($event)"
             />
           </li>
         }
@@ -68,11 +68,4 @@
     </div>
   }
 
-  <!-- Preview drawer -->
-  <app-material-preview-drawer
-    [visible]="previewVisible()"
-    [material]="previewMaterial()"
-    (closed)="onPreviewClosed()"
-    (deleted)="onPreviewDeleted()"
-  />
 </div>

@@ -1,21 +1,22 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { Material } from '../../../core/models/material.model';
 import { MaterialService } from '../../../core/services/material.service';
 import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialRowComponent } from '../../../shared/components/material-row/material-row.component';
-import { MaterialPreviewDrawerComponent } from '../../../shared/components/material-preview-drawer/material-preview-drawer.component';
+import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 /**
  * Recent materials feed for the engagement landing. Calls
  * list_recent_materials_for_space and renders a stack of
- * <app-material-row> cards. Hidden automatically when there are no
- * materials.
+ * <app-material-row> cards with inline download + delete. Hidden
+ * automatically when there are no materials and no error.
  */
 @Component({
   selector: 'app-recent-materials-widget',
   standalone: true,
-  imports: [MaterialRowComponent, MaterialPreviewDrawerComponent],
+  imports: [MaterialRowComponent],
   template: `
     @if (visible() && (loading() || error() || rows().length > 0)) {
       <section class="border border-slate-200 bg-white" aria-label="Recent materials">
@@ -44,8 +45,8 @@ import { MaterialPreviewDrawerComponent } from '../../../shared/components/mater
                   <app-material-row
                     [material]="material"
                     [showLinks]="true"
-                    (rowClick)="onRowClick($event)"
                     (downloadClick)="onDownloadClick($event)"
+                    (deleteClick)="onDeleteClick($event)"
                   />
                 </li>
               }
@@ -53,18 +54,13 @@ import { MaterialPreviewDrawerComponent } from '../../../shared/components/mater
           }
         </div>
       </section>
-
-      <app-material-preview-drawer
-        [visible]="previewVisible()"
-        [material]="previewMaterial()"
-        (closed)="onPreviewClosed()"
-        (deleted)="onPreviewDeleted()"
-      />
     }
   `,
 })
 export class RecentMaterialsWidgetComponent {
   private readonly materialService = inject(MaterialService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmation = inject(ConfirmationService);
 
   readonly spaceId = input.required<string>();
   readonly tenantId = input<string | null>(null);
@@ -79,8 +75,6 @@ export class RecentMaterialsWidgetComponent {
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly previewMaterial = signal<Material | null>(null);
-  protected readonly previewVisible = signal(false);
 
   protected readonly allMaterialsLink = computed(() => {
     const t = this.tenantId();
@@ -110,11 +104,6 @@ export class RecentMaterialsWidgetComponent {
     }
   }
 
-  protected onRowClick(material: Material): void {
-    this.previewMaterial.set(material);
-    this.previewVisible.set(true);
-  }
-
   protected async onDownloadClick(material: Material): Promise<void> {
     try {
       const { url } = await this.materialService.getDownloadUrl(material.id);
@@ -125,21 +114,41 @@ export class RecentMaterialsWidgetComponent {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {
-      this.previewMaterial.set(material);
-      this.previewVisible.set(true);
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not download material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
     }
   }
 
-  protected onPreviewClosed(): void {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-  }
+  protected async onDeleteClick(material: Material): Promise<void> {
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete material',
+      message:
+        `Delete "${material.title}"? The file and all of its links will be ` +
+        `permanently removed. This cannot be undone.`,
+    });
+    if (!ok) return;
 
-  protected async onPreviewDeleted(): Promise<void> {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-    const sid = this.spaceId();
-    if (sid) await this.load(sid, this.limit());
+    try {
+      await this.materialService.delete(material.id);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Material deleted.',
+        life: 3000,
+      });
+      const sid = this.spaceId();
+      if (sid) await this.load(sid, this.limit());
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
+    }
   }
 }

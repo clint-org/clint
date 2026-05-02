@@ -2,6 +2,7 @@ import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/c
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
   MATERIAL_TYPE_LABEL,
@@ -12,8 +13,8 @@ import {
 import { MaterialService } from '../../core/services/material.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { MaterialRowComponent } from '../../shared/components/material-row/material-row.component';
-import { MaterialPreviewDrawerComponent } from '../../shared/components/material-preview-drawer/material-preview-drawer.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { errorMessage } from '../../core/utils/error-message';
 
 type MaterialFilter = MaterialType | 'all';
@@ -21,7 +22,8 @@ type EntityFilter = MaterialEntityType | 'all';
 
 /**
  * Cross-cutting "All materials" page at /t/:tenant/s/:space/materials.
- * Recency-ordered, filterable by type and entity type.
+ * Recency-ordered, filterable by type and entity type. Each row has
+ * inline download + delete.
  */
 @Component({
   selector: 'app-materials-browse-page',
@@ -31,7 +33,6 @@ type EntityFilter = MaterialEntityType | 'all';
     ButtonModule,
     ManagePageShellComponent,
     MaterialRowComponent,
-    MaterialPreviewDrawerComponent,
   ],
   template: `
     <app-manage-page-shell>
@@ -98,21 +99,14 @@ type EntityFilter = MaterialEntityType | 'all';
                 <app-material-row
                   [material]="material"
                   [showLinks]="true"
-                  (rowClick)="onRowClick($event)"
                   (downloadClick)="onDownloadClick($event)"
+                  (deleteClick)="onDeleteClick($event)"
                 />
               </li>
             }
           </ul>
         }
       </div>
-
-      <app-material-preview-drawer
-        [visible]="previewVisible()"
-        [material]="previewMaterial()"
-        (closed)="onPreviewClosed()"
-        (deleted)="onPreviewDeleted()"
-      />
     </app-manage-page-shell>
   `,
 })
@@ -120,6 +114,8 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly materialService = inject(MaterialService);
   private readonly topbarState = inject(TopbarStateService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmation = inject(ConfirmationService);
 
   protected readonly spaceId = signal('');
   protected readonly typeFilter = signal<MaterialFilter>('all');
@@ -128,9 +124,6 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-
-  protected readonly previewMaterial = signal<Material | null>(null);
-  protected readonly previewVisible = signal(false);
 
   protected readonly typeFilters: { label: string; value: MaterialFilter }[] = [
     { label: 'All', value: 'all' },
@@ -197,11 +190,6 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
     this.entityFilter.set(next);
   }
 
-  protected onRowClick(material: Material): void {
-    this.previewMaterial.set(material);
-    this.previewVisible.set(true);
-  }
-
   protected async onDownloadClick(material: Material): Promise<void> {
     try {
       const { url } = await this.materialService.getDownloadUrl(material.id);
@@ -212,21 +200,41 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {
-      this.previewMaterial.set(material);
-      this.previewVisible.set(true);
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not download material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
     }
   }
 
-  protected onPreviewClosed(): void {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-  }
+  protected async onDeleteClick(material: Material): Promise<void> {
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete material',
+      message:
+        `Delete "${material.title}"? The file and all of its links will be ` +
+        `permanently removed. This cannot be undone.`,
+    });
+    if (!ok) return;
 
-  protected async onPreviewDeleted(): Promise<void> {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-    const sid = this.spaceId();
-    if (sid) await this.load(sid, this.typeFilter(), this.entityFilter());
+    try {
+      await this.materialService.delete(material.id);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Material deleted.',
+        life: 3000,
+      });
+      const sid = this.spaceId();
+      if (sid) await this.load(sid, this.typeFilter(), this.entityFilter());
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
+    }
   }
 }

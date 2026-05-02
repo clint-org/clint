@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 
 import {
   MATERIAL_ENTITY_LABEL,
@@ -7,27 +7,20 @@ import {
   MaterialFileKind,
   classifyMaterialMime,
 } from '../../../core/models/material.model';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 /**
  * Single row in a materials list. File-type icon (PPTX amber, PDF red,
- * DOCX blue) leads; title and metadata follow; an optional download
- * affordance sits at the end. The whole row is clickable to open the
- * preview drawer.
+ * DOCX blue) leads; title and metadata follow; inline Download and
+ * (uploader-only) Delete actions sit at the end. The row itself is no
+ * longer a button.
  */
 @Component({
   selector: 'app-material-row',
   standalone: true,
   imports: [],
   template: `
-    <div
-      class="group flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none"
-      role="button"
-      tabindex="0"
-      [attr.aria-label]="'Open ' + material().title"
-      (click)="rowClick.emit(material())"
-      (keydown.enter)="rowClick.emit(material())"
-      (keydown.space)="$event.preventDefault(); rowClick.emit(material())"
-    >
+    <div class="group flex w-full items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
       <!-- File-type badge (PPTX amber, PDF red, DOCX blue, other slate) -->
       <span
         class="flex h-9 w-7 shrink-0 items-center justify-center rounded-sm text-[9px] font-bold uppercase tracking-wider"
@@ -63,24 +56,43 @@ import {
         </div>
       </div>
 
-      <!-- Download icon -->
-      <button
-        type="button"
-        class="shrink-0 rounded-sm p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 group-hover:opacity-100"
-        (click)="$event.stopPropagation(); downloadClick.emit(material())"
-        [attr.aria-label]="'Download ' + material().title"
-      >
-        <i class="fa-solid fa-arrow-down text-xs"></i>
-      </button>
+      <!-- Action buttons (revealed on hover; always reachable via keyboard) -->
+      <div class="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          class="rounded-sm p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 group-hover:opacity-100"
+          (click)="downloadClick.emit(material())"
+          [attr.aria-label]="'Download ' + material().title"
+        >
+          <i class="fa-solid fa-arrow-down text-xs"></i>
+        </button>
+        @if (canDelete()) {
+          <button
+            type="button"
+            class="rounded-sm p-1.5 text-slate-400 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-400 group-hover:opacity-100"
+            (click)="deleteClick.emit(material())"
+            [attr.aria-label]="'Delete ' + material().title"
+          >
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        }
+      </div>
     </div>
   `,
 })
 export class MaterialRowComponent {
+  private readonly supabase = inject(SupabaseService);
+
   readonly material = input.required<Material>();
   readonly showLinks = input<boolean>(true);
 
-  readonly rowClick = output<Material>();
   readonly downloadClick = output<Material>();
+  readonly deleteClick = output<Material>();
+
+  protected readonly canDelete = computed(() => {
+    const userId = this.supabase.currentUser()?.id;
+    return !!userId && this.material().uploaded_by === userId;
+  });
 
   protected readonly kind = computed<MaterialFileKind>(() =>
     classifyMaterialMime(this.material().mime_type, this.material().file_name)

@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
   MATERIAL_TYPE_LABEL,
@@ -9,9 +10,9 @@ import {
 import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialService } from '../../../core/services/material.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { confirmDelete } from '../../utils/confirm-delete';
 import { MaterialRowComponent } from '../material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../material-upload-zone/material-upload-zone.component';
-import { MaterialPreviewDrawerComponent } from '../material-preview-drawer/material-preview-drawer.component';
 
 type MaterialFilter = MaterialType | 'all';
 
@@ -19,16 +20,18 @@ type MaterialFilter = MaterialType | 'all';
  * Entity-level Materials section. Drops onto trial / company / product /
  * marker detail pages. Loads via list_materials_for_entity, supports a
  * type-filter chip strip (All / Briefing / Priority Notice / Ad Hoc),
- * and exposes an upload zone + preview drawer.
+ * and exposes an upload zone. Each row has inline download + delete.
  */
 @Component({
   selector: 'app-materials-section',
   standalone: true,
-  imports: [MaterialRowComponent, MaterialUploadZoneComponent, MaterialPreviewDrawerComponent],
+  imports: [MaterialRowComponent, MaterialUploadZoneComponent],
   templateUrl: './materials-section.component.html',
 })
 export class MaterialsSectionComponent implements OnInit {
   private readonly materialService = inject(MaterialService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmation = inject(ConfirmationService);
   protected readonly spaceRole = inject(SpaceRoleService);
 
   readonly entityType = input.required<MaterialEntityType>();
@@ -40,8 +43,6 @@ export class MaterialsSectionComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
 
   protected readonly activeFilter = signal<MaterialFilter>('all');
-  protected readonly previewMaterial = signal<Material | null>(null);
-  protected readonly previewVisible = signal(false);
 
   protected readonly typeFilters: { label: string; value: MaterialFilter }[] = [
     { label: 'All', value: 'all' },
@@ -99,11 +100,6 @@ export class MaterialsSectionComponent implements OnInit {
     await this.load();
   }
 
-  protected onRowClick(material: Material): void {
-    this.previewMaterial.set(material);
-    this.previewVisible.set(true);
-  }
-
   protected async onDownloadClick(material: Material): Promise<void> {
     try {
       const { url } = await this.materialService.getDownloadUrl(material.id);
@@ -114,21 +110,40 @@ export class MaterialsSectionComponent implements OnInit {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {
-      // Fall through; the preview drawer surfaces a more visible error.
-      this.previewMaterial.set(material);
-      this.previewVisible.set(true);
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not download material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
     }
   }
 
-  protected onPreviewClosed(): void {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-  }
+  protected async onDeleteClick(material: Material): Promise<void> {
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete material',
+      message:
+        `Delete "${material.title}"? The file and all of its links will be ` +
+        `permanently removed. This cannot be undone.`,
+    });
+    if (!ok) return;
 
-  protected async onPreviewDeleted(): Promise<void> {
-    this.previewVisible.set(false);
-    this.previewMaterial.set(null);
-    await this.load();
+    try {
+      await this.materialService.delete(material.id);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Material deleted.',
+        life: 3000,
+      });
+      await this.load();
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not delete material',
+        detail: errorMessage(e),
+        life: 4000,
+      });
+    }
   }
 }
