@@ -268,21 +268,24 @@ export const routes: Routes = [
                     (m) => m.CatalystsPageComponent
                   ),
               },
-              {
-                path: 'intelligence',
-                loadComponent: () =>
-                  import('./shared/components/intelligence-browse/intelligence-browse.component').then(
-                    (m) => m.IntelligenceBrowseComponent
-                  ),
-              },
-              {
-                path: 'materials',
-                loadComponent: () =>
-                  import('./features/materials-browse/materials-browse-page.component').then(
-                    (m) => m.MaterialsBrowsePageComponent
-                  ),
-              },
             ],
+          },
+          // Intelligence and Materials are browse views, not landscape
+          // visualisations -- siblings of landscape-shell so they don't
+          // inherit its filter bar.
+          {
+            path: 'intelligence',
+            loadComponent: () =>
+              import(
+                './shared/components/intelligence-browse/intelligence-browse.component'
+              ).then((m) => m.IntelligenceBrowseComponent),
+          },
+          {
+            path: 'materials',
+            loadComponent: () =>
+              import('./features/materials-browse/materials-browse-page.component').then(
+                (m) => m.MaterialsBrowsePageComponent
+              ),
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
           {

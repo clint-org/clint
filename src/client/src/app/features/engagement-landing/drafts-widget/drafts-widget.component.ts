@@ -34,7 +34,12 @@ import {
         <ul class="drafts-list">
           @for (draft of drafts(); track draft.id) {
             <li class="draft-row">
-              <a [routerLink]="draftRoute(draft)" class="draft-headline">{{ draft.headline }}</a>
+              <a
+                [routerLink]="draftRoute(draft)"
+                [queryParams]="draftQueryParams(draft)"
+                class="draft-headline"
+                >{{ draft.headline }}</a
+              >
               <p class="draft-meta">
                 <span class="draft-entity">{{ entityLabel(draft) }}</span>
                 <span aria-hidden="true" class="dot">.</span>
@@ -44,7 +49,11 @@ import {
           }
         </ul>
         @if (allDraftsRoute()) {
-          <a [routerLink]="allDraftsRoute()" class="section-action-link drafts-all-link">
+          <a
+            [routerLink]="allDraftsRoute()"
+            [queryParams]="{ status: 'drafts' }"
+            class="section-action-link drafts-all-link"
+          >
             All drafts
           </a>
         }
@@ -178,6 +187,10 @@ export class DraftsWidgetComponent {
       return ['/t', t, 's', s, 'manage', 'trials', draft.entity_id];
     }
     return ['/t', t, 's', s, 'intelligence'];
+  }
+
+  protected draftQueryParams(draft: IntelligenceFeedRow): Record<string, string> | null {
+    return draft.entity_type === 'trial' ? null : { status: 'drafts' };
   }
 
   protected formatStamp(iso: string): string {

@@ -9,6 +9,18 @@
 @import './app/features/landscape/landscape.css';
 @plugin "tailwindcss-primeui";
 
+/* Search-term highlight used by intelligence feed rows and other browse
+   surfaces. Lives in global styles because the highlight is injected
+   into [innerHTML] payloads, which view-encapsulated component styles
+   cannot reach. Tinted slate/amber rather than pure yellow to stay on
+   brand. */
+mark.search-hit {
+  background-color: #fef3c7;
+  color: #78350f;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
 @theme {
   --color-brand-50:  var(--brand-50,  #f0fdfa);
   --color-brand-100: var(--brand-100, #ccfbf1);

@@ -221,8 +221,8 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
         /by-company   PositioningViewComponent
         /by-roa   PositioningViewComponent
       /catalysts   CatalystsPageComponent
-      /intelligence   IntelligenceBrowseComponent
-      /materials   MaterialsBrowsePageComponent
+    /intelligence   IntelligenceBrowseComponent
+    /materials   MaterialsBrowsePageComponent
     /landscape   -> bullseye/by-therapy-area
     /landscape/by-therapy-area   -> bullseye/by-therapy-area
     /landscape/by-therapy-area/:entityId   -> bullseye/by-therapy-area/:entityId

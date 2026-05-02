@@ -15,6 +15,8 @@ export const NAV_ICONS: Record<string, string> = {
   // Intelligence pages
   events: 'fa-solid fa-calendar-day',
   catalysts: 'fa-solid fa-bolt',
+  'intelligence-feed': 'fa-solid fa-newspaper',
+  materials: 'fa-solid fa-folder-open',
 
   // Manage pages
   companies: 'fa-solid fa-building',

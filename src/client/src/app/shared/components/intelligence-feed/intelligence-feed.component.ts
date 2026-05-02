@@ -7,6 +7,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { BrandContextService } from '../../../core/services/brand-context.service';
 import { renderMarkdownInline } from '../../utils/markdown-render';
+import { highlightHtml, highlightPlain } from '../../utils/highlight-search';
 
 /**
  * Recency-ordered feed of published primary intelligence reads. Used on
@@ -30,9 +31,8 @@ import { renderMarkdownInline } from '../../utils/markdown-render';
             <a
               [routerLink]="entityRouterLink(row)"
               class="text-sm font-semibold text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
-            >
-              {{ row.headline }}
-            </a>
+              [innerHTML]="headline(row)"
+            ></a>
             <span class="ml-auto font-mono text-[10px] text-slate-400 tabular-nums">
               {{ formatDate(row.updated_at) }}
             </span>
@@ -56,6 +56,8 @@ export class IntelligenceFeedComponent {
   readonly rows = input<IntelligenceFeedRow[]>([]);
   readonly tenantId = input<string | null>(null);
   readonly spaceId = input<string | null>(null);
+  /** Optional active search query -- when set, occurrences are wrapped in <mark>. */
+  readonly query = input<string>('');
 
   protected readonly agencyName = computed(() => {
     const b = this.brand.brand();
@@ -77,9 +79,13 @@ export class IntelligenceFeedComponent {
     return ['/t', t, 's', s, 'intelligence'];
   }
 
+  protected headline(row: IntelligenceFeedRow): string {
+    return highlightPlain(row.headline ?? '', this.query());
+  }
+
   protected excerpt(row: IntelligenceFeedRow): string {
     const html = renderMarkdownInline(row.thesis_md ?? '');
-    return html;
+    return highlightHtml(html, this.query());
   }
 
   protected formatDate(iso: string): string {
