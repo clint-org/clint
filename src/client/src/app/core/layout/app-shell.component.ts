@@ -372,7 +372,8 @@ export class AppShellComponent implements OnInit {
     const route = this.activeSpaceRoute();
     if (route.startsWith('manage/')) return 'manage';
     if (route.startsWith('settings/')) return 'settings';
-    if (route === 'events') return 'intelligence';
+    if (route === 'events' || route === 'intelligence' || route === 'materials')
+      return 'intelligence';
     if (route === 'catalysts') return 'landscape';
     return 'landscape';
   });
@@ -392,6 +393,8 @@ export class AppShellComponent implements OnInit {
       route.startsWith('bullseye') ||
       route.startsWith('positioning') ||
       route === 'events' ||
+      route === 'intelligence' ||
+      route === 'materials' ||
       route === 'catalysts' ||
       route.startsWith('manage/')
     ) {
@@ -457,6 +460,18 @@ export class AppShellComponent implements OnInit {
         ];
       case 'intelligence':
         return [
+          {
+            label: 'Intelligence Feed',
+            value: 'intelligence',
+            active: route === 'intelligence',
+            icon: NAV_ICONS['intelligence-feed'],
+          },
+          {
+            label: 'Materials',
+            value: 'materials',
+            active: route === 'materials',
+            icon: NAV_ICONS['materials'],
+          },
           {
             label: 'Events',
             value: 'events',
