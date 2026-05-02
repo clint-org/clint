@@ -11,8 +11,8 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import {
   BullseyeDimension,
   BullseyeProduct,
@@ -38,7 +38,7 @@ import { LandscapeStateService } from './landscape-state.service';
     RouterLink,
     ButtonModule,
     MessageModule,
-    ProgressSpinner,
+    SkeletonComponent,
   ],
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],

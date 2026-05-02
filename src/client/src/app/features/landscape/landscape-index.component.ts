@@ -2,15 +2,15 @@ import { Component, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { BullseyeDimension } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 
 @Component({
   selector: 'app-landscape-index',
   standalone: true,
-  imports: [RouterLink, ButtonModule, MessageModule, ProgressSpinner],
+  imports: [RouterLink, ButtonModule, MessageModule, SkeletonComponent],
   templateUrl: './landscape-index.component.html',
 })
 export class LandscapeIndexComponent implements OnInit {
@@ -20,6 +20,7 @@ export class LandscapeIndexComponent implements OnInit {
   readonly tenantId = signal('');
   readonly spaceId = signal('');
   readonly dimension = signal<BullseyeDimension>('therapeutic-area');
+  protected readonly skeletonCards = [0, 1, 2, 3, 4, 5, 6, 7];
 
   private static parseDimension(segment: string): BullseyeDimension {
     const map: Record<string, BullseyeDimension> = {

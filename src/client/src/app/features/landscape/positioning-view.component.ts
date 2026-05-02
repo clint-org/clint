@@ -1,9 +1,9 @@
 import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { PositioningBubble, PositioningGrouping } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
@@ -19,22 +19,19 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
     PositioningChartComponent,
     PositioningDetailPanelComponent,
     PositioningTooltipComponent,
-    ProgressSpinner,
+    SkeletonComponent,
     MessageModule,
     ButtonModule,
   ],
   animations: [slidePanelAnimation],
   template: `
     @if (positioningData.isLoading()) {
-      <div class="flex items-center justify-center h-full">
-        <div class="flex flex-col items-center gap-3">
-          <p-progressspinner
-            strokeWidth="4"
-            [style]="{ width: '2rem', height: '2rem' }"
-            aria-label="Loading positioning data"
-          />
-          <span class="text-sm text-slate-500">Loading positioning data...</span>
-        </div>
+      <div
+        class="flex h-full items-center justify-center"
+        aria-busy="true"
+        aria-label="Loading positioning data"
+      >
+        <app-skeleton w="200px" h="14px" />
       </div>
     } @else if (positioningData.error()) {
       <div class="flex items-center justify-center h-full">

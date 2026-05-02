@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { PaginatorModule } from 'primeng/paginator';
 
 import {
@@ -14,6 +13,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
@@ -38,9 +38,9 @@ const PAGE_SIZE = 25;
     InputTextModule,
     MultiSelectModule,
     DatePickerModule,
-    ProgressSpinnerModule,
     PaginatorModule,
     IntelligenceFeedComponent,
+    SkeletonComponent,
   ],
   template: `
     <div class="page-shell">
@@ -87,10 +87,32 @@ const PAGE_SIZE = 25;
       </section>
 
       @if (loading()) {
-        <div class="flex items-center gap-3 py-8 text-sm text-slate-500">
-          <p-progressspinner strokeWidth="4" [style]="{ width: '1.25rem', height: '1.25rem' }" />
-          Loading reads...
-        </div>
+        <ul
+          class="divide-y divide-slate-100 border border-slate-200 bg-white"
+          aria-busy="true"
+          aria-label="Loading reads"
+        >
+          @for (i of skeletonRows; track i) {
+            <li class="px-4 py-3" aria-hidden="true">
+              <div class="mb-1 flex items-baseline gap-2">
+                <app-skeleton w="44px" h="14px" />
+                <app-skeleton w="220px" h="14px" />
+                <span class="ml-auto inline-flex">
+                  <app-skeleton w="62px" h="10px" />
+                </span>
+              </div>
+              <div class="mt-1.5">
+                <app-skeleton [block]="true" w="100%" h="11px" />
+              </div>
+              <div class="mt-1">
+                <app-skeleton [block]="true" w="62%" h="11px" />
+              </div>
+              <div class="mt-2">
+                <app-skeleton w="84px" h="10px" />
+              </div>
+            </li>
+          }
+        </ul>
       } @else {
         <app-intelligence-feed [rows]="rows()" [tenantId]="tenantId()" [spaceId]="spaceId()" />
 
@@ -114,6 +136,7 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
   protected readonly entityTypeOptions = ENTITY_TYPES;
+  protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   protected readonly tenantId = signal<string | null>(null);
   protected readonly spaceId = signal<string | null>(null);

@@ -1,15 +1,34 @@
 <div class="relative flex flex-col h-full">
   <div class="flex-1 overflow-auto px-4 pb-0">
     @if (state.dataLoading()) {
-      <div class="flex items-center justify-center py-20">
-        <div class="flex flex-col items-center gap-3">
-          <p-progressspinner
-            strokeWidth="4"
-            [style]="{ width: '2rem', height: '2rem' }"
-            aria-label="Loading dashboard data"
-          />
-          <span class="text-sm text-slate-500">Loading dashboard data...</span>
+      <div
+        class="flex flex-col rounded-lg border border-slate-200"
+        aria-busy="true"
+        aria-label="Loading dashboard data"
+      >
+        <div class="flex h-8 items-center gap-3 border-b border-slate-300 bg-slate-800 px-3">
+          <app-skeleton w="56px" h="9px" />
+          <app-skeleton w="48px" h="9px" />
+          <app-skeleton w="40px" h="9px" />
+          <span class="ml-auto inline-flex">
+            <app-skeleton w="120px" h="9px" />
+          </span>
         </div>
+        @for (i of skeletonRows; track i) {
+          <div
+            class="flex items-center gap-4 border-b border-slate-200 px-3"
+            [class.bg-slate-50]="i % 2 !== 0"
+            [style.height.px]="36"
+            aria-hidden="true"
+          >
+            <app-skeleton w="92px" h="11px" />
+            <app-skeleton w="120px" h="11px" />
+            <app-skeleton w="160px" h="11px" />
+            <span class="ml-auto inline-flex" [style.width.%]="50">
+              <app-skeleton [block]="true" w="100%" h="10px" />
+            </span>
+          </div>
+        }
       </div>
     } @else if (state.dataError()) {
       <div class="flex items-center justify-center py-20">

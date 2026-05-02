@@ -5,8 +5,8 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
+import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
 import { TrialService } from '../../../core/services/trial.service';
@@ -38,7 +38,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     TableModule,
     ButtonModule,
     MessageModule,
-    ProgressSpinnerModule,
+    SkeletonComponent,
     TrialFormComponent,
     MarkerFormComponent,
     NoteFormComponent,

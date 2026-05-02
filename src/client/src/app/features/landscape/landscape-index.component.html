@@ -1,15 +1,27 @@
 <div class="flex flex-col h-full">
   <div class="flex-1 overflow-auto p-6">
     @if (indexData.isLoading()) {
-      <div class="flex items-center justify-center py-20">
-        <div class="flex flex-col items-center gap-3">
-          <p-progressspinner
-            strokeWidth="4"
-            [style]="{ width: '2rem', height: '2rem' }"
-            aria-label="Loading entries"
-          />
-          <span class="text-sm text-slate-500">Loading...</span>
-        </div>
+      <div
+        class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        aria-busy="true"
+        aria-label="Loading entries"
+      >
+        @for (i of skeletonCards; track i) {
+          <div
+            class="landscape-index-card pointer-events-none"
+            aria-hidden="true"
+            style="border-color: #e2e8f0;"
+          >
+            <app-skeleton w="62%" h="16px" />
+            <div class="mt-1.5">
+              <app-skeleton w="40%" h="11px" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <app-skeleton w="68px" h="13px" />
+              <app-skeleton w="78px" h="13px" />
+            </div>
+          </div>
+        }
       </div>
     } @else if (indexData.error()) {
       <div class="flex items-center justify-center py-20">

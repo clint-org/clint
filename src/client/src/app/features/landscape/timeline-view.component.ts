@@ -2,10 +2,10 @@ import { Component, computed, DestroyRef, effect, inject, signal } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
@@ -20,7 +20,7 @@ import { LandscapeStateService } from './landscape-state.service';
     LegendComponent,
     ButtonModule,
     MessageModule,
-    ProgressSpinner,
+    SkeletonComponent,
   ],
   templateUrl: './timeline-view.component.html',
 })
@@ -36,6 +36,7 @@ export class TimelineViewComponent {
   readonly exportDialogOpen = signal(false);
 
   readonly companies = computed(() => this.state.filteredCompanies());
+  protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
 
   constructor() {
     const destroyRef = inject(DestroyRef);
