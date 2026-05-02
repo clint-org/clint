@@ -1629,3 +1629,558 @@ $$;
 
 comment on function public._seed_demo_primary_intelligence(uuid, uuid) is
   'Seeds 8 published primary intelligence reads (6 trial-anchored, 1 company-anchored, 1 space-thematic) plus 2 drafts (1 marker-anchored, 1 trial-anchored). Includes cross-entity links via primary_intelligence_links. Runs as security definer so the orchestrators space-owner gate is the authoritative permission check.';
+
+-- =============================================================================
+-- 13. helper: _seed_demo_materials (~76 materials over 36-month engagement)
+-- =============================================================================
+-- 36 monthly briefings (programmatic) + 15 conference reports + 13 priority
+-- notices + 12 ad hoc memos = 76 total. File rows reference plausible storage
+-- paths but no bytes are uploaded; download flows 404 cleanly by design.
+
+create or replace function public._seed_demo_materials(
+  p_space_id uuid,
+  p_uid      uuid
+) returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  -- Trials
+  t_surmount_1     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_1');
+  t_surpass_2      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surpass_2');
+  t_step_1         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_step_1');
+  t_select         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_select');
+  t_summit         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_summit');
+  t_surmount_osa   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_osa');
+  t_attain_1       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_attain_1');
+  t_flow           uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_flow');
+  t_redefine_1     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_redefine_1');
+  t_deliver        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_deliver');
+  t_emperor_preserved uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_emperor_preserved');
+  t_empact_mi      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_empact_mi');
+  t_survodutide_p2 uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_survodutide_p2');
+  t_fineart_hf     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_fineart_hf');
+  t_sequoia_hcm    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_sequoia_hcm');
+  t_odyssey_hcm    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_odyssey_hcm');
+  t_explorer_hcm   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_explorer_hcm');
+
+  -- Companies
+  c_apex     uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_apex');
+  c_helios   uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_helios');
+  c_meridian uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_meridian');
+  c_vantage  uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_vantage');
+  c_cascade  uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_cascade');
+  c_zenith   uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_zenith');
+  c_atlas    uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_atlas');
+  c_solara   uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_solara');
+  c_polaris  uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_polaris');
+  c_vortex   uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_vortex');
+
+  -- Products
+  p_mounjaro     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_mounjaro');
+  p_zepbound     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_zepbound');
+  p_wegovy       uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_wegovy');
+  p_ozempic      uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_ozempic');
+  p_cagrisema    uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_cagrisema');
+  p_jardiance    uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_jardiance');
+  p_aficamten    uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_aficamten');
+  p_camzyos      uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_camzyos');
+  p_attruby      uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_attruby');
+  p_vyndaqel     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_vyndaqel');
+  p_kerendia     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_kerendia');
+  p_leqvio       uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_leqvio');
+  p_entresto     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_entresto');
+  p_orforglipron uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_orforglipron');
+  p_retatrutide  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_retatrutide');
+  p_maritide     uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_maritide');
+  p_vk2735_sc    uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_vk2735_sc');
+  p_ct388        uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_ct388');
+  p_ct996        uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_ct996');
+  p_danuglipron  uuid := (select id from _seed_ids where entity_type = 'product' and key = 'p_danuglipron');
+
+  -- Bespoke material UUIDs
+  mat_id uuid;
+begin
+  -- =========================================================================
+  -- MONTHLY BRIEFINGS (36) - programmatic via generate_series
+  -- =========================================================================
+
+  with months as (
+    select generate_series(
+      date '2023-05-01',
+      date '2026-04-01',
+      interval '1 month'
+    ) as month_start
+  ),
+  materials_to_insert as (
+    select
+      gen_random_uuid() as mat_id,
+      m.month_start,
+      'competitive-landscape-briefing-' || to_char(m.month_start, 'YYYY-MM') || '.pptx' as file_name
+    from months m
+  ),
+  inserted as (
+    insert into public.materials (
+      id, space_id, uploaded_by, file_path, file_name, file_size_bytes,
+      mime_type, material_type, title, uploaded_at, finalized_at
+    )
+    select
+      mti.mat_id,
+      p_space_id,
+      p_uid,
+      'materials/' || p_space_id::text || '/' || mti.mat_id::text || '/' || mti.file_name,
+      mti.file_name,
+      1500000 + (random()*1500000)::bigint,
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'briefing',
+      'Competitive landscape briefing, ' || to_char(mti.month_start, 'Mon YYYY'),
+      mti.month_start + interval '1 day',
+      mti.month_start + interval '1 day'
+    from materials_to_insert mti
+    returning id
+  )
+  insert into public.material_links (material_id, entity_type, entity_id, display_order)
+  select id, 'space', p_space_id, 0 from inserted;
+
+  -- =========================================================================
+  -- CONFERENCE REPORTS (15) - bespoke
+  -- =========================================================================
+
+  -- ADA 2023
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/ada-2023-conference-report.pdf',
+     'ada-2023-conference-report.pdf', 2100000, 'application/pdf', 'conference_report',
+     'ADA 2023 conference report: SURPASS series and oral semaglutide updates', '2023-06-30', '2023-06-30');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_surpass_2, 0),
+    (mat_id, 'trial', t_step_1, 1);
+
+  -- ESC 2023
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/esc-2023-conference-report.pdf',
+     'esc-2023-conference-report.pdf', 2300000, 'application/pdf', 'conference_report',
+     'ESC 2023 conference report: DELIVER subgroups and EMPEROR analyses', '2023-09-04', '2023-09-04');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_deliver, 0),
+    (mat_id, 'trial', t_emperor_preserved, 1);
+
+  -- EASD 2023
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/easd-2023-conference-report.pdf',
+     'easd-2023-conference-report.pdf', 1900000, 'application/pdf', 'conference_report',
+     'EASD 2023 conference report: SURMOUNT readouts in obesity', '2023-09-29', '2023-09-29');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_surmount_1, 0);
+
+  -- AHA 2023
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/aha-2023-conference-report.pdf',
+     'aha-2023-conference-report.pdf', 2400000, 'application/pdf', 'conference_report',
+     'AHA 2023 conference report: SELECT NEJM and EMPACT-MI design', '2023-11-20', '2023-11-20');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_select, 0);
+
+  -- ObesityWeek 2023
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/obesityweek-2023-conference-report.pdf',
+     'obesityweek-2023-conference-report.pdf', 1800000, 'application/pdf', 'conference_report',
+     'ObesityWeek 2023 conference report: tirzepatide vs semaglutide head-to-head signals', '2023-10-22', '2023-10-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_surmount_1, 0),
+    (mat_id, 'trial', t_step_1, 1);
+
+  -- ADA 2024
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/ada-2024-conference-report.pdf',
+     'ada-2024-conference-report.pdf', 2200000, 'application/pdf', 'conference_report',
+     'ADA 2024 conference report: FLOW and tirzepatide HFpEF SUMMIT preview', '2024-06-28', '2024-06-28');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_flow, 0),
+    (mat_id, 'trial', t_summit, 1);
+
+  -- ESC 2024
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/esc-2024-conference-report.pdf',
+     'esc-2024-conference-report.pdf', 2500000, 'application/pdf', 'conference_report',
+     'ESC 2024 conference report: FINEARTS-HF positive and EMPACT-MI failure', '2024-09-04', '2024-09-04');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_fineart_hf, 0),
+    (mat_id, 'trial', t_empact_mi, 1);
+
+  -- EASD 2024
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/easd-2024-conference-report.pdf',
+     'easd-2024-conference-report.pdf', 2000000, 'application/pdf', 'conference_report',
+     'EASD 2024 conference report: CagriSema preview and REDEFINE expectations', '2024-09-23', '2024-09-23');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_redefine_1, 0);
+
+  -- AHA 2024
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/aha-2024-conference-report.pdf',
+     'aha-2024-conference-report.pdf', 2700000, 'application/pdf', 'conference_report',
+     'AHA 2024 conference report: SUMMIT NEJM and SEQUOIA-HCM full results', '2024-11-20', '2024-11-20');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_summit, 0),
+    (mat_id, 'trial', t_sequoia_hcm, 1);
+
+  -- ObesityWeek 2024
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/obesityweek-2024-conference-report.pdf',
+     'obesityweek-2024-conference-report.pdf', 2100000, 'application/pdf', 'conference_report',
+     'ObesityWeek 2024 conference report: Zepbound real-world and retatrutide P2 update', '2024-11-08', '2024-11-08');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial',   t_summit, 0),
+    (mat_id, 'product', p_zepbound, 1);
+
+  -- ADA 2025
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/ada-2025-conference-report.pdf',
+     'ada-2025-conference-report.pdf', 2300000, 'application/pdf', 'conference_report',
+     'ADA 2025 conference report: orforglipron Phase 3 preview and Mounjaro long-term', '2025-06-26', '2025-06-26');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_attain_1, 0);
+
+  -- ESC 2025
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/esc-2025-conference-report.pdf',
+     'esc-2025-conference-report.pdf', 2600000, 'application/pdf', 'conference_report',
+     'ESC 2025 conference report: aficamten launch outlook and finerenone HFpEF rollout', '2025-09-03', '2025-09-03');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_sequoia_hcm, 0),
+    (mat_id, 'trial', t_fineart_hf, 1);
+
+  -- EASD 2025
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/easd-2025-conference-report.pdf',
+     'easd-2025-conference-report.pdf', 2000000, 'application/pdf', 'conference_report',
+     'EASD 2025 conference report: survodutide P3 design and the GLP-1 oral race', '2025-09-22', '2025-09-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_survodutide_p2, 0);
+
+  -- AHA 2025
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/aha-2025-conference-report.pdf',
+     'aha-2025-conference-report.pdf', 2500000, 'application/pdf', 'conference_report',
+     'AHA 2025 conference report: MAPLE-HCM preview and GLP-1 in cardiology guidelines', '2025-11-19', '2025-11-19');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_sequoia_hcm, 0);
+
+  -- ObesityWeek 2025
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/obesityweek-2025-conference-report.pdf',
+     'obesityweek-2025-conference-report.pdf', 2200000, 'application/pdf', 'conference_report',
+     'ObesityWeek 2025 conference report: tirzepatide vs CagriSema field data', '2025-11-05', '2025-11-05');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_redefine_1, 0);
+
+  -- =========================================================================
+  -- PRIORITY NOTICES (13) - bespoke
+  -- =========================================================================
+
+  -- 1. SELECT NEJM
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/select-nejm-priority-notice.pdf',
+     'select-nejm-priority-notice.pdf', 850000, 'application/pdf', 'priority_notice',
+     'Priority notice: SELECT NEJM publication and CV-outcomes label implications', '2023-11-13', '2023-11-13');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_select, 0),
+    (mat_id, 'product', p_wegovy, 1);
+
+  -- 2. Pfizer danuglipron DC
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/pfizer-danuglipron-discontinuation-priority-notice.pdf',
+     'pfizer-danuglipron-discontinuation-priority-notice.pdf', 720000, 'application/pdf', 'priority_notice',
+     'Priority notice: Pfizer discontinues danuglipron program', '2023-12-01', '2023-12-01');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'company', c_apex, 0),
+    (mat_id, 'product', p_danuglipron, 1);
+
+  -- 3. Roche / Carmot
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/roche-carmot-priority-notice.pdf',
+     'roche-carmot-priority-notice.pdf', 880000, 'application/pdf', 'priority_notice',
+     'Priority notice: Roche acquires Carmot for $2.7B', '2023-12-04', '2023-12-04');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'company', c_cascade, 0),
+    (mat_id, 'product', p_ct388, 1),
+    (mat_id, 'product', p_ct996, 2);
+
+  -- 4. Viking VK2735
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/viking-vk2735-readout-priority-notice.pdf',
+     'viking-vk2735-readout-priority-notice.pdf', 940000, 'application/pdf', 'priority_notice',
+     'Priority notice: Viking VK2735 P2 readout, stock plus 120 percent', '2024-02-27', '2024-02-27');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'company', c_zenith, 0),
+    (mat_id, 'product', p_vk2735_sc, 1);
+
+  -- 5. FLOW
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/flow-readout-priority-notice.pdf',
+     'flow-readout-priority-notice.pdf', 800000, 'application/pdf', 'priority_notice',
+     'Priority notice: FLOW positive readout in CKD with T2D', '2024-03-12', '2024-03-12');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_flow, 0),
+    (mat_id, 'product', p_ozempic, 1);
+
+  -- 6. EMPACT-MI
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/empact-mi-failure-priority-notice.pdf',
+     'empact-mi-failure-priority-notice.pdf', 760000, 'application/pdf', 'priority_notice',
+     'Priority notice: EMPACT-MI fails primary in post-MI population', '2024-04-08', '2024-04-08');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_empact_mi, 0),
+    (mat_id, 'product', p_jardiance, 1);
+
+  -- 7. SUMMIT
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/summit-readout-priority-notice.pdf',
+     'summit-readout-priority-notice.pdf', 920000, 'application/pdf', 'priority_notice',
+     'Priority notice: SUMMIT positive in HFpEF with obesity', '2024-08-23', '2024-08-23');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_summit, 0),
+    (mat_id, 'product', p_zepbound, 1);
+
+  -- 8. SEQUOIA-HCM
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/sequoia-hcm-priority-notice.pdf',
+     'sequoia-hcm-priority-notice.pdf', 870000, 'application/pdf', 'priority_notice',
+     'Priority notice: SEQUOIA-HCM full results and NDA filing planned', '2024-09-03', '2024-09-03');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_sequoia_hcm, 0),
+    (mat_id, 'product', p_aficamten, 1);
+
+  -- 9. ODYSSEY-HCM
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/odyssey-hcm-failure-priority-notice.pdf',
+     'odyssey-hcm-failure-priority-notice.pdf', 770000, 'application/pdf', 'priority_notice',
+     'Priority notice: ODYSSEY-HCM fails primary in non-obstructive HCM', '2024-10-15', '2024-10-15');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_odyssey_hcm, 0),
+    (mat_id, 'product', p_camzyos, 1);
+
+  -- 10. Attruby approval
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/attruby-approval-priority-notice.pdf',
+     'attruby-approval-priority-notice.pdf', 810000, 'application/pdf', 'priority_notice',
+     'Priority notice: Attruby (acoramidis) FDA approval', '2024-11-22', '2024-11-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_attruby, 0),
+    (mat_id, 'company', c_atlas, 1);
+
+  -- 11. Zepbound OSA
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/zepbound-osa-priority-notice.pdf',
+     'zepbound-osa-priority-notice.pdf', 830000, 'application/pdf', 'priority_notice',
+     'Priority notice: Zepbound approved for OSA', '2024-12-20', '2024-12-20');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_surmount_osa, 0),
+    (mat_id, 'product', p_zepbound, 1);
+
+  -- 12. REDEFINE-1
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/redefine-1-priority-notice.pdf',
+     'redefine-1-priority-notice.pdf', 890000, 'application/pdf', 'priority_notice',
+     'Priority notice: REDEFINE-1 misses 25 percent bar, CagriSema thesis impaired', '2024-12-21', '2024-12-21');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_redefine_1, 0),
+    (mat_id, 'product', p_cagrisema, 1);
+
+  -- 13. Ozempic CKD approval
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/ozempic-ckd-approval-priority-notice.pdf',
+     'ozempic-ckd-approval-priority-notice.pdf', 820000, 'application/pdf', 'priority_notice',
+     'Priority notice: Ozempic FDA-approved for CKD in T2D (FLOW)', '2025-01-30', '2025-01-30');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial', t_flow, 0),
+    (mat_id, 'product', p_ozempic, 1);
+
+  -- =========================================================================
+  -- AD HOC MEMOS (12) - bespoke
+  -- =========================================================================
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/tirzepatide-salesforce-sizing.docx',
+     'tirzepatide-salesforce-sizing.docx', 180000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Tirzepatide salesforce sizing, US specialty endo channel', '2024-01-22', '2024-01-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_mounjaro, 0),
+    (mat_id, 'product', p_zepbound, 1),
+    (mat_id, 'company', c_meridian, 2);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/viking-takeout-scenarios.docx',
+     'viking-takeout-scenarios.docx', 195000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Viking takeout scenarios, pre and post P2 readout', '2024-02-15', '2024-02-15');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'company', c_zenith, 0),
+    (mat_id, 'product', p_vk2735_sc, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/wegovy-formulary-access.docx',
+     'wegovy-formulary-access.docx', 220000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Wegovy formulary access deep dive, top 10 PBM coverage', '2024-04-30', '2024-04-30');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_wegovy, 0),
+    (mat_id, 'company', c_vantage, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/hcm-undiagnosed-pool-sizing.docx',
+     'hcm-undiagnosed-pool-sizing.docx', 240000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'HCM diagnostic and undiagnosed pool sizing', '2024-06-10', '2024-06-10');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial',   t_explorer_hcm, 0),
+    (mat_id, 'product', p_camzyos, 1),
+    (mat_id, 'product', p_aficamten, 2);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/hfpef-white-space-post-finearts.docx',
+     'hfpef-white-space-post-finearts.docx', 215000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'HFpEF white space, post-FINEARTS positioning', '2024-09-30', '2024-09-30');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'trial',   t_fineart_hf, 0),
+    (mat_id, 'product', p_kerendia, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/leqvio-lipid-franchise-addon.docx',
+     'leqvio-lipid-franchise-addon.docx', 175000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Cardiometabolic lipid franchise add-on, Leqvio scenario', '2024-10-22', '2024-10-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_leqvio, 0),
+    (mat_id, 'company', c_polaris, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/attr-cm-market-expansion.docx',
+     'attr-cm-market-expansion.docx', 230000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'ATTR-CM market expansion, post-Attruby launch dynamics', '2024-12-04', '2024-12-04');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_attruby, 0),
+    (mat_id, 'product', p_vyndaqel, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/aficamten-launch-readiness.docx',
+     'aficamten-launch-readiness.docx', 200000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Aficamten launch readiness assessment', '2025-03-15', '2025-03-15');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_aficamten, 0),
+    (mat_id, 'company', c_solara, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/hfpef-launch-salesforce-reorg.docx',
+     'hfpef-launch-salesforce-reorg.docx', 205000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Salesforce reorg memo for HFpEF launches (BMS, BI)', '2025-04-22', '2025-04-22');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'company', c_helios, 0),
+    (mat_id, 'company', c_vortex, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/long-acting-incretin-landscape.docx',
+     'long-acting-incretin-landscape.docx', 250000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Long-acting incretin landscape memo', '2025-08-12', '2025-08-12');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_orforglipron, 0),
+    (mat_id, 'product', p_retatrutide, 1),
+    (mat_id, 'product', p_maritide, 2);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/entresto-generic-entry-timing.docx',
+     'entresto-generic-entry-timing.docx', 188000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Generic-entry timing memo for Entresto', '2025-10-20', '2025-10-20');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_entresto, 0),
+    (mat_id, 'company', c_polaris, 1);
+
+  mat_id := gen_random_uuid();
+  insert into public.materials (id, space_id, uploaded_by, file_path, file_name, file_size_bytes, mime_type, material_type, title, uploaded_at, finalized_at) values
+    (mat_id, p_space_id, p_uid,
+     'materials/' || p_space_id::text || '/' || mat_id::text || '/orforglipron-pricing-scenarios.docx',
+     'orforglipron-pricing-scenarios.docx', 210000, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'ad_hoc',
+     'Orforglipron pricing scenarios', '2026-01-08', '2026-01-08');
+  insert into public.material_links (material_id, entity_type, entity_id, display_order) values
+    (mat_id, 'product', p_orforglipron, 0),
+    (mat_id, 'company', c_meridian, 1);
+end;
+$$;
+
+comment on function public._seed_demo_materials(uuid, uuid) is
+  'Seeds 76 materials over a 36-month engagement window: 36 monthly briefings (programmatic generate_series), 15 conference reports (ADA, ESC, EASD, AHA, ObesityWeek for 2023-2025), 13 priority notices (event-driven), 12 ad hoc memos (client-triggered). File rows reference plausible storage paths but no bytes are uploaded.';
