@@ -17,12 +17,16 @@
 --   up-front so callers see a deterministic error rather than an empty page
 --   when they lack access. revoke from public, grant to authenticated.
 --
--- pagination: get_activity_feed uses keyset pagination on
+-- pagination: get_activity_feed uses two-axis keyset pagination on
 --   (observed_at desc, id desc). caller passes the (limit+1)th row's
---   observed_at back as p_cursor_observed_at; we return limit+1 rows so the
---   caller can detect "more pages exist". the id tie-breaker keeps the cursor
---   stable when many events share the same observed_at (common during a
---   single ingest run).
+--   (observed_at, id) pair back as (p_cursor_observed_at, p_cursor_id); we
+--   return limit+1 rows so the caller can detect "more pages exist". the
+--   id tie-breaker is part of the cursor predicate, not just the sort, so
+--   ties on observed_at -- common because postgres now() returns
+--   transaction-start time and a single ingest can emit many events sharing
+--   the same observed_at -- never cause unread rows to be skipped. the
+--   compound predicate is `observed_at < cursor_observed_at OR
+--   (observed_at = cursor_observed_at AND id < cursor_id)`.
 --
 -- marker_title fallback: marker_id has on-delete-set-null so survived markers
 --   join cleanly. for events whose marker has since been deleted (marker_id
@@ -33,10 +37,15 @@
 -- =============================================================================
 -- RPC 1. get_activity_feed: paged unified change feed for one space.
 --
+-- drop the old 4-arg signature explicitly so this migration is reentrant on a
+-- database where a previous deploy installed the single-axis cursor.
+drop function if exists public.get_activity_feed(uuid, jsonb, timestamptz, int);
+
 create or replace function public.get_activity_feed(
   p_space_id              uuid,
   p_filters               jsonb       default '{}'::jsonb,
   p_cursor_observed_at    timestamptz default null,
+  p_cursor_id             uuid        default null,
   p_limit                 int         default 50
 ) returns setof jsonb
 language plpgsql
@@ -111,7 +120,11 @@ begin
       left join public.markers m on m.id = e.marker_id
       left join public.marker_changes mc on mc.id = e.derived_from_marker_change_id
      where e.space_id = p_space_id
-       and (p_cursor_observed_at is null or e.observed_at < p_cursor_observed_at)
+       and (
+         p_cursor_observed_at is null
+         or e.observed_at < p_cursor_observed_at
+         or (e.observed_at = p_cursor_observed_at and (p_cursor_id is null or e.id < p_cursor_id))
+       )
        and (v_event_types is null or e.event_type = any(v_event_types))
        and (v_sources is null or e.source = any(v_sources))
        and (v_trial_ids is null or e.trial_id = any(v_trial_ids))
@@ -135,11 +148,11 @@ begin
 end;
 $$;
 
-revoke execute on function public.get_activity_feed(uuid, jsonb, timestamptz, int) from public;
-grant  execute on function public.get_activity_feed(uuid, jsonb, timestamptz, int) to authenticated;
+revoke execute on function public.get_activity_feed(uuid, jsonb, timestamptz, uuid, int) from public;
+grant  execute on function public.get_activity_feed(uuid, jsonb, timestamptz, uuid, int) to authenticated;
 
-comment on function public.get_activity_feed(uuid, jsonb, timestamptz, int) is
-  'Paged unified change feed for one space. Filters via jsonb (event_types, sources, trial_ids, date_range 7d|30d|all, whitelist=high_signal). Cursor pagination on observed_at desc, id desc; returns limit+1 rows so caller can detect more pages. Joins trial name+identifier and marker title (with fallback to marker_changes for deleted markers). SECURITY INVOKER; raises 42501 if caller lacks has_space_access.';
+comment on function public.get_activity_feed(uuid, jsonb, timestamptz, uuid, int) is
+  'Paged unified change feed for one space. Filters via jsonb (event_types, sources, trial_ids, date_range 7d|30d|all, whitelist=high_signal). Two-axis keyset pagination on (observed_at desc, id desc): caller passes the (limit+1)th row''s (observed_at, id) pair back as (p_cursor_observed_at, p_cursor_id), and the predicate is `observed_at < cursor OR (observed_at = cursor AND id < cursor_id)` so events sharing observed_at within a single ingest are never skipped. Returns limit+1 rows so caller can detect more pages. Joins trial name+identifier and marker title (with fallback to marker_changes for deleted markers). SECURITY INVOKER; raises 42501 if caller lacks has_space_access.';
 
 -- =============================================================================
 -- RPC 2. get_trial_activity: recent events for one trial. No cursor.
@@ -492,6 +505,12 @@ declare
   v_int              int;
   v_visibility       jsonb;
   v_cursor           timestamptz;
+  v_cursor_id        uuid;
+  v_tie_obs          timestamptz := '2026-04-01 12:00:00+00'::timestamptz;
+  v_tie_id_1         uuid := 'aaaaaac1-aaaa-aaaa-aaaa-aaaaaaaaaac1';
+  v_tie_id_2         uuid := 'aaaaaac2-aaaa-aaaa-aaaa-aaaaaaaaaac2';
+  v_tie_id_3         uuid := 'aaaaaac3-aaaa-aaaa-aaaa-aaaaaaaaaac3';
+  v_third_id         uuid;
   v_payload_v1       jsonb := '{"protocolSection":{"statusModule":{"overallStatus":"RECRUITING"}}}'::jsonb;
   v_payload_v2       jsonb := '{"protocolSection":{"statusModule":{"overallStatus":"COMPLETED"}}}'::jsonb;
   v_payload_v3       jsonb := '{"protocolSection":{"statusModule":{"overallStatus":"TERMINATED"}}}'::jsonb;
@@ -625,23 +644,80 @@ begin
      v_obs_3, v_obs_3);
 
   v_rows := array(
-    select e from public.get_activity_feed(v_space_id, '{}'::jsonb, null, 2) as e
+    select e from public.get_activity_feed(v_space_id, '{}'::jsonb, null, null, 2) as e
   );
   if array_length(v_rows, 1) <> 3 then
     raise exception 'surface smoke FAIL test 4a: expected 3 rows (limit+1), got %', array_length(v_rows, 1);
   end if;
 
-  -- the second row's observed_at is the next cursor. callers passing this
-  -- back will see strictly older rows, i.e. just the third event.
-  v_cursor := (v_rows[2] ->> 'observed_at')::timestamptz;
+  -- the second row's (observed_at, id) is the next cursor pair. callers
+  -- passing them back will see strictly older rows, i.e. just the third event.
+  v_cursor    := (v_rows[2] ->> 'observed_at')::timestamptz;
+  v_cursor_id := (v_rows[2] ->> 'id')::uuid;
   v_rows := array(
-    select e from public.get_activity_feed(v_space_id, '{}'::jsonb, v_cursor, 2) as e
+    select e from public.get_activity_feed(
+      v_space_id, '{}'::jsonb, v_cursor, v_cursor_id, 2
+    ) as e
   );
   if array_length(v_rows, 1) <> 1 then
     raise exception 'surface smoke FAIL test 4b: expected 1 row after cursor, got %',
       array_length(v_rows, 1);
   end if;
   raise notice 'surface smoke ok test 4: get_activity_feed cursor pagination';
+
+  -- =========================================================================
+  -- test 4c: tie-breaker. insert 3 events sharing one observed_at literal.
+  -- with a single-axis cursor on observed_at alone, page 2 would skip ALL
+  -- ties; with the (observed_at, id) compound predicate, page 2 returns the
+  -- last tied row in id-desc order. clean slate first so only these 3 rows
+  -- match the cursor predicate.
+  delete from public.trial_change_events where space_id = v_space_id;
+
+  insert into public.trial_change_events (
+    id, trial_id, space_id, event_type, source, payload, occurred_at, observed_at
+  ) values
+    (v_tie_id_1, v_trial_a_id, v_space_id, 'status_changed', 'ctgov',
+     jsonb_build_object('from', 'RECRUITING', 'to', 'COMPLETED'),
+     v_tie_obs, v_tie_obs),
+    (v_tie_id_2, v_trial_a_id, v_space_id, 'phase_transitioned', 'ctgov',
+     jsonb_build_object('from', 'PHASE2', 'to', 'PHASE3'),
+     v_tie_obs, v_tie_obs),
+    (v_tie_id_3, v_trial_a_id, v_space_id, 'sponsor_changed', 'ctgov',
+     jsonb_build_object('from', 'X', 'to', 'Y'),
+     v_tie_obs, v_tie_obs);
+
+  -- limit=2 should return 3 rows (limit+1) in id-desc order, all with the
+  -- same observed_at.
+  v_rows := array(
+    select e from public.get_activity_feed(v_space_id, '{}'::jsonb, null, null, 2) as e
+  );
+  if array_length(v_rows, 1) <> 3 then
+    raise exception 'surface smoke FAIL test 4c: expected 3 tied rows (limit+1), got %',
+      array_length(v_rows, 1);
+  end if;
+
+  -- the third id in the original ordering (id desc, all sharing observed_at)
+  -- is the smallest of the three uuids.
+  v_third_id := (v_rows[3] ->> 'id')::uuid;
+  v_cursor    := (v_rows[2] ->> 'observed_at')::timestamptz;
+  v_cursor_id := (v_rows[2] ->> 'id')::uuid;
+
+  -- with the cursor pair, expect exactly 1 row (the third tied id). a
+  -- single-axis cursor would return 0 rows here -- this is the regression.
+  v_rows := array(
+    select e from public.get_activity_feed(
+      v_space_id, '{}'::jsonb, v_cursor, v_cursor_id, 2
+    ) as e
+  );
+  if array_length(v_rows, 1) <> 1 then
+    raise exception 'surface smoke FAIL test 4c: expected 1 row after tied cursor, got %',
+      array_length(v_rows, 1);
+  end if;
+  if (v_rows[1] ->> 'id')::uuid <> v_third_id then
+    raise exception 'surface smoke FAIL test 4c: expected id=% after tied cursor, got %',
+      v_third_id, v_rows[1] ->> 'id';
+  end if;
+  raise notice 'surface smoke ok test 4c: get_activity_feed tie-breaker on observed_at';
 
   -- =========================================================================
   -- test 5: access denied for a user who is not a space member.
