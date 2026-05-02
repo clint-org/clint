@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "methods": ["GET", "PUT"],
+        "origins": [
+          "https://clintapp.com",
+          "https://*.clintapp.com"
+        ],
+        "headers": ["Content-Type", "Authorization"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 600
+    }
+  ]
+}
