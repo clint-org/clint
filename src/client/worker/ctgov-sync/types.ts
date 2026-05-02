@@ -13,6 +13,12 @@ export interface PollingTrialRow {
   space_id: string;
   nct_id: string;
   last_update_posted_date: string | null;
+  // latest_ctgov_version is the highest snapshot version we have already
+  // ingested for this trial. The poller uses it as the version-derivation
+  // fallback when /api/int/.../history is unavailable, so each retry can
+  // bump (instead of colliding on the (trial_id, ctgov_version) unique
+  // constraint at version=1 forever). Null when no snapshot has been ingested.
+  latest_ctgov_version: number | null;
 }
 
 // CtgovStudySummary: result of /api/v2/studies?fields=NCTId,LastUpdatePostDate batch.

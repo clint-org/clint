@@ -18,6 +18,11 @@
 -- (last_polled_at, id) is a deterministic tie-breaker so the same fixture
 -- under tests yields the same first row.
 --
+-- The drop is required because Postgres rejects return-type changes via
+-- create-or-replace; an earlier migration may have created this with a
+-- 4-column return shape (no latest_ctgov_version). Reapply must be clean.
+drop function if exists public.get_trials_for_polling(text, int);
+
 create or replace function public.get_trials_for_polling(
   p_secret text,
   p_limit  int default 1000
@@ -25,7 +30,8 @@ create or replace function public.get_trials_for_polling(
   trial_id                uuid,
   space_id                uuid,
   nct_id                  text,
-  last_update_posted_date date
+  last_update_posted_date date,
+  latest_ctgov_version    int
 )
 language plpgsql
 stable
@@ -39,7 +45,8 @@ begin
     select t.id,
            t.space_id,
            t.identifier::text,
-           t.last_update_posted_date
+           t.last_update_posted_date,
+           t.latest_ctgov_version
       from public.trials t
      where t.identifier is not null
      order by t.last_polled_at nulls first, t.id
@@ -169,6 +176,8 @@ declare
   v_polled_count   int;
   v_updated        int;
   v_threw          boolean;
+  v_seen_version   int;
+  v_version_is_null boolean;
 begin
   -- bootstrap fixture.
   insert into auth.users (id, email)
@@ -209,13 +218,22 @@ begin
     raise exception 'polling smoke FAIL test 1: expected 1 fixture trial in queue, got %', v_queue_count;
   end if;
 
-  select q.trial_id into v_seen_first
+  select q.trial_id, q.latest_ctgov_version
+    into v_seen_first, v_seen_version
     from public.get_trials_for_polling('local-dev-ctgov-secret', 1000) q
    where q.trial_id in (v_trial_with_id, v_trial_no_id);
   if v_seen_first <> v_trial_with_id then
     raise exception 'polling smoke FAIL test 1: queue returned %, expected NCT-bearing trial %', v_seen_first, v_trial_with_id;
   end if;
-  raise notice 'polling smoke ok test 1: queue returns NCT-bearing trials only';
+  -- The freshly-inserted fixture trial has no snapshot yet, so the
+  -- latest_ctgov_version column (added in 20260502120100) must still be null.
+  -- This pins the 5-column return shape too: any drift in the row shape would
+  -- error out on the destructuring above.
+  v_version_is_null := v_seen_version is null;
+  if not v_version_is_null then
+    raise exception 'polling smoke FAIL test 1: expected latest_ctgov_version null on fresh trial, got %', v_seen_version;
+  end if;
+  raise notice 'polling smoke ok test 1: queue returns NCT-bearing trials only with 5-col shape';
 
   -- --- test 2: ordering. add a second NCT-bearing trial polled 1 day ago,
   -- and set the first trial's last_polled_at = null. The null must come first.

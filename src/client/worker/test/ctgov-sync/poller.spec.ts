@@ -123,9 +123,9 @@ function summaryStudy(nctId: string, postDate: string) {
 describe('runScheduledSync', () => {
   it('happy path with no changes: skips ingest, marks all polled, status=success', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-01' },
-      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-03-15' },
-      { trial_id: 't3', space_id: 's2', nct_id: 'NCT03', last_update_posted_date: '2026-02-20' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-01', latest_ctgov_version: null },
+      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-03-15', latest_ctgov_version: null },
+      { trial_id: 't3', space_id: 's2', nct_id: 'NCT03', last_update_posted_date: '2026-02-20', latest_ctgov_version: null },
     ];
 
     const harness = installFetch([
@@ -184,7 +184,7 @@ describe('runScheduledSync', () => {
 
   it('happy path with one change: ingests once, status=success', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01', latest_ctgov_version: null },
     ];
 
     const harness = installFetch([
@@ -209,7 +209,14 @@ describe('runScheduledSync', () => {
           },
         })
       ),
-      ctgovHistoryHandler(),
+      // Custom history handler that returns one entry with statusModule label,
+      // so we can pin module-hint forwarding through to the ingest call.
+      (req: Request) => {
+        if (!req.url.match(/^https:\/\/ctgov\.test\/api\/int\/studies\/[^/]+\/history$/)) return null;
+        return jsonResponse({
+          changes: [{ version: 1, date: '2026-04-15', moduleLabels: ['statusModule'] }],
+        });
+      },
     ]);
 
     const summary = await runScheduledSync(makeEnv());
@@ -228,6 +235,8 @@ describe('runScheduledSync', () => {
     expect(ingestCalls[0].body['p_nct_id']).toBe('NCT01');
     expect(ingestCalls[0].body['p_post_date']).toBe('2026-04-15');
     expect(ingestCalls[0].body['p_fetched_via']).toBe('v2_poll');
+    // Module hints from /api/int/.../history get deduped and forwarded.
+    expect(ingestCalls[0].body['p_module_hints']).toEqual(['statusModule']);
 
     const bulkCalls = harness.rpcCalls.filter((c) => c.fn === 'bulk_update_last_polled');
     expect(bulkCalls).toHaveLength(1);
@@ -241,8 +250,8 @@ describe('runScheduledSync', () => {
 
   it('one trial fails ingestion: continues, status=partial', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01' },
-      { trial_id: 't2', space_id: 's2', nct_id: 'NCT02', last_update_posted_date: '2026-03-01' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01', latest_ctgov_version: null },
+      { trial_id: 't2', space_id: 's2', nct_id: 'NCT02', last_update_posted_date: '2026-03-01', latest_ctgov_version: null },
     ];
 
     let ingestSeq = 0;
@@ -304,9 +313,9 @@ describe('runScheduledSync', () => {
 
   it('watermark batch fails: skips ingest, leaves last_polled unchanged, status=failed', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-01' },
-      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-03-15' },
-      { trial_id: 't3', space_id: 's2', nct_id: 'NCT03', last_update_posted_date: '2026-02-20' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-01', latest_ctgov_version: null },
+      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-03-15', latest_ctgov_version: null },
+      { trial_id: 't3', space_id: 's2', nct_id: 'NCT03', last_update_posted_date: '2026-02-20', latest_ctgov_version: null },
     ];
 
     const harness = installFetch([
@@ -341,7 +350,7 @@ describe('runScheduledSync', () => {
 
   it('404 from CT.gov fetchStudy: marks polled, errors_count reflects, status=partial', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-03-01', latest_ctgov_version: null },
     ];
 
     const harness = installFetch([
@@ -369,15 +378,67 @@ describe('runScheduledSync', () => {
     expect(bulkCalls).toHaveLength(1);
     expect(bulkCalls[0].body['p_trial_ids']).toEqual(['t1']);
   });
+
+  it('version falls back to latest_ctgov_version + 1 when /api/int/ is 404', async () => {
+    // /api/int/.../history is unreachable in many production paths (auth-walled,
+    // rate-limited, or simply 404). Without a fallback, ingest collides on the
+    // (trial_id, ctgov_version) unique constraint at version=1 forever and
+    // last_update_posted_date never advances. The DB-derived counter restores
+    // monotonicity per trial.
+    const trials = [
+      {
+        trial_id: 't1',
+        space_id: 's1',
+        nct_id: 'NCT01',
+        last_update_posted_date: '2026-03-01',
+        latest_ctgov_version: 5,
+      },
+    ];
+
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse(trials),
+        ingest_ctgov_snapshot: () =>
+          jsonResponse({
+            snapshot_id: '11111111-1111-1111-1111-111111111111',
+            inserted: true,
+            events_emitted: 1,
+            changes_recorded: 1,
+          }),
+        bulk_update_last_polled: () => jsonResponse(1),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+      ctgovSummaryHandler(() => jsonResponse({ studies: [summaryStudy('NCT01', '2026-04-15')] })),
+      ctgovStudyHandler(() =>
+        jsonResponse({
+          protocolSection: {
+            identificationModule: { nctId: 'NCT01' },
+            statusModule: { lastUpdatePostDateStruct: { date: '2026-04-15' } },
+          },
+        })
+      ),
+      ctgovHistoryHandler(),
+    ]);
+
+    const summary = await runScheduledSync(makeEnv());
+
+    expect(summary.status).toBe('success');
+    expect(summary.snapshots_written).toBe(1);
+
+    const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
+    expect(ingestCalls).toHaveLength(1);
+    // Fallback: latest_ctgov_version (5) + 1 = 6.
+    expect(ingestCalls[0].body['p_version']).toBe(6);
+  });
 });
 
 describe('runManualBackfill', () => {
   it('happy path: ingests every requested NCT regardless of watermark', async () => {
     const trials = [
-      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-15' },
-      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-04-15' },
+      { trial_id: 't1', space_id: 's1', nct_id: 'NCT01', last_update_posted_date: '2026-04-15', latest_ctgov_version: null },
+      { trial_id: 't2', space_id: 's1', nct_id: 'NCT02', last_update_posted_date: '2026-04-15', latest_ctgov_version: null },
       // Extra trial in the queue that should be filtered out.
-      { trial_id: 't3', space_id: 's2', nct_id: 'NCT99', last_update_posted_date: '2026-04-15' },
+      { trial_id: 't3', space_id: 's2', nct_id: 'NCT99', last_update_posted_date: '2026-04-15', latest_ctgov_version: null },
     ];
 
     const harness = installFetch([
@@ -431,5 +492,40 @@ describe('runManualBackfill', () => {
     expect(recordCalls).toHaveLength(1);
     expect(recordCalls[0].body['p_status']).toBe('success');
     expect(recordCalls[0].body['p_snapshots_written']).toBe(2);
+  });
+
+  it('flags unknown NCTs (no trial row) as per-NCT errors', async () => {
+    // Operator asks to backfill an NCT that has no trial row. Previously this
+    // silently no-op'd and reported success; now each unknown NCT is recorded
+    // as an error with kind=unknown_nct so the run reflects what happened.
+    const harness = installFetch([
+      rpcHandler({
+        // Empty queue: no trials match the requested NCT.
+        get_trials_for_polling: () => jsonResponse([]),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+    ]);
+
+    const summary = await runManualBackfill(makeEnv(), ['NCT01234567']);
+
+    expect(summary.errors_count).toBe(1);
+    expect(summary.snapshots_written).toBe(0);
+    expect(summary.error_summary).not.toBeNull();
+    const errorSummary = summary.error_summary as { errors: Array<Record<string, unknown>> };
+    expect(errorSummary.errors).toHaveLength(1);
+    expect(errorSummary.errors[0]['nct_id']).toBe('NCT01234567');
+    expect(errorSummary.errors[0]['kind']).toBe('unknown_nct');
+    // Every requested NCT is unknown -> nothing succeeded -> failed.
+    expect(summary.status).toBe('failed');
+
+    // No CT.gov calls and no ingest calls: there's nothing to fetch.
+    const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
+    expect(ingestCalls).toHaveLength(0);
+    expect(harness.ctgovCalls).toHaveLength(0);
+
+    const recordCalls = harness.rpcCalls.filter((c) => c.fn === 'record_sync_run');
+    expect(recordCalls).toHaveLength(1);
+    expect(recordCalls[0].body['p_status']).toBe('failed');
+    expect(recordCalls[0].body['p_errors_count']).toBe(1);
   });
 });

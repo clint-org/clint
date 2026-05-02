@@ -43,6 +43,10 @@ interface ErrorEntry {
   trial_id?: string;
   status?: number;
   message?: string;
+  // kind discriminates non-CT.gov errors so future UIs can render them
+  // distinctly (e.g. an unknown-NCT request vs a transient bulk-update
+  // failure). Absent on the common per-NCT or per-trial CT.gov errors.
+  kind?: 'bulk_update_last_polled' | 'unknown_nct';
 }
 
 interface SupabaseCfg {
@@ -144,10 +148,12 @@ async function fetchAndIngestNct(
       : null;
   const hints = moduleHints && moduleHints.length > 0 ? moduleHints : null;
 
-  // Extract version + post_date from the full payload. CT.gov v2 study
-  // shape: protocolSection.identificationModule.nctId,
+  // Extract post_date from the full payload. CT.gov v2 study shape:
+  // protocolSection.identificationModule.nctId,
   // protocolSection.statusModule.lastUpdatePostDateStruct.date.
-  // Version is monotonic from history (length when present, else 1).
+  // Version is computed PER ASSIGNMENT below (assignments for the same NCT
+  // can diverge in latest_ctgov_version when the same NCT is shared across
+  // spaces, so we cannot share a single version across the loop).
   const studyShape = study as {
     protocolSection?: {
       statusModule?: {
@@ -156,7 +162,6 @@ async function fetchAndIngestNct(
     };
   };
   const postDate = studyShape.protocolSection?.statusModule?.lastUpdatePostDateStruct?.date ?? null;
-  const version = history && history.length > 0 ? history.length : 1;
 
   if (!postDate) {
     errors.push({ nct_id: nctId, message: 'no last_update_post_date in payload' });
@@ -173,13 +178,23 @@ async function fetchAndIngestNct(
   const polledTrialIds: string[] = [];
 
   for (const assignment of assignments) {
+    // Per assignment: prefer CT.gov's authoritative version when /api/int/
+    // history is up. Fall back to our own per-trial counter + 1 when history
+    // is unavailable, otherwise we'd collide on the
+    // (trial_id, ctgov_version) unique constraint forever at version=1 and
+    // last_update_posted_date would never advance.
+    const versionForAssignment =
+      history && history.length > 0
+        ? history.length
+        : (assignment.latest_ctgov_version ?? 0) + 1;
+
     try {
       const result = await callRpc<IngestResult>(cfgFrom(env), null, 'ingest_ctgov_snapshot', {
         p_secret: env.CTGOV_WORKER_SECRET,
         p_trial_id: assignment.trial_id,
         p_space_id: assignment.space_id,
         p_nct_id: nctId,
-        p_version: version,
+        p_version: versionForAssignment,
         p_post_date: postDate,
         p_payload: study,
         p_fetched_via: fetchedVia,
@@ -353,7 +368,11 @@ export async function runScheduledSync(env: CtgovSyncEnv): Promise<SyncRunSummar
       });
     } catch (e) {
       const err = e as { message?: string; httpStatus?: number };
-      errors.push({ status: err.httpStatus, message: err.message });
+      errors.push({
+        kind: 'bulk_update_last_polled',
+        status: err.httpStatus,
+        message: err.message,
+      });
     }
   }
 
@@ -401,6 +420,22 @@ export async function runManualBackfill(
   let eventsEmitted = 0;
   let successfulNcts = 0;
 
+  // Surface NCTs the operator asked for that don't map to any trial row.
+  // Without this, runManualBackfill silently no-ops on unknown NCTs and the
+  // operator sees status=success with zero work done. Each unknown NCT is
+  // logged as a per-NCT error so errors_count reflects it and status drops
+  // to partial (or failed if every requested NCT was unknown).
+  const knownNcts = new Set(targetNcts);
+  for (const requestedNct of requested) {
+    if (!knownNcts.has(requestedNct)) {
+      errors.push({
+        kind: 'unknown_nct',
+        nct_id: requestedNct,
+        message: 'unknown NCT (no trial row)',
+      });
+    }
+  }
+
   const perNctResults = await pMap(targetNcts, parallel, async (nct) => {
     const assignments = nctMap.get(nct) ?? [];
     return await fetchAndIngestNct(env, client, nct, assignments, 'manual_sync');
@@ -425,9 +460,20 @@ export async function runManualBackfill(
       });
     } catch (e) {
       const err = e as { message?: string; httpStatus?: number };
-      errors.push({ status: err.httpStatus, message: err.message });
+      errors.push({
+        kind: 'bulk_update_last_polled',
+        status: err.httpStatus,
+        message: err.message,
+      });
     }
   }
+
+  // totalNctsAttempted counts known NCTs we actually pulled PLUS unknown
+  // NCTs the operator asked for, so a request of all-unknowns yields
+  // status=failed (successfulNcts=0, totalNctsAttempted>0). A mixed
+  // known/unknown request lands at partial as long as at least one known
+  // NCT ingested.
+  const totalNctsAttempted = targetNcts.length + (requested.size - knownNcts.size);
 
   const summary = buildSummary({
     startedAt,
@@ -437,7 +483,7 @@ export async function runManualBackfill(
     snapshotsWritten,
     eventsEmitted,
     errors,
-    totalNctsAttempted: targetNcts.length,
+    totalNctsAttempted,
     successfulNcts,
   });
 
