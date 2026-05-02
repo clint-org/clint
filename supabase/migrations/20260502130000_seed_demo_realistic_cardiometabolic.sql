@@ -917,3 +917,329 @@ begin
     ('trial', 't_danuglipron_p2',   t_danuglipron_p2);
 end;
 $$;
+
+-- =============================================================================
+-- 9. helper: _seed_demo_markers (~75 real cardiometabolic markers)
+-- =============================================================================
+
+create or replace function public._seed_demo_markers(p_space_id uuid, p_uid uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  -- Trial UUIDs
+  t_surmount_1       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_1');
+  t_surpass_2        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surpass_2');
+  t_step_1           uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_step_1');
+  t_select           uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_select');
+  t_dapa_hf          uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_dapa_hf');
+  t_emperor_reduced  uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_emperor_reduced');
+  t_explorer_hcm     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_explorer_hcm');
+  t_paradigm_hf      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_paradigm_hf');
+  t_attr_act         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_attr_act');
+  t_attribute_cm     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_attribute_cm');
+  t_surmount_mmo     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_mmo');
+  t_summit           uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_summit');
+  t_surmount_osa     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_osa');
+  t_attain_1         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_attain_1');
+  t_achieve_1        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_achieve_1');
+  t_triumph_1        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_triumph_1');
+  t_flow             uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_flow');
+  t_redefine_1       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_redefine_1');
+  t_redefine_2       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_redefine_2');
+  t_soul             uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_soul');
+  t_deliver          uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_deliver');
+  t_dapa_ckd         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_dapa_ckd');
+  t_emperor_preserved uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_emperor_preserved');
+  t_empa_kidney      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_empa_kidney');
+  t_empact_mi        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_empact_mi');
+  t_survodutide_p2   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_survodutide_p2');
+  t_fineart_hf       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_fineart_hf');
+  t_sequoia_hcm      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_sequoia_hcm');
+  t_maple_hcm        uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_maple_hcm');
+  t_acacia_hcm       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_acacia_hcm');
+  t_odyssey_hcm      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_odyssey_hcm');
+  t_ct388_p2         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_ct388_p2');
+  t_vk2735_sc_p2     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_vk2735_sc_p2');
+  t_vk2735_oral_p2   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_vk2735_oral_p2');
+  t_maritide_p2      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_maritide_p2');
+  t_danuglipron_p2   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_danuglipron_p2');
+
+  -- Named marker UUIDs for downstream references in primary_intelligence
+  m_summit_topline    uuid := gen_random_uuid();
+  m_redefine_1_miss   uuid := gen_random_uuid();
+  m_orforglipron_read uuid := gen_random_uuid();
+  m_maritide_read     uuid := gen_random_uuid();
+begin
+  -- =========================================================================
+  -- TOPLINE DATA READOUTS (PAST) - ~15 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'SURMOUNT-1 full results published in NEJM', 'actual', '2022-07-21', 'Tirzepatide ~22.5% body weight loss at 72 weeks; the obesity efficacy bar was reset.', 'https://www.nejm.org/doi/full/10.1056/NEJMoa2206038'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'STEP 1 full results published in NEJM',     'actual', '2021-03-18', 'Semaglutide 2.4 mg achieved 14.9% body weight reduction at week 68.', 'https://www.nejm.org/doi/full/10.1056/NEJMoa2032183'),
+    (m_summit_topline,  p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'SUMMIT NEJM publication',                   'actual', '2024-11-16', 'First HFpEF outcomes trial in obese patients to show improvement on KCCQ-CSS plus reduced HF events.', 'https://www.nejm.org/doi/full/10.1056/NEJMoa2410027'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'SELECT NEJM publication',                   'actual', '2023-11-11', 'Semaglutide reduced 3-point MACE by 20% in obese non-diabetic patients with established CV disease.', 'https://www.nejm.org/doi/full/10.1056/NEJMoa2307563'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000031', 'FLOW NEJM publication',                     'actual', '2024-05-24', 'Semaglutide reduced major kidney disease events by 24% in T2D + CKD.', 'https://www.nejm.org/doi/full/10.1056/NEJMoa2403347'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'SEQUOIA-HCM topline at AHA 2024',            'actual', '2024-11-16', 'Aficamten met primary endpoint with significant improvement in pVO2 at week 24.', 'https://www.cytokinetics.com/news-releases/'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'FINEARTS-HF positive at ESC 2024',           'actual', '2024-09-01', 'Finerenone reduced composite of CV death and total HF events by 16% in HFmrEF/HFpEF.', 'https://www.bayer.com/en/news/finearts-hf-positive'),
+    (m_redefine_1_miss, p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'REDEFINE-1 topline below Street expectations', 'actual', '2024-12-20', 'CagriSema delivered 22.7% weight loss vs ~25% Street consensus; combo defense thesis impaired.', 'https://www.novonordisk.com/news-and-media/news-and-ir-materials/news-details.html?id=171636'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'DAPA-HF topline announced',                 'actual', '2019-08-20', 'Dapagliflozin reduced CV death or worsening HF by 26% in HFrEF.', 'https://clinicaltrials.gov/study/NCT03036124'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'EMPEROR-Reduced topline announced',         'actual', '2020-08-28', 'Empagliflozin reduced primary composite by 25% in HFrEF.', 'https://www.boehringer-ingelheim.com/'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'EXPLORER-HCM positive at HFSA 2020',         'actual', '2020-08-29', 'Mavacamten met composite primary endpoint in obstructive HCM.', 'https://www.bms.com/'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ATTRibute-CM positive topline',              'actual', '2023-07-17', 'Acoramidis reduced all-cause mortality and CV hospitalizations vs placebo in ATTR-CM.', 'https://bridgebio.com/news/'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'EMPACT-MI fails primary in post-MI',          'actual', '2024-04-08', 'Empagliflozin did not reduce composite of all-cause death or HF hospitalization in post-MI patients without HF.', 'https://www.boehringer-ingelheim.com/'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ODYSSEY-HCM fails primary in nHCM',          'actual', '2024-10-15', 'Mavacamten missed primary endpoint in non-obstructive HCM; limits indication expansion.', 'https://www.bms.com/'),
+    (m_maritide_read,   p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MariTide P2 positive readout',               'actual', '2024-11-26', 'Maridebart cafraglutide ~20% weight loss at 52 weeks; GIPR antagonism + GLP-1 agonism validated.', 'https://www.amgen.com/newsroom/press-releases');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'SURMOUNT-1 full results published in NEJM'),  t_surmount_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'STEP 1 full results published in NEJM'),      t_step_1),
+    (m_summit_topline,    t_summit),
+    ((select id from public.markers where space_id = p_space_id and title = 'SELECT NEJM publication'),                    t_select),
+    ((select id from public.markers where space_id = p_space_id and title = 'FLOW NEJM publication'),                      t_flow),
+    ((select id from public.markers where space_id = p_space_id and title = 'SEQUOIA-HCM topline at AHA 2024'),            t_sequoia_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'FINEARTS-HF positive at ESC 2024'),           t_fineart_hf),
+    (m_redefine_1_miss,   t_redefine_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'DAPA-HF topline announced'),                  t_dapa_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'EMPEROR-Reduced topline announced'),          t_emperor_reduced),
+    ((select id from public.markers where space_id = p_space_id and title = 'EXPLORER-HCM positive at HFSA 2020'),         t_explorer_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'ATTRibute-CM positive topline'),              t_attribute_cm),
+    ((select id from public.markers where space_id = p_space_id and title = 'EMPACT-MI fails primary in post-MI'),         t_empact_mi),
+    ((select id from public.markers where space_id = p_space_id and title = 'ODYSSEY-HCM fails primary in nHCM'),          t_odyssey_hcm),
+    (m_maritide_read,     t_maritide_p2);
+
+  -- =========================================================================
+  -- TOPLINE DATA READOUTS (PROJECTED) - ~10 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'TRIUMPH-1 topline projected',           'company', '2026-08-15', 'Retatrutide P3 obesity readout, expected H2 2026.'),
+    (m_orforglipron_read,  p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ATTAIN-1 topline projected',            'company', '2026-06-30', 'Lilly orforglipron P3 obesity readout.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ACHIEVE-1 topline projected',           'company', '2026-06-15', 'Lilly orforglipron P3 T2D readout.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'MAPLE-HCM topline projected',           'company', '2025-09-15', 'Aficamten head-to-head vs metoprolol; readout already in late 2025 window.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'ACACIA-HCM topline projected',          'company', '2027-06-30', 'Aficamten in non-obstructive HCM.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'SURMOUNT-MMO topline projected',        'company', '2027-10-01', 'Tirzepatide CV outcomes trial in obesity.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'CT-388 P2 final analysis projected',    'company', '2026-03-15', 'Roche/Carmot enicepatide obesity P2 final analysis.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'REDEFINE-2 topline projected',          'company', '2026-02-01', 'CagriSema P3 in obesity + T2D, follow-on to REDEFINE-1.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'VK2735 oral P2 final results projected','company', '2025-08-15', 'Viking oral GIP/GLP-1 dual agonist.'),
+    (gen_random_uuid(),    p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000013', 'Survodutide P3 obesity readout projected','company', '2027-04-15', 'BI/Zealand GLP-1/glucagon dual agonist P3 confirmatory.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'TRIUMPH-1 topline projected'),         t_triumph_1),
+    (m_orforglipron_read, t_attain_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'ACHIEVE-1 topline projected'),         t_achieve_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'MAPLE-HCM topline projected'),         t_maple_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'ACACIA-HCM topline projected'),        t_acacia_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'SURMOUNT-MMO topline projected'),      t_surmount_mmo),
+    ((select id from public.markers where space_id = p_space_id and title = 'CT-388 P2 final analysis projected'),  t_ct388_p2),
+    ((select id from public.markers where space_id = p_space_id and title = 'REDEFINE-2 topline projected'),        t_redefine_2),
+    ((select id from public.markers where space_id = p_space_id and title = 'VK2735 oral P2 final results projected'), t_vk2735_oral_p2),
+    ((select id from public.markers where space_id = p_space_id and title = 'Survodutide P3 obesity readout projected'), t_survodutide_p2);
+
+  -- =========================================================================
+  -- REGULATORY FILINGS (PAST) - ~10 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Wegovy SELECT sNDA submitted',     'actual', '2024-01-15', 'CV risk reduction label expansion based on SELECT.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Aficamten NDA submitted',          'actual', '2024-09-30', 'Cytokinetics NDA filing for oHCM based on SEQUOIA-HCM.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Finerenone HFpEF sNDA submitted',  'actual', '2024-09-20', 'Bayer label expansion to HFpEF/HFmrEF based on FINEARTS-HF.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Zepbound OSA sNDA submitted',      'actual', '2024-06-15', 'Tirzepatide OSA label expansion based on SURMOUNT-OSA.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Acoramidis NDA submitted',         'actual', '2024-01-25', 'BridgeBio NDA filing for ATTR-CM based on ATTRibute-CM.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Ozempic CKD sNDA submitted',       'actual', '2024-09-15', 'Novo label expansion to CKD in T2D based on FLOW.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Jardiance EMPA-KIDNEY sNDA submitted','actual', '2023-03-14', 'BI label expansion to CKD.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Farxiga DELIVER sNDA submitted',   'actual', '2022-04-15', 'AZ label expansion to HFpEF/HFmrEF.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Mavacamten NDA submitted',         'actual', '2021-08-30', 'BMS NDA filing for oHCM based on EXPLORER-HCM.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Tirzepatide T2D NDA submitted',    'actual', '2021-10-04', 'Lilly NDA filing for tirzepatide in T2D, basis for Mounjaro approval.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Wegovy SELECT sNDA submitted'),     t_select),
+    ((select id from public.markers where space_id = p_space_id and title = 'Aficamten NDA submitted'),          t_sequoia_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Finerenone HFpEF sNDA submitted'),  t_fineart_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound OSA sNDA submitted'),      t_surmount_osa),
+    ((select id from public.markers where space_id = p_space_id and title = 'Acoramidis NDA submitted'),         t_attribute_cm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Ozempic CKD sNDA submitted'),       t_flow),
+    ((select id from public.markers where space_id = p_space_id and title = 'Jardiance EMPA-KIDNEY sNDA submitted'), t_empa_kidney),
+    ((select id from public.markers where space_id = p_space_id and title = 'Farxiga DELIVER sNDA submitted'),   t_deliver),
+    ((select id from public.markers where space_id = p_space_id and title = 'Mavacamten NDA submitted'),         t_explorer_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Tirzepatide T2D NDA submitted'),    t_surpass_2);
+
+  -- =========================================================================
+  -- REGULATORY FILINGS (PROJECTED) - ~5 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Tirzepatide HFpEF sNDA projected',  'company', '2025-03-15', 'Lilly tirzepatide label expansion to HFpEF based on SUMMIT.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Orforglipron NDA projected',         'company', '2026-12-01', 'Lilly orforglipron NDA, contingent on ATTAIN-1 / ACHIEVE-1 readouts.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Retatrutide NDA projected',          'company', '2027-03-15', 'Lilly retatrutide NDA, contingent on TRIUMPH-1.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'CagriSema NDA projected',            'company', '2026-09-30', 'Novo CagriSema NDA filing despite REDEFINE-1 below-bar miss.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000032', 'Aficamten EU MAA projected',         'company', '2025-06-30', 'Cytokinetics EU regulatory filing post-SEQUOIA-HCM.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Tirzepatide HFpEF sNDA projected'), t_summit),
+    ((select id from public.markers where space_id = p_space_id and title = 'Orforglipron NDA projected'),       t_attain_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Retatrutide NDA projected'),        t_triumph_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'CagriSema NDA projected'),          t_redefine_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Aficamten EU MAA projected'),       t_sequoia_hcm);
+
+  -- =========================================================================
+  -- APPROVALS + LAUNCHES - ~14 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description, source_url) values
+    -- src: https://en.wikipedia.org/wiki/Tirzepatide
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Mounjaro FDA approval (T2D)',                'actual', '2022-05-13', 'First-in-class GIP/GLP-1 dual agonist approved for T2D.', 'https://en.wikipedia.org/wiki/Tirzepatide'),
+    -- src: https://en.wikipedia.org/wiki/Tirzepatide
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Zepbound FDA approval (chronic weight management)','actual', '2023-11-08', 'Tirzepatide approved for chronic weight management in obese adults.', 'https://en.wikipedia.org/wiki/Tirzepatide'),
+    -- src: https://en.wikipedia.org/wiki/Tirzepatide
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Zepbound FDA approval (OSA)',                'actual', '2024-12-20', 'First drug approved for obstructive sleep apnea in obesity.', 'https://en.wikipedia.org/wiki/Tirzepatide'),
+    -- src: https://en.wikipedia.org/wiki/Semaglutide
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Wegovy FDA approval (obesity)',              'actual', '2021-06-04', 'Semaglutide 2.4 mg approved for chronic weight management.', 'https://en.wikipedia.org/wiki/Semaglutide'),
+    -- src: https://en.wikipedia.org/wiki/Semaglutide
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Wegovy FDA approval (CV risk reduction)',    'actual', '2024-03-08', 'Label expansion to reduce risk of CV death, MI, stroke based on SELECT.', 'https://en.wikipedia.org/wiki/Semaglutide'),
+    -- src: https://en.wikipedia.org/wiki/Dapagliflozin
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Farxiga FDA approval (HFrEF)',               'actual', '2020-05-05', 'First SGLT2 inhibitor approved for HFrEF.', 'https://en.wikipedia.org/wiki/Dapagliflozin'),
+    -- src: https://en.wikipedia.org/wiki/Dapagliflozin
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Farxiga FDA approval (CKD)',                 'actual', '2021-04-30', 'CKD label expansion based on DAPA-CKD.', 'https://en.wikipedia.org/wiki/Dapagliflozin'),
+    -- src: https://en.wikipedia.org/wiki/Empagliflozin
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Jardiance FDA approval (broad heart failure)','actual', '2022-02-24', 'Heart failure indication expanded across the LVEF spectrum.', 'https://en.wikipedia.org/wiki/Empagliflozin'),
+    -- src: https://en.wikipedia.org/wiki/Mavacamten
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Camzyos FDA approval (oHCM)',                'actual', '2022-04-29', 'First cardiac myosin inhibitor approved for symptomatic obstructive HCM.', 'https://en.wikipedia.org/wiki/Mavacamten'),
+    -- src: https://en.wikipedia.org/wiki/Sacubitril/valsartan
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Entresto FDA approval (HFrEF)',              'actual', '2015-07-07', 'First-in-class ARNI approved for HFrEF based on PARADIGM-HF.', 'https://en.wikipedia.org/wiki/Sacubitril/valsartan'),
+    -- src: https://en.wikipedia.org/wiki/Tafamidis
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Vyndaqel/Vyndamax FDA approval (ATTR-CM)',   'actual', '2019-05-03', 'First TTR stabilizer approved for ATTR-CM.', 'https://en.wikipedia.org/wiki/Tafamidis'),
+    -- src: https://en.wikipedia.org/wiki/Acoramidis
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Attruby FDA approval (ATTR-CM)',             'actual', '2024-11-22', 'BridgeBio acoramidis approved for ATTR-CM, second-to-market entrant.', 'https://en.wikipedia.org/wiki/Acoramidis'),
+    -- src: https://en.wikipedia.org/wiki/Vericiguat
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Verquvo FDA approval (HFrEF)',               'actual', '2021-01-19', 'First sGC stimulator approved for symptomatic chronic HFrEF.', 'https://en.wikipedia.org/wiki/Vericiguat'),
+    -- src: https://en.wikipedia.org/wiki/Finerenone
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Kerendia FDA approval (CKD with T2D)',       'actual', '2021-07-09', 'First non-steroidal MRA approved for CKD with T2D.', 'https://en.wikipedia.org/wiki/Finerenone');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Mounjaro FDA approval (T2D)'),                          t_surpass_2),
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound FDA approval (chronic weight management)'),    t_surmount_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound FDA approval (OSA)'),                          t_surmount_osa),
+    ((select id from public.markers where space_id = p_space_id and title = 'Wegovy FDA approval (obesity)'),                        t_step_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Wegovy FDA approval (CV risk reduction)'),              t_select),
+    ((select id from public.markers where space_id = p_space_id and title = 'Farxiga FDA approval (HFrEF)'),                         t_dapa_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Farxiga FDA approval (CKD)'),                           t_dapa_ckd),
+    ((select id from public.markers where space_id = p_space_id and title = 'Jardiance FDA approval (broad heart failure)'),         t_emperor_preserved),
+    ((select id from public.markers where space_id = p_space_id and title = 'Camzyos FDA approval (oHCM)'),                          t_explorer_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Entresto FDA approval (HFrEF)'),                        t_paradigm_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Vyndaqel/Vyndamax FDA approval (ATTR-CM)'),             t_attr_act),
+    ((select id from public.markers where space_id = p_space_id and title = 'Attruby FDA approval (ATTR-CM)'),                       t_attribute_cm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Verquvo FDA approval (HFrEF)'),                         t_paradigm_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Kerendia FDA approval (CKD with T2D)'),                 t_fineart_hf);
+
+  -- Launch markers
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Mounjaro US launch',         'actual', '2022-06-01', 'Lilly tirzepatide commercial launch in T2D.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Zepbound US launch',         'actual', '2023-12-04', 'Tirzepatide obesity launch, fastest US launch ramp on record.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Wegovy US launch',           'actual', '2021-06-22', 'Semaglutide 2.4 mg obesity launch.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Camzyos US launch',          'actual', '2022-05-09', 'BMS first-in-class oHCM launch.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Attruby US launch',          'actual', '2024-12-09', 'BridgeBio ATTR-CM launch into Vyndaqel-saturated market.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Mounjaro US launch'),         t_surpass_2),
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound US launch'),         t_surmount_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Wegovy US launch'),           t_step_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Camzyos US launch'),          t_explorer_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Attruby US launch'),          t_attribute_cm);
+
+  -- =========================================================================
+  -- PRIMARY COMPLETION DATES - ~6 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'SUMMIT primary completion',         'actual', '2024-07-02'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'FLOW primary completion',           'actual', '2024-01-09'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'SURMOUNT-MMO primary completion projected', 'company', '2027-10-15'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'TRIUMPH-1 primary completion projected',     'company', '2026-04-15'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'ACACIA-HCM primary completion projected',    'company', '2026-06-30'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'CT-388 P2 primary completion',      'actual',  '2025-12-08');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'SUMMIT primary completion'),                t_summit),
+    ((select id from public.markers where space_id = p_space_id and title = 'FLOW primary completion'),                  t_flow),
+    ((select id from public.markers where space_id = p_space_id and title = 'SURMOUNT-MMO primary completion projected'),t_surmount_mmo),
+    ((select id from public.markers where space_id = p_space_id and title = 'TRIUMPH-1 primary completion projected'),   t_triumph_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'ACACIA-HCM primary completion projected'),  t_acacia_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'CT-388 P2 primary completion'),             t_ct388_p2);
+
+  -- =========================================================================
+  -- TRIAL STARTS - ~5 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'SURMOUNT-MMO study initiated',  'actual', '2022-10-11'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'TRIUMPH-1 study initiated',     'actual', '2023-07-10'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'ATTAIN-1 first patient in',     'actual', '2023-06-05'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'CT-388 P2 study initiated',     'actual', '2024-08-16'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'VK2735 oral P2 study initiated','actual', '2024-12-18');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'SURMOUNT-MMO study initiated'), t_surmount_mmo),
+    ((select id from public.markers where space_id = p_space_id and title = 'TRIUMPH-1 study initiated'),    t_triumph_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'ATTAIN-1 first patient in'),    t_attain_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'CT-388 P2 study initiated'),    t_ct388_p2),
+    ((select id from public.markers where space_id = p_space_id and title = 'VK2735 oral P2 study initiated'), t_vk2735_oral_p2);
+
+  -- =========================================================================
+  -- LOSS OF EXCLUSIVITY / GENERIC ENTRY - ~5 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, end_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Entresto US LOE',              'actual',  '2025-07-15', null,         'Sacubitril/valsartan US patent expiry.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Trulicity US LOE projected',   'company', '2027-12-31', null,         'Dulaglutide US patent expiry near horizon.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Vyndaqel/Vyndamax US LOE window','company','2024-12-01','2028-12-31', 'Tafamidis multi-patent expiry window.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000020', 'Jardiance US LOE projected',   'company', '2028-08-15', null,         'Empagliflozin US composition-of-matter patent expiry.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000021', 'Entresto generic entry expected','company','2025-09-01', null,        'First generic sacubitril/valsartan launch projected post-LOE.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Entresto US LOE'),                  t_paradigm_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Trulicity US LOE projected'),       t_surpass_2),
+    ((select id from public.markers where space_id = p_space_id and title = 'Vyndaqel/Vyndamax US LOE window'),  t_attr_act),
+    ((select id from public.markers where space_id = p_space_id and title = 'Jardiance US LOE projected'),       t_emperor_reduced),
+    ((select id from public.markers where space_id = p_space_id and title = 'Entresto generic entry expected'),  t_paradigm_hf);
+
+  -- =========================================================================
+  -- NO LONGER EXPECTED (FAILURES / DCs) - ~3 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, no_longer_expected, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Pfizer danuglipron development discontinued', 'actual', '2023-12-01', true, 'Pfizer halted danuglipron after high incidence of adverse events; oral GLP-1 small molecule strategy paused.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Camzyos nHCM expansion no longer expected',   'actual', '2024-10-15', true, 'ODYSSEY-HCM failed primary; non-obstructive HCM label expansion no longer expected.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Jardiance post-MI expansion no longer expected','actual','2024-04-08', true, 'EMPACT-MI failed primary; post-MI label expansion no longer expected.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Pfizer danuglipron development discontinued'),    t_danuglipron_p2),
+    ((select id from public.markers where space_id = p_space_id and title = 'Camzyos nHCM expansion no longer expected'),      t_odyssey_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Jardiance post-MI expansion no longer expected'), t_empact_mi);
+
+  -- =========================================================================
+  -- RANGE MARKERS (LAUNCH WINDOWS) - ~3 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, end_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Aficamten US launch window',     'company', '2025-10-01', '2026-03-31', 'Anticipated US commercial launch window for Cytokinetics aficamten in oHCM.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Finerenone HFpEF launch window', 'company', '2025-04-01', '2026-06-30', 'Anticipated launch window for Kerendia HFpEF/HFmrEF label expansion.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000036', 'Orforglipron US launch window',  'company', '2027-04-01', '2027-12-31', 'Anticipated launch window for Lilly orforglipron contingent on regulatory approval.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Aficamten US launch window'),     t_sequoia_hcm),
+    ((select id from public.markers where space_id = p_space_id and title = 'Finerenone HFpEF launch window'), t_fineart_hf),
+    ((select id from public.markers where space_id = p_space_id and title = 'Orforglipron US launch window'),  t_attain_1);
+
+  -- =========================================================================
+  -- MANY-TO-MANY SHARED MARKERS - ~2 markers
+  -- =========================================================================
+
+  insert into public.markers (id, space_id, created_by, marker_type_id, title, projection, event_date, description) values
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000033', 'Zepbound HFpEF sNDA filing (combined SUMMIT + SURMOUNT-1)','company', '2025-04-15', 'Tirzepatide HFpEF label expansion combining SUMMIT and SURMOUNT-1 obesity data.'),
+    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000035', 'Semaglutide CKD label expansion (FLOW + SUSTAIN-6)',      'actual',  '2025-01-30', 'Ozempic CKD label expansion based on FLOW with supportive SUSTAIN-6 readthrough.');
+  insert into public.marker_assignments (marker_id, trial_id) values
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound HFpEF sNDA filing (combined SUMMIT + SURMOUNT-1)'), t_summit),
+    ((select id from public.markers where space_id = p_space_id and title = 'Zepbound HFpEF sNDA filing (combined SUMMIT + SURMOUNT-1)'), t_surmount_1),
+    ((select id from public.markers where space_id = p_space_id and title = 'Semaglutide CKD label expansion (FLOW + SUSTAIN-6)'),       t_flow);
+
+  -- Register named marker UUIDs for primary intelligence
+  insert into _seed_ids (entity_type, key, id) values
+    ('marker', 'm_summit_topline',    m_summit_topline),
+    ('marker', 'm_redefine_1_miss',   m_redefine_1_miss),
+    ('marker', 'm_orforglipron_read', m_orforglipron_read),
+    ('marker', 'm_maritide_read',     m_maritide_read);
+end;
+$$;
