@@ -4,7 +4,26 @@
 
 ---
 
-The backend is managed by Supabase. The only non-database server-side code is one Edge Function (`send-invite-email`).
+The backend is managed by Supabase. Non-database server-side code consists of one Supabase Edge Function (`send-invite-email`) and one Cloudflare Worker that handles R2 presigned URL signing for engagement materials.
+
+## Materials Worker
+
+The Worker lives in `src/client/worker/` and is bundled into the same Cloudflare Worker deployment as the Angular SPA (entry point `worker/index.ts`, configured in `src/client/wrangler.jsonc`).
+
+**Routes:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/materials/sign-upload` | Returns a presigned R2 PUT URL (5-min TTL) for a registered but not-yet-finalized material row |
+| `POST` | `/api/materials/sign-download` | Returns a presigned R2 GET URL (60-s TTL) for a finalized material the caller can access |
+
+**Auth and access control:** The Worker extracts the JWT from the `Authorization: Bearer <token>` header and passes it verbatim to the Supabase RPC. All access decisions live in Postgres. `sign-upload` calls `prepare_material_upload(p_material_id)`, which verifies the caller is the uploader and holds an `owner | editor` space role, and that the row is not yet finalized. `sign-download` calls `download_material(p_material_id)`, which verifies the caller has any space access and that the row is finalized. The Worker never makes independent access decisions.
+
+**Rate limiting:** Workers Rate Limiting API. Upload: 30 requests per user per 60 seconds (`UPLOAD_LIMITER`). Download: 120 requests per user per 60 seconds (`DOWNLOAD_LIMITER`). The rate-limit key is the JWT subject; falls back to `CF-Connecting-IP` for anonymous requests. Both limiters are configured as `ratelimits` entries in `wrangler.jsonc` with placeholder namespace IDs that must be replaced before deployment (see [12-deployment.md](12-deployment.md)).
+
+**R2 bucket:** `clint-materials` (set via the `R2_BUCKET` var in `wrangler.jsonc`). Object key scheme: `{space_id}/{material_id}/{file_name}`. The bucket name is stable; the key encodes space isolation.
+
+**TTLs:** PUT presigned URL expires in 5 minutes. GET presigned URL expires in 60 seconds. Both are hardcoded in `worker/r2.ts`.
 
 ## RPC -> Table Access Matrix
 
@@ -41,6 +60,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_space_member_guards` | - | space_members |
 | `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
+| `finalize_material` | materials | - |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
@@ -83,6 +103,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
+| `prepare_material_upload` | - | materials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
 | `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
@@ -451,7 +472,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `build_intelligence_payload`
 - `delete_material`
 - `delete_primary_intelligence`
-- `download_material`
+- `finalize_material`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`

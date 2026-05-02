@@ -127,7 +127,42 @@ export const environment = {
 
 `apexDomain: ''` in dev keeps the localStorage path. With `apexDomain` set, Supabase JS uses `Domain=.yourproduct.com` cookies on apex hosts and falls back to localStorage on custom domains (which are a separate trust boundary).
 
-### 7. Deploy the Edge Function
+### 7. Cloudflare Worker (R2 materials)
+
+The materials Worker is bundled into the same Cloudflare Worker as the Angular SPA (entry point `src/client/worker/index.ts`). It is deployed automatically via the Cloudflare Workers Builds pipeline on every push to `main`. The following one-time setup is required before the first deploy.
+
+**Create the R2 bucket:**
+
+```bash
+npx wrangler r2 bucket create clint-materials
+```
+
+**Configure R2 CORS** (allows the Angular client to PUT directly from the browser):
+
+```bash
+# Create a file cors.json with your allowed origins, then:
+npx wrangler r2 bucket cors put clint-materials --rules cors.json
+```
+
+The CORS policy must allow `PUT` and `GET` from the same origin set as `ALLOWED_APEXES` in the Worker config. A minimal rule allows `PUT` from `https://*.yourproduct.com` and `https://yourproduct.com` for the content types used by materials uploads.
+
+**Set Worker secrets** via `wrangler secret put`:
+
+```bash
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_ANON_KEY
+npx wrangler secret put R2_ACCOUNT_ID
+npx wrangler secret put R2_ACCESS_KEY_ID
+npx wrangler secret put R2_SECRET_ACCESS_KEY
+```
+
+`R2_ACCOUNT_ID` is the Cloudflare account ID (found in the Workers dashboard). `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` are an R2-scoped API token pair created at **Cloudflare Dashboard > R2 > Manage R2 API Tokens** with "Object Read and Write" permission on the `clint-materials` bucket.
+
+**Rate-limit namespaces:** The Worker uses two Workers Rate Limiting namespaces (one for upload, one for download). Create them in **Cloudflare Dashboard > Workers > Rate Limiting**. Copy the numeric namespace IDs into `src/client/wrangler.jsonc` replacing the `<UPLOAD_NAMESPACE_ID>` and `<DOWNLOAD_NAMESPACE_ID>` placeholders before deploying.
+
+- [ ] **Verify:** `npx wrangler r2 bucket list` shows `clint-materials`. `npx wrangler secret list` shows all five secrets. The namespace IDs in `wrangler.jsonc` are numeric (not placeholder strings).
+
+### 8. Deploy the Edge Function
 
 ```bash
 cd /Users/aadityamadala/Documents/code/clint-v2
@@ -138,7 +173,7 @@ The function ships a Deno-runtime handler under `supabase/functions/send-invite-
 
 - [ ] **Verify:** `supabase functions list` shows `send-invite-email` as `ACTIVE`.
 
-### 8. Configure the database webhook
+### 9. Configure the database webhook
 
 In **Supabase Dashboard > Database > Webhooks** (this cannot be expressed in `config.toml`):
 
@@ -147,7 +182,7 @@ In **Supabase Dashboard > Database > Webhooks** (this cannot be expressed in `co
 - [ ] Add HTTP header: `webhook-signature: <same value as EMAIL_WEBHOOK_SECRET>`
 - [ ] **Verify:** issue a test invite from the agency portal; check Resend dashboard for delivery and recipient inbox for the branded email. Forged calls without the header should return 401.
 
-### 9. Bootstrap the first platform admin
+### 10. Bootstrap the first platform admin
 
 `platform_admins` has no UI. After signing in once via the deployed app, find your `auth.uid()`:
 
@@ -165,7 +200,7 @@ Once inserted, you can navigate to the super-admin host (`https://admin.<apex>`)
 
 - [ ] **Verify:** `https://admin.yourproduct.com/super-admin/agencies` loads (instead of redirecting away).
 
-### 10. Provision the first agency
+### 11. Provision the first agency
 
 From psql, before the super-admin UI is wired (or as a smoke test of the RPC):
 
@@ -180,7 +215,7 @@ SELECT public.provision_agency(
 
 If the owner has signed in to the platform before, they're inserted directly into `agency_members` with role `owner` (returns `owner_invited: false`). Otherwise an `agency_invites` row is held; the owner's first Google OAuth sign-in fires `handle_new_user`, which promotes the invite to an `agency_members` row silently (returns `owner_invited: true`). After this, the agency owner can sign in at `https://zs.yourproduct.com`, land on `/admin/tenants`, and provision pharma client tenants self-serve.
 
-### 11. Provisioning a custom domain (manual ops checklist, sales-led)
+### 12. Provisioning a custom domain (manual ops checklist, sales-led)
 
 Custom domains are sales-led. There's no self-serve path. When a customer requests `competitive.pfizer.com`:
 

@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 
 import { Material } from '../../../core/models/material.model';
 import { MaterialService } from '../../../core/services/material.service';
+import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialRowComponent } from '../../../shared/components/material-row/material-row.component';
 import { MaterialPreviewDrawerComponent } from '../../../shared/components/material-preview-drawer/material-preview-drawer.component';
 
@@ -16,7 +17,7 @@ import { MaterialPreviewDrawerComponent } from '../../../shared/components/mater
   standalone: true,
   imports: [MaterialRowComponent, MaterialPreviewDrawerComponent],
   template: `
-    @if (visible() && (loading() || rows().length > 0)) {
+    @if (visible() && (loading() || error() || rows().length > 0)) {
       <section class="border border-slate-200 bg-white" aria-label="Recent materials">
         <header
           class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
@@ -34,6 +35,8 @@ import { MaterialPreviewDrawerComponent } from '../../../shared/components/mater
         <div class="materials-section__list">
           @if (loading()) {
             <p class="px-4 py-3 text-xs text-slate-400">Loading...</p>
+          } @else if (error()) {
+            <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
           } @else {
             <ul class="divide-y divide-slate-100">
               @for (material of rows(); track material.id) {
@@ -75,6 +78,7 @@ export class RecentMaterialsWidgetComponent {
 
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
   protected readonly previewMaterial = signal<Material | null>(null);
   protected readonly previewVisible = signal(false);
 
@@ -94,10 +98,12 @@ export class RecentMaterialsWidgetComponent {
 
   private async load(spaceId: string, limit: number): Promise<void> {
     this.loading.set(true);
+    this.error.set(null);
     try {
       const rows = await this.materialService.listRecentForSpace(spaceId, limit);
       this.rows.set(rows);
-    } catch {
+    } catch (e) {
+      this.error.set(errorMessage(e));
       this.rows.set([]);
     } finally {
       this.loading.set(false);

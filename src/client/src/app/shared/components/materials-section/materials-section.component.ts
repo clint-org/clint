@@ -6,6 +6,7 @@ import {
   MaterialEntityType,
   MaterialType,
 } from '../../../core/models/material.model';
+import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialService } from '../../../core/services/material.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { MaterialRowComponent } from '../material-row/material-row.component';
@@ -83,7 +84,7 @@ export class MaterialsSectionComponent implements OnInit {
       });
       this.materials.set(result.rows ?? []);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Could not load materials.');
+      this.error.set(errorMessage(e));
       this.materials.set([]);
     } finally {
       this.loading.set(false);

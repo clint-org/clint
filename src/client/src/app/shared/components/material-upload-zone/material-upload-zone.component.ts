@@ -6,6 +6,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 
+import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialService } from '../../../core/services/material.service';
 import {
   MATERIAL_DEFAULT_ALLOWED_MIME,
@@ -397,30 +398,35 @@ export class MaterialUploadZoneComponent {
 
     const sid = this.spaceId();
     const file = pending.file;
-    const tempPath = this.materialService.buildTempPath(sid, file.name);
+
+    // Compose links: picker links plus, when the current entity is
+    // space-level, an explicit space link (the picker doesn't show
+    // space as a target).
+    const links: MaterialLink[] = this.pickerLinks().map((l, i) => ({
+      entity_type: l.entity_type,
+      entity_id: l.entity_id,
+      display_order: i,
+    }));
+    if (this.entityType() === 'space') {
+      links.unshift({
+        entity_type: 'space',
+        entity_id: this.entityId(),
+        display_order: 0,
+      });
+    }
 
     try {
-      await this.materialService.uploadFile(tempPath, file);
-
-      // Compose links: picker links plus, when the current entity is
-      // space-level, an explicit space link (the picker doesn't show
-      // space as a target).
-      const links: MaterialLink[] = this.pickerLinks().map((l, i) => ({
-        entity_type: l.entity_type,
-        entity_id: l.entity_id,
-        display_order: i,
-      }));
-      if (this.entityType() === 'space') {
-        links.unshift({
-          entity_type: 'space',
-          entity_id: this.entityId(),
-          display_order: 0,
-        });
-      }
-
+      // 1. Register first. RPC validates size/mime/access. Returns a
+      //    material_id; worker derives the canonical R2 key from this id.
       const materialId = await this.materialService.registerMaterial({
         space_id: sid,
-        file_path: tempPath,
+        // Placeholder path; the worker derives the real R2 key from
+        // (space_id, material_id, file_name) at sign-upload time. The
+        // file_path column gets its real value at finalize time, but
+        // we pre-fill it here so list_materials_for_* can return a
+        // path-ish string for the row even pre-finalize. The row is
+        // hidden by finalized_at IS NULL anyway.
+        file_path: `${sid}/pending/${file.name}`,
         file_name: file.name,
         file_size_bytes: file.size,
         mime_type: file.type,
@@ -429,20 +435,17 @@ export class MaterialUploadZoneComponent {
         links,
       });
 
-      // Repath storage object so the canonical path contains the
-      // material id. Best-effort: if the move fails we keep the temp
-      // path -- the row already references it.
-      const finalPath = this.materialService.buildFinalPath(sid, materialId, file.name);
-      const moved = await this.materialService.repath(tempPath, finalPath);
-      if (moved) {
-        try {
-          await this.materialService.updateFilePath(materialId, finalPath);
-        } catch {
-          // Row update failed; the file is at finalPath but the row
-          // still points at tempPath. The file will be unreachable;
-          // we surface a warning but consider the upload succeeded.
-        }
-      }
+      // 2. Upload bytes. Worker mints presigned PUT URL, browser PUTs
+      //    directly to R2 at {space_id}/{material_id}/{file_name}.
+      await this.materialService.uploadFile(materialId, file);
+
+      // 3. Update the row's file_path to the canonical key and mark
+      //    finalized in a single RPC. (finalize_material handles the
+      //    visibility flip.) We could also update file_path here via
+      //    a second RPC; keep the current shape for now since
+      //    download_material returns whatever path is in the column.
+      await this.materialService.updateFilePathDirect(materialId, `${sid}/${materialId}/${file.name}`);
+      await this.materialService.finalize(materialId);
 
       this.messageService.add({
         severity: 'success',
@@ -454,7 +457,7 @@ export class MaterialUploadZoneComponent {
         id: materialId,
         space_id: sid,
         uploaded_by: '',
-        file_path: moved ? finalPath : tempPath,
+        file_path: `${sid}/${materialId}/${file.name}`,
         file_name: file.name,
         file_size_bytes: file.size,
         mime_type: file.type,
@@ -467,7 +470,7 @@ export class MaterialUploadZoneComponent {
       this.dialogOpen.set(false);
       this.onDialogClose();
     } catch (e) {
-      this.uploadError.set(e instanceof Error ? e.message : 'Upload failed.');
+      this.uploadError.set(errorMessage(e));
     } finally {
       this.uploading.set(false);
     }

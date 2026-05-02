@@ -17,6 +17,7 @@
 | Email | Resend | Branded transactional email (invite emails) via a single platform-wide sender domain with DKIM/SPF; per-tenant display name and brand in the body |
 | Export | pptxgenjs | Client-side PowerPoint generation; brand-aware cover, footer, and accent colors |
 | Deployment | Cloudflare Workers (static assets binding via `src/client/wrangler.jsonc`) | Static SPA hosting with `not_found_handling: "single-page-application"` for client-side routing; free wildcard subdomain SSL on the `*.<apex>` zone; security headers via `src/client/public/_headers` |
+| Storage | Cloudflare R2 (S3-compatible object store) | Engagement materials (briefings, PDFs, decks) are stored in the `clint-materials` R2 bucket. The same Cloudflare Worker that serves the SPA also exposes two presign endpoints (`POST /api/materials/sign-upload` and `POST /api/materials/sign-download`). The Worker forwards the user JWT to Supabase RPCs for access decisions, then signs short-lived URLs using `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`. The Angular client never touches R2 directly. |
 
 ## Full Version Inventory
 
@@ -50,6 +51,8 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 <!-- AUTO-GEN:DRIFT -->
 - `@angular/cdk`
 - `@angular/core`
+- `@aws-sdk/client-s3`
+- `@aws-sdk/s3-request-presigner`
 - `@fortawesome/fontawesome-free`
 - `@primeng/themes`
 - `@supabase/supabase-js`
@@ -67,6 +70,8 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `tailwindcss-primeui`
 - `tslib`
 - `zone.js`
+- `@cloudflare/vitest-pool-workers`
+- `@cloudflare/workers-types`
 - `@playwright/test`
 - `@tailwindcss/postcss`
 - `@types/jsonwebtoken`
