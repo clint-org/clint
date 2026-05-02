@@ -1243,3 +1243,107 @@ begin
     ('marker', 'm_maritide_read',     m_maritide_read);
 end;
 $$;
+
+-- =============================================================================
+-- 10. helper: _seed_demo_trial_notes (15 real analyst notes)
+-- =============================================================================
+
+create or replace function public._seed_demo_trial_notes(p_space_id uuid, p_uid uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  t_summit         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_summit');
+  t_redefine_1     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_redefine_1');
+  t_surmount_1     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_surmount_1');
+  t_select         uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_select');
+  t_flow           uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_flow');
+  t_attribute_cm   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_attribute_cm');
+  t_sequoia_hcm    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_sequoia_hcm');
+  t_maple_hcm      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_maple_hcm');
+  t_danuglipron_p2 uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_danuglipron_p2');
+  t_empact_mi      uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_empact_mi');
+  t_odyssey_hcm    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_odyssey_hcm');
+  t_fineart_hf     uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_fineart_hf');
+  t_vk2735_sc_p2   uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_vk2735_sc_p2');
+  t_ct388_p2       uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_ct388_p2');
+  t_maritide_p2    uuid := (select id from _seed_ids where entity_type = 'trial' and key = 't_maritide_p2');
+begin
+  insert into public.trial_notes (id, space_id, created_by, trial_id, content) values
+    (gen_random_uuid(), p_space_id, p_uid, t_summit,         'First HFpEF outcomes trial in obese patients to show improvement on KCCQ-CSS. Sets a new standard for cardiometabolic trial design that combines body weight + clinical outcomes.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_redefine_1,     'Weight loss of ~22.7% missed Street consensus near 25%. CagriSema differentiation thesis (additive amylin effect) weakened. Read-through to amycretin and other Novo combo bets.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_surmount_1,     'Tirzepatide ~22% weight loss at 72 weeks redefined the obesity efficacy bar. Fastest US obesity launch ramp on record post-approval.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_select,         'First obesity drug to demonstrate CV outcomes benefit independent of glycemic effect. Reframes payer ROI calculation, defensible on cardiology budget rather than just metabolic.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_flow,           'Broadens semaglutide label to non-diabetic CKD an open question for next FDA cycle. Substantially expands TAM.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_attribute_cm,   'Acoramidis vs tafamidis: head-to-head data lacking, payer pressure expected. Real-world switching dynamics will define 2026.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_sequoia_hcm,    'Aficamten data closely tracks EXPLORER-HCM. NDA filed Q3 2024, PDUFA 2025. Differentiation will come on dosing convenience and onset of effect.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_maple_hcm,      'Head-to-head vs metoprolol the first true active-control HCM trial. Result will set the bar for displacement of beta-blockers as first-line.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_danuglipron_p2, 'Discontinuation a clean signal that oral GLP-1 small molecule is harder than the SC peptide. Reads through to Lilly orforglipron and other oral programs.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_empact_mi,      'Failed primary in post-MI limits SGLT2 expansion narrative. Does not reverse HFrEF, HFpEF, CKD wins but caps the indication ladder.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_odyssey_hcm,    'BMS Camzyos failed primary in nHCM, limits indication expansion vs the obstructive form. Aficamten ACACIA-HCM still in play for nHCM.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_fineart_hf,     'First nsMRA HFpEF win opens a non-SGLT2 / non-ARNI lane. Combined with EMPEROR-Preserved, suggests HFpEF treatment cocktail forming.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_vk2735_sc_p2,   'P2 ~13-15% weight loss at 13 weeks competitive with tirzepatide and semaglutide ramp. M&A speculation justified given Viking pipeline depth.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_ct388_p2,       'Roche entry via Carmot acquisition late but well resourced. P2 obesity readout 2026 the make-or-break catalyst.'),
+    (gen_random_uuid(), p_space_id, p_uid, t_maritide_p2,    'GIPR antagonism (vs agonism) a differentiated bet. Mechanism distinct from Lilly and Novo entries, if validated, Amgen has a defensible second-mover position.');
+end;
+$$;
+
+-- =============================================================================
+-- 11. helper: _seed_demo_events (10 real cardiometabolic company events)
+-- =============================================================================
+
+create or replace function public._seed_demo_events(p_space_id uuid, p_uid uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  c_meridian uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_meridian');
+  c_vantage  uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_vantage');
+  c_apex     uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_apex');
+  c_cascade  uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_cascade');
+  c_zenith   uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_zenith');
+  c_atlas    uuid := (select id from _seed_ids where entity_type = 'company' and key = 'c_atlas');
+
+  ec_regulatory uuid := 'e0000000-0000-0000-0000-000000000002';
+  ec_financial  uuid := 'e0000000-0000-0000-0000-000000000003';
+  ec_strategic  uuid := 'e0000000-0000-0000-0000-000000000004';
+  ec_clinical   uuid := 'e0000000-0000-0000-0000-000000000005';
+  ec_commercial uuid := 'e0000000-0000-0000-0000-000000000006';
+begin
+  insert into public.events (id, space_id, company_id, category_id, title, event_date, description, priority, tags, created_by) values
+    (gen_random_uuid(), p_space_id, c_cascade,  ec_strategic,  'Roche acquires Carmot Therapeutics ($2.7B)',
+      '2023-12-04', 'Roche announces acquisition of Carmot Therapeutics for $2.7B upfront, gaining access to CT-388 and CT-996 obesity assets.',
+      'high', array['m&a', 'obesity', 'incretin'], p_uid),
+    (gen_random_uuid(), p_space_id, c_meridian, ec_strategic,  'Lilly announces $4.5B manufacturing capacity expansion',
+      '2024-02-23', 'Lilly to invest $4.5B in additional incretin manufacturing capacity to meet GLP-1 demand.',
+      'high', array['manufacturing', 'capacity'], p_uid),
+    (gen_random_uuid(), p_space_id, c_vantage,  ec_strategic,  'Novo Holdings acquires Catalent ($16.5B)',
+      '2024-02-05', 'Novo Holdings acquires Catalent for $16.5B; Novo Nordisk to acquire 3 Catalent fill-finish sites for Wegovy and Ozempic supply.',
+      'high', array['m&a', 'manufacturing', 'supply'], p_uid),
+    (gen_random_uuid(), p_space_id, c_apex,     ec_clinical,   'Pfizer discontinues danuglipron program',
+      '2023-12-01', 'Pfizer halts development of oral GLP-1 small molecule danuglipron after high incidence of adverse events in P2.',
+      'high', array['discontinuation', 'oral-glp1', 'safety'], p_uid),
+    (gen_random_uuid(), p_space_id, c_zenith,   ec_financial,  'Viking VK2735 P2 readout drives stock +120%',
+      '2024-02-27', 'Viking Therapeutics VK2735 SC P2 obesity readout (~13-15% weight loss at 13 weeks) drives stock price up 120% in single session.',
+      'high', array['readout', 'obesity', 'stock-move'], p_uid),
+    (gen_random_uuid(), p_space_id, c_vantage,  ec_financial,  'Novo CagriSema misses bar, stock -20%',
+      '2024-12-20', 'REDEFINE-1 weight loss of 22.7% below ~25% Street consensus, Novo Nordisk stock drops 20% on disappointment.',
+      'high', array['readout', 'obesity', 'stock-move'], p_uid),
+    (gen_random_uuid(), p_space_id, c_atlas,    ec_commercial, 'BridgeBio Attruby commercial launch',
+      '2024-12-09', 'BridgeBio launches Attruby (acoramidis) for ATTR-CM, second-to-market entrant against Pfizer Vyndaqel.',
+      'high', array['launch', 'attr-cm'], p_uid),
+    (gen_random_uuid(), p_space_id, c_meridian, ec_financial,  'Lilly Mounjaro/Zepbound combined annual revenue exceeds $15B',
+      '2024-02-06', 'Lilly FY2024 earnings: Mounjaro and Zepbound combined revenue exceeds $15B, anchor of cardiometabolic franchise.',
+      'high', array['earnings', 'revenue', 'incretin'], p_uid),
+    (gen_random_uuid(), p_space_id, c_vantage,  ec_regulatory, 'Wegovy SELECT label update for CV outcomes',
+      '2024-03-08', 'FDA approves Wegovy label expansion to include reduced risk of CV death, MI, and stroke based on SELECT.',
+      'high', array['fda', 'label-expansion', 'cv-outcomes'], p_uid),
+    (gen_random_uuid(), p_space_id, c_apex,     ec_strategic,  'Pfizer pivots cardiometabolic R&D away from oral GLP-1',
+      '2024-01-15', 'Following danuglipron discontinuation, Pfizer signals shift in cardiometabolic R&D away from oral GLP-1 small molecules.',
+      'low', array['strategy', 'r&d', 'pivot'], p_uid);
+end;
+$$;
