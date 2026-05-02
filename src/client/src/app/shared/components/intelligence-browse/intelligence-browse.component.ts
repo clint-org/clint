@@ -15,10 +15,6 @@ import {
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
-import {
-  BrowseFilterBarComponent,
-  BrowseFilterChip,
-} from '../browse-filter-bar/browse-filter-bar.component';
 
 const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
@@ -44,6 +40,10 @@ const DRAFTS_LIMIT = 200;
  * Filterable browse view for primary intelligence in the current space.
  * Toggle between Published (paginated, server-filtered) and Drafts
  * (single page, client-filtered, gated to agency members by RLS).
+ *
+ * The toolbar deliberately mirrors the materials browse surface (slate-50
+ * stripe + mono labels + same density) so the two pages read as one
+ * product surface, even though their filter controls differ.
  */
 @Component({
   selector: 'app-intelligence-browse',
@@ -58,7 +58,6 @@ const DRAFTS_LIMIT = 200;
     SelectButtonModule,
     IntelligenceFeedComponent,
     SkeletonComponent,
-    BrowseFilterBarComponent,
   ],
   template: `
     <div class="page-shell">
@@ -69,14 +68,17 @@ const DRAFTS_LIMIT = 200;
         </div>
       </header>
 
-      <app-browse-filter-bar
-        ariaLabel="Intelligence filters"
-        [chips]="activeChips()"
-        [hasActive]="hasAnyActive()"
-        [resultLabel]="totalLabel()"
-        (chipRemove)="onChipRemove($event)"
-        (clearAll)="onClearAll()"
+      <div
+        class="flex flex-wrap items-center gap-2 border border-slate-200 bg-slate-50/50 px-4 py-2"
+        role="toolbar"
+        aria-label="Intelligence filters"
       >
+        <span
+          class="font-mono text-[10px] uppercase tracking-wider text-slate-500"
+          aria-hidden="true"
+        >
+          Status
+        </span>
         <p-selectbutton
           [options]="statusOptions"
           [ngModel]="status()"
@@ -87,23 +89,28 @@ const DRAFTS_LIMIT = 200;
           size="small"
           aria-label="Filter by status"
         />
-        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+        <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+          Search
+        </span>
         <input
           pInputText
           type="search"
           [ngModel]="query()"
           (ngModelChange)="query.set($event); resetAndLoad()"
-          placeholder="Search headline / thesis"
-          aria-label="Search"
-          class="!h-8 w-64"
+          placeholder="Headline / thesis"
+          aria-label="Search headline or thesis"
+          class="!h-7 w-56 !text-xs"
         />
+        <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+          Entity
+        </span>
         <p-multiSelect
           [options]="entityTypeOptions"
           [ngModel]="entityTypes()"
           (ngModelChange)="entityTypes.set($event ?? []); resetAndLoad()"
           optionLabel="label"
           optionValue="value"
-          placeholder="Entity"
+          placeholder="Any"
           ariaLabel="Filter by entity type"
           [showClear]="true"
           appendTo="body"
@@ -112,25 +119,36 @@ const DRAFTS_LIMIT = 200;
           [maxSelectedLabels]="0"
           [selectedItemsLabel]="'Entity (' + entityTypes().length + ')'"
         />
+        <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+          Since
+        </span>
         <p-datepicker
           [ngModel]="since()"
           (ngModelChange)="since.set($event); resetAndLoad()"
-          placeholder="Since..."
+          placeholder="Any time"
           dateFormat="yy-mm-dd"
           [showIcon]="true"
           [showClear]="true"
           size="small"
           appendTo="body"
         />
-      </app-browse-filter-bar>
+        @if (hasAnyActive()) {
+          <p-button
+            label="Clear"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            (onClick)="onClearAll()"
+          />
+        }
+        <span class="ml-auto font-mono text-[10px] tabular-nums text-slate-400">
+          {{ totalLabel() }}
+        </span>
+      </div>
 
-      <div class="mt-4">
+      <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
-          <ul
-            class="divide-y divide-slate-100 border border-slate-200 bg-white"
-            aria-busy="true"
-            aria-label="Loading reads"
-          >
+          <ul aria-busy="true" aria-label="Loading reads" class="divide-y divide-slate-100">
             @for (i of skeletonRows; track i) {
               <li class="px-4 py-3" aria-hidden="true">
                 <div class="mb-1 flex items-baseline gap-2">
@@ -153,9 +171,7 @@ const DRAFTS_LIMIT = 200;
             }
           </ul>
         } @else if (rows().length === 0) {
-          <div class="border border-slate-200 bg-white px-4 py-8 text-center">
-            <p class="text-xs text-slate-500">{{ emptyMessage() }}</p>
-          </div>
+          <p class="px-4 py-4 text-xs text-slate-400">{{ emptyMessage() }}</p>
         } @else {
           <app-intelligence-feed
             [rows]="rows()"
@@ -163,19 +179,19 @@ const DRAFTS_LIMIT = 200;
             [spaceId]="spaceId()"
             [query]="query()"
           />
-
-          @if (status() === 'published' && (total() > rows().length || offset() > 0)) {
-            <div class="mt-4">
-              <p-paginator
-                [rows]="PAGE_SIZE"
-                [totalRecords]="total()"
-                [first]="offset()"
-                (onPageChange)="onPage($event)"
-              />
-            </div>
-          }
         }
       </div>
+
+      @if (status() === 'published' && (total() > rows().length || offset() > 0)) {
+        <div class="mt-4">
+          <p-paginator
+            [rows]="PAGE_SIZE"
+            [totalRecords]="total()"
+            [first]="offset()"
+            (onPageChange)="onPage($event)"
+          />
+        </div>
+      }
     </div>
   `,
 })
@@ -231,37 +247,6 @@ export class IntelligenceBrowseComponent implements OnInit {
     );
   });
 
-  protected readonly activeChips = computed<BrowseFilterChip[]>(() => {
-    const chips: BrowseFilterChip[] = [];
-    const q = this.query().trim();
-    if (q) {
-      chips.push({ field: 'query', header: 'Search', value: q, id: 'query' });
-    }
-    const entityLabels = new Map(ENTITY_TYPES.map((o) => [o.value, o.label]));
-    for (const type of this.entityTypes()) {
-      chips.push({
-        field: 'entityTypes',
-        header: 'Entity',
-        value: entityLabels.get(type) ?? type,
-        id: type,
-      });
-    }
-    const sinceDate = this.since();
-    if (sinceDate) {
-      chips.push({
-        field: 'since',
-        header: 'Since',
-        value: sinceDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        }),
-        id: 'since',
-      });
-    }
-    return chips;
-  });
-
   // Re-fetch when the route's spaceId changes.
   private readonly routeEffect = effect(() => {
     const sid = this.spaceId();
@@ -300,19 +285,6 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected onPage(event: { first?: number }): void {
     this.offset.set(event.first ?? 0);
     void this.load();
-  }
-
-  protected onChipRemove(chip: BrowseFilterChip): void {
-    if (chip.field === 'query') {
-      this.query.set('');
-    } else if (chip.field === 'entityTypes') {
-      this.entityTypes.update((types) =>
-        types.filter((t) => t !== (chip.id as IntelligenceEntityType))
-      );
-    } else if (chip.field === 'since') {
-      this.since.set(null);
-    }
-    this.resetAndLoad();
   }
 
   protected onClearAll(): void {
