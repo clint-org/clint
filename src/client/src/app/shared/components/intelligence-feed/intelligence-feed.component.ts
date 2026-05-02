@@ -20,16 +20,16 @@ import { renderMarkdownInline } from '../../utils/markdown-render';
   template: `
     <ul class="divide-y divide-slate-100 border border-slate-200 bg-white">
       @for (row of rows(); track row.id) {
-        <li class="px-4 py-3">
+        <li class="group relative px-4 py-3 transition-colors hover:bg-slate-50">
           <div class="mb-1 flex flex-wrap items-baseline gap-2">
             <span
-              class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+              class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
             >
               {{ entityLabel(row) }}
             </span>
             <a
               [routerLink]="entityRouterLink(row)"
-              class="text-sm font-semibold text-slate-900 hover:text-brand-700"
+              class="text-sm font-semibold text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
             >
               {{ row.headline }}
             </a>
