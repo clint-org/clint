@@ -29,6 +29,16 @@
 -- security: _emit and _log are SECURITY DEFINER, both have execute revoked
 --   from public (no direct callers). backfill_marker_history is granted to
 --   authenticated so platform admins can run it once after deploy.
+--
+-- Cascade-delete hazard: if a future RPC deletes a `spaces` row, the cascade
+-- to `markers` fires this BEFORE DELETE trigger which inserts new audit rows
+-- referencing the same `space_id`. Postgres RI cascade ordering between
+-- `markers` and `marker_changes` deletions is not guaranteed, so depending on
+-- order the new audit rows may end up dangling (silently orphaned) or be
+-- cleaned up by the cascade. Any future delete-space flow MUST explicitly
+-- DELETE FROM markers WHERE space_id = X first to avoid this. The smoke test
+-- at the bottom of this file follows that pattern. (Spaces are not currently
+-- deletable via any RPC, so this is forward-guidance only.)
 
 -- =============================================================================
 -- 1. classifier: walk a marker_changes row, fan out to trial_change_events.
@@ -215,10 +225,13 @@ begin
 
     elsif v_old_title is distinct from v_new_title
        or v_old_descr is distinct from v_new_descr
-       or v_old_end_date is distinct from v_new_end_date then
+       or v_old_end_date is distinct from v_new_end_date
+       or v_old_proj is distinct from v_new_proj then
       -- nothing higher-priority changed; bundle the remaining material
       -- fields under marker_updated. end_date has no dedicated event type
-      -- in the spec, so it lands here too.
+      -- in the spec, so it lands here too. projection-only changes between
+      -- two non-actual values (e.g. stout -> primary) also land here, since
+      -- projection_finalized fires only when the new value is 'actual'.
       v_changed_fields := array[]::text[];
       if v_old_title is distinct from v_new_title then
         v_changed_fields := array_append(v_changed_fields, 'title');
@@ -229,14 +242,18 @@ begin
       if v_old_end_date is distinct from v_new_end_date then
         v_changed_fields := array_append(v_changed_fields, 'end_date');
       end if;
+      if v_old_proj is distinct from v_new_proj then
+        v_changed_fields := array_append(v_changed_fields, 'projection');
+      end if;
       v_event_type := 'marker_updated';
       v_payload := jsonb_build_object(
         'changed_fields', to_jsonb(v_changed_fields)
       );
 
     else
-      -- update with no material field actually different. trigger guards
-      -- against this writing an audit row, so we should never get here.
+      -- Defensive: if no material field actually differs, return without
+      -- emitting. The trigger's diff guard should make this unreachable,
+      -- but kept for safety.
       return;
     end if;
 
@@ -300,7 +317,7 @@ comment on function public._emit_events_from_marker_change(uuid) is
 
 
 -- =============================================================================
--- 2. trigger function: AFTER INSERT/UPDATE/DELETE on markers.
+-- 2. trigger function: BEFORE INSERT/UPDATE/DELETE on markers.
 --
 create or replace function public._log_marker_change()
 returns trigger
@@ -403,7 +420,7 @@ $$;
 revoke execute on function public._log_marker_change() from public;
 
 comment on function public._log_marker_change() is
-  'Internal trigger function: writes marker_changes audit rows on INSERT / UPDATE / DELETE of public.markers (UPDATE only when a material field differs) and calls _emit_events_from_marker_change for fanout. SECURITY DEFINER.';
+  'Internal trigger function: writes marker_changes audit rows on INSERT / UPDATE / DELETE of public.markers (UPDATE only when a material field differs) and calls _emit_events_from_marker_change for fanout. BEFORE timing is required because marker_assignments are cascade-deleted; an AFTER DELETE trigger would see zero assignments at fan-out time. SECURITY DEFINER.';
 
 create trigger markers_audit
 before insert or update or delete on public.markers
@@ -483,6 +500,7 @@ declare
   v_trial_id    uuid := '88888888-8888-8888-8888-888888888888';
   v_marker_id   uuid;
   v_marker2_id  uuid;
+  v_marker3_id  uuid;
   v_orphan_id   uuid;
   v_audit_id    uuid;
   v_event_id    uuid;
@@ -820,6 +838,59 @@ begin
   end if;
 
   raise notice 'marker trigger smoke ok 10: backfill_marker_history -> created rows + fanout events';
+
+  -- --- test 11: UPDATE projection between two non-actual values
+  -- ('stout' -> 'primary') -> marker_updated with projection in
+  -- changed_fields, and zero projection_finalized events on this trial.
+  v_marker3_id := gen_random_uuid();
+  insert into public.markers (
+    id, space_id, marker_type_id, title, projection, event_date, created_by
+  ) values (
+    v_marker3_id, v_space_id, v_type_a, 'M3 Projection Shift', 'stout', '2026-11-01', v_user_id
+  );
+  insert into public.marker_assignments (marker_id, trial_id)
+    values (v_marker3_id, v_trial_id);
+
+  -- snapshot the trial-level projection_finalized count before the update so
+  -- we can assert the update contributed zero of them.
+  select count(*) into v_event_count
+    from public.trial_change_events
+   where trial_id = v_trial_id and event_type = 'projection_finalized';
+
+  update public.markers
+     set projection = 'primary'
+   where id = v_marker3_id;
+
+  if (select count(*) from public.trial_change_events
+        where marker_id = v_marker3_id and event_type = 'marker_updated') <> 1 then
+    raise exception 'marker trigger smoke FAIL test 11: expected 1 marker_updated event for marker3, got %',
+      (select count(*) from public.trial_change_events
+         where marker_id = v_marker3_id and event_type = 'marker_updated');
+  end if;
+
+  select payload into v_payload
+    from public.trial_change_events
+   where marker_id = v_marker3_id and event_type = 'marker_updated';
+
+  if not (v_payload -> 'changed_fields') ? 'projection' then
+    raise exception 'marker trigger smoke FAIL test 11: expected changed_fields to include projection, got %', v_payload;
+  end if;
+
+  -- the update must NOT have produced any projection_finalized event for
+  -- this trial (count must be unchanged from the pre-update snapshot).
+  if (select count(*) from public.trial_change_events
+        where trial_id = v_trial_id and event_type = 'projection_finalized') <> v_event_count then
+    raise exception 'marker trigger smoke FAIL test 11: stout->primary unexpectedly emitted projection_finalized';
+  end if;
+
+  -- belt-and-suspenders: assert zero projection_finalized rows exist
+  -- specifically tied to marker3.
+  if (select count(*) from public.trial_change_events
+        where marker_id = v_marker3_id and event_type = 'projection_finalized') <> 0 then
+    raise exception 'marker trigger smoke FAIL test 11: marker3 must have 0 projection_finalized events';
+  end if;
+
+  raise notice 'marker trigger smoke ok 11: projection stout->primary -> marker_updated (projection in changed_fields), no projection_finalized';
 
   -- cleanup: tear down fixture in reverse-dependency order. markers must
   -- be deleted explicitly before spaces (and their tenant) so the BEFORE
