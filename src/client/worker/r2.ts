@@ -19,6 +19,11 @@ function client(cfg: R2Config): S3Client {
       accessKeyId: cfg.accessKeyId,
       secretAccessKey: cfg.secretAccessKey,
     },
+    // R2 does not require the SDK's default CRC32 checksum, and including
+    // x-amz-checksum-crc32 / x-amz-sdk-checksum-algorithm in the signed URL
+    // makes browser PUTs without a matching header fail.
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
   });
 }
 
