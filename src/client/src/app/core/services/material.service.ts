@@ -2,7 +2,6 @@ import { inject, Injectable } from '@angular/core';
 
 import { SupabaseService } from './supabase.service';
 import {
-  DownloadMaterialResult,
   Material,
   MaterialEntityType,
   MaterialListResult,
@@ -11,67 +10,92 @@ import {
   UpdateMaterialInput,
 } from '../models/material.model';
 
-const MATERIALS_BUCKET = 'materials';
-const SIGNED_URL_TTL_SECONDS = 60;
+const WORKER_BASE = '/api/materials';
 
 /**
- * Service wrapper around the materials registry RPCs and Supabase Storage.
+ * Service wrapper around the materials registry RPCs and the R2 Worker.
  *
  * Upload flow:
- *   1. Caller picks a file. uploadFile() places it in the private
- *      `materials` bucket at materials/{space_id}/{tmp_id}/{file_name}.
- *   2. registerMaterial() inserts the row and links via RPC and returns
- *      the new material id.
- *   3. Caller may optionally repath the storage object so the final path
- *      contains the canonical material id; service.repath() handles that.
+ *   1. registerMaterial() inserts the row (finalized_at IS NULL, hidden
+ *      from readers) and returns the new material id.
+ *   2. uploadFile() asks the worker for a presigned R2 PUT URL, then
+ *      PUTs the bytes directly to R2.
+ *   3. updateFilePathDirect() writes the canonical R2 key to the row.
+ *   4. finalize() flips finalized_at, making the row visible.
  *
  * Download flow:
- *   1. downloadMaterial() validates access via RPC (returns the storage
- *      path).
- *   2. Frontend calls storage.from(...).createSignedUrl(path, ttl) and
- *      hands the browser the resulting URL.
+ *   getDownloadUrl() asks the worker to sign a GET URL. The worker
+ *   validates access via the download_material RPC, then returns a
+ *   presigned R2 URL with a Content-Disposition: attachment header.
  */
 @Injectable({ providedIn: 'root' })
 export class MaterialService {
   private supabase = inject(SupabaseService);
 
-  /** Generates a fresh `materials/{space_id}/{tmp_id}/{file_name}` path. */
-  buildTempPath(spaceId: string, fileName: string): string {
-    const tmp = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).toString();
-    return `${spaceId}/${tmp}/${this.safeFileName(fileName)}`;
+  /**
+   * Asks the worker for a presigned R2 PUT URL, then uploads the file
+   * directly to R2. Caller must have already called registerMaterial()
+   * to obtain materialId.
+   */
+  async uploadFile(materialId: string, file: File): Promise<void> {
+    const { data: session } = await this.supabase.client.auth.getSession();
+    const token = session.session?.access_token;
+    if (!token) throw new Error('Not signed in');
+
+    const signRes = await fetch(`${WORKER_BASE}/sign-upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ material_id: materialId }),
+    });
+    if (!signRes.ok) {
+      const body = await safeJson(signRes);
+      throw new Error(body?.error ?? `Upload sign failed (${signRes.status})`);
+    }
+    const { url } = (await signRes.json()) as { url: string; key: string };
+
+    const putRes = await fetch(url, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type },
+    });
+    if (!putRes.ok) {
+      throw new Error(`Upload to R2 failed (${putRes.status})`);
+    }
   }
 
-  buildFinalPath(spaceId: string, materialId: string, fileName: string): string {
-    return `${spaceId}/${materialId}/${this.safeFileName(fileName)}`;
-  }
-
-  private safeFileName(name: string): string {
-    // Replace path separators and control chars; keep extensions intact.
-    return name.replace(/[/\\]/g, '_');
-  }
-
-  /** Uploads the file to the private `materials` bucket. */
-  async uploadFile(path: string, file: File): Promise<void> {
-    const { error } = await this.supabase.client.storage.from(MATERIALS_BUCKET).upload(path, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type,
+  /** Mark the row as finalized so list/download RPCs surface it. */
+  async finalize(materialId: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('finalize_material', {
+      p_material_id: materialId,
     });
     if (error) throw error;
   }
 
   /**
-   * Moves the storage object so the final path contains the canonical
-   * material id. Best-effort: if the move fails we leave the temp path
-   * (the row already references it).
+   * Asks the worker for a presigned R2 GET URL with a download
+   * Content-Disposition. The worker validates access via the existing
+   * download_material RPC.
    */
-  async repath(fromPath: string, toPath: string): Promise<boolean> {
-    if (fromPath === toPath) return true;
-    const { error } = await this.supabase.client.storage
-      .from(MATERIALS_BUCKET)
-      .move(fromPath, toPath);
-    if (error) return false;
-    return true;
+  async getDownloadUrl(materialId: string): Promise<{
+    url: string;
+    fileName: string;
+    mimeType: string;
+  }> {
+    const { data: session } = await this.supabase.client.auth.getSession();
+    const token = session.session?.access_token;
+    if (!token) throw new Error('Not signed in');
+
+    const res = await fetch(`${WORKER_BASE}/sign-download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ material_id: materialId }),
+    });
+    if (!res.ok) {
+      const body = await safeJson(res);
+      throw new Error(body?.error ?? `Download sign failed (${res.status})`);
+    }
+    const body = (await res.json()) as { url: string; file_name: string; mime_type: string };
+    return { url: body.url, fileName: body.file_name, mimeType: body.mime_type };
   }
 
   async registerMaterial(input: RegisterMaterialInput): Promise<string> {
@@ -94,11 +118,12 @@ export class MaterialService {
   }
 
   /**
-   * Updates the row's storage path. Only the uploader is allowed to do
-   * this (RLS check on materials.update). Used after registerMaterial +
-   * repath so the row points at the final, material-id-keyed path.
+   * Updates materials.file_path directly via PostgREST (RLS enforces
+   * uploader-only). Called from the upload flow after the R2 PUT
+   * succeeds, so the canonical R2 key is what download_material
+   * surfaces.
    */
-  async updateFilePath(materialId: string, newPath: string): Promise<void> {
+  async updateFilePathDirect(materialId: string, newPath: string): Promise<void> {
     const { error } = await this.supabase.client
       .from('materials')
       .update({ file_path: newPath })
@@ -172,48 +197,17 @@ export class MaterialService {
   }
 
   async delete(id: string): Promise<void> {
-    const { data, error } = await this.supabase.client.rpc('delete_material', {
+    const { error } = await this.supabase.client.rpc('delete_material', {
       p_id: id,
     });
     if (error) throw error;
-    const result = data as { material_id: string; file_path: string } | null;
-    if (result?.file_path) {
-      // Best-effort storage cleanup. If this fails (race, retention),
-      // the row is already gone -- the orphaned file will be cleaned up
-      // by an external janitor.
-      await this.supabase.client.storage.from(MATERIALS_BUCKET).remove([result.file_path]);
-    }
   }
+}
 
-  /**
-   * Validates access via RPC, then issues a short-lived signed URL via
-   * the storage client. Keeps the access check server-side and the
-   * signed-url issuance in the well-tested storage SDK.
-   */
-  async getDownloadUrl(materialId: string): Promise<{
-    url: string;
-    fileName: string;
-    mimeType: string;
-  }> {
-    const { data: rpcData, error: rpcError } = await this.supabase.client.rpc('download_material', {
-      p_material_id: materialId,
-    });
-    if (rpcError) throw rpcError;
-    const meta = rpcData as DownloadMaterialResult;
-    if (!meta?.file_path) throw new Error('Material not found');
-
-    const { data: signed, error: signedError } = await this.supabase.client.storage
-      .from(MATERIALS_BUCKET)
-      .createSignedUrl(meta.file_path, SIGNED_URL_TTL_SECONDS, {
-        download: meta.file_name,
-      });
-    if (signedError) throw signedError;
-    if (!signed?.signedUrl) throw new Error('Could not create signed URL');
-
-    return {
-      url: signed.signedUrl,
-      fileName: meta.file_name,
-      mimeType: meta.mime_type,
-    };
+async function safeJson(res: Response): Promise<{ error?: string } | null> {
+  try {
+    return (await res.json()) as { error?: string };
+  } catch {
+    return null;
   }
 }
