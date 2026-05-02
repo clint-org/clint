@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 
+import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { UpcomingCatalyst } from '../engagement-landing.service';
 
 interface CatalystRow {
@@ -36,12 +37,30 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 @Component({
   selector: 'app-upcoming-catalysts-widget',
   standalone: true,
+  imports: [SkeletonComponent],
   template: `
-    <section class="card" aria-labelledby="upcoming-heading">
+    <section class="card" aria-labelledby="upcoming-heading" [attr.aria-busy]="loading() || null">
       <header class="card-head">
         <h2 id="upcoming-heading">Next 14 days</h2>
       </header>
-      @if (rows().length === 0) {
+      @if (loading()) {
+        <ul class="upcoming" role="list">
+          @for (i of skeletonRows; track i) {
+            <li>
+              <div class="row" aria-hidden="true">
+                <span class="udate">
+                  <app-skeleton w="32px" h="13px" />
+                  <app-skeleton w="22px" h="9px" />
+                </span>
+                <span class="ubody">
+                  <app-skeleton w="80%" h="12.5px" />
+                  <app-skeleton w="55%" h="9.5px" />
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else if (rows().length === 0) {
         <p class="empty">No catalysts in the next 14 days.</p>
       } @else {
         <ul class="upcoming" role="list">
@@ -208,8 +227,11 @@ const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export class UpcomingCatalystsWidgetComponent {
   readonly catalysts = input<UpcomingCatalyst[]>([]);
   readonly limit = input<number>(5);
+  readonly loading = input<boolean>(false);
   readonly allCatalystsRoute = input<string>('');
   readonly rowClick = output<string>();
+
+  protected readonly skeletonRows = [0, 1, 2];
 
   readonly rows = computed<CatalystRow[]>(() => {
     const limit = this.limit();

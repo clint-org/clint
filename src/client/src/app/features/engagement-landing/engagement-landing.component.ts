@@ -1,8 +1,8 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 
+import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
@@ -40,8 +40,8 @@ import { IntelligenceFeedComponent } from '../../shared/components/intelligence-
   standalone: true,
   imports: [
     RouterLink,
-    ProgressSpinner,
     MessageModule,
+    SkeletonComponent,
     EngagementContextStripComponent,
     DraftsWidgetComponent,
     UpcomingCatalystsWidgetComponent,
@@ -71,6 +71,7 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
   readonly drafts = signal<IntelligenceFeedRow[]>([]);
+  protected readonly skeletonRows = [0, 1, 2];
 
   readonly intelligenceBrowseRoute = computed(() => {
     const tid = this.tenantId();

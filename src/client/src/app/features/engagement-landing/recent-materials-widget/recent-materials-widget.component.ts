@@ -5,6 +5,7 @@ import { Material } from '../../../core/models/material.model';
 import { MaterialService } from '../../../core/services/material.service';
 import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialRowComponent } from '../../../shared/components/material-row/material-row.component';
+import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 
 /**
@@ -16,10 +17,14 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
 @Component({
   selector: 'app-recent-materials-widget',
   standalone: true,
-  imports: [MaterialRowComponent],
+  imports: [MaterialRowComponent, SkeletonComponent],
   template: `
     @if (visible() && (loading() || error() || rows().length > 0)) {
-      <section class="border border-slate-200 bg-white" aria-label="Recent materials">
+      <section
+        class="border border-slate-200 bg-white"
+        aria-label="Recent materials"
+        [attr.aria-busy]="loading() || null"
+      >
         <header
           class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
         >
@@ -35,7 +40,22 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
         </header>
         <div class="materials-section__list">
           @if (loading()) {
-            <p class="px-4 py-3 text-xs text-slate-400">Loading...</p>
+            <ul class="divide-y divide-slate-100" aria-hidden="true">
+              @for (i of skeletonRows; track i) {
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <app-skeleton w="28px" h="36px" />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-baseline gap-2">
+                      <app-skeleton w="44%" h="14px" />
+                      <app-skeleton w="28px" h="10px" />
+                    </div>
+                    <div class="mt-1.5">
+                      <app-skeleton w="58%" h="11px" />
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
           } @else if (error()) {
             <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
           } @else {
@@ -75,6 +95,7 @@ export class RecentMaterialsWidgetComponent {
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly skeletonRows = [0, 1, 2];
 
   protected readonly allMaterialsLink = computed(() => {
     const t = this.tenantId();

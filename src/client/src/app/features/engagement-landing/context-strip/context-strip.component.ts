@@ -1,10 +1,11 @@
 import { Component, computed, input } from '@angular/core';
 
+import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { SpaceLandingStats } from '../engagement-landing.service';
 
 interface Stat {
   label: string;
-  value: string;
+  value: string | null;
 }
 
 /**
@@ -14,6 +15,7 @@ interface Stat {
 @Component({
   selector: 'app-engagement-context-strip',
   standalone: true,
+  imports: [SkeletonComponent],
   template: `
     <div class="strip">
       <div class="left">
@@ -24,8 +26,14 @@ interface Stat {
       </div>
       <ul class="stats" role="list" aria-label="Engagement statistics">
         @for (stat of computedStats(); track stat.label) {
-          <li class="stat">
-            <span class="stat-value">{{ stat.value }}</span>
+          <li class="stat" [attr.aria-busy]="stat.value === null ? true : null">
+            @if (stat.value === null) {
+              <span class="stat-value stat-value--loading">
+                <app-skeleton w="36px" h="20px" />
+              </span>
+            } @else {
+              <span class="stat-value">{{ stat.value }}</span>
+            }
             <span class="stat-label">{{ stat.label }}</span>
           </li>
         }
@@ -93,6 +101,11 @@ interface Stat {
         letter-spacing: -0.01em;
         line-height: 1;
       }
+      .stat-value--loading {
+        display: inline-flex;
+        align-items: center;
+        height: 22px;
+      }
       .stat-label {
         font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
         font-size: 10px;
@@ -130,8 +143,9 @@ export class EngagementContextStripComponent {
 
   readonly computedStats = computed<Stat[]>(() => {
     const s = this.stats();
-    const fmt = (n: number | undefined): string => {
-      if (this.loading() && !s) return '-';
+    const loading = this.loading();
+    const fmt = (n: number | undefined): string | null => {
+      if (loading && !s) return null;
       return typeof n === 'number' ? String(n) : '-';
     };
     return [
