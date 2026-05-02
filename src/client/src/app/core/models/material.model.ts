@@ -4,7 +4,7 @@
  * registry RPCs.
  */
 
-export type MaterialType = 'briefing' | 'priority_notice' | 'ad_hoc';
+export type MaterialType = 'briefing' | 'conference_report' | 'priority_notice' | 'ad_hoc';
 
 export type MaterialEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space';
 
@@ -63,6 +63,7 @@ export interface DownloadMaterialResult {
 
 export const MATERIAL_TYPE_LABEL: Record<MaterialType, string> = {
   briefing: 'Briefing',
+  conference_report: 'Conference report',
   priority_notice: 'Priority notice',
   ad_hoc: 'Ad hoc',
 };
