@@ -43,6 +43,7 @@ src/client/
           space.model.ts        # Space, SpaceMember
           agency.model.ts       # Agency, AgencyMember, AgencyTenantSummary
           brand.model.ts        # Brand, BrandKind ('tenant'|'agency'|'super-admin'|'default')
+          phase-colors.ts       # Shared PHASE_DESCRIPTORS + PHASE_COLORS map; single source of truth used by phase-bar.component (data viz) and phases-help (live-render reference)
         services/               # All business logic and API calls (16 services)
           topbar-state.service.ts # Lets pages contribute title, count, and actions to the topbar
       features/
@@ -85,8 +86,10 @@ src/client/
         space-settings/         # Per-space settings: general (name, description, delete) + members
           space-general.component.ts       # Name, description, danger zone (delete-space)
           space-members.component.ts       # Invite to space, role picker, remove member
-        help/                   # User-facing role/permission docs
-          roles-help.component.ts          # Renders role/permission breakdown for agency and tenant owners
+        help/                   # User-facing help pages (live-render where possible, stop-hook flags editorial drift)
+          roles-help.component.ts          # Role/permission breakdown for agency and tenant owners
+          markers-help.component.ts        # Marker semantics: editorial color rule, projection convention, live-rendered marker types from MarkerTypeService
+          phases-help.component.ts         # Phase bar semantics, driven by shared PHASE_DESCRIPTORS in core/models/phase-colors.ts
       shared/
         animations/
           slide-panel.animation.ts  # Reusable slide-in/out trigger (@slidePanel) for overlay detail panels (200ms enter, 150ms leave)
