@@ -1,6 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import {
   ENTITY_TYPE_LABEL,
   IntelligenceFeedRow,
@@ -26,8 +27,8 @@ import {
         <div class="empty">
           <p class="empty-line">No drafts yet.</p>
           <p class="empty-hint">
-            Drafts of primary intelligence by your agency will appear here once an analyst starts
-            one.
+            Drafts of primary intelligence by your agency will appear here once
+            {{ starterLabel() }} starts one.
           </p>
         </div>
       } @else {
@@ -164,9 +165,18 @@ import {
   ],
 })
 export class DraftsWidgetComponent {
+  private readonly brand = inject(BrandContextService);
+
   readonly drafts = input<IntelligenceFeedRow[]>([]);
   readonly tenantId = input<string | null>(null);
   readonly spaceId = input<string | null>(null);
+
+  // "...once {starter} starts one." With an agency: "a {agency} teammate";
+  // without (default brand or direct tenant): keep the generic "an analyst".
+  protected readonly starterLabel = computed(() => {
+    const name = this.brand.agency()?.name;
+    return name ? `a ${name} teammate` : 'an analyst';
+  });
 
   protected readonly allDraftsRoute = computed(() => {
     const t = this.tenantId();

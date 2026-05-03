@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MarkerType } from '../../core/models/marker.model';
 import { MarkerTypeService } from '../../core/services/marker-type.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
 import { CircleIconComponent } from '../../shared/components/svg-icons/circle-icon.component';
 import { DiamondIconComponent } from '../../shared/components/svg-icons/diamond-icon.component';
 import { FlagIconComponent } from '../../shared/components/svg-icons/flag-icon.component';
@@ -37,10 +38,10 @@ interface MarkerGroup {
             Markers and what they mean
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
-            Markers are the events analysts and executives scan for on the timeline. Shape encodes
-            the event type, color encodes the editorial role of the event, and inner marks
-            distinguish actual versus projected occurrences. This list reflects the marker types
-            configured for this space.
+            Markers are the events {{ analystSubject() }} and executives scan for on the timeline.
+            Shape encodes the event type, color encodes the editorial role of the event, and inner
+            marks distinguish actual versus projected occurrences. This list reflects the marker
+            types configured for this space.
           </p>
         </header>
 
@@ -205,7 +206,7 @@ interface MarkerGroup {
             Common questions
           </h2>
           <div class="space-y-5">
-            @for (entry of faq; track entry.q) {
+            @for (entry of faq(); track entry.q) {
               <div>
                 <p class="text-sm font-semibold text-slate-900">{{ entry.q }}</p>
                 <p class="mt-1 text-sm text-slate-600">{{ entry.a }}</p>
@@ -224,9 +225,17 @@ interface MarkerGroup {
 export class MarkersHelpComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly markerTypeService = inject(MarkerTypeService);
+  private readonly brand = inject(BrandContextService);
 
   protected readonly markerTypes = signal<MarkerType[]>([]);
   protected readonly loading = signal(true);
+
+  // Editorial actor label. With an agency: the agency name (singular noun);
+  // without: "the analyst" so the prose still reads naturally.
+  protected readonly analystActor = computed(() => this.brand.agency()?.name ?? 'the analyst');
+  // Plural-people slot ("X and executives scan..."). Companies take a singular
+  // noun here; the fallback is the plural "analysts".
+  protected readonly analystSubject = computed(() => this.brand.agency()?.name ?? 'analysts');
 
   protected readonly groupedMarkerTypes = computed<MarkerGroup[]>(() => {
     const types = this.markerTypes().filter((t) => t.display_order > 0);
@@ -268,24 +277,27 @@ export class MarkersHelpComponent implements OnInit {
     },
   ];
 
-  protected readonly faq = [
-    {
-      q: 'Why are some markers outline instead of filled?',
-      a: 'Filled markers are events that have actually happened. Outline markers are events the analyst projects will happen. The same shape and color are used so the event type stays recognizable, only the certainty changes.',
-    },
-    {
-      q: 'What does a marker with a strike-through line mean?',
-      a: 'NLE -- no longer expected. The event was previously projected but the analyst now believes it will not occur (program shelved, indication dropped, sponsor change). The marker stays on the timeline so the prior expectation is auditable.',
-    },
-    {
-      q: 'Why does the same event type sometimes appear in different colors?',
-      a: 'Color encodes editorial role, not event identity. A readout-related event with regulatory implications can sit in the regulatory family. The color tells you why the event matters for the competitive read; the shape tells you what it is.',
-    },
-    {
-      q: 'Can I add a custom marker type?',
-      a: 'Yes -- space owners can add space-specific marker types from Manage > Marker Types. The list above includes both shared system markers and any custom markers configured for this space.',
-    },
-  ];
+  protected readonly faq = computed(() => {
+    const actor = this.analystActor();
+    return [
+      {
+        q: 'Why are some markers outline instead of filled?',
+        a: `Filled markers are events that have actually happened. Outline markers are events ${actor} projects will happen. The same shape and color are used so the event type stays recognizable, only the certainty changes.`,
+      },
+      {
+        q: 'What does a marker with a strike-through line mean?',
+        a: `NLE -- no longer expected. The event was previously projected but ${actor} now believes it will not occur (program shelved, indication dropped, sponsor change). The marker stays on the timeline so the prior expectation is auditable.`,
+      },
+      {
+        q: 'Why does the same event type sometimes appear in different colors?',
+        a: 'Color encodes editorial role, not event identity. A readout-related event with regulatory implications can sit in the regulatory family. The color tells you why the event matters for the competitive read; the shape tells you what it is.',
+      },
+      {
+        q: 'Can I add a custom marker type?',
+        a: 'Yes -- space owners can add space-specific marker types from Manage > Marker Types. The list above includes both shared system markers and any custom markers configured for this space.',
+      },
+    ];
+  });
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId') ?? undefined;

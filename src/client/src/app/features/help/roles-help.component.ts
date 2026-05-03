@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
 interface RoleColumn {
@@ -32,7 +33,7 @@ interface CapabilityRow {
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
             What each role can do inside a space. Use this when deciding what role
-            to give a new analyst or a client team member.
+            to give a new {{ teammateLabel() }} or a client team member.
           </p>
         </header>
 
@@ -117,7 +118,7 @@ interface CapabilityRow {
             Common questions
           </h2>
           <div class="space-y-5">
-            @for (entry of faq; track entry.q) {
+            @for (entry of faq(); track entry.q) {
               <div>
                 <p class="text-sm font-semibold text-slate-900">{{ entry.q }}</p>
                 <p class="mt-1 text-sm text-slate-600">{{ entry.a }}</p>
@@ -137,6 +138,18 @@ interface CapabilityRow {
 })
 export class RolesHelpComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly brand = inject(BrandContextService);
+
+  // Individual-person slot ("a new {teammate}", "Most {teammates} working").
+  // With an agency: "{agency} teammate(s)"; without: keep generic "analyst(s)".
+  protected readonly teammateLabel = computed(() => {
+    const name = this.brand.agency()?.name;
+    return name ? `${name} teammate` : 'analyst';
+  });
+  private readonly teammatesLabel = computed(() => {
+    const name = this.brand.agency()?.name;
+    return name ? `${name} teammates` : 'analysts';
+  });
 
   protected readonly roleColumns: RoleColumn[] = [
     {
@@ -238,28 +251,31 @@ export class RolesHelpComponent {
     },
   ];
 
-  protected readonly faq = [
-    {
-      q: 'When should I make someone a Contributor instead of an Owner?',
-      a: 'Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most analysts working an engagement should be Contributors. Promote to Owner only when someone needs to manage the space itself.',
-    },
-    {
-      q: 'When is Reader the right role?',
-      a: 'When the person consumes the analysis but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
-    },
-    {
-      q: 'What happens when I add an agency colleague to a space?',
-      a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between engagements is enforced per space.',
-    },
-    {
-      q: 'Can a Reader see who else is in the space?',
-      a: 'Yes. The members list is visible to everyone in the space. Only Owners can change it.',
-    },
-    {
-      q: 'A tenant owner who is not in this space, what can they see?',
-      a: 'They see the space exists in the tenant’s spaces list, and they can manage tenant-level settings (members, branding for direct customers). They cannot see any data inside the space until they are explicitly added as Owner, Contributor, or Reader.',
-    },
-  ];
+  protected readonly faq = computed(() => {
+    const teammates = this.teammatesLabel();
+    return [
+      {
+        q: 'When should I make someone a Contributor instead of an Owner?',
+        a: `Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most ${teammates} working an engagement should be Contributors. Promote to Owner only when someone needs to manage the space itself.`,
+      },
+      {
+        q: 'When is Reader the right role?',
+        a: 'When the person consumes the analysis but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
+      },
+      {
+        q: 'What happens when I add an agency colleague to a space?',
+        a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between engagements is enforced per space.',
+      },
+      {
+        q: 'Can a Reader see who else is in the space?',
+        a: 'Yes. The members list is visible to everyone in the space. Only Owners can change it.',
+      },
+      {
+        q: 'A tenant owner who is not in this space, what can they see?',
+        a: 'They see the space exists in the tenant’s spaces list, and they can manage tenant-level settings (members, branding for direct customers). They cannot see any data inside the space until they are explicitly added as Owner, Contributor, or Reader.',
+      },
+    ];
+  });
 
   protected groupedRows(): { title: string; rows: CapabilityRow[] }[] {
     const groups = new Map<string, CapabilityRow[]>();

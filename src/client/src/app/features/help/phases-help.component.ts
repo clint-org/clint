@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PHASE_DESCRIPTORS } from '../../core/models/phase-colors';
+import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
 @Component({
@@ -28,7 +29,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             Phase progression
           </h2>
           <div class="border border-slate-200 bg-white">
-            @for (phase of phases; track phase.key) {
+            @for (phase of phases(); track phase.key) {
               <div
                 class="grid grid-cols-[8rem_5rem_1fr] items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
               >
@@ -73,7 +74,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             Common questions
           </h2>
           <div class="space-y-5">
-            @for (entry of faq; track entry.q) {
+            @for (entry of faq(); track entry.q) {
               <div>
                 <p class="text-sm font-semibold text-slate-900">{{ entry.q }}</p>
                 <p class="mt-1 text-sm text-slate-600">{{ entry.a }}</p>
@@ -91,27 +92,44 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 })
 export class PhasesHelpComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly brand = inject(BrandContextService);
 
-  protected readonly phases = PHASE_DESCRIPTORS;
+  // Plural-people slot. Companies take a singular noun, so the agency name
+  // slots in directly; without an agency we fall back to "analysts".
+  private readonly analystSubject = computed(() => this.brand.agency()?.name ?? 'analysts');
 
-  protected readonly faq = [
-    {
-      q: 'Why is P3 the brightest color?',
-      a: 'Pivotal trials decide the commercial and partnership narrative. The hero color cues the eye to the assets in or near pivotal readout. Earlier phases stay muted so they recede into context.',
-    },
-    {
-      q: 'Why are APPROVED and LAUNCHED separate?',
-      a: 'Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let analysts spot programs that are approved-but-not-launched at a glance.',
-    },
-    {
-      q: 'What does PRECLIN mean for a competitor read?',
-      a: 'Preclinical programs are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
-    },
-    {
-      q: 'Can the colors change per tenant?',
-      a: 'No. Phase colors are a global semantic and stay consistent across all tenants and engagements so analysts moving between spaces read the same signal the same way.',
-    },
-  ];
+  // Phase descriptors are a global const used by both the timeline phase bar
+  // and this help page. Swap "analysts" inside the rendered descriptions so
+  // the help page reads with the agency name without mutating the source const.
+  protected readonly phases = computed(() => {
+    const subject = this.analystSubject();
+    return PHASE_DESCRIPTORS.map((p) => ({
+      ...p,
+      description: p.description.replace(/\banalysts\b/g, subject),
+    }));
+  });
+
+  protected readonly faq = computed(() => {
+    const subject = this.analystSubject();
+    return [
+      {
+        q: 'Why is P3 the brightest color?',
+        a: 'Pivotal trials decide the commercial and partnership narrative. The hero color cues the eye to the assets in or near pivotal readout. Earlier phases stay muted so they recede into context.',
+      },
+      {
+        q: 'Why are APPROVED and LAUNCHED separate?',
+        a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot programs that are approved-but-not-launched at a glance.`,
+      },
+      {
+        q: 'What does PRECLIN mean for a competitor read?',
+        a: 'Preclinical programs are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
+      },
+      {
+        q: 'Can the colors change per tenant?',
+        a: `No. Phase colors are a global semantic and stay consistent across all tenants and engagements so ${subject} moving between spaces read the same signal the same way.`,
+      },
+    ];
+  });
 
   protected backLink(): string[] {
     const tenantId = this.route.snapshot.paramMap.get('tenantId');

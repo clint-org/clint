@@ -427,6 +427,8 @@ User-facing reference pages explain conventions and assumptions that are not der
 
 Pages follow a consistent shape (header + summary + descriptor table + FAQ + back link) and use `ManagePageShellComponent` for layout. Drift prevention has two layers: live render for state-derived content (markers list, phase color tokens), and the `runbook-review-guard.sh` stop hook surfaces the matching help page for editorial review when a related source path changes (FAQ/prose are not auto-updated).
 
+**Agency-name substitution.** Help-page copy refers to the editorial actor by name when the workspace is provisioned by an agency. Each help component injects `BrandContextService` and reads `agency()?.name`; when present, the value replaces "the analyst" / "analysts" inside FAQ entries, header summaries, and (for `phases-help`) the `OBS` phase descriptor (transformed at render time so `PHASE_DESCRIPTORS` itself stays a single shared const). When `agency()` is null (default brand or direct-tenant workspace), the prose falls back to the generic "analyst" wording. Where the slot refers to an individual person rather than the editorial actor, the substitution becomes "{agency} teammate(s)" instead of the agency name alone (used in `roles-help` and the `drafts-widget` empty state).
+
 ## Documentation Drift
 
 Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts` whose path string does not appear anywhere in this file. Add a feature heading or sentence describing each flagged route, or mark it intentional if it is purely structural (a redirect, a guard sandbox, etc).
