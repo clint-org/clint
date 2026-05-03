@@ -39,59 +39,67 @@
 } @else {
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
-      <!-- Trial Form (edit mode) - renders its own section cards -->
-      @if (editingTrial()) {
-        <app-trial-form
-          [trial]="t"
-          (saved)="onTrialSaved()"
-          (cancelled)="editingTrial.set(false)"
-        />
-      } @else {
-        <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
-        <nav
-          aria-label="Sections on this trial"
-          class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
+      <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
+      <nav
+        aria-label="Sections on this trial"
+        class="mb-4 flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
+      >
+        <a
+          href="#primary-intelligence"
+          (click)="scrollToSection($event, 'primary-intelligence')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
         >
-          <a
-            href="#primary-intelligence"
-            (click)="scrollToSection($event, 'primary-intelligence')"
-            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Primary intelligence
-          </a>
-          <span class="text-slate-300">|</span>
-          <a
-            href="#referenced-in"
-            (click)="scrollToSection($event, 'referenced-in')"
-            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Referenced in
-          </a>
-          <span class="text-slate-300">|</span>
-          <a
-            href="#recent-activity"
-            (click)="scrollToSection($event, 'recent-activity')"
-            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Recent activity
-          </a>
-          <span class="text-slate-300">|</span>
-          <a
-            href="#materials"
-            (click)="scrollToSection($event, 'materials')"
-            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Materials
-          </a>
-          <span class="text-slate-300">|</span>
-          <a
-            href="#markers"
-            (click)="scrollToSection($event, 'markers')"
-            class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-          >
-            Markers
-          </a>
-        </nav>
+          Primary intelligence
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#referenced-in"
+          (click)="scrollToSection($event, 'referenced-in')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Referenced in
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#recent-activity"
+          (click)="scrollToSection($event, 'recent-activity')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Recent activity
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#materials"
+          (click)="scrollToSection($event, 'materials')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Materials
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#ctgov"
+          (click)="scrollToSection($event, 'ctgov')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          CT.gov
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#markers"
+          (click)="scrollToSection($event, 'markers')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Markers
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
+          href="#activity"
+          (click)="scrollToSection($event, 'activity')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Activity
+        </a>
+      </nav>
 
         <!-- Primary intelligence -->
         <div id="primary-intelligence">
@@ -181,6 +189,74 @@
             <app-materials-section entityType="trial" [entityId]="t.id" [spaceId]="t.space_id" />
           }
         </section>
+
+        <!-- CT.gov data block -->
+        <div id="ctgov">
+          <app-section-card title="CT.gov data">
+            <ng-container actions>
+              @if (spaceRole.canEdit()) {
+                <p-button
+                  label="Sync from CT.gov"
+                  icon="fa-solid fa-rotate"
+                  [text]="true"
+                  size="small"
+                  [loading]="syncing()"
+                  (onClick)="syncCtgov()"
+                />
+              }
+              @if (snapshot()) {
+                <p-button
+                  label="Show all CT.gov data"
+                  [text]="true"
+                  size="small"
+                  (onClick)="showAllCtgovModal.set(true)"
+                />
+              }
+            </ng-container>
+
+            <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt class="text-slate-500">Phase</dt>
+              <dd class="text-slate-900">{{ t.phase ?? '(not set)' }}</dd>
+              <dt class="text-slate-500">Recruitment status</dt>
+              <dd class="text-slate-900">{{ t.recruitment_status ?? '(not set)' }}</dd>
+              <dt class="text-slate-500">Study type</dt>
+              <dd class="text-slate-900">{{ t.study_type ?? '(not set)' }}</dd>
+            </dl>
+
+            @if (snapshot()?.payload && detailExtraPaths().length) {
+              <div class="mt-4">
+                <app-ctgov-field-renderer
+                  [snapshot]="snapshot()!.payload"
+                  [paths]="detailExtraPaths()"
+                  [dense]="true"
+                />
+              </div>
+            }
+
+            @if (t.ctgov_last_synced_at; as lastSynced) {
+              <p class="mt-3 font-mono text-[11px] text-slate-500 tabular-nums">
+                Last synced: {{ lastSynced | date: 'short' }}
+              </p>
+            } @else {
+              <p class="mt-3 font-mono text-[11px] text-slate-500">
+                Not yet synced from CT.gov.
+              </p>
+            }
+          </app-section-card>
+        </div>
+
+        <p-dialog
+          [(visible)]="showAllCtgovModal"
+          header="All CT.gov data"
+          [modal]="true"
+          [style]="{ width: '60rem' }"
+        >
+          @if (snapshot(); as snap) {
+            <app-ctgov-field-renderer [snapshot]="snap.payload" [paths]="allCatalogPaths" />
+          } @else {
+            <p class="py-4 text-sm text-slate-500">No CT.gov snapshot is available yet.</p>
+          }
+        </p-dialog>
 
         <!-- Basic info -->
         <app-section-card title="Basic info">
@@ -395,6 +471,17 @@
           }
         </app-section-card>
 
+        <!-- Activity feed for this trial -->
+        <div id="activity">
+          <app-section-card title="Activity">
+            @for (event of trialActivity(); track event.id) {
+              <app-change-event-row [event]="event" />
+            } @empty {
+              <p class="py-4 text-sm text-slate-500">No activity yet.</p>
+            }
+          </app-section-card>
+        </div>
+
         <!-- Authoring drawer -->
         @if (spaceIdSig()) {
           <app-intelligence-drawer
@@ -406,7 +493,6 @@
             (published)="onIntelligencePublished()"
           />
         }
-      }
     </app-manage-page-shell>
   }
 }

@@ -58,6 +58,14 @@ export class CtgovFieldRendererComponent {
     }
     return String(item);
   }
+
+  asDateInput(value: unknown): string | number | Date | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+      return value;
+    }
+    return null;
+  }
 }
 
 function lookupField(path: string): CtgovField | undefined {

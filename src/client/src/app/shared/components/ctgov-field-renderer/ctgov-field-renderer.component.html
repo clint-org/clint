@@ -14,7 +14,7 @@
           }
         }
         @case ('date') {
-          {{ item.value ? (item.value | date: 'mediumDate') : '(none)' }}
+          {{ asDateInput(item.value) ? (asDateInput(item.value) | date: 'mediumDate') : '(none)' }}
         }
         @case ('number') {
           {{ item.value ?? '(none)' }}
