@@ -271,6 +271,24 @@ ng lint && ng build
 
 Both must pass before committing.
 
+### Test scripts
+
+Five separate vitest / playwright runners, each with its own config so the
+pools don't fight (workerd vs node vs browser). Most edits only need one:
+
+| Script | Config | Pool | What it covers |
+|---|---|---|---|
+| `npm run test:units` | `vitest.units.config.ts` | node | Pure helpers under `src/app/**` (no Angular DI, no browser). Specs live next to the file (`foo.ts` -> `foo.spec.ts`). |
+| `npm run test:worker` | `worker/vitest.config.mts` | workerd (Cloudflare miniflare) | The Cloudflare Worker (R2 signing, CT.gov sync endpoints, scheduled cron). Specs in `worker/test/`. |
+| `npm run test:integration` | `integration/vitest.config.ts` | node, single-fork | Specs that hit the live local Postgres via the Supabase JS client. Specs in `integration/tests/`. |
+| `npm run test:unit` | `playwright.unit.config.ts` | playwright | Pure-function specs that historically used the Playwright runner (grid url-codec, palette, error-message). New pure-helper specs should use `test:units` instead. |
+| `npm run test:e2e` | `e2e/playwright.config.ts` | playwright (browser) | End-to-end browser flows under `e2e/tests/`. |
+
+Angular component / DI tests don't yet have a runner -- the legacy
+`ng test` script is wired but no runner is configured. Standing up
+component specs (vitest + `@analogjs/vitest-angular`, or Karma + Jasmine)
+is open work.
+
 ## Environment Configuration
 
 The app uses Supabase environment variables defined in `src/environments/environment.ts`. For production, these are baked into the build via Angular's environment system. The production environment points to the hosted Supabase project.
