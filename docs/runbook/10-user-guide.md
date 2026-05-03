@@ -192,6 +192,56 @@ Manage the list of medical indication categories (name + abbreviation) used to c
 
 ---
 
+## Activity & change feed
+
+Every change to a trial -- whether it came from the daily CT.gov sync or from an analyst editing a row in Clint -- is recorded as a change event. Several surfaces expose those events.
+
+### Activity page
+
+**Navigate:** `/t/:tenantId/s/:spaceId/activity`
+
+A filterable, paginated feed of every change in the space, newest first. Filters:
+
+- Date range (last 7d / 30d / 90d / custom)
+- Event type (date moved, phase transitioned, status changed, marker edited, etc.)
+- Source (CT.gov vs. analyst)
+- Trial
+
+Each row shows who or what triggered the change, the field that moved, the before/after values, and the timestamp. Click a row to jump to the trial detail page.
+
+### What changed widget
+
+The engagement landing page surfaces a "What changed" panel with the top 5 high-signal events from the last 7 days. Click **View all** to open the full Activity page.
+
+### Trial row badges
+
+Trial names on the dashboard, the Trials list, and the engagement landing show a small dot badge:
+
+- **Slate dot** -- any change in the last 7 days
+- **Red dot** -- a `date_moved`, `phase_transitioned`, or `trial_withdrawn` event in the last 7 days
+
+Hover the badge for a quick summary; click the trial to drill in.
+
+### Marker history panel
+
+On any marker detail, expand **History** to see who edited the marker, what fields changed, and when. Useful for auditing analyst overrides.
+
+### Trial-detail Activity section
+
+The bottom of every trial-detail page lists recent change events for that trial only. Same row format as the Activity page; scoped to the current trial.
+
+### Sync from CT.gov
+
+Trial-detail pages have a **Sync from CT.gov** button that forces an immediate poll of that trial's NCT identifier and recomputes its change feed. Available to space owners and editors. The daily 07:00 UTC sync still runs automatically; this button is for when you need a fresh read on demand (e.g. you saw a press release and want to confirm the registry update has landed).
+
+### Per-space field visibility
+
+**Navigate:** `/t/:tenantId/s/:spaceId/settings/fields`
+
+Space owners pick which CT.gov fields appear on each surface (trial detail, bullseye detail, timeline detail, key catalysts panel, trial list). Useful for hiding noise fields the team doesn't track or for surfacing rare fields a particular engagement cares about. Choices are per-space.
+
+---
+
 ## Exporting to PowerPoint
 
 1. Click **Export** button in the dashboard toolbar
