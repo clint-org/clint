@@ -74,7 +74,6 @@ export interface BullseyeTrial {
   id: string;
   name: string;
   identifier: string | null;
-  sample_size: number | null;
   status: string | null;
   recruitment_status: string | null;
   study_type: string | null;
