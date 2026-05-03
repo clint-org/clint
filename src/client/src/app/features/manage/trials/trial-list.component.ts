@@ -10,9 +10,15 @@ import { MessageModule } from 'primeng/message';
 import { Trial } from '../../../core/models/trial.model';
 import { Product } from '../../../core/models/product.model';
 import { Company } from '../../../core/models/company.model';
+import {
+  CTGOV_FIELD_CATALOGUE,
+  CTGOV_TRIAL_LIST_DEFAULT_PATHS,
+} from '../../../core/models/ctgov-field.model';
 import { TrialService } from '../../../core/services/trial.service';
 import { ProductService } from '../../../core/services/product.service';
 import { CompanyService } from '../../../core/services/company.service';
+import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
+import { formatCtgovFieldValue } from '../../../shared/utils/ctgov-field-format';
 import { TrialCreateDialogComponent } from './trial-create-dialog.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
@@ -95,6 +101,42 @@ export class TrialListComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
 
   creating = signal(false);
+
+  // Per-space CT.gov field columns (trial_list_columns surface). Loaded once
+  // alongside trials; falls back to CTGOV_TRIAL_LIST_DEFAULT_PATHS when the
+  // space has not customized this surface. Cells are read-only -- existing
+  // p-table sort/filter behavior on the static columns stays untouched.
+  private readonly fieldVisibilityService = inject(SpaceFieldVisibilityService);
+  private readonly perSpacePaths = signal<string[] | null>(null);
+  private readonly snapshotsByTrial = signal<Map<string, unknown>>(new Map());
+
+  readonly extraPaths = computed(() => this.perSpacePaths() ?? CTGOV_TRIAL_LIST_DEFAULT_PATHS);
+
+  readonly extraColumns = computed(() => {
+    return this.extraPaths()
+      .map((path) => {
+        const field = CTGOV_FIELD_CATALOGUE.find((f) => f.path === path);
+        return field ? { path, label: field.label } : null;
+      })
+      .filter((c): c is { path: string; label: string } => c !== null);
+  });
+
+  readonly emptyColspan = computed(() => 8 + this.extraColumns().length);
+
+  readonly skeletonCells = computed(() => {
+    const base: { w: string; h?: string; class?: string }[] = [
+      { w: '58%' },
+      { w: '80px', h: '11px' },
+      { w: '55%' },
+      { w: '55%' },
+      { w: '58px', h: '14px' },
+      { w: '20px', class: 'col-num' },
+      { w: '20px', class: 'col-num' },
+    ];
+    base.push(...this.extraColumns().map(() => ({ w: '60%' })));
+    base.push({ w: '14px', class: 'col-actions' });
+    return base;
+  });
 
   readonly rows = computed<TrialRow[]>(() => {
     const productMap = new Map(this.products().map((p) => [p.id, p]));
@@ -249,19 +291,31 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      const [trials, products, companies] = await Promise.all([
-        this.trialService.listBySpace(this.spaceId()),
-        this.productService.list(this.spaceId()),
-        this.companyService.list(this.spaceId()),
+      const spaceId = this.spaceId();
+      const [trials, products, companies, visibilityMap, snapshots] = await Promise.all([
+        this.trialService.listBySpace(spaceId),
+        this.productService.list(spaceId),
+        this.companyService.list(spaceId),
+        this.fieldVisibilityService.get(spaceId).catch(() => ({}) as Record<string, string[]>),
+        this.trialService.getLatestSnapshotsForSpace(spaceId).catch(() => new Map<string, unknown>()),
       ]);
       this.trials.set(trials);
       this.products.set(products);
       this.companies.set(companies);
+      const paths = visibilityMap['trial_list_columns'];
+      this.perSpacePaths.set(paths && paths.length > 0 ? paths : null);
+      this.snapshotsByTrial.set(snapshots);
       this.menuCache.clear();
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load trials');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  extraValue(trialId: string, path: string): string {
+    const snap = this.snapshotsByTrial().get(trialId);
+    if (!snap) return '';
+    return formatCtgovFieldValue(snap, path);
   }
 }
