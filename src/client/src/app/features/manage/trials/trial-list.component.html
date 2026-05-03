@@ -166,23 +166,6 @@
   </p-table>
 </app-manage-page-shell>
 
-<p-dialog
-  [header]="editingTrial() ? 'Edit trial' : 'Add trial'"
-  [(visible)]="modalOpen"
-  [modal]="true"
-  [style]="{ width: '40rem' }"
-  (onHide)="closeModal()"
->
-  @if (modalOpen()) {
-    <app-trial-form
-      [trial]="editingTrial()"
-      [preselectedProductId]="preselectedProductId()"
-      (saved)="onSaved()"
-      (cancelled)="closeModal()"
-    />
-  }
-</p-dialog>
-
 <app-trial-create-dialog
   [visible]="creating()"
   (visibleChange)="creating.set($event)"
