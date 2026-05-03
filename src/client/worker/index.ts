@@ -49,6 +49,9 @@ export default {
     if (url.pathname === '/admin/ctgov-backfill' && request.method === 'POST') {
       return handleManualBackfill(request, env, cors);
     }
+    if (url.pathname === '/api/ctgov/sync-trial' && request.method === 'POST') {
+      return handleSingleTrialSync(request, env, cors);
+    }
 
     if (url.pathname.startsWith('/api/')) {
       return errorResponse(404, 'not_found', cors);
@@ -247,6 +250,98 @@ async function handleManualBackfill(
   } catch (e) {
     log({
       route: 'admin-ctgov-backfill',
+      status: 500,
+      duration_ms: Date.now() - start,
+      error: String(e),
+    });
+    return errorResponse(500, 'internal_error', cors);
+  }
+}
+
+/**
+ * Single-trial Sync from CT.gov. Fronts the trial-detail "Sync from CT.gov"
+ * button. Unlike /admin/ctgov-backfill (platform-admin gate, intended for
+ * ops bulk re-polls), this endpoint accepts any space owner|editor JWT --
+ * the trigger_single_trial_sync RPC enforces that gate AND returns the NCT
+ * to back-fill, so a single request handles both the access check and the
+ * NCT lookup. The CT.gov fetch + ingest then runs under the worker secret.
+ */
+async function handleSingleTrialSync(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  const start = Date.now();
+  const auth = request.headers.get('Authorization');
+  if (!auth) {
+    log({ route: 'api-ctgov-sync-trial', status: 401, duration_ms: Date.now() - start });
+    return errorResponse(401, 'unauthorized', cors);
+  }
+
+  let body: { trial_id?: string };
+  try {
+    body = (await request.json()) as { trial_id?: string };
+  } catch {
+    return errorResponse(400, 'invalid_json', cors);
+  }
+  if (!body.trial_id || typeof body.trial_id !== 'string') {
+    return errorResponse(400, 'trial_id_required', cors);
+  }
+
+  // Validate space access + resolve NCT in one RPC call. The RPC is
+  // SECURITY INVOKER and gated on has_space_access(..., ['owner','editor']);
+  // a non-member's JWT raises errcode 42501 which surfaces as a 403 from
+  // PostgREST. Treat any error from this call as a forbidden / not-found
+  // signal rather than a 500 -- the user can always retry with the right
+  // role.
+  let triggerResult: { ok: boolean; nct_id?: string; reason?: string };
+  try {
+    triggerResult = await callRpc<{ ok: boolean; nct_id?: string; reason?: string }>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      auth,
+      'trigger_single_trial_sync',
+      { p_trial_id: body.trial_id }
+    );
+  } catch (e) {
+    const err = e as SupabaseRpcError;
+    const status = err.status === 401 || err.status === 403 ? err.status : 403;
+    log({
+      route: 'api-ctgov-sync-trial',
+      status,
+      duration_ms: Date.now() - start,
+      error: err.message ?? String(e),
+    });
+    return errorResponse(status, status === 401 ? 'unauthorized' : 'forbidden', cors);
+  }
+
+  if (!triggerResult.ok || !triggerResult.nct_id) {
+    log({
+      route: 'api-ctgov-sync-trial',
+      status: 200,
+      duration_ms: Date.now() - start,
+      reason: triggerResult.reason ?? 'unknown',
+    });
+    return new Response(JSON.stringify(triggerResult), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
+  }
+
+  try {
+    const summary = await runManualBackfill(env, [triggerResult.nct_id]);
+    log({
+      route: 'api-ctgov-sync-trial',
+      status: 200,
+      duration_ms: Date.now() - start,
+      nct_id: triggerResult.nct_id,
+    });
+    return new Response(
+      JSON.stringify({ ok: true, nct_id: triggerResult.nct_id, summary }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...cors } }
+    );
+  } catch (e) {
+    log({
+      route: 'api-ctgov-sync-trial',
       status: 500,
       duration_ms: Date.now() - start,
       error: String(e),

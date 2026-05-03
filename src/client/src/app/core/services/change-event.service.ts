@@ -56,30 +56,33 @@ export class ChangeEventService {
   }
 
   /**
-   * Validates owner|editor access via the RPC, then forwards the NCT id to
-   * the Worker's admin/ctgov-backfill endpoint with the user's JWT. Returns
-   * the RPC result so callers can surface no_nct_id reasons.
+   * Posts to the Worker's /api/ctgov/sync-trial endpoint with the user's
+   * JWT. The Worker calls trigger_single_trial_sync (gated on space
+   * owner|editor) to validate access and resolve the NCT, then runs the
+   * manual backfill under the worker secret. Single round-trip from the
+   * client.
+   *
+   * Returns the {ok, nct_id, reason} shape so callers can surface
+   * `no_nct_id` (the RPC's response when the trial has no identifier set)
+   * and other soft errors via toast text.
    */
   async triggerSingleTrialSync(
     trialId: string
   ): Promise<{ ok: boolean; nct_id?: string; reason?: string }> {
-    const { data, error } = await this.supabase.client.rpc('trigger_single_trial_sync', {
-      p_trial_id: trialId,
-    });
-    if (error) throw error;
-    const result = data as { ok: boolean; nct_id?: string; reason?: string };
-    if (!result.ok || !result.nct_id) return result;
-
     const session = (await this.supabase.client.auth.getSession()).data.session;
     const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
-    await fetch(`${apiBase}/admin/ctgov-backfill`, {
+    const res = await fetch(`${apiBase}/api/ctgov/sync-trial`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session?.access_token ?? ''}`,
       },
-      body: JSON.stringify({ nct_ids: [result.nct_id] }),
+      body: JSON.stringify({ trial_id: trialId }),
     });
-    return result;
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(errBody.error ?? `sync failed (${res.status})`);
+    }
+    return (await res.json()) as { ok: boolean; nct_id?: string; reason?: string };
   }
 }
