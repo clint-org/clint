@@ -64,7 +64,7 @@ psql "$PGURL" -c "select tablename, rowsecurity from pg_tables where tablename i
 # trials has watermark trio + materialized 3
 psql "$PGURL" -c "select column_name from information_schema.columns where table_schema='public' and table_name='trials' order by column_name;" | grep -E "phase|recruitment_status|study_type|last_update_posted_date|latest_ctgov_version|last_polled_at|ctgov_last_synced_at"
 
-# 33 dropped columns are GONE
+# a representative subset of the 36 dropped columns is GONE
 psql "$PGURL" -c "select column_name from information_schema.columns where table_schema='public' and table_name='trials' and column_name in ('lead_sponsor','sponsor_type','sample_size','conditions','start_date','primary_completion_date','has_dmc');"
 # expect: zero rows
 
@@ -85,12 +85,21 @@ In one terminal:
 
 ```bash
 cd src/client
-# set the local-dev worker secret so cron-RPCs accept anon+secret calls
-echo 'CTGOV_WORKER_SECRET = "local-dev-ctgov-secret"' > .dev.vars
+# Worker needs three things in .dev.vars: the worker secret, plus the local
+# Supabase REST URL and anon key (otherwise the poller logs
+# "Invalid URL: undefined/rest/v1/rpc/get_trials_for_polling"). Pull the anon
+# key from `supabase status -o env`. .dev.vars is gitignored.
+cat > .dev.vars <<'VARS'
+CTGOV_WORKER_SECRET = "local-dev-ctgov-secret"
+SUPABASE_URL = "http://127.0.0.1:54321"
+SUPABASE_ANON_KEY = "<paste ANON_KEY from `supabase status -o env`>"
+VARS
 wrangler dev --test-scheduled --port 8787
 ```
 
-In a second terminal — seed a real NCT-bearing trial so the cron has something to do:
+In a second terminal — sign in to the running app at least once so the gated
+seed (`seed_demo_data`) populates a tenant, space, products, and therapeutic
+areas. Then attach a real NCT-bearing trial:
 
 ```bash
 PGURL='postgresql://postgres:postgres@localhost:54322/postgres'
@@ -278,7 +287,7 @@ The branch is ready to merge when ALL of the following hold:
 
 - Section 0: every smoke test PASSes on `supabase db reset`.
 - Section 1: lint, build, worker tests all green.
-- Section 2: 5 new tables present, 17 RPCs present, 33 columns gone, BEFORE trigger installed.
+- Section 2: 5 new tables present, 17 RPCs present, 36 columns gone, BEFORE trigger installed.
 - Section 3: cron writes a snapshot on first run, no-ops on second run, manual backfill endpoint correctly rejects unauthorized + missing-payload requests.
 - Section 4: every UI sub-section renders without console errors and the listed behaviors match.
 - Section 5: edge cases don't surface regressions.
@@ -307,4 +316,4 @@ The branch is ready to merge when ALL of the following hold:
 - New Angular routes: `/activity`, `/settings/fields`
 - New components: change-event-row, change-badge, what-changed-widget, ctgov-field-renderer, ctgov-field-picker, trial-create-dialog, engagement-activity-page, space-field-visibility-settings
 - New services: change-event.service, space-field-visibility.service
-- Retired: trial-form.component, ctgov-sync.service, 33 trials columns, sample_size displays
+- Retired: trial-form.component, ctgov-sync.service, 36 trials columns, sample_size displays

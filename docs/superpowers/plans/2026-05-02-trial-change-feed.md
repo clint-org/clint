@@ -37,7 +37,7 @@
 | `20260502120700_marker_changes_trigger.sql` | AFTER trigger on `markers` + `_emit_events_from_marker_change` classifier + `backfill_marker_history()` one-shot. |
 | `20260502120800_change_feed_surface_rpcs.sql` | `get_activity_feed`, `get_trial_activity`, `get_marker_history`, `trigger_single_trial_sync`, `update_space_field_visibility`, `recompute_trial_change_events`. |
 | `20260502120900_dashboard_data_change_counts.sql` | Drop + recreate `get_dashboard_data` adding `recent_changes_count` + `most_recent_change_type` per trial. Update `get_landscape_data` similarly. |
-| `20260502121000_drop_orphaned_trial_columns.sql` | Drop the ~33 CT.gov columns from `trials`. Also strip dropped keys from the `jsonb_build_object` projections in `get_dashboard_data`/`get_landscape_data`. |
+| `20260502122000_drop_orphaned_trial_columns.sql` | Drop the 36 CT.gov columns from `trials`. Also strip dropped keys from the `jsonb_build_object` projections in `get_dashboard_data`/`get_landscape_data`. |
 
 ### New Worker files (under `src/client/worker/`)
 
@@ -115,7 +115,7 @@ Under `src/client/src/app/core/services/`:
 
 Under `src/client/src/app/core/models/trial.model.ts`:
 
-Drop the ~33 orphaned CT.gov field declarations; keep `phase`, `recruitment_status`, `study_type`, `last_update_posted_date`, plus the new `latest_ctgov_version`, `last_polled_at`, `ctgov_last_synced_at`. (Phase 10.)
+Drop the 36 orphaned CT.gov field declarations; keep `phase`, `recruitment_status`, `study_type`, `last_update_posted_date`, plus the new `latest_ctgov_version`, `last_polled_at`, `ctgov_last_synced_at`. (Phase 10.)
 
 Under `src/client/src/app/app.routes.ts`:
 
@@ -1987,7 +1987,7 @@ git commit -m "feat(client): add per-space field visibility settings"
 
 ## Phase 7: Schema cleanup (drop the orphaned columns)
 
-Goal: 33 dead CT.gov columns gone from `trials`. RPC projections, model interface, and any UI referencing them all cleaned up. `sample_size` displays removed.
+Goal: 36 dead CT.gov columns gone from `trials`. RPC projections, model interface, and any UI referencing them all cleaned up. `sample_size` displays removed.
 
 This phase is destructive: do it after Phases 4-6 land so we know nothing else reads the dropped columns.
 
@@ -2015,7 +2015,7 @@ Save findings to a scratch file (do not commit). For each remaining reference, d
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- Drop the 33 orphaned CT.gov columns from public.trials.
+-- Drop the 36 orphaned CT.gov columns from public.trials.
 -- These had no live consumer after the trial change feed cleanup.
 -- Data remains accessible via trial_ctgov_snapshots.payload and the
 -- per-space field visibility renderer.
@@ -2306,7 +2306,7 @@ If git status is dirty after these checks, fix and commit. Otherwise skip.
 - [x] Trial-detail Activity section + CT.gov block + Sync button -- Phase 4
 - [x] Per-space field visibility config -- Phase 1, Task 1.3 + Phase 6
 - [x] Trial form retirement (form, route, ctgov-sync.service) -- Phase 5
-- [x] Drop ~33 orphaned columns -- Phase 7
+- [x] Drop 36 orphaned columns -- Phase 7
 - [x] Drop sample_size displays -- Phase 7, Task 7.3 step 2
 - [x] Update Trial model -- Phase 7, Task 7.3
 - [x] Worker scheduled handler tests -- Phase 2, Task 2.4

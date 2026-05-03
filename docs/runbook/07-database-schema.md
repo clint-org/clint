@@ -16,7 +16,7 @@ The trial change feed introduces five new tables that together replace the wide 
 - `marker_changes`: analyst-side audit log written by a BEFORE INSERT/UPDATE/DELETE trigger on `markers`. BEFORE timing is required: an AFTER DELETE trigger would see zero `marker_assignments` after the cascade, so the trigger fires before the cascade runs and captures the intent.
 - `ctgov_sync_runs`: one observability row per Cloudflare cron invocation: started/finished timestamps, trials polled, trials changed, status (`success | partial | failed`), and any error message.
 
-`trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. Roughly 33 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
+`trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. 36 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
 
 ## Schema Diagram
 
