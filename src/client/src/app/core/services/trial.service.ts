@@ -76,6 +76,20 @@ export class TrialService {
     return data as Trial;
   }
 
+  async getLatestSnapshot(
+    trialId: string
+  ): Promise<{ payload: unknown; fetched_at: string } | null> {
+    const { data, error } = await this.supabase.client
+      .from('trial_ctgov_snapshots')
+      .select('payload, fetched_at')
+      .eq('trial_id', trialId)
+      .order('ctgov_version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
     const { data, error } = await this.supabase.client
       .from('trials')
