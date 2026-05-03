@@ -2,10 +2,10 @@
   <div>
     <h3 class="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">Available</h3>
     <ul
-      id="available-list"
+      [id]="availableListId()"
       cdkDropList
       [cdkDropListData]="localAvailable()"
-      [cdkDropListConnectedTo]="['visible-list']"
+      [cdkDropListConnectedTo]="availableConnectedTo()"
       (cdkDropListDropped)="drop($event)"
       class="min-h-[20rem] border border-slate-200 rounded p-2 space-y-1 bg-slate-50"
     >
@@ -27,10 +27,10 @@
       Visible (drag to reorder)
     </h3>
     <ul
-      id="visible-list"
+      [id]="visibleListId()"
       cdkDropList
       [cdkDropListData]="localVisible()"
-      [cdkDropListConnectedTo]="['available-list']"
+      [cdkDropListConnectedTo]="visibleConnectedTo()"
       (cdkDropListDropped)="drop($event)"
       class="min-h-[20rem] border border-slate-200 rounded p-2 space-y-1 bg-white"
     >

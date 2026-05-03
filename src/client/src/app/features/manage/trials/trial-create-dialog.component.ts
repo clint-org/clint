@@ -47,11 +47,34 @@ export class TrialCreateDialogComponent {
 
   saving = signal(false);
 
-  isValid = computed(() => {
+  // Autopopulate state for the NCT-first flow. The dialog opens with focus on
+  // the NCT input; on a valid NCT format (NCT + 8 digits) we hit
+  // CT.gov v2 and seed the Name field with the official acronym (or briefTitle
+  // as fallback). The user can overwrite. nctLookupError surfaces 404s
+  // inline so users know to fix the NCT before saving instead of finding out
+  // when Sync fails post-create.
+  protected readonly nctLookupState = signal<'idle' | 'looking_up' | 'ok' | 'not_found' | 'error'>(
+    'idle'
+  );
+  protected readonly nctLookupAcronym = signal<string | null>(null);
+  // Toggled true once the user types into the Name field manually so the
+  // autopopulate doesn't clobber their input on a subsequent NCT change.
+  private readonly nameWasManuallyEdited = signal(false);
+
+  protected readonly nctFormatValid = computed(() => {
     const id = this.identifier();
-    const idValid = !id || /^NCT\d{8}$/i.test(id.trim());
+    if (!id) return true;
+    return /^NCT\d{8}$/i.test(id.trim());
+  });
+
+  isValid = computed(() => {
     return (
-      this.name().trim().length > 0 && !!this.productId() && !!this.therapeuticAreaId() && idValid
+      this.name().trim().length > 0 &&
+      !!this.productId() &&
+      !!this.therapeuticAreaId() &&
+      this.nctFormatValid() &&
+      this.nctLookupState() !== 'looking_up' &&
+      this.nctLookupState() !== 'not_found'
     );
   });
 
@@ -70,8 +93,73 @@ export class TrialCreateDialogComponent {
         this.identifier.set(null);
         this.productId.set(null);
         this.therapeuticAreaId.set(null);
+        this.nctLookupState.set('idle');
+        this.nctLookupAcronym.set(null);
+        this.nameWasManuallyEdited.set(false);
       }
     });
+  }
+
+  /**
+   * Called from (ngModelChange) on the NCT input. When the value parses as a
+   * valid NCT, hit CT.gov for the acronym and seed Name. Aborts in-flight
+   * lookups on subsequent changes so we don't race results out of order.
+   */
+  private lookupController: AbortController | null = null;
+  protected onIdentifierChanged(value: string | null): void {
+    this.identifier.set(value);
+    this.nctLookupState.set('idle');
+    this.nctLookupAcronym.set(null);
+    if (this.lookupController) {
+      this.lookupController.abort();
+      this.lookupController = null;
+    }
+    if (!value) return;
+    const trimmed = value.trim();
+    if (!/^NCT\d{8}$/i.test(trimmed)) return;
+
+    this.nctLookupState.set('looking_up');
+    const controller = new AbortController();
+    this.lookupController = controller;
+
+    void (async () => {
+      try {
+        const res = await fetch(
+          `https://clinicaltrials.gov/api/v2/studies/${encodeURIComponent(trimmed)}`,
+          { signal: controller.signal }
+        );
+        if (controller.signal.aborted) return;
+        if (res.status === 404) {
+          this.nctLookupState.set('not_found');
+          return;
+        }
+        if (!res.ok) {
+          this.nctLookupState.set('error');
+          return;
+        }
+        const study = (await res.json()) as {
+          protocolSection?: {
+            identificationModule?: { acronym?: string; briefTitle?: string };
+          };
+        };
+        const acronym = study.protocolSection?.identificationModule?.acronym?.trim() ?? null;
+        const briefTitle = study.protocolSection?.identificationModule?.briefTitle?.trim() ?? null;
+        const display = acronym || briefTitle;
+        this.nctLookupAcronym.set(acronym);
+        this.nctLookupState.set('ok');
+        if (display && !this.nameWasManuallyEdited()) {
+          this.name.set(display);
+        }
+      } catch (e) {
+        if ((e as { name?: string })?.name === 'AbortError') return;
+        this.nctLookupState.set('error');
+      }
+    })();
+  }
+
+  protected onNameChanged(value: string): void {
+    this.name.set(value);
+    this.nameWasManuallyEdited.set(true);
   }
 
   private async loadOptions(spaceId: string): Promise<void> {

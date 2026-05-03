@@ -6,6 +6,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { Dialog } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
@@ -15,6 +16,7 @@ import { MarkerService } from '../../../core/services/marker.service';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
+import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 import { ChangeEvent } from '../../../core/models/change-event.model';
 import {
@@ -35,6 +37,7 @@ import { RecentActivityFeedComponent } from '../../../shared/components/recent-a
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
+import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -48,6 +51,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     ButtonModule,
     MessageModule,
     Dialog,
+    TooltipModule,
     SkeletonComponent,
     MarkerFormComponent,
     NoteFormComponent,
@@ -62,6 +66,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     MaterialsSectionComponent,
     CtgovFieldRendererComponent,
     ChangeEventRowComponent,
+    TrialEditDialogComponent,
   ],
   templateUrl: './trial-detail.component.html',
 })
@@ -89,9 +94,55 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   });
 
   private readonly topbarActionsEffect = effect(() => {
-    // Edit-trial topbar action retired with the trial-form modal in Task 4.4.
-    // Inline per-field editing is the future state (Phase 5/6).
-    this.topbarState.actions.set([]);
+    // Re-added an "Edit details" topbar action via the trial-edit-dialog
+    // after the trial-form retirement left no UI path to fix typos /
+    // backfill a missing NCT / reassign product or therapeutic area.
+    // Inline per-field editing is still the planned future state.
+    if (!this.trial() || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
+      return;
+    }
+    this.topbarState.actions.set([
+      {
+        label: 'Edit details',
+        icon: 'fa-solid fa-pen',
+        text: true,
+        callback: () => this.editingTrial.set(true),
+      },
+    ]);
+  });
+
+  editingTrial = signal(false);
+
+  // Lightweight CT.gov existence probe so the trial-detail readonly view
+  // surfaces "Not found at CT.gov" when an NCT was entered but doesn't
+  // resolve. Triggered when the identifier changes; debounced through the
+  // effect so a fast Sync round-trip doesn't double-fire.
+  protected readonly nctValidity = signal<'unknown' | 'valid' | 'not_found' | 'error'>('unknown');
+  private lastProbedNct: string | null = null;
+  private readonly nctProbeEffect = effect(() => {
+    const t = this.trial();
+    const nct = t?.identifier ?? null;
+    if (!nct) {
+      this.nctValidity.set('unknown');
+      this.lastProbedNct = null;
+      return;
+    }
+    if (nct === this.lastProbedNct) return;
+    this.lastProbedNct = nct;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `https://clinicaltrials.gov/api/v2/studies/${encodeURIComponent(nct)}`
+        );
+        if (this.lastProbedNct !== nct) return;
+        if (res.status === 404) this.nctValidity.set('not_found');
+        else if (res.ok) this.nctValidity.set('valid');
+        else this.nctValidity.set('error');
+      } catch {
+        if (this.lastProbedNct === nct) this.nctValidity.set('error');
+      }
+    })();
   });
 
   trial = signal<Trial | null>(null);
@@ -114,8 +165,12 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   showAllCtgovModal = signal(false);
   syncing = signal(false);
 
-  // Hard-coded to defaults for now; Task 6.1 will wire per-space visibility.
-  detailExtraPaths = computed(() => CTGOV_DETAIL_DEFAULT_PATHS);
+  // Per-space override of which CT.gov fields render below Phase / Recruitment
+  // / Study type. Loaded once when the trial resolves; falls back to the
+  // catalogue defaults when the space hasn't customized this surface.
+  private readonly fieldVisibilityService = inject(SpaceFieldVisibilityService);
+  private readonly perSpaceDetailPaths = signal<string[] | null>(null);
+  detailExtraPaths = computed(() => this.perSpaceDetailPaths() ?? CTGOV_DETAIL_DEFAULT_PATHS);
   readonly allCatalogPaths = CTGOV_FIELD_CATALOGUE.map((f) => f.path);
 
   protected readonly hasIntelligence = computed(() => {
@@ -133,9 +188,22 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       this.loadIntelligence();
       void this.loadSnapshot();
       void this.loadTrialActivity();
+      void this.loadFieldVisibility();
     } else {
       this.error.set('No trial ID provided');
       this.loading.set(false);
+    }
+  }
+
+  private async loadFieldVisibility(): Promise<void> {
+    const spaceId = this.route.snapshot.paramMap.get('spaceId');
+    if (!spaceId) return;
+    try {
+      const map = await this.fieldVisibilityService.get(spaceId);
+      const paths = map['trial_detail'];
+      this.perSpaceDetailPaths.set(paths && paths.length > 0 ? paths : null);
+    } catch {
+      this.perSpaceDetailPaths.set(null);
     }
   }
 
@@ -231,6 +299,18 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     }
     this.menuCache.set(key, items);
     return items;
+  }
+
+  async onTrialEdited(updated: Trial): Promise<void> {
+    // The dialog returns the bare row from PostgREST without the embedded
+    // markers / notes / TA join, so reload through the full select instead
+    // of trusting the partial. If the NCT changed, kick off a fresh sync so
+    // the snapshot + materialized columns catch up to the new identifier.
+    const previousIdentifier = this.trial()?.identifier ?? null;
+    await this.loadTrial();
+    if (updated.identifier && updated.identifier !== previousIdentifier) {
+      this.changeEventService.triggerSingleTrialSync(updated.id).catch(() => undefined);
+    }
   }
 
   async loadTrial(): Promise<void> {

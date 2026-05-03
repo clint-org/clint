@@ -8,20 +8,6 @@
 >
   <form (ngSubmit)="save()" class="flex flex-col gap-4">
     <div class="flex flex-col gap-1">
-      <label for="trial-name" class="text-sm font-medium text-slate-700">
-        Name <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="trial-name"
-        type="text"
-        pInputText
-        [ngModel]="name()"
-        (ngModelChange)="name.set($event)"
-        name="name"
-        required
-      />
-    </div>
-    <div class="flex flex-col gap-1">
       <label for="trial-nct" class="text-sm font-medium text-slate-700">
         NCT identifier (optional)
       </label>
@@ -30,9 +16,57 @@
         type="text"
         pInputText
         [ngModel]="identifier()"
-        (ngModelChange)="identifier.set($event)"
+        (ngModelChange)="onIdentifierChanged($event)"
         name="identifier"
         placeholder="NCT12345678"
+        autocomplete="off"
+        [attr.aria-invalid]="!nctFormatValid() || nctLookupState() === 'not_found' ? true : null"
+        aria-describedby="trial-nct-status"
+      />
+      <p id="trial-nct-status" class="text-[11px]">
+        @switch (nctLookupState()) {
+          @case ('looking_up') {
+            <span class="text-slate-500">Looking up at CT.gov...</span>
+          }
+          @case ('ok') {
+            <span class="text-slate-500">
+              Found at CT.gov.
+              @if (nctLookupAcronym()) {
+                Acronym: <span class="font-mono">{{ nctLookupAcronym() }}</span> -- name
+                autopopulated.
+              } @else {
+                No acronym; brief title used for name.
+              }
+            </span>
+          }
+          @case ('not_found') {
+            <span class="text-red-600">Not found at CT.gov. Check the NCT or leave blank.</span>
+          }
+          @case ('error') {
+            <span class="text-amber-600">CT.gov lookup failed; you can still save.</span>
+          }
+          @default {
+            @if (identifier() && !nctFormatValid()) {
+              <span class="text-red-600">Format: NCT followed by 8 digits.</span>
+            } @else {
+              <span class="text-slate-500">Optional. Format: NCT followed by 8 digits.</span>
+            }
+          }
+        }
+      </p>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="trial-name" class="text-sm font-medium text-slate-700">
+        Name <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="trial-name"
+        type="text"
+        pInputText
+        [ngModel]="name()"
+        (ngModelChange)="onNameChanged($event)"
+        name="name"
+        required
       />
     </div>
     <div class="flex flex-col gap-1">

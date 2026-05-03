@@ -1,0 +1,85 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  header="Edit trial details"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  [closeOnEscape]="true"
+>
+  <form (ngSubmit)="save()" class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <label for="edit-trial-name" class="text-sm font-medium text-slate-700">
+        Name <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="edit-trial-name"
+        type="text"
+        pInputText
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        name="name"
+        required
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="edit-trial-nct" class="text-sm font-medium text-slate-700">
+        NCT identifier (optional)
+      </label>
+      <input
+        id="edit-trial-nct"
+        type="text"
+        pInputText
+        [ngModel]="identifier()"
+        (ngModelChange)="identifier.set($event)"
+        name="identifier"
+        placeholder="NCT12345678"
+      />
+      <p class="text-[11px] text-slate-500">
+        Format: NCT followed by 8 digits. Sync from CT.gov runs after save.
+      </p>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="edit-trial-product" class="text-sm font-medium text-slate-700">
+        Product <span class="text-red-500">*</span>
+      </label>
+      <p-select
+        inputId="edit-trial-product"
+        [options]="products()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="productId()"
+        (ngModelChange)="productId.set($event)"
+        name="product"
+        placeholder="Select product"
+        [filter]="true"
+        appendTo="body"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="edit-trial-ta" class="text-sm font-medium text-slate-700">
+        Therapeutic area <span class="text-red-500">*</span>
+      </label>
+      <p-select
+        inputId="edit-trial-ta"
+        [options]="therapeuticAreas()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="therapeuticAreaId()"
+        (ngModelChange)="therapeuticAreaId.set($event)"
+        name="ta"
+        placeholder="Select therapeutic area"
+        [filter]="true"
+        appendTo="body"
+      />
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
+      <p-button
+        label="Save"
+        [disabled]="!isValid() || saving()"
+        [loading]="saving()"
+        type="submit"
+      />
+    </div>
+  </form>
+</p-dialog>

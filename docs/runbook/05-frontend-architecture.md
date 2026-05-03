@@ -64,7 +64,7 @@ src/client/
         manage/                 # CRUD UIs for all entities
           companies/            # company-list, company-form
           products/             # product-list, product-form
-          trials/               # trial-detail, trial-form, phase-form, marker-form, note-form
+          trials/               # trial-detail, trial-list, trial-create-dialog, trial-edit-dialog, marker-form, note-form
           marker-types/         # marker-type-list, marker-type-form
           therapeutic-areas/    # therapeutic-area-list, therapeutic-area-form
           taxonomies/           # Consolidated page: Therapeutic Areas, MOA, ROA with segmented control

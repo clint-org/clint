@@ -1,4 +1,4 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { CtgovField } from '../../../core/models/ctgov-field.model';
 
@@ -11,6 +11,12 @@ import { CtgovField } from '../../../core/models/ctgov-field.model';
  * Used by the per-space `ctgov_field_visibility` settings UI to choose
  * which CT.gov fields render on each surface (trial-detail, bullseye, etc.)
  * and in what order.
+ *
+ * `instanceId` must be unique within a single page render. The CDK drag-drop
+ * directives match `cdkDropListConnectedTo` against the global cdk drop-list
+ * registry; if two pickers share an id (e.g. across p-tabpanel siblings) all
+ * drops route to the first registered one and silently drop into a hidden
+ * tab.
  */
 @Component({
   selector: 'app-ctgov-field-picker',
@@ -21,7 +27,13 @@ import { CtgovField } from '../../../core/models/ctgov-field.model';
 export class CtgovFieldPickerComponent {
   readonly available = input.required<CtgovField[]>();
   readonly selected = input.required<string[]>();
+  readonly instanceId = input.required<string>();
   readonly selectedChange = output<string[]>();
+
+  protected readonly availableListId = computed(() => `available-list-${this.instanceId()}`);
+  protected readonly visibleListId = computed(() => `visible-list-${this.instanceId()}`);
+  protected readonly availableConnectedTo = computed(() => [this.visibleListId()]);
+  protected readonly visibleConnectedTo = computed(() => [this.availableListId()]);
 
   // Local signal-backed copies of the two list contents.
   // The CDK drag-drop directives mutate the bound array in place, so we keep
@@ -47,8 +59,8 @@ export class CtgovFieldPickerComponent {
   protected drop(event: CdkDragDrop<CtgovField[]>): void {
     const visible = [...this.localVisible()];
     const available = [...this.localAvailable()];
-    const fromVisible = event.previousContainer.id === 'visible-list';
-    const toVisible = event.container.id === 'visible-list';
+    const fromVisible = event.previousContainer.id === this.visibleListId();
+    const toVisible = event.container.id === this.visibleListId();
 
     if (event.previousContainer === event.container) {
       if (toVisible) {

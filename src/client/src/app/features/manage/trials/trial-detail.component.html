@@ -195,14 +195,20 @@
         <app-section-card title="CT.gov data">
           <ng-container actions>
             @if (spaceRole.canEdit()) {
-              <p-button
-                label="Sync from CT.gov"
-                icon="fa-solid fa-rotate"
-                [text]="true"
-                size="small"
-                [loading]="syncing()"
-                (onClick)="syncCtgov()"
-              />
+              <span
+                [pTooltip]="!t.identifier ? 'Add an NCT identifier to enable CT.gov sync.' : ''"
+                tooltipPosition="bottom"
+              >
+                <p-button
+                  label="Sync from CT.gov"
+                  icon="fa-solid fa-rotate"
+                  [text]="true"
+                  size="small"
+                  [loading]="syncing()"
+                  [disabled]="!t.identifier"
+                  (onClick)="syncCtgov()"
+                />
+              </span>
             }
             @if (snapshot()) {
               <p-button
@@ -213,6 +219,15 @@
               />
             }
           </ng-container>
+
+          @if (t.identifier && nctValidity() === 'not_found') {
+            <p-message severity="error" [closable]="false" styleClass="mb-3">
+              <span class="text-xs">
+                <span class="font-mono">{{ t.identifier }}</span> was not found at CT.gov. Edit the
+                trial to fix the NCT, or remove it.
+              </span>
+            </p-message>
+          }
 
           <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
             <dt class="text-slate-500">Phase</dt>
@@ -479,6 +494,15 @@
           [entityId]="trialId()"
           (closed)="onIntelligenceClosed()"
           (published)="onIntelligencePublished()"
+        />
+      }
+
+      @if (trial(); as t) {
+        <app-trial-edit-dialog
+          [visible]="editingTrial()"
+          (visibleChange)="editingTrial.set($event)"
+          [trial]="t"
+          (saved)="onTrialEdited($event)"
         />
       }
     </app-manage-page-shell>

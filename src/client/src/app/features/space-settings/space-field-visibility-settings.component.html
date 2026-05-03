@@ -29,6 +29,7 @@
               <app-ctgov-field-picker
                 [available]="catalogue"
                 [selected]="selectedFor(s.key)"
+                [instanceId]="s.key"
                 (selectedChange)="onSelectedChange(s.key, $event)"
               />
             </p-tabpanel>
