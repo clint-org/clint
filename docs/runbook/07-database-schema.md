@@ -687,4 +687,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260502121200_get_latest_sync_run.sql`
 - `20260502122000_drop_orphaned_trial_columns.sql`
 - `20260502130000_seed_demo_realistic_cardiometabolic.sql`
+- `20260503000000_fix_seed_demo_post_drop.sql`
 <!-- /AUTO-GEN:DRIFT -->
