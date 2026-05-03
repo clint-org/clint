@@ -127,13 +127,19 @@
         </td>
         <td class="col-identifier">
           @if (row.trial.identifier) {
-            <span [innerHTML]="row.trial.identifier | highlight: grid.debouncedGlobalSearch()"></span>
+            <span
+              [innerHTML]="row.trial.identifier | highlight: grid.debouncedGlobalSearch()"
+            ></span>
           } @else {
             --
           }
         </td>
-        <td class="col-secondary"><span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span></td>
-        <td class="col-secondary"><span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary">
+          <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+        </td>
+        <td class="col-secondary">
+          <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+        </td>
         <td>
           <app-status-tag [label]="row.trial.status" />
         </td>
@@ -172,19 +178,9 @@
   </p-table>
 </app-manage-page-shell>
 
-<p-dialog
-  [header]="editingTrial() ? 'Edit trial' : 'Add trial'"
-  [(visible)]="modalOpen"
-  [modal]="true"
-  [style]="{ width: '40rem' }"
-  (onHide)="closeModal()"
->
-  @if (modalOpen()) {
-    <app-trial-form
-      [trial]="editingTrial()"
-      [preselectedProductId]="preselectedProductId()"
-      (saved)="onSaved()"
-      (cancelled)="closeModal()"
-    />
-  }
-</p-dialog>
+<app-trial-create-dialog
+  [visible]="creating()"
+  (visibleChange)="creating.set($event)"
+  [spaceId]="spaceId()"
+  (saved)="onTrialCreated($event)"
+/>

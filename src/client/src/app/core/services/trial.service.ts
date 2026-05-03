@@ -23,9 +23,7 @@ const TRIAL_SELECT = `
 /** Flatten marker_assignments[].markers into trial.markers[] */
 function normalizeTrial(raw: Record<string, unknown>): Trial {
   const assignments = (raw['marker_assignments'] as { markers: Marker }[] | null) ?? [];
-  const markers: Marker[] = assignments
-    .map(a => a.markers)
-    .filter((m): m is Marker => !!m);
+  const markers: Marker[] = assignments.map((a) => a.markers).filter((m): m is Marker => !!m);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { marker_assignments: _unused, ...rest } = raw;
   return { ...rest, markers } as unknown as Trial;
@@ -74,6 +72,20 @@ export class TrialService {
       .single();
     if (error) throw error;
     return data as Trial;
+  }
+
+  async getLatestSnapshot(
+    trialId: string
+  ): Promise<{ payload: unknown; fetched_at: string } | null> {
+    const { data, error } = await this.supabase.client
+      .from('trial_ctgov_snapshots')
+      .select('payload, fetched_at')
+      .eq('trial_id', trialId)
+      .order('ctgov_version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
   }
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {

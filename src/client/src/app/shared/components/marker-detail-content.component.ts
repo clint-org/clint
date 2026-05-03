@@ -1,13 +1,15 @@
-import { Component, computed, input, output } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { DatePipe, JsonPipe } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
+import { MarkerChangeRow } from '../../core/models/change-event.model';
+import { ChangeEventService } from '../../core/services/change-event.service';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
 @Component({
   selector: 'app-marker-detail-content',
   standalone: true,
-  imports: [DatePipe, MaterialsSectionComponent],
+  imports: [DatePipe, JsonPipe, MaterialsSectionComponent],
   template: `
     @if (detail(); as d) {
       <!-- Title -->
@@ -152,7 +154,7 @@ import { MaterialsSectionComponent } from './materials-section/materials-section
           <ul class="space-y-1">
             @for (re of d.related_events; track re.event_id) {
               <li class="text-[11px] text-slate-500">
-                {{ re.event_date | date: 'mediumDate' }} &mdash; {{ re.title }}
+                {{ re.event_date | date: 'mediumDate' }} &middot; {{ re.title }}
                 <span class="text-slate-500">({{ re.category_name }})</span>
               </li>
             }
@@ -173,10 +175,110 @@ import { MaterialsSectionComponent } from './materials-section/materials-section
           />
         </div>
       }
+
+      <!-- History (collapsible audit log) -->
+      <div class="mt-2 border-t border-slate-100 pt-3">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-2 text-left focus:outline-none"
+          (click)="toggleHistory()"
+          [attr.aria-expanded]="historyOpen()"
+          aria-controls="marker-history-panel"
+        >
+          <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            History
+          </span>
+          <i
+            class="fa-solid text-[10px] text-slate-400"
+            [class.fa-chevron-right]="!historyOpen()"
+            [class.fa-chevron-down]="historyOpen()"
+            aria-hidden="true"
+          ></i>
+        </button>
+
+        @if (historyOpen()) {
+          <div id="marker-history-panel" class="mt-2">
+            @if (historyLoading()) {
+              <p class="py-2 text-[11px] text-slate-400">Loading history...</p>
+            } @else if (history() === null) {
+              <!-- not loaded yet, nothing to show -->
+            } @else if (history()!.length === 0) {
+              <p class="py-2 text-[11px] text-slate-400">No history recorded.</p>
+            } @else {
+              <ul class="space-y-1">
+                @for (row of history(); track row.id) {
+                  <li class="border-b border-slate-100 py-1.5 last:border-b-0">
+                    <button
+                      type="button"
+                      class="flex w-full items-start justify-between gap-2 text-left focus:outline-none"
+                      (click)="toggleRow(row.id)"
+                      [attr.aria-expanded]="isRowExpanded(row.id)"
+                    >
+                      <div class="min-w-0 flex-1">
+                        <div
+                          class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wide text-slate-500"
+                        >
+                          <span
+                            class="font-semibold"
+                            [class.text-green-600]="row.change_type === 'created'"
+                            [class.text-blue-600]="row.change_type === 'updated'"
+                            [class.text-red-600]="row.change_type === 'deleted'"
+                          >
+                            {{ changeTypeLabel(row.change_type) }}
+                          </span>
+                          <span>&middot;</span>
+                          <span class="tabular-nums">{{ row.changed_at | date: 'medium' }}</span>
+                        </div>
+                        <div class="mt-0.5 text-[11px] text-slate-600">
+                          {{ row.changed_by_email ?? 'system' }}
+                        </div>
+                      </div>
+                      <i
+                        class="fa-solid mt-1 text-[9px] text-slate-400"
+                        [class.fa-chevron-right]="!isRowExpanded(row.id)"
+                        [class.fa-chevron-down]="isRowExpanded(row.id)"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                    @if (isRowExpanded(row.id)) {
+                      <div class="mt-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <p
+                            class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+                          >
+                            Old
+                          </p>
+                          <pre
+                            class="overflow-x-auto rounded bg-slate-50 p-2 text-[10px] text-slate-700"
+                            >{{ row.old_values | json }}</pre
+                          >
+                        </div>
+                        <div>
+                          <p
+                            class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+                          >
+                            New
+                          </p>
+                          <pre
+                            class="overflow-x-auto rounded bg-slate-50 p-2 text-[10px] text-slate-700"
+                            >{{ row.new_values | json }}</pre
+                          >
+                        </div>
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
     }
   `,
 })
 export class MarkerDetailContentComponent {
+  private changeEventService = inject(ChangeEventService);
+
   readonly detail = input<CatalystDetail | null>(null);
   /**
    * Optional space id. When set, a small Materials section renders at the
@@ -186,6 +288,11 @@ export class MarkerDetailContentComponent {
    */
   readonly spaceId = input<string | null>(null);
   readonly markerClick = output<string>();
+
+  protected readonly historyOpen = signal(false);
+  protected readonly history = signal<MarkerChangeRow[] | null>(null);
+  protected readonly historyLoading = signal(false);
+  private readonly expandedRows = signal<Set<string>>(new Set());
 
   protected projectionLabel = computed(() => {
     const d = this.detail();
@@ -208,6 +315,53 @@ export class MarkerDetailContentComponent {
       return new URL(url).hostname.replace(/^www\./, '');
     } catch {
       return url;
+    }
+  }
+
+  protected toggleHistory(): void {
+    const next = !this.historyOpen();
+    this.historyOpen.set(next);
+    if (next && this.history() === null && !this.historyLoading()) {
+      this.loadHistory();
+    }
+  }
+
+  private async loadHistory(): Promise<void> {
+    const markerId = this.detail()?.catalyst.marker_id;
+    if (!markerId) return;
+    this.historyLoading.set(true);
+    try {
+      const rows = await this.changeEventService.getMarkerHistory(markerId);
+      this.history.set(rows);
+    } catch {
+      this.history.set([]);
+    } finally {
+      this.historyLoading.set(false);
+    }
+  }
+
+  protected toggleRow(id: string): void {
+    const next = new Set(this.expandedRows());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.expandedRows.set(next);
+  }
+
+  protected isRowExpanded(id: string): boolean {
+    return this.expandedRows().has(id);
+  }
+
+  protected changeTypeLabel(t: MarkerChangeRow['change_type']): string {
+    switch (t) {
+      case 'created':
+        return 'Created';
+      case 'updated':
+        return 'Updated';
+      case 'deleted':
+        return 'Deleted';
     }
   }
 }

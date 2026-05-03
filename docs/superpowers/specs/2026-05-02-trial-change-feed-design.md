@@ -16,7 +16,7 @@ This design moves that work into the background, captures full history (so addin
 2. **Full history capture.** Store raw CT.gov JSON snapshots indefinitely. Materialized columns become a projection of the snapshot, not the source of truth.
 3. **Unified change feed.** CT.gov-driven changes and analyst-edited marker (catalyst) changes both flow into a single typed event stream.
 4. **In-place surfacing.** Activity page, engagement landing widget, trial-row badges, marker history, and intel feed mixing — all reading the same feed.
-5. **Cleanup of dead schema.** Drop ~33 orphaned CT.gov columns that have no live consumer; data stays available via JSON snapshots and a per-space field-visibility config.
+5. **Cleanup of dead schema.** Drop 36 orphaned CT.gov columns that have no live consumer; data stays available via JSON snapshots and a per-space field-visibility config.
 6. **Replace the trial form** with inline editing on the trial-detail page (CT.gov fields are read-only; analyst-owned fields stay editable).
 
 ## Non-goals (v1)
@@ -218,7 +218,7 @@ Plus the watermark / sync columns:
 - `latest_ctgov_version` (new)
 - `last_polled_at` (new)
 
-### Columns dropped (~33 CT.gov columns)
+### Columns dropped (36 CT.gov columns)
 
 All have no live frontend consumer and no RPC filter parameter. Data remains in JSON snapshots and is renderable via the per-space field chooser.
 
@@ -744,7 +744,7 @@ Order within the PR:
 5. New `app-trial-create-dialog`.
 6. New `app-space-field-visibility-settings`.
 7. Drop trial-form route + component + `ctgov-sync.service.ts`.
-8. Drop the ~33 orphaned trial columns + RPC projection cleanup.
+8. Drop the 36 orphaned trial columns + RPC projection cleanup.
 9. Drop `sample_size` displays.
 10. Update `Trial` model.
 

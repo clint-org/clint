@@ -311,6 +311,8 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             trial_phase: trial.phase_type ?? trial.phase ?? null,
             description: marker.description ?? null,
             source_url: marker.source_url ?? null,
+            trial_recent_changes_count: trial.recent_changes_count ?? 0,
+            trial_most_recent_change_type: trial.most_recent_change_type ?? null,
           });
         }
       }

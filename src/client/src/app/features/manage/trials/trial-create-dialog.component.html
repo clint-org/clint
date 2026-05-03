@@ -1,0 +1,82 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  header="New trial"
+  [modal]="true"
+  [style]="{ width: '32rem' }"
+  [closeOnEscape]="true"
+>
+  <form (ngSubmit)="save()" class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <label for="trial-name" class="text-sm font-medium text-slate-700">
+        Name <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="trial-name"
+        type="text"
+        pInputText
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        name="name"
+        required
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="trial-nct" class="text-sm font-medium text-slate-700">
+        NCT identifier (optional)
+      </label>
+      <input
+        id="trial-nct"
+        type="text"
+        pInputText
+        [ngModel]="identifier()"
+        (ngModelChange)="identifier.set($event)"
+        name="identifier"
+        placeholder="NCT12345678"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="trial-product" class="text-sm font-medium text-slate-700">
+        Product <span class="text-red-500">*</span>
+      </label>
+      <p-select
+        inputId="trial-product"
+        [options]="products()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="productId()"
+        (ngModelChange)="productId.set($event)"
+        name="product"
+        placeholder="Select product"
+        [filter]="true"
+        appendTo="body"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="trial-ta" class="text-sm font-medium text-slate-700">
+        Therapeutic area <span class="text-red-500">*</span>
+      </label>
+      <p-select
+        inputId="trial-ta"
+        [options]="therapeuticAreas()"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="therapeuticAreaId()"
+        (ngModelChange)="therapeuticAreaId.set($event)"
+        name="ta"
+        placeholder="Select therapeutic area"
+        [filter]="true"
+        appendTo="body"
+      />
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
+      <p-button
+        label="Create"
+        [disabled]="!isValid() || saving()"
+        [loading]="saving()"
+        type="submit"
+      />
+    </div>
+  </form>
+</p-dialog>

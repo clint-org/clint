@@ -522,6 +522,7 @@ export class AppShellComponent implements OnInit {
       'settings/spaces': 'Spaces',
       'settings/general': 'General',
       'settings/members': 'Members',
+      'settings/fields': 'Fields',
     };
     return titleMap[route] ?? this.topbarState.title();
   });
@@ -668,8 +669,7 @@ export class AppShellComponent implements OnInit {
     // bootstrap re-runs against the target host.
     const target = this.tenants().find((t) => t.id === newTenantId);
     if (target && environment.apexDomain) {
-      const targetHost =
-        target.custom_domain ?? `${target.subdomain}.${environment.apexDomain}`;
+      const targetHost = target.custom_domain ?? `${target.subdomain}.${environment.apexDomain}`;
       if (targetHost && targetHost !== window.location.host) {
         window.location.href = `${window.location.protocol}//${targetHost}/t/${newTenantId}/spaces`;
         return;

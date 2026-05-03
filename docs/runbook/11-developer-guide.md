@@ -225,6 +225,31 @@ www app api admin auth mail support status docs blog help cdn static assets nore
 
 If you add a new operational subdomain (e.g. `metrics`, `api-v2`, `cdn-eu`) anywhere — DNS, Cloudflare Worker custom domains, marketing, anything — you MUST add it to the reserved list in both `provision_tenant` and `provision_agency` via a new migration. Without this, a tenant could register the same subdomain and host a phishing page that reads authenticated cookies (apex-scoped session storage means all `*.<apex>` subdomains share the session).
 
+## Extending the change feed
+
+The change feed pipeline is: CT.gov snapshot -> `_compute_field_diffs` (jsonb path diff) -> `_classify_change` (turns each diff into a typed event row) -> `change_events` -> RPCs (`get_activity_feed`, `get_trial_activity`, `get_marker_history`) -> Angular row components.
+
+### Adding a new event type
+
+1. Add the JSON path to the `_compute_field_diffs` watch list in `supabase/migrations/20260502120400_ctgov_helper_functions.sql`. Modify in a follow-up migration that drops + recreates the helper -- never edit an applied migration.
+2. Add the case to `_classify_change` with the new `event_type` string and a payload builder that extracts the before/after values into the event's `payload jsonb`.
+3. Update the `ChangeEventType` union in `src/client/src/app/core/models/change-event.model.ts`.
+4. Add `iconFor` / `summaryFor` cases in `src/client/src/app/shared/components/change-event-row/change-event-row.component.ts` and `src/client/src/app/shared/utils/change-event-summary.ts` so the row renders.
+5. Backfill historical events: `select recompute_trial_change_events(trial_id)` for any trial whose history should pick up the new event. Snapshots are the source of truth; no CT.gov re-poll required.
+
+### Adding a new CT.gov field to the catalogue
+
+1. Add an entry to `CTGOV_FIELD_CATALOGUE` in `src/client/src/app/core/models/ctgov-field.model.ts` (key, label, category, surfaces it can appear on).
+2. Per-space owners can then add it to any surface via `/t/:tenantId/s/:spaceId/settings/fields`. No migration needed -- the catalogue is the registry; per-space `ctgov_field_visibility` rows reference its keys.
+
+### Worker secret rotation
+
+See `08-authentication-security.md`'s "Worker secret model" section.
+
+### Manual backfill
+
+`POST /admin/ctgov-backfill` on the Worker with `{nct_ids: ["NCT01234567", ...]}` and a platform-admin JWT. Pulls fresh snapshots for the listed NCTs and re-runs the diff/classify pipeline. Used by the trial-detail "Sync from CT.gov" button (scoped to one NCT) and by ops when a bulk re-poll is needed.
+
 ## Verification
 
 ```bash

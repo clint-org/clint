@@ -16,13 +16,13 @@
 
   <div class="page">
     <div class="col-main">
+      <app-what-changed-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
+
       <section aria-labelledby="latest-heading" class="latest">
         <header class="sect-head">
           <h2 id="latest-heading">Latest from Stout</h2>
-          @if (latestIntelligence().length > 0) {
-            <a [routerLink]="intelligenceBrowseRoute()" class="section-action-link">
-              View feed
-            </a>
+          @if (hasFeedItems()) {
+            <a [routerLink]="intelligenceBrowseRoute()" class="section-action-link"> View feed </a>
           } @else {
             <span class="meta">Notices, post-readouts, and thesis updates</span>
           }
@@ -54,9 +54,9 @@
               </li>
             }
           </ul>
-        } @else if (latestIntelligence().length > 0) {
+        } @else if (hasFeedItems()) {
           <app-intelligence-feed
-            [rows]="latestIntelligence()"
+            [items]="intelligenceFeedItems()"
             [tenantId]="tenantId()"
             [spaceId]="spaceId()"
           />
@@ -76,11 +76,7 @@
 
     <aside class="col-side" aria-label="Engagement side rail">
       @if (isAgency()) {
-        <app-drafts-widget
-          [drafts]="drafts()"
-          [tenantId]="tenantId()"
-          [spaceId]="spaceId()"
-        />
+        <app-drafts-widget [drafts]="drafts()" [tenantId]="tenantId()" [spaceId]="spaceId()" />
       }
 
       <app-upcoming-catalysts-widget

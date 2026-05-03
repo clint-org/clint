@@ -74,12 +74,18 @@ export interface BullseyeTrial {
   id: string;
   name: string;
   identifier: string | null;
-  sample_size: number | null;
   status: string | null;
   recruitment_status: string | null;
   study_type: string | null;
   /** The trial's own highest phase (may be OBS if that's all the trial has). */
   phase: RingPhase | 'OBS' | null;
+  /**
+   * Change-feed badge fields. Optional because get_bullseye_data has not
+   * been extended with these yet; the ChangeBadgeComponent treats an
+   * absent count as zero and hides itself.
+   */
+  recent_changes_count?: number;
+  most_recent_change_type?: string | null;
 }
 
 export interface BullseyeMarker {

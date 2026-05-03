@@ -1,0 +1,65 @@
+<app-manage-page-shell>
+  <div class="max-w-5xl">
+    <h1 class="mb-1 text-xl font-semibold text-slate-900">Field visibility</h1>
+    <p class="mb-6 text-sm text-slate-500">
+      Choose which CT.gov fields appear on each surface. Saved per space.
+    </p>
+
+    @if (loading()) {
+      <div aria-busy="true" aria-label="Loading field visibility settings">
+        <div class="mb-4 flex gap-2">
+          <app-skeleton w="92px" h="28px" />
+          <app-skeleton w="92px" h="28px" />
+          <app-skeleton w="92px" h="28px" />
+          <app-skeleton w="92px" h="28px" />
+          <app-skeleton w="92px" h="28px" />
+        </div>
+        <app-skeleton [block]="true" w="100%" h="20rem" />
+      </div>
+    } @else {
+      <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+        <p-tablist>
+          @for (s of surfaces; track s.key) {
+            <p-tab [value]="s.key">{{ s.label }}</p-tab>
+          }
+        </p-tablist>
+        <p-tabpanels>
+          @for (s of surfaces; track s.key) {
+            <p-tabpanel [value]="s.key">
+              <app-ctgov-field-picker
+                [available]="catalogue"
+                [selected]="selectedFor(s.key)"
+                (selectedChange)="onSelectedChange(s.key, $event)"
+              />
+            </p-tabpanel>
+          }
+        </p-tabpanels>
+      </p-tabs>
+
+      <div class="mt-6 flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
+        <p-button
+          label="Reset"
+          [text]="true"
+          (onClick)="reset()"
+          [disabled]="!isDirty() || saving()"
+        />
+        <span
+          [pTooltip]="!canEdit() ? 'Only space owners can save changes.' : ''"
+          tooltipPosition="top"
+        >
+          <p-button
+            label="Save"
+            (onClick)="save()"
+            [disabled]="!isDirty() || !canEdit() || saving()"
+            [loading]="saving()"
+          />
+        </span>
+      </div>
+      @if (!canEdit()) {
+        <p class="mt-2 text-right text-[11px] text-slate-500">
+          Read-only view. Only space owners can save changes.
+        </p>
+      }
+    }
+  </div>
+</app-manage-page-shell>

@@ -28,7 +28,9 @@
       <!-- Company -->
       @if (dimension() !== 'company') {
         <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">COMPANY</div>
+          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+            COMPANY
+          </div>
           <button
             type="button"
             class="cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium text-slate-900 hover:text-brand-600"
@@ -42,7 +44,9 @@
       <!-- MOA -->
       @if (product.moas.length > 0) {
         <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">MECHANISM OF ACTION</div>
+          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+            MECHANISM OF ACTION
+          </div>
           <div class="flex flex-wrap gap-1">
             @for (moa of product.moas; track moa.id) {
               <span
@@ -52,7 +56,8 @@
                 [class.font-semibold]="isScopedMoa(moa.id)"
                 [class.bg-slate-100]="!isScopedMoa(moa.id)"
                 [class.text-slate-700]="!isScopedMoa(moa.id)"
-              >{{ moa.name }}</span>
+                >{{ moa.name }}</span
+              >
             }
           </div>
         </section>
@@ -61,7 +66,9 @@
       <!-- ROA -->
       @if (product.roas.length > 0) {
         <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">ROUTE OF ADMINISTRATION</div>
+          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+            ROUTE OF ADMINISTRATION
+          </div>
           <div class="flex flex-wrap gap-1">
             @for (roa of product.roas; track roa.id) {
               <span
@@ -72,7 +79,8 @@
                 [class.bg-slate-100]="!isScopedRoa(roa.id)"
                 [class.text-slate-700]="!isScopedRoa(roa.id)"
                 [attr.title]="roa.name"
-              >{{ roa.abbreviation ?? roa.name }}</span>
+                >{{ roa.abbreviation ?? roa.name }}</span
+              >
             }
           </div>
         </section>
@@ -80,7 +88,9 @@
 
       <!-- Trials -->
       <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-        <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">TRIALS ({{ product.trials.length }})</div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+          TRIALS ({{ product.trials.length }})
+        </div>
         @if (product.trials.length === 0) {
           <p class="text-[13px] text-slate-500">No trials tracked.</p>
         } @else {
@@ -92,19 +102,31 @@
                   class="flex w-full cursor-pointer flex-col gap-0.5 rounded-sm border-none bg-transparent px-2 py-1.5 text-left hover:bg-slate-50"
                   (click)="onTrialClick(trial.id)"
                 >
-                  <span class="text-[13px] font-medium text-slate-900">{{ trial.name }}</span>
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900"
+                  >
+                    {{ trial.name }}
+                    <app-change-badge
+                      [count]="trial.recent_changes_count ?? 0"
+                      [type]="trial.most_recent_change_type ?? null"
+                    />
+                  </span>
                   <span class="flex gap-2 font-mono text-[11px] text-slate-400">
                     @if (trial.identifier) {
                       <span>{{ trial.identifier }}</span>
-                    }
-                    @if (trial.sample_size) {
-                      <span>n={{ trial.sample_size }}</span>
                     }
                     @if (trial.phase) {
                       <span>{{ trial.phase }}</span>
                     }
                     @if (trial.recruitment_status) {
-                      <span [class]="isTerminalStatus(trial.recruitment_status) ? 'text-slate-400' : 'text-brand-600'">{{ trial.recruitment_status }}</span>
+                      <span
+                        [class]="
+                          isTerminalStatus(trial.recruitment_status)
+                            ? 'text-slate-400'
+                            : 'text-brand-600'
+                        "
+                        >{{ trial.recruitment_status }}</span
+                      >
                     }
                   </span>
                 </button>
@@ -126,7 +148,9 @@
       <!-- Recent markers -->
       @if (product.recent_markers.length > 0) {
         <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">RECENT MARKERS</div>
+          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+            RECENT MARKERS
+          </div>
           <ul class="mt-1 flex flex-col gap-1 p-0">
             @for (marker of product.recent_markers; track marker.id) {
               <li class="flex list-none items-center gap-2 text-xs text-slate-700">
@@ -135,13 +159,21 @@
                   [style.background-color]="marker.color"
                   aria-hidden="true"
                 ></span>
-                <span class="font-mono text-[11px] text-slate-500">{{ marker.event_date | date: 'mediumDate' }}</span>
+                <span class="font-mono text-[11px] text-slate-500">{{
+                  marker.event_date | date: 'mediumDate'
+                }}</span>
                 <span>{{ marker.marker_type_name }}</span>
                 @if (marker.category_name) {
-                  <span class="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ marker.category_name }}</span>
+                  <span
+                    class="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+                    >{{ marker.category_name }}</span
+                  >
                 }
                 @if (marker.projection && marker.projection !== 'actual') {
-                  <span class="rounded-sm bg-amber-100 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-amber-700">{{ marker.projection }}</span>
+                  <span
+                    class="rounded-sm bg-amber-100 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-amber-700"
+                    >{{ marker.projection }}</span
+                  >
                 }
               </li>
             }
@@ -152,7 +184,9 @@
   } @else {
     <!-- Empty state -->
     <div class="flex flex-col gap-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">CLICK A DRUG TO SEE DETAILS</div>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+        CLICK A DRUG TO SEE DETAILS
+      </div>
       <p class="text-[13px] text-slate-700">
         {{ totalProducts() }} {{ totalProducts() === 1 ? 'product' : 'products' }} across
         {{ totalSpokes() }} {{ spokeLabel().toLowerCase() }}
@@ -166,8 +200,12 @@
               (click)="onRingRowClick(entry.phase)"
               [attr.aria-label]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
             >
-              <span class="font-semibold" [style.color]="phaseColor(entry.phase)">{{ entry.phase }}</span>
-              <span [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'">{{ entry.count }}</span>
+              <span class="font-semibold" [style.color]="phaseColor(entry.phase)">{{
+                entry.phase
+              }}</span>
+              <span [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'">{{
+                entry.count
+              }}</span>
             </button>
           </li>
         }

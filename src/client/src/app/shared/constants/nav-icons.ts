@@ -26,6 +26,7 @@ export const NAV_ICONS: Record<string, string> = {
   // Settings pages
   general: 'fa-solid fa-gear',
   members: 'fa-solid fa-users',
+  fields: 'fa-solid fa-table-columns',
   taxonomies: 'fa-solid fa-tags',
   'marker-types': 'fa-solid fa-shapes',
 };

@@ -225,6 +225,45 @@ Custom domains are sales-led. There's no self-serve path. When a customer reques
 4. **Verify:** `curl -sI https://competitive.pfizer.com/` returns 200; `get_brand_by_host('competitive.pfizer.com')` returns the right tenant's brand
 5. **Note:** custom domains do NOT share the apex session cookie. Users sign in fresh on the custom domain
 
+## CT.gov sync
+
+The trial change feed runs from the same Cloudflare Worker as the SPA via a `scheduled()` export.
+
+**Cron schedule.** `0 7 * * *` (07:00 UTC daily) defined in `src/client/wrangler.jsonc` under `triggers.crons`. One run per day pulls fresh CT.gov payloads for every trial whose watermark indicates a change.
+
+**Wrangler vars** (committed in `wrangler.jsonc`):
+
+- `CTGOV_BASE_URL`: `https://clinicaltrials.gov`
+- `CTGOV_BATCH_SIZE`: number of trials per polling batch
+- `CTGOV_PARALLEL_FETCHES`: concurrency cap on outbound CT.gov fetches
+
+**Worker secret** (set via `wrangler secret put`, never committed):
+
+```bash
+npx wrangler secret put CTGOV_WORKER_SECRET
+```
+
+The same value must exist in `vault.secrets` named `ctgov_worker_secret` so `_verify_ctgov_worker_secret()` can match it. See [08-authentication-security.md](08-authentication-security.md#worker-secret-model) for the rotation playbook.
+
+**Initial deploy and backfill.** Use the manual admin endpoint to seed the snapshot store before the first scheduled run:
+
+```bash
+curl -X POST https://yourproduct.com/admin/ctgov-backfill \
+  -H "Authorization: Bearer <platform-admin-jwt>" \
+  -H "content-type: application/json" \
+  -d '{"nct_ids":["NCT01234567","NCT07654321"]}'
+```
+
+Gated by `is_platform_admin()` on the JWT. Same code path as scheduled mode.
+
+**Monitoring.** Each cron invocation writes one row to `ctgov_sync_runs`:
+
+```sql
+select * from public.ctgov_sync_runs order by started_at desc limit 10;
+```
+
+`status` is `success | partial | failed`. The engagement landing surfaces the latest row via `get_latest_sync_run()` so analysts can see freshness without database access.
+
 ## Build Output
 
 The Angular build produces static files in `src/client/dist/clinical-trial-dashboard/browser/`. Cloudflare's Worker static-assets binding (configured in `wrangler.jsonc`) serves these from the global edge. No SSR is configured -- this is a pure client-side SPA. The `public/` directory contents (favicon, `_headers`) are copied into the dist by the Angular build's `assets` entry in `angular.json`.

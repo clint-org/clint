@@ -32,6 +32,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 <!-- AUTO-GEN:RPC_TABLE_MATRIX -->
 | RPC | Writes | Reads |
 |---|---|---|
+| `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
+| `_log_marker_change` | marker_changes | - |
+| `_materialize_trial_from_snapshot` | trials | - |
 | `_seed_demo_companies` | companies | - |
 | `_seed_demo_events` | events | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
@@ -47,7 +50,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
+| `backfill_marker_history` | marker_changes | markers |
 | `build_intelligence_payload` | - | primary_intelligence, primary_intelligence_links, primary_intelligence_revisions |
+| `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
 | `create_space` | space_members, spaces | tenant_members |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -61,6 +66,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
 | `finalize_material` | materials | - |
+| `get_activity_feed` | - | marker_changes, markers, trial_change_events, trials |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
@@ -68,7 +74,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_bullseye_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_catalyst_detail` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trial_notes, trials |
+| `get_dashboard_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trial_change_events, trial_notes, trials |
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
@@ -76,18 +82,23 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_landscape_index_by_company` | - | companies, products, trials |
 | `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
 | `get_landscape_index_by_roa` | - | companies, product_routes_of_administration, products, routes_of_administration, trials |
+| `get_latest_sync_run` | - | ctgov_sync_runs |
 | `get_marker_detail_with_intelligence` | - | markers |
+| `get_marker_history` | - | marker_changes |
 | `get_notifications` | - | marker_assignments, marker_categories, marker_notifications, marker_types, markers, notification_reads, trials |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
+| `get_trial_activity` | - | marker_changes, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
+| `get_trials_for_polling` | - | trials |
 | `get_unread_notification_count` | - | marker_notifications, notification_reads |
 | `handle_new_user` | agency_invites, agency_members | - |
 | `has_space_access` | - | space_members, spaces, tenants |
 | `has_tenant_access` | - | space_members, spaces |
+| `ingest_ctgov_snapshot` | trial_change_events, trial_ctgov_snapshots, trial_field_changes, trials | - |
 | `invite_to_space` | space_invites, space_members | - |
 | `is_agency_member` | - | agency_members |
 | `is_agency_member_of_space` | - | spaces, tenants |
@@ -106,6 +117,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `prepare_material_upload` | - | materials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
+| `recompute_trial_change_events` | trial_change_events, trial_field_changes | trial_ctgov_snapshots, trials |
+| `record_sync_run` | ctgov_sync_runs | - |
 | `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
 | `register_custom_domain` | tenants | agencies, retired_hostnames |
 | `register_material` | material_links, materials | spaces, tenants |
@@ -114,8 +127,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
 | `seed_demo_data` | - | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `trigger_single_trial_sync` | - | trials |
 | `update_agency_branding` | agencies | - |
 | `update_material` | material_links, materials | - |
+| `update_space_field_visibility` | spaces | - |
 | `update_tenant_access` | tenants | - |
 | `update_tenant_branding` | tenants | - |
 | `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
@@ -463,12 +478,63 @@ Deno-runtime handler triggered by a Supabase database webhook on `INSERT` into `
 
 **Local emulator:** the Supabase local emulator does not support the dashboard's database-webhook configuration 1:1, so local invite flows continue to surface the invite code in the UI. The email path is exercised in the remote project. See `docs/runbook/12-deployment.md` for the production setup checklist.
 
+## Trial change feed RPCs
+
+The trial change feed has four pipeline pieces: a Cloudflare Worker pulls daily from CT.gov on cron, calls `ingest_ctgov_snapshot` per changed trial which writes to `trial_ctgov_snapshots`, computes diffs into `trial_field_changes`, and classifies them into the typed `trial_change_events` stream the UI reads. Marker edits flow into the same `trial_change_events` table via a BEFORE trigger on `markers` that writes `marker_changes` audit rows.
+
+```mermaid
+flowchart TD
+  A[ingest_ctgov_snapshot called<br/>p_trial_id, p_payload, p_post_date, p_module_hints]
+  B[Verify worker secret]
+  C[INSERT snapshot<br/>ON CONFLICT trial_id, ctgov_version DO NOTHING]
+  D{New row<br/>inserted?}
+  E[Update last_polled_at only]
+  F[Materialize columns:<br/>_materialize_trial_from_snapshot]
+  G[Fetch previous snapshot for this trial]
+  H{Previous<br/>exists?}
+  I[Skip diff - first time]
+  J[Compute field diffs:<br/>_compute_field_diffs]
+  K[INSERT into trial_field_changes]
+  L[Run classifier:<br/>_classify_change per diff]
+  M[INSERT into trial_change_events]
+  N[Update trials watermark:<br/>last_polled_at, latest_ctgov_version, last_update_posted_date]
+  O[Return summary jsonb]
+
+  A --> B --> C --> D
+  D -->|no, dup| E --> O
+  D -->|yes| F --> G --> H
+  H -->|no| I --> N --> O
+  H -->|yes| J --> K --> L --> M --> N --> O
+```
+
+**Worker-side RPCs** (gated by `_verify_ctgov_worker_secret`; the Worker calls Supabase as anon and presents the secret as an argument):
+
+- `get_trials_for_polling(p_secret, p_batch_size)`: returns the next batch of `(trial_id, nct_id, last_update_posted_date)` rows ordered by stalest watermark.
+- `ingest_ctgov_snapshot(p_secret, p_trial_id, p_payload, p_post_date, p_module_hints)`: single-trial insert + diff + classify pipeline above. Single transaction; rolls back on any failure.
+- `record_sync_run(p_secret, p_started_at, p_finished_at, p_trials_polled, p_trials_changed, p_status, p_error)`: observability row per cron invocation.
+- `bulk_update_last_polled(p_secret, p_trial_ids)`: bumps `trials.last_polled_at` for trials the Worker checked but found unchanged.
+
+**User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
+
+- `get_activity_feed(p_space_id, p_filters, p_limit, p_offset)`: backs the activity page; reads `trial_change_events` joined to trial / marker context.
+- `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
+- `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes`.
+- `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
+- `update_space_field_visibility(p_space_id, p_visibility)`: writes the per-space field-visibility map that drives which CT.gov columns render on trial-detail.
+- `recompute_trial_change_events(p_trial_id)`: admin-only; replays the classifier over existing `trial_field_changes` for a trial. Used after classifier rule changes.
+- `get_latest_sync_run()`: reads the most recent `ctgov_sync_runs` row for the engagement-landing freshness indicator.
+
 ## Documentation Drift
 
 Auto-generated. Lists public functions in `pg_proc` and edge functions in `supabase/functions/` whose name does not appear anywhere in this file. Add a section under Database Functions / Whitelabel RPCs / Edge Functions for each flagged item. Helpers (`is_*`, `has_*`, `enforce_*`) and demo seed helpers (`_seed_demo_*`) are tracked elsewhere and excluded here.
 
 <!-- AUTO-GEN:DRIFT -->
 **RPCs in `pg_proc` not documented:**
+- `_emit_events_from_marker_change`
+- `_log_marker_change`
+- `_map_phase_array`
+- `_path_in_hinted_modules`
+- `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`
 - `delete_primary_intelligence`

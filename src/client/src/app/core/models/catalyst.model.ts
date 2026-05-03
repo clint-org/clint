@@ -19,6 +19,13 @@ export interface Catalyst {
   trial_phase: string | null;
   description: string | null;
   source_url: string | null;
+  /**
+   * Change-feed badge fields propagated from the catalyst's parent trial
+   * (via the dashboard data the catalyst list flattens from). Optional so
+   * any catalyst built from a payload without these fields renders no badge.
+   */
+  trial_recent_changes_count?: number;
+  trial_most_recent_change_type?: string | null;
 }
 
 export interface CatalystDetail {

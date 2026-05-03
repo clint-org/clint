@@ -223,6 +223,20 @@ Async guard on `/t/:tenantId/s/:spaceId/*`. Walks the route tree to read both `:
 
 Strict child guard on `/t/:tenantId/settings`. The parent `tenantGuard` uses `has_tenant_access` (loose; lets space-only members reach their space), which previously also let a space-only Reader reach the tenant settings page where RLS hid every row and every mutation got rejected at the RPC layer — a confusing empty/inert surface. This guard runs in addition to `tenantGuard`, requires explicit tenant membership via `is_tenant_member` RPC, and redirects non-members to `/t/:tenantId/spaces`. Loose parent activation still lets space-only members reach the space; the strict child blocks them only at the tenant-management surface.
 
+## Worker secret model
+
+The trial change feed's daily polling Worker runs as anonymous on Supabase but authenticates each cron-RPC call with a shared secret. The Worker's invocation pattern is: anon JWT in the `Authorization` header, secret as a function argument; every cron-RPC body verifies it via `_verify_ctgov_worker_secret(p_secret)` (SECURITY DEFINER) before doing anything else.
+
+**Blast radius.** Leaking `CTGOV_WORKER_SECRET` only exposes the four cron RPCs (`get_trials_for_polling`, `ingest_ctgov_snapshot`, `record_sync_run`, `bulk_update_last_polled`). The secret grants no RLS bypass and no arbitrary DB access; an attacker holding the secret can poison `trial_ctgov_snapshots` and `ctgov_sync_runs` rows, but cannot read or write any tenant data outside that scope. The Worker reads no rows back to the client either.
+
+**Rotation playbook.** No downtime required:
+
+1. Insert a new row into `vault.secrets` (or update the existing one) named `ctgov_worker_secret` with the new value.
+2. `wrangler secret put CTGOV_WORKER_SECRET` with the same new value.
+3. The Worker uses the new secret on its next cron fire; in-flight calls finish against whichever value Postgres holds when they execute. No coordination needed because both sides are read in the same transaction.
+
+**User-facing manual sync is gated separately.** The `POST /admin/ctgov-backfill` endpoint on the Worker (used by the platform-admin "Backfill NCTs" UI and by `trigger_single_trial_sync`) is gated by `is_platform_admin()` over the user's JWT, NOT by the worker secret. The two gates are independent: the cron path uses the secret because there is no user JWT; the admin path uses the JWT because there is no need to ship a secret to the browser.
+
 ## RLS Coverage
 
 Auto-generated from `pg_class` and `pg_policy`. Every public table should have RLS enabled with at least one policy. A row marked **no** under "RLS enabled" is a security smell — investigate before merging.
@@ -234,6 +248,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agency_invites` | yes | 2 |
 | `agency_members` | yes | 4 |
 | `companies` | yes | 4 |
+| `ctgov_sync_runs` | yes | 1 |
 | `event_categories` | yes | 4 |
 | `event_links` | yes | 3 |
 | `event_sources` | yes | 4 |
@@ -241,6 +256,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `events` | yes | 4 |
 | `marker_assignments` | yes | 4 |
 | `marker_categories` | yes | 4 |
+| `marker_changes` | yes | 1 |
 | `marker_notifications` | yes | 3 |
 | `marker_types` | yes | 4 |
 | `markers` | yes | 4 |
@@ -266,6 +282,9 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `tenant_members` | yes | 4 |
 | `tenants` | yes | 3 |
 | `therapeutic_areas` | yes | 4 |
+| `trial_change_events` | yes | 1 |
+| `trial_ctgov_snapshots` | yes | 1 |
+| `trial_field_changes` | yes | 1 |
 | `trial_notes` | yes | 4 |
 | `trials` | yes | 4 |
 <!-- /AUTO-GEN:RLS_COVERAGE -->

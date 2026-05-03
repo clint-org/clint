@@ -6,6 +6,18 @@
 
 All schema changes are in `supabase/migrations/` as timestamped SQL files.
 
+## Trial change feed tables
+
+The trial change feed introduces five new tables that together replace the wide CT.gov column set on `trials`:
+
+- `trial_ctgov_snapshots`: append-only JSONB store of CT.gov payloads, keyed by `(trial_id, ctgov_version)`. Source of truth for everything CT.gov-derived; consulted only for history queries (per-trial change log, "view this field as of date X", column-chooser rendering).
+- `trial_field_changes`: raw diff log between consecutive snapshots; one row per changed field path. Cheap to write, easy to replay through the classifier.
+- `trial_change_events`: the typed event stream the UI reads. Both CT.gov-derived events (`derived_from_change_id`) and analyst-derived events (`derived_from_marker_change_id`, `marker_id`) flow here; surface code does not branch on origin.
+- `marker_changes`: analyst-side audit log written by a BEFORE INSERT/UPDATE/DELETE trigger on `markers`. BEFORE timing is required: an AFTER DELETE trigger would see zero `marker_assignments` after the cascade, so the trigger fires before the cascade runs and captures the intent.
+- `ctgov_sync_runs`: one observability row per Cloudflare cron invocation: started/finished timestamps, trials polled, trials changed, status (`success | partial | failed`), and any error message.
+
+`trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. 36 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
+
 ## Schema Diagram
 
 Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraints on the local Supabase database. Run `npm run docs:arch` from `src/client/` to regenerate. Tables without any FK relationship render as empty boxes so they remain visible.
@@ -30,6 +42,7 @@ erDiagram
   MARKERS ||--o{ MARKER_ASSIGNMENTS : "marker_id"
   TRIALS ||--o{ MARKER_ASSIGNMENTS : "trial_id"
   SPACES ||--o{ MARKER_CATEGORIES : "space_id"
+  SPACES ||--o{ MARKER_CHANGES : "space_id"
   MARKERS ||--o{ MARKER_NOTIFICATIONS : "marker_id"
   SPACES ||--o{ MARKER_NOTIFICATIONS : "space_id"
   MARKER_CATEGORIES ||--o{ MARKER_TYPES : "category_id"
@@ -59,11 +72,22 @@ erDiagram
   TENANTS ||--o{ TENANT_MEMBERS : "tenant_id"
   AGENCIES ||--o{ TENANTS : "agency_id"
   SPACES ||--o{ THERAPEUTIC_AREAS : "space_id"
+  TRIAL_FIELD_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_change_id"
+  MARKER_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_marker_change_id"
+  MARKERS ||--o{ TRIAL_CHANGE_EVENTS : "marker_id"
+  SPACES ||--o{ TRIAL_CHANGE_EVENTS : "space_id"
+  TRIALS ||--o{ TRIAL_CHANGE_EVENTS : "trial_id"
+  SPACES ||--o{ TRIAL_CTGOV_SNAPSHOTS : "space_id"
+  TRIALS ||--o{ TRIAL_CTGOV_SNAPSHOTS : "trial_id"
+  TRIAL_CTGOV_SNAPSHOTS ||--o{ TRIAL_FIELD_CHANGES : "source_snapshot_id"
+  SPACES ||--o{ TRIAL_FIELD_CHANGES : "space_id"
+  TRIALS ||--o{ TRIAL_FIELD_CHANGES : "trial_id"
   SPACES ||--o{ TRIAL_NOTES : "space_id"
   TRIALS ||--o{ TRIAL_NOTES : "trial_id"
   PRODUCTS ||--o{ TRIALS : "product_id"
   SPACES ||--o{ TRIALS : "space_id"
   THERAPEUTIC_AREAS ||--o{ TRIALS : "therapeutic_area_id"
+  CTGOV_SYNC_RUNS { }
   PLATFORM_ADMINS { }
   RETIRED_HOSTNAMES { }
 ```
@@ -570,7 +594,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
-- `marker_assignments`
 - `marker_notifications`
 - `mechanisms_of_action`
 - `notification_reads`
@@ -651,5 +674,17 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260501130349_extend_seed_demo_intelligence_and_materials.sql`
 - `20260501132002_seed_demo_intelligence_security_definer.sql`
 - `20260501152530_add_space_landing_stats.sql`
+- `20260502120000_trial_change_feed_tables.sql`
+- `20260502120100_trials_polling_columns.sql`
+- `20260502120200_spaces_field_visibility.sql`
+- `20260502120300_ctgov_worker_secret.sql`
+- `20260502120400_ctgov_helper_functions.sql`
+- `20260502120500_ctgov_ingest_rpc.sql`
+- `20260502120600_ctgov_polling_rpcs.sql`
+- `20260502120700_marker_changes_trigger.sql`
+- `20260502120800_change_feed_surface_rpcs.sql`
+- `20260502120900_dashboard_data_change_counts.sql`
+- `20260502121200_get_latest_sync_run.sql`
+- `20260502122000_drop_orphaned_trial_columns.sql`
 - `20260502130000_seed_demo_realistic_cardiometabolic.sql`
 <!-- /AUTO-GEN:DRIFT -->

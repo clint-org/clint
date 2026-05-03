@@ -1,0 +1,58 @@
+<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
+  @for (item of renderedFields(); track item.field.path) {
+    <dt class="text-slate-500">{{ item.field.label }}</dt>
+    <dd class="text-slate-900">
+      @switch (item.field.kind) {
+        @case ('string') {
+          {{ item.value || '(none)' }}
+        }
+        @case ('longtext') {
+          @if (item.value) {
+            <span class="block whitespace-pre-wrap">{{ item.value }}</span>
+          } @else {
+            (none)
+          }
+        }
+        @case ('date') {
+          {{ asDateInput(item.value) ? (asDateInput(item.value) | date: 'mediumDate') : '(none)' }}
+        }
+        @case ('number') {
+          {{ item.value ?? '(none)' }}
+        }
+        @case ('boolean') {
+          {{ item.value === true ? 'Yes' : item.value === false ? 'No' : '(none)' }}
+        }
+        @case ('array') {
+          @if (asArray(item.value); as arr) {
+            @if (item.field.summary === 'count' && !isExpanded(item.field.path)) {
+              <button
+                type="button"
+                class="text-brand-600 hover:underline"
+                (click)="toggleExpanded(item.field.path)"
+              >
+                {{ arr.length }} items
+              </button>
+            } @else {
+              <ul class="list-disc list-inside space-y-1">
+                @for (it of arr; track $index) {
+                  <li>{{ itemValue(it, item.field.itemPath) }}</li>
+                }
+              </ul>
+              @if (item.field.summary === 'count') {
+                <button
+                  type="button"
+                  class="text-brand-600 hover:underline mt-1"
+                  (click)="toggleExpanded(item.field.path)"
+                >
+                  Hide
+                </button>
+              }
+            }
+          } @else {
+            (none)
+          }
+        }
+      }
+    </dd>
+  }
+</dl>

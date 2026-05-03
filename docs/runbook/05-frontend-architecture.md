@@ -223,6 +223,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
       /catalysts   CatalystsPageComponent
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
+    /activity   EngagementActivityPageComponent
     /landscape   -> bullseye/by-therapy-area
     /landscape/by-therapy-area   -> bullseye/by-therapy-area
     /landscape/by-therapy-area/:entityId   -> bullseye/by-therapy-area/:entityId
@@ -241,6 +242,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /settings/taxonomies   TaxonomiesPageComponent
     /settings/general   SpaceGeneralComponent
     /settings/members   SpaceMembersComponent
+    /settings/fields   SpaceFieldVisibilitySettingsComponent
     /manage/marker-types   -> settings/marker-types
     /manage/therapeutic-areas   -> settings/taxonomies
     /manage/mechanisms-of-action   -> settings/taxonomies
@@ -552,6 +554,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 
 <!-- AUTO-GEN:DRIFT -->
 **Services:**
+- `ChangeEventService`
 - `EventCategoryService`
 - `EventThreadService`
 - `EventService`
@@ -568,8 +571,11 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `PrimaryIntelligenceService`
 - `ProseMirrorService`
 - `RouteOfAdministrationService`
+- `SpaceFieldVisibilityService`
 
 **Models:**
+- `ChangeEvent`
+- `CtgovField`
 - `MechanismOfAction`
 - `Palette`
 - `PrimaryIntelligence`

@@ -1,0 +1,24 @@
+<div class="flex items-start gap-3 py-3 border-b border-slate-200">
+  <i [class]="iconClass()" class="text-slate-500 mt-1 w-5"></i>
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
+      <span class="font-mono uppercase tracking-wide tabular-nums">{{ sourceLabel() }}</span>
+      <span>&bull;</span>
+      <span class="font-mono tabular-nums">{{ event().observed_at | date: 'medium' }}</span>
+      <span>&bull;</span>
+      <span>{{ event().trial_identifier ?? event().trial_name }}</span>
+    </div>
+    <div class="text-sm text-slate-900">{{ summary() }}</div>
+    @if (expanded()) {
+      <pre class="mt-2 p-2 bg-slate-50 rounded text-xs overflow-x-auto">{{
+        event().payload | json
+      }}</pre>
+    }
+    <p-button
+      [label]="expanded() ? 'Hide details' : 'Show details'"
+      [text]="true"
+      size="small"
+      (click)="toggle()"
+    />
+  </div>
+</div>

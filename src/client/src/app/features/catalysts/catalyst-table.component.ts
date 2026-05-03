@@ -5,13 +5,22 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
-  imports: [DatePipe, FormsModule, SelectModule, TableModule, TableSkeletonBodyComponent, HighlightPipe],
+  imports: [
+    ChangeBadgeComponent,
+    DatePipe,
+    FormsModule,
+    SelectModule,
+    TableModule,
+    TableSkeletonBodyComponent,
+    HighlightPipe,
+  ],
   template: `
     <p-table
       [value]="catalysts()"
@@ -125,15 +134,31 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                   catalyst.marker_type_shape === 'diamond' ? 'rotate(45deg)' : 'none'
                 "
               ></span>
-              <span class="text-xs text-slate-500" [innerHTML]="catalyst.category_name | highlight: query()"></span>
+              <span
+                class="text-xs text-slate-500"
+                [innerHTML]="catalyst.category_name | highlight: query()"
+              ></span>
             </span>
           </td>
-          <td class="text-sm font-medium text-slate-900" [innerHTML]="catalyst.title | highlight: query()"></td>
+          <td class="text-sm font-medium text-slate-900">
+            <span class="inline-flex items-center gap-1.5">
+              <span [innerHTML]="catalyst.title | highlight: query()"></span>
+              <app-change-badge
+                [count]="catalyst.trial_recent_changes_count ?? 0"
+                [type]="catalyst.trial_most_recent_change_type ?? null"
+              />
+            </span>
+          </td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
-              <span class="uppercase" [innerHTML]="catalyst.company_name | highlight: query()"></span>
+              <span
+                class="uppercase"
+                [innerHTML]="catalyst.company_name | highlight: query()"
+              ></span>
               @if (catalyst.product_name) {
-                <span> &middot; <span [innerHTML]="catalyst.product_name | highlight: query()"></span></span>
+                <span>
+                  &middot; <span [innerHTML]="catalyst.product_name | highlight: query()"></span
+                ></span>
               }
             }
           </td>

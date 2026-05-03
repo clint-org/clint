@@ -187,6 +187,45 @@ Export details:
 - Legend showing all marker types
 - Runs entirely client-side -- no file is sent to a server
 
+## Trial change feed
+
+A unified, typed event stream that captures every meaningful update to a trial: both CT.gov-derived (overall recruitment status, primary completion date, design fields, etc.) and analyst-derived (marker added, edited, deleted). A daily Cloudflare Worker pulls fresh CT.gov payloads and a BEFORE trigger on `markers` writes audit rows; both feed a single `trial_change_events` table that the UI reads from in six places. See [docs/superpowers/specs/2026-05-02-trial-change-feed-design.md](../superpowers/specs/2026-05-02-trial-change-feed-design.md).
+
+Four-stage pipeline: observe, store, classify, surface.
+
+```mermaid
+flowchart LR
+  CT[ClinicalTrials.gov<br/>v2 + int APIs]
+  CF[Cloudflare Worker<br/>daily cron]
+  RPC[Supabase RPC<br/>ingest_ctgov_snapshot]
+  SNAP[(trial_ctgov_snapshots<br/>append-only JSONB)]
+  TRIALS[(trials<br/>materialized columns)]
+  RAW[(trial_field_changes<br/>raw diffs)]
+  EVT[(trial_change_events<br/>typed feed)]
+  MK[(markers)]
+  MKC[(marker_changes<br/>via PG trigger)]
+  UI[Angular surfaces<br/>6 places]
+
+  CF -->|batch watermark check<br/>then full pull| CT
+  CF -->|per changed trial| RPC
+  RPC --> SNAP
+  RPC --> TRIALS
+  RPC --> RAW
+  RAW -->|classify| EVT
+  MK -->|AFTER trigger| MKC
+  MKC -->|classify| EVT
+  EVT --> UI
+```
+
+**Surfaces.** The same `trial_change_events` rows render in:
+
+- **Activity page** at `/t/:tenantId/s/:spaceId/activity`: full filterable feed across the engagement.
+- **What-changed widget** on the engagement landing: top recent events at a glance.
+- **Trial row badges** on the timeline and tables: small change-count chips per trial.
+- **Marker history panel** on the marker detail panel: analyst-side audit trail per marker.
+- **Intel feed mixing** in the existing intelligence feed: change events interleave with primary intelligence rows.
+- **Trial-detail Activity section**: per-trial change log on the trial detail page.
+
 ## CT.gov Integration
 
 The `CtgovSyncService` can fetch trial data from the ClinicalTrials.gov API v2 by NCT ID and map it to internal fields. Trials can store 35+ fields from the ClinicalTrials.gov data model, including:
@@ -399,6 +438,7 @@ Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts`
 - `manage/routes-of-administration`
 - `manage/therapeutic-areas`
 - `seed-demo`
+- `settings/fields`
 - `settings/general`
 - `settings/marker-types`
 - `settings/members`

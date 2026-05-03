@@ -1,0 +1,157 @@
+<div class="flex h-full min-h-0 flex-col overflow-y-auto">
+  <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-6">
+    <!-- Header -->
+    <header class="flex flex-col gap-1">
+      <h1 class="text-xl font-semibold text-slate-900">Activity</h1>
+      @if (spaceName()) {
+        <p class="text-sm text-slate-500">{{ spaceName() }}</p>
+      }
+    </header>
+
+    <!-- Filters -->
+    <section
+      class="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4"
+      aria-label="Activity filters"
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono uppercase tracking-wide text-slate-500">Range</span>
+          <p-selectbutton
+            [options]="dateRangeOptions"
+            [ngModel]="dateRange()"
+            (ngModelChange)="dateRange.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            size="small"
+            ariaLabelledBy="activity-date-range"
+          />
+        </div>
+
+        <div class="h-4 w-px bg-slate-200"></div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono uppercase tracking-wide text-slate-500">Source</span>
+          <p-selectbutton
+            [options]="sourceOptions"
+            [ngModel]="source()"
+            (ngModelChange)="source.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            size="small"
+            ariaLabelledBy="activity-source"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <p-multiselect
+          [options]="eventTypeOptions"
+          [ngModel]="selectedEventTypes()"
+          (ngModelChange)="selectedEventTypes.set($event ?? [])"
+          placeholder="Event type"
+          ariaLabel="Filter by event type"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          size="small"
+          [maxSelectedLabels]="0"
+          [styleClass]="'w-fit' + (selectedEventTypes().length ? ' has-value' : '')"
+          [selectedItemsLabel]="'Event type (' + selectedEventTypes().length + ')'"
+        />
+
+        <p-multiselect
+          [options]="trialOptions()"
+          [ngModel]="selectedTrialIds()"
+          (ngModelChange)="selectedTrialIds.set($event ?? [])"
+          placeholder="Trial"
+          ariaLabel="Filter by trial"
+          optionLabel="label"
+          optionValue="value"
+          [filter]="true"
+          [showClear]="true"
+          appendTo="body"
+          size="small"
+          [maxSelectedLabels]="0"
+          [styleClass]="'w-fit' + (selectedTrialIds().length ? ' has-value' : '')"
+          [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
+        />
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section
+      class="flex-1 rounded-md border border-slate-200 bg-white"
+      aria-live="polite"
+      [attr.aria-busy]="loading()"
+    >
+      @if (errorMessage()) {
+        <div class="px-4 py-3 text-sm text-red-700">{{ errorMessage() }}</div>
+      }
+
+      @if (initialLoad() && loading()) {
+        <div class="divide-y divide-slate-200 px-4">
+          @for (i of skeletonRows; track i) {
+            <div class="flex items-start gap-3 py-3">
+              <app-skeleton w="20px" h="20px" />
+              <div class="flex flex-1 flex-col gap-2">
+                <app-skeleton w="40%" h="10px" />
+                <app-skeleton w="80%" h="14px" />
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (events().length === 0) {
+        <div class="px-4 py-12 text-center text-sm text-slate-500">
+          No activity matches your filters.
+        </div>
+      } @else {
+        <ul class="divide-y divide-slate-200 px-4">
+          @for (e of events(); track e.id) {
+            <li>
+              <app-change-event-row [event]="e" />
+            </li>
+          }
+        </ul>
+
+        <div class="flex items-center justify-center border-t border-slate-200 px-4 py-3">
+          @if (hasMore()) {
+            <p-button
+              label="Load more"
+              [text]="true"
+              size="small"
+              [loading]="loading()"
+              [disabled]="loading()"
+              (click)="loadMore()"
+            />
+          } @else {
+            <span class="text-xs font-mono uppercase tracking-wide text-slate-400">
+              End of feed
+            </span>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Footer: latest sync run -->
+    <footer class="text-xs font-mono tabular-nums text-slate-500" aria-label="Last sync status">
+      @if (!syncRunLoaded()) {
+        <app-skeleton w="240px" h="10px" />
+      } @else {
+        @if (syncRun(); as r) {
+          <span>Last sync:</span>
+          <span class="ml-1">{{ r.ended_at | date: 'medium' }}</span>
+          <span class="mx-2">&bull;</span>
+          <span>{{ r.trials_checked | number }} trials checked</span>
+          <span class="mx-2">&bull;</span>
+          <span>{{ r.ncts_with_changes | number }} changes detected</span>
+        } @else {
+          <span>No sync runs yet</span>
+        }
+      }
+    </footer>
+  </div>
+</div>

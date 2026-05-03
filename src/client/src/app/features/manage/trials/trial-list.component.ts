@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 
 import { Trial } from '../../../core/models/trial.model';
@@ -14,7 +13,7 @@ import { Company } from '../../../core/models/company.model';
 import { TrialService } from '../../../core/services/trial.service';
 import { ProductService } from '../../../core/services/product.service';
 import { CompanyService } from '../../../core/services/company.service';
-import { TrialFormComponent } from './trial-form.component';
+import { TrialCreateDialogComponent } from './trial-create-dialog.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
@@ -43,9 +42,8 @@ interface TrialRow {
     SelectModule,
     TableModule,
     ButtonModule,
-    Dialog,
     MessageModule,
-    TrialFormComponent,
+    TrialCreateDialogComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -73,15 +71,20 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'Add trial', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+        {
+          label: 'Add trial',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
     }
   });
 
-  spaceId = '';
-  tenantId = '';
+  spaceId = signal('');
+  tenantId = signal('');
 
   private readonly menuCache = new Map<string, MenuItem[]>();
 
@@ -91,8 +94,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  modalOpen = signal(false);
-  editingTrial = signal<Trial | null>(null);
+  creating = signal(false);
 
   readonly rows = computed<TrialRow[]>(() => {
     const productMap = new Map(this.products().map((p) => [p.id, p]));
@@ -164,23 +166,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
     this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
   });
 
-  /**
-   * If the user arrived via a deep-link with the product filter pre-applied
-   * (e.g., from product-list "View trials"), the trial-form modal can pre-select
-   * that product when opened. Reads the current product_id filter value out of
-   * the grid state.
-   */
-  readonly preselectedProductId = computed<string | null>(() => {
-    const filter = this.grid.filters()['trial.product_id'];
-    if (filter?.kind === 'select' && filter.values.length > 0) {
-      return String(filter.values[0]);
-    }
-    return null;
-  });
-
   async ngOnInit(): Promise<void> {
-    this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
-    this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    this.spaceId.set(this.route.snapshot.paramMap.get('spaceId')!);
+    this.tenantId.set(this.route.snapshot.paramMap.get('tenantId')!);
     await this.loadData();
   }
 
@@ -203,7 +191,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
         {
           label: 'Edit',
           icon: 'fa-solid fa-pen',
-          command: () => this.openEditModal(row.trial),
+          command: () => this.openDetail(row.trial),
         },
         { separator: true },
         {
@@ -211,7 +199,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDelete(row.trial),
-        },
+        }
       );
     }
     this.menuCache.set(row.trial.id, items);
@@ -219,33 +207,23 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   openCreateModal(): void {
-    this.editingTrial.set(null);
-    this.modalOpen.set(true);
+    this.creating.set(true);
   }
 
-  openEditModal(trial: Trial): void {
-    this.editingTrial.set(trial);
-    this.modalOpen.set(true);
-  }
-
-  closeModal(): void {
-    this.modalOpen.set(false);
-    this.editingTrial.set(null);
-  }
-
-  async onSaved(): Promise<void> {
-    const wasEditing = this.editingTrial() !== null;
-    this.closeModal();
-    await this.loadData();
-    this.messageService.add({
-      severity: 'success',
-      summary: wasEditing ? 'Trial updated.' : 'Trial created.',
-      life: 3000,
-    });
+  onTrialCreated({ trialId }: { trialId: string }): void {
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
   }
 
   openDetail(trial: Trial): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trial.id]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'trials',
+      trial.id,
+    ]);
   }
 
   async confirmDelete(trial: Trial): Promise<void> {
@@ -272,9 +250,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       const [trials, products, companies] = await Promise.all([
-        this.trialService.listBySpace(this.spaceId),
-        this.productService.list(this.spaceId),
-        this.companyService.list(this.spaceId),
+        this.trialService.listBySpace(this.spaceId()),
+        this.productService.list(this.spaceId()),
+        this.companyService.list(this.spaceId()),
       ]);
       this.trials.set(trials);
       this.products.set(products);

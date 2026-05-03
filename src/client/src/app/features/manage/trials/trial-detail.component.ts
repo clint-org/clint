@@ -5,6 +5,7 @@ import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { Dialog } from 'primeng/dialog';
 
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
@@ -13,9 +14,14 @@ import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { ChangeEventService } from '../../../core/services/change-event.service';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import { ChangeEvent } from '../../../core/models/change-event.model';
+import {
+  CTGOV_DETAIL_DEFAULT_PATHS,
+  CTGOV_FIELD_CATALOGUE,
+} from '../../../core/models/ctgov-field.model';
 
-import { TrialFormComponent } from './trial-form.component';
 import { MarkerFormComponent } from './marker-form.component';
 import { NoteFormComponent } from './note-form.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
@@ -27,6 +33,8 @@ import { IntelligenceEmptyComponent } from '../../../shared/components/intellige
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
 import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
+import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
+import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -39,8 +47,8 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     TableModule,
     ButtonModule,
     MessageModule,
+    Dialog,
     SkeletonComponent,
-    TrialFormComponent,
     MarkerFormComponent,
     NoteFormComponent,
     SectionCardComponent,
@@ -52,6 +60,8 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     IntelligenceDrawerComponent,
     RecentActivityFeedComponent,
     MaterialsSectionComponent,
+    CtgovFieldRendererComponent,
+    ChangeEventRowComponent,
   ],
   templateUrl: './trial-detail.component.html',
 })
@@ -62,6 +72,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   private markerService = inject(MarkerService);
   private noteService = inject(TrialNoteService);
   private intelligenceService = inject(PrimaryIntelligenceService);
+  private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
@@ -78,18 +89,9 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   });
 
   private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'Edit trial',
-          icon: 'fa-solid fa-pen',
-          text: true,
-          callback: () => this.editingTrial.set(true),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
+    // Edit-trial topbar action retired with the trial-form modal in Task 4.4.
+    // Inline per-field editing is the future state (Phase 5/6).
+    this.topbarState.actions.set([]);
   });
 
   trial = signal<Trial | null>(null);
@@ -97,7 +99,6 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   loading = signal(true);
   error = signal<string | null>(null);
 
-  editingTrial = signal(false);
   addingMarker = signal(false);
   editingMarker = signal<Marker | null>(null);
   addingNote = signal(false);
@@ -106,6 +107,16 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   // Primary intelligence
   intelligence = signal<IntelligenceDetailBundle | null>(null);
   intelligenceDrawerOpen = signal(false);
+
+  // CT.gov data + activity feed
+  snapshot = signal<{ payload: unknown; fetched_at: string } | null>(null);
+  trialActivity = signal<ChangeEvent[]>([]);
+  showAllCtgovModal = signal(false);
+  syncing = signal(false);
+
+  // Hard-coded to defaults for now; Task 6.1 will wire per-space visibility.
+  detailExtraPaths = computed(() => CTGOV_DETAIL_DEFAULT_PATHS);
+  readonly allCatalogPaths = CTGOV_FIELD_CATALOGUE.map((f) => f.path);
 
   protected readonly hasIntelligence = computed(() => {
     const i = this.intelligence();
@@ -120,9 +131,49 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       this.trialId.set(id);
       this.loadTrial();
       this.loadIntelligence();
+      void this.loadSnapshot();
+      void this.loadTrialActivity();
     } else {
       this.error.set('No trial ID provided');
       this.loading.set(false);
+    }
+  }
+
+  private async loadSnapshot(): Promise<void> {
+    try {
+      this.snapshot.set(await this.trialService.getLatestSnapshot(this.trialId()));
+    } catch {
+      this.snapshot.set(null);
+    }
+  }
+
+  private async loadTrialActivity(): Promise<void> {
+    try {
+      this.trialActivity.set(await this.changeEventService.getTrialActivity(this.trialId(), 25));
+    } catch {
+      this.trialActivity.set([]);
+    }
+  }
+
+  async syncCtgov(): Promise<void> {
+    this.syncing.set(true);
+    try {
+      await this.changeEventService.triggerSingleTrialSync(this.trialId());
+      await Promise.all([this.loadTrial(), this.loadSnapshot(), this.loadTrialActivity()]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Sync from CT.gov queued.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not sync from CT.gov',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    } finally {
+      this.syncing.set(false);
     }
   }
 
@@ -206,12 +257,6 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       // empty state simply renders. Real errors surface elsewhere.
       this.intelligence.set(null);
     }
-  }
-
-  async onTrialSaved(): Promise<void> {
-    this.editingTrial.set(false);
-    await this.loadTrial();
-    this.messageService.add({ severity: 'success', summary: 'Trial updated.', life: 3000 });
   }
 
   async onMarkerSaved(): Promise<void> {

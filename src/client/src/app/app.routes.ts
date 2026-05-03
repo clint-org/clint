@@ -270,21 +270,25 @@ export const routes: Routes = [
               },
             ],
           },
-          // Intelligence and Materials are browse views, not landscape
-          // visualisations -- siblings of landscape-shell so they don't
-          // inherit its filter bar.
           {
             path: 'intelligence',
             loadComponent: () =>
-              import(
-                './shared/components/intelligence-browse/intelligence-browse.component'
-              ).then((m) => m.IntelligenceBrowseComponent),
+              import('./shared/components/intelligence-browse/intelligence-browse.component').then(
+                (m) => m.IntelligenceBrowseComponent
+              ),
           },
           {
             path: 'materials',
             loadComponent: () =>
               import('./features/materials-browse/materials-browse-page.component').then(
                 (m) => m.MaterialsBrowsePageComponent
+              ),
+          },
+          {
+            path: 'activity',
+            loadComponent: () =>
+              import('./features/engagement-activity/engagement-activity-page.component').then(
+                (m) => m.EngagementActivityPageComponent
               ),
           },
           // Redirects: old /landscape/* paths -> /bullseye/*
@@ -385,6 +389,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/space-settings/space-members.component').then(
                 (m) => m.SpaceMembersComponent
+              ),
+          },
+          {
+            path: 'settings/fields',
+            loadComponent: () =>
+              import('./features/space-settings/space-field-visibility-settings.component').then(
+                (m) => m.SpaceFieldVisibilitySettingsComponent
               ),
           },
           // Redirects: old manage taxonomy/marker paths -> new settings paths
