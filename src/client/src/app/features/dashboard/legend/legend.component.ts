@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
@@ -12,6 +13,7 @@ import { SquareIconComponent } from '../../../shared/components/svg-icons/square
   selector: 'app-legend',
   standalone: true,
   imports: [
+    RouterLink,
     CircleIconComponent,
     DiamondIconComponent,
     FlagIconComponent,
@@ -22,13 +24,27 @@ import { SquareIconComponent } from '../../../shared/components/svg-icons/square
 })
 export class LegendComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);
+  private route = inject(ActivatedRoute);
 
   spaceId = input<string>();
   markerTypes = signal<MarkerType[]>([]);
   loading = signal(true);
 
+  protected markersHelpLink(): string[] | null {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId');
+    const spaceId = this.spaceId() ?? this.route.snapshot.paramMap.get('spaceId');
+    if (!tenantId || !spaceId) return null;
+    return ['/t', tenantId, 's', spaceId, 'help', 'markers'];
+  }
+
+  protected phasesHelpLink(): string[] | null {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId');
+    if (!tenantId) return null;
+    return ['/t', tenantId, 'help', 'phases'];
+  }
+
   groupedMarkerTypes = computed(() => {
-    const types = this.markerTypes().filter(t => t.display_order > 0);
+    const types = this.markerTypes().filter((t) => t.display_order > 0);
     const groupMap = new Map<string, { label: string; order: number; types: MarkerType[] }>();
 
     for (const t of types) {

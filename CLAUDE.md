@@ -140,6 +140,16 @@ The runbook at `docs/runbook/` is the single source of truth for architecture, s
 
 The script regenerates: `02-tech-stack.md` (versions + drift), `03-features.md` (drift), `05-frontend-architecture.md` (route tree + drift), `06-backend-architecture.md` (RPC→table matrix + drift), `07-database-schema.md` (Mermaid ER + drift), `08-authentication-security.md` (RLS coverage + guard drift), `09-multi-tenant-model.md` (helper drift). It requires local Supabase to be running (`supabase start`).
 
+## In-app Help Pages
+
+User-facing help pages live under `src/client/src/app/features/help/` and follow the same two-layer drift-prevention rules as the runbook:
+
+1. **Live render where there is a single source of truth.** The page imports the same data the live UI uses, never duplicates it. `markers-help` queries `MarkerTypeService` (same as the legend); `phases-help` imports `PHASE_DESCRIPTORS` from `core/models/phase-colors.ts` (same as `phase-bar.component`). When the underlying data or token changes, the help page changes with it -- no regen step.
+
+2. **Stop-hook flags editorial drift.** `.claude/hooks/runbook-review-guard.sh` maps changed paths to help pages whose FAQ or prose may need updating (e.g. changes to `marker_types`, `phase-colors`, or `space-members` flag the matching help page). Extend the `helpRules` map there when a new help page is added.
+
+Each help page is reachable via an inline link near the surface it explains -- keep that link short and uppercase-tracked so it reads as a reference affordance, not a CTA. The shape is consistent: header + summary + capability or descriptor table + FAQ + back link.
+
 ## Whitelabel Architecture (host-aware brand resolution)
 
 The app is a multi-tenant whitelabel platform. Hierarchy: **agency** (consultancy) → **tenant** (pharma client) → **space** (engagement).

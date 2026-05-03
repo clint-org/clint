@@ -15,17 +15,19 @@
     <div class="flex flex-wrap items-center gap-x-6 gap-y-1.5">
       <div class="flex items-center gap-x-3 mr-2">
         <div class="flex items-center gap-1 text-[9px] text-slate-500">
-          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#64748b"/></svg>
+          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#64748b" /></svg>
           <span>Actual</span>
         </div>
         <div class="flex items-center gap-1 text-[9px] text-slate-500">
-          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="none" stroke="#64748b" stroke-width="1.2"/></svg>
+          <svg width="10" height="10">
+            <circle cx="5" cy="5" r="4" fill="none" stroke="#64748b" stroke-width="1.2" />
+          </svg>
           <span>Projected</span>
         </div>
         <div class="flex items-center gap-1 text-[9px] text-slate-500">
           <svg width="14" height="10">
-            <circle cx="5" cy="5" r="4" fill="#64748b" opacity="0.3"/>
-            <line x1="0" y1="5" x2="14" y2="5" stroke="#64748b" stroke-width="1.5"/>
+            <circle cx="5" cy="5" r="4" fill="#64748b" opacity="0.3" />
+            <line x1="0" y1="5" x2="14" y2="5" stroke="#64748b" stroke-width="1.5" />
           </svg>
           <span>NLE</span>
         </div>
@@ -42,16 +44,37 @@
             <div class="flex items-center gap-1 text-[10px] text-slate-400" role="listitem">
               @if (mt.shape === 'dashed-line') {
                 <svg width="10" height="12">
-                  <line x1="5" y1="1" x2="5" y2="11" [attr.stroke]="mt.color" stroke-width="1.5" stroke-dasharray="3,2" stroke-linecap="round"/>
+                  <line
+                    x1="5"
+                    y1="1"
+                    x2="5"
+                    y2="11"
+                    [attr.stroke]="mt.color"
+                    stroke-width="1.5"
+                    stroke-dasharray="3,2"
+                    stroke-linecap="round"
+                  />
                 </svg>
               } @else {
                 <svg width="12" height="12">
                   @switch (mt.shape) {
                     @case ('circle') {
-                      <g app-circle-icon [size]="12" [color]="mt.color" fillStyle="filled" [innerMark]="mt.inner_mark" />
+                      <g
+                        app-circle-icon
+                        [size]="12"
+                        [color]="mt.color"
+                        fillStyle="filled"
+                        [innerMark]="mt.inner_mark"
+                      />
                     }
                     @case ('diamond') {
-                      <g app-diamond-icon [size]="12" [color]="mt.color" fillStyle="filled" [innerMark]="mt.inner_mark" />
+                      <g
+                        app-diamond-icon
+                        [size]="12"
+                        [color]="mt.color"
+                        fillStyle="filled"
+                        [innerMark]="mt.inner_mark"
+                      />
                     }
                     @case ('flag') {
                       <g app-flag-icon [size]="12" [color]="mt.color" fillStyle="filled" />
@@ -60,7 +83,13 @@
                       <g app-triangle-icon [size]="12" [color]="mt.color" fillStyle="filled" />
                     }
                     @case ('square') {
-                      <g app-square-icon [size]="12" [color]="mt.color" fillStyle="filled" [innerMark]="mt.inner_mark" />
+                      <g
+                        app-square-icon
+                        [size]="12"
+                        [color]="mt.color"
+                        fillStyle="filled"
+                        [innerMark]="mt.inner_mark"
+                      />
                     }
                   }
                 </svg>
@@ -73,6 +102,25 @@
           <div class="h-3 w-px bg-slate-700"></div>
         }
       }
+
+      <div class="ml-auto flex items-center gap-x-3">
+        @if (markersHelpLink(); as link) {
+          <a
+            [routerLink]="link"
+            class="text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
+            aria-label="What do these markers mean?"
+            >Markers guide</a
+          >
+        }
+        @if (phasesHelpLink(); as link) {
+          <a
+            [routerLink]="link"
+            class="text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
+            aria-label="What do the phase bar colors mean?"
+            >Phases guide</a
+          >
+        }
+      </div>
     </div>
   </div>
 }

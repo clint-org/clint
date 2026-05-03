@@ -124,6 +124,11 @@ export const routes: Routes = [
           import('./features/help/roles-help.component').then((m) => m.RolesHelpComponent),
       },
       {
+        path: 'help/phases',
+        loadComponent: () =>
+          import('./features/help/phases-help.component').then((m) => m.PhasesHelpComponent),
+      },
+      {
         path: 's/:spaceId',
         canActivate: [spaceGuard],
         children: [
@@ -139,6 +144,11 @@ export const routes: Routes = [
               import('./features/engagement-landing/engagement-landing.component').then(
                 (m) => m.EngagementLandingComponent
               ),
+          },
+          {
+            path: 'help/markers',
+            loadComponent: () =>
+              import('./features/help/markers-help.component').then((m) => m.MarkersHelpComponent),
           },
           {
             path: '',

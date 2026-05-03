@@ -1,5 +1,5 @@
 import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -29,6 +29,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     ButtonModule,
     Dialog,
     MessageModule,
+    RouterLink,
     MarkerTypeFormComponent,
     ColorSwatchComponent,
     ManagePageShellComponent,
@@ -100,6 +101,11 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     this.loadMarkerTypes();
   }
 
+  protected markersHelpLink(): string[] {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    return ['/t', tenantId, 's', this.spaceId, 'help', 'markers'];
+  }
+
   ngOnDestroy(): void {
     this.topbarState.clear();
   }
@@ -121,7 +127,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.deleteType(mt.id),
-        },
+        }
       );
     }
     this.menuCache.set(mt.id, items);

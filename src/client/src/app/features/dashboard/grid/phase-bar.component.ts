@@ -1,17 +1,7 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 
+import { PHASE_COLORS, PHASE_FALLBACK_COLOR } from '../../../core/models/phase-colors';
 import { TimelineService } from '../../../core/services/timeline.service';
-
-const DEFAULT_COLORS: Record<string, string> = {
-  PRECLIN: '#cbd5e1', // slate-300 — before first-in-human, dimmer than P1
-  P1: '#94a3b8',
-  P2: '#67e8f9',
-  P3: '#2dd4bf',
-  P4: '#a78bfa',
-  APPROVED: '#8b5cf6', // violet-500 — darker than P4 violet to differentiate
-  LAUNCHED: '#0d9488', // teal-600 — hero color for the strongest state
-  OBS: '#fbbf24',
-};
 
 const BAR_HEIGHT = 14;
 const CORNER_RADIUS = 3;
@@ -37,12 +27,7 @@ export class PhaseBarComponent {
   protected barX = computed(() =>
     Math.max(
       0,
-      this.timeline.dateToX(
-        this.startDate(),
-        this.startYear(),
-        this.endYear(),
-        this.totalWidth()
-      )
+      this.timeline.dateToX(this.startDate(), this.startYear(), this.endYear(), this.totalWidth())
     )
   );
 
@@ -65,7 +50,7 @@ export class PhaseBarComponent {
     return Math.max(0, endX - clampedStart);
   });
 
-  protected barColor = computed(() => DEFAULT_COLORS[this.phaseType()] ?? '#64748b');
+  protected barColor = computed(() => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR);
 
   protected labelText = computed(() => this.phaseType());
 

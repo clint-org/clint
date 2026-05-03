@@ -1,4 +1,11 @@
 <app-manage-page-shell>
+  <p class="mb-3 text-[11px] text-slate-500 max-w-2xl">
+    Marker types are the shape, color, and inner mark used on the timeline to encode each event.
+    System markers are shared across all spaces; custom markers are scoped to this space.
+    <a [routerLink]="markersHelpLink()" class="ml-1 text-brand-700 hover:underline">Markers guide</a
+    >.
+  </p>
+
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search marker types..." />
 
   <p-table
@@ -40,8 +47,12 @@
     <ng-template #body let-mt>
       <tr>
         <td><span [innerHTML]="mt.name | highlight: grid.debouncedGlobalSearch()"></span></td>
-        <td class="col-secondary"><span [innerHTML]="mt.shape | highlight: grid.debouncedGlobalSearch()"></span></td>
-        <td class="col-secondary"><span [innerHTML]="mt.fill_style | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary">
+          <span [innerHTML]="mt.shape | highlight: grid.debouncedGlobalSearch()"></span>
+        </td>
+        <td class="col-secondary">
+          <span [innerHTML]="mt.fill_style | highlight: grid.debouncedGlobalSearch()"></span>
+        </td>
         <td>
           <app-color-swatch [color]="mt.color" />
         </td>
