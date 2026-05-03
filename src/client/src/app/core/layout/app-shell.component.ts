@@ -11,7 +11,6 @@ import { environment } from '../../../environments/environment';
 import { CommandPaletteComponent } from './command-palette/command-palette.component';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
-import { NotificationBellComponent } from './notification-bell.component';
 import { TopbarStateService } from '../services/topbar-state.service';
 import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
@@ -37,7 +36,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
     CommandPaletteComponent,
     SidebarComponent,
     ContextualTopbarComponent,
-    NotificationBellComponent,
     ButtonModule,
     Dialog,
     FormsModule,
@@ -98,13 +96,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (newSpaceClick)="onNewSpaceClick()"
           (joinTenantClick)="onJoinTenantClick()"
           (timelineHintDismiss)="onboardingTooltip.dismiss()"
-        >
-          <div topbar-actions class="flex items-center gap-3">
-            @if (spaceId()) {
-              <app-notification-bell [spaceId]="spaceId()" />
-            }
-          </div>
-        </app-contextual-topbar>
+        ></app-contextual-topbar>
 
         <!-- Page content -->
         <div class="content-area" [@routeFade]="activeSpaceRoute()">

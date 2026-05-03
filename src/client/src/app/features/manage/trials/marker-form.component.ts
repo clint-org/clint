@@ -5,7 +5,6 @@ import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { MultiSelect } from 'primeng/multiselect';
-import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -14,7 +13,6 @@ import { Trial } from '../../../core/models/trial.model';
 import { MarkerService } from '../../../core/services/marker.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
-import { NotificationService } from '../../../core/services/notification.service';
 import { TrialService } from '../../../core/services/trial.service';
 import { extractConstraintMessage } from '../../../core/util/db-error';
 
@@ -34,7 +32,6 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
     Textarea,
     Select,
     MultiSelect,
-    Checkbox,
     ButtonModule,
     MessageModule,
   ],
@@ -228,56 +225,6 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             [selectedItemsLabel]="'Trial (' + selectedTrialIds.length + ')'"
           />
         </div>
-
-        <!-- Notify Team -->
-        <div class="sm:col-span-2">
-          <div class="flex items-center gap-2">
-            <p-checkbox
-              [(ngModel)]="notifyTeam"
-              name="notifyTeam"
-              [binary]="true"
-              inputId="marker-notify"
-            />
-            <label for="marker-notify" class="text-sm font-medium text-slate-700">
-              Notify Team
-            </label>
-          </div>
-
-          @if (notifyTeam) {
-            <div class="mt-3 space-y-3 border-l-2 border-brand-200 pl-4">
-              <div>
-                <label for="notify-priority" class="block text-sm font-medium text-slate-700">
-                  Priority
-                </label>
-                <p-select
-                  inputId="notify-priority"
-                  [options]="notifyPriorityOptions"
-                  [(ngModel)]="notifyPriority"
-                  name="notifyPriority"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="Select priority"
-                  [style]="{ width: '100%' }"
-                  class="mt-1"
-                />
-              </div>
-              <div>
-                <label for="notify-summary" class="block text-sm font-medium text-slate-700">
-                  Summary
-                </label>
-                <textarea
-                  pTextarea
-                  id="notify-summary"
-                  class="w-full mt-1"
-                  [(ngModel)]="notifySummary"
-                  name="notifySummary"
-                  rows="2"
-                  placeholder="Brief summary for team notification..."
-                ></textarea>
-              </div>
-            </div>
-          }
-        </div>
       </div>
 
       <div class="flex justify-end gap-2">
@@ -307,7 +254,6 @@ export class MarkerFormComponent implements OnInit {
   private markerService = inject(MarkerService);
   private markerCategoryService = inject(MarkerCategoryService);
   private markerTypeService = inject(MarkerTypeService);
-  private notificationService = inject(NotificationService);
   private trialService = inject(TrialService);
   private route = inject(ActivatedRoute);
 
@@ -322,11 +268,6 @@ export class MarkerFormComponent implements OnInit {
     { label: 'Standard', value: 'standard' },
     { label: 'Priority', value: 'priority' },
     { label: 'CNPV', value: 'cnpv' },
-  ];
-
-  readonly notifyPriorityOptions = [
-    { label: 'Low', value: 'low' },
-    { label: 'High', value: 'high' },
   ];
 
   categories = signal<MarkerCategory[]>([]);
@@ -345,9 +286,6 @@ export class MarkerFormComponent implements OnInit {
   sourceUrl = '';
   regulatoryPathway = '';
   selectedTrialIds: string[] = [];
-  notifyTeam = false;
-  notifyPriority: 'low' | 'high' = 'low';
-  notifySummary = '';
 
   saving = signal(false);
   error = signal<string | null>(null);
@@ -505,24 +443,12 @@ export class MarkerFormComponent implements OnInit {
 
     try {
       const existing = this.marker();
-      let savedMarkerId: string;
 
       if (existing) {
         await this.markerService.update(existing.id, payload);
         await this.markerService.updateAssignments(existing.id, this.selectedTrialIds);
-        savedMarkerId = existing.id;
       } else {
-        const created = await this.markerService.create(spaceId, payload, this.selectedTrialIds);
-        savedMarkerId = created.id;
-      }
-
-      if (this.notifyTeam && this.notifySummary.trim()) {
-        await this.notificationService.createNotification(
-          spaceId,
-          savedMarkerId,
-          this.notifyPriority,
-          this.notifySummary.trim()
-        );
+        await this.markerService.create(spaceId, payload, this.selectedTrialIds);
       }
 
       this.saved.emit();

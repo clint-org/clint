@@ -29,8 +29,6 @@ src/client/
           contextual-topbar.component.ts # Topbar: org/space breadcrumb + page identity (tabs, title, back nav, actions)
           icon-rail.component.ts        # (Unused) standalone icon rail -- absorbed into sidebar
           header.component.ts           # (Legacy) flat horizontal nav -- replaced by app-shell
-          notification-bell.component.ts # Bell icon with unread count badge
-          notification-panel.component.ts # Notification dropdown panel
         models/                 # TypeScript interfaces for all domain entities
           trial.model.ts        # Trial, TrialPhase, TrialNote, TherapeuticArea
           company.model.ts      # Company
@@ -570,7 +568,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `MarkerService`
 - `MaterialService`
 - `MechanismOfActionService`
-- `NotificationService`
 - `PaletteHotkeyService`
 - `PalettePinService`
 - `PaletteRecentsService`

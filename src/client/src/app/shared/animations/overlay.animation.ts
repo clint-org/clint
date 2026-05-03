@@ -20,16 +20,3 @@ export const menuSlideUpAnimation = trigger('menuSlideUp', [
   ]),
 ]);
 
-/** Fade + slide down for panels appearing below a trigger (e.g., notification dropdown). */
-export const panelSlideDownAnimation = trigger('panelSlideDown', [
-  transition(':enter', [
-    style({ opacity: 0, transform: 'translateY(-8px)' }),
-    animate(
-      '150ms cubic-bezier(0.25, 1, 0.5, 1)',
-      style({ opacity: 1, transform: 'translateY(0)' })
-    ),
-  ]),
-  transition(':leave', [
-    animate('100ms ease-in', style({ opacity: 0, transform: 'translateY(-8px)' })),
-  ]),
-]);

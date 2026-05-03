@@ -43,8 +43,6 @@ erDiagram
   TRIALS ||--o{ MARKER_ASSIGNMENTS : "trial_id"
   SPACES ||--o{ MARKER_CATEGORIES : "space_id"
   SPACES ||--o{ MARKER_CHANGES : "space_id"
-  MARKERS ||--o{ MARKER_NOTIFICATIONS : "marker_id"
-  SPACES ||--o{ MARKER_NOTIFICATIONS : "space_id"
   MARKER_CATEGORIES ||--o{ MARKER_TYPES : "category_id"
   SPACES ||--o{ MARKER_TYPES : "space_id"
   MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
@@ -52,7 +50,6 @@ erDiagram
   MATERIALS ||--o{ MATERIAL_LINKS : "material_id"
   SPACES ||--o{ MATERIALS : "space_id"
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
-  MARKER_NOTIFICATIONS ||--o{ NOTIFICATION_READS : "notification_id"
   SPACES ||--o{ PALETTE_PINNED : "space_id"
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
@@ -594,9 +591,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
-- `marker_notifications`
 - `mechanisms_of_action`
-- `notification_reads`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence`
@@ -695,4 +690,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260503050000_derive_phase_type_from_ctgov.sql`
 - `20260503060000_seed_ctgov_markers_on_sync.sql`
 - `20260503070000_catalyst_detail_with_provenance.sql`
+- `20260503080000_drop_marker_notifications.sql`
 <!-- /AUTO-GEN:DRIFT -->

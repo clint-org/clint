@@ -41,7 +41,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
 | `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
-| `_seed_demo_notifications` | marker_notifications | - |
 | `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products, trials |
 | `_seed_demo_products` | products | - |
 | `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
@@ -86,7 +85,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_latest_sync_run` | - | ctgov_sync_runs |
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
-| `get_notifications` | - | marker_assignments, marker_categories, marker_notifications, marker_types, markers, notification_reads, trials |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, markers, products, trials |
@@ -95,7 +93,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_trial_activity` | - | marker_changes, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trials_for_polling` | - | trials |
-| `get_unread_notification_count` | - | marker_notifications, notification_reads |
 | `handle_new_user` | agency_invites, agency_members | - |
 | `has_space_access` | - | space_members, spaces, tenants |
 | `has_tenant_access` | - | space_members, spaces |
@@ -219,7 +216,7 @@ Creates a new space and adds the calling user as the space owner. Verifies the c
 seed_demo_data(p_space_id uuid) -> void
 ```
 
-Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 products across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 marker notifications, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
+Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 products across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
 
 Two helpers added on 2026-05-01: `_seed_demo_primary_intelligence` (4 trial-anchored published reads, 1 space-level thematic read, 2 drafts; cross-entity links across products and companies; revisions written by the existing trigger) and `_seed_demo_materials` (briefing PPTX, priority notice PDF, ad hoc DOCX with multi-entity links). Material rows reference plausible storage paths but do not upload files; demo download flows 404 cleanly.
 
@@ -560,14 +557,12 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_moa`
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
-- `get_notifications`
 - `get_positioning_data`
 - `get_product_detail_with_intelligence`
 - `get_space_intelligence`
 - `get_space_landing_stats`
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
-- `get_unread_notification_count`
 - `list_draft_intelligence_for_space`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
