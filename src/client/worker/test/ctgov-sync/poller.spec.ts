@@ -276,6 +276,72 @@ describe('runScheduledSync', () => {
     expect(recordCalls[0].body['p_events_emitted']).toBe(2);
   });
 
+  it('forwards null hints even when CT.gov returns real-world moduleLabels', async () => {
+    // Regression test for the silent change-feed bug surfaced 2026-05-03:
+    // CT.gov's /api/int/.../history returns moduleLabels as human display
+    // strings ("Study Status", "Eligibility", "Contacts/Locations"), not
+    // path segments. The SQL filter `_path_in_hinted_modules` matches
+    // segments, so any non-null hints array filtered out every diff and
+    // events_emitted dropped to 0 on every sync that had history. The
+    // pre-existing happy path test at line ~203 hides this by mocking
+    // moduleLabels: ['statusModule'] (canonical form, never seen in real
+    // CT.gov data). This test pins the production fix: even with realistic
+    // labels in the response, p_module_hints stays null so the SQL diff
+    // engine compares all paths.
+    const trials = [
+      {
+        trial_id: 't1',
+        space_id: 's1',
+        nct_id: 'NCT01',
+        last_update_posted_date: '2026-03-01',
+        latest_ctgov_version: null,
+      },
+    ];
+
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse(trials),
+        ingest_ctgov_snapshot: () =>
+          jsonResponse({
+            snapshot_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+            inserted: true,
+            events_emitted: 1,
+            changes_recorded: 1,
+          }),
+        bulk_update_last_polled: () => jsonResponse(1),
+        record_sync_run: () => jsonResponse('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
+      }),
+      ctgovSummaryHandler(() => jsonResponse({ studies: [summaryStudy('NCT01', '2026-04-15')] })),
+      ctgovStudyHandler(() =>
+        jsonResponse({
+          protocolSection: {
+            identificationModule: { nctId: 'NCT01' },
+            statusModule: { lastUpdatePostDateStruct: { date: '2026-04-15' } },
+          },
+        })
+      ),
+      // Real CT.gov label set probed live from NCT04832594:
+      // ['Contacts/Locations', 'Document Section', 'Eligibility',
+      //  'Study Description', 'Study Status']
+      (req: Request) => {
+        if (!req.url.match(/^https:\/\/ctgov\.test\/api\/int\/studies\/[^/]+\/history$/))
+          return null;
+        return jsonResponse({
+          changes: [
+            { version: 1, date: '2026-04-15', moduleLabels: ['Study Status', 'Eligibility'] },
+            { version: 2, date: '2026-04-20', moduleLabels: ['Contacts/Locations'] },
+          ],
+        });
+      },
+    ]);
+
+    await runScheduledSync(makeEnv());
+
+    const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
+    expect(ingestCalls).toHaveLength(1);
+    expect(ingestCalls[0].body['p_module_hints']).toBeNull();
+  });
+
   it('one trial fails ingestion: continues, status=partial', async () => {
     const trials = [
       {

@@ -287,6 +287,106 @@ describe('POST /admin/ctgov-backfill', () => {
   });
 });
 
+describe('POST /api/ctgov/sync-trial', () => {
+  it('returns 401 without Authorization header', async () => {
+    const req = new Request('https://x/api/ctgov/sync-trial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: 'https://pfizer.clintapp.com' },
+      body: JSON.stringify({ trial_id: '00000000-0000-0000-0000-000000000001' }),
+    });
+    const res = await worker.fetch(req, makeEnv());
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 when trial_id missing', async () => {
+    const req = new Request('https://x/api/ctgov/sync-trial', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'https://pfizer.clintapp.com',
+        Authorization: VALID_BEARER,
+      },
+      body: JSON.stringify({}),
+    });
+    const res = await worker.fetch(req, makeEnv());
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('trial_id_required');
+  });
+
+  it('returns 400 on invalid JSON body', async () => {
+    const req = new Request('https://x/api/ctgov/sync-trial', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'https://pfizer.clintapp.com',
+        Authorization: VALID_BEARER,
+      },
+      body: 'not-json',
+    });
+    const res = await worker.fetch(req, makeEnv());
+    expect(res.status).toBe(400);
+  });
+
+  it('maps Supabase forbidden (42501) from trigger_single_trial_sync to 403', async () => {
+    // Locks in the regression fix from commit 77f74a9: previously the Sync
+    // button wired through /admin/ctgov-backfill which gated on
+    // is_platform_admin and 403'd for ordinary space editors. The new
+    // endpoint instead calls trigger_single_trial_sync under the user's JWT
+    // and trusts its has_space_access gate. A non-member's 42501 should
+    // propagate as a 403 from this endpoint.
+    mockSupabaseFetch((req) => {
+      if (req.url.endsWith('/rpc/trigger_single_trial_sync')) {
+        return new Response(JSON.stringify({ code: '42501', message: 'forbidden' }), {
+          status: 400,
+        });
+      }
+      throw new Error(`unexpected rpc: ${req.url}`);
+    });
+    const req = new Request('https://x/api/ctgov/sync-trial', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'https://pfizer.clintapp.com',
+        Authorization: VALID_BEARER,
+      },
+      body: JSON.stringify({ trial_id: '00000000-0000-0000-0000-000000000001' }),
+    });
+    const res = await worker.fetch(req, makeEnv());
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('forbidden');
+  });
+
+  it('returns 200 with {ok:false, reason:no_nct_id} when trial has no NCT', async () => {
+    // The RPC returns {ok:false, reason:'no_nct_id'} for trials that exist
+    // and the caller can access but have no identifier. The Worker should
+    // pass that response through verbatim instead of attempting a CT.gov
+    // call. This is the soft-error path that the trial-detail toast
+    // surfaces to the user.
+    mockSupabaseFetch((req) => {
+      if (req.url.endsWith('/rpc/trigger_single_trial_sync')) {
+        return new Response(JSON.stringify({ ok: false, reason: 'no_nct_id' }), { status: 200 });
+      }
+      throw new Error(`unexpected rpc: ${req.url}`);
+    });
+    const req = new Request('https://x/api/ctgov/sync-trial', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'https://pfizer.clintapp.com',
+        Authorization: VALID_BEARER,
+      },
+      body: JSON.stringify({ trial_id: '00000000-0000-0000-0000-000000000001' }),
+    });
+    const res = await worker.fetch(req, makeEnv());
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; reason?: string };
+    expect(body.ok).toBe(false);
+    expect(body.reason).toBe('no_nct_id');
+  });
+});
+
 describe('scheduled export', () => {
   it('exposes a scheduled handler', () => {
     expect(typeof worker.scheduled).toBe('function');

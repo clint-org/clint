@@ -691,4 +691,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260503010000_drop_orphaned_column_refs_in_rpcs.sql`
 - `20260503020000_get_marker_history_security_definer.sql`
 - `20260503030000_list_latest_snapshots_for_space.sql`
+- `20260503040000_get_marker_history_runtime_smoke.sql`
 <!-- /AUTO-GEN:DRIFT -->
