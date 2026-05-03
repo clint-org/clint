@@ -10,6 +10,7 @@ import {
   RING_ORDER,
   RingPhase,
 } from '../../core/models/landscape.model';
+import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
 interface RingHistogramEntry {
@@ -20,7 +21,7 @@ interface RingHistogramEntry {
 @Component({
   selector: 'app-bullseye-detail-panel',
   standalone: true,
-  imports: [ButtonModule, DatePipe, DetailPanelShellComponent],
+  imports: [ButtonModule, ChangeBadgeComponent, DatePipe, DetailPanelShellComponent],
   templateUrl: './bullseye-detail-panel.component.html',
 })
 export class BullseyeDetailPanelComponent {

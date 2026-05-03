@@ -20,6 +20,7 @@ import { TimelineColumn, TimelineService } from '../../../core/services/timeline
 import { ButtonModule } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { Popover } from 'primeng/popover';
+import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
@@ -45,6 +46,7 @@ export interface FlattenedTrial {
   standalone: true,
   imports: [
     ButtonModule,
+    ChangeBadgeComponent,
     Checkbox,
     FormsModule,
     GridHeaderComponent,
@@ -101,7 +103,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
             moa: this.showMoaColumn(),
             roa: this.showRoaColumn(),
             notes: this.showNotesColumn(),
-          }),
+          })
         );
       } catch {
         // ignore full storage

@@ -74,6 +74,15 @@ export interface Trial {
 
   // sync tracking
   ctgov_last_synced_at?: string | null;
+
+  // change-feed badge fields, populated by get_dashboard_data via a
+  // LEFT JOIN LATERAL on trial_change_events. recent_changes_count is the
+  // number of events observed in the last 7 days; most_recent_change_type is
+  // the event_type of the most recent one. both may be missing on payloads
+  // from RPCs that have not been extended with these fields yet, so the
+  // ChangeBadgeComponent treats absent values as zero.
+  recent_changes_count?: number;
+  most_recent_change_type?: string | null;
 }
 
 export interface TrialNote {

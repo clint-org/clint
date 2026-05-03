@@ -60,9 +60,16 @@
             Trial
           </div>
         </div>
-        <p-popover #columnSettingsPanel ariaLabel="Column visibility settings" (onShow)="columnSettingsOpen.set(true)" (onHide)="columnSettingsOpen.set(false)">
+        <p-popover
+          #columnSettingsPanel
+          ariaLabel="Column visibility settings"
+          (onShow)="columnSettingsOpen.set(true)"
+          (onHide)="columnSettingsOpen.set(false)"
+        >
           <div class="flex flex-col gap-2 p-1">
-            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Columns</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+              >Columns</span
+            >
             <div class="flex items-center gap-2">
               <p-checkbox
                 [(ngModel)]="showMoaColumn"
@@ -254,6 +261,11 @@
               (keydown.space)="onTrialClick(row.trial)"
             >
               {{ row.trial.name }}
+              <app-change-badge
+                class="ml-1 inline-flex items-center"
+                [count]="row.trial.recent_changes_count ?? 0"
+                [type]="row.trial.most_recent_change_type ?? null"
+              />
               @if (row.trial.identifier) {
                 <span class="text-[10px] text-slate-400 font-mono ml-1">{{
                   row.trial.identifier

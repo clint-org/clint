@@ -5,12 +5,20 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
-  imports: [DatePipe, FormsModule, SelectModule, TableModule, TableSkeletonBodyComponent],
+  imports: [
+    ChangeBadgeComponent,
+    DatePipe,
+    FormsModule,
+    SelectModule,
+    TableModule,
+    TableSkeletonBodyComponent,
+  ],
   template: `
     <p-table
       [value]="catalysts()"
@@ -127,7 +135,15 @@ import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/tab
               <span class="text-xs text-slate-500">{{ catalyst.category_name }}</span>
             </span>
           </td>
-          <td class="text-sm font-medium text-slate-900">{{ catalyst.title }}</td>
+          <td class="text-sm font-medium text-slate-900">
+            <span class="inline-flex items-center gap-1.5">
+              {{ catalyst.title }}
+              <app-change-badge
+                [count]="catalyst.trial_recent_changes_count ?? 0"
+                [type]="catalyst.trial_most_recent_change_type ?? null"
+              />
+            </span>
+          </td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
               <span class="uppercase">{{ catalyst.company_name }}</span>
