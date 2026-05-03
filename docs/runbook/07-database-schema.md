@@ -594,9 +594,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
-- `ctgov_sync_runs`
-- `marker_assignments`
-- `marker_changes`
 - `marker_notifications`
 - `mechanisms_of_action`
 - `notification_reads`
@@ -608,9 +605,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`
-- `trial_change_events`
-- `trial_ctgov_snapshots`
-- `trial_field_changes`
 
 **Migration files not in history table:**
 - `20260411120000_extend_phase_types.sql`

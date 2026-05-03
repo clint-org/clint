@@ -530,21 +530,15 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 
 <!-- AUTO-GEN:DRIFT -->
 **RPCs in `pg_proc` not documented:**
-- `_classify_change`
-- `_compute_field_diffs`
 - `_emit_events_from_marker_change`
 - `_log_marker_change`
 - `_map_phase_array`
-- `_materialize_trial_from_snapshot`
 - `_path_in_hinted_modules`
-- `_verify_ctgov_worker_secret`
 - `backfill_marker_history`
 - `build_intelligence_payload`
-- `bulk_update_last_polled`
 - `delete_material`
 - `delete_primary_intelligence`
 - `finalize_material`
-- `get_activity_feed`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`
@@ -558,20 +552,15 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
 - `get_landscape_index_by_roa`
-- `get_latest_sync_run`
 - `get_marker_detail_with_intelligence`
-- `get_marker_history`
 - `get_notifications`
 - `get_positioning_data`
 - `get_product_detail_with_intelligence`
 - `get_space_intelligence`
 - `get_space_landing_stats`
 - `get_space_tags`
-- `get_trial_activity`
 - `get_trial_detail_with_intelligence`
-- `get_trials_for_polling`
 - `get_unread_notification_count`
-- `ingest_ctgov_snapshot`
 - `list_draft_intelligence_for_space`
 - `list_materials_for_entity`
 - `list_materials_for_space`
@@ -583,14 +572,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_set_pinned`
 - `palette_touch_recent`
 - `palette_unpin`
-- `recompute_trial_change_events`
-- `record_sync_run`
 - `referenced_in_entity`
 - `register_material`
 - `search_palette`
-- `trigger_single_trial_sync`
 - `update_material`
-- `update_space_field_visibility`
 - `upsert_primary_intelligence`
 - `validate_material_links_payload`
 - `write_primary_intelligence_revision`
