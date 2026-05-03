@@ -139,14 +139,20 @@ async function fetchAndIngestNct(
     };
   }
 
-  // Opportunistic history (never throws). Module hints power UI affordances
-  // but are not required; null is fine.
+  // History is still fetched because `versionForAssignment` below uses
+  // `history.length` to derive a stable per-trial version counter when CT.gov
+  // assigns ascending versions of its own.
+  //
+  // Module hints are deliberately NOT forwarded: CT.gov returns
+  // `moduleLabels` as human display strings ("Study Status", "Eligibility",
+  // "Contacts/Locations") while the SQL `_path_in_hinted_modules` filter
+  // expects path segments ("statusModule", "eligibilityModule"). The two
+  // never match, so any non-null `p_module_hints` causes
+  // `_compute_field_diffs` to drop every diff. Passing null preserves
+  // correctness; the optimization can return once a label->module-key
+  // mapping exists on either the worker or SQL side.
   const history = await client.fetchHistory(nctId);
-  const moduleHints =
-    history && history.length > 0
-      ? Array.from(new Set(history.flatMap((h) => h.moduleLabels ?? [])))
-      : null;
-  const hints = moduleHints && moduleHints.length > 0 ? moduleHints : null;
+  const hints = null;
 
   // Extract post_date from the full payload. CT.gov v2 study shape:
   // protocolSection.identificationModule.nctId,

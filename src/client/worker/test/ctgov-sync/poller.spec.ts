@@ -260,8 +260,11 @@ describe('runScheduledSync', () => {
     expect(ingestCalls[0].body['p_nct_id']).toBe('NCT01');
     expect(ingestCalls[0].body['p_post_date']).toBe('2026-04-15');
     expect(ingestCalls[0].body['p_fetched_via']).toBe('v2_poll');
-    // Module hints from /api/int/.../history get deduped and forwarded.
-    expect(ingestCalls[0].body['p_module_hints']).toEqual(['statusModule']);
+    // Module hints are deliberately NOT forwarded today (always null) because
+    // CT.gov returns moduleLabels as display strings ("Study Status") that
+    // don't match the SQL filter's path segments ("statusModule"). Forwarding
+    // them caused `_compute_field_diffs` to drop every diff. See poller.ts.
+    expect(ingestCalls[0].body['p_module_hints']).toBeNull();
 
     const bulkCalls = harness.rpcCalls.filter((c) => c.fn === 'bulk_update_last_polled');
     expect(bulkCalls).toHaveLength(1);

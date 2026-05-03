@@ -11,6 +11,10 @@ import { generateBrandScale, pickStopForSurface } from './app/core/util/color-sc
 import { BrandContextService, DEFAULT_BRAND } from './app/core/services/brand-context.service';
 import { Brand } from './app/core/models/brand.model';
 
+if (!environment.production) {
+  (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE = 'http://localhost:8787';
+}
+
 async function fetchBrand(): Promise<Brand> {
   // Dev-only query-string override: ?wl_kind=agency&wl_id=<uuid> bypasses
   // host-based brand resolution so /admin can be smoke-tested locally where

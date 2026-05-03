@@ -688,4 +688,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260502122000_drop_orphaned_trial_columns.sql`
 - `20260502130000_seed_demo_realistic_cardiometabolic.sql`
 - `20260503000000_fix_seed_demo_post_drop.sql`
+- `20260503010000_drop_orphaned_column_refs_in_rpcs.sql`
+- `20260503020000_get_marker_history_security_definer.sql`
 <!-- /AUTO-GEN:DRIFT -->

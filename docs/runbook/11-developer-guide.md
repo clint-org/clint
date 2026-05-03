@@ -250,6 +250,13 @@ See `08-authentication-security.md`'s "Worker secret model" section.
 
 `POST /admin/ctgov-backfill` on the Worker with `{nct_ids: ["NCT01234567", ...]}` and a platform-admin JWT. Pulls fresh snapshots for the listed NCTs and re-runs the diff/classify pipeline. Used by the trial-detail "Sync from CT.gov" button (scoped to one NCT) and by ops when a bulk re-poll is needed.
 
+In production the SPA and Worker are co-located (single Cloudflare Worker serves static assets and admin routes), so the client posts to a relative `/admin/ctgov-backfill`. In local dev the SPA (`ng serve` on `:8000`) and the Worker (`wrangler dev` on `:8787`) are on different origins, so two pieces of glue are required:
+
+- `src/client/src/main.ts` sets `window.__WORKER_API_BASE = 'http://localhost:8787'` for non-production builds, so the client targets the local Worker.
+- `src/client/.dev.vars` extends `ALLOWED_APEXES` to include `localhost:8000`, so the Worker's CORS preflight accepts the cross-port request.
+
+Both are no-ops in production builds.
+
 ## Verification
 
 ```bash

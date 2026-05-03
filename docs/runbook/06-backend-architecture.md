@@ -45,7 +45,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_products` | products | - |
 | `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
 | `_seed_demo_trial_notes` | trial_notes | - |
-| `_seed_demo_trials` | trials | events |
+| `_seed_demo_trials` | trials | - |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
@@ -518,7 +518,7 @@ flowchart TD
 
 - `get_activity_feed(p_space_id, p_filters, p_limit, p_offset)`: backs the activity page; reads `trial_change_events` joined to trial / marker context.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
-- `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes`.
+- `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
 - `update_space_field_visibility(p_space_id, p_visibility)`: writes the per-space field-visibility map that drives which CT.gov columns render on trial-detail.
 - `recompute_trial_change_events(p_trial_id)`: admin-only; replays the classifier over existing `trial_field_changes` for a trial. Used after classifier rule changes.
