@@ -1,0 +1,50 @@
+<div class="grid grid-cols-2 gap-4">
+  <div>
+    <h3 class="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">Available</h3>
+    <ul
+      id="available-list"
+      cdkDropList
+      [cdkDropListData]="localAvailable()"
+      [cdkDropListConnectedTo]="['visible-list']"
+      (cdkDropListDropped)="drop($event)"
+      class="min-h-[20rem] border border-slate-200 rounded p-2 space-y-1 bg-slate-50"
+    >
+      @for (field of localAvailable(); track field.path) {
+        <li
+          cdkDrag
+          class="px-2 py-1 bg-white border border-slate-200 rounded text-sm cursor-move hover:border-slate-300"
+        >
+          <div class="text-slate-900">{{ field.label }}</div>
+          <div class="text-xs font-mono text-slate-400">{{ field.path }}</div>
+        </li>
+      } @empty {
+        <li class="text-slate-400 text-sm py-4 text-center">No fields available</li>
+      }
+    </ul>
+  </div>
+  <div>
+    <h3 class="text-xs font-mono uppercase tracking-wider text-slate-500 mb-2">
+      Visible (drag to reorder)
+    </h3>
+    <ul
+      id="visible-list"
+      cdkDropList
+      [cdkDropListData]="localVisible()"
+      [cdkDropListConnectedTo]="['available-list']"
+      (cdkDropListDropped)="drop($event)"
+      class="min-h-[20rem] border border-slate-200 rounded p-2 space-y-1 bg-white"
+    >
+      @for (field of localVisible(); track field.path) {
+        <li
+          cdkDrag
+          class="px-2 py-1 bg-slate-50 border border-slate-300 rounded text-sm cursor-move hover:border-slate-400"
+        >
+          <div class="text-slate-900">{{ field.label }}</div>
+          <div class="text-xs font-mono text-slate-400">{{ field.path }}</div>
+        </li>
+      } @empty {
+        <li class="text-slate-400 text-sm py-4 text-center">Drop fields here</li>
+      }
+    </ul>
+  </div>
+</div>
