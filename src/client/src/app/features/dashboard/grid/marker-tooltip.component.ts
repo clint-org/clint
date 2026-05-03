@@ -9,6 +9,7 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
+import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
 import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
 import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
 import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
@@ -20,6 +21,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
   standalone: true,
   imports: [
     CircleIconComponent,
+    CtgovSourceTagComponent,
     DiamondIconComponent,
     FlagIconComponent,
     TriangleIconComponent,
@@ -44,12 +46,17 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
         <!-- Category tag -->
         @if (categoryName()) {
           <div class="mb-1.5">
-            <span class="text-[10px] uppercase tracking-wider text-slate-400">{{ categoryName() }}</span>
+            <span class="text-[10px] uppercase tracking-wider text-slate-400">{{
+              categoryName()
+            }}</span>
           </div>
         }
 
         <!-- Title -->
-        <div class="text-[12px] font-semibold text-slate-900 leading-snug mb-1.5">{{ title() }}</div>
+        <div class="text-[12px] font-semibold text-slate-900 leading-snug mb-1.5">
+          <span>{{ title() }}</span>
+          <app-ctgov-source-tag class="ml-1.5 align-middle" [metadata]="metadata()" />
+        </div>
 
         <!-- Type icon + name | date row -->
         <div class="flex items-center gap-1.5 mb-1.5">
@@ -57,22 +64,51 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
           <svg width="10" height="10" class="shrink-0 overflow-visible">
             @switch (shape()) {
               @case ('circle') {
-                <g app-circle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
+                <g
+                  app-circle-icon
+                  [size]="10"
+                  [color]="typeColor()"
+                  [fillStyle]="typedFillStyle()"
+                  [innerMark]="typedInnerMark()"
+                />
               }
               @case ('diamond') {
-                <g app-diamond-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
+                <g
+                  app-diamond-icon
+                  [size]="10"
+                  [color]="typeColor()"
+                  [fillStyle]="typedFillStyle()"
+                  [innerMark]="typedInnerMark()"
+                />
               }
               @case ('flag') {
                 <g app-flag-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
               }
               @case ('triangle') {
-                <g app-triangle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+                <g
+                  app-triangle-icon
+                  [size]="10"
+                  [color]="typeColor()"
+                  [fillStyle]="typedFillStyle()"
+                />
               }
               @case ('square') {
-                <g app-square-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
+                <g
+                  app-square-icon
+                  [size]="10"
+                  [color]="typeColor()"
+                  [fillStyle]="typedFillStyle()"
+                  [innerMark]="typedInnerMark()"
+                />
               }
               @default {
-                <g app-circle-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" [innerMark]="typedInnerMark()" />
+                <g
+                  app-circle-icon
+                  [size]="10"
+                  [color]="typeColor()"
+                  [fillStyle]="typedFillStyle()"
+                  [innerMark]="typedInnerMark()"
+                />
               }
             }
           </svg>
@@ -111,7 +147,10 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
         @if (companyName()) {
           <div class="mt-1.5">
             <span class="text-[9px] text-slate-500 tracking-[0.03em]">
-              <span class="uppercase">{{ companyName() }}</span>@if (productName()) { · {{ productName() }}}
+              <span class="uppercase">{{ companyName() }}</span>
+              @if (productName()) {
+                · {{ productName() }}
+              }
             </span>
           </div>
         }
@@ -140,7 +179,8 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
             target="_blank"
             rel="noopener noreferrer"
             class="pointer-events-auto mt-2 block text-brand-600 text-xs hover:text-brand-700 hover:underline"
-          >View source</a>
+            >View source</a
+          >
         }
       </div>
     </div>
@@ -158,6 +198,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   categoryName = input<string>('');
   description = input<string | null>(null);
   sourceUrl = input<string | null>(null);
+  metadata = input<Record<string, unknown> | null>(null);
   noLongerExpected = input<boolean>(false);
 
   shape = input<string>('');
@@ -185,7 +226,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
 
   trialContext = computed(() =>
-    [this.trialPhase(), this.recruitmentStatus()].filter(v => !!v).join(' \u00b7 ')
+    [this.trialPhase(), this.recruitmentStatus()].filter((v) => !!v).join(' \u00b7 ')
   );
 
   formattedDate = computed(() => {

@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe, JsonPipe } from '@angular/common';
 
-import { CatalystDetail } from '../../core/models/catalyst.model';
+import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
 import {
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
@@ -11,6 +11,7 @@ import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
 import { CtgovFieldRendererComponent } from './ctgov-field-renderer/ctgov-field-renderer.component';
+import { CtgovSourceTagComponent } from './ctgov-source-tag.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
 export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
@@ -18,13 +19,22 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
 @Component({
   selector: 'app-marker-detail-content',
   standalone: true,
-  imports: [CtgovFieldRendererComponent, DatePipe, JsonPipe, MaterialsSectionComponent],
+  imports: [
+    CtgovFieldRendererComponent,
+    CtgovSourceTagComponent,
+    DatePipe,
+    JsonPipe,
+    MaterialsSectionComponent,
+  ],
   template: `
     @if (detail(); as d) {
-      <!-- Title -->
-      <h2 class="mb-3 text-sm font-semibold leading-snug text-slate-900">
-        {{ d.catalyst.title }}
-      </h2>
+      <!-- Title with optional CT.gov badge -->
+      <div class="mb-3 flex items-start justify-between gap-2">
+        <h2 class="text-sm font-semibold leading-snug text-slate-900">
+          {{ d.catalyst.title }}
+        </h2>
+        <app-ctgov-source-tag [metadata]="d.catalyst.metadata" variant="detailed" />
+      </div>
 
       <!-- Projection / no longer expected badges -->
       @if (projectionLabel()) {
@@ -81,11 +91,7 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
           </p>
           @if (ctgovPaths().length > 0 && snapshotPayload(); as snap) {
             <div class="mt-2 text-[12px]">
-              <app-ctgov-field-renderer
-                [snapshot]="snap"
-                [paths]="ctgovPaths()"
-                [dense]="true"
-              />
+              <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
             </div>
           }
         </div>
@@ -119,8 +125,46 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
         </div>
       }
 
-      <!-- Source -->
-      @if (d.catalyst.source_url) {
+      <!-- Source / provenance -->
+      @if (ctgovProvenance(); as prov) {
+        <!-- Auto-derived from CT.gov: rich provenance block so analysts
+             can see exactly which CT.gov field this came from, whether
+             it's actual or anticipated, and when it last synced. -->
+        <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+            Source
+          </p>
+          <p class="mb-2 text-xs text-slate-700">Auto-synced from clinicaltrials.gov</p>
+          <dl class="mb-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[11px]">
+            <dt class="text-slate-500">Field</dt>
+            <dd class="font-mono text-slate-700">{{ prov.field }}</dd>
+            <dt class="text-slate-500">Date type</dt>
+            <dd
+              [class.text-amber-700]="prov.dateType === 'ANTICIPATED'"
+              [class.text-green-700]="prov.dateType === 'ACTUAL'"
+            >
+              {{ prov.dateTypeLabel }}
+            </dd>
+            @if (d.catalyst.ctgov_last_synced_at) {
+              <dt class="text-slate-500">Last synced</dt>
+              <dd class="text-slate-700">
+                {{ d.catalyst.ctgov_last_synced_at | date: 'mediumDate' }}
+              </dd>
+            }
+          </dl>
+          @if (d.catalyst.source_url) {
+            <a
+              [href]="d.catalyst.source_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 text-[11px] text-brand-700 hover:text-brand-800 hover:underline"
+            >
+              View on clinicaltrials.gov
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+            </a>
+          }
+        </div>
+      } @else if (d.catalyst.source_url) {
         <div class="mb-4">
           <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Source
@@ -382,6 +426,29 @@ export class MarkerDetailContentComponent {
       default:
         return '';
     }
+  });
+
+  /**
+   * Extracts the CT.gov provenance block when this marker was auto-derived
+   * by sync. Returns null for analyst-created markers and for markers with
+   * non-ctgov metadata shapes (e.g. {pathway: 'priority'} on FDA Submission).
+   */
+  protected ctgovProvenance = computed<{
+    field: string;
+    dateType: 'ACTUAL' | 'ANTICIPATED';
+    dateTypeLabel: string;
+  } | null>(() => {
+    const m = this.detail()?.catalyst.metadata;
+    if (!m) return null;
+    const meta = m as Partial<CtgovMarkerMetadata>;
+    if (meta.source !== 'ctgov') return null;
+    const dateType: 'ACTUAL' | 'ANTICIPATED' =
+      meta.ctgov_date_type === 'ACTUAL' ? 'ACTUAL' : 'ANTICIPATED';
+    return {
+      field: meta.field ?? '(unknown field)',
+      dateType,
+      dateTypeLabel: dateType === 'ACTUAL' ? 'Actual' : 'Anticipated by sponsor',
+    };
   });
 
   protected extractDomain(url: string): string {

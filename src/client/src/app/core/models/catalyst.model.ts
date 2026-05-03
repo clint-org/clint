@@ -28,6 +28,19 @@ export interface Catalyst {
   trial_most_recent_change_type?: string | null;
 }
 
+/**
+ * Provenance metadata recorded on auto-derived markers. Set by
+ * _seed_ctgov_markers when CT.gov sync creates a Trial Start / PCD /
+ * Trial End marker. Manually-created markers have null metadata or a
+ * different shape (e.g. {pathway: 'priority'} for FDA Submission rows).
+ */
+export interface CtgovMarkerMetadata {
+  source: 'ctgov';
+  field: string;
+  snapshot_id: string;
+  ctgov_date_type: 'ACTUAL' | 'ANTICIPATED';
+}
+
 export interface CatalystDetail {
   catalyst: Catalyst & {
     recruitment_status: string | null;
@@ -35,6 +48,16 @@ export interface CatalystDetail {
     no_longer_expected: boolean;
     company_logo_url: string | null;
     marker_type_inner_mark: string;
+    /**
+     * Markers metadata jsonb passthrough; see CtgovMarkerMetadata for the
+     * auto-derived shape. Other shapes possible for manual markers.
+     */
+    metadata: Record<string, unknown> | null;
+    /**
+     * Parent trial's last successful CT.gov sync (null if never synced).
+     * Used by the marker-detail provenance block to show freshness.
+     */
+    ctgov_last_synced_at: string | null;
   };
   upcoming_markers: UpcomingMarker[];
   related_events: RelatedEvent[];

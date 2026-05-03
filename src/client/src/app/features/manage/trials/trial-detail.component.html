@@ -401,7 +401,12 @@
                   {{ marker.marker_types?.marker_categories?.name || '--' }}
                 </td>
                 <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
-                <td class="col-secondary max-w-xs truncate">{{ marker.title }}</td>
+                <td class="col-secondary max-w-xs">
+                  <div class="flex items-center gap-1.5">
+                    <span class="truncate">{{ marker.title }}</span>
+                    <app-ctgov-source-tag [metadata]="marker.metadata" />
+                  </div>
+                </td>
                 <td class="col-identifier">{{ marker.event_date | date: 'mediumDate' }}</td>
                 <td>
                   @if (marker.projection && marker.projection !== 'actual') {

@@ -36,6 +36,7 @@ import { IntelligenceDrawerComponent } from '../../../shared/components/intellig
 import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
+import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
 import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
 import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
@@ -65,6 +66,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     RecentActivityFeedComponent,
     MaterialsSectionComponent,
     CtgovFieldRendererComponent,
+    CtgovSourceTagComponent,
     ChangeEventRowComponent,
     TrialEditDialogComponent,
   ],
@@ -347,9 +349,19 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   }
 
   async deleteMarker(id: string): Promise<void> {
+    // Auto-derived markers (Trial Start / PCD / Trial End seeded by
+    // ingest_ctgov_snapshot) get re-created on the next CT.gov sync because
+    // the seeder dedups by "marker of this type already exists for this
+    // trial". Surface that quirk in the confirm so analysts aren't surprised
+    // by a resurrected marker on the next pull.
+    const marker = this.trial()?.markers?.find((m) => m.id === id);
+    const isCtgovSourced =
+      (marker?.metadata as { source?: string } | null | undefined)?.source === 'ctgov';
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete marker',
-      message: 'Delete this marker? This cannot be undone.',
+      message: isCtgovSourced
+        ? 'This marker was auto-derived from clinicaltrials.gov. Deleting it removes it from the timeline now, but the next CT.gov sync may re-create it. To suppress permanently, replace it with a manual marker of the same type.'
+        : 'Delete this marker? This cannot be undone.',
     });
     if (!ok) return;
     try {

@@ -84,6 +84,12 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             (ngModelChange)="onMarkerTypeChange($event)"
             [attr.aria-required]="true"
           />
+          @if (showCtgovAutoMarkerHint()) {
+            <p class="mt-1 text-[11px] text-amber-700">
+              Heads up: this marker type is auto-derived from clinicaltrials.gov when the trial
+              syncs. A manual one created here will sit alongside the auto-derived one.
+            </p>
+          }
         </div>
 
         <!-- Title -->
@@ -451,6 +457,27 @@ export class MarkerFormComponent implements OnInit {
       !!this.eventDate &&
       this.selectedTrialIds.length > 0
     );
+  }
+
+  /**
+   * True when the picked marker type is one of the three the CT.gov sync
+   * auto-derives (Trial Start / Primary Completion / Trial End) AND at
+   * least one of the selected trials has an NCT identifier (so it'll
+   * actually get a sync run). Read directly from non-signal form state;
+   * called as a method from the template, so re-evaluates each CD cycle
+   * without needing form fields to be signals.
+   */
+  protected showCtgovAutoMarkerHint(): boolean {
+    if (!this.markerTypeId || this.selectedTrialIds.length === 0) return false;
+    const selectedType = this.markerTypes().find((t) => t.id === this.markerTypeId);
+    if (!selectedType) return false;
+    const autoTypeName =
+      selectedType.name === 'Trial Start' ||
+      selectedType.name === 'Primary Completion Date (PCD)' ||
+      selectedType.name === 'Trial End';
+    if (!autoTypeName) return false;
+    const selectedTrials = this.trials().filter((t) => this.selectedTrialIds.includes(t.id));
+    return selectedTrials.some((t) => !!t.identifier);
   }
 
   async onSubmit(): Promise<void> {

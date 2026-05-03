@@ -18,8 +18,13 @@
     @if (isDashedLine()) {
       <svg [attr.width]="6" [attr.height]="28" class="overflow-visible" [style.margin-left.px]="-3">
         <line
-          x1="3" y1="0" x2="3" y2="28"
-          [attr.stroke]="isNle() ? mt.color : (effectiveFillStyle() === 'outline' ? '#cbd5e1' : mt.color)"
+          x1="3"
+          y1="0"
+          x2="3"
+          y2="28"
+          [attr.stroke]="
+            isNle() ? mt.color : effectiveFillStyle() === 'outline' ? '#cbd5e1' : mt.color
+          "
           stroke-width="1.5"
           stroke-dasharray="4,3"
           stroke-linecap="round"
@@ -27,12 +32,17 @@
         />
       </svg>
     } @else {
-      <svg [attr.width]="iconSize" [attr.height]="iconSize" class="overflow-visible drop-shadow-sm"
-           [style.margin-left.px]="-iconSize / 2">
+      <svg
+        [attr.width]="iconSize"
+        [attr.height]="iconSize"
+        class="overflow-visible drop-shadow-sm"
+        [style.margin-left.px]="-iconSize / 2"
+      >
         <g [attr.opacity]="nleOpacity()">
           @switch (mt.shape) {
             @case ('circle') {
-              <g app-circle-icon
+              <g
+                app-circle-icon
                 [size]="iconSize"
                 [color]="mt.color"
                 [fillStyle]="effectiveFillStyle()"
@@ -40,7 +50,8 @@
               />
             }
             @case ('diamond') {
-              <g app-diamond-icon
+              <g
+                app-diamond-icon
                 [size]="iconSize"
                 [color]="mt.color"
                 [fillStyle]="effectiveFillStyle()"
@@ -48,21 +59,24 @@
               />
             }
             @case ('flag') {
-              <g app-flag-icon
+              <g
+                app-flag-icon
                 [size]="iconSize"
                 [color]="mt.color"
                 [fillStyle]="effectiveFillStyle()"
               />
             }
             @case ('triangle') {
-              <g app-triangle-icon
+              <g
+                app-triangle-icon
                 [size]="iconSize"
                 [color]="mt.color"
                 [fillStyle]="effectiveFillStyle()"
               />
             }
             @case ('square') {
-              <g app-square-icon
+              <g
+                app-square-icon
                 [size]="iconSize"
                 [color]="mt.color"
                 [fillStyle]="effectiveFillStyle()"
@@ -96,6 +110,7 @@
         [categoryName]="markerType()?.marker_categories?.name ?? ''"
         [description]="marker().description"
         [sourceUrl]="marker().source_url"
+        [metadata]="marker().metadata"
         [noLongerExpected]="isNle()"
         [shape]="markerType()?.shape ?? ''"
         [fillStyle]="effectiveFillStyle()"

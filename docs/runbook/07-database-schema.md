@@ -692,4 +692,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260503020000_get_marker_history_security_definer.sql`
 - `20260503030000_list_latest_snapshots_for_space.sql`
 - `20260503040000_get_marker_history_runtime_smoke.sql`
+- `20260503050000_derive_phase_type_from_ctgov.sql`
+- `20260503060000_seed_ctgov_markers_on_sync.sql`
+- `20260503070000_catalyst_detail_with_provenance.sql`
 <!-- /AUTO-GEN:DRIFT -->

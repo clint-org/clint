@@ -166,6 +166,7 @@ The Trial Detail page provides a comprehensive form with sections:
 - View all event markers
 - **Add Marker** -- Select type, set event date (and optional end date for ranges), add tooltip text
 - **Edit / Delete** markers
+- **CT.gov auto-derived markers** -- For trials linked to an NCT identifier, three markers are auto-derived from clinicaltrials.gov on first sync and refreshed when newly populated: Trial Start, Primary Completion Date, and Trial End. They carry a small **CT.gov** badge in the marker title cell and on hover tooltips so they're identifiable at a glance. Click one to see source field, date type (anticipated by sponsor vs. actual), and last sync time. Deleting an auto-derived marker is allowed but the next CT.gov sync may re-create it -- to suppress permanently, replace it with a manual marker of the same type.
 
 **Notes tab:**
 - View all notes for this trial

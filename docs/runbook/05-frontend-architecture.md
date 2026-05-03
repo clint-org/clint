@@ -107,6 +107,7 @@ src/client/
           form-field.component.ts         # Labeled form field with error state
           form-actions.component.ts       # Cancel / submit button pair
           color-swatch.component.ts       # Color swatch chip
+          ctgov-source-tag.component.ts   # Slate "CT.gov" badge for auto-derived markers; renders nothing when metadata.source is not 'ctgov'
           marker-detail-panel.component.ts    # Unified detail panel shell: header (marker icon + category/type label + close button) + scrollable body. Accepts mode='inline' (static, used by catalysts page) or mode='drawer' (absolute overlay with @slidePanel animation + Escape-to-close, used by timeline). Replaces the former CatalystDetailPanelComponent and MarkerDetailDrawerComponent.
           marker-detail-content.component.ts # Shared detail panel body: title, projection/no-longer-expected badges, program (logo + company/product), trial context, date, description, source, upcoming markers, related events. Used by MarkerDetailPanelComponent and EventDetailPanelComponent.
         styles/
@@ -199,8 +200,10 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
   /spaces   SpaceListComponent
   /settings   tenantSettingsGuard | TenantSettingsComponent
   /help/roles   RolesHelpComponent
+  /help/phases   PhasesHelpComponent
   /s/:spaceId   spaceGuard
     (empty)   EngagementLandingComponent | exact
+    /help/markers   MarkersHelpComponent
     (empty)   LandscapeShellComponent
       /timeline   TimelineViewComponent
       /bullseye
@@ -335,6 +338,7 @@ All non-timeline management pages (Companies, Products, Trials, Marker Types, Th
 - **`manage-table.css`** (imported from `styles.css`) -- a single CSS layer that applies to any `<p-table>` opted in via `styleClass="manage-table"`. Produces a white card with slate-200 border, uppercase tracked 10px thead on a subtly-shaded slate-50/60 background, 13px dense rows with slate-100 row dividers, teal-50/55% row hover, and supports column modifiers `col-identifier` (mono tabular for NCT / generic names / codes), `col-num` (right-aligned tabular-nums), `col-secondary` (slate-500), and `col-actions` (narrow, right-aligned).
 - **`RowActionsComponent`** -- `<app-row-actions [items]="...">` renders an ellipsis trigger button and an anchored PrimeNG `p-menu` popup. Destructive items set `styleClass: 'row-actions-danger'` so the shared CSS colors them red. Used on every manage-table row; replaces the bootstrap-style Edit/Delete text link pair. **Callers MUST memoize the `MenuItem[]`** — typically via a `private readonly menuCache = new Map<string, MenuItem[]>()` keyed by row id, cleared in the list's load method. Returning a fresh array from a `rowMenu(row)` template-call causes `p-menu` to re-render between `pointerdown` and `click`, which swallows the first click and forces the user to click every menu option twice. All existing list components (companies / products / trials / marker-types / therapeutic-areas / trial-detail / tenant-settings) use this pattern; copy it when adding a new list.
 - **`StatusTagComponent`** -- `<app-status-tag [label]="t.status" />` auto-maps trial status strings to brand-safe tones (teal for Active/Recruiting, amber for Suspended/Not yet recruiting, slate for Completed/Terminated). Accepts an explicit `[tone]="'teal'|'amber'|'slate'|'neutral'"` override.
+- **`CtgovSourceTagComponent`** -- `<app-ctgov-source-tag [metadata]="m.metadata" />` renders a small slate `CT.gov` chip when the marker's `metadata.source === 'ctgov'`, and nothing otherwise. Use `[variant]="'detailed'"` for the longer "Synced from CT.gov" pill in the marker detail panel header. Drop it next to any marker title (table cell, hover tooltip, panel header) without conditional `@if` -- it self-suppresses for analyst-created markers. The marker detail panel pairs the badge with a richer provenance block (source field path, anticipated/actual date type, last sync timestamp, link to clinicaltrials.gov) when the same metadata signal is present.
 
 The Products list **no longer** renders its trials inline (the old chevron-expand + nested p-table pattern is removed). Instead, the Trials column shows a count that deep-links to `/manage/trials?product=<id>`, which filters the dedicated Trials list to that product. The "Add Trial" action moved with it: trials are created from the Trials list with a product dropdown, or from a product-filtered Trials view where the product is preselected.
 

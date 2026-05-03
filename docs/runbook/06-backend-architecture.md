@@ -35,6 +35,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
+| `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_companies` | companies | - |
 | `_seed_demo_events` | events | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
@@ -491,6 +492,7 @@ flowchart TD
   D{New row<br/>inserted?}
   E[Update last_polled_at only]
   F[Materialize columns:<br/>_materialize_trial_from_snapshot]
+  P[Seed CT.gov markers:<br/>_seed_ctgov_markers]
   G[Fetch previous snapshot for this trial]
   H{Previous<br/>exists?}
   I[Skip diff - first time]
@@ -503,10 +505,14 @@ flowchart TD
 
   A --> B --> C --> D
   D -->|no, dup| E --> O
-  D -->|yes| F --> G --> H
+  D -->|yes| F --> P --> G --> H
   H -->|no| I --> N --> O
   H -->|yes| J --> K --> L --> M --> N --> O
 ```
+
+**Snapshot materialization (`_materialize_trial_from_snapshot`).** The materialize step writes both ct.gov-owned columns and the four analyst-owned columns the visualizations depend on from each snapshot, with two opposite coalesce directions. Ct.gov-owned columns (`phase`, `recruitment_status`, `study_type`, `last_update_posted_date`) use `coalesce(derived, existing)` -- a missing path keeps the prior value. Analyst-owned `phase_type` / `phase_start_date` / `phase_end_date` / `status` use `coalesce(existing, derived)` -- ct.gov seeds them on first sync (so newly-created NCT-linked trials show up on the bullseye, the dashboard phase bar, and the trial-list Status column without an analyst editing them), but a value the analyst has set is never overwritten. `phase_type` is derived by `_derive_phase_type` from the CT.gov phases array (multi-phase designs collapse to the max bucket because `P1_2` / `P2_3` are not handled by the bullseye rank). End date prefers `primaryCompletionDateStruct` (the readout / catalyst date) and falls back to `completionDateStruct` (post-followup). `status` is derived by `_derive_status` from CT.gov `overallStatus`, collapsing the verbatim enum (still preserved in `recruitment_status`) to the coarser analyst lifecycle bucket -- Planned / Active / Completed / Terminated / Withdrawn. After first seed, ct.gov date and status moves still emit typed events into the change feed but do not silently update the trial row.
+
+**CT.gov marker seeding (`_seed_ctgov_markers`).** Immediately after materialization, the ingest pipeline seeds the three system markers in the Clinical Trial category that have an unambiguous CT.gov source: Trial Start (from `startDateStruct.date`), Primary Completion Date (from `primaryCompletionDateStruct.date`), and Trial End (from `completionDateStruct.date`). Each is created only when no marker of that type is already assigned to the trial -- analyst-set markers are never duplicated. Date-type mapping: CT.gov `ACTUAL` becomes `projection='actual'` (the markers table's generated `is_projected` column resolves to false), CT.gov `ANTICIPATED` (or missing) becomes `projection='company'` (sponsor projection, `is_projected=true`). All auto-created markers are tagged with `metadata.source='ctgov'` plus `field` / `snapshot_id` / `ctgov_date_type` for provenance, get a `source_url` pointing at `https://clinicaltrials.gov/study/<NCT>`, and are attributed to the trial's `created_by` (the worker has no `auth.uid()`). The other 10 system marker types in the catalog (Topline Data, Regulatory Filing, Approval, Launch, LOE, etc.) are not derivable from CT.gov -- their source data lives in FDA Orange Book, EMA, or press-release feeds and they remain analyst-curated. Resurrection quirk: an analyst who deletes an auto-seeded marker will see it re-created on the next sync because the dedup is "skip if marker of that type exists" rather than tracking deletes; replace the auto-marker with a manual marker of the same type to suppress permanently. The summary jsonb returned by `ingest_ctgov_snapshot` gains a `markers_seeded` field (count of markers created in this call).
 
 **Worker-side RPCs** (gated by `_verify_ctgov_worker_secret`; the Worker calls Supabase as anon and presents the secret as an argument):
 
