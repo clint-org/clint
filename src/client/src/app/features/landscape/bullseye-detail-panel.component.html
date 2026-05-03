@@ -130,6 +130,15 @@
                     }
                   </span>
                 </button>
+                @if (bullseyePaths().length > 0 && snapshotFor(trial.id); as snap) {
+                  <div class="px-2 pb-1.5 text-[12px]">
+                    <app-ctgov-field-renderer
+                      [snapshot]="snap"
+                      [paths]="bullseyePaths()"
+                      [dense]="true"
+                    />
+                  </div>
+                }
               </li>
             }
           </ul>

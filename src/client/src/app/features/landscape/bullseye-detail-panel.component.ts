@@ -1,5 +1,6 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 import {
@@ -10,7 +11,11 @@ import {
   RING_ORDER,
   RingPhase,
 } from '../../core/models/landscape.model';
+import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
+import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
+import { TrialService } from '../../core/services/trial.service';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
+import { CtgovFieldRendererComponent } from '../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
 interface RingHistogramEntry {
@@ -21,7 +26,13 @@ interface RingHistogramEntry {
 @Component({
   selector: 'app-bullseye-detail-panel',
   standalone: true,
-  imports: [ButtonModule, ChangeBadgeComponent, DatePipe, DetailPanelShellComponent],
+  imports: [
+    ButtonModule,
+    ChangeBadgeComponent,
+    CtgovFieldRendererComponent,
+    DatePipe,
+    DetailPanelShellComponent,
+  ],
   templateUrl: './bullseye-detail-panel.component.html',
 })
 export class BullseyeDetailPanelComponent {
@@ -39,12 +50,84 @@ export class BullseyeDetailPanelComponent {
 
   private readonly showAllTrials = signal(false);
 
+  // Per-space CT.gov field overlay (bullseye_detail_panel surface). Loaded
+  // once when the panel sees a spaceId on its containing route; lazy-loads
+  // snapshots only for the trials currently visible in the selected
+  // product's trial list.
+  private readonly route = inject(ActivatedRoute);
+  private readonly fieldVisibility = inject(SpaceFieldVisibilityService);
+  private readonly trialService = inject(TrialService);
+  private readonly perSpacePaths = signal<string[] | null>(null);
+  private readonly snapshotByTrial = signal<Map<string, unknown>>(new Map());
+  private lastVisibilitySpaceId: string | null = null;
+
+  readonly bullseyePaths = computed(() => this.perSpacePaths() ?? CTGOV_BULLSEYE_DEFAULT_PATHS);
+
   constructor() {
     // Reset the "show all" toggle whenever the user selects a different product
     effect(() => {
       this.selectedProduct();
       this.showAllTrials.set(false);
     });
+
+    // Load the per-space visibility map once when the spaceId is available
+    // on the route. Walks up the snapshot chain because this panel mounts as
+    // a sibling of the landscape view, not under a spaceId-keyed route of
+    // its own.
+    effect(() => {
+      let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
+      let spaceId: string | null = null;
+      while (snap) {
+        if (snap.paramMap.has('spaceId')) {
+          spaceId = snap.paramMap.get('spaceId');
+          break;
+        }
+        snap = snap.parent;
+      }
+      if (!spaceId || spaceId === this.lastVisibilitySpaceId) return;
+      this.lastVisibilitySpaceId = spaceId;
+      void (async () => {
+        try {
+          const map = await this.fieldVisibility.get(spaceId);
+          const paths = map['bullseye_detail_panel'];
+          this.perSpacePaths.set(paths && paths.length > 0 ? paths : null);
+        } catch {
+          this.perSpacePaths.set(null);
+        }
+      })();
+    });
+
+    // Lazy-load latest snapshots whenever the visible trial list changes.
+    // Short-circuits on cache hit so toggling "Show all" does not refetch
+    // already-loaded snapshots.
+    effect(() => {
+      const trials = this.visibleTrials();
+      if (this.bullseyePaths().length === 0) return;
+      const have = this.snapshotByTrial();
+      const missing = trials.map((t) => t.id).filter((id) => !have.has(id));
+      if (missing.length === 0) return;
+      void (async () => {
+        const results = await Promise.all(
+          missing.map(async (id) => {
+            try {
+              const s = await this.trialService.getLatestSnapshot(id);
+              return [id, s?.payload ?? null] as const;
+            } catch {
+              return [id, null] as const;
+            }
+          })
+        );
+        this.snapshotByTrial.update((m) => {
+          const next = new Map(m);
+          for (const [id, payload] of results) next.set(id, payload);
+          return next;
+        });
+      })();
+    });
+  }
+
+  snapshotFor(trialId: string): unknown | null {
+    return this.snapshotByTrial().get(trialId) ?? null;
   }
 
   protected readonly visibleTrials = computed(() => {

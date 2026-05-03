@@ -690,4 +690,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260503000000_fix_seed_demo_post_drop.sql`
 - `20260503010000_drop_orphaned_column_refs_in_rpcs.sql`
 - `20260503020000_get_marker_history_security_definer.sql`
+- `20260503030000_list_latest_snapshots_for_space.sql`
 <!-- /AUTO-GEN:DRIFT -->

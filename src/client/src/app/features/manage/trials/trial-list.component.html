@@ -111,6 +111,9 @@
           Markers <p-sortIcon field="markerCount" />
           <p-columnFilter type="numeric" field="markerCount" display="menu" />
         </th>
+        @for (col of extraColumns(); track col.path) {
+          <th>{{ col.label }}</th>
+        }
         <th class="col-actions"></th>
       </tr>
     </ng-template>
@@ -145,28 +148,20 @@
         </td>
         <td class="col-num">{{ row.phaseCount }}</td>
         <td class="col-num">{{ row.markerCount }}</td>
+        @for (col of extraColumns(); track col.path) {
+          <td class="col-secondary">{{ extraValue(row.trial.id, col.path) || '--' }}</td>
+        }
         <td class="col-actions">
           <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.trial.name" />
         </td>
       </tr>
     </ng-template>
     <ng-template #loadingbody>
-      <app-table-skeleton-body
-        [cells]="[
-          { w: '58%' },
-          { w: '80px', h: '11px' },
-          { w: '55%' },
-          { w: '55%' },
-          { w: '58px', h: '14px' },
-          { w: '20px', class: 'col-num' },
-          { w: '20px', class: 'col-num' },
-          { w: '14px', class: 'col-actions' },
-        ]"
-      />
+      <app-table-skeleton-body [cells]="skeletonCells()" />
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="8">
+        <td [attr.colspan]="emptyColspan()">
           @if (grid.isFiltered()) {
             No trials match your filters.
           } @else {

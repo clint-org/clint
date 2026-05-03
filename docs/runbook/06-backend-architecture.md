@@ -105,6 +105,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_platform_admin` | - | platform_admins |
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
 | `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_revisions |
+| `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
 | `list_materials_for_entity` | - | material_links, materials |
 | `list_materials_for_space` | - | material_links, materials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links, primary_intelligence_revisions |
@@ -562,6 +563,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_trial_detail_with_intelligence`
 - `get_unread_notification_count`
 - `list_draft_intelligence_for_space`
+- `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
 - `list_materials_for_space`
 - `list_primary_intelligence`

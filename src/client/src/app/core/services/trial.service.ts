@@ -88,6 +88,24 @@ export class TrialService {
     return data;
   }
 
+  /**
+   * Returns a Map of trial_id -> latest snapshot payload for every trial in
+   * a space, in a single round trip. Used by the trial-list dynamic columns
+   * surface; lazy per-row fetches are reserved for panels that show one
+   * trial at a time.
+   */
+  async getLatestSnapshotsForSpace(spaceId: string): Promise<Map<string, unknown>> {
+    const { data, error } = await this.supabase.client.rpc('list_latest_snapshots_for_space', {
+      p_space_id: spaceId,
+    });
+    if (error) throw error;
+    const out = new Map<string, unknown>();
+    for (const row of (data ?? []) as { trial_id: string; payload: unknown }[]) {
+      out.set(row.trial_id, row.payload);
+    }
+    return out;
+  }
+
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
     const { data, error } = await this.supabase.client
       .from('trials')

@@ -4,7 +4,10 @@ import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { FillStyle, InnerMark } from '../../core/models/marker.model';
 import { slidePanelAnimation } from '../animations/slide-panel.animation';
-import { MarkerDetailContentComponent } from './marker-detail-content.component';
+import {
+  CtgovMarkerSurfaceKey,
+  MarkerDetailContentComponent,
+} from './marker-detail-content.component';
 import { CircleIconComponent } from './svg-icons/circle-icon.component';
 import { DiamondIconComponent } from './svg-icons/diamond-icon.component';
 import { FlagIconComponent } from './svg-icons/flag-icon.component';
@@ -125,6 +128,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
         <app-marker-detail-content
           [detail]="detail()"
           [spaceId]="spaceId()"
+          [surfaceKey]="surfaceKey()"
           (markerClick)="markerClick.emit($event)"
         />
       </div>
@@ -137,6 +141,12 @@ export class MarkerDetailPanelComponent {
   readonly spaceId = input<string | null>(null);
   readonly mode = input<'inline' | 'drawer'>('inline');
   readonly open = input<boolean>(true);
+  /**
+   * Per-space CT.gov field surface to render under the Trial section.
+   * Defaults to `timeline_detail`; the catalysts route overrides to
+   * `key_catalysts_panel`.
+   */
+  readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly panelClose = output<void>();
   readonly markerClick = output<string>();
 
