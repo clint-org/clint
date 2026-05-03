@@ -391,6 +391,13 @@ export const routes: Routes = [
                 (m) => m.SpaceMembersComponent
               ),
           },
+          {
+            path: 'settings/fields',
+            loadComponent: () =>
+              import('./features/space-settings/space-field-visibility-settings.component').then(
+                (m) => m.SpaceFieldVisibilitySettingsComponent
+              ),
+          },
           // Redirects: old manage taxonomy/marker paths -> new settings paths
           {
             path: 'manage/marker-types',

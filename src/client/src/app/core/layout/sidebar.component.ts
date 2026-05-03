@@ -72,6 +72,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'General', route: 'settings/general', icon: NAV_ICONS['general'] },
       { label: 'Members', route: 'settings/members', icon: NAV_ICONS['members'] },
+      { label: 'Fields', route: 'settings/fields', icon: NAV_ICONS['fields'] },
       { label: 'Taxonomies', route: 'settings/taxonomies', icon: NAV_ICONS['taxonomies'] },
       { label: 'Marker Types', route: 'settings/marker-types', icon: NAV_ICONS['marker-types'] },
     ],
