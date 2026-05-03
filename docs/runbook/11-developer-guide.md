@@ -246,11 +246,16 @@ The change feed pipeline is: CT.gov snapshot -> `_compute_field_diffs` (jsonb pa
 
 See `08-authentication-security.md`'s "Worker secret model" section.
 
-### Manual backfill
+### CT.gov sync endpoints
 
-`POST /admin/ctgov-backfill` on the Worker with `{nct_ids: ["NCT01234567", ...]}` and a platform-admin JWT. Pulls fresh snapshots for the listed NCTs and re-runs the diff/classify pipeline. Used by the trial-detail "Sync from CT.gov" button (scoped to one NCT) and by ops when a bulk re-poll is needed.
+The Worker exposes two CT.gov sync entry points with different gates:
 
-In production the SPA and Worker are co-located (single Cloudflare Worker serves static assets and admin routes), so the client posts to a relative `/admin/ctgov-backfill`. In local dev the SPA (`ng serve` on `:8000`) and the Worker (`wrangler dev` on `:8787`) are on different origins, so two pieces of glue are required:
+- **`POST /api/ctgov/sync-trial`** with `{trial_id}` and any user JWT. Calls `trigger_single_trial_sync(p_trial_id)` under the user's JWT, which gates on `has_space_access(..., ['owner','editor'])` and resolves the NCT in one round-trip; the Worker then runs the manual backfill under its own secret. This is what the trial-detail "Sync from CT.gov" button hits. Returns `{ok, nct_id, summary}` on success or `{ok:false, reason:'no_nct_id'}` when the trial has no identifier.
+- **`POST /admin/ctgov-backfill`** with `{nct_ids: [...]}` and a **platform-admin** JWT. Bulk re-pull entry point for ops. Skips per-trial access checks (not appropriate for bulk cross-tenant operations). Used when a manual re-poll is needed across many trials at once.
+
+The split exists because the per-trial Sync button should work for any space editor, while the bulk endpoint must stay platform-admin-only -- a single endpoint with mixed gates would either be too permissive (any user re-pulls cross-tenant NCTs) or too restrictive (only platform admins can use the Sync button). Both endpoints feed the same `runManualBackfill` pipeline under the hood.
+
+In production the SPA and Worker are co-located (single Cloudflare Worker serves static assets and admin routes), so the client posts to relative paths. In local dev the SPA (`ng serve` on `:8000`) and the Worker (`wrangler dev` on `:8787`) are on different origins, so two pieces of glue are required:
 
 - `src/client/src/main.ts` sets `window.__WORKER_API_BASE = 'http://localhost:8787'` for non-production builds, so the client targets the local Worker.
 - `src/client/.dev.vars` extends `ALLOWED_APEXES` to include `localhost:8000`, so the Worker's CORS preflight accepts the cross-port request.
