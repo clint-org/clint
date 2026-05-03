@@ -61,6 +61,9 @@ import { ProgressSpinner } from 'primeng/progressspinner';
               mode="drawer"
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
+              [surfaceKey]="
+                viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'
+              "
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"

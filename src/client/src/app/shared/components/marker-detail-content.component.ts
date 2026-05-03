@@ -1,15 +1,24 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe, JsonPipe } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
+import {
+  CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
+  CTGOV_TIMELINE_DEFAULT_PATHS,
+} from '../../core/models/ctgov-field.model';
 import { ChangeEventService } from '../../core/services/change-event.service';
+import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
+import { TrialService } from '../../core/services/trial.service';
+import { CtgovFieldRendererComponent } from './ctgov-field-renderer/ctgov-field-renderer.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
+
+export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
 
 @Component({
   selector: 'app-marker-detail-content',
   standalone: true,
-  imports: [DatePipe, JsonPipe, MaterialsSectionComponent],
+  imports: [CtgovFieldRendererComponent, DatePipe, JsonPipe, MaterialsSectionComponent],
   template: `
     @if (detail(); as d) {
       <!-- Title -->
@@ -70,6 +79,15 @@ import { MaterialsSectionComponent } from './materials-section/materials-section
               &middot; {{ d.catalyst.recruitment_status }}
             }
           </p>
+          @if (ctgovPaths().length > 0 && snapshotPayload(); as snap) {
+            <div class="mt-2 text-[12px]">
+              <app-ctgov-field-renderer
+                [snapshot]="snap"
+                [paths]="ctgovPaths()"
+                [dense]="true"
+              />
+            </div>
+          }
         </div>
       }
 
@@ -278,6 +296,8 @@ import { MaterialsSectionComponent } from './materials-section/materials-section
 })
 export class MarkerDetailContentComponent {
   private changeEventService = inject(ChangeEventService);
+  private trialService = inject(TrialService);
+  private fieldVisibility = inject(SpaceFieldVisibilityService);
 
   readonly detail = input<CatalystDetail | null>(null);
   /**
@@ -287,7 +307,61 @@ export class MarkerDetailContentComponent {
    * preview) leave this unset and skip the section.
    */
   readonly spaceId = input<string | null>(null);
+  /**
+   * Per-space CT.gov field surface this panel reads from. Same component
+   * services both timeline and catalysts contexts; the parent (landscape
+   * shell) decides which surface key applies based on the active view mode.
+   */
+  readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly markerClick = output<string>();
+
+  // Per-space CT.gov field overlay state. Snapshot is lazy-loaded by
+  // trial_id whenever the selected marker (and therefore detail) changes;
+  // visibility paths are loaded once per space + surface combination.
+  protected readonly snapshotPayload = signal<unknown | null>(null);
+  private readonly perSpacePaths = signal<string[] | null>(null);
+
+  readonly ctgovPaths = computed(() => {
+    const paths = this.perSpacePaths();
+    if (paths !== null) return paths;
+    return this.surfaceKey() === 'key_catalysts_panel'
+      ? CTGOV_KEY_CATALYSTS_DEFAULT_PATHS
+      : CTGOV_TIMELINE_DEFAULT_PATHS;
+  });
+
+  private readonly snapshotEffect = effect(() => {
+    const trialId = this.detail()?.catalyst.trial_id ?? null;
+    this.snapshotPayload.set(null);
+    if (!trialId) return;
+    void (async () => {
+      try {
+        const snap = await this.trialService.getLatestSnapshot(trialId);
+        if (this.detail()?.catalyst.trial_id === trialId) {
+          this.snapshotPayload.set(snap?.payload ?? null);
+        }
+      } catch {
+        // snapshot block stays hidden on fetch failure
+      }
+    })();
+  });
+
+  private readonly visibilityEffect = effect(() => {
+    const spaceId = this.spaceId();
+    const key = this.surfaceKey();
+    if (!spaceId) {
+      this.perSpacePaths.set(null);
+      return;
+    }
+    void (async () => {
+      try {
+        const map = await this.fieldVisibility.get(spaceId);
+        const paths = map[key];
+        this.perSpacePaths.set(paths && paths.length > 0 ? paths : null);
+      } catch {
+        this.perSpacePaths.set(null);
+      }
+    })();
+  });
 
   protected readonly historyOpen = signal(false);
   protected readonly history = signal<MarkerChangeRow[] | null>(null);
