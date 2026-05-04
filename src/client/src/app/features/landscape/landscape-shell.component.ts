@@ -169,15 +169,17 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     });
 
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
-      const previousMode = this.viewMode();
       this.extractRouteParams();
       this.syncStateFromUrl();
       this.applyQueryParamFilters();
-      // Clear the marker selection on view-mode change so the drawer
-      // doesn't persist across timeline -> bullseye -> positioning hops.
-      // Same-mode navigations (e.g. switching bullseye dimension) keep
-      // selection intact.
-      if (this.viewMode() !== previousMode) {
+      // Marker selection only makes sense in marker-bearing views
+      // (timeline, catalysts). Clear it when entering bullseye /
+      // positioning so a previously-opened drawer doesn't trail along
+      // into a view where it has no referent. Selection is preserved
+      // between timeline <-> catalysts (same markers, different
+      // layout) and across same-mode dimension switches.
+      const mode = this.viewMode();
+      if (mode === 'bullseye' || mode === 'positioning') {
         this.state.clearSelection();
       }
     });
