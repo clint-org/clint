@@ -126,7 +126,7 @@ export class PhasesHelpComponent {
       },
       {
         q: 'Can the colors change per tenant?',
-        a: `No. Phase colors are a global semantic and stay consistent across all tenants and engagements so ${subject} moving between spaces read the same signal the same way.`,
+        a: 'No. Phase colors are a global semantic and stay consistent across all tenants and engagements so anyone moving between spaces reads the same signal the same way.',
       },
     ];
   });
