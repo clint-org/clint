@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
 
 import {
   BullseyeData,
@@ -16,6 +15,10 @@ import { SpaceFieldVisibilityService } from '../../core/services/space-field-vis
 import { TrialService } from '../../core/services/trial.service';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { CtgovFieldRendererComponent } from '../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
+import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
+import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
+import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
+import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
 interface RingHistogramEntry {
@@ -27,10 +30,13 @@ interface RingHistogramEntry {
   selector: 'app-bullseye-detail-panel',
   standalone: true,
   imports: [
-    ButtonModule,
     ChangeBadgeComponent,
     CtgovFieldRendererComponent,
     DatePipe,
+    DetailPanelEmptyStateComponent,
+    DetailPanelEntityListComponent,
+    DetailPanelEntityRowComponent,
+    DetailPanelSectionComponent,
     DetailPanelShellComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
@@ -169,6 +175,10 @@ export class BullseyeDetailPanelComponent {
   protected readonly totalProducts = computed(() => this.allProducts().length);
   protected readonly totalSpokes = computed(() => this.data()?.spokes.length ?? 0);
   protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
+
+  protected readonly headerLabel = computed(() =>
+    this.selectedProduct() ? 'Drug' : 'Bullseye · overview'
+  );
 
   protected isScopedMoa(moaId: string): boolean {
     const d = this.data();

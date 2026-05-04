@@ -179,27 +179,26 @@
       </p-table>
     </div>
 
-    <!-- Detail panel (380px, shown when a row is selected) -->
-    @if (selectedItem()) {
-      <div
-        @slidePanel
-        class="sticky top-0 w-[380px] shrink-0 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto"
-      >
-        @if (detailLoading()) {
-          <div class="flex h-full items-center justify-center py-12">
-            <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
-          </div>
-        } @else {
-          <app-event-detail-panel
-            [detail]="selectedDetail()"
-            [catalystDetail]="selectedCatalystDetail()"
-            [canEdit]="spaceRole.canEdit()"
-            (edit)="openEditModal(selectedItem()!.id)"
-            (panelClose)="closePanel()"
-          />
-        }
-      </div>
-    }
+    <!-- Detail panel (380px, always rendered - shows empty-state overview when no row selected) -->
+    <div
+      class="sticky top-0 w-[380px] shrink-0 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+    >
+      @if (selectedItem() && detailLoading()) {
+        <div class="flex h-full items-center justify-center py-12">
+          <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+        </div>
+      } @else {
+        <app-event-detail-panel
+          [detail]="selectedDetail()"
+          [catalystDetail]="selectedCatalystDetail()"
+          [canEdit]="spaceRole.canEdit()"
+          [feedItems]="feedItems()"
+          (edit)="openEditModal(selectedItem()!.id)"
+          (panelClose)="closePanel()"
+          (recentClick)="onRecentClick($event)"
+        />
+      }
+    </div>
   </div>
 </app-manage-page-shell>
 

@@ -58,18 +58,17 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
               (bubbleClick)="onBubbleClick($event)"
             />
           </div>
-          @if (selectedBubble()) {
-            <div class="landscape-panel-wrap" @slidePanel>
-              <app-positioning-detail-panel
-                [bubble]="selectedBubble()"
-                [countUnit]="state.countUnit()"
-                [totalBubbles]="data.bubbles.length"
-                (clearSelection)="selectedBubble.set(null)"
-                (openProduct)="onOpenProduct($event)"
-                (openInBullseye)="onOpenInBullseye()"
-              />
-            </div>
-          }
+          <div class="landscape-panel-wrap">
+            <app-positioning-detail-panel
+              [bubble]="selectedBubble()"
+              [countUnit]="state.countUnit()"
+              [totalBubbles]="data.bubbles.length"
+              [grouping]="state.positioningGrouping()"
+              (clearSelection)="selectedBubble.set(null)"
+              (openProduct)="onOpenProduct($event)"
+              (openInBullseye)="onOpenInBullseye()"
+            />
+          </div>
         </div>
       } @else if (data) {
         <div class="flex items-center justify-center h-full">

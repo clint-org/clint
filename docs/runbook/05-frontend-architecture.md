@@ -109,8 +109,17 @@ src/client/
           form-actions.component.ts       # Cancel / submit button pair
           color-swatch.component.ts       # Color swatch chip
           ctgov-source-tag.component.ts   # Slate "CT.gov" badge for auto-derived markers; renders nothing when metadata.source is not 'ctgov'
-          marker-detail-panel.component.ts    # Unified detail panel shell: header (marker icon + category/type label + close button) + scrollable body. Accepts mode='inline' (static, used by catalysts page) or mode='drawer' (absolute overlay with @slidePanel animation + Escape-to-close, used by timeline). Replaces the former CatalystDetailPanelComponent and MarkerDetailDrawerComponent.
-          marker-detail-content.component.ts # Shared detail panel body: title, projection/no-longer-expected badges, program (logo + company/product), trial context, date, description, source, upcoming markers, related events. Used by MarkerDetailPanelComponent and EventDetailPanelComponent.
+          marker-detail-panel.component.ts    # Thin marker-pane composition: drops the marker shape glyph into the shell's headerLeading slot and renders MarkerDetailContentComponent in the body. Accepts mode='inline' or mode='drawer' (340px @slidePanel overlay). Density resolves to 'compact' for drawer / 'roomy' for inline.
+          marker-detail-content.component.ts # Marker pane body: title meta strip (status pill + date), program, trial (with optional CT.gov field overlay), description, unified Source section (CT.gov provenance dl when auto-derived, simple URL otherwise), upcoming markers, related events, materials, and DetailPanelHistoryComponent with field-level diff. Used by MarkerDetailPanelComponent and (for marker-source rows) EventDetailPanelComponent.
+          detail-panel-shell.component.ts     # Canonical container for every detail pane (marker, event, positioning, bullseye). Owns header (headerLeading + brand-tone label + headerActions + close), scroll body, footer slot, aria-live, Escape-to-close. Inputs: density (compact/roomy), labelTone (brand/muted), bordered, showHeader, showClose. See "Detail Panel Pattern" below.
+          detail-panel-section.component.ts   # Section primitive: eyebrow + content with the canonical mt-3 border-t pt-3 rhythm. Pass first=true for the first section after the title meta strip (uses mt-4).
+          detail-panel-entity-row.component.ts # Clickable row primitive: button + hover bg + focus ring + trailing arrow. Set clickable=false for read-only rows in the same visual family.
+          detail-panel-entity-list.component.ts # Wraps entity rows with consistent space-y-px.
+          detail-panel-empty-state.component.ts # Renders the "Click an X to see details" action prompt; caller composes count/histogram/recent via primitives.
+          detail-panel-pill.component.ts      # Status / projection / priority pill. One source of truth for tone-to-color (green/amber/red/slate/blue/brand) + dot.
+          detail-panel-history.component.ts   # Collapsible audit trail with Field|Before|After diff table per entry; "View raw JSON" toggle preserves the engineering case.
+          detail-panel-mini-phase-bar.component.ts # 7-segment compact phase bar (PRECLIN -> LAUNCHED) using PHASE_COLOR. Distinct from the SVG dashboard PhaseBarComponent.
+          detail-panel-phase-race.component.ts # Two-line label + mini phase bar comparison row, sorted by phase rank desc. Used by the positioning detail pane.
         styles/
           manage-table.css      # Dense p-table chrome + shell layout classes
         utils/
@@ -345,19 +354,40 @@ The Products list **no longer** renders its trials inline (the old chevron-expan
 
 The trial edit form (`TrialFormComponent`) **does not use `p-fieldset`**. The previous collapsible fieldset pattern for CT.gov sections (Study Design / Eligibility / Timeline / Regulatory) caused content-leakage bugs during collapse animations and has been replaced with sibling `SectionCard`s that are always expanded — users scroll. When adding new grouped form sections, follow the same pattern.
 
-## Detail Panel Pattern (Overlay)
+## Detail Panel Pattern (Shell + Primitives)
 
-All detail panels across the app use a unified overlay pattern: a 340px absolute-positioned panel that slides in from the right edge of its container when an item is selected, and hides when nothing is selected. The chart/table beneath fills the full available width; the panel overlays on top of it. There is no backdrop or scroll lock -- the underlying content remains visible and interactive around the panel.
+Every detail pane in the product (marker, event, positioning, bullseye) is built by composing a small set of standalone primitives in `shared/components/detail-panel-*.component.ts`. The pane components themselves are thin compositions that map domain data into the primitive slots; the primitives own all spacing, colour, divider, eyebrow, focus-ring, and empty-state rules so the visual family stays consistent without per-pane drift.
 
-**Layout structure:** The container (`.landscape-layout` for landscape views, or a `position: relative` wrapper for events/catalysts) uses `position: relative` with its chart or table filling the full space. The panel wrapper (`.landscape-panel-wrap` or an inline `absolute` div) is positioned `absolute top-0 right-0 bottom-0 w-[340px] z-10` with a left box-shadow for depth.
+### The primitives
 
-**Consumers:**
-- **Timeline + Catalysts** -- Shared `MarkerDetailPanelComponent` with `mode='drawer'` rendered by `LandscapeShellComponent`. State lives in `LandscapeStateService` (`selectedMarkerId`, `selectedDetail`, `detailLoading`). Panel persists across tab switches.
-- **Bullseye** -- `LandscapeComponent` (dot click opens `BullseyeDetailPanelComponent`: product name, company, MOA/ROA tags, trials with recruitment status, recent markers with formatted dates, "Open in timeline" action)
-- **Positioning** -- `PositioningViewComponent` (bubble click opens `PositioningDetailPanelComponent`: "COMPETITIVE GROUP" header, stacked stats, phase breakdown chips, clickable products with generic names and navigation arrows, "Open in bullseye" cross-navigation that maps the current positioning grouping to the matching bullseye dimension)
-- **Events** -- `EventsPageComponent` (row click opens `EventDetailPanelComponent`)
+- **`DetailPanelShellComponent`** (`<app-detail-panel-shell>`) — canonical container. Renders the header strip (`headerLeading` slot for marker glyph, brand-tone eyebrow `[label]`, `headerActions` slot for edit/etc, close button), the scrolling body (default content slot), and the footer slot (`<div footer ...>` for primary actions). Inputs: `[density]` (`'compact'` for the 340px drawer, `'roomy'` for in-column panes), `[labelTone]` (`'brand'` when something is selected, `'muted'` for the empty-state overview eyebrow), `[showHeader]`, `[showClose]`, `[bordered]`. Owns `aria-live="polite"`, `role="region"`, and document-level Escape-to-close.
+- **`DetailPanelSectionComponent`** (`<app-detail-panel-section>`) — single section with a `[label]` eyebrow and the standard `mt-3 border-t border-slate-100 pt-3` rhythm. Pass `[first]="true"` for the first section after the title block (uses `mt-4`). Replaces ad-hoc `<section><p class="text-[10px]...">` markup across all panes.
+- **`DetailPanelEntityListComponent`** + **`DetailPanelEntityRowComponent`** (`<app-detail-panel-entity-list>` / `<app-detail-panel-entity-row>`) — clickable row pattern. Each row is a `<button>` with hover background, focus ring, and a trailing `→` arrow that recolors on hover. Set `[clickable]="false"` for read-only rows in the same visual family. Used by Upcoming markers, Related events, Thread events, Linked events, Trials, Products, Recent markers, and every empty-state histogram.
+- **`DetailPanelEmptyStateComponent`** (`<app-detail-panel-empty-state>`) — renders the `Click an X to see details` action prompt. Caller composes the count summary + histogram + recent-activity sections via standard primitives. Pair with the shell's `labelTone="muted"` to render a passive overview eyebrow (e.g. `Catalysts · overview`) when nothing is selected.
+- **`DetailPanelPillComponent`** (`<app-detail-panel-pill [tone]="...">`) — status / projection / priority pill. One source of truth for `rounded-full`, padding, dot, and the tone-to-color map (`green | amber | red | slate | blue | brand`). Replaces the prior pillbox markup that diverged across panes.
+- **`DetailPanelHistoryComponent`** (`<app-detail-panel-history>`) — collapsible audit trail. Caller projects `MarkerChangeRow[]` into `HistoryEntry[]` (with field labels + value formatters) and the primitive renders a `Field | Before | After` diff table per entry. The "View raw JSON" toggle preserves the engineering case. Lazy-load is wired via the `(toggleOpen)` event so the caller can fetch on first expand.
+- **`DetailPanelMiniPhaseBarComponent`** (`<app-detail-panel-mini-phase-bar>`) — compact 7-segment phase bar (PRECLIN → P1 → P2 → P3 → P4 → APPROVED → LAUNCHED). Each filled segment uses its own `PHASE_COLOR`; segments past `[currentPhase]` render in slate-200. Distinct from the dashboard's SVG `PhaseBarComponent`, which is a date-axis visualization.
+- **`DetailPanelPhaseRaceComponent`** (`<app-detail-panel-phase-race>`) — visual race comparison: two-line label (product / company) + mini phase bar + phase glyph. Sorted by phase rank descending so the leader sits at the top. Used by the positioning detail pane to answer "who's winning this race and by how much" at a glance.
 
-**When adding a new detail panel:** use `position: relative` on the parent container, absolute-position the panel at the right edge, import `slidePanelAnimation` from `shared/animations/slide-panel.animation.ts`, and apply `@slidePanel` to the panel wrapper inside an `@if` block so the animation triggers on enter/leave.
+### Consumers
+
+- **Timeline + Catalysts** — `MarkerDetailPanelComponent` (`mode='drawer'`, `density='compact'`) rendered by `LandscapeShellComponent`. Body is `MarkerDetailContentComponent` composed from the primitives above. The catalyst's projection state is collapsed into a single status pill ("Confirmed actual" or "Projected · Stout estimate") in the meta strip directly under the title — there is no separate Date/Status grid. Source treatment is unified: the slate-50 box is gone; CT.gov-derived markers render a small `Field / Date type / Last synced` dl under the standard `Source` section eyebrow, analyst-created markers render just the URL link in the same slot. History uses `DetailPanelHistoryComponent` with field-level diff (`event_date`, `projection`, `is_projected`, etc. via `HISTORY_FIELD_LABELS`).
+- **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Selected state uses `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events (both now navigable), and a slim ghost footer button "Open thread" when the event has a thread. All `&mdash;` separators are gone (project rule); replaced with middle dots.
+- **Positioning** — `PositioningDetailPanelComponent` is **always** rendered. Header eyebrow now reflects the active grouping ("MOA group" / "Therapy area group" / "MOA + TA group" / "Company group" / "ROA group") instead of generic "COMPETITIVE GROUP". Selected state replaces the old phase-breakdown chips with a `DetailPanelPhaseRace` (every product, leader at top, 7-segment bar). Empty state pattern matches bullseye.
+- **Bullseye** — `BullseyeDetailPanelComponent` header eyebrow renamed `SELECTED` → `Drug` (says what is selected, not that something is). Selected and empty states migrated onto the shell + primitives. Recent markers list now read-only via `[clickable]="false"`; trial list keeps the inline CT.gov field renderer.
+
+### Layout structure (overlay vs in-column)
+
+The marker pane in landscape is still an **overlay** — `LandscapeShellComponent` absolute-positions a 340px wrapper with `slidePanelAnimation` and renders the panel inside. The event, positioning, and bullseye panes are **always-mounted in-column** (380px on /events, sized by `landscape-panel-wrap` on landscape views). When adding a new detail pane, prefer in-column with an empty state — the column never sits blank, and the empty state teaches the surface.
+
+### When extending or adding a new pane
+
+1. Drop a `<app-detail-panel-shell>` at the root with the right `[density]` and `[label]`.
+2. Compose body content from `<app-detail-panel-section>` blocks (eyebrow + content), with `[first]="true"` on the first one after the title meta strip.
+3. Use `<app-detail-panel-entity-list>` + `<app-detail-panel-entity-row>` for any list of clickable references — never re-roll the hover/focus/arrow markup.
+4. Use `<app-detail-panel-pill>` for status, projection, or priority badges — never inline the chip Tailwind classes.
+5. For an empty state: render `<app-detail-panel-empty-state prompt="Click X to see details">` inside the shell with `labelTone="muted"`, then compose the overview using the same section/list primitives.
+6. Add a slim ghost footer CTA via `<div footer class="border-t border-slate-100 px-5 py-3">…</div>` — use the existing button styling (`inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 ...`) for consistency.
 
 ## Shared Animations
 

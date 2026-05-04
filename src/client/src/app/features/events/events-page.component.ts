@@ -230,6 +230,16 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.selectedCatalystDetail.set(null);
   }
 
+  /**
+   * Empty-state "Most recent" row click: jump to that feed item by
+   * resolving it from the loaded feed and routing through the standard
+   * row-click path (loads detail, opens panel).
+   */
+  async onRecentClick(itemId: string): Promise<void> {
+    const item = this.feedItems().find((i) => i.id === itemId);
+    if (item) await this.onRowClick(item);
+  }
+
   openCreateModal(): void {
     this.editingEventId.set(null);
     this.modalOpen.set(true);

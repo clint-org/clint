@@ -1,5 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { FillStyle, InnerMark } from '../../core/models/marker.model';
@@ -8,19 +8,30 @@ import {
   CtgovMarkerSurfaceKey,
   MarkerDetailContentComponent,
 } from './marker-detail-content.component';
+import { DetailPanelShellComponent } from './detail-panel-shell.component';
 import { CircleIconComponent } from './svg-icons/circle-icon.component';
 import { DiamondIconComponent } from './svg-icons/diamond-icon.component';
 import { FlagIconComponent } from './svg-icons/flag-icon.component';
 import { TriangleIconComponent } from './svg-icons/triangle-icon.component';
 import { SquareIconComponent } from './svg-icons/square-icon.component';
 
+/**
+ * Container for the marker detail content. Two display modes:
+ *   - `drawer`: 340px slide-in panel anchored to the right of the host (used
+ *     by the timeline + catalysts views in the landscape shell).
+ *   - `inline`: renders directly into a parent column without animation.
+ *
+ * The header eyebrow shows the marker shape glyph + "{category} ·
+ * {marker_type}" so the user can scan what kind of object is selected
+ * before the body loads.
+ */
 @Component({
   selector: 'app-marker-detail-panel',
   standalone: true,
   imports: [
-    NgClass,
     NgTemplateOutlet,
     MarkerDetailContentComponent,
+    DetailPanelShellComponent,
     CircleIconComponent,
     DiamondIconComponent,
     FlagIconComponent,
@@ -28,36 +39,32 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
     SquareIconComponent,
   ],
   animations: [slidePanelAnimation],
-  host: {
-    '(document:keydown.escape)': 'onEscape()',
-  },
   template: `
     @if (mode() === 'drawer') {
       @if (open()) {
         <div
           @slidePanel
-          class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] flex-col border-l border-slate-200 bg-white shadow-[-4px_0_16px_rgba(0,0,0,0.08)]"
-          role="region"
-          aria-label="Marker detail"
+          class="absolute top-0 right-0 bottom-0 z-10 w-[340px] border-l border-slate-200 bg-white shadow-[-4px_0_16px_rgba(0,0,0,0.08)]"
         >
-          <ng-container [ngTemplateOutlet]="panelContent" />
+          <ng-container *ngTemplateOutlet="paneContent" />
         </div>
       }
     } @else {
-      <div class="flex h-full flex-col overflow-hidden border-l border-slate-200 bg-white">
-        <ng-container [ngTemplateOutlet]="panelContent" />
+      <div class="h-full">
+        <ng-container *ngTemplateOutlet="paneContent" />
       </div>
     }
 
-    <ng-template #panelContent>
-      <!-- Panel header -->
-      <div
-        class="flex shrink-0 justify-between gap-3 border-b border-slate-100 px-5"
-        [ngClass]="mode() === 'drawer' ? 'items-center py-2.5' : 'items-start py-4'"
+    <ng-template #paneContent>
+      <app-detail-panel-shell
+        [label]="headerLabel()"
+        [density]="mode() === 'drawer' ? 'compact' : 'roomy'"
+        [bordered]="mode() === 'inline'"
+        (closed)="panelClose.emit()"
       >
-        <div class="flex min-w-0 flex-1 items-center gap-1.5">
+        <span headerLeading class="inline-flex shrink-0 items-center">
           @if (detail(); as d) {
-            <svg width="12" height="12" class="shrink-0 overflow-visible" aria-hidden="true">
+            <svg width="12" height="12" class="overflow-visible" aria-hidden="true">
               @switch (d.catalyst.marker_type_shape) {
                 @case ('circle') {
                   <g
@@ -104,34 +111,16 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
                 }
               }
             </svg>
-            <p class="text-[10px] font-semibold uppercase tracking-widest text-brand-600">
-              {{ d.catalyst.category_name }} &middot; {{ d.catalyst.marker_type_name }}
-            </p>
           }
-        </div>
-        <button
-          type="button"
-          class="flex shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          [ngClass]="mode() === 'drawer' ? 'h-6 w-6' : 'h-7 w-7'"
-          (click)="panelClose.emit()"
-          aria-label="Close detail panel"
-        >
-          <i class="fa-solid fa-xmark text-xs"></i>
-        </button>
-      </div>
+        </span>
 
-      <!-- Panel body (scrollable) -->
-      <div
-        class="flex-1 overflow-y-auto px-5"
-        [ngClass]="mode() === 'drawer' ? 'pt-3 pb-4' : 'py-4'"
-      >
         <app-marker-detail-content
           [detail]="detail()"
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
           (markerClick)="markerClick.emit($event)"
         />
-      </div>
+      </app-detail-panel-shell>
     </ng-template>
   `,
 })
@@ -150,21 +139,21 @@ export class MarkerDetailPanelComponent {
   readonly panelClose = output<void>();
   readonly markerClick = output<string>();
 
-  effectiveFillStyle = computed<FillStyle>(() => {
+  readonly headerLabel = computed(() => {
+    const d = this.detail();
+    if (!d) return '';
+    return `${d.catalyst.category_name} · ${d.catalyst.marker_type_name}`;
+  });
+
+  readonly effectiveFillStyle = computed<FillStyle>(() => {
     const c = this.detail()?.catalyst;
     if (!c) return 'filled';
     if (c.projection) return c.projection === 'actual' ? 'filled' : 'outline';
     return c.is_projected ? 'outline' : 'filled';
   });
 
-  innerMark = computed<InnerMark>(() => {
+  readonly innerMark = computed<InnerMark>(() => {
     const d = this.detail();
     return (d?.catalyst.marker_type_inner_mark as InnerMark) ?? 'none';
   });
-
-  onEscape(): void {
-    if (this.mode() === 'drawer' && this.open()) {
-      this.panelClose.emit();
-    }
-  }
 }

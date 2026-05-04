@@ -1,6 +1,6 @@
 <app-detail-panel-shell
-  [label]="'SELECTED'"
-  [showHeader]="!!selectedProduct()"
+  [label]="headerLabel()"
+  [labelTone]="selectedProduct() ? 'brand' : 'muted'"
   [showClose]="!!selectedProduct()"
   (closed)="onClearSelection()"
 >
@@ -13,165 +13,144 @@
       <div class="h-3 animate-pulse rounded bg-slate-100"></div>
       <div class="h-3 animate-pulse rounded bg-slate-100"></div>
     </div>
-  } @else if (selectedProduct()) {
-    @let product = selectedProduct()!;
-
-    <div class="flex flex-col gap-3">
-      <!-- Name -->
-      <div>
-        <h2 class="text-xl font-bold leading-tight text-slate-900">{{ product.name }}</h2>
-        @if (product.generic_name) {
-          <p class="-mt-0.5 text-sm italic text-slate-500">{{ product.generic_name }}</p>
-        }
-      </div>
-
-      <!-- Company -->
-      @if (dimension() !== 'company') {
-        <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-            COMPANY
-          </div>
-          <button
-            type="button"
-            class="cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium text-slate-900 hover:text-brand-600"
-            (click)="onCompanyClick()"
-          >
-            {{ product.company_name }} &rarr;
-          </button>
-        </section>
+  } @else {
+    @if (selectedProduct(); as product) {
+    <div>
+      <h2 class="text-base font-semibold leading-snug text-slate-900">{{ product.name }}</h2>
+      @if (product.generic_name) {
+        <p class="mt-0.5 text-[13px] italic text-slate-500">{{ product.generic_name }}</p>
       }
+    </div>
 
-      <!-- MOA -->
-      @if (product.moas.length > 0) {
-        <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-            MECHANISM OF ACTION
-          </div>
-          <div class="flex flex-wrap gap-1">
-            @for (moa of product.moas; track moa.id) {
-              <span
-                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-brand-100]="isScopedMoa(moa.id)"
-                [class.text-brand-800]="isScopedMoa(moa.id)"
-                [class.font-semibold]="isScopedMoa(moa.id)"
-                [class.bg-slate-100]="!isScopedMoa(moa.id)"
-                [class.text-slate-700]="!isScopedMoa(moa.id)"
-                >{{ moa.name }}</span
-              >
-            }
-          </div>
-        </section>
-      }
+    @if (dimension() !== 'company') {
+      <app-detail-panel-section [first]="true" label="Company">
+        <button
+          type="button"
+          class="group flex items-center gap-1 text-[13px] font-medium text-slate-900 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          (click)="onCompanyClick()"
+        >
+          {{ product.company_name }}
+          <i
+            class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </app-detail-panel-section>
+    }
 
-      <!-- ROA -->
-      @if (product.roas.length > 0) {
-        <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-            ROUTE OF ADMINISTRATION
-          </div>
-          <div class="flex flex-wrap gap-1">
-            @for (roa of product.roas; track roa.id) {
-              <span
-                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-brand-100]="isScopedRoa(roa.id)"
-                [class.text-brand-800]="isScopedRoa(roa.id)"
-                [class.font-semibold]="isScopedRoa(roa.id)"
-                [class.bg-slate-100]="!isScopedRoa(roa.id)"
-                [class.text-slate-700]="!isScopedRoa(roa.id)"
-                [attr.title]="roa.name"
-                >{{ roa.abbreviation ?? roa.name }}</span
-              >
-            }
-          </div>
-        </section>
-      }
-
-      <!-- Trials -->
-      <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-        <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-          TRIALS ({{ product.trials.length }})
+    @if (product.moas.length > 0) {
+      <app-detail-panel-section
+        [first]="dimension() === 'company'"
+        label="Mechanism of action"
+      >
+        <div class="flex flex-wrap gap-1">
+          @for (moa of product.moas; track moa.id) {
+            <span
+              class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
+              [class.bg-brand-100]="isScopedMoa(moa.id)"
+              [class.text-brand-800]="isScopedMoa(moa.id)"
+              [class.font-semibold]="isScopedMoa(moa.id)"
+              [class.bg-slate-100]="!isScopedMoa(moa.id)"
+              [class.text-slate-700]="!isScopedMoa(moa.id)"
+              >{{ moa.name }}</span
+            >
+          }
         </div>
-        @if (product.trials.length === 0) {
-          <p class="text-[13px] text-slate-500">No trials tracked.</p>
-        } @else {
-          <ul class="mt-1 flex flex-col gap-0.5 p-0">
-            @for (trial of visibleTrials(); track trial.id) {
-              <li class="list-none">
-                <button
-                  type="button"
-                  class="flex w-full cursor-pointer flex-col gap-0.5 rounded-sm border-none bg-transparent px-2 py-1.5 text-left hover:bg-slate-50"
-                  (click)="onTrialClick(trial.id)"
-                >
-                  <span
-                    class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900"
-                  >
-                    {{ trial.name }}
-                    <app-change-badge
-                      [count]="trial.recent_changes_count ?? 0"
-                      [type]="trial.most_recent_change_type ?? null"
-                    />
-                  </span>
-                  <span class="flex gap-2 font-mono text-[11px] text-slate-400">
-                    @if (trial.identifier) {
-                      <span>{{ trial.identifier }}</span>
-                    }
-                    @if (trial.phase) {
-                      <span>{{ trial.phase }}</span>
-                    }
-                    @if (trial.recruitment_status) {
-                      <span
-                        [class]="
-                          isTerminalStatus(trial.recruitment_status)
-                            ? 'text-slate-400'
-                            : 'text-brand-600'
-                        "
-                        >{{ trial.recruitment_status }}</span
-                      >
-                    }
-                  </span>
-                </button>
+      </app-detail-panel-section>
+    }
+
+    @if (product.roas.length > 0) {
+      <app-detail-panel-section label="Route of administration">
+        <div class="flex flex-wrap gap-1">
+          @for (roa of product.roas; track roa.id) {
+            <span
+              class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
+              [class.bg-brand-100]="isScopedRoa(roa.id)"
+              [class.text-brand-800]="isScopedRoa(roa.id)"
+              [class.font-semibold]="isScopedRoa(roa.id)"
+              [class.bg-slate-100]="!isScopedRoa(roa.id)"
+              [class.text-slate-700]="!isScopedRoa(roa.id)"
+              [attr.title]="roa.name"
+              >{{ roa.abbreviation ?? roa.name }}</span
+            >
+          }
+        </div>
+      </app-detail-panel-section>
+    }
+
+    <app-detail-panel-section [label]="'Trials (' + product.trials.length + ')'">
+      @if (product.trials.length === 0) {
+        <p class="text-[12px] text-slate-500">No trials tracked.</p>
+      } @else {
+        <app-detail-panel-entity-list>
+          @for (trial of visibleTrials(); track trial.id) {
+            <app-detail-panel-entity-row (rowClick)="onTrialClick(trial.id)">
+              <span class="flex w-full min-w-0 flex-col gap-0.5">
+                <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900">
+                  {{ trial.name }}
+                  <app-change-badge
+                    [count]="trial.recent_changes_count ?? 0"
+                    [type]="trial.most_recent_change_type ?? null"
+                  />
+                </span>
+                <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+                  @if (trial.identifier) {
+                    <span>{{ trial.identifier }}</span>
+                  }
+                  @if (trial.phase) {
+                    <span>{{ trial.phase }}</span>
+                  }
+                  @if (trial.recruitment_status) {
+                    <span
+                      [class]="
+                        isTerminalStatus(trial.recruitment_status)
+                          ? 'text-slate-400'
+                          : 'text-brand-600'
+                      "
+                      >{{ trial.recruitment_status }}</span
+                    >
+                  }
+                </span>
                 @if (bullseyePaths().length > 0 && snapshotFor(trial.id); as snap) {
-                  <div class="px-2 pb-1.5 text-[12px]">
+                  <span class="mt-0.5 block text-[12px]">
                     <app-ctgov-field-renderer
                       [snapshot]="snap"
                       [paths]="bullseyePaths()"
                       [dense]="true"
                     />
-                  </div>
+                  </span>
                 }
-              </li>
-            }
-          </ul>
-          @if (hasMoreTrials()) {
-            <button
-              type="button"
-              class="mt-2 cursor-pointer border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-center text-xs text-slate-500 hover:border-brand-600 hover:text-brand-600"
-              (click)="onShowAllTrials()"
-            >
-              Show all {{ product.trials.length }} trials
-            </button>
+              </span>
+            </app-detail-panel-entity-row>
           }
+        </app-detail-panel-entity-list>
+        @if (hasMoreTrials()) {
+          <button
+            type="button"
+            class="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-1 border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-[11px] text-slate-500 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            (click)="onShowAllTrials()"
+          >
+            Show all {{ product.trials.length }} trials
+          </button>
         }
-      </section>
+      }
+    </app-detail-panel-section>
 
-      <!-- Recent markers -->
-      @if (product.recent_markers.length > 0) {
-        <section class="flex flex-col gap-1 border-t border-slate-50 pt-2">
-          <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-            RECENT MARKERS
-          </div>
-          <ul class="mt-1 flex flex-col gap-1 p-0">
-            @for (marker of product.recent_markers; track marker.id) {
-              <li class="flex list-none items-center gap-2 text-xs text-slate-700">
+    @if (product.recent_markers.length > 0) {
+      <app-detail-panel-section label="Recent markers">
+        <app-detail-panel-entity-list>
+          @for (marker of product.recent_markers; track marker.id) {
+            <app-detail-panel-entity-row [clickable]="false">
+              <span class="flex w-full items-center gap-2">
                 <span
                   class="inline-block h-2 w-2 shrink-0 rounded-full"
                   [style.background-color]="marker.color"
                   aria-hidden="true"
                 ></span>
-                <span class="font-mono text-[11px] text-slate-500">{{
+                <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
                   marker.event_date | date: 'mediumDate'
                 }}</span>
-                <span>{{ marker.marker_type_name }}</span>
+                <span class="text-[12px] text-slate-700">{{ marker.marker_type_name }}</span>
                 @if (marker.category_name) {
                   <span
                     class="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400"
@@ -180,57 +159,69 @@
                 }
                 @if (marker.projection && marker.projection !== 'actual') {
                   <span
-                    class="rounded-sm bg-amber-100 px-1 py-px text-[10px] font-semibold uppercase tracking-wider text-amber-700"
+                    class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700"
                     >{{ marker.projection }}</span
                   >
                 }
-              </li>
-            }
-          </ul>
-        </section>
-      }
-    </div>
+              </span>
+            </app-detail-panel-entity-row>
+          }
+        </app-detail-panel-entity-list>
+      </app-detail-panel-section>
+    }
   } @else {
-    <!-- Empty state -->
-    <div class="flex flex-col gap-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-        CLICK A DRUG TO SEE DETAILS
-      </div>
-      <p class="text-[13px] text-slate-700">
-        {{ totalProducts() }} {{ totalProducts() === 1 ? 'product' : 'products' }} across
-        {{ totalSpokes() }} {{ spokeLabel().toLowerCase() }}
+    <app-detail-panel-empty-state prompt="Click a drug to see details">
+      <p class="mt-2 text-[13px] text-slate-700">
+        <span class="text-base font-semibold tabular-nums text-slate-900">{{
+          totalProducts()
+        }}</span>
+        {{ totalProducts() === 1 ? 'product' : 'products' }} across
+        <span class="font-medium text-slate-900">{{ totalSpokes() }}</span>
+        {{ spokeLabel().toLowerCase() }}
       </p>
-      <ul class="mt-2 flex flex-col gap-px border-t border-slate-200 p-0 pt-2" role="list">
-        @for (entry of ringHistogram(); track entry.phase) {
-          <li class="list-none">
-            <button
-              type="button"
-              class="flex w-full cursor-pointer items-center justify-between border-none bg-transparent px-2 py-1.5 font-mono text-xs tracking-wider text-slate-700 hover:bg-slate-50"
-              (click)="onRingRowClick(entry.phase)"
-              [attr.aria-label]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
+
+      <app-detail-panel-section [first]="true" label="By ring">
+        <app-detail-panel-entity-list>
+          @for (entry of ringHistogram(); track entry.phase) {
+            <app-detail-panel-entity-row
+              [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
+              (rowClick)="onRingRowClick(entry.phase)"
             >
-              <span class="font-semibold" [style.color]="phaseColor(entry.phase)">{{
-                entry.phase
-              }}</span>
-              <span [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'">{{
-                entry.count
-              }}</span>
-            </button>
-          </li>
-        }
-      </ul>
-    </div>
+              <span class="flex w-full items-center gap-2">
+                <span
+                  class="inline-block h-2 w-2 shrink-0 rounded-full"
+                  [style.background-color]="phaseColor(entry.phase)"
+                  aria-hidden="true"
+                ></span>
+                <span
+                  class="font-mono text-[12px] font-semibold tracking-wider"
+                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
+                  >{{ entry.phase }}</span
+                >
+                <span
+                  class="ml-auto font-mono text-[12px] tabular-nums"
+                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
+                  >{{ entry.count }}</span
+                >
+              </span>
+            </app-detail-panel-entity-row>
+          }
+        </app-detail-panel-entity-list>
+      </app-detail-panel-section>
+    </app-detail-panel-empty-state>
+    }
   }
 
-  <!-- Actions slot -->
   @if (selectedProduct()) {
-    <div actions class="mt-auto border-t border-slate-100 px-5 py-3">
-      <p-button
-        label="Open in timeline &rarr;"
-        severity="secondary"
-        styleClass="w-full"
-        (onClick)="onOpenTimeline()"
-      />
+    <div footer class="border-t border-slate-100 px-5 py-3">
+      <button
+        type="button"
+        class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        (click)="onOpenTimeline()"
+      >
+        Open in timeline
+        <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+      </button>
     </div>
   }
 </app-detail-panel-shell>

@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { DatePipe, JsonPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 
 import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
@@ -12,9 +12,53 @@ import { SpaceFieldVisibilityService } from '../../core/services/space-field-vis
 import { TrialService } from '../../core/services/trial.service';
 import { CtgovFieldRendererComponent } from './ctgov-field-renderer/ctgov-field-renderer.component';
 import { CtgovSourceTagComponent } from './ctgov-source-tag.component';
+import {
+  DetailPanelHistoryComponent,
+  HistoryEntry,
+  HistoryFieldDiff,
+} from './detail-panel-history.component';
+import { DetailPanelEntityListComponent } from './detail-panel-entity-list.component';
+import { DetailPanelEntityRowComponent } from './detail-panel-entity-row.component';
+import { DetailPanelPillComponent, PillTone } from './detail-panel-pill.component';
+import { DetailPanelSectionComponent } from './detail-panel-section.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
 export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
+
+interface ProjectionPill {
+  text: string;
+  tone: PillTone;
+}
+
+interface CtgovProvenanceBlock {
+  field: string;
+  dateType: 'ACTUAL' | 'ANTICIPATED';
+  dateTypeLabel: string;
+}
+
+const PROJECTION_LABEL: Record<NonNullable<CatalystDetail['catalyst']['projection']>, string> = {
+  actual: 'Confirmed actual',
+  stout: 'Projected · Stout estimate',
+  company: 'Projected · Company guidance',
+  primary: 'Projected · Primary source estimate',
+};
+
+// Field labels for the history diff. Keys not in this map are suppressed
+// from the diff (covers id columns, audit timestamps, foreign keys we
+// can't usefully display without joins, etc.).
+const HISTORY_FIELD_LABELS: Record<string, string> = {
+  title: 'Title',
+  description: 'Description',
+  event_date: 'Event date',
+  recruitment_status: 'Recruitment status',
+  is_projected: 'Projected',
+  projection: 'Projection source',
+  no_longer_expected: 'No longer expected',
+  source_url: 'Source URL',
+};
+
+const HISTORY_DATE_FIELDS = new Set(['event_date']);
+const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
 
 @Component({
   selector: 'app-marker-detail-content',
@@ -23,45 +67,44 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
     DatePipe,
-    JsonPipe,
+    DetailPanelEntityListComponent,
+    DetailPanelEntityRowComponent,
+    DetailPanelHistoryComponent,
+    DetailPanelPillComponent,
+    DetailPanelSectionComponent,
     MaterialsSectionComponent,
   ],
   template: `
     @if (detail(); as d) {
-      <!-- Title with optional CT.gov badge -->
-      <div class="mb-3 flex items-start justify-between gap-2">
-        <h2 class="text-sm font-semibold leading-snug text-slate-900">
+      <!-- Title + CT.gov source tag -->
+      <div class="flex items-start justify-between gap-2">
+        <h2 class="text-base font-semibold leading-snug text-slate-900">
           {{ d.catalyst.title }}
         </h2>
         <app-ctgov-source-tag [metadata]="d.catalyst.metadata" variant="detailed" />
       </div>
 
-      <!-- Projection / no longer expected badges -->
-      @if (projectionLabel()) {
-        <div class="mb-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5">
-          <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-          <span class="text-[10px] font-medium text-amber-700">{{ projectionLabel() }}</span>
-        </div>
-      }
-      @if (d.catalyst.no_longer_expected) {
-        <div class="mb-2 ml-1 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5">
-          <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-          <span class="text-[10px] font-medium text-slate-500">No longer expected</span>
-        </div>
-      }
+      <!-- Meta strip: status pill + date + optional "no longer expected" -->
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        @if (projectionPill(); as pill) {
+          <app-detail-panel-pill [tone]="pill.tone">{{ pill.text }}</app-detail-panel-pill>
+        }
+        <span class="font-mono text-[11px] tabular-nums text-slate-500">
+          {{ d.catalyst.event_date | date: 'mediumDate' }}
+        </span>
+        @if (d.catalyst.no_longer_expected) {
+          <app-detail-panel-pill tone="slate">No longer expected</app-detail-panel-pill>
+        }
+      </div>
 
-      <!-- Program -->
       @if (d.catalyst.company_name) {
-        <div class="mb-3 border-b border-slate-100 pb-2">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Program
-          </p>
-          <div class="flex items-center gap-2 text-xs text-slate-900">
+        <app-detail-panel-section [first]="true" label="Program">
+          <div class="flex items-center gap-2 text-[13px] text-slate-900">
             @if (d.catalyst.company_logo_url) {
               <img
                 [src]="d.catalyst.company_logo_url"
                 [alt]="d.catalyst.company_name"
-                class="h-5 w-5 rounded object-contain flex-none"
+                class="h-5 w-5 flex-none rounded object-contain"
               />
             }
             <p>
@@ -71,18 +114,12 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
               }
             </p>
           </div>
-        </div>
+        </app-detail-panel-section>
       }
 
-      <!-- Trial -->
       @if (d.catalyst.trial_name) {
-        <div class="mb-3 border-b border-slate-100 pb-2">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Trial
-          </p>
-          <p class="text-xs font-medium text-slate-900">
-            {{ d.catalyst.trial_name }}
-          </p>
+        <app-detail-panel-section [first]="!d.catalyst.company_name" label="Trial">
+          <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
           <p class="text-[11px] text-slate-500">
             {{ d.catalyst.trial_phase }}
             @if (d.catalyst.recruitment_status) {
@@ -94,48 +131,20 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
               <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
             </div>
           }
-        </div>
+        </app-detail-panel-section>
       }
 
-      <!-- Date & Status -->
-      <div class="mb-4 flex items-center gap-4 text-xs text-slate-500">
-        <div>
-          <span class="font-semibold">Date</span><br />
-          {{ d.catalyst.event_date | date: 'mediumDate' }}
-        </div>
-        <div>
-          <span class="font-semibold">Status</span><br />
-          @if (d.catalyst.is_projected) {
-            <span class="text-amber-600">Projected</span>
-          } @else {
-            <span class="text-green-600">Confirmed</span>
-          }
-        </div>
-      </div>
-
-      <!-- Description -->
       @if (d.catalyst.description) {
-        <div class="mb-4">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Description
-          </p>
-          <p class="text-xs leading-relaxed text-slate-600">
-            {{ d.catalyst.description }}
-          </p>
-        </div>
+        <app-detail-panel-section label="Description">
+          <p class="text-[13px] leading-relaxed text-slate-700">{{ d.catalyst.description }}</p>
+        </app-detail-panel-section>
       }
 
-      <!-- Source / provenance -->
+      <!-- Source: unified treatment regardless of provenance shape -->
       @if (ctgovProvenance(); as prov) {
-        <!-- Auto-derived from CT.gov: rich provenance block so analysts
-             can see exactly which CT.gov field this came from, whether
-             it's actual or anticipated, and when it last synced. -->
-        <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-          <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-            Source
-          </p>
-          <p class="mb-2 text-xs text-slate-700">Auto-synced from clinicaltrials.gov</p>
-          <dl class="mb-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[11px]">
+        <app-detail-panel-section label="Source">
+          <p class="mb-1.5 text-[12px] text-slate-700">Auto-synced from clinicaltrials.gov</p>
+          <dl class="mb-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-0.5 text-[11px]">
             <dt class="text-slate-500">Field</dt>
             <dd class="font-mono text-slate-700">{{ prov.field }}</dd>
             <dt class="text-slate-500">Date type</dt>
@@ -157,184 +166,83 @@ export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
               [href]="d.catalyst.source_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-[11px] text-brand-700 hover:text-brand-800 hover:underline"
+              class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
             >
               View on clinicaltrials.gov
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
             </a>
           }
-        </div>
+        </app-detail-panel-section>
       } @else if (d.catalyst.source_url) {
-        <div class="mb-4">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Source
-          </p>
+        <app-detail-panel-section label="Source">
           <a
             [href]="d.catalyst.source_url"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-xs text-brand-700 hover:text-brand-800 hover:underline"
+            class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
           >
             {{ extractDomain(d.catalyst.source_url) }}
-            <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
           </a>
-        </div>
+        </app-detail-panel-section>
       }
 
-      <!-- Upcoming for this trial -->
       @if (d.upcoming_markers.length > 0) {
-        <div class="mb-4">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Upcoming for this trial
-          </p>
-          <ul class="space-y-1">
+        <app-detail-panel-section label="Upcoming for this trial">
+          <app-detail-panel-entity-list>
             @for (um of d.upcoming_markers; track um.marker_id) {
-              <li
-                class="cursor-pointer border-b border-slate-100 py-1.5 text-[11px] text-slate-600 hover:text-brand-700"
-                (click)="markerClick.emit(um.marker_id)"
-                (keydown.enter)="markerClick.emit(um.marker_id)"
-                tabindex="0"
-                role="button"
-              >
-                {{ um.event_date | date: 'MMM yyyy' }} &middot;
-                {{ um.marker_type_name }}
-                @if (um.is_projected) {
-                  <span class="text-amber-500">(projected)</span>
-                }
-              </li>
+              <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
+                <span class="flex w-full items-center gap-2">
+                  <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
+                    um.event_date | date: 'MMM yyyy'
+                  }}</span>
+                  <span class="text-[12px] text-slate-700">{{ um.marker_type_name }}</span>
+                  @if (um.is_projected) {
+                    <span class="text-[10px] font-medium text-amber-600">(projected)</span>
+                  }
+                </span>
+              </app-detail-panel-entity-row>
             }
-          </ul>
-        </div>
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
       }
 
-      <!-- Related events -->
       @if (d.related_events.length > 0) {
-        <div class="mb-4">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Related events
-          </p>
-          <ul class="space-y-1">
+        <app-detail-panel-section label="Related events">
+          <app-detail-panel-entity-list>
             @for (re of d.related_events; track re.event_id) {
-              <li class="text-[11px] text-slate-500">
-                {{ re.event_date | date: 'mediumDate' }} &middot; {{ re.title }}
-                <span class="text-slate-500">({{ re.category_name }})</span>
-              </li>
+              <app-detail-panel-entity-row (rowClick)="markerClick.emit(re.event_id)">
+                <span class="flex w-full items-center gap-2 text-[12px]">
+                  <span class="font-mono tabular-nums text-slate-500">{{
+                    re.event_date | date: 'mediumDate'
+                  }}</span>
+                  <span class="truncate text-slate-700">{{ re.title }}</span>
+                  <span class="text-[10px] text-slate-400">({{ re.category_name }})</span>
+                </span>
+              </app-detail-panel-entity-row>
             }
-          </ul>
-        </div>
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
       }
 
-      <!-- Materials linked to this marker -->
       @if (spaceId()) {
-        <div class="mb-2 border-t border-slate-100 pt-3">
-          <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Materials
-          </p>
+        <app-detail-panel-section label="Materials">
           <app-materials-section
             entityType="marker"
             [entityId]="d.catalyst.marker_id"
             [spaceId]="spaceId()!"
           />
-        </div>
+        </app-detail-panel-section>
       }
 
-      <!-- History (collapsible audit log) -->
-      <div class="mt-2 border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          class="flex w-full items-center justify-between gap-2 text-left focus:outline-none"
-          (click)="toggleHistory()"
-          [attr.aria-expanded]="historyOpen()"
-          aria-controls="marker-history-panel"
-        >
-          <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            History
-          </span>
-          <i
-            class="fa-solid text-[10px] text-slate-400"
-            [class.fa-chevron-right]="!historyOpen()"
-            [class.fa-chevron-down]="historyOpen()"
-            aria-hidden="true"
-          ></i>
-        </button>
-
-        @if (historyOpen()) {
-          <div id="marker-history-panel" class="mt-2">
-            @if (historyLoading()) {
-              <p class="py-2 text-[11px] text-slate-400">Loading history...</p>
-            } @else if (history() === null) {
-              <!-- not loaded yet, nothing to show -->
-            } @else if (history()!.length === 0) {
-              <p class="py-2 text-[11px] text-slate-400">No history recorded.</p>
-            } @else {
-              <ul class="space-y-1">
-                @for (row of history(); track row.id) {
-                  <li class="border-b border-slate-100 py-1.5 last:border-b-0">
-                    <button
-                      type="button"
-                      class="flex w-full items-start justify-between gap-2 text-left focus:outline-none"
-                      (click)="toggleRow(row.id)"
-                      [attr.aria-expanded]="isRowExpanded(row.id)"
-                    >
-                      <div class="min-w-0 flex-1">
-                        <div
-                          class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wide text-slate-500"
-                        >
-                          <span
-                            class="font-semibold"
-                            [class.text-green-600]="row.change_type === 'created'"
-                            [class.text-blue-600]="row.change_type === 'updated'"
-                            [class.text-red-600]="row.change_type === 'deleted'"
-                          >
-                            {{ changeTypeLabel(row.change_type) }}
-                          </span>
-                          <span>&middot;</span>
-                          <span class="tabular-nums">{{ row.changed_at | date: 'medium' }}</span>
-                        </div>
-                        <div class="mt-0.5 text-[11px] text-slate-600">
-                          {{ row.changed_by_email ?? 'system' }}
-                        </div>
-                      </div>
-                      <i
-                        class="fa-solid mt-1 text-[9px] text-slate-400"
-                        [class.fa-chevron-right]="!isRowExpanded(row.id)"
-                        [class.fa-chevron-down]="isRowExpanded(row.id)"
-                        aria-hidden="true"
-                      ></i>
-                    </button>
-                    @if (isRowExpanded(row.id)) {
-                      <div class="mt-2 grid grid-cols-2 gap-2">
-                        <div>
-                          <p
-                            class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
-                          >
-                            Old
-                          </p>
-                          <pre
-                            class="overflow-x-auto rounded bg-slate-50 p-2 text-[10px] text-slate-700"
-                            >{{ row.old_values | json }}</pre
-                          >
-                        </div>
-                        <div>
-                          <p
-                            class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
-                          >
-                            New
-                          </p>
-                          <pre
-                            class="overflow-x-auto rounded bg-slate-50 p-2 text-[10px] text-slate-700"
-                            >{{ row.new_values | json }}</pre
-                          >
-                        </div>
-                      </div>
-                    }
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        }
-      </div>
+      <app-detail-panel-section>
+        <app-detail-panel-history
+          [entries]="historyEntries()"
+          [loading]="historyLoading()"
+          [open]="historyOpen()"
+          (toggleOpen)="toggleHistory()"
+        />
+      </app-detail-panel-section>
     }
   `,
 })
@@ -345,16 +253,13 @@ export class MarkerDetailContentComponent {
 
   readonly detail = input<CatalystDetail | null>(null);
   /**
-   * Optional space id. When set, a small Materials section renders at the
-   * bottom of the panel for materials linked to this marker. Marker
-   * tooltips hosted outside a space context (e.g. in the agency portal
-   * preview) leave this unset and skip the section.
+   * Optional space id. When set, a small Materials section renders for
+   * materials linked to this marker.
    */
   readonly spaceId = input<string | null>(null);
   /**
-   * Per-space CT.gov field surface this panel reads from. Same component
-   * services both timeline and catalysts contexts; the parent (landscape
-   * shell) decides which surface key applies based on the active view mode.
+   * Per-space CT.gov field surface this panel reads from. The parent picks
+   * `key_catalysts_panel` or `timeline_detail` based on the active view.
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly markerClick = output<string>();
@@ -365,7 +270,7 @@ export class MarkerDetailContentComponent {
   protected readonly snapshotPayload = signal<unknown | null>(null);
   private readonly perSpacePaths = signal<string[] | null>(null);
 
-  readonly ctgovPaths = computed(() => {
+  protected readonly ctgovPaths = computed(() => {
     const paths = this.perSpacePaths();
     if (paths !== null) return paths;
     return this.surfaceKey() === 'key_catalysts_panel'
@@ -408,36 +313,41 @@ export class MarkerDetailContentComponent {
   });
 
   protected readonly historyOpen = signal(false);
-  protected readonly history = signal<MarkerChangeRow[] | null>(null);
   protected readonly historyLoading = signal(false);
-  private readonly expandedRows = signal<Set<string>>(new Set());
+  private readonly historyRows = signal<MarkerChangeRow[] | null>(null);
 
-  protected projectionLabel = computed(() => {
-    const d = this.detail();
-    if (!d) return '';
-    switch (d.catalyst.projection) {
-      case 'stout':
-        return 'Stout estimate';
-      case 'company':
-        return 'Company guidance';
-      case 'primary':
-        return 'Primary source estimate';
-      case 'actual':
-      default:
-        return '';
+  protected readonly historyEntries = computed<HistoryEntry[] | null>(() => {
+    const rows = this.historyRows();
+    if (rows === null) return null;
+    return rows.map((row) => ({
+      id: row.id,
+      changeType: row.change_type,
+      changedAt: row.changed_at,
+      changedBy: row.changed_by_email,
+      diffs: this.computeDiffs(row.old_values, row.new_values),
+      raw: { old: row.old_values, new: row.new_values },
+    }));
+  });
+
+  protected readonly projectionPill = computed<ProjectionPill | null>(() => {
+    const c = this.detail()?.catalyst;
+    if (!c) return null;
+    if (c.projection) {
+      const text = PROJECTION_LABEL[c.projection];
+      return { text, tone: c.projection === 'actual' ? 'green' : 'amber' };
     }
+    // Legacy markers without a projection enum: derive from is_projected.
+    return c.is_projected
+      ? { text: 'Projected', tone: 'amber' }
+      : { text: 'Confirmed actual', tone: 'green' };
   });
 
   /**
    * Extracts the CT.gov provenance block when this marker was auto-derived
-   * by sync. Returns null for analyst-created markers and for markers with
-   * non-ctgov metadata shapes (e.g. {pathway: 'priority'} on FDA Submission).
+   * by sync. Returns null for analyst-created markers and for non-ctgov
+   * metadata shapes (e.g. {pathway: 'priority'} on FDA Submission).
    */
-  protected ctgovProvenance = computed<{
-    field: string;
-    dateType: 'ACTUAL' | 'ANTICIPATED';
-    dateTypeLabel: string;
-  } | null>(() => {
+  protected readonly ctgovProvenance = computed<CtgovProvenanceBlock | null>(() => {
     const m = this.detail()?.catalyst.metadata;
     if (!m) return null;
     const meta = m as Partial<CtgovMarkerMetadata>;
@@ -462,7 +372,7 @@ export class MarkerDetailContentComponent {
   protected toggleHistory(): void {
     const next = !this.historyOpen();
     this.historyOpen.set(next);
-    if (next && this.history() === null && !this.historyLoading()) {
+    if (next && this.historyRows() === null && !this.historyLoading()) {
       this.loadHistory();
     }
   }
@@ -473,36 +383,69 @@ export class MarkerDetailContentComponent {
     this.historyLoading.set(true);
     try {
       const rows = await this.changeEventService.getMarkerHistory(markerId);
-      this.history.set(rows);
+      this.historyRows.set(rows);
     } catch {
-      this.history.set([]);
+      this.historyRows.set([]);
     } finally {
       this.historyLoading.set(false);
     }
   }
 
-  protected toggleRow(id: string): void {
-    const next = new Set(this.expandedRows());
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
+  /**
+   * Walks the union of keys in old/new and emits a diff row for each field
+   * that actually changed AND is in the displayable set. Skips id columns,
+   * audit timestamps, and the metadata blob (which is too nested to diff
+   * meaningfully without per-shape knowledge).
+   */
+  private computeDiffs(
+    oldValues: Record<string, unknown> | null,
+    newValues: Record<string, unknown> | null
+  ): HistoryFieldDiff[] {
+    const allKeys = new Set<string>([
+      ...Object.keys(oldValues ?? {}),
+      ...Object.keys(newValues ?? {}),
+    ]);
+    const diffs: HistoryFieldDiff[] = [];
+    for (const key of allKeys) {
+      const label = HISTORY_FIELD_LABELS[key];
+      if (!label) continue;
+      const before = oldValues?.[key] ?? null;
+      const after = newValues?.[key] ?? null;
+      if (this.deepEqual(before, after)) continue;
+      diffs.push({
+        field: key,
+        label,
+        before: this.formatValue(key, before),
+        after: this.formatValue(key, after),
+      });
     }
-    this.expandedRows.set(next);
+    return diffs;
   }
 
-  protected isRowExpanded(id: string): boolean {
-    return this.expandedRows().has(id);
+  private deepEqual(a: unknown, b: unknown): boolean {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    return JSON.stringify(a) === JSON.stringify(b);
   }
 
-  protected changeTypeLabel(t: MarkerChangeRow['change_type']): string {
-    switch (t) {
-      case 'created':
-        return 'Created';
-      case 'updated':
-        return 'Updated';
-      case 'deleted':
-        return 'Deleted';
+  private formatValue(field: string, value: unknown): string | null {
+    if (value === null || value === undefined || value === '') return null;
+    if (HISTORY_DATE_FIELDS.has(field) && typeof value === 'string') {
+      // Render as MMM d, yyyy without pulling in the DatePipe in TS.
+      const d = new Date(value);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
     }
+    if (HISTORY_BOOL_FIELDS.has(field)) return value ? 'Yes' : 'No';
+    if (field === 'projection' && typeof value === 'string') {
+      const key = value as keyof typeof PROJECTION_LABEL;
+      return PROJECTION_LABEL[key] ?? value;
+    }
+    return String(value);
   }
 }
