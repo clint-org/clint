@@ -58,6 +58,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_material` | materials | - |
 | `delete_primary_intelligence` | primary_intelligence | - |
+| `delete_space` | markers, spaces | - |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
 | `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
@@ -542,6 +543,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `build_intelligence_payload`
 - `delete_material`
 - `delete_primary_intelligence`
+- `delete_space`
 - `finalize_material`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`

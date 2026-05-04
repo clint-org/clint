@@ -49,7 +49,7 @@ export class SpaceService {
   }
 
   async deleteSpace(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from('spaces').delete().eq('id', id);
+    const { error } = await this.supabase.client.rpc('delete_space', { p_space_id: id });
     if (error) throw error;
   }
 
