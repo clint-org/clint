@@ -83,6 +83,29 @@
 --                                    phase_end_date / status where each is null)
 
 -- =============================================================================
+-- 0. _safe_iso_date
+-- =============================================================================
+-- ct.gov returns dates as strings under the *DateStruct.date paths. Most are
+-- full ISO YYYY-MM-DD, but early-planning trials sometimes return partials
+-- (e.g. 'YYYY-MM' or 'YYYY'). A direct ::date cast on a partial raises 22007
+-- and breaks the entire UPDATE statement, which is what blocked this
+-- migration's first remote push. This helper returns a date only when the
+-- input is exactly YYYY-MM-DD; partials, malformed strings, and empties all
+-- coalesce to NULL. Padding partials to first-of-month was rejected because
+-- it would feed fabricated dates into the timeline phase bar.
+
+create or replace function public._safe_iso_date(p_text text)
+returns date
+language sql
+immutable
+as $$
+  select case when p_text ~ '^\d{4}-\d{2}-\d{2}$' then p_text::date else null end;
+$$;
+
+comment on function public._safe_iso_date(text) is
+  'Returns p_text as a date only if it matches YYYY-MM-DD exactly; otherwise NULL. Used to safely cast ct.gov *DateStruct.date strings, which can be partials like ''2026-06''.';
+
+-- =============================================================================
 -- 1. _derive_phase_type
 -- =============================================================================
 
@@ -216,13 +239,13 @@ begin
                           p_payload #> '{protocolSection,designModule,phases}',
                           v_study_type
                         );
-  v_phase_start_date := nullif(p_payload #>> '{protocolSection,statusModule,startDateStruct,date}', '')::date;
+  v_phase_start_date := public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,startDateStruct,date}');
   v_phase_end_date   := coalesce(
-                          nullif(p_payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}', '')::date,
-                          nullif(p_payload #>> '{protocolSection,statusModule,completionDateStruct,date}', '')::date
+                          public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}'),
+                          public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,completionDateStruct,date}')
                         );
   v_status           := public._derive_status(v_recruitment);
-  v_last_update_date := nullif(p_payload #>> '{protocolSection,statusModule,lastUpdatePostDateStruct,date}', '')::date;
+  v_last_update_date := public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,lastUpdatePostDateStruct,date}');
 
   update public.trials
      set phase                   = coalesce(v_phase, phase),
@@ -272,11 +295,11 @@ update public.trials t
         ls.payload #> '{protocolSection,designModule,phases}',
         ls.payload #>> '{protocolSection,designModule,studyType}'
       ) as phase_type,
-      nullif(ls.payload #>> '{protocolSection,statusModule,startDateStruct,date}', '')::date
+      public._safe_iso_date(ls.payload #>> '{protocolSection,statusModule,startDateStruct,date}')
         as phase_start_date,
       coalesce(
-        nullif(ls.payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}', '')::date,
-        nullif(ls.payload #>> '{protocolSection,statusModule,completionDateStruct,date}', '')::date
+        public._safe_iso_date(ls.payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}'),
+        public._safe_iso_date(ls.payload #>> '{protocolSection,statusModule,completionDateStruct,date}')
       ) as phase_end_date,
       public._derive_status(ls.payload #>> '{protocolSection,statusModule,overallStatus}')
         as status

@@ -127,7 +127,7 @@ begin
   ) into v_exists;
 
   if not v_exists then
-    v_event_date := nullif(p_payload #>> '{protocolSection,statusModule,startDateStruct,date}', '')::date;
+    v_event_date := public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,startDateStruct,date}');
     if v_event_date is not null then
       v_date_type  := upper(coalesce(
                         nullif(p_payload #>> '{protocolSection,statusModule,startDateStruct,type}', ''),
@@ -171,7 +171,7 @@ begin
   ) into v_exists;
 
   if not v_exists then
-    v_event_date := nullif(p_payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}', '')::date;
+    v_event_date := public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,date}');
     if v_event_date is not null then
       v_date_type  := upper(coalesce(
                         nullif(p_payload #>> '{protocolSection,statusModule,primaryCompletionDateStruct,type}', ''),
@@ -215,7 +215,7 @@ begin
   ) into v_exists;
 
   if not v_exists then
-    v_event_date := nullif(p_payload #>> '{protocolSection,statusModule,completionDateStruct,date}', '')::date;
+    v_event_date := public._safe_iso_date(p_payload #>> '{protocolSection,statusModule,completionDateStruct,date}');
     if v_event_date is not null then
       v_date_type  := upper(coalesce(
                         nullif(p_payload #>> '{protocolSection,statusModule,completionDateStruct,type}', ''),
@@ -480,7 +480,18 @@ declare
   v_marker_count    int;
   v_marker          record;
   v_pcd_marker      record;
+  v_worker_secret   text;
 begin
+  -- read the worker secret from vault so this smoke works regardless of
+  -- whether the operator has rotated away from the local default. The
+  -- placeholder local-dev-ctgov-secret is only valid until first prod rotate.
+  select decrypted_secret into v_worker_secret
+    from vault.decrypted_secrets
+   where name = 'ctgov_worker_secret';
+  if v_worker_secret is null then
+    raise exception 'marker seed smoke FAIL: vault entry ''ctgov_worker_secret'' is missing';
+  end if;
+
   -- bootstrap. Mirrors the surface_rpcs smoke (20260502120800) pattern --
   -- the markers BEFORE INSERT trigger fan-out path needs tenant_members +
   -- space_members rows in place to satisfy downstream constraint checks;
@@ -508,7 +519,7 @@ begin
 
   -- test 1: first ingest seeds all three markers
   v_result := public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret',
+    v_worker_secret,
     v_trial_id, v_space_id,
     'NCT99887766', 1, '2026-01-01'::date,
     v_payload, 'manual_sync', null
@@ -527,7 +538,7 @@ begin
   -- (markers already exist for all three types). diff/event path still runs
   -- but markers_seeded must be 0.
   v_result := public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret',
+    v_worker_secret,
     v_trial_id, v_space_id,
     'NCT99887766', 2, '2026-02-01'::date,
     v_payload || jsonb_build_object(

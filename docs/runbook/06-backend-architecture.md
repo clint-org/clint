@@ -539,6 +539,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
+- `_safe_iso_date`
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`
