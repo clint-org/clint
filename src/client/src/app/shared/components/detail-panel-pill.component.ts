@@ -13,16 +13,16 @@ export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
 @Component({
   selector: 'app-detail-panel-pill',
   standalone: true,
+  host: {
+    class:
+      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium leading-none',
+    '[class]': 'bgTextClass()',
+  },
   template: `
-    <span
-      class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-      [class]="bgTextClass()"
-    >
-      @if (showDot()) {
-        <span class="h-1.5 w-1.5 rounded-full" [class]="dotClass()"></span>
-      }
-      <ng-content />
-    </span>
+    @if (showDot()) {
+      <span class="h-1.5 w-1.5 rounded-full" [class]="dotClass()"></span>
+    }
+    <ng-content />
   `,
 })
 export class DetailPanelPillComponent {
@@ -49,6 +49,11 @@ export class DetailPanelPillComponent {
     brand: 'bg-brand-500',
   };
 
+  /**
+   * Composed class string for the host's bg + text. Combined with the
+   * static host classes above via `[class]` host binding so each tone is
+   * a literal Tailwind string the JIT scanner picks up.
+   */
   protected readonly bgTextClass = computed(
     () => DetailPanelPillComponent.TONE_BG_TEXT[this.tone()]
   );

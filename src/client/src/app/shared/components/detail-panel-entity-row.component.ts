@@ -19,15 +19,13 @@ import { Component, input, output } from '@angular/core';
       @if (clickable()) {
         <button
           type="button"
-          class="group flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          class="group flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
           (click)="rowClick.emit()"
           [attr.aria-label]="ariaLabel() || null"
         >
-          <span class="flex min-w-0 flex-1 items-center gap-2">
-            <ng-content />
-          </span>
+          <ng-content />
           <i
-            class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
+            class="fa-solid fa-arrow-right ml-auto text-[10px] text-slate-300 group-hover:text-brand-600"
             aria-hidden="true"
           ></i>
         </button>

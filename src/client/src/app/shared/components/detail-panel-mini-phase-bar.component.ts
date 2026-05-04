@@ -9,24 +9,25 @@ const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
  * uses its own phase color from PHASE_COLOR; segments past the current
  * phase render as muted slate.
  *
- * Used by the positioning Phase race, where each row is a product and the
- * bar shows how far it has reached. Distinct from the dashboard's
- * SVG-based PhaseBarComponent, which is a date-axis visualization with
- * start/end semantics.
+ * Host element is flex-1 so the bar grows to fill available space when
+ * placed inside a flex row (the typical Phase race layout).
  */
 @Component({
   selector: 'app-detail-panel-mini-phase-bar',
   standalone: true,
+  host: {
+    class: 'flex min-w-0 flex-1 items-center gap-px',
+    role: 'img',
+    '[attr.aria-label]': '"Reached " + currentPhase()',
+  },
   template: `
-    <div class="flex flex-1 gap-px" [attr.aria-label]="'Reached ' + currentPhase()">
-      @for (phase of phases; track phase) {
-        <div
-          class="h-2 flex-1 rounded-sm"
-          [style.background]="segmentColor(phase)"
-          [attr.aria-hidden]="true"
-        ></div>
-      }
-    </div>
+    @for (phase of phases; track phase) {
+      <span
+        class="h-2 flex-1 rounded-sm"
+        [style.background]="segmentColor(phase)"
+        aria-hidden="true"
+      ></span>
+    }
   `,
 })
 export class DetailPanelMiniPhaseBarComponent {

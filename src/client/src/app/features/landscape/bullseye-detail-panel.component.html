@@ -85,9 +85,9 @@
         <app-detail-panel-entity-list>
           @for (trial of visibleTrials(); track trial.id) {
             <app-detail-panel-entity-row (rowClick)="onTrialClick(trial.id)">
-              <span class="flex w-full min-w-0 flex-col gap-0.5">
+              <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900">
-                  {{ trial.name }}
+                  <span class="truncate">{{ trial.name }}</span>
                   <app-change-badge
                     [count]="trial.recent_changes_count ?? 0"
                     [type]="trial.most_recent_change_type ?? null"
@@ -141,29 +141,27 @@
         <app-detail-panel-entity-list>
           @for (marker of product.recent_markers; track marker.id) {
             <app-detail-panel-entity-row [clickable]="false">
-              <span class="flex w-full items-center gap-2">
-                <span
-                  class="inline-block h-2 w-2 shrink-0 rounded-full"
-                  [style.background-color]="marker.color"
-                  aria-hidden="true"
-                ></span>
-                <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
-                  marker.event_date | date: 'mediumDate'
+              <span
+                class="inline-block h-2 w-2 shrink-0 rounded-full"
+                [style.background-color]="marker.color"
+                aria-hidden="true"
+              ></span>
+              <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                marker.event_date | date: 'mediumDate'
+              }}</span>
+              <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                marker.marker_type_name
+              }}</span>
+              @if (marker.category_name) {
+                <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{
+                  marker.category_name
                 }}</span>
-                <span class="text-[12px] text-slate-700">{{ marker.marker_type_name }}</span>
-                @if (marker.category_name) {
-                  <span
-                    class="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-                    >{{ marker.category_name }}</span
-                  >
-                }
-                @if (marker.projection && marker.projection !== 'actual') {
-                  <span
-                    class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700"
-                    >{{ marker.projection }}</span
-                  >
-                }
-              </span>
+              }
+              @if (marker.projection && marker.projection !== 'actual') {
+                <span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-none text-amber-700">{{
+                  marker.projection
+                }}</span>
+              }
             </app-detail-panel-entity-row>
           }
         </app-detail-panel-entity-list>
@@ -187,23 +185,21 @@
               [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
               (rowClick)="onRingRowClick(entry.phase)"
             >
-              <span class="flex w-full items-center gap-2">
-                <span
-                  class="inline-block h-2 w-2 shrink-0 rounded-full"
-                  [style.background-color]="phaseColor(entry.phase)"
-                  aria-hidden="true"
-                ></span>
-                <span
-                  class="font-mono text-[12px] font-semibold tracking-wider"
-                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
-                  >{{ entry.phase }}</span
-                >
-                <span
-                  class="ml-auto font-mono text-[12px] tabular-nums"
-                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
-                  >{{ entry.count }}</span
-                >
-              </span>
+              <span
+                class="inline-block h-2 w-2 shrink-0 rounded-full"
+                [style.background-color]="phaseColor(entry.phase)"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="flex-1 font-mono text-[12px] font-semibold tracking-wider"
+                [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
+                >{{ entry.phase }}</span
+              >
+              <span
+                class="font-mono text-[12px] tabular-nums"
+                [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
+                >{{ entry.count }}</span
+              >
             </app-detail-panel-entity-row>
           }
         </app-detail-panel-entity-list>

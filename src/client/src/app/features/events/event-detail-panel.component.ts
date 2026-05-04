@@ -144,15 +144,15 @@ const CATEGORY_COLOR: Record<string, string> = {
                   } @else {
                     <button
                       type="button"
-                      class="group flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      class="group flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
                       (click)="threadEventClick.emit(te.id)"
                     >
-                      <span class="flex min-w-0 items-center gap-2 text-[11px] leading-snug">
-                        <span class="font-mono tabular-nums text-slate-500">{{
-                          te.event_date | date: 'mediumDate'
-                        }}</span>
-                        <span class="truncate text-slate-600">{{ te.title }}</span>
-                      </span>
+                      <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                        te.event_date | date: 'mediumDate'
+                      }}</span>
+                      <span class="min-w-0 flex-1 truncate text-[11px] text-slate-600">{{
+                        te.title
+                      }}</span>
                       <i
                         class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
                         aria-hidden="true"
@@ -170,13 +170,11 @@ const CATEGORY_COLOR: Record<string, string> = {
             <app-detail-panel-entity-list>
               @for (le of d.linked_events; track le.id) {
                 <app-detail-panel-entity-row (rowClick)="relatedEventClick.emit(le.id)">
-                  <span class="flex w-full min-w-0 items-center gap-2 text-[12px]">
-                    <span class="font-mono tabular-nums text-slate-500">{{
-                      le.event_date | date: 'mediumDate'
-                    }}</span>
-                    <span class="truncate text-slate-700">{{ le.title }}</span>
-                    <span class="text-[10px] text-slate-400">({{ le.category_name }})</span>
-                  </span>
+                  <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                    le.event_date | date: 'mediumDate'
+                  }}</span>
+                  <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{ le.title }}</span>
+                  <span class="shrink-0 text-[10px] text-slate-400">({{ le.category_name }})</span>
                 </app-detail-panel-entity-row>
               }
             </app-detail-panel-entity-list>
@@ -208,17 +206,17 @@ const CATEGORY_COLOR: Record<string, string> = {
               <app-detail-panel-entity-list>
                 @for (entry of categoryHistogram(); track entry.name) {
                   <app-detail-panel-entity-row (rowClick)="categoryFilter.emit(entry.name)">
-                    <span class="flex w-full items-center gap-3">
-                      <span
-                        class="inline-block h-2 w-2 shrink-0 rounded-full"
-                        [style.background-color]="entry.color"
-                        aria-hidden="true"
-                      ></span>
-                      <span class="flex-1 text-[12px] text-slate-700">{{ entry.name }}</span>
-                      <span class="font-mono text-[12px] tabular-nums text-slate-900">{{
-                        entry.count
-                      }}</span>
-                    </span>
+                    <span
+                      class="inline-block h-2 w-2 shrink-0 rounded-full"
+                      [style.background-color]="entry.color"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                      entry.name
+                    }}</span>
+                    <span class="shrink-0 font-mono text-[12px] tabular-nums text-slate-900">{{
+                      entry.count
+                    }}</span>
                   </app-detail-panel-entity-row>
                 }
               </app-detail-panel-entity-list>
@@ -230,14 +228,12 @@ const CATEGORY_COLOR: Record<string, string> = {
               <app-detail-panel-entity-list>
                 @for (item of mostRecent(); track item.id) {
                   <app-detail-panel-entity-row (rowClick)="recentClick.emit(item.id)">
-                    <span class="flex w-full items-center gap-2">
-                      <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
-                        item.event_date | date: 'MMM d'
-                      }}</span>
-                      <span class="flex-1 truncate text-[12px] text-slate-700">{{
-                        item.title
-                      }}</span>
-                    </span>
+                    <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                      item.event_date | date: 'MMM d'
+                    }}</span>
+                    <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                      item.title
+                    }}</span>
                   </app-detail-panel-entity-row>
                 }
               </app-detail-panel-entity-list>

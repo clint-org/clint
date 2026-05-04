@@ -73,8 +73,8 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
           <app-detail-panel-entity-list>
             @for (product of sortedProducts(); track product.id) {
               <app-detail-panel-entity-row (rowClick)="openProduct.emit(product.id)">
-                <span class="flex w-full min-w-0 flex-col gap-0.5">
-                  <span class="text-[13px] font-medium text-slate-900">
+                <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span class="truncate text-[13px] font-medium text-slate-900">
                     {{ product.name }}
                     @if (product.generic_name) {
                       <span class="font-normal italic text-slate-400"
@@ -83,8 +83,8 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
                     }
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-                    <span class="text-slate-500">{{ product.company_name }}</span>
-                    <span>{{ product.trial_count }} {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span>
+                    <span class="truncate text-slate-500">{{ product.company_name }}</span>
+                    <span class="shrink-0">{{ product.trial_count }} {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span>
                   </span>
                 </span>
               </app-detail-panel-entity-row>

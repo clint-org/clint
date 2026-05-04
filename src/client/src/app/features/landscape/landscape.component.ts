@@ -222,7 +222,10 @@ export class LandscapeComponent implements OnInit {
   }
 
   onOpenInTimeline(payload: { productId: string; therapeuticAreaId: string }): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId()], {
+    // Land on the actual timeline view, not the space root (which renders
+    // the landscape index). Filters thread through as query params and are
+    // applied in landscape-shell's applyQueryParamFilters().
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: {
         productIds: payload.productId,
         therapeuticAreaIds: payload.therapeuticAreaId,

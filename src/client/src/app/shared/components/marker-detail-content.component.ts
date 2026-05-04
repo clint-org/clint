@@ -84,12 +84,15 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
         <app-ctgov-source-tag [metadata]="d.catalyst.metadata" variant="detailed" />
       </div>
 
-      <!-- Meta strip: status pill + date + optional "no longer expected" -->
-      <div class="mt-2 flex flex-wrap items-center gap-2">
+      <!-- Meta strip: status pill + date + optional "no longer expected".
+           Items align at baseline so the pill (with vertical padding) and
+           the date text share a visual horizontal line instead of the
+           pill sitting taller than the date. -->
+      <div class="mt-2 flex flex-wrap items-baseline gap-2">
         @if (projectionPill(); as pill) {
           <app-detail-panel-pill [tone]="pill.tone">{{ pill.text }}</app-detail-panel-pill>
         }
-        <span class="font-mono text-[11px] tabular-nums text-slate-500">
+        <span class="font-mono text-[11px] tabular-nums leading-none text-slate-500">
           {{ d.catalyst.event_date | date: 'mediumDate' }}
         </span>
         @if (d.catalyst.no_longer_expected) {
@@ -192,15 +195,15 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
           <app-detail-panel-entity-list>
             @for (um of d.upcoming_markers; track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
-                <span class="flex w-full items-center gap-2">
-                  <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
-                    um.event_date | date: 'MMM yyyy'
-                  }}</span>
-                  <span class="text-[12px] text-slate-700">{{ um.marker_type_name }}</span>
-                  @if (um.is_projected) {
-                    <span class="text-[10px] font-medium text-amber-600">(projected)</span>
-                  }
-                </span>
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  um.event_date | date: 'MMM yyyy'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  um.marker_type_name
+                }}</span>
+                @if (um.is_projected) {
+                  <span class="shrink-0 text-[10px] font-medium text-amber-600">(projected)</span>
+                }
               </app-detail-panel-entity-row>
             }
           </app-detail-panel-entity-list>
@@ -212,13 +215,11 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
           <app-detail-panel-entity-list>
             @for (re of d.related_events; track re.event_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(re.event_id)">
-                <span class="flex w-full items-center gap-2 text-[12px]">
-                  <span class="font-mono tabular-nums text-slate-500">{{
-                    re.event_date | date: 'mediumDate'
-                  }}</span>
-                  <span class="truncate text-slate-700">{{ re.title }}</span>
-                  <span class="text-[10px] text-slate-400">({{ re.category_name }})</span>
-                </span>
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  re.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{ re.title }}</span>
+                <span class="shrink-0 text-[10px] text-slate-400">({{ re.category_name }})</span>
               </app-detail-panel-entity-row>
             }
           </app-detail-panel-entity-list>
