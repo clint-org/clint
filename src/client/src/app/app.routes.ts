@@ -372,6 +372,13 @@ export const routes: Routes = [
                 (m) => m.TrialDetailComponent
               ),
           },
+          {
+            path: 'manage/companies/:id',
+            loadComponent: () =>
+              import('./features/manage/companies/company-detail.component').then(
+                (m) => m.CompanyDetailComponent
+              ),
+          },
           // Settings routes (moved from manage)
           {
             path: 'settings/marker-types',
