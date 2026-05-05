@@ -1,7 +1,8 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { summaryFor } from '../../utils/change-event-summary';
 
 @Component({
@@ -21,9 +22,14 @@ export class ChangeEventRowComponent {
   readonly tenantId = input<string | null>(null);
   readonly spaceId = input<string | null>(null);
 
+  private readonly brand = inject(BrandContextService);
+
   readonly iconClass = computed(() => iconFor(this.event().event_type));
   readonly summary = computed(() => summaryFor(this.event()));
-  readonly sourceLabel = computed(() => (this.event().source === 'ctgov' ? 'CT.GOV' : 'ANALYST'));
+  readonly sourceLabel = computed(() => {
+    if (this.event().source === 'ctgov') return 'CT.GOV';
+    return this.brand.agency()?.name ?? this.brand.appDisplayName();
+  });
 
   readonly routerLink = computed<unknown[] | null>(() => {
     const t = this.tenantId();
