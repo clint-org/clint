@@ -151,10 +151,16 @@ Drafts and published rows are deletable. The RPC already enforces agency-member 
 
 ## Existing list page integration
 
-- **Company list** (`company-list.component.html`): wrap company name in a router link to the new detail route. No other changes.
-- **Product list** (`product-list.component.html`): same treatment for product name.
+Beyond surfacing the new detail pages from their primary list, every place in the app that today references a company or product should route to the new detail page. This is a consistency pass that uses the same helper.
+
+- **Company list** (`company-list.component.html`): wrap company name in a router link to the new detail route. The "View products" affordance stays in the row-actions menu so the existing capability is not lost.
+- **Product list** (`product-list.component.html`): same treatment for product name. The product list's company column also becomes a router link to the company detail page. "View trials" stays in the row menu.
+- **Trial list** (`trial-list.component.html`): the product and company columns currently render as plain text. Both become router links to the respective detail pages. Requires adding `productId` to the row interface.
 - **Trial detail Markers table** (`trial-detail.component.html:400-429`): the marker title cell is currently plain text. Wrap it in a router link to `MarkerDetailComponent`. The row-actions menu (Edit / Delete the marker row itself) stays unchanged. This is the primary entry point for marker intelligence: analysts find markers through their parent trial.
-- **Timeline marker pin**: clicking a marker pin currently opens an inline detail panel in the timeline. Add a "View detail" link inside that panel that navigates to `MarkerDetailComponent`. Secondary entry, used when an analyst is working in timeline mode.
+- **Timeline marker pin** (`marker-detail-content.component.ts`): clicking a marker pin opens an inline panel. Add a "View detail" link near the top that navigates to `MarkerDetailComponent`. Inside the same panel's "Program" section, the company name and product name (today plain text) become router links to the respective detail pages.
+- **Bullseye detail panel** (`bullseye-detail-panel.component.html`): the Company section's existing button already emits the company id; the consumer in `landscape.component.ts` currently discards the id and routes to the company *list*. Update the consumer to route to the company detail page using the emitted id.
+- **Dashboard grid** (`dashboard-grid.component.html` and `landscape.component.ts` / `timeline-view.component.ts`): the grid already emits `companyClick` / `productClick` events with ids. The consumers today either drop the id or filter the timeline. Repoint them to the company / product detail pages.
+- **Command palette** (`command-palette.component.ts:194-195`): company and product results currently route to `manage/companies?selected=<id>` and `manage/products?selected=<id>`. Repoint to the new detail routes.
 - **Engagement**: add a sidebar entry under the space's primary nav linking to the engagement detail page.
 
 Discoverability of marker intelligence specifically rests on the trial-detail link being unmistakable. The marker title should render as a link (underlined on hover, brand-tinted) so it reads as navigation, not as a label.
