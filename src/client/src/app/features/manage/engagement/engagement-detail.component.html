@@ -1,0 +1,51 @@
+<p-toast />
+<p-confirmDialog />
+
+<app-manage-page-shell [narrow]="true">
+  @if (loading()) {
+    <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
+  } @else {
+    <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+      <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">Engagement</h1>
+      <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+        Space-level primary intelligence
+      </p>
+    </header>
+
+    @if (hasIntelligence()) {
+      <app-intelligence-block
+        [published]="intelligence()?.published ?? null"
+        [draft]="intelligence()?.draft ?? null"
+        [agencyView]="spaceRole.canEdit()"
+        [tenantId]="tenantIdSig()"
+        [spaceId]="spaceIdSig()"
+        (edit)="onIntelligenceEdit()"
+        (deleted)="onIntelligenceDelete()"
+      />
+    } @else {
+      <app-intelligence-empty
+        [canEdit]="spaceRole.canEdit()"
+        entityLabel="engagement"
+        (add)="onIntelligenceEdit()"
+      />
+    }
+
+    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+      </header>
+      <app-materials-section entityType="space" [entityId]="spaceIdSig()" [spaceId]="spaceIdSig()" />
+    </section>
+
+    @if (spaceIdSig()) {
+      <app-intelligence-drawer
+        [visible]="drawerOpen()"
+        [spaceId]="spaceIdSig()"
+        entityType="space"
+        [entityId]="spaceIdSig()"
+        (closed)="onIntelligenceClosed()"
+        (published)="onIntelligencePublished()"
+      />
+    }
+  }
+</app-manage-page-shell>

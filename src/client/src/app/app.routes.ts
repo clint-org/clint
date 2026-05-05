@@ -393,6 +393,13 @@ export const routes: Routes = [
                 (m) => m.MarkerDetailComponent
               ),
           },
+          {
+            path: 'manage/engagement',
+            loadComponent: () =>
+              import('./features/manage/engagement/engagement-detail.component').then(
+                (m) => m.EngagementDetailComponent
+              ),
+          },
           // Settings routes (moved from manage)
           {
             path: 'settings/marker-types',
