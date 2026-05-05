@@ -13,6 +13,7 @@ export const NAV_ICONS: Record<string, string> = {
   positioning: 'fa-solid fa-crosshairs',
 
   // Intelligence pages
+  engagement: 'fa-solid fa-handshake',
   events: 'fa-solid fa-calendar-day',
   catalysts: 'fa-solid fa-bolt',
   'intelligence-feed': 'fa-solid fa-newspaper',

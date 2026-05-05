@@ -55,6 +55,7 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'intelligence',
     label: 'Intelligence',
     items: [
+      { label: 'Engagement', route: 'manage/engagement', icon: NAV_ICONS['engagement'] },
       {
         label: 'Intelligence Feed',
         route: 'intelligence',
