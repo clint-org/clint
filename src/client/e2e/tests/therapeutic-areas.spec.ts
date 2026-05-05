@@ -2,6 +2,7 @@ import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
 import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
+import { clickRowAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -45,8 +46,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
   test('edit therapeutic area via modal', async () => {
     const row = page.locator('tr', { hasText: 'Oncology' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#ta-name', 'Immunology');
@@ -60,8 +60,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
 
   test('delete therapeutic area succeeds', async () => {
     const row = page.locator('tr', { hasText: 'Immunology' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, row, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);

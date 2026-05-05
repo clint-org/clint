@@ -97,7 +97,10 @@ test.describe('Product Management CRUD', () => {
   test('create product with empty name is prevented', async () => {
     await page.getByRole('button', { name: 'Add Product' }).click();
     await expect(page.locator('#product-name')).toBeVisible({ timeout: 5000 });
-    await page.getByRole('button', { name: 'Create Product' }).click();
+    // The form auto-disables the submit button when required fields are empty;
+    // assert that, then dismiss. (Clicking a disabled button auto-waits and
+    // would otherwise time out.)
+    await expect(page.getByRole('button', { name: 'Create Product' })).toBeDisabled();
     await expect(page.locator('.p-dialog')).toBeVisible();
     await page.keyboard.press('Escape');
   });

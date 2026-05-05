@@ -68,8 +68,10 @@ test.describe('Space Settings - Members', () => {
     await expect(page.locator('p-table tbody tr').first()).toBeVisible({ timeout: 15000 });
   });
 
-  test('add member button is visible in topbar', async () => {
+  test('invite-to-space button is visible in topbar', async () => {
     await page.goto(membersUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('button', { name: 'Add member' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: 'Invite to space' })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });

@@ -2,6 +2,7 @@ import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
 import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
+import { clickRowAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -43,8 +44,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
 
   test('edit therapeutic area pre-populates form', async () => {
     const row = page.locator('tr', { hasText: 'Cardiology' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     // KEY ASSERTION: Verify pre-population (this was the bug)
@@ -61,8 +61,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
 
   test('delete therapeutic area', async () => {
     const row = page.locator('tr', { hasText: 'Neurology' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, row, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
@@ -108,8 +107,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
 
   test('edit MOA pre-populates form', async () => {
     const row = page.locator('tr', { hasText: 'PD-1 Inhibitor' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#moa-name')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#moa-name')).toHaveValue('PD-1 Inhibitor');
 
@@ -123,8 +121,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
 
   test('delete MOA', async () => {
     const row = page.locator('tr', { hasText: 'VEGF Inhibitor' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, row, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
@@ -172,8 +169,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
 
   test('edit ROA pre-populates form', async () => {
     const row = page.locator('tr', { hasText: 'Intravenous' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#roa-name')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#roa-name')).toHaveValue('Intravenous');
 
@@ -188,8 +184,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
 
   test('delete ROA', async () => {
     const row = page.locator('tr', { hasText: 'Subcutaneous' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, row, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);

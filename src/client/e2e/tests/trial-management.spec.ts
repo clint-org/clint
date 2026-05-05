@@ -9,6 +9,7 @@ import {
   createTestTrial,
 } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
+import { clickRowAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -46,13 +47,13 @@ test.describe('Trial Management CRUD', () => {
   });
 
   test('edit trial basic info', async () => {
-    // The "Edit trial" button is in the topbar actions (set by the component)
-    await page.getByRole('button', { name: 'Edit trial' }).click();
-    await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
+    // The "Edit details" topbar action opens the trial-edit dialog.
+    await page.getByRole('button', { name: 'Edit details' }).click();
+    await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
 
-    await clearAndFill(page, '#trial-name', 'Updated Trial');
-    // Submit button says "Update trial" (lowercase)
-    await page.getByRole('button', { name: 'Update trial' }).click();
+    await clearAndFill(page, '#edit-trial-name', 'Updated Trial');
+    // Dialog submit button is labeled "Save".
+    await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
@@ -84,20 +85,25 @@ test.describe('Trial Management CRUD', () => {
     await page.waitForTimeout(3000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('2025-03-15')).toBeVisible({ timeout: 5000 });
+    // The marker table renders dates via `| date: 'mediumDate'` (e.g. "Mar 15, 2025"),
+    // so assert against the marker title instead -- it's unique and format-stable.
+    await expect(page.getByText('Test marker title')).toBeVisible({ timeout: 5000 });
   });
 
   test('delete a trial marker', async () => {
-    // Find the marker row and open the row-actions menu
-    const markerRow = page.locator('tr', { hasText: '2025-03-15' });
-    await markerRow.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    // Find the marker row by title and open the row-actions menu
+    const markerRow = page.locator('tr', { hasText: 'Test marker title' });
+    await clickRowAction(page, markerRow, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('2025-03-15')).not.toBeVisible({ timeout: 5000 });
+    // Scope the assertion to the markers table -- the activity feed still
+    // shows "Marker removed: Test marker title" after the deletion.
+    await expect(
+      page.locator('p-table tbody').getByText('Test marker title'),
+    ).not.toBeVisible({ timeout: 5000 });
   });
 
   test('add a trial note', async () => {
@@ -109,7 +115,9 @@ test.describe('Trial Management CRUD', () => {
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('This is a test note for the trial.')).toBeVisible({
+    // Scope to the Notes section -- the activity feed also surfaces note text.
+    const notesSection = page.locator('app-section-card', { has: page.getByRole('heading', { name: 'Notes' }) });
+    await expect(notesSection.getByText('This is a test note for the trial.')).toBeVisible({
       timeout: 5000,
     });
   });
@@ -119,14 +127,15 @@ test.describe('Trial Management CRUD', () => {
     const noteContainer = page.locator('li', {
       hasText: 'This is a test note for the trial.',
     });
-    await noteContainer.locator('app-row-actions button').first().click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, noteContainer, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('This is a test note for the trial.')).not.toBeVisible({
+    // Scope to the Notes section -- the activity feed retains "Note removed" text.
+    const notesSection = page.locator('app-section-card', { has: page.getByRole('heading', { name: 'Notes' }) });
+    await expect(notesSection.getByText('This is a test note for the trial.')).not.toBeVisible({
       timeout: 5000,
     });
   });
@@ -175,15 +184,19 @@ test.describe('Trial List CRUD', () => {
     await expect(page.getByText('KEYNOTE-001')).toBeVisible({ timeout: 10000 });
   });
 
-  test('edit trial from list pre-populates form', async () => {
+  test('edit trial from list opens detail and pre-populates dialog', async () => {
+    // Edit menuitem on the list row now navigates to the trial detail page,
+    // where the "Edit details" topbar action opens the edit dialog.
     const row = page.locator('tr', { hasText: 'KEYNOTE-001' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Edit' }).click();
-    await expect(page.locator('#trial-name')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('#trial-name')).toHaveValue('KEYNOTE-001');
+    await clickRowAction(page, row, 'Edit');
+    await expect(page).toHaveURL(/\/manage\/trials\/[0-9a-f-]+/, { timeout: 10000 });
 
-    await clearAndFill(page, '#trial-name', 'KEYNOTE-002');
-    await page.getByRole('button', { name: 'Update trial' }).click();
+    await page.getByRole('button', { name: 'Edit details' }).click();
+    await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#edit-trial-name')).toHaveValue('KEYNOTE-001');
+
+    await clearAndFill(page, '#edit-trial-name', 'KEYNOTE-002');
+    await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
 
     await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
@@ -192,8 +205,7 @@ test.describe('Trial List CRUD', () => {
 
   test('delete trial from list', async () => {
     const row = page.locator('tr', { hasText: 'KEYNOTE-002' });
-    await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
+    await clickRowAction(page, row, 'Delete');
     // Handle PrimeNG ConfirmDialog
     await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
     await page.waitForTimeout(2000);

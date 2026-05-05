@@ -3,8 +3,13 @@ import { authenticatedPage } from '../helpers/auth.helper';
 import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
 
 test.describe('Authentication', () => {
-  test('unauthenticated user visiting / is redirected to /login', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+  test('unauthenticated user visiting a protected route is redirected to /login', async ({
+    page,
+  }) => {
+    // The marketing landing now serves "/" on the default host, so "/" no
+    // longer redirects unauth users. Visit a route gated by authGuard
+    // (/onboarding) to assert the auth-required redirect still fires.
+    await page.goto('/onboarding', { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(/\/login/);
   });
 

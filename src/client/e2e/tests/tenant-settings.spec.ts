@@ -19,27 +19,27 @@ test.describe('Tenant Settings', () => {
     await page.close();
   });
 
-  test('settings page loads with org name input visible', async () => {
+  test('settings page loads with tenant name input visible', async () => {
     await page.goto(settingsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.locator('#org-name')).toBeVisible();
+    await expect(page.locator('#tenant-name')).toBeVisible();
   });
 
-  test('save button exists and invite dialog works', async () => {
-    // The Save button should exist on the page
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
-    // Invite member button should be visible
-    await expect(page.getByRole('button', { name: 'Invite member' })).toBeVisible();
+  test('save and add-owner controls are visible', async () => {
+    // "Save" sits next to the tenant-name input (saves the rename).
+    await expect(page.getByRole('button', { name: 'Save' }).first()).toBeVisible();
+    // "Add owner" is the topbar action that opens the owner-invite dialog.
+    await expect(page.getByRole('button', { name: 'Add owner' })).toBeVisible();
   });
 
-  test('invite member dialog opens and closes', async () => {
-    await page.getByRole('button', { name: 'Invite member' }).click();
+  test('add-owner dialog opens and closes', async () => {
+    await page.getByRole('button', { name: 'Add owner' }).click();
     await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 5000 });
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     await expect(page.locator('.p-dialog')).not.toBeVisible();
   });
 
-  test('members table shows at least one member', async () => {
+  test('owners table shows at least one owner', async () => {
     await expect(page.locator('p-table tbody tr').first()).toBeVisible({ timeout: 10000 });
   });
 });

@@ -393,7 +393,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   areaRowMenu(area: TherapeuticArea): MenuItem[] {
     const cached = this.areaMenuCache.get(area.id);
-    if (cached) return cached;
+    if (cached && cached.length > 0) return cached;
     const items: MenuItem[] = [];
     if (this.spaceRole.canEdit()) {
       items.push(
@@ -410,14 +410,16 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           command: () => this.confirmDeleteArea(area),
         },
       );
+      // Only cache once populated; otherwise a row that renders before
+      // SpaceRoleService.fetchRole resolves would lock in an empty menu.
+      this.areaMenuCache.set(area.id, items);
     }
-    this.areaMenuCache.set(area.id, items);
     return items;
   }
 
   moaRowMenu(item: MechanismOfAction): MenuItem[] {
     const cached = this.moaMenuCache.get(item.id);
-    if (cached) return cached;
+    if (cached && cached.length > 0) return cached;
     const items: MenuItem[] = [];
     if (this.spaceRole.canEdit()) {
       items.push(
@@ -434,14 +436,14 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           command: () => this.confirmDeleteMoa(item),
         },
       );
+      this.moaMenuCache.set(item.id, items);
     }
-    this.moaMenuCache.set(item.id, items);
     return items;
   }
 
   roaRowMenu(item: RouteOfAdministration): MenuItem[] {
     const cached = this.roaMenuCache.get(item.id);
-    if (cached) return cached;
+    if (cached && cached.length > 0) return cached;
     const items: MenuItem[] = [];
     if (this.spaceRole.canEdit()) {
       items.push(
@@ -458,8 +460,8 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           command: () => this.confirmDeleteRoa(item),
         },
       );
+      this.roaMenuCache.set(item.id, items);
     }
-    this.roaMenuCache.set(item.id, items);
     return items;
   }
 

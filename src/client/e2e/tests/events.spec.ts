@@ -34,31 +34,34 @@ test.describe('Events CRUD', () => {
     // Fill title (required)
     await fillInput(page, '#event-title', 'Phase 3 Topline Results');
 
-    // Fill date (required) -- set the component property directly via Angular debug API
-    // PrimeNG DatePicker doesn't respond to raw DOM input/change events for ngModel
-    await page.evaluate(() => {
-      const ng = (window as any).ng;
-      if (!ng?.getOwningComponent) return;
-      // The dialog form is app-event-form -- find it via the form element
+    // Date and category are PrimeNG widgets backed by signals. Drive them via
+    // the component's signal setters (Angular debug API) -- raw DOM events on
+    // p-datepicker / p-select don't propagate to the signal state.
+    // Wait until categories have loaded into the form before trying to pick one.
+    await page.waitForFunction(() => {
+      const ng = (window as { ng?: { getComponent?: (el: Element) => unknown } }).ng;
       const form = document.querySelector('app-event-form');
-      if (!form) return;
-      const component = ng.getComponent(form);
-      if (!component) return;
-      component.eventDateValue = new Date();
-    });
-    await page.waitForTimeout(300);
+      if (!ng?.getComponent || !form) return false;
+      const component = ng.getComponent(form) as { categories?: () => unknown[] } | null;
+      const cats = component?.categories?.() ?? [];
+      return Array.isArray(cats) && cats.length > 0;
+    }, { timeout: 10000 });
 
-    // Select a category (required) -- also set via component for reliability
     await page.evaluate(() => {
-      const ng = (window as any).ng;
-      if (!ng?.getComponent) return;
+      type SignalLike<T> = ((value?: T) => T) & { set: (v: T) => void };
+      const ng = (window as { ng?: { getComponent?: (el: Element) => unknown } }).ng;
       const form = document.querySelector('app-event-form');
-      if (!form) return;
-      const component = ng.getComponent(form);
+      if (!ng?.getComponent || !form) return;
+      const component = ng.getComponent(form) as {
+        eventDateValue: SignalLike<Date | null>;
+        categoryId: SignalLike<string>;
+        categories: SignalLike<{ id: string }[]>;
+      } | null;
       if (!component) return;
-      const cats = component.categories?.() ?? component.categories ?? [];
-      if (cats.length > 0) {
-        component.categoryId = cats[0].id;
+      component.eventDateValue.set(new Date());
+      const cats = component.categories();
+      if (cats && cats.length > 0) {
+        component.categoryId.set(cats[0].id);
       }
     });
     await page.waitForTimeout(300);
@@ -68,7 +71,11 @@ test.describe('Events CRUD', () => {
     await page.waitForTimeout(3000);
 
     await page.goto(eventsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Phase 3 Topline Results')).toBeVisible({ timeout: 10000 });
+    // The title renders in both the table row and the right-side overview pane,
+    // so scope to the events table to avoid strict-mode locator violations.
+    await expect(
+      page.locator('p-table').getByText('Phase 3 Topline Results').first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test('delete event', async () => {
@@ -76,6 +83,8 @@ test.describe('Events CRUD', () => {
     // Events can be deleted by clicking the row to open detail, then editing
     // or through a different mechanism. Since the UI has evolved, this test
     // verifies that we can at least view the created event.
-    await expect(page.getByText('Phase 3 Topline Results')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.locator('p-table').getByText('Phase 3 Topline Results').first(),
+    ).toBeVisible({ timeout: 5000 });
   });
 });
