@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
 import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
@@ -48,6 +49,7 @@ interface CtgovProvenanceBlock {
   selector: 'app-marker-detail-content',
   standalone: true,
   imports: [
+    RouterLink,
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
     DatePipe,
@@ -83,6 +85,17 @@ interface CtgovProvenanceBlock {
           <app-detail-panel-pill tone="slate">No longer expected</app-detail-panel-pill>
         }
       </div>
+
+      @if (d.catalyst.marker_id && tenantIdSig() && spaceId()) {
+        <div class="mt-2 flex justify-end">
+          <a
+            [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'markers', d.catalyst.marker_id]"
+            class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
+          >
+            View detail
+          </a>
+        </div>
+      }
 
       @if (d.catalyst.company_name) {
         <app-detail-panel-section [first]="true" label="Program">
@@ -261,6 +274,22 @@ export class MarkerDetailContentComponent {
   private changeEventService = inject(ChangeEventService);
   private trialService = inject(TrialService);
   private fieldVisibility = inject(SpaceFieldVisibilityService);
+  private route = inject(ActivatedRoute);
+
+  /**
+   * Tenant id read from the route ancestry. Used to build the "View detail"
+   * link to the marker detail page; the panel is mounted from
+   * landscape-shell.component, which lives under /t/:tenantId/s/:spaceId.
+   */
+  protected readonly tenantIdSig = computed(() => {
+    let snap: ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snap) {
+      const v = snap.paramMap.get('tenantId');
+      if (v) return v;
+      snap = snap.parent;
+    }
+    return '';
+  });
 
   readonly detail = input<CatalystDetail | null>(null);
   /**
