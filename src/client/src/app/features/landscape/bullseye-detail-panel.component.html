@@ -15,196 +15,199 @@
     </div>
   } @else {
     @if (selectedProduct(); as product) {
-    <div>
-      <h2 class="text-base font-semibold leading-snug text-slate-900">{{ product.name }}</h2>
-      @if (product.generic_name) {
-        <p class="mt-0.5 text-[13px] italic text-slate-500">{{ product.generic_name }}</p>
-      }
-    </div>
+      <div>
+        <h2 class="text-base font-semibold leading-snug text-slate-900">{{ product.name }}</h2>
+        @if (product.generic_name) {
+          <p class="mt-0.5 text-[13px] italic text-slate-500">{{ product.generic_name }}</p>
+        }
+      </div>
 
-    @if (dimension() !== 'company') {
-      <app-detail-panel-section [first]="true" label="Company">
-        <button
-          type="button"
-          class="group flex items-center gap-1 text-[13px] font-medium text-slate-900 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          (click)="onCompanyClick()"
-        >
-          {{ product.company_name }}
-          <i
-            class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
-            aria-hidden="true"
-          ></i>
-        </button>
-      </app-detail-panel-section>
-    }
-
-    @if (product.moas.length > 0) {
-      <app-detail-panel-section
-        [first]="dimension() === 'company'"
-        label="Mechanism of action"
-      >
-        <div class="flex flex-wrap gap-1">
-          @for (moa of product.moas; track moa.id) {
-            <span
-              class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-              [class.bg-brand-100]="isScopedMoa(moa.id)"
-              [class.text-brand-800]="isScopedMoa(moa.id)"
-              [class.font-semibold]="isScopedMoa(moa.id)"
-              [class.bg-slate-100]="!isScopedMoa(moa.id)"
-              [class.text-slate-700]="!isScopedMoa(moa.id)"
-              >{{ moa.name }}</span
-            >
-          }
-        </div>
-      </app-detail-panel-section>
-    }
-
-    @if (product.roas.length > 0) {
-      <app-detail-panel-section label="Route of administration">
-        <div class="flex flex-wrap gap-1">
-          @for (roa of product.roas; track roa.id) {
-            <span
-              class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-              [class.bg-brand-100]="isScopedRoa(roa.id)"
-              [class.text-brand-800]="isScopedRoa(roa.id)"
-              [class.font-semibold]="isScopedRoa(roa.id)"
-              [class.bg-slate-100]="!isScopedRoa(roa.id)"
-              [class.text-slate-700]="!isScopedRoa(roa.id)"
-              [attr.title]="roa.name"
-              >{{ roa.abbreviation ?? roa.name }}</span
-            >
-          }
-        </div>
-      </app-detail-panel-section>
-    }
-
-    <app-detail-panel-section [label]="'Trials (' + product.trials.length + ')'">
-      @if (product.trials.length === 0) {
-        <p class="text-[12px] text-slate-500">No trials tracked.</p>
-      } @else {
-        <app-detail-panel-entity-list>
-          @for (trial of visibleTrials(); track trial.id) {
-            <app-detail-panel-entity-row (rowClick)="onTrialClick(trial.id)">
-              <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900">
-                  <span class="truncate">{{ trial.name }}</span>
-                  <app-change-badge
-                    [count]="trial.recent_changes_count ?? 0"
-                    [type]="trial.most_recent_change_type ?? null"
-                  />
-                </span>
-                <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-                  @if (trial.identifier) {
-                    <span>{{ trial.identifier }}</span>
-                  }
-                  @if (trial.phase) {
-                    <span>{{ trial.phase }}</span>
-                  }
-                  @if (trial.recruitment_status) {
-                    <span
-                      [class]="
-                        isTerminalStatus(trial.recruitment_status)
-                          ? 'text-slate-400'
-                          : 'text-brand-600'
-                      "
-                      >{{ trial.recruitment_status }}</span
-                    >
-                  }
-                </span>
-                @if (bullseyePaths().length > 0 && snapshotFor(trial.id); as snap) {
-                  <span class="mt-0.5 block text-[12px]">
-                    <app-ctgov-field-renderer
-                      [snapshot]="snap"
-                      [paths]="bullseyePaths()"
-                      [dense]="true"
-                    />
-                  </span>
-                }
-              </span>
-            </app-detail-panel-entity-row>
-          }
-        </app-detail-panel-entity-list>
-        @if (hasMoreTrials()) {
+      @if (dimension() !== 'company') {
+        <app-detail-panel-section [first]="true" label="Company">
           <button
             type="button"
-            class="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-1 border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-[11px] text-slate-500 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            (click)="onShowAllTrials()"
+            class="group flex items-center gap-1 text-[13px] font-medium text-slate-900 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            (click)="onCompanyClick()"
           >
-            Show all {{ product.trials.length }} trials
+            {{ product.company_name }}
+            <i
+              class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
+              aria-hidden="true"
+            ></i>
           </button>
-        }
+        </app-detail-panel-section>
       }
-    </app-detail-panel-section>
 
-    @if (product.recent_markers.length > 0) {
-      <app-detail-panel-section label="Recent markers">
-        <app-detail-panel-entity-list>
-          @for (marker of product.recent_markers; track marker.id) {
-            <app-detail-panel-entity-row [clickable]="false">
+      @if (product.moas.length > 0) {
+        <app-detail-panel-section [first]="dimension() === 'company'" label="Mechanism of action">
+          <div class="flex flex-wrap gap-1">
+            @for (moa of product.moas; track moa.id) {
               <span
-                class="inline-block h-2 w-2 shrink-0 rounded-full"
-                [style.background-color]="marker.color"
-                aria-hidden="true"
-              ></span>
-              <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
-                marker.event_date | date: 'mediumDate'
-              }}</span>
-              <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
-                marker.marker_type_name
-              }}</span>
-              @if (marker.category_name) {
-                <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{
-                  marker.category_name
-                }}</span>
-              }
-              @if (marker.projection && marker.projection !== 'actual') {
-                <span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-none text-amber-700">{{
-                  marker.projection
-                }}</span>
-              }
-            </app-detail-panel-entity-row>
-          }
-        </app-detail-panel-entity-list>
-      </app-detail-panel-section>
-    }
-  } @else {
-    <app-detail-panel-empty-state prompt="Click a drug to see details">
-      <p class="mt-2 text-[13px] text-slate-700">
-        <span class="text-base font-semibold tabular-nums text-slate-900">{{
-          totalProducts()
-        }}</span>
-        {{ totalProducts() === 1 ? 'product' : 'products' }} across
-        <span class="font-medium text-slate-900">{{ totalSpokes() }}</span>
-        {{ spokeLabel().toLowerCase() }}
-      </p>
+                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
+                [class.bg-brand-100]="isScopedMoa(moa.id)"
+                [class.text-brand-800]="isScopedMoa(moa.id)"
+                [class.font-semibold]="isScopedMoa(moa.id)"
+                [class.bg-slate-100]="!isScopedMoa(moa.id)"
+                [class.text-slate-700]="!isScopedMoa(moa.id)"
+                >{{ moa.name }}</span
+              >
+            }
+          </div>
+        </app-detail-panel-section>
+      }
 
-      <app-detail-panel-section [first]="true" label="By ring">
-        <app-detail-panel-entity-list>
-          @for (entry of ringHistogram(); track entry.phase) {
-            <app-detail-panel-entity-row
-              [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
-              (rowClick)="onRingRowClick(entry.phase)"
+      @if (product.roas.length > 0) {
+        <app-detail-panel-section label="Route of administration">
+          <div class="flex flex-wrap gap-1">
+            @for (roa of product.roas; track roa.id) {
+              <span
+                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
+                [class.bg-brand-100]="isScopedRoa(roa.id)"
+                [class.text-brand-800]="isScopedRoa(roa.id)"
+                [class.font-semibold]="isScopedRoa(roa.id)"
+                [class.bg-slate-100]="!isScopedRoa(roa.id)"
+                [class.text-slate-700]="!isScopedRoa(roa.id)"
+                [attr.title]="roa.name"
+                >{{ roa.abbreviation ?? roa.name }}</span
+              >
+            }
+          </div>
+        </app-detail-panel-section>
+      }
+
+      <app-detail-panel-section [label]="'Trials (' + product.trials.length + ')'">
+        @if (product.trials.length === 0) {
+          <p class="text-[12px] text-slate-500">No trials tracked.</p>
+        } @else {
+          <app-detail-panel-entity-list>
+            @for (trial of visibleTrials(); track trial.id) {
+              <app-detail-panel-entity-row (rowClick)="onTrialClick(trial.id)">
+                <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900"
+                  >
+                    <span class="truncate">{{ trial.name }}</span>
+                    <app-change-badge
+                      [count]="trial.recent_changes_count ?? 0"
+                      [type]="trial.most_recent_change_type ?? null"
+                    />
+                  </span>
+                  <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
+                    @if (trial.identifier) {
+                      <span>{{ trial.identifier }}</span>
+                    }
+                    @if (trial.phase) {
+                      <span>{{ trial.phase }}</span>
+                    }
+                    @if (trial.recruitment_status) {
+                      <span
+                        [class]="
+                          isTerminalStatus(trial.recruitment_status)
+                            ? 'text-slate-400'
+                            : 'text-brand-600'
+                        "
+                        >{{ trial.recruitment_status }}</span
+                      >
+                    }
+                  </span>
+                  @if (bullseyePaths().length > 0 && snapshotFor(trial.id); as snap) {
+                    <span class="mt-0.5 block text-[12px]">
+                      <app-ctgov-field-renderer
+                        [snapshot]="snap"
+                        [paths]="bullseyePaths()"
+                        [dense]="true"
+                      />
+                    </span>
+                  }
+                </span>
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+          @if (hasMoreTrials()) {
+            <button
+              type="button"
+              class="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-1 border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-[11px] text-slate-500 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              (click)="onShowAllTrials()"
             >
-              <span
-                class="inline-block h-2 w-2 shrink-0 rounded-full"
-                [style.background-color]="phaseColor(entry.phase)"
-                aria-hidden="true"
-              ></span>
-              <span
-                class="flex-1 font-mono text-[12px] font-semibold tracking-wider"
-                [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
-                >{{ entry.phase }}</span
-              >
-              <span
-                class="font-mono text-[12px] tabular-nums"
-                [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
-                >{{ entry.count }}</span
-              >
-            </app-detail-panel-entity-row>
+              Show all {{ product.trials.length }} trials
+            </button>
           }
-        </app-detail-panel-entity-list>
+        }
       </app-detail-panel-section>
-    </app-detail-panel-empty-state>
+
+      @if (product.recent_markers.length > 0) {
+        <app-detail-panel-section label="Recent markers">
+          <app-detail-panel-entity-list>
+            @for (marker of product.recent_markers; track marker.id) {
+              <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
+                <app-marker-icon
+                  [shape]="$any(marker.shape)"
+                  [color]="marker.color"
+                  [size]="14"
+                  [fillStyle]="marker.projection === 'actual' ? 'filled' : 'outline'"
+                  aria-hidden="true"
+                />
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  marker.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  marker.marker_type_name
+                }}</span>
+                @if (marker.category_name) {
+                  <span
+                    class="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+                    >{{ marker.category_name }}</span
+                  >
+                }
+                @if (marker.projection && marker.projection !== 'actual') {
+                  <span
+                    class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-none text-amber-700"
+                    >{{ marker.projection }}</span
+                  >
+                }
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+    } @else {
+      <app-detail-panel-empty-state prompt="Click a drug to see details">
+        <p class="mt-2 text-[13px] text-slate-700">
+          <span class="text-base font-semibold tabular-nums text-slate-900">{{
+            totalProducts()
+          }}</span>
+          {{ totalProducts() === 1 ? 'product' : 'products' }} across
+          <span class="font-medium text-slate-900">{{ totalSpokes() }}</span>
+          {{ spokeLabel().toLowerCase() }}
+        </p>
+
+        <app-detail-panel-section [first]="true" label="By ring">
+          <app-detail-panel-entity-list>
+            @for (entry of ringHistogram(); track entry.phase) {
+              <app-detail-panel-entity-row
+                [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
+                (rowClick)="onRingRowClick(entry.phase)"
+              >
+                <span
+                  class="inline-block h-2 w-2 shrink-0 rounded-full"
+                  [style.background-color]="phaseColor(entry.phase)"
+                  aria-hidden="true"
+                ></span>
+                <span
+                  class="flex-1 font-mono text-[12px] font-semibold tracking-wider"
+                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
+                  >{{ entry.phase }}</span
+                >
+                <span
+                  class="font-mono text-[12px] tabular-nums"
+                  [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#cbd5e1'"
+                  >{{ entry.count }}</span
+                >
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      </app-detail-panel-empty-state>
     }
   }
 

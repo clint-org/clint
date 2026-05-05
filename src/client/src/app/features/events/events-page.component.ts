@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -57,6 +57,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private eventCategoryService = inject(EventCategoryService);
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
@@ -65,7 +66,12 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'New Event', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+        {
+          label: 'New Event',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -168,14 +174,14 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.spaceId = this.getSpaceId();
     await this.loadInitialData();
 
-    // If the URL has ?eventId=<id>, open that event's detail panel.
-    const eventId = this.route.snapshot.queryParamMap.get('eventId');
-    if (eventId) {
-      const item = this.feedItems().find((f) => f.id === eventId);
-      if (item) {
-        await this.onRowClick(item);
+    // Subscribe so deep-links keep working when navigating *to* this page
+    // from another route (component is reused, ngOnInit only fires once).
+    this.route.queryParamMap.subscribe(async (params) => {
+      const eventId = params.get('eventId');
+      if (eventId && this.selectedItem()?.id !== eventId) {
+        await this.openByEventId(eventId);
       }
-    }
+    });
   }
 
   ngOnDestroy(): void {
@@ -238,6 +244,126 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   async onRecentClick(itemId: string): Promise<void> {
     const item = this.feedItems().find((i) => i.id === itemId);
     if (item) await this.onRowClick(item);
+  }
+
+  /**
+   * Open the detail pane for an event id that may not be in the loaded
+   * feed (e.g. a related-event from the marker drawer or a thread sibling
+   * that's older than the current page). Always treats the id as an event
+   * since `eventId` deep-links and panel cross-links never carry markers.
+   */
+  async openByEventId(eventId: string): Promise<void> {
+    if (this.selectedItem()?.id === eventId) return;
+    this.detailLoading.set(true);
+    this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
+    try {
+      const detail = await this.eventService.getEventDetail(eventId);
+      this.selectedItem.set({
+        source_type: 'event',
+        id: detail.id,
+        title: detail.title,
+        event_date: detail.event_date,
+        category_name: detail.category.name,
+        category_id: detail.category.id,
+        priority: detail.priority,
+        entity_level: detail.entity_level,
+        entity_name: detail.entity_name,
+        entity_id: detail.entity_id,
+        company_name: detail.company_name,
+        tags: detail.tags,
+        has_thread: !!detail.thread,
+        thread_id: detail.thread_id,
+        description: detail.description,
+        source_url: null,
+      });
+      this.selectedDetail.set(detail);
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Could not load event.');
+    } finally {
+      this.detailLoading.set(false);
+    }
+  }
+
+  /**
+   * Filter the feed table by category from the empty-state histogram.
+   * Uses the grid's text filter on `category_name` so the filter chip
+   * row + p-table column filter stay in sync with the user's intent.
+   */
+  onCategoryFilter(name: string): void {
+    this.grid.filters.update((f) => ({
+      ...f,
+      category_name: { kind: 'text', contains: name },
+    }));
+  }
+
+  /** Load a marker (catalyst) detail by id when crossed-linked from another marker. */
+  async openByMarkerId(markerId: string): Promise<void> {
+    if (this.selectedItem()?.id === markerId) return;
+    this.detailLoading.set(true);
+    this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
+    try {
+      const detail = await this.catalystService.getCatalystDetail(markerId);
+      this.selectedItem.set({
+        source_type: 'marker',
+        id: detail.catalyst.marker_id,
+        title: detail.catalyst.title,
+        event_date: detail.catalyst.event_date,
+        category_name: detail.catalyst.category_name,
+        category_id: detail.catalyst.category_id,
+        priority: null,
+        entity_level: detail.catalyst.trial_id
+          ? 'trial'
+          : detail.catalyst.product_id
+            ? 'product'
+            : detail.catalyst.company_id
+              ? 'company'
+              : 'space',
+        entity_name:
+          detail.catalyst.trial_name ??
+          detail.catalyst.product_name ??
+          detail.catalyst.company_name ??
+          '',
+        entity_id:
+          detail.catalyst.trial_id ?? detail.catalyst.product_id ?? detail.catalyst.company_id,
+        company_name: detail.catalyst.company_name,
+        tags: [],
+        has_thread: false,
+        thread_id: null,
+        description: detail.catalyst.description,
+        source_url: detail.catalyst.source_url,
+      });
+      this.selectedCatalystDetail.set(detail);
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Could not load marker.');
+    } finally {
+      this.detailLoading.set(false);
+    }
+  }
+
+  /** Navigate to the trial detail page for a clicked trial in the marker pane. */
+  onTrialClick(trialId: string): void {
+    this.router.navigate([
+      '/t',
+      this.getTenantId(),
+      's',
+      this.spaceId,
+      'manage',
+      'trials',
+      trialId,
+    ]);
+  }
+
+  private getTenantId(): string {
+    let route = this.route.snapshot;
+    while (route) {
+      const id = route.paramMap.get('tenantId');
+      if (id) return id;
+      if (!route.parent) break;
+      route = route.parent;
+    }
+    return '';
   }
 
   openCreateModal(): void {

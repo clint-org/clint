@@ -42,7 +42,10 @@
               >
                 <ng-template #filter let-value let-filter="filterCallback">
                   <p-select
-                    [options]="[{ label: 'Event', value: 'event' }, { label: 'Marker', value: 'marker' }]"
+                    [options]="[
+                      { label: 'Event', value: 'event' },
+                      { label: 'Marker', value: 'marker' },
+                    ]"
                     [ngModel]="value"
                     (ngModelChange)="filter($event)"
                     placeholder="All"
@@ -79,7 +82,10 @@
               >
                 <ng-template #filter let-value let-filter="filterCallback">
                   <p-select
-                    [options]="[{ label: 'High', value: 'high' }, { label: 'Low', value: 'low' }]"
+                    [options]="[
+                      { label: 'High', value: 'high' },
+                      { label: 'Low', value: 'low' },
+                    ]"
                     [ngModel]="value"
                     (ngModelChange)="filter($event)"
                     placeholder="All"
@@ -135,10 +141,14 @@
               </div>
             </td>
             <td class="col-secondary text-xs text-slate-500">
-              <span [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"></span>
+              <span
+                [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
+              ></span>
             </td>
             <td class="col-secondary text-xs text-slate-500">
-              <span [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"></span>
+              <span
+                [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"
+              ></span>
             </td>
             <td class="col-priority text-center">
               @if (item.priority === 'high') {
@@ -196,6 +206,11 @@
           (edit)="openEditModal(selectedItem()!.id)"
           (panelClose)="closePanel()"
           (recentClick)="onRecentClick($event)"
+          (relatedEventClick)="openByEventId($event)"
+          (threadEventClick)="openByEventId($event)"
+          (categoryFilter)="onCategoryFilter($event)"
+          (markerSelect)="openByMarkerId($event)"
+          (trialClick)="onTrialClick($event)"
         />
       }
     </div>

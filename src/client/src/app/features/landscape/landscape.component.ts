@@ -233,6 +233,17 @@ export class LandscapeComponent implements OnInit {
     });
   }
 
+  onOpenMarker(markerId: string): void {
+    const product = this.selectedProduct();
+    const taId = this.entityId();
+    const queryParams: Record<string, string> = { markerId };
+    if (product) queryParams['productIds'] = product.id;
+    if (taId) queryParams['therapeuticAreaIds'] = taId;
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
+      queryParams,
+    });
+  }
+
   retry(): void {
     this.bullseyeData.reload();
   }

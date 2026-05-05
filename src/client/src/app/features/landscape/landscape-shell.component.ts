@@ -61,13 +61,12 @@ import { ProgressSpinner } from 'primeng/progressspinner';
               mode="drawer"
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
-              [surfaceKey]="
-                viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'
-              "
+              [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (eventClick)="onEventClick($event)"
+              (trialClick)="onTrialClick($event)"
             />
           }
         }
@@ -215,6 +214,10 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.router.navigate([...this.spaceBase(), 'events'], { queryParams: { eventId } });
   }
 
+  onTrialClick(trialId: string): void {
+    this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+  }
+
   private extractRouteParams(): void {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
     while (snap) {
@@ -283,6 +286,10 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         productIds: productIds ?? f.productIds,
         therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
       }));
+    }
+    const markerId = qp.get('markerId');
+    if (markerId) {
+      void this.state.selectMarker(markerId);
     }
   }
 

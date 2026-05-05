@@ -9,11 +9,7 @@ import {
   MarkerDetailContentComponent,
 } from './marker-detail-content.component';
 import { DetailPanelShellComponent } from './detail-panel-shell.component';
-import { CircleIconComponent } from './svg-icons/circle-icon.component';
-import { DiamondIconComponent } from './svg-icons/diamond-icon.component';
-import { FlagIconComponent } from './svg-icons/flag-icon.component';
-import { TriangleIconComponent } from './svg-icons/triangle-icon.component';
-import { SquareIconComponent } from './svg-icons/square-icon.component';
+import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 
 /**
  * Container for the marker detail content. Two display modes:
@@ -32,11 +28,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
     NgTemplateOutlet,
     MarkerDetailContentComponent,
     DetailPanelShellComponent,
-    CircleIconComponent,
-    DiamondIconComponent,
-    FlagIconComponent,
-    TriangleIconComponent,
-    SquareIconComponent,
+    MarkerIconComponent,
   ],
   animations: [slidePanelAnimation],
   template: `
@@ -64,53 +56,14 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
       >
         <span headerLeading class="inline-flex shrink-0 items-center">
           @if (detail(); as d) {
-            <svg width="12" height="12" class="overflow-visible" aria-hidden="true">
-              @switch (d.catalyst.marker_type_shape) {
-                @case ('circle') {
-                  <g
-                    app-circle-icon
-                    [size]="12"
-                    [color]="d.catalyst.marker_type_color"
-                    [fillStyle]="effectiveFillStyle()"
-                    [innerMark]="innerMark()"
-                  />
-                }
-                @case ('diamond') {
-                  <g
-                    app-diamond-icon
-                    [size]="12"
-                    [color]="d.catalyst.marker_type_color"
-                    [fillStyle]="effectiveFillStyle()"
-                    [innerMark]="innerMark()"
-                  />
-                }
-                @case ('flag') {
-                  <g
-                    app-flag-icon
-                    [size]="12"
-                    [color]="d.catalyst.marker_type_color"
-                    [fillStyle]="effectiveFillStyle()"
-                  />
-                }
-                @case ('triangle') {
-                  <g
-                    app-triangle-icon
-                    [size]="12"
-                    [color]="d.catalyst.marker_type_color"
-                    [fillStyle]="effectiveFillStyle()"
-                  />
-                }
-                @case ('square') {
-                  <g
-                    app-square-icon
-                    [size]="12"
-                    [color]="d.catalyst.marker_type_color"
-                    [fillStyle]="effectiveFillStyle()"
-                    [innerMark]="innerMark()"
-                  />
-                }
-              }
-            </svg>
+            <app-marker-icon
+              [shape]="$any(d.catalyst.marker_type_shape)"
+              [color]="d.catalyst.marker_type_color"
+              [size]="12"
+              [fillStyle]="effectiveFillStyle()"
+              [innerMark]="innerMark()"
+              [isNle]="d.catalyst.no_longer_expected"
+            />
           }
         </span>
 
@@ -120,6 +73,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
           [surfaceKey]="surfaceKey()"
           (markerClick)="markerClick.emit($event)"
           (eventClick)="eventClick.emit($event)"
+          (trialClick)="trialClick.emit($event)"
         />
       </app-detail-panel-shell>
     </ng-template>
@@ -140,6 +94,7 @@ export class MarkerDetailPanelComponent {
   readonly panelClose = output<void>();
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
+  readonly trialClick = output<string>();
 
   readonly headerLabel = computed(() => {
     const d = this.detail();

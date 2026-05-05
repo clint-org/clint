@@ -7,6 +7,7 @@ import { TableModule } from 'primeng/table';
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 
 @Component({
@@ -16,6 +17,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
     ChangeBadgeComponent,
     DatePipe,
     FormsModule,
+    MarkerIconComponent,
     SelectModule,
     TableModule,
     TableSkeletonBodyComponent,
@@ -126,14 +128,12 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           </td>
           <td>
             <span class="inline-flex items-center gap-1.5">
-              <span
-                class="inline-block h-2 w-2 shrink-0"
-                [style.background]="catalyst.marker_type_color"
-                [class.rounded-full]="catalyst.marker_type_shape === 'circle'"
-                [style.transform]="
-                  catalyst.marker_type_shape === 'diamond' ? 'rotate(45deg)' : 'none'
-                "
-              ></span>
+              <app-marker-icon
+                [shape]="$any(catalyst.marker_type_shape)"
+                [color]="catalyst.marker_type_color"
+                [size]="14"
+                [fillStyle]="catalyst.is_projected ? 'outline' : 'filled'"
+              />
               <span
                 class="text-xs text-slate-500"
                 [innerHTML]="catalyst.category_name | highlight: query()"
