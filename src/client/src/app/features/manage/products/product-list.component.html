@@ -64,13 +64,12 @@
     <ng-template #body let-row>
       <tr>
         <td>
-          <button
-            type="button"
+          <a
+            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'products', row.product.id]"
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
-            (click)="openTrials(row.product.id)"
           >
             <span [innerHTML]="row.product.name | highlight: grid.debouncedGlobalSearch()"></span>
-          </button>
+          </a>
         </td>
         <td class="col-identifier">
           @if (row.product.generic_name) {
@@ -79,7 +78,18 @@
             --
           }
         </td>
-        <td class="col-secondary"><span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary">
+          @if (row.product.company_id) {
+            <a
+              [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'companies', row.product.company_id]"
+              class="text-brand-700 hover:underline"
+            >
+              <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+            </a>
+          } @else {
+            <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+          }
+        </td>
         <td class="col-num">
           @if (row.trialCount > 0) {
             <button

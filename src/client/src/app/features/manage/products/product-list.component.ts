@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -34,6 +34,7 @@ interface ProductRow {
   selector: 'app-product-list',
   standalone: true,
   imports: [
+    RouterLink,
     FormsModule,
     SelectModule,
     TableModule,
