@@ -9,6 +9,7 @@ import {
 import { BrandContextService } from '../../../core/services/brand-context.service';
 import { renderMarkdownInline } from '../../utils/markdown-render';
 import { highlightHtml, highlightPlain } from '../../utils/highlight-search';
+import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
 
 /**
  * Recency-ordered feed of published primary intelligence reads. Used on the
@@ -74,13 +75,9 @@ export class IntelligenceFeedComponent {
   }
 
   protected entityRouterLink(row: IntelligenceFeedRow): unknown[] {
-    const t = this.tenantId();
-    const s = this.spaceId();
-    if (!t || !s) return [];
-    if (row.entity_type === 'trial') {
-      return ['/t', t, 's', s, 'manage', 'trials', row.entity_id];
-    }
-    return ['/t', t, 's', s, 'intelligence'];
+    return (
+      buildEntityRouterLink(this.tenantId(), this.spaceId(), row.entity_type, row.entity_id) ?? []
+    );
   }
 
   protected headline(row: IntelligenceFeedRow): string {
