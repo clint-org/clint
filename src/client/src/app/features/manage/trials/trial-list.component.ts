@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -34,6 +34,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
 interface TrialRow {
   readonly trial: Trial;
   readonly productName: string;
+  readonly productId: string;
   readonly companyName: string;
   readonly companyId: string;
   readonly phaseCount: number;
@@ -44,6 +45,7 @@ interface TrialRow {
   selector: 'app-trial-list',
   standalone: true,
   imports: [
+    RouterLink,
     FormsModule,
     SelectModule,
     TableModule,
@@ -147,6 +149,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       return {
         trial,
         productName: product?.name ?? '--',
+        productId: product?.id ?? '',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
         phaseCount: trial.phase_type ? 1 : 0,

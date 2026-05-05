@@ -138,10 +138,28 @@
           }
         </td>
         <td class="col-secondary">
-          <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+          @if (row.productId) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'products', row.productId]"
+              class="text-brand-700 hover:underline"
+            >
+              <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+            </a>
+          } @else {
+            <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+          }
         </td>
         <td class="col-secondary">
-          <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+          @if (row.companyId) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', row.companyId]"
+              class="text-brand-700 hover:underline"
+            >
+              <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+            </a>
+          } @else {
+            <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
+          }
         </td>
         <td>
           <app-status-tag [label]="row.trial.status" />
