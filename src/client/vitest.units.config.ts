@@ -18,7 +18,11 @@ export default defineConfig({
     // @playwright/test's `test.describe` which throws if loaded outside
     // a Playwright runner. Exclude by name; if more Playwright unit
     // specs land, generalize this exclude pattern.
-    exclude: ['**/error-message.spec.ts', 'node_modules/**'],
+    exclude: [
+      '**/error-message.spec.ts',
+      '**/intelligence-router-link.spec.ts',
+      'node_modules/**',
+    ],
     environment: 'node',
     globals: true,
   },
