@@ -36,8 +36,27 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Supabase Docker images
+        id: supabase-images-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/supabase-images.tar
+          key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+
+      - name: Load cached Supabase images
+        if: steps.supabase-images-cache.outputs.cache-hit == 'true'
+        run: docker load -i ~/supabase-images.tar
+
       - name: Start Supabase
         run: supabase start
+
+      - name: Save Supabase images for cache
+        if: steps.supabase-images-cache.outputs.cache-hit != 'true'
+        run: |
+          images=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase/|public.ecr.aws/supabase/' || true)
+          if [ -n "$images" ]; then
+            docker save $images -o ~/supabase-images.tar
+          fi
 
       - name: Reset database
         run: supabase db reset
@@ -62,8 +81,20 @@ jobs:
           SUPABASE_JWT_SECRET: ${{ steps.supabase.outputs.jwt_secret }}
           SUPABASE_DB_URL: ${{ steps.supabase.outputs.db_url }}
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('src/client/package-lock.json') }}
+
       - name: Install Playwright browsers
-        run: cd src/client && npx playwright install chromium --with-deps
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            cd src/client && npx playwright install-deps chromium
+          else
+            cd src/client && npx playwright install chromium --with-deps
+          fi
 
       - name: Run E2E tests
         run: cd src/client && npx playwright test
