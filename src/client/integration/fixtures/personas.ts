@@ -123,13 +123,17 @@ function mintJwt(userId: string, email: string): string {
  * isn't enough. We also wipe everything attached to the persona user_ids.
  */
 async function wipe(admin: SupabaseClient): Promise<void> {
-  const { data: list, error: listErr } = await admin.auth.admin.listUsers({ perPage: 200 });
-  if (listErr) throw new Error(`listUsers failed: ${listErr.message}`);
-  const personas = list.users.filter((u) => u.email?.endsWith(`@${EMAIL_SUFFIX}`));
-  const personaIds = personas.map((u) => u.id);
-
+  // Query auth.users directly via pg. The supabase-js admin.auth.listUsers
+  // API has unreliable behavior when called multiple times within a single
+  // test process (observed: returns 0 even when 8 rows are present), and
+  // direct SQL is more deterministic for fixture work.
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   await pg.connect();
+  const { rows: personaRows } = await pg.query<{ id: string }>(
+    `select id from auth.users where email like $1`,
+    [`%@${EMAIL_SUFFIX}`],
+  );
+  const personaIds = personaRows.map((r) => r.id);
   try {
     await pg.query('begin');
     await pg.query(`set local clint.member_guard_cascade = 'on'`);
@@ -140,6 +144,20 @@ async function wipe(admin: SupabaseClient): Promise<void> {
       await pg.query(`delete from public.tenant_invites where created_by = any($1::uuid[])`, [personaIds]);
       await pg.query(`delete from public.space_invites  where created_by = any($1::uuid[])`, [personaIds]);
       await pg.query(`delete from public.agency_invites where invited_by  = any($1::uuid[]) or accepted_by = any($1::uuid[])`, [personaIds]);
+
+      // Markers must be deleted before their parent spaces. The cascade from
+      // deleting spaces fires the _log_marker_change trigger which inserts
+      // marker_changes audit rows referencing the parent space_id; if the
+      // space row is already gone (mid-cascade), the FK rejects. Same fix
+      // public.delete_space (migration 20260503090000) applies in its RPC.
+      await pg.query(
+        `delete from public.markers where space_id in (
+           select id from public.spaces
+           where created_by = any($1::uuid[])
+              or tenant_id in (select id from public.tenants where subdomain = $2)
+         )`,
+        [personaIds, TENANT_SUBDOMAIN],
+      );
 
       // Spaces, products, companies, trials etc. reference auth.users via
       // created_by without cascade. Delete every space the persona created
@@ -162,12 +180,22 @@ async function wipe(admin: SupabaseClient): Promise<void> {
     await pg.query(`delete from public.tenants where subdomain = $1`, [TENANT_SUBDOMAIN]);
     await pg.query(`delete from public.agencies where subdomain = $1`, [AGENCY_SUBDOMAIN]);
 
-    if (personaIds.length > 0) {
-      // Finally remove the persona auth.users rows. FK refs are now cleared.
-      await pg.query(`delete from auth.users where id = any($1::uuid[])`, [personaIds]);
-    }
-
     await pg.query('commit');
+
+    // Remove auth.users via the Auth admin API rather than direct pg DELETE.
+    // Direct DELETE FROM auth.users leaves Supabase Auth's internal state
+    // (auth.identities, auth.sessions, the JWT issuer's email index) in a
+    // partial state that blocks re-creation of the same email -- we observed
+    // listUsers reporting the personas as gone but createUser failing with
+    // "Database error creating new user" because the email collision check
+    // fires against a layer the SQL delete didn't reach. deleteUser handles
+    // the full teardown.
+    for (const id of personaIds) {
+      const { error } = await admin.auth.admin.deleteUser(id);
+      if (error && !/not.found/i.test(error.message)) {
+        throw new Error(`deleteUser ${id} failed: ${error.message}`);
+      }
+    }
   } catch (err) {
     await pg.query('rollback');
     throw err;

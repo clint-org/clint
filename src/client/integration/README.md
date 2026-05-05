@@ -60,7 +60,7 @@ Each `.spec.ts` calls `buildPersonas()` in `beforeAll`. The fixture opens a dire
 
 **Out of scope (use Playwright):** route guard redirects, chrome rendering, button visibility, edit-form populate behavior, cross-host bounce. The persona fixture and JWT vault can be reused from Playwright via `page.context().addCookies` or localStorage stubs if/when those checks are encoded.
 
-**Out of scope (destructive in fixture):** delete-space test (would mid-test wipe the fixture), register_custom_domain (DNS plumbing not relevant in CI).
+**Destructive ops:** covered via the per-test `fixtures/scratch.ts` helpers (`createScratchAgency`, `createScratchTenant`, `createScratchSpace`). Tests provision a throwaway entity, exercise the destructive RPC against it, and clean up via direct pg in a `try/finally`. See `tests/rpc-destructive.spec.ts` and `tests/rpc-hostname.spec.ts` for the pattern. The shared persona graph (`buildPersonas()`) is never wiped mid-test by destructive coverage.
 
 ## Why direct JWT signing
 
