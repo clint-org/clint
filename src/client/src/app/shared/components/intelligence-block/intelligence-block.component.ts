@@ -10,6 +10,7 @@ import {
   PrimaryIntelligenceLink,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
+import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
 
 /**
  * Display-only presenter for a primary intelligence read. Shows the
@@ -147,34 +148,21 @@ export class IntelligenceBlockComponent {
   }
 
   /**
-   * Routes for each entity_type:
-   * - trial: dedicated detail page
-   * - marker: timeline filtered to open the marker detail panel
-   * - product: timeline filtered to that product
-   * - company: companies list (no detail route exists yet)
-   * Returns null when tenantId/spaceId are missing -- the template falls back
-   * to a non-anchor span so the chip still renders.
+   * Routes a linked-entity chip to the matching detail page. IntelligenceLinkEntityType
+   * excludes 'space', so engagement is not a link target here. Returns null when
+   * tenantId/spaceId are missing so the template renders a non-anchor span.
    */
   protected linkRoute(link: PrimaryIntelligenceLink): {
     commands: unknown[];
     queryParams?: Record<string, string>;
   } | null {
-    const t = this.tenantId();
-    const s = this.spaceId();
-    if (!t || !s) return null;
-    const base = ['/t', t, 's', s];
-    switch (link.entity_type) {
-      case 'trial':
-        return { commands: [...base, 'manage', 'trials', link.entity_id] };
-      case 'marker':
-        return { commands: [...base, 'timeline'], queryParams: { markerId: link.entity_id } };
-      case 'product':
-        return { commands: [...base, 'timeline'], queryParams: { productIds: link.entity_id } };
-      case 'company':
-        return { commands: [...base, 'manage', 'companies'] };
-      default:
-        return null;
-    }
+    const commands = buildEntityRouterLink(
+      this.tenantId(),
+      this.spaceId(),
+      link.entity_type,
+      link.entity_id
+    );
+    return commands ? { commands } : null;
   }
 }
 
