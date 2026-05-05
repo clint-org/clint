@@ -26,6 +26,14 @@
             Published
           </span>
         }
+        @if (agencyView() && draftPending()) {
+          <span
+            class="rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-700"
+            title="Unpublished changes are saved as a draft. Clients still see the published version. Click Edit to resume and publish."
+          >
+            Draft pending
+          </span>
+        }
       </div>
       @if (agencyView()) {
         <p-button

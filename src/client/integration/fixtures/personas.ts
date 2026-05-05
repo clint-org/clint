@@ -24,14 +24,13 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
 const SUPABASE_JWT_SECRET =
-  process.env['SUPABASE_JWT_SECRET'] ??
-  'super-secret-jwt-token-with-at-least-32-characters-long';
+  process.env['SUPABASE_JWT_SECRET'] ?? 'super-secret-jwt-token-with-at-least-32-characters-long';
 const SUPABASE_DB_URL =
   process.env['SUPABASE_DB_URL'] ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error(
-    'SUPABASE_SERVICE_ROLE_KEY is required. Run `supabase status -o env` and export it.',
+    'SUPABASE_SERVICE_ROLE_KEY is required. Run `supabase status -o env` and export it.'
   );
 }
 
@@ -49,8 +48,8 @@ export const TEST_SUBDOMAIN_PREFIX = `${SUBDOMAIN_PREFIX}-tx-`;
 
 export type PersonaName =
   | 'platform_admin'
-  | 'agency_owner'    // Owns the test agency AND has an explicit tenant_members row (#10 setup).
-  | 'agency_only'     // Owns the test agency but has NO tenant_members row anywhere (firewall).
+  | 'agency_owner' // Owns the test agency AND has an explicit tenant_members row (#10 setup).
+  | 'agency_only' // Owns the test agency but has NO tenant_members row anywhere (firewall).
   | 'tenant_owner'
   | 'space_owner'
   | 'contributor'
@@ -77,8 +76,10 @@ const PERSONA_ROLES: Exclude<PersonaName, 'anon'>[] = [
   'no_memberships',
 ];
 
-/** Service-role client. Bypasses RLS; used only for fixture setup/teardown. */
-function adminClient(): SupabaseClient {
+/** Service-role client. Bypasses RLS; used for fixture setup/teardown and
+ *  for tests that need to seed entity-graph rows (companies/products/trials)
+ *  the personas fixture doesn't create on its own. */
+export function adminClient(): SupabaseClient {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -100,7 +101,7 @@ function mintJwt(userId: string, email: string): string {
       user_metadata: {},
     },
     SUPABASE_JWT_SECRET,
-    { algorithm: 'HS256' },
+    { algorithm: 'HS256' }
   );
 }
 
@@ -131,7 +132,7 @@ async function wipe(admin: SupabaseClient): Promise<void> {
   await pg.connect();
   const { rows: personaRows } = await pg.query<{ id: string }>(
     `select id from auth.users where email like $1`,
-    [`%@${EMAIL_SUFFIX}`],
+    [`%@${EMAIL_SUFFIX}`]
   );
   const personaIds = personaRows.map((r) => r.id);
   try {
@@ -141,9 +142,16 @@ async function wipe(admin: SupabaseClient): Promise<void> {
     if (personaIds.length > 0) {
       // Tables where personas left rows that don't cascade through tenant/agency
       // deletion. These have to go before auth.users delete or the FK blocks it.
-      await pg.query(`delete from public.tenant_invites where created_by = any($1::uuid[])`, [personaIds]);
-      await pg.query(`delete from public.space_invites  where created_by = any($1::uuid[])`, [personaIds]);
-      await pg.query(`delete from public.agency_invites where invited_by  = any($1::uuid[]) or accepted_by = any($1::uuid[])`, [personaIds]);
+      await pg.query(`delete from public.tenant_invites where created_by = any($1::uuid[])`, [
+        personaIds,
+      ]);
+      await pg.query(`delete from public.space_invites  where created_by = any($1::uuid[])`, [
+        personaIds,
+      ]);
+      await pg.query(
+        `delete from public.agency_invites where invited_by  = any($1::uuid[]) or accepted_by = any($1::uuid[])`,
+        [personaIds]
+      );
 
       // Markers must be deleted before their parent spaces. The cascade from
       // deleting spaces fires the _log_marker_change trigger which inserts
@@ -156,7 +164,7 @@ async function wipe(admin: SupabaseClient): Promise<void> {
            where created_by = any($1::uuid[])
               or tenant_id in (select id from public.tenants where subdomain = $2)
          )`,
-        [personaIds, TENANT_SUBDOMAIN],
+        [personaIds, TENANT_SUBDOMAIN]
       );
 
       // Spaces, products, companies, trials etc. reference auth.users via
@@ -164,17 +172,21 @@ async function wipe(admin: SupabaseClient): Promise<void> {
       // (cascades to space-scoped data) plus everything under the test tenant.
       await pg.query(
         `delete from public.spaces where created_by = any($1::uuid[]) or tenant_id in (select id from public.tenants where subdomain = $2)`,
-        [personaIds, TENANT_SUBDOMAIN],
+        [personaIds, TENANT_SUBDOMAIN]
       );
     }
 
     // Test-created tenants (named with TEST_SUBDOMAIN_PREFIX by tests that
     // call RPCs which create new tenants/agencies, e.g. provision_agency).
-    await pg.query(`delete from public.tenants where subdomain like $1`, [`${TEST_SUBDOMAIN_PREFIX}%`]);
+    await pg.query(`delete from public.tenants where subdomain like $1`, [
+      `${TEST_SUBDOMAIN_PREFIX}%`,
+    ]);
 
     // Test-created agencies (provision_agency in platform_admin tests).
     // Includes their cascading agency_members + agency_invites.
-    await pg.query(`delete from public.agencies where subdomain like $1`, [`${TEST_SUBDOMAIN_PREFIX}%`]);
+    await pg.query(`delete from public.agencies where subdomain like $1`, [
+      `${TEST_SUBDOMAIN_PREFIX}%`,
+    ]);
 
     // Well-known fixture entities.
     await pg.query(`delete from public.tenants where subdomain = $1`, [TENANT_SUBDOMAIN]);
@@ -207,7 +219,7 @@ async function wipe(admin: SupabaseClient): Promise<void> {
 /** Create one auth.users row via the admin API. */
 async function createUser(
   admin: SupabaseClient,
-  name: PersonaName,
+  name: PersonaName
 ): Promise<{ id: string; email: string }> {
   const email = `${name}@${EMAIL_SUFFIX}`;
   const { data, error } = await admin.auth.admin.createUser({

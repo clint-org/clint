@@ -696,4 +696,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260505200109_intel_link_names.sql`
 - `20260505201000_seed_demo_recent_activity.sql`
 - `20260505201132_intel_revision_changed_fields.sql`
+- `20260505220000_intel_payload_resolve_names_for_agency.sql`
 <!-- /AUTO-GEN:DRIFT -->

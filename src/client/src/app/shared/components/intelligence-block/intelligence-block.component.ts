@@ -40,6 +40,17 @@ export class IntelligenceBlockComponent {
     return this.published() ?? this.draft() ?? null;
   });
 
+  /**
+   * True when both a published row AND an in-flight draft exist for this
+   * anchor. Agency authors save drafts via auto-save without publishing; the
+   * block keeps showing the published content (clients should never see
+   * unpublished writes), so without an explicit affordance an agency user
+   * can't tell their changes were saved.
+   */
+  protected readonly draftPending = computed<boolean>(() => {
+    return !!this.published() && !!this.draft();
+  });
+
   protected readonly thesisHtml = computed(() =>
     renderMarkdownInline(this.current()?.record.thesis_md ?? '')
   );
@@ -110,7 +121,9 @@ export class IntelligenceBlockComponent {
     if (!c) return [];
     const latest = (c.recent_revisions ?? [])[0];
     const map = latest?.changed_fields ?? {};
-    return IntelligenceBlockComponent.FIELD_LABELS.filter(([k]) => map[k]).map(([, label]) => label);
+    return IntelligenceBlockComponent.FIELD_LABELS.filter(([k]) => map[k]).map(
+      ([, label]) => label
+    );
   });
 
   protected readonly linkedGroups = computed(() => {
