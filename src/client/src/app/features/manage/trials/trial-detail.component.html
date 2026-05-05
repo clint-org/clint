@@ -111,6 +111,7 @@
             [tenantId]="tenantIdSig()"
             [spaceId]="spaceIdSig()"
             (edit)="onIntelligenceEdit()"
+            (deleted)="onIntelligenceDelete()"
           />
         } @else {
           <app-intelligence-empty

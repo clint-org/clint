@@ -433,6 +433,36 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
   }
 
+  onIntelligenceDelete(): void {
+    const i = this.intelligence();
+    const id = i?.published?.record.id ?? i?.draft?.record.id;
+    if (!id) return;
+    this.confirmation.confirm({
+      header: 'Delete primary intelligence?',
+      message: 'This cannot be undone.',
+      acceptLabel: 'Delete',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectLabel: 'Cancel',
+      accept: async () => {
+        try {
+          await this.intelligenceService.delete(id);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Deleted',
+            detail: 'Primary intelligence removed.',
+          });
+          await this.loadIntelligence();
+        } catch (err) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Delete failed',
+            detail: (err as Error).message,
+          });
+        }
+      },
+    });
+  }
+
   ngOnDestroy(): void {
     this.topbarState.clear();
   }
