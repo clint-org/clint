@@ -36,13 +36,23 @@
         }
       </div>
       @if (agencyView()) {
-        <p-button
-          label="Edit"
-          icon="fa-solid fa-pen"
-          [text]="true"
-          size="small"
-          (onClick)="edit.emit()"
-        />
+        <div class="flex items-center gap-1">
+          <p-button
+            label="Edit"
+            icon="fa-solid fa-pen"
+            [text]="true"
+            size="small"
+            (onClick)="edit.emit()"
+          />
+          <p-button
+            label="Delete"
+            icon="fa-solid fa-trash"
+            [text]="true"
+            severity="danger"
+            size="small"
+            (onClick)="deleted.emit()"
+          />
+        </div>
       }
     </header>
 

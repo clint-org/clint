@@ -35,6 +35,7 @@ export class IntelligenceBlockComponent {
   readonly spaceId = input<string | null>(null);
 
   readonly edit = output<void>();
+  readonly deleted = output<void>();
 
   protected readonly current = computed<IntelligencePayload | null>(() => {
     return this.published() ?? this.draft() ?? null;
