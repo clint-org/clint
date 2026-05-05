@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { schema as basicSchema } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
-import { Schema } from 'prosemirror-model';
-import { EditorState } from 'prosemirror-state';
+import { Schema, MarkType, NodeType } from 'prosemirror-model';
+import { EditorState, Command } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
@@ -13,7 +13,13 @@ import {
   MarkdownParser,
   MarkdownSerializer,
 } from 'prosemirror-markdown';
-import { splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list';
+import {
+  splitListItem,
+  liftListItem,
+  sinkListItem,
+  wrapInList,
+} from 'prosemirror-schema-list';
+import { inputRules, wrappingInputRule } from 'prosemirror-inputrules';
 
 /**
  * Centralised editor configuration so the ProseMirror surface is the only
@@ -44,6 +50,10 @@ export class ProseMirrorService {
     );
   }
 
+  get schema(): Schema {
+    return this.editorSchema;
+  }
+
   createEditor(
     target: HTMLElement,
     initialMarkdown: string,
@@ -72,13 +82,24 @@ export class ProseMirrorService {
       'Shift-Tab': liftListItem(listItem),
     });
 
-    void bulletList;
-    void orderedList;
+    const markdownInputRules = inputRules({
+      rules: [
+        // "- " or "* " or "+ " at line start -> bullet list
+        wrappingInputRule(/^\s*([-+*])\s$/, bulletList),
+        // "1. " at line start -> ordered list
+        wrappingInputRule(
+          /^(\d+)\.\s$/,
+          orderedList,
+          (match) => ({ order: Number(match[1]) }),
+          (match, node) => node.childCount + node.attrs['order'] === Number(match[1])
+        ),
+      ],
+    });
 
     const state = EditorState.create({
       doc: doc!,
       schema: this.editorSchema,
-      plugins: [history(), customKeys, keymap(baseKeymap)],
+      plugins: [history(), customKeys, markdownInputRules, keymap(baseKeymap)],
     });
 
     const view = new EditorView(target, {
@@ -114,5 +135,63 @@ export class ProseMirrorService {
       plugins: view.state.plugins,
     });
     view.updateState(state);
+  }
+
+  // -- Toolbar command builders ------------------------------------------------
+  // Components dispatch these against an EditorView. Each returns whether the
+  // command applied so toolbars can disable buttons that wouldn't take effect.
+
+  toggleStrong(view: EditorView): boolean {
+    return this.runMarkToggle(view, this.editorSchema.marks['strong']);
+  }
+
+  toggleEm(view: EditorView): boolean {
+    return this.runMarkToggle(view, this.editorSchema.marks['em']);
+  }
+
+  toggleBulletList(view: EditorView): boolean {
+    return this.runListToggle(view, this.editorSchema.nodes['bullet_list']);
+  }
+
+  toggleOrderedList(view: EditorView): boolean {
+    return this.runListToggle(view, this.editorSchema.nodes['ordered_list']);
+  }
+
+  isMarkActive(view: EditorView, markName: 'strong' | 'em'): boolean {
+    const mark = this.editorSchema.marks[markName];
+    if (!mark) return false;
+    const { from, $from, to, empty } = view.state.selection;
+    if (empty) return !!mark.isInSet(view.state.storedMarks || $from.marks());
+    return view.state.doc.rangeHasMark(from, to, mark);
+  }
+
+  isListActive(view: EditorView, listName: 'bullet_list' | 'ordered_list'): boolean {
+    const node = this.editorSchema.nodes[listName];
+    if (!node) return false;
+    const { $from } = view.state.selection;
+    for (let depth = $from.depth; depth > 0; depth--) {
+      if ($from.node(depth).type === node) return true;
+    }
+    return false;
+  }
+
+  private runMarkToggle(view: EditorView, mark: MarkType | undefined): boolean {
+    if (!mark) return false;
+    return this.exec(view, toggleMark(mark));
+  }
+
+  private runListToggle(view: EditorView, listType: NodeType | undefined): boolean {
+    if (!listType) return false;
+    const listItem = this.editorSchema.nodes['list_item'];
+    if (this.isListActive(view, listType.name as 'bullet_list' | 'ordered_list')) {
+      return this.exec(view, liftListItem(listItem));
+    }
+    return this.exec(view, wrapInList(listType));
+  }
+
+  private exec(view: EditorView, command: Command): boolean {
+    const applied = command(view.state, view.dispatch, view);
+    if (applied) view.focus();
+    return applied;
   }
 }

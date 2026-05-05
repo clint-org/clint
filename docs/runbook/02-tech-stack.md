@@ -59,6 +59,7 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `primeng`
 - `prosemirror-commands`
 - `prosemirror-history`
+- `prosemirror-inputrules`
 - `prosemirror-keymap`
 - `prosemirror-markdown`
 - `prosemirror-model`

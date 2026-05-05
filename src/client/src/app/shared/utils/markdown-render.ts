@@ -43,9 +43,20 @@ function applyInline(escaped: string): string {
  * bullet/ordered lists (single level), bold, italic, inline code, and
  * links. Returns an empty string when given empty input.
  */
+/**
+ * Strip CommonMark backslash-escapes from punctuation. Older content was
+ * authored before list/bold input rules existed, so the editor stored raw
+ * leading hyphens or asterisks as `\-` / `\*` to be safe. We unescape on
+ * the read path so those rows render correctly without a destructive
+ * migration.
+ */
+function unescapePunctuation(input: string): string {
+  return input.replace(/\\([\\`*_{}[\]()#+\-.!>~|])/g, '$1');
+}
+
 export function renderMarkdownInline(md: string): string {
   if (!md || !md.trim()) return '';
-  const lines = md.split(/\r?\n/);
+  const lines = unescapePunctuation(md).split(/\r?\n/);
   const blocks: string[] = [];
   let para: string[] = [];
   let listType: 'ul' | 'ol' | null = null;
