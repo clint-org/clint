@@ -57,7 +57,7 @@ test.describe('Trial Management CRUD', () => {
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByText('Updated Trial')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Updated Trial' })).toBeVisible({ timeout: 10000 });
   });
 
   test('add a trial marker', async () => {
