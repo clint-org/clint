@@ -34,10 +34,12 @@ Each clinical phase has a distinct, meaningful color:
 - OBS (observational): amber, caution-adjacent
 
 ### Marker Colors (from seed data)
-- Data events (circles): green
-- Regulatory events (diamonds): red
-- Approval/Launch events (flags, bars): blue
-- Change/status events (arrow, x): orange, red
+- Data events (circles): green. Topline, Interim, Full Data.
+- Trial milestones (circles, dashed lines): slate. PCD, Trial Start, Trial End.
+- Regulatory events (diamonds): orange. Filing, Submission, Acceptance.
+- Approval (flag): blue.
+- Launch (triangle): violet.
+- Loss of exclusivity (squares): amber. LOE Date, Generic Entry Date.
 
 ## Visual Hierarchy
 1. **Markers** are the primary visual element -- they represent the events executives scan for. They must pop.

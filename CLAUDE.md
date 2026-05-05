@@ -21,7 +21,7 @@ Pharma competitive intelligence professionals and the teams they support -- busi
 
 ### Aesthetic Direction
 - **Visual tone:** Minimal, data-dense, structured. Every pixel earns its place. White space is used for grouping, not decoration.
-- **Palette:** Teal primary (hero accent, active states), slate neutrals (never pure gray), phase bars use a muted slate -> cyan -> teal -> violet -> amber progression so P3 pivotal trials read as the hero color. Markers are the visual foreground: green (data), red (regulatory), blue (approval/launch), orange (change). See `docs/brand.md` for exact role-to-color mapping.
+- **Palette:** Teal primary (hero accent, active states), slate neutrals (never pure gray), phase bars use a muted slate -> cyan -> teal -> violet -> amber progression so P3 pivotal trials read as the hero color. Markers are the visual foreground: green (data), slate (trial milestones), orange (regulatory), blue (approval), violet (launch), amber (loss of exclusivity). See `docs/brand.md` for exact role-to-color mapping.
 - **Typography:** Mono/tabular for timeline headers (data-instrument feel). Company names uppercase and tracked as structural labels. No display typography, no hero fonts.
 - **Theme:** Light mode only. Dark mode is explicitly disabled in the PrimeNG preset (`src/client/src/app/config/primeng-theme.ts`).
 - **References (aim for):** Bloomberg Terminal (data density, gravity), Evaluate Pharma / Citeline (domain familiarity), Linear / Notion (modern craft, interaction polish, typographic discipline).
