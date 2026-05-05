@@ -10,6 +10,11 @@ import {
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
+import {
+  MARKER_FIELD_LABELS,
+  PROJECTION_LABEL,
+  formatMarkerFieldValue,
+} from '../utils/marker-fields';
 import { CtgovFieldRendererComponent } from './ctgov-field-renderer/ctgov-field-renderer.component';
 import { CtgovSourceTagComponent } from './ctgov-source-tag.component';
 import {
@@ -36,29 +41,8 @@ interface CtgovProvenanceBlock {
   dateTypeLabel: string;
 }
 
-const PROJECTION_LABEL: Record<NonNullable<CatalystDetail['catalyst']['projection']>, string> = {
-  actual: 'Confirmed actual',
-  stout: 'Projected · Stout estimate',
-  company: 'Projected · Company guidance',
-  primary: 'Projected · Primary source estimate',
-};
-
-// Field labels for the history diff. Keys not in this map are suppressed
-// from the diff (covers id columns, audit timestamps, foreign keys we
-// can't usefully display without joins, etc.).
-const HISTORY_FIELD_LABELS: Record<string, string> = {
-  title: 'Title',
-  description: 'Description',
-  event_date: 'Event date',
-  recruitment_status: 'Recruitment status',
-  is_projected: 'Projected',
-  projection: 'Projection source',
-  no_longer_expected: 'No longer expected',
-  source_url: 'Source URL',
-};
-
-const HISTORY_DATE_FIELDS = new Set(['event_date']);
-const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
+// Field-name and value vocabulary lives in shared/utils/marker-fields.ts so
+// the History pane reads the same way as the activity feed and edit form.
 
 @Component({
   selector: 'app-marker-detail-content',
@@ -436,7 +420,7 @@ export class MarkerDetailContentComponent {
     ]);
     const diffs: HistoryFieldDiff[] = [];
     for (const key of allKeys) {
-      const label = HISTORY_FIELD_LABELS[key];
+      const label = MARKER_FIELD_LABELS[key];
       if (!label) continue;
       const before = oldValues?.[key] ?? null;
       const after = newValues?.[key] ?? null;
@@ -444,8 +428,8 @@ export class MarkerDetailContentComponent {
       diffs.push({
         field: key,
         label,
-        before: this.formatValue(key, before),
-        after: this.formatValue(key, after),
+        before: formatMarkerFieldValue(key, before),
+        after: formatMarkerFieldValue(key, after),
       });
     }
     return diffs;
@@ -455,26 +439,5 @@ export class MarkerDetailContentComponent {
     if (a === b) return true;
     if (a == null || b == null) return false;
     return JSON.stringify(a) === JSON.stringify(b);
-  }
-
-  private formatValue(field: string, value: unknown): string | null {
-    if (value === null || value === undefined || value === '') return null;
-    if (HISTORY_DATE_FIELDS.has(field) && typeof value === 'string') {
-      // Render as MMM d, yyyy without pulling in the DatePipe in TS.
-      const d = new Date(value);
-      if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-      }
-    }
-    if (HISTORY_BOOL_FIELDS.has(field)) return value ? 'Yes' : 'No';
-    if (field === 'projection' && typeof value === 'string') {
-      const key = value as keyof typeof PROJECTION_LABEL;
-      return PROJECTION_LABEL[key] ?? value;
-    }
-    return String(value);
   }
 }
