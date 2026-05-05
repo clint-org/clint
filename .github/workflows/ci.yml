@@ -36,9 +36,9 @@ jobs:
         with:
           version: latest
 
-      - name: Cache Supabase Docker images
+      - name: Restore Supabase Docker images cache
         id: supabase-images-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/supabase-images.tar
           key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
@@ -50,13 +50,22 @@ jobs:
       - name: Start Supabase
         run: supabase start
 
-      - name: Save Supabase images for cache
+      - name: Save Supabase images tarball
         if: steps.supabase-images-cache.outputs.cache-hit != 'true'
         run: |
-          images=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase/|public.ecr.aws/supabase/' || true)
+          images=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '/supabase/|^supabase/' || true)
           if [ -n "$images" ]; then
             docker save $images -o ~/supabase-images.tar
           fi
+
+      # cache/save runs even when later steps (e2e tests) fail, unlike the
+      # combined cache@v4 action whose post-step is skipped on job failure.
+      - name: Save Supabase Docker images cache
+        if: always() && steps.supabase-images-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/supabase-images.tar
+          key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
 
       - name: Reset database
         run: supabase db reset
@@ -81,9 +90,9 @@ jobs:
           SUPABASE_JWT_SECRET: ${{ steps.supabase.outputs.jwt_secret }}
           SUPABASE_DB_URL: ${{ steps.supabase.outputs.db_url }}
 
-      - name: Cache Playwright browsers
+      - name: Restore Playwright browsers cache
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('src/client/package-lock.json') }}
@@ -95,6 +104,15 @@ jobs:
           else
             cd src/client && npx playwright install chromium --with-deps
           fi
+
+      # cache/save runs even when later steps (e2e tests) fail, unlike the
+      # combined cache@v4 action whose post-step is skipped on job failure.
+      - name: Save Playwright browsers cache
+        if: always() && steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('src/client/package-lock.json') }}
 
       - name: Run E2E tests
         run: cd src/client && npx playwright test
