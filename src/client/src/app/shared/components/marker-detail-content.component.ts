@@ -108,9 +108,28 @@ interface CtgovProvenanceBlock {
               />
             }
             <p>
-              <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
+              @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
+                <a
+                  [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'companies', d.catalyst.company_id]"
+                  class="font-semibold uppercase text-brand-700 hover:underline"
+                >
+                  {{ d.catalyst.company_name }}
+                </a>
+              } @else {
+                <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
+              }
               @if (d.catalyst.product_name) {
-                &middot; {{ d.catalyst.product_name }}
+                &middot;
+                @if (d.catalyst.product_id && tenantIdSig() && spaceId()) {
+                  <a
+                    [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'products', d.catalyst.product_id]"
+                    class="text-brand-700 hover:underline"
+                  >
+                    {{ d.catalyst.product_name }}
+                  </a>
+                } @else {
+                  {{ d.catalyst.product_name }}
+                }
               }
             </p>
           </div>
