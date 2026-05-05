@@ -47,12 +47,29 @@
           {{ clientByline() }}
         }
       </p>
-      @if (latestRevisionNote()) {
-        <p
-          class="mb-4 border-l-2 border-slate-200 bg-slate-50/40 px-3 py-1.5 text-xs italic text-slate-500"
+      @if (latestRevisionNote() || latestChangedFields().length) {
+        <div
+          class="mb-4 flex flex-wrap items-center gap-2 border-l-2 border-slate-200 bg-slate-50/40 px-3 py-1.5"
         >
-          {{ latestRevisionNote() }}
-        </p>
+          @if (latestChangedFields().length) {
+            <span
+              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+              aria-label="Sections changed in last revision"
+            >
+              Updated
+            </span>
+            @for (label of latestChangedFields(); track label) {
+              <span
+                class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-600"
+              >
+                {{ label }}
+              </span>
+            }
+          }
+          @if (latestRevisionNote()) {
+            <span class="text-xs italic text-slate-500">{{ latestRevisionNote() }}</span>
+          }
+        </div>
       }
 
       @if (c.record.thesis_md.length) {

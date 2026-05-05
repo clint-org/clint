@@ -616,7 +616,5 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `RouteOfAdministration`
 
 **SVG icon components:**
-- `NleOverlayComponent`
-- `SquareIconComponent`
-- `TriangleIconComponent`
+_All svg-icon components documented._
 <!-- /AUTO-GEN:DRIFT -->

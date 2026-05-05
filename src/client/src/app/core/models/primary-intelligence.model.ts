@@ -40,11 +40,25 @@ export interface PrimaryIntelligenceLink {
   display_order: number;
 }
 
+/**
+ * Sections of a primary_intelligence read that can change between revisions.
+ * Mirrors the keys produced by upsert_primary_intelligence's diff logic.
+ */
+export type IntelligenceRevisionField =
+  | 'headline'
+  | 'thesis'
+  | 'watch'
+  | 'implications'
+  | 'links'
+  | 'state';
+
 export interface PrimaryIntelligenceRevision {
   id: string;
   state: IntelligenceState;
   headline: string;
   change_note: string | null;
+  /** Empty for the initial creation revision; truthy keys = sections that changed. */
+  changed_fields: Partial<Record<IntelligenceRevisionField, true>>;
   edited_by: string;
   edited_at: string;
 }
