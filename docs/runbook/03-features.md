@@ -422,7 +422,7 @@ Google OAuth and Microsoft (Azure AD) OAuth via Supabase Auth. Users sign in wit
 User-facing reference pages explain conventions and assumptions that are not derivable from the UI alone (editorial color rules, role-permission matrices, projection conventions). Three pages are live:
 
 - `help/roles` -- role/permission breakdown for space membership. Linked from the Space Members page.
-- `help/markers` -- marker semantics (color rule, projection convention, full marker-type list). Live-rendered from `MarkerTypeService` so the type list always matches the space's actual configuration. Linked from the dashboard legend strip and the Manage > Marker Types page.
+- `help/markers` -- marker semantics (color rule, projection convention, full marker-type list). Live-rendered from `MarkerTypeService` so the type list always matches the space's actual configuration. Linked from the dashboard legend strip and the Settings > Marker Types page.
 - `help/phases` -- phase bar color semantics. Driven by the shared `PHASE_DESCRIPTORS` map in `core/models/phase-colors.ts`, which `phase-bar.component` also imports -- the help page and the chart can never disagree on color. Linked from the dashboard legend strip.
 
 Pages follow a consistent shape (header + summary + descriptor table + FAQ + back link) and use `ManagePageShellComponent` for layout. Drift prevention has two layers: live render for state-derived content (markers list, phase color tokens), and the `runbook-review-guard.sh` stop hook surfaces the matching help page for editorial review when a related source path changes (FAQ/prose are not auto-updated).

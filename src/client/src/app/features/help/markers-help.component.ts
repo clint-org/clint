@@ -38,10 +38,10 @@ interface MarkerGroup {
             Markers and what they mean
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
-            Markers are the events {{ analystSubject() }} and executives scan for on the timeline.
-            Shape encodes the event type, color encodes the editorial role of the event, and inner
-            marks distinguish actual versus projected occurrences. This list reflects the marker
-            types configured for this space.
+            Markers show the events {{ analystSubject() }} and executives scan for on the timeline.
+            Read each marker by its shape (event family), color (editorial role), inner mark
+            (variant of that shape), and fill style (actual or projected). The list below shows the
+            marker types set up for this space.
           </p>
         </header>
 
@@ -79,8 +79,7 @@ interface MarkerGroup {
                   <circle cx="7" cy="7" r="5" fill="#64748b" />
                 </svg>
                 <span
-                  ><span class="font-semibold text-slate-900">Filled</span> -- actual /
-                  occurred</span
+                  ><span class="font-semibold text-slate-900">Filled:</span> actual</span
                 >
               </div>
               <div class="flex items-center gap-2">
@@ -88,8 +87,7 @@ interface MarkerGroup {
                   <circle cx="7" cy="7" r="5" fill="none" stroke="#64748b" stroke-width="1.4" />
                 </svg>
                 <span
-                  ><span class="font-semibold text-slate-900">Outline</span> -- projected /
-                  expected</span
+                  ><span class="font-semibold text-slate-900">Outline:</span> projected</span
                 >
               </div>
               <div class="flex items-center gap-2">
@@ -98,8 +96,8 @@ interface MarkerGroup {
                   <line x1="0" y1="7" x2="20" y2="7" stroke="#64748b" stroke-width="1.5" />
                 </svg>
                 <span
-                  ><span class="font-semibold text-slate-900">Strikethrough (NLE)</span> -- no
-                  longer expected</span
+                  ><span class="font-semibold text-slate-900">Strikethrough (NLE):</span> no longer
+                  expected</span
                 >
               </div>
             </div>
@@ -258,22 +256,32 @@ export class MarkersHelpComponent implements OnInit {
     {
       label: 'Green',
       color: '#16a34a',
-      description: 'Data events. Readouts, interim results, primary endpoint reports.',
+      description: 'Data readouts. Topline, interim, full.',
     },
     {
-      label: 'Red',
-      color: '#dc2626',
-      description: 'Regulatory events. FDA actions, label changes, holds, rejections.',
-    },
-    {
-      label: 'Blue',
-      color: '#2563eb',
-      description: 'Approval and launch milestones. Where commercial timing is decided.',
+      label: 'Slate',
+      color: '#475569',
+      description: 'Trial milestones. Start, end, primary completion date.',
     },
     {
       label: 'Orange',
-      color: '#ea580c',
-      description: 'Change or status shifts. Strategic pivots, program reprioritizations.',
+      color: '#f97316',
+      description: 'Regulatory events. Filings, submissions, acceptances.',
+    },
+    {
+      label: 'Blue',
+      color: '#3b82f6',
+      description: 'Approval decision.',
+    },
+    {
+      label: 'Violet',
+      color: '#7c3aed',
+      description: 'Commercial launch.',
+    },
+    {
+      label: 'Amber',
+      color: '#d97706',
+      description: 'Loss of exclusivity. LOE and generic entry dates.',
     },
   ];
 
@@ -282,19 +290,19 @@ export class MarkersHelpComponent implements OnInit {
     return [
       {
         q: 'Why are some markers outline instead of filled?',
-        a: `Filled markers are events that have actually happened. Outline markers are events ${actor} projects will happen. The same shape and color are used so the event type stays recognizable, only the certainty changes.`,
+        a: `Filled markers already happened. Outline markers are projected by ${actor}. Same shape and color, only the fill changes.`,
       },
       {
         q: 'What does a marker with a strike-through line mean?',
-        a: `NLE -- no longer expected. The event was previously projected but ${actor} now believes it will not occur (program shelved, indication dropped, sponsor change). The marker stays on the timeline so the prior expectation is auditable.`,
+        a: `NLE: no longer expected. The event was projected, but ${actor} no longer expects it to happen (program shelved, indication dropped, sponsor change). The marker stays so the earlier call is still visible.`,
       },
       {
-        q: 'Why does the same event type sometimes appear in different colors?',
-        a: 'Color encodes editorial role, not event identity. A readout-related event with regulatory implications can sit in the regulatory family. The color tells you why the event matters for the competitive read; the shape tells you what it is.',
+        q: 'How do I tell two markers of the same shape apart?',
+        a: 'The inner mark tells you which variant. Circles: dot = topline, dash = interim, plain = full data. Diamonds: dot = filing, plain = submission, check = acceptance. Squares: x = LOE, plain = generic entry.',
       },
       {
         q: 'Can I add a custom marker type?',
-        a: 'Yes -- space owners can add space-specific marker types from Manage > Marker Types. The list above includes both shared system markers and any custom markers configured for this space.',
+        a: 'Yes. Space owners can add custom marker types from Settings > Marker Types. The list above shows the shared system markers plus any custom ones added for this space.',
       },
     ];
   });
