@@ -1,0 +1,83 @@
+<p-toast />
+<p-confirmDialog />
+
+<app-manage-page-shell [narrow]="true">
+  @if (loading()) {
+    <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
+  } @else if (marker()) {
+    @let m = marker()!;
+    <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+      <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">{{ m.title }}</h1>
+      <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+        {{ m.marker_types?.marker_categories?.name || '--' }}
+        / {{ m.marker_types?.name || 'Unknown' }}
+        @if (m.event_date) {
+          / {{ m.event_date | date: 'mediumDate' }}
+        }
+      </p>
+    </header>
+
+    @if (hasIntelligence()) {
+      <app-intelligence-block
+        [published]="intelligence()?.published ?? null"
+        [draft]="intelligence()?.draft ?? null"
+        [agencyView]="spaceRole.canEdit()"
+        [tenantId]="tenantIdSig()"
+        [spaceId]="spaceIdSig()"
+        (edit)="onIntelligenceEdit()"
+        (deleted)="onIntelligenceDelete()"
+      />
+    } @else {
+      <app-intelligence-empty
+        [canEdit]="spaceRole.canEdit()"
+        entityLabel="marker"
+        (add)="onIntelligenceEdit()"
+      />
+    }
+
+    <section class="mb-4 border border-slate-200 bg-white" aria-label="Reads referencing this marker">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Referenced in</h2>
+        <span class="font-mono text-[10px] text-slate-400">
+          {{ (intelligence()?.referenced_in ?? []).length }} reads
+        </span>
+      </header>
+      <div class="px-4 py-3">
+        @if ((intelligence()?.referenced_in ?? []).length === 0) {
+          <p class="text-xs text-slate-400">No published reads link to this marker yet.</p>
+        } @else {
+          <ul class="divide-y divide-slate-100">
+            @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
+              <li class="flex flex-wrap items-baseline gap-2 py-2">
+                <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                  {{ ref.entity_type }}
+                </span>
+                <span class="text-sm text-slate-800">{{ ref.headline }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+      </header>
+      <app-materials-section entityType="marker" [entityId]="markerId()" [spaceId]="spaceIdSig()" />
+    </section>
+
+    @if (spaceIdSig()) {
+      <app-intelligence-drawer
+        [visible]="drawerOpen()"
+        [spaceId]="spaceIdSig()"
+        entityType="marker"
+        [entityId]="markerId()"
+        (closed)="onIntelligenceClosed()"
+        (published)="onIntelligencePublished()"
+      />
+    }
+  } @else {
+    <div class="px-4 py-8 text-sm text-slate-500">Marker not found.</div>
+  }
+</app-manage-page-shell>
