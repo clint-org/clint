@@ -64,4 +64,17 @@ export class MarkerService {
     const { error } = await this.supabase.client.from('markers').delete().eq('id', id);
     if (error) throw error;
   }
+
+  async getById(id: string): Promise<Marker | null> {
+    const { data, error } = await this.supabase.client
+      .from('markers')
+      .select('*, marker_types(name, marker_categories(name))')
+      .eq('id', id)
+      .single();
+    if (error) {
+      if ((error as { code?: string }).code === 'PGRST116') return null;
+      throw error;
+    }
+    return data as Marker;
+  }
 }
