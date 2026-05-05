@@ -153,8 +153,11 @@ Drafts and published rows are deletable. The RPC already enforces agency-member 
 
 - **Company list** (`company-list.component.html`): wrap company name in a router link to the new detail route. No other changes.
 - **Product list** (`product-list.component.html`): same treatment for product name.
-- **Timeline marker pin**: clicking a marker pin currently opens an inline detail panel in the timeline. Add a "View detail" link inside that panel that navigates to `MarkerDetailComponent`. The inline panel stays as a quick-look affordance.
+- **Trial detail Markers table** (`trial-detail.component.html:400-429`): the marker title cell is currently plain text. Wrap it in a router link to `MarkerDetailComponent`. The row-actions menu (Edit / Delete the marker row itself) stays unchanged. This is the primary entry point for marker intelligence: analysts find markers through their parent trial.
+- **Timeline marker pin**: clicking a marker pin currently opens an inline detail panel in the timeline. Add a "View detail" link inside that panel that navigates to `MarkerDetailComponent`. Secondary entry, used when an analyst is working in timeline mode.
 - **Engagement**: add a sidebar entry under the space's primary nav linking to the engagement detail page.
+
+Discoverability of marker intelligence specifically rests on the trial-detail link being unmistakable. The marker title should render as a link (underlined on hover, brand-tinted) so it reads as navigation, not as a label.
 
 ## Testing
 
