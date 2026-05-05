@@ -379,6 +379,13 @@ export const routes: Routes = [
                 (m) => m.CompanyDetailComponent
               ),
           },
+          {
+            path: 'manage/products/:id',
+            loadComponent: () =>
+              import('./features/manage/products/product-detail.component').then(
+                (m) => m.ProductDetailComponent
+              ),
+          },
           // Settings routes (moved from manage)
           {
             path: 'settings/marker-types',
