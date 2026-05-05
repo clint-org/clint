@@ -117,12 +117,30 @@ export class TimelineViewComponent {
     ]);
   }
 
-  onCompanyClick(): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'companies']);
+  onCompanyClick(companyId: string): void {
+    if (!companyId) return;
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'companies',
+      companyId,
+    ]);
   }
 
-  onProductClick(): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'products']);
+  onProductClick(productId: string): void {
+    if (!productId) return;
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'products',
+      productId,
+    ]);
   }
 
   retry(): void {

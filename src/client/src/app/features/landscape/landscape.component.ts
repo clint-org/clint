@@ -217,8 +217,17 @@ export class LandscapeComponent implements OnInit {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
   }
 
-  onOpenCompany(): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'companies']);
+  onOpenCompany(companyId: string): void {
+    if (!companyId) return;
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'manage',
+      'companies',
+      companyId,
+    ]);
   }
 
   onOpenInTimeline(payload: { productId: string; therapeuticAreaId: string }): void {
