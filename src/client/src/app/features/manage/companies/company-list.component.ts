@@ -1,5 +1,5 @@
 import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -23,6 +23,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   selector: 'app-company-list',
   standalone: true,
   imports: [
+    RouterLink,
     TableModule,
     ButtonModule,
     Dialog,

@@ -31,13 +31,12 @@
     <ng-template #body let-company>
       <tr>
         <td>
-          <button
-            type="button"
+          <a
+            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'companies', company.id]"
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
-            (click)="openProducts(company.id)"
           >
             <span [innerHTML]="company.name | highlight: grid.debouncedGlobalSearch()"></span>
-          </button>
+          </a>
         </td>
         <td>
           @if (company.logo_url && !brokenLogos().has(company.id)) {
