@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -20,6 +20,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   selector: 'app-product-detail',
   standalone: true,
   imports: [
+    RouterLink,
     ConfirmDialogModule,
     ToastModule,
     ManagePageShellComponent,

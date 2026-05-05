@@ -17,6 +17,7 @@ interface RawProductRow extends Product {
 
 const PRODUCT_WITH_MOA_ROA_SELECT = `
   *,
+  companies ( id, name ),
   product_mechanisms_of_action (
     moa:mechanisms_of_action ( id, name )
   ),

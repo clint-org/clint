@@ -18,7 +18,11 @@
         }
         <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">{{ c.name }}</h1>
       </div>
-      <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">Company</p>
+      @if ((c.products?.length ?? 0) > 0) {
+        <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500 tabular-nums">
+          {{ c.products?.length }} {{ c.products?.length === 1 ? 'product' : 'products' }}
+        </p>
+      }
     </header>
 
     @if (hasIntelligence()) {

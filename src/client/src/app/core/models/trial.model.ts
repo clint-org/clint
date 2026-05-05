@@ -20,6 +20,11 @@ export interface Trial {
   phase_end_date: string | null;
 
   therapeutic_areas?: TherapeuticArea;
+  products?: {
+    id: string;
+    name: string;
+    companies?: { id: string; name: string } | null;
+  } | null;
   markers?: Marker[];
   trial_notes?: TrialNote[];
 

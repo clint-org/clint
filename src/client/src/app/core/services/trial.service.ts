@@ -7,6 +7,7 @@ import { SupabaseService } from './supabase.service';
 const TRIAL_SELECT = `
   *,
   therapeutic_areas(*),
+  products(id, name, companies(id, name)),
   marker_assignments(
     id,
     marker_id,

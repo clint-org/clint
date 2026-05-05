@@ -7,7 +7,15 @@
   } @else if (product()) {
     @let p = product()!;
     <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-      <div class="flex items-center gap-3">
+      @if (p.companies; as co) {
+        <a
+          [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
+          class="inline-block font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500 hover:text-brand-700 hover:underline"
+        >
+          {{ co.name }}
+        </a>
+      }
+      <div class="mt-0.5 flex items-center gap-3">
         @if (p.logo_url) {
           <img
             [src]="p.logo_url"
@@ -18,9 +26,17 @@
         }
         <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">{{ p.name }}</h1>
       </div>
-      @if (p.generic_name) {
-        <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">{{ p.generic_name }}</p>
-      }
+      <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+        @if (p.generic_name) {
+          <span>{{ p.generic_name }}</span>
+        }
+        @for (moa of p.mechanisms_of_action ?? []; track moa.id) {
+          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{ moa.name }}</span>
+        }
+        @for (roa of p.routes_of_administration ?? []; track roa.id) {
+          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{ roa.abbreviation || roa.name }}</span>
+        }
+      </div>
     </header>
 
     @if (hasIntelligence()) {

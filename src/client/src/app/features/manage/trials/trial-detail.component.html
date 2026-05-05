@@ -39,6 +39,58 @@
 } @else {
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
+      <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+        @if (t.products; as prod) {
+          <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">
+            @if (prod.companies; as co) {
+              <a
+                [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
+                class="hover:text-brand-700 hover:underline"
+              >
+                {{ co.name }}
+              </a>
+              <span class="text-slate-300" aria-hidden="true">/</span>
+            }
+            <a
+              [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'products', prod.id]"
+              class="hover:text-brand-700 hover:underline"
+            >
+              {{ prod.name }}
+            </a>
+          </div>
+        }
+        <h1 class="mt-0.5 text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
+          {{ t.name }}
+        </h1>
+        <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          @if (t.identifier) {
+            <a
+              [href]="'https://clinicaltrials.gov/study/' + t.identifier"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
+            >
+              {{ t.identifier }}
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+            </a>
+          }
+          @if (t.phase_type || t.phase) {
+            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+              <span class="text-slate-400">Phase</span>
+              <span class="ml-1 text-slate-700">{{ t.phase_type || t.phase }}</span>
+            </span>
+          }
+          @if (t.status) {
+            <app-status-tag [label]="t.status" />
+          }
+          @if (t.therapeutic_areas?.name) {
+            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+              {{ t.therapeutic_areas?.name }}
+            </span>
+          }
+        </div>
+      </header>
+
       <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
       <nav
         aria-label="Sections on this trial"
