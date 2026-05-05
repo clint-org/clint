@@ -189,10 +189,8 @@ export class CommandPaletteComponent implements OnInit {
     const base = `/t/${this.tenantId}/s/${this.spaceId}`;
     switch (item.kind) {
       case 'trial':    return `${base}/manage/trials/${item.id}`;
-      // Companies and products have no detail page; the list page reads
-      // ?selected=<id> on init and filters to that row.
-      case 'company':  return `${base}/manage/companies?selected=${item.id}`;
-      case 'product':  return `${base}/manage/products?selected=${item.id}`;
+      case 'company':  return `${base}/manage/companies/${item.id}`;
+      case 'product':  return `${base}/manage/products/${item.id}`;
       case 'event':    return `${base}/events?eventId=${item.id}`;
       case 'catalyst': return `${base}/catalysts?markerId=${item.id}`;
     }
