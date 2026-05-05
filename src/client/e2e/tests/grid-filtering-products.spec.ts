@@ -99,14 +99,17 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
     await expect(page).toHaveURL(/manage\/companies/);
   });
 
-  test('inbound deep-link via company click lands pre-filtered', async () => {
-    // Navigate to companies page, then click the Pfizer company name button
-    // which calls openProducts(pfizerId) using buildFilterQueryParams.
+  test('inbound deep-link via company "View products" lands pre-filtered', async () => {
+    // The company-name cell now links to the company detail page; the
+    // "click name -> filtered products" affordance moved to the row-actions
+    // menu's "View products" item, which still calls openProducts(pfizerId)
+    // using buildFilterQueryParams.
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
     await page.goto(companiesUrl, { waitUntil: 'networkidle' });
 
-    // The company name cell renders as a button that calls openProducts().
-    await page.getByRole('button', { name: 'Pfizer', exact: true }).first().click();
+    const row = page.locator('tr', { hasText: 'Pfizer' }).first();
+    await row.locator('app-row-actions button').click();
+    await page.getByRole('menuitem', { name: 'View products' }).click();
 
     // Landed on products page with the filter applied via the unified URL shape.
     await expect(page).toHaveURL(new RegExp(`filter\\.product\\.company_id=${pfizerId}`));
