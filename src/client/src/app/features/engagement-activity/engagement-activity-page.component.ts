@@ -81,6 +81,7 @@ export class EngagementActivityPageComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
   private readonly spaceService = inject(SpaceService);
 
+  readonly tenantId = signal('');
   readonly spaceId = signal('');
   readonly spaceName = signal('');
   readonly loading = signal(false);
@@ -172,8 +173,15 @@ export class EngagementActivityPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('spaceId') ?? '';
-    this.spaceId.set(id);
+    // Walk up the snapshot tree because tenantId/spaceId live on parent
+    // routes (/t/:tenantId/s/:spaceId/activity).
+    let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snap) {
+      if (snap.paramMap.has('tenantId')) this.tenantId.set(snap.paramMap.get('tenantId')!);
+      if (snap.paramMap.has('spaceId')) this.spaceId.set(snap.paramMap.get('spaceId')!);
+      snap = snap.parent;
+    }
+    const id = this.spaceId();
     if (!id) return;
     void this.trialService
       .listBySpace(id)

@@ -1,26 +1,48 @@
-import { Component, computed, input, signal } from '@angular/core';
-import { DatePipe, JsonPipe } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
+import { Component, computed, input } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
 import { summaryFor } from '../../utils/change-event-summary';
 
 @Component({
   selector: 'app-change-event-row',
   standalone: true,
-  imports: [DatePipe, JsonPipe, ButtonModule],
+  imports: [DatePipe, RouterLink],
   templateUrl: './change-event-row.component.html',
 })
 export class ChangeEventRowComponent {
   readonly event = input.required<ChangeEvent>();
-  readonly expanded = signal(false);
+  /**
+   * Optional. When both tenantId and spaceId are provided the row becomes a
+   * link to the marker drawer (when the event has a marker_id) or the trial
+   * detail page. When omitted (e.g. on the trial-detail Activity card where
+   * the row would link back to itself), the row renders as plain text.
+   */
+  readonly tenantId = input<string | null>(null);
+  readonly spaceId = input<string | null>(null);
 
   readonly iconClass = computed(() => iconFor(this.event().event_type));
   readonly summary = computed(() => summaryFor(this.event()));
   readonly sourceLabel = computed(() => (this.event().source === 'ctgov' ? 'CT.GOV' : 'ANALYST'));
 
-  toggle(): void {
-    this.expanded.update((v) => !v);
-  }
+  readonly routerLink = computed<unknown[] | null>(() => {
+    const t = this.tenantId();
+    const s = this.spaceId();
+    if (!t || !s) return null;
+    const e = this.event();
+    if (e.marker_id) {
+      return ['/t', t, 's', s, 'catalysts'];
+    }
+    if (e.trial_id) {
+      return ['/t', t, 's', s, 'manage', 'trials', e.trial_id];
+    }
+    return null;
+  });
+
+  readonly queryParams = computed<Record<string, string> | null>(() => {
+    const e = this.event();
+    return e.marker_id && this.routerLink() ? { markerId: e.marker_id } : null;
+  });
 }
 
 function iconFor(t: ChangeEventType): string {

@@ -38,7 +38,7 @@
     <ul class="px-4">
       @for (event of events(); track event.id) {
         <li>
-          <app-change-event-row [event]="event" />
+          <app-change-event-row [event]="event" [tenantId]="tenantId()" [spaceId]="spaceId()" />
         </li>
       }
     </ul>

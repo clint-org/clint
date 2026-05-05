@@ -6,14 +6,12 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
-import { ChangeEventService } from '../../core/services/change-event.service';
 import { Space } from '../../core/models/space.model';
 import { Company } from '../../core/models/company.model';
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
 import { Product } from '../../core/models/product.model';
 import { IntelligenceFeedRow } from '../../core/models/primary-intelligence.model';
-import { ChangeEvent } from '../../core/models/change-event.model';
 import {
   EngagementLandingService,
   SpaceLandingStats,
@@ -23,10 +21,7 @@ import { EngagementContextStripComponent } from './context-strip/context-strip.c
 import { DraftsWidgetComponent } from './drafts-widget/drafts-widget.component';
 import { UpcomingCatalystsWidgetComponent } from './upcoming-catalysts-widget/upcoming-catalysts-widget.component';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
-import {
-  IntelligenceFeedComponent,
-  IntelligenceFeedItem,
-} from '../../shared/components/intelligence-feed/intelligence-feed.component';
+import { IntelligenceFeedComponent } from '../../shared/components/intelligence-feed/intelligence-feed.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
 /**
@@ -65,7 +60,6 @@ export class EngagementLandingComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   private readonly spaceService = inject(SpaceService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
-  private readonly changeEventService = inject(ChangeEventService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -79,26 +73,9 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
   readonly drafts = signal<IntelligenceFeedRow[]>([]);
-  readonly systemUpdates = signal<ChangeEvent[]>([]);
   protected readonly skeletonRows = [0, 1, 2];
 
-  readonly intelligenceFeedItems = computed<IntelligenceFeedItem[]>(() => {
-    const intel: IntelligenceFeedItem[] = this.latestIntelligence().map((intelligence) => ({
-      kind: 'intelligence',
-      intelligence,
-    }));
-    const updates: IntelligenceFeedItem[] = this.systemUpdates().map((event) => ({
-      kind: 'system_update',
-      event,
-    }));
-    return [...intel, ...updates].sort((a, b) => {
-      const ta = a.kind === 'intelligence' ? a.intelligence.updated_at : a.event.observed_at;
-      const tb = b.kind === 'intelligence' ? b.intelligence.updated_at : b.event.observed_at;
-      return tb.localeCompare(ta);
-    });
-  });
-
-  readonly hasFeedItems = computed(() => this.intelligenceFeedItems().length > 0);
+  readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
 
   readonly intelligenceBrowseRoute = computed(() => {
     const tid = this.tenantId();
@@ -158,21 +135,16 @@ export class EngagementLandingComponent implements OnInit {
     this.latestLoading.set(true);
     this.loadError.set(null);
 
-    const [spaceRes, statsRes, dashRes, agencyRes, latestRes, draftsRes, systemRes] =
-      await Promise.allSettled([
+    const [spaceRes, statsRes, dashRes, agencyRes, latestRes, draftsRes] = await Promise.allSettled(
+      [
         this.spaceService.getSpace(sid),
         this.engagementService.getStats(sid),
         this.dashboardService.getDashboardData(sid, emptyFilters()),
         this.engagementService.isAgencyMemberOfTenant(tid),
         this.intelligenceService.list({ spaceId: sid, limit: 5 }),
         this.intelligenceService.listDraftsForSpace(sid, 3),
-        this.changeEventService.getActivityFeed(
-          sid,
-          { date_range: '7d', whitelist: 'high_signal' },
-          null,
-          5
-        ),
-      ]);
+      ]
+    );
 
     if (spaceRes.status === 'fulfilled') {
       this.space.set(spaceRes.value);
@@ -193,9 +165,6 @@ export class EngagementLandingComponent implements OnInit {
     }
     if (draftsRes.status === 'fulfilled') {
       this.drafts.set(draftsRes.value);
-    }
-    if (systemRes.status === 'fulfilled') {
-      this.systemUpdates.set(systemRes.value.events);
     }
 
     this.statsLoading.set(false);

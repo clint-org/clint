@@ -112,7 +112,7 @@
         <ul class="divide-y divide-slate-200 px-4">
           @for (e of events(); track e.id) {
             <li>
-              <app-change-event-row [event]="e" />
+              <app-change-event-row [event]="e" [tenantId]="tenantId()" [spaceId]="spaceId()" />
             </li>
           }
         </ul>
