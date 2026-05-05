@@ -9,6 +9,7 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
@@ -41,6 +42,7 @@ import { SpaceRoleService } from '../../core/services/space-role.service';
     ProgressSpinner,
     SelectModule,
     TableModule,
+    Tooltip,
     ManagePageShellComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,

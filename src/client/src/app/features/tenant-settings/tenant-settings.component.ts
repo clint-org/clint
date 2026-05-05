@@ -10,6 +10,7 @@ import { InputText } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MessageModule } from 'primeng/message';
+import { Tooltip } from 'primeng/tooltip';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { MATERIAL_DEFAULT_ALLOWED_MIME } from '../../core/models/material.model';
@@ -39,6 +40,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
     InputNumberModule,
     MultiSelectModule,
     MessageModule,
+    Tooltip,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -189,7 +191,8 @@ import { extractErrorMessage } from '../../core/util/error-message';
               @if (member.is_agency_backed) {
                 <span
                   class="ml-2 inline-flex items-center rounded-sm bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-slate-500"
-                  title="This user has access via the parent agency. Manage their access from the agency portal."
+                  pTooltip="This user has access via the parent agency. Manage their access from the agency portal."
+                  tooltipPosition="top"
                 >
                   via agency
                 </span>

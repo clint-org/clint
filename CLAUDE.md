@@ -68,6 +68,7 @@ Pharma competitive intelligence professionals and the teams they support -- busi
 - Use PrimeNG form components (`pInputText`, `p-inputnumber`, `p-select`, `p-colorpicker`, `pTextarea`, `p-checkbox`) over native HTML inputs
 - Use design tokens for theming -- do not override PrimeNG colors with inline Tailwind color classes
 - Domain-specific visualization components (SVG timeline, phase bars, markers) remain custom
+- For hover labels on interactive elements (icons, badges, constrained buttons), always use `pTooltip` from `primeng/tooltip` -- never the native `title=` attribute. `tooltipPosition` convention: `right` for nav rails, `top` for inline badges and form actions, `bottom` for editor/toolbar buttons. Rich multi-section content uses the marker hovercard pattern, not a tooltip.
 
 ## Tailwind CSS Conventions
 

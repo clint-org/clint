@@ -1,6 +1,7 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { BrandContextService } from '../../../core/services/brand-context.service';
 import {
@@ -19,7 +20,7 @@ import { renderMarkdownInline } from '../../utils/markdown-render';
 @Component({
   selector: 'app-intelligence-block',
   standalone: true,
-  imports: [ButtonModule, RouterLink],
+  imports: [ButtonModule, RouterLink, Tooltip],
   templateUrl: './intelligence-block.component.html',
 })
 export class IntelligenceBlockComponent {

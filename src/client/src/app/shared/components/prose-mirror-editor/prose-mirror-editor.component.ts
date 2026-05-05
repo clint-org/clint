@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import type { EditorView } from 'prosemirror-view';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ProseMirrorService } from '../../../core/services/prose-mirror.service';
 
@@ -24,6 +25,7 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
 @Component({
   selector: 'app-prose-mirror-editor',
   standalone: true,
+  imports: [Tooltip],
   template: `
     <div
       class="rounded-sm border border-slate-200 bg-white focus-within:border-brand-600 focus-within:ring-1 focus-within:ring-brand-600/40"
@@ -40,7 +42,8 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
           (mousedown)="$event.preventDefault()"
           (click)="cmd('strong')"
           aria-label="Bold (Cmd/Ctrl-B)"
-          title="Bold"
+          pTooltip="Bold"
+          tooltipPosition="bottom"
         >
           <span class="font-semibold">B</span>
         </button>
@@ -51,7 +54,8 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
           (mousedown)="$event.preventDefault()"
           (click)="cmd('em')"
           aria-label="Italic (Cmd/Ctrl-I)"
-          title="Italic"
+          pTooltip="Italic"
+          tooltipPosition="bottom"
         >
           <span class="italic">I</span>
         </button>
@@ -63,7 +67,8 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
           (mousedown)="$event.preventDefault()"
           (click)="cmd('bullet')"
           aria-label="Bullet list"
-          title="Bullet list"
+          pTooltip="Bullet list"
+          tooltipPosition="bottom"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="2.5" cy="4" r="1.2" fill="currentColor" />
@@ -81,12 +86,37 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
           (mousedown)="$event.preventDefault()"
           (click)="cmd('ordered')"
           aria-label="Numbered list"
-          title="Numbered list"
+          pTooltip="Numbered list"
+          tooltipPosition="bottom"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-            <text x="0.5" y="5.5" font-size="4.5" font-family="ui-monospace, monospace" fill="currentColor">1.</text>
-            <text x="0.5" y="10" font-size="4.5" font-family="ui-monospace, monospace" fill="currentColor">2.</text>
-            <text x="0.5" y="14.5" font-size="4.5" font-family="ui-monospace, monospace" fill="currentColor">3.</text>
+            <text
+              x="0.5"
+              y="5.5"
+              font-size="4.5"
+              font-family="ui-monospace, monospace"
+              fill="currentColor"
+            >
+              1.
+            </text>
+            <text
+              x="0.5"
+              y="10"
+              font-size="4.5"
+              font-family="ui-monospace, monospace"
+              fill="currentColor"
+            >
+              2.
+            </text>
+            <text
+              x="0.5"
+              y="14.5"
+              font-size="4.5"
+              font-family="ui-monospace, monospace"
+              fill="currentColor"
+            >
+              3.
+            </text>
             <rect x="6" y="3.4" width="8" height="1.2" fill="currentColor" />
             <rect x="6" y="7.4" width="8" height="1.2" fill="currentColor" />
             <rect x="6" y="11.4" width="8" height="1.2" fill="currentColor" />

@@ -135,7 +135,9 @@
                 @if (item.has_thread) {
                   <i
                     class="fa-solid fa-link shrink-0 text-[9px] text-slate-300"
-                    title="Part of a thread"
+                    pTooltip="Part of a thread"
+                    tooltipPosition="top"
+                    aria-label="Part of a thread"
                   ></i>
                 }
               </div>
@@ -154,7 +156,8 @@
               @if (item.priority === 'high') {
                 <span
                   class="inline-block h-2 w-2 rounded-full bg-red-500"
-                  title="High priority"
+                  pTooltip="High priority"
+                  tooltipPosition="top"
                   aria-label="High priority"
                 ></span>
               }

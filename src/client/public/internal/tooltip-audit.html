@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Tooltip & Hover Audit</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --amber-100: #fef3c7;
+        --amber-500: #f59e0b;
+        --amber-700: #b45309;
+        --red-600: #dc2626;
+        --green-600: #16a34a;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+      .page {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 56px 64px 96px;
+      }
+      .head {
+        margin-bottom: 48px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .head .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--brand-700);
+        margin-bottom: 12px;
+      }
+      .head h1 {
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--slate-900);
+        letter-spacing: -0.02em;
+        margin-bottom: 12px;
+      }
+      .head p {
+        font-size: 15px;
+        color: var(--slate-500);
+        max-width: 760px;
+      }
+
+      h2.section {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--slate-500);
+        font-family: var(--font-mono);
+        font-weight: 600;
+        margin: 64px 0 24px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      h2.section:first-of-type {
+        margin-top: 0;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+      }
+
+      .specimen {
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .specimen.featured {
+        border: 1px solid var(--brand-300);
+        background: linear-gradient(180deg, white 0%, var(--brand-50) 100%);
+      }
+      .specimen .label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .specimen .label .name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--slate-900);
+      }
+      .specimen .label .kind {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--slate-400);
+      }
+      .specimen .where {
+        font-size: 12px;
+        color: var(--slate-500);
+        line-height: 1.5;
+      }
+      .specimen .stage {
+        background: var(--slate-100);
+        border: 1px dashed var(--slate-300);
+        border-radius: 8px;
+        padding: 40px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        position: relative;
+      }
+      .specimen .stage.dark {
+        background: var(--slate-700);
+        border-color: var(--slate-600);
+      }
+      .specimen .meta {
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        gap: 6px 12px;
+        font-size: 11px;
+      }
+      .specimen .meta dt {
+        color: var(--slate-400);
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .specimen .meta dd {
+        color: var(--slate-700);
+        font-family: var(--font-mono);
+      }
+
+      /* ========== TOOLTIP VARIANTS (faithful renders) ========== */
+
+      /* PrimeNG default tooltip */
+      .ptooltip {
+        background: var(--slate-900);
+        color: white;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        max-width: 200px;
+        line-height: 1.4;
+      }
+
+      /* Native title attribute (browser default) */
+      .nativetitle {
+        background: #fffbcc;
+        color: #1a1a1a;
+        font-size: 11px;
+        padding: 3px 6px;
+        border: 1px solid #888;
+        border-radius: 2px;
+        font-family: -apple-system, sans-serif;
+        max-width: 250px;
+        line-height: 1.3;
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Landscape dark tooltip (bullseye / positioning) */
+      .landscape-tip {
+        background: var(--slate-800);
+        color: white;
+        font-size: 12px;
+        border-radius: 6px;
+        padding: 8px 12px;
+        box-shadow:
+          0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        max-width: 224px;
+      }
+      .landscape-tip .name {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .landscape-tip .row {
+        color: var(--slate-300);
+      }
+      .landscape-tip .moa {
+        color: var(--slate-400);
+        margin-top: 4px;
+        border-top: 1px solid var(--slate-600);
+        padding-top: 4px;
+      }
+      .landscape-tip .hint {
+        color: var(--slate-500);
+        margin-top: 2px;
+      }
+
+      /* Marker hovercard (light, rich) */
+      .marker-card {
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 8px;
+        box-shadow:
+          0 4px 16px rgba(15, 23, 42, 0.08),
+          0 1px 3px rgba(15, 23, 42, 0.04);
+        min-width: 200px;
+        max-width: 300px;
+        display: flex;
+        overflow: hidden;
+      }
+      .marker-card .accent {
+        width: 3px;
+        flex-shrink: 0;
+        background: var(--green-600);
+      }
+      .marker-card .body {
+        padding: 10px 12px;
+        flex: 1;
+        min-width: 0;
+      }
+      .marker-card .cat {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--slate-400);
+        margin-bottom: 6px;
+      }
+      .marker-card .title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--slate-900);
+        line-height: 1.35;
+        margin-bottom: 6px;
+      }
+      .marker-card .row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+        font-size: 11px;
+      }
+      .marker-card .row .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green-600);
+      }
+      .marker-card .row .type {
+        color: var(--slate-600);
+      }
+      .marker-card .row .sep {
+        color: var(--slate-300);
+      }
+      .marker-card .row .date {
+        color: var(--slate-400);
+        font-family: var(--font-mono);
+      }
+      .marker-card .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--amber-100);
+        padding: 2px 8px;
+        border-radius: 999px;
+        margin-bottom: 6px;
+      }
+      .marker-card .badge .pip {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--amber-500);
+      }
+      .marker-card .badge .text {
+        font-size: 10px;
+        color: var(--amber-700);
+        font-weight: 500;
+      }
+      .marker-card .ctx {
+        border-top: 1px solid var(--slate-100);
+        padding-top: 8px;
+        margin-top: 8px;
+      }
+      .marker-card .ctx .trial {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--slate-900);
+      }
+      .marker-card .ctx .sub {
+        font-size: 9px;
+        color: var(--slate-500);
+        margin-top: 2px;
+      }
+      .marker-card .program {
+        margin-top: 6px;
+        font-size: 9px;
+        color: var(--slate-500);
+        letter-spacing: 0.03em;
+      }
+      .marker-card .program .co {
+        text-transform: uppercase;
+      }
+      .marker-card .desc {
+        font-size: 11px;
+        color: var(--slate-500);
+        line-height: 1.55;
+        margin-top: 6px;
+      }
+      .marker-card .intel {
+        margin-top: 8px;
+        border-top: 1px solid var(--slate-100);
+        padding-top: 8px;
+      }
+      .marker-card .intel .lbl {
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--brand-700);
+      }
+      .marker-card .intel .copy {
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--slate-700);
+        line-height: 1.35;
+      }
+      .marker-card .src {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--brand-600);
+        text-decoration: none;
+      }
+      .marker-card .src:hover {
+        color: var(--brand-700);
+        text-decoration: underline;
+      }
+
+      /* p-popover (light card) — used for row notes & column settings */
+      .ppopover {
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 6px;
+        box-shadow:
+          0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        padding: 4px;
+        max-width: 320px;
+      }
+      .ppopover .total {
+        font-size: 11px;
+        color: var(--slate-400);
+        padding: 4px 8px 8px;
+      }
+      .ppopover .note {
+        font-size: 13px;
+        color: var(--slate-700);
+        padding: 8px;
+        border-top: 1px solid var(--slate-100);
+      }
+      .ppopover .note:first-of-type {
+        border-top: 0;
+      }
+      .ppopover .note .when {
+        font-size: 11px;
+        color: var(--slate-400);
+        margin-top: 2px;
+        font-family: var(--font-mono);
+      }
+      .ppopover .col-head {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--slate-400);
+        padding: 6px 8px 8px;
+      }
+      .ppopover .col-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        font-size: 13px;
+        color: var(--slate-700);
+      }
+      .ppopover .col-row input {
+        margin: 0;
+      }
+
+      /* ========== ISSUES TABLE ========== */
+      .issues {
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+      }
+      .issues table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .issues th,
+      .issues td {
+        text-align: left;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--slate-200);
+        font-size: 13px;
+        vertical-align: top;
+      }
+      .issues tr:last-child td {
+        border-bottom: 0;
+      }
+      .issues th {
+        background: var(--slate-50);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--slate-500);
+        font-family: var(--font-mono);
+      }
+      .issues td.severity span {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+      }
+      .issues td.severity .high {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .issues td.severity .med {
+        background: var(--amber-100);
+        color: var(--amber-700);
+      }
+      .issues td.severity .low {
+        background: var(--slate-100);
+        color: var(--slate-600);
+      }
+      .issues td .ref {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-500);
+      }
+
+      /* ========== PLAN ========== */
+      .plan {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+      .track {
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 12px;
+        padding: 28px;
+      }
+      .track .lane {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--brand-700);
+        margin-bottom: 8px;
+      }
+      .track h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--slate-900);
+        margin-bottom: 8px;
+      }
+      .track .summary {
+        font-size: 13px;
+        color: var(--slate-500);
+        margin-bottom: 20px;
+      }
+      .track ol {
+        list-style: none;
+        counter-reset: step;
+      }
+      .track ol li {
+        counter-increment: step;
+        position: relative;
+        padding: 12px 0 12px 36px;
+        border-top: 1px solid var(--slate-100);
+        font-size: 13px;
+        color: var(--slate-700);
+        line-height: 1.55;
+      }
+      .track ol li:first-child {
+        border-top: 0;
+      }
+      .track ol li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: 14px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--brand-50);
+        color: var(--brand-700);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .track ol li code {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--slate-600);
+        background: var(--slate-50);
+        padding: 1px 5px;
+        border-radius: 3px;
+      }
+      .track .effort {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--slate-200);
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .track .effort div {
+        font-size: 11px;
+      }
+      .track .effort dt {
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--slate-400);
+        margin-bottom: 4px;
+      }
+      .track .effort dd {
+        color: var(--slate-700);
+        font-weight: 500;
+      }
+
+      .footer {
+        margin-top: 64px;
+        padding-top: 24px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 12px;
+        color: var(--slate-400);
+      }
+      .footer code {
+        font-family: var(--font-mono);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+    <div class="page">
+      <header class="head">
+        <div class="eyebrow">Design Audit / 2026-05-05</div>
+        <h1>Tooltip and hover-popup audit</h1>
+        <p>
+          The app currently ships four distinct hover and popover primitives. This page renders each
+          variant at faithful scale so the visual drift is visible at a glance, lists the
+          consistency problems worth fixing, and proposes a two-track unification plan.
+        </p>
+      </header>
+
+      <h2 class="section">1. Inventory -- six variants in production</h2>
+
+      <div class="grid-3">
+        <!-- PrimeNG tooltip -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">PrimeNG label tooltip</div>
+            <div class="kind">pTooltip</div>
+          </div>
+          <div class="where">
+            Icon-rail nav, sidebar nav, change-badge, trial-detail (CT.gov sync),
+            space-field-visibility (save). Single-line label, dark, framework default.
+          </div>
+          <div class="stage">
+            <div class="ptooltip">Sync from CT.gov</div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>slate-900</dd>
+            <dt>radius</dt>
+            <dd>4px</dd>
+            <dt>animation</dt>
+            <dd>PrimeNG default</dd>
+            <dt>files</dt>
+            <dd>5</dd>
+          </dl>
+        </div>
+
+        <!-- Native title -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">Native HTML title attribute</div>
+            <div class="kind">title=</div>
+          </div>
+          <div class="where">
+            events-page (thread / priority badges), intelligence-block (full-sentence draft hint).
+            OS-styled, slow to appear, weak a11y, off-brand.
+          </div>
+          <div class="stage">
+            <div class="nativetitle">
+              Unpublished changes are saved as a draft. Clients still see the published version.
+              Click Edit to resume and publish.
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>OS native</dd>
+            <dt>radius</dt>
+            <dd>n/a</dd>
+            <dt>animation</dt>
+            <dd>OS delay</dd>
+            <dt>files</dt>
+            <dd>2+</dd>
+          </dl>
+        </div>
+
+        <!-- Landscape dark tooltip -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">Landscape dark tooltip</div>
+            <div class="kind">custom dark</div>
+          </div>
+          <div class="where">
+            bullseye-tooltip + positioning-tooltip (near-duplicates). Hover on chart dots and
+            bubbles. Only dark surface in the product.
+          </div>
+          <div class="stage dark">
+            <div class="landscape-tip">
+              <div class="name">Pembrolizumab</div>
+              <div class="row">Keytruda</div>
+              <div class="row">Merck, highest phase: P3</div>
+              <div class="row">42 trials</div>
+              <div class="moa">PD-1 inhibitor, Anti-PD1 monoclonal</div>
+              <div class="hint">Click for details</div>
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>slate-800</dd>
+            <dt>max-w</dt>
+            <dd>224px</dd>
+            <dt>animation</dt>
+            <dd>fade 120/80ms</dd>
+            <dt>z-index</dt>
+            <dd>50</dd>
+          </dl>
+        </div>
+
+        <!-- Marker hovercard -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">Marker hovercard (rich)</div>
+            <div class="kind">custom light</div>
+          </div>
+          <div class="where">
+            Dashboard grid markers. Multi-section: title, type, projection, trial context, program,
+            description, primary intelligence, source link. Truly a hovercard, not a tooltip.
+          </div>
+          <div class="stage">
+            <div class="marker-card">
+              <div class="accent"></div>
+              <div class="body">
+                <div class="cat">Phase 3 readout</div>
+                <div class="title">CheckMate-816 OS final analysis</div>
+                <div class="row">
+                  <span class="dot"></span>
+                  <span class="type">Data readout</span>
+                  <span class="sep">|</span>
+                  <span class="date">June 14, 2026</span>
+                </div>
+                <div class="badge">
+                  <span class="pip"></span><span class="text">Stout estimate</span>
+                </div>
+                <div class="ctx">
+                  <div class="trial">CheckMate-816</div>
+                  <div class="sub">Phase 3 -- Active, not recruiting</div>
+                </div>
+                <div class="program"><span class="co">BMS</span> &middot; Opdivo</div>
+                <p class="desc">
+                  Final overall survival readout for resectable NSCLC. Stout expects positive HR
+                  with widening curves.
+                </p>
+                <div class="intel">
+                  <div class="lbl">Primary intelligence</div>
+                  <div class="copy">
+                    Investor day reaffirmed mid-year readout window with no protocol changes.
+                  </div>
+                </div>
+                <a class="src" href="#">View source</a>
+              </div>
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>white</dd>
+            <dt>max-w</dt>
+            <dd>300px</dd>
+            <dt>animation</dt>
+            <dd>none</dd>
+            <dt>z-index</dt>
+            <dd>99999 inline</dd>
+          </dl>
+        </div>
+
+        <!-- p-popover row notes -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">PrimeNG popover -- row notes</div>
+            <div class="kind">p-popover</div>
+          </div>
+          <div class="where">
+            Click a row's note cell to open. Scrolling list of notes with timestamps. Click-driven,
+            not hover.
+          </div>
+          <div class="stage">
+            <div class="ppopover" style="width: 280px">
+              <div class="total">3 notes on this trial</div>
+              <div class="note">
+                Sponsor expected to update primary endpoint in next protocol amendment.
+                <div class="when">Apr 28, 2026</div>
+              </div>
+              <div class="note">
+                FDA Type B meeting in May -- likely accelerated approval pathway discussion.
+                <div class="when">Apr 14, 2026</div>
+              </div>
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>white</dd>
+            <dt>max-w</dt>
+            <dd>320px</dd>
+            <dt>trigger</dt>
+            <dd>click</dd>
+            <dt>scroll</dt>
+            <dd>yes (300px)</dd>
+          </dl>
+        </div>
+
+        <!-- p-popover column settings -->
+        <div class="specimen">
+          <div class="label">
+            <div class="name">PrimeNG popover -- column settings</div>
+            <div class="kind">p-popover</div>
+          </div>
+          <div class="where">
+            Click the gear in the dashboard grid header. Lightweight settings panel. Same primitive
+            as row notes, different content shape.
+          </div>
+          <div class="stage">
+            <div class="ppopover" style="width: 200px">
+              <div class="col-head">Columns</div>
+              <label class="col-row"><input type="checkbox" checked /> MOA</label>
+              <label class="col-row"><input type="checkbox" checked /> ROA</label>
+              <label class="col-row"><input type="checkbox" /> Notes</label>
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>bg</dt>
+            <dd>white</dd>
+            <dt>max-w</dt>
+            <dd>~200px</dd>
+            <dt>trigger</dt>
+            <dd>click</dd>
+            <dt>shape</dt>
+            <dd>form</dd>
+          </dl>
+        </div>
+      </div>
+
+      <h2 class="section">2. Consistency problems worth fixing</h2>
+
+      <div class="issues">
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Problem</th>
+              <th>Where</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="severity"><span class="high">High</span></td>
+              <td>
+                <strong>Native <code>title=</code> for non-trivial copy.</strong>
+                Browser-styled, slow to appear, keyboard-invisible. The intelligence-block draft
+                hint is a full sentence delivered through this anti-pattern.
+              </td>
+              <td>
+                <div class="ref">
+                  intelligence-block.component.html:32<br />events-page.component.html:138, 157
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="high">High</span></td>
+              <td>
+                <strong>Two near-duplicate tooltip components.</strong>
+                bullseye-tooltip and positioning-tooltip share wrapper classes, positioning logic,
+                animation, and content shape. One refactor target.
+              </td>
+              <td>
+                <div class="ref">
+                  features/landscape/bullseye-tooltip.component.ts<br />features/landscape/positioning-tooltip.component.ts
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="med">Medium</span></td>
+              <td>
+                <strong>Off-brand dark surfaces.</strong>
+                Brand guide is light-mode-only with tinted slate. Landscape tooltips are
+                <code>bg-slate-800</code> + white -- the only dark surfaces in the product.
+              </td>
+              <td><div class="ref">features/landscape/*.component.ts</div></td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="med">Medium</span></td>
+              <td>
+                <strong>No vocabulary for tooltip vs hovercard.</strong>
+                The marker tooltip is a 300px hovercard with a clickable source link. The PrimeNG
+                tooltip is a one-line label. Both called "tooltip" in conversation.
+              </td>
+              <td><div class="ref">across the app</div></td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="med">Medium</span></td>
+              <td>
+                <strong>Z-index drift.</strong>
+                Marker hovercard inlines <code>z-index: 99999</code>. Landscape tooltips use
+                <code>z-50</code>. PrimeNG manages its own. Three answers, no documented stack.
+              </td>
+              <td><div class="ref">marker-tooltip.component.ts:34</div></td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="low">Low</span></td>
+              <td>
+                <strong>Animation inconsistency.</strong>
+                Landscape uses fadeTooltip (120/80ms). Marker hovercard is instant. Probably correct
+                (analysts scrub fast over markers), but undocumented.
+              </td>
+              <td><div class="ref">shared/animations/fade-tooltip.animation.ts</div></td>
+            </tr>
+            <tr>
+              <td class="severity"><span class="low">Low</span></td>
+              <td>
+                <strong>tooltipPosition convention not written down.</strong>
+                Right for nav, top for form actions, bottom for trial-detail. Defensible but should
+                be a one-line rule in CLAUDE.md to prevent drift.
+              </td>
+              <td><div class="ref">5 pTooltip sites</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="section">3. Proposed unification -- two named primitives</h2>
+
+      <div class="grid-2">
+        <div class="specimen featured">
+          <div class="label">
+            <div class="name">Label tooltip</div>
+            <div class="kind">PrimeNG pTooltip</div>
+          </div>
+          <div class="where">
+            Single line of context for an icon, badge, or constrained button. Ephemeral. Always
+            PrimeNG, no custom alternatives. Replace every native
+            <code style="font-family: var(--font-mono)">title=</code>.
+          </div>
+          <div class="stage">
+            <div class="ptooltip">Add an NCT identifier to enable CT.gov sync</div>
+          </div>
+          <dl class="meta">
+            <dt>when</dt>
+            <dd>label only, &le; 1 sentence</dd>
+            <dt>position</dt>
+            <dd>right (nav), top (forms), bottom (content actions)</dd>
+            <dt>trigger</dt>
+            <dd>hover + focus (PrimeNG handles)</dd>
+          </dl>
+        </div>
+
+        <div class="specimen featured">
+          <div class="label">
+            <div class="name">Hovercard</div>
+            <div class="kind">&lt;app-hovercard&gt;</div>
+          </div>
+          <div class="where">
+            Rich, multi-section content with optional accent bar, optional source link. Extracted
+            from marker-tooltip. Bullseye and positioning tooltips refactor onto this shell --
+            killing the dark surface and the duplication in one move.
+          </div>
+          <div class="stage">
+            <div class="marker-card">
+              <div class="accent" style="background: var(--brand-600)"></div>
+              <div class="body">
+                <div class="cat">Bullseye</div>
+                <div class="title">Pembrolizumab</div>
+                <div class="row">
+                  <span class="type">Merck</span>
+                  <span class="sep">|</span>
+                  <span class="date">P3 &middot; 42 trials</span>
+                </div>
+                <p class="desc">PD-1 inhibitor, Anti-PD1 monoclonal antibody.</p>
+                <a class="src" href="#">Open product</a>
+              </div>
+            </div>
+          </div>
+          <dl class="meta">
+            <dt>when</dt>
+            <dd>multi-line, multi-section, optional CTA</dd>
+            <dt>shell</dt>
+            <dd>white, slate-200 border, soft shadow, optional 3px accent</dd>
+            <dt>z-index</dt>
+            <dd>tokenized constant</dd>
+          </dl>
+        </div>
+      </div>
+
+      <h2 class="section">4. Plan -- two tracks</h2>
+
+      <div class="plan">
+        <div class="track">
+          <div class="lane">Track A &middot; quick win</div>
+          <h3>Replace native title attributes with pTooltip</h3>
+          <p class="summary">
+            Pure cleanup, no design decisions. Eliminates the off-brand OS tooltip and gives the
+            affected copy real keyboard discoverability. Smallest possible PR.
+          </p>
+          <ol>
+            <li>
+              Audit every native <code>title=</code> on interactive elements (grep
+              <code>title="</code> in templates).
+            </li>
+            <li>
+              Replace with <code>pTooltip</code>; import <code>TooltipModule</code> in the host
+              components.
+            </li>
+            <li>Pick position per the convention (nav: right, form: top, content: bottom).</li>
+            <li>
+              Keep <code>title=</code> only on truly-decorative svg/img where alt text doesn't fit.
+            </li>
+            <li>
+              Add a one-liner to <code>CLAUDE.md</code> banning native <code>title=</code> on
+              interactive elements.
+            </li>
+          </ol>
+          <dl class="effort">
+            <div>
+              <dt>files</dt>
+              <dd>~6</dd>
+            </div>
+            <div>
+              <dt>risk</dt>
+              <dd>low</dd>
+            </div>
+            <div>
+              <dt>est</dt>
+              <dd>1 sitting</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="track">
+          <div class="lane">Track B &middot; structural</div>
+          <h3>Extract &lt;app-hovercard&gt; and refactor landscape tooltips onto it</h3>
+          <p class="summary">
+            Real architecture work. Turns three components into one shell + three slot
+            configurations. Pulls the landscape tooltips on-brand and removes a future divergence
+            point.
+          </p>
+          <ol>
+            <li>
+              Create <code>shared/components/hovercard/hovercard.component.ts</code> with slots:
+              accent, eyebrow, title, body, footer.
+            </li>
+            <li>
+              Move positioning logic (clamp-to-viewport, flip-above) into a
+              <code>useHovercardPosition</code> directive or service so it isn't reimplemented per
+              call site.
+            </li>
+            <li>
+              Tokenize z-index in one place (e.g. <code>--z-hovercard: 9999</code>); remove inline
+              <code>z-index: 99999</code>.
+            </li>
+            <li>
+              Refactor marker-tooltip to consume the new shell; verify visual parity in the
+              dashboard grid.
+            </li>
+            <li>
+              Refactor bullseye-tooltip and positioning-tooltip onto the shell; drop the dark
+              slate-800 surface; add a "Open details" footer link.
+            </li>
+            <li>
+              Decide animation: keep instant for marker (data scrubbing), keep fade for landscape
+              (lower-frequency hover). Document the choice.
+            </li>
+            <li>
+              Add a one-pager to <code>docs/runbook/05-frontend-architecture.md</code>: "Hover
+              surfaces -- label tooltip vs hovercard."
+            </li>
+          </ol>
+          <dl class="effort">
+            <div>
+              <dt>files</dt>
+              <dd>~8</dd>
+            </div>
+            <div>
+              <dt>risk</dt>
+              <dd>medium (visual)</dd>
+            </div>
+            <div>
+              <dt>est</dt>
+              <dd>1 day</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <p class="footer">
+        Source: <code>src/client/src/app/features/dashboard/grid/marker-tooltip.component.ts</code>,
+        <code>src/client/src/app/features/landscape/bullseye-tooltip.component.ts</code>,
+        <code>src/client/src/app/features/landscape/positioning-tooltip.component.ts</code>, and 5
+        <code>pTooltip</code> sites. Visual specimens recreated from each component's actual classes
+        and inline styles -- no live Angular bootstrap, so the renders are static approximations.
+      </p>
+    </div>
+  </body>
+</html>
