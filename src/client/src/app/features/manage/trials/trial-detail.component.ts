@@ -1,6 +1,6 @@
 import { DatePipe, Location } from '@angular/common';
 import { Component, computed, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -47,6 +47,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   selector: 'app-trial-detail',
   standalone: true,
   imports: [
+    RouterLink,
     DatePipe,
     TableModule,
     ButtonModule,
