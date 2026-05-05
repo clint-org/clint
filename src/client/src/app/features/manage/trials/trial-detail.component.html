@@ -108,6 +108,8 @@
             [published]="intelligence()?.published ?? null"
             [draft]="intelligence()?.draft ?? null"
             [agencyView]="spaceRole.canEdit()"
+            [tenantId]="tenantIdSig()"
+            [spaceId]="spaceIdSig()"
             (edit)="onIntelligenceEdit()"
           />
         } @else {

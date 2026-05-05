@@ -181,6 +181,19 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   });
 
   protected readonly spaceIdSig = computed(() => this.trial()?.space_id ?? '');
+  protected readonly tenantIdSig = computed(
+    () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
+  );
+
+  private findAncestorParam(key: string): string | null {
+    let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
+    while (snap) {
+      const v = snap.paramMap.get(key);
+      if (v) return v;
+      snap = snap.parent;
+    }
+    return null;
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

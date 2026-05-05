@@ -33,6 +33,8 @@ export interface PrimaryIntelligenceLink {
   id?: string;
   entity_type: IntelligenceLinkEntityType;
   entity_id: string;
+  /** Resolved name from the linked entity (trials.name, markers.title, etc.). Null if the row was deleted. */
+  entity_name?: string | null;
   relationship_type: string;
   gloss: string | null;
   display_order: number;
@@ -89,7 +91,10 @@ export interface IntelligenceFeedRow {
   thesis_md: string;
   last_edited_by: string;
   updated_at: string;
-  links: Pick<PrimaryIntelligenceLink, 'entity_type' | 'entity_id' | 'relationship_type' | 'gloss'>[];
+  links: Pick<
+    PrimaryIntelligenceLink,
+    'entity_type' | 'entity_id' | 'relationship_type' | 'gloss'
+  >[];
   contributors: string[];
 }
 

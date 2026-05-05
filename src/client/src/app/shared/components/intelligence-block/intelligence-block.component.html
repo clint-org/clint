@@ -57,9 +57,7 @@
 
       @if (c.record.thesis_md.length) {
         <div class="mb-4">
-          <h4
-            class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-          >
+          <h4 class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Thesis
           </h4>
           <div class="prose-render text-sm text-slate-800" [innerHTML]="thesisHtml()"></div>
@@ -68,9 +66,7 @@
 
       @if (c.record.watch_md.length) {
         <div class="mb-4">
-          <h4
-            class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-          >
+          <h4 class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             What to watch
           </h4>
           <div class="prose-render text-sm text-slate-800" [innerHTML]="watchHtml()"></div>
@@ -79,9 +75,7 @@
 
       @if (c.record.implications_md.length) {
         <div class="mb-4">
-          <h4
-            class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-          >
+          <h4 class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Implications
           </h4>
           <div class="prose-render text-sm text-slate-800" [innerHTML]="implicationsHtml()"></div>
@@ -102,17 +96,34 @@
                   {{ g.relationship }}
                 </span>
                 @for (link of g.items; track link.entity_id) {
-                  <span
-                    class="inline-flex items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700"
-                  >
-                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                      {{ link.entity_type }}
+                  @let route = linkRoute(link);
+                  @if (route) {
+                    <a
+                      [routerLink]="route.commands"
+                      [queryParams]="route.queryParams ?? null"
+                      class="inline-flex items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                    >
+                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                        {{ link.entity_type }}
+                      </span>
+                      <span>{{ linkLabel(link) }}</span>
+                      @if (link.gloss) {
+                        <span class="text-slate-400">-- {{ link.gloss }}</span>
+                      }
+                    </a>
+                  } @else {
+                    <span
+                      class="inline-flex items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700"
+                    >
+                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                        {{ link.entity_type }}
+                      </span>
+                      <span>{{ linkLabel(link) }}</span>
+                      @if (link.gloss) {
+                        <span class="text-slate-400">-- {{ link.gloss }}</span>
+                      }
                     </span>
-                    <span class="font-mono text-[11px]">{{ link.entity_id.slice(0, 8) }}</span>
-                    @if (link.gloss) {
-                      <span class="text-slate-400">-- {{ link.gloss }}</span>
-                    }
-                  </span>
+                  }
                 }
               </div>
             }

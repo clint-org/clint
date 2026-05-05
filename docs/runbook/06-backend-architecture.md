@@ -43,6 +43,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
 | `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products, trials |
 | `_seed_demo_products` | products | - |
+| `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trials | - |
@@ -51,7 +52,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | primary_intelligence, primary_intelligence_links, primary_intelligence_revisions |
+| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, primary_intelligence_revisions, products, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
 | `create_space` | space_members, spaces | tenant_members |

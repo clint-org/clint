@@ -693,4 +693,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260503080000_drop_marker_notifications.sql`
 - `20260503090000_delete_space_rpc.sql`
 - `20260504000000_seed_demo_helpers_security_definer.sql`
+- `20260505200109_intel_link_names.sql`
+- `20260505201000_seed_demo_recent_activity.sql`
 <!-- /AUTO-GEN:DRIFT -->

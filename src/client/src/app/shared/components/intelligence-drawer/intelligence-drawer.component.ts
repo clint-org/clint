@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, OnDestroy, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  OnDestroy,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -144,16 +153,14 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
           </div>
 
           <div class="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400" aria-live="polite">
+            <span
+              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+              aria-live="polite"
+            >
               {{ saveStateLabel() }}
             </span>
             <div class="flex items-center gap-2">
-              <p-button
-                label="Cancel"
-                severity="secondary"
-                [text]="true"
-                (onClick)="cancel()"
-              />
+              <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="cancel()" />
               <p-button
                 label="Save draft"
                 icon="fa-solid fa-save"
@@ -239,23 +246,23 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     this.markDirty();
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.autoSaveTimer = setTimeout(() => {
-      void this.persist('draft');
+      void this.persist('draft', false);
     }, 1500);
   }
 
   protected autoSave(): void {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
-    void this.persist('draft');
+    void this.persist('draft', false);
   }
 
   protected async saveDraft(): Promise<void> {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
-    await this.persist('draft');
+    await this.persist('draft', true);
   }
 
   protected async publish(): Promise<void> {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
-    await this.persist('published');
+    await this.persist('published', true);
     if (this.saveState() !== 'error') {
       this.published.emit();
       this.open.set(false);
@@ -334,14 +341,19 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     this.changeNote.set('');
   }
 
-  private async persist(state: 'draft' | 'published'): Promise<void> {
+  /**
+   * @param notify When true (explicit Save draft / Publish), shows a success
+   * toast on the happy path. Auto-save callers pass false to keep the UX
+   * silent -- only the inline "Saved" status label updates.
+   */
+  private async persist(state: 'draft' | 'published', notify: boolean): Promise<void> {
     if (this.loading()) return;
     if (state === 'draft' && !this.dirty() && !!this.currentId()) return;
     if (!this.headline().trim()) return;
 
     this.saveState.set('saving');
     const input: UpsertIntelligenceInput = {
-      id: state === 'draft' ? this.currentId() : this.currentId() ?? this.publishedId(),
+      id: state === 'draft' ? this.currentId() : (this.currentId() ?? this.publishedId()),
       space_id: this.spaceId(),
       entity_type: this.entityType(),
       entity_id: this.entityId(),
@@ -361,6 +373,13 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       this.dirty.set(false);
       if (state === 'published') {
         this.publishedId.set(id);
+      }
+      if (notify) {
+        this.messageService.add({
+          severity: 'success',
+          summary: state === 'published' ? 'Published' : 'Draft saved',
+          life: 2500,
+        });
       }
     } catch (error) {
       this.saveState.set('error');
