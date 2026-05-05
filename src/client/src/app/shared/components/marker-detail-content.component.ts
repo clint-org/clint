@@ -214,7 +214,7 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
         <app-detail-panel-section label="Related events">
           <app-detail-panel-entity-list>
             @for (re of d.related_events; track re.event_id) {
-              <app-detail-panel-entity-row (rowClick)="markerClick.emit(re.event_id)">
+              <app-detail-panel-entity-row (rowClick)="eventClick.emit(re.event_id)">
                 <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
                   re.event_date | date: 'mediumDate'
                 }}</span>
@@ -264,6 +264,7 @@ export class MarkerDetailContentComponent {
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly markerClick = output<string>();
+  readonly eventClick = output<string>();
 
   // Per-space CT.gov field overlay state. Snapshot is lazy-loaded by
   // trial_id whenever the selected marker (and therefore detail) changes;

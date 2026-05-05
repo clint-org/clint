@@ -67,6 +67,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
+              (eventClick)="onEventClick($event)"
             />
           }
         }
@@ -208,6 +209,10 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private spaceBase(): string[] {
     return ['/t', this.tenantId(), 's', this.spaceId()];
+  }
+
+  onEventClick(eventId: string): void {
+    this.router.navigate([...this.spaceBase(), 'events'], { queryParams: { eventId } });
   }
 
   private extractRouteParams(): void {

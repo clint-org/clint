@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 /**
@@ -14,7 +15,13 @@ import { Component, input, output } from '@angular/core';
 @Component({
   selector: 'app-detail-panel-entity-row',
   standalone: true,
+  imports: [NgTemplateOutlet],
+  // Single <ng-content/> captured into #content and rendered via
+  // NgTemplateOutlet in both branches. Two unselected <ng-content/> slots
+  // in @if/@else don't both receive projected content - only one wins,
+  // and it's the wrong one for the active branch.
   template: `
+    <ng-template #content><ng-content /></ng-template>
     <li class="list-none">
       @if (clickable()) {
         <button
@@ -23,7 +30,7 @@ import { Component, input, output } from '@angular/core';
           (click)="rowClick.emit()"
           [attr.aria-label]="ariaLabel() || null"
         >
-          <ng-content />
+          <ng-container *ngTemplateOutlet="content" />
           <i
             class="fa-solid fa-arrow-right ml-auto text-[10px] text-slate-300 group-hover:text-brand-600"
             aria-hidden="true"
@@ -31,7 +38,7 @@ import { Component, input, output } from '@angular/core';
         </button>
       } @else {
         <div class="flex w-full items-center gap-2 px-2 py-1.5">
-          <ng-content />
+          <ng-container *ngTemplateOutlet="content" />
         </div>
       }
     </li>

@@ -119,6 +119,7 @@ import { SquareIconComponent } from './svg-icons/square-icon.component';
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
           (markerClick)="markerClick.emit($event)"
+          (eventClick)="eventClick.emit($event)"
         />
       </app-detail-panel-shell>
     </ng-template>
@@ -138,6 +139,7 @@ export class MarkerDetailPanelComponent {
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly panelClose = output<void>();
   readonly markerClick = output<string>();
+  readonly eventClick = output<string>();
 
   readonly headerLabel = computed(() => {
     const d = this.detail();
