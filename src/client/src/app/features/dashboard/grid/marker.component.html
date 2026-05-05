@@ -15,81 +15,19 @@
     role="button"
     [attr.aria-label]="ariaLabel()"
   >
-    @if (isDashedLine()) {
-      <svg [attr.width]="6" [attr.height]="28" class="overflow-visible" [style.margin-left.px]="-3">
-        <line
-          x1="3"
-          y1="0"
-          x2="3"
-          y2="28"
-          [attr.stroke]="
-            isNle() ? mt.color : effectiveFillStyle() === 'outline' ? '#cbd5e1' : mt.color
-          "
-          stroke-width="1.5"
-          stroke-dasharray="4,3"
-          stroke-linecap="round"
-          [attr.opacity]="isNle() ? 0.25 : 1"
-        />
-      </svg>
-    } @else {
-      <svg
-        [attr.width]="iconSize"
-        [attr.height]="iconSize"
-        class="overflow-visible drop-shadow-sm"
-        [style.margin-left.px]="-iconSize / 2"
-      >
-        <g [attr.opacity]="nleOpacity()">
-          @switch (mt.shape) {
-            @case ('circle') {
-              <g
-                app-circle-icon
-                [size]="iconSize"
-                [color]="mt.color"
-                [fillStyle]="effectiveFillStyle()"
-                [innerMark]="mt.inner_mark"
-              />
-            }
-            @case ('diamond') {
-              <g
-                app-diamond-icon
-                [size]="iconSize"
-                [color]="mt.color"
-                [fillStyle]="effectiveFillStyle()"
-                [innerMark]="mt.inner_mark"
-              />
-            }
-            @case ('flag') {
-              <g
-                app-flag-icon
-                [size]="iconSize"
-                [color]="mt.color"
-                [fillStyle]="effectiveFillStyle()"
-              />
-            }
-            @case ('triangle') {
-              <g
-                app-triangle-icon
-                [size]="iconSize"
-                [color]="mt.color"
-                [fillStyle]="effectiveFillStyle()"
-              />
-            }
-            @case ('square') {
-              <g
-                app-square-icon
-                [size]="iconSize"
-                [color]="mt.color"
-                [fillStyle]="effectiveFillStyle()"
-                [innerMark]="mt.inner_mark"
-              />
-            }
-          }
-        </g>
-        @if (isNle()) {
-          <g app-nle-overlay [size]="iconSize" />
-        }
-      </svg>
-    }
+    <div
+      [class.drop-shadow-sm]="!isDashedLine()"
+      [style.margin-left.px]="isDashedLine() ? -3 : -iconSize / 2"
+    >
+      <app-marker-icon
+        [shape]="mt.shape"
+        [color]="mt.color"
+        [size]="iconSize"
+        [fillStyle]="effectiveFillStyle()"
+        [innerMark]="mt.inner_mark"
+        [isNle]="isNle()"
+      />
+    </div>
 
     <div
       class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"

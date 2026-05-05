@@ -20,6 +20,7 @@ import { DetailPanelEntityListComponent } from '../../shared/components/detail-p
 import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 
 interface RingHistogramEntry {
   phase: RingPhase;
@@ -38,6 +39,7 @@ interface RingHistogramEntry {
     DetailPanelEntityRowComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
+    MarkerIconComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
 })
@@ -51,6 +53,7 @@ export class BullseyeDetailPanelComponent {
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
   readonly openInTimeline = output<{ productId: string; therapeuticAreaId: string }>();
+  readonly openMarker = output<string>();
   readonly ringHighlightToggle = output<RingPhase | null>();
   readonly clearSelection = output<void>();
 
@@ -192,6 +195,10 @@ export class BullseyeDetailPanelComponent {
 
   protected onTrialClick(trialId: string): void {
     this.openTrial.emit(trialId);
+  }
+
+  protected onMarkerRowClick(markerId: string): void {
+    this.openMarker.emit(markerId);
   }
 
   protected onCompanyClick(): void {

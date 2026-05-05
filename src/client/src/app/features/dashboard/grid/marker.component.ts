@@ -2,27 +2,14 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
-import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
-import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
-import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
-import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
-import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
-import { NleOverlayComponent } from '../../../shared/components/svg-icons/nle-overlay.component';
+import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
 import { MarkerTooltipComponent } from './marker-tooltip.component';
 
 @Component({
   selector: 'app-marker',
   standalone: true,
-  imports: [
-    CircleIconComponent,
-    DiamondIconComponent,
-    FlagIconComponent,
-    TriangleIconComponent,
-    SquareIconComponent,
-    NleOverlayComponent,
-    MarkerTooltipComponent,
-  ],
+  imports: [MarkerIconComponent, MarkerTooltipComponent],
   templateUrl: './marker.component.html',
 })
 export class MarkerComponent {
@@ -68,11 +55,24 @@ export class MarkerComponent {
 
   isDashedLine = computed(() => this.markerType()?.shape === 'dashed-line');
 
-  nleOpacity = computed(() => this.isNle() ? 0.3 : 1);
+  nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
   shortDate = computed(() => {
     const d = new Date(this.marker().event_date);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
   });
 

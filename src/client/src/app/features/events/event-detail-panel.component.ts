@@ -104,7 +104,10 @@ const CATEGORY_COLOR: Record<string, string> = {
                     class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
                   >
                     {{ src.label || src.url }}
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+                    <i
+                      class="fa-solid fa-arrow-up-right-from-square text-[9px]"
+                      aria-hidden="true"
+                    ></i>
                   </a>
                 </li>
               }
@@ -130,7 +133,9 @@ const CATEGORY_COLOR: Record<string, string> = {
               @for (te of thread.events; track te.id) {
                 <li>
                   @if (te.id === d.id) {
-                    <div class="flex items-center justify-between gap-2 rounded-sm bg-brand-50 px-2 py-1">
+                    <div
+                      class="flex items-center justify-between gap-2 rounded-sm bg-brand-50 px-2 py-1"
+                    >
                       <span class="flex min-w-0 items-center gap-2 text-[11px] leading-snug">
                         <span class="font-mono tabular-nums text-brand-700">{{
                           te.event_date | date: 'mediumDate'
@@ -173,7 +178,9 @@ const CATEGORY_COLOR: Record<string, string> = {
                   <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
                     le.event_date | date: 'mediumDate'
                   }}</span>
-                  <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{ le.title }}</span>
+                  <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                    le.title
+                  }}</span>
                   <span class="shrink-0 text-[10px] text-slate-400">({{ le.category_name }})</span>
                 </app-detail-panel-entity-row>
               }
@@ -181,11 +188,14 @@ const CATEGORY_COLOR: Record<string, string> = {
           </app-detail-panel-section>
         }
 
-        <p class="mt-4 text-[10px] text-slate-400">
-          Created {{ d.created_at | date: 'medium' }}
-        </p>
+        <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
       } @else if (catalystDetail()) {
-        <app-marker-detail-content [detail]="catalystDetail()" />
+        <app-marker-detail-content
+          [detail]="catalystDetail()"
+          (markerClick)="markerSelect.emit($event)"
+          (eventClick)="relatedEventClick.emit($event)"
+          (trialClick)="trialClick.emit($event)"
+        />
       } @else {
         <app-detail-panel-empty-state prompt="Click an event to see details">
           <p class="mt-2 text-[13px] text-slate-700">
@@ -195,8 +205,9 @@ const CATEGORY_COLOR: Record<string, string> = {
             in window
             @if (highPriorityCount() > 0) {
               <span class="text-slate-500"
-                >&middot; <span class="font-medium text-slate-900">{{ highPriorityCount() }}</span>
-                high priority</span
+                >&middot;
+                <span class="font-medium text-slate-900">{{ highPriorityCount() }}</span> high
+                priority</span
               >
             }
           </p>
@@ -272,6 +283,8 @@ export class EventDetailPanelComponent {
   readonly relatedEventClick = output<string>();
   readonly recentClick = output<string>();
   readonly categoryFilter = output<string>();
+  readonly markerSelect = output<string>();
+  readonly trialClick = output<string>();
 
   readonly hasSelection = computed(() => !!this.detail() || !!this.catalystDetail());
 

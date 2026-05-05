@@ -36,7 +36,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
       <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
         {{ label() }}
       </p>
-      <p class="font-mono text-[9px] uppercase tracking-wider text-slate-300">
+      <p class="whitespace-nowrap font-mono text-[9px] uppercase tracking-wider text-slate-300">
         Pre &middot; P1 &middot; P2 &middot; P3 &middot; P4 &middot; App &middot; L
       </p>
     </div>
@@ -64,9 +64,7 @@ export class DetailPanelPhaseRaceComponent {
   readonly entries = input.required<PhaseRaceEntry[]>();
 
   protected sortedEntries(): PhaseRaceEntry[] {
-    return [...this.entries()].sort(
-      (a, b) => RING_DEV_RANK[b.phase] - RING_DEV_RANK[a.phase]
-    );
+    return [...this.entries()].sort((a, b) => RING_DEV_RANK[b.phase] - RING_DEV_RANK[a.phase]);
   }
 
   protected phaseColor(phase: RingPhase): string {

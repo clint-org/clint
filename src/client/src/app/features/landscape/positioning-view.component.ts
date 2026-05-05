@@ -39,7 +39,12 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
           <p-message severity="error" [closable]="false">
             Failed to load positioning data. Please try again.
           </p-message>
-          <p-button label="Retry" severity="primary" size="small" (onClick)="positioningData.reload()" />
+          <p-button
+            label="Retry"
+            severity="primary"
+            size="small"
+            (onClick)="positioningData.reload()"
+          />
         </div>
       </div>
     } @else {
@@ -123,7 +128,7 @@ export class PositioningViewComponent implements OnInit {
         request.spaceId,
         request.grouping,
         request.countUnit,
-        request.filters,
+        request.filters
       );
     },
   });
@@ -184,24 +189,33 @@ export class PositioningViewComponent implements OnInit {
   }
 
   onOpenProduct(productId: string): void {
-    this.router.navigate(
-      ['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', this.bullseyeSegment()],
-      { queryParams: { product: productId } },
-    );
+    // Open the timeline filtered by this product so the analyst sees the
+    // product's trials and markers in time. The footer "Open in bullseye"
+    // button still routes to bullseye for the cross-positional view.
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
+      queryParams: { productIds: productId },
+    });
   }
 
   onOpenInBullseye(): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye', this.bullseyeSegment()]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'bullseye',
+      this.bullseyeSegment(),
+    ]);
   }
 
   /** Map positioning grouping to the closest bullseye dimension segment. */
   private bullseyeSegment(): string {
     const map: Record<PositioningGrouping, string> = {
-      'moa': 'by-moa',
+      moa: 'by-moa',
       'therapeutic-area': 'by-therapy-area',
       'moa+therapeutic-area': 'by-therapy-area',
-      'company': 'by-company',
-      'roa': 'by-roa',
+      company: 'by-company',
+      roa: 'by-roa',
     };
     return map[this.state.positioningGrouping()] ?? 'by-therapy-area';
   }

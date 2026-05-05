@@ -122,13 +122,37 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
 
       @if (d.catalyst.trial_name) {
         <app-detail-panel-section [first]="!d.catalyst.company_name" label="Trial">
-          <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
-          <p class="text-[11px] text-slate-500">
-            {{ d.catalyst.trial_phase }}
-            @if (d.catalyst.recruitment_status) {
-              &middot; {{ d.catalyst.recruitment_status }}
-            }
-          </p>
+          @if (d.catalyst.trial_id; as trialId) {
+            <button
+              type="button"
+              class="group flex w-full flex-col items-start gap-0.5 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+              (click)="trialClick.emit(trialId)"
+            >
+              <span
+                class="inline-flex items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+              >
+                {{ d.catalyst.trial_name }}
+                <i
+                  class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
+                  aria-hidden="true"
+                ></i>
+              </span>
+              <span class="text-[11px] text-slate-500">
+                {{ d.catalyst.trial_phase }}
+                @if (d.catalyst.recruitment_status) {
+                  &middot; {{ d.catalyst.recruitment_status }}
+                }
+              </span>
+            </button>
+          } @else {
+            <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
+            <p class="text-[11px] text-slate-500">
+              {{ d.catalyst.trial_phase }}
+              @if (d.catalyst.recruitment_status) {
+                &middot; {{ d.catalyst.recruitment_status }}
+              }
+            </p>
+          }
           @if (ctgovPaths().length > 0 && snapshotPayload(); as snap) {
             <div class="mt-2 text-[12px]">
               <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
@@ -218,7 +242,9 @@ const HISTORY_BOOL_FIELDS = new Set(['is_projected', 'no_longer_expected']);
                 <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
                   re.event_date | date: 'mediumDate'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{ re.title }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  re.title
+                }}</span>
                 <span class="shrink-0 text-[10px] text-slate-400">({{ re.category_name }})</span>
               </app-detail-panel-entity-row>
             }
@@ -265,6 +291,7 @@ export class MarkerDetailContentComponent {
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
+  readonly trialClick = output<string>();
 
   // Per-space CT.gov field overlay state. Snapshot is lazy-loaded by
   // trial_id whenever the selected marker (and therefore detail) changes;

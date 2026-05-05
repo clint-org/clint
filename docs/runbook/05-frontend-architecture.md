@@ -100,7 +100,7 @@ src/client/
           nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
           clint-logo.component.ts # Triple C logo mark: size-adaptive SVG with auto stroke thickening
-          svg-icons/            # 6 SVG shape components for markers
+          svg-icons/            # Per-shape SVG icons + the shared <app-marker-icon> wrapper that owns shape selection / fill / NLE rules
           manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
           row-actions.component.ts        # Overflow (ellipsis) row-action menu
           status-tag.component.ts         # Squared status tag with status→tone mapping
@@ -322,9 +322,9 @@ The root dashboard component uses Angular signals extensively:
 - `computed()` -- derived lists for filter options (unique companies, etc.)
 - `effect()` -- syncs filter state to URL query params
 
-Click events on phase bars and trials navigate to trial detail pages. Marker clicks call `LandscapeStateService.selectMarker()`, which opens the shared detail panel rendered by the landscape shell. The detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) fetches full detail via `get_catalyst_detail` RPC. Body composition is detailed in the "Detail Panel Pattern" section below; the header uses the shared SVG icon components (`CircleIconComponent`, `DiamondIconComponent`, etc. from `shared/components/svg-icons/`) projected into the shell's `headerLeading` slot, with fill style derived from `projection` (`actual` = filled, else outline) and `inner_mark` -- identical rendering to the timeline grid markers. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel persists between timeline <-> catalysts (same marker data, different layout) and across same-mode dimension switches; entering bullseye or positioning clears the selection (no marker referent in those views) -- the clear is wired in `LandscapeShellComponent`'s router-events subscription.
+Click events on phase bars and trials navigate to trial detail pages. Marker clicks call `LandscapeStateService.selectMarker()`, which opens the shared detail panel rendered by the landscape shell. The detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) fetches full detail via `get_catalyst_detail` RPC. Body composition is detailed in the "Detail Panel Pattern" section below; the header uses the shared `<app-marker-icon>` (single source of truth for shape + color + projection-derived fill + inner mark + NLE overlay) projected into the shell's `headerLeading` slot — identical rendering to the timeline grid markers, the catalyst category cell, and the bullseye Recent Markers list. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel persists between timeline <-> catalysts (same marker data, different layout) and across same-mode dimension switches; entering bullseye or positioning clears the selection (no marker referent in those views) -- the clear is wired in `LandscapeShellComponent`'s router-events subscription. The shell also consumes `?markerId=` on /timeline so cross-pane jumps (e.g. bullseye Recent Markers row → timeline) auto-open the drawer on arrival.
 
-Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `productIds` + `therapeuticAreaIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension. Marker pane (catalysts) provides "Open trial"; event pane provides "Open thread".
+Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `productIds` + `therapeuticAreaIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension; the product-row click in the same pane navigates to `/timeline?productIds=` so the analyst lands on that product's trial timeline rather than re-entering the bullseye view. Marker pane (catalysts) provides "Open trial" and a clickable Trial section that routes to `/manage/trials/:id`. Event pane provides "Open thread", and its Related events / Thread events / Category histogram rows now stay in-pane (loading detail by id directly rather than searching the limited feed window). Bullseye Recent Markers rows route through `?markerId=` to open the timeline drawer.
 
 ### AppShellComponent (Layout)
 
@@ -374,9 +374,9 @@ Every detail pane in the product (marker, event, positioning, bullseye) is built
 ### Consumers
 
 - **Timeline + Catalysts** — `MarkerDetailPanelComponent` (`mode='drawer'`, `density='compact'`) rendered by `LandscapeShellComponent`. Body is `MarkerDetailContentComponent` composed from the primitives above. The catalyst's projection state is collapsed into a single status pill ("Confirmed actual" or "Projected · Stout estimate") in the meta strip directly under the title — there is no separate Date/Status grid. Source treatment is unified: the slate-50 box is gone; CT.gov-derived markers render a small `Field / Date type / Last synced` dl under the standard `Source` section eyebrow, analyst-created markers render just the URL link in the same slot. History uses `DetailPanelHistoryComponent` with field-level diff (`event_date`, `projection`, `is_projected`, etc. via `HISTORY_FIELD_LABELS`).
-- **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Selected state uses `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events (both now navigable), and a slim ghost footer button "Open thread" when the event has a thread. All `&mdash;` separators are gone (project rule); replaced with middle dots.
+- **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Selected state uses `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events, and a slim ghost footer button "Open thread" when the event has a thread. Thread / related-event / category-filter outputs are wired in `EventsPageComponent`: `relatedEventClick` and `threadEventClick` both call `openByEventId(id)` (which loads detail directly by id rather than searching the feed window), and `categoryFilter` updates the grid's `category_name` text filter so the chip row stays in sync. The `?eventId=` deep-link uses a `queryParamMap` subscription (not a one-shot `ngOnInit` read) so cross-page jumps from the marker drawer continue to work when the events page is already mounted. All `&mdash;` separators are gone (project rule); replaced with middle dots.
 - **Positioning** — `PositioningDetailPanelComponent` is **always** rendered. Header eyebrow now reflects the active grouping ("MOA group" / "Therapy area group" / "MOA + TA group" / "Company group" / "ROA group") instead of generic "COMPETITIVE GROUP". Selected state replaces the old phase-breakdown chips with a `DetailPanelPhaseRace` (every product, leader at top, 7-segment bar). Empty state pattern matches bullseye.
-- **Bullseye** — `BullseyeDetailPanelComponent` header eyebrow renamed `SELECTED` → `Drug` (says what is selected, not that something is). Selected and empty states migrated onto the shell + primitives. Recent markers list now read-only via `[clickable]="false"`; trial list keeps the inline CT.gov field renderer.
+- **Bullseye** — `BullseyeDetailPanelComponent` header eyebrow renamed `SELECTED` → `Drug` (says what is selected, not that something is). Selected and empty states migrated onto the shell + primitives. Recent markers list renders the real `<app-marker-icon>` (not a colored dot) and each row is clickable: emits `openMarker` on the panel, which `LandscapeComponent` routes to `/timeline?markerId=` so the timeline drawer opens on arrival. Trial list keeps the inline CT.gov field renderer.
 
 ### Layout structure (overlay vs in-column)
 
@@ -444,16 +444,14 @@ ZoomLevel        'yearly' | 'quarterly' | 'monthly' | 'daily'
 
 ## SVG Icon Components
 
-Six custom SVG marker shape components in `shared/components/svg-icons/`:
+Marker shape primitives + a single shared wrapper, all in `shared/components/svg-icons/`. Always use `<app-marker-icon>` at call sites — it owns shape selection, fill rules, NLE overlay, and the dashed-line variant. The per-shape components are implementation details.
 
-| Component | Shape | Inputs |
+| Component | Role | Inputs |
 |---|---|---|
-| `CircleIconComponent` | Circle | size, color, fillStyle |
-| `DiamondIconComponent` | Diamond/rhombus | size, color, fillStyle |
-| `FlagIconComponent` | Flag on pole | size, color, fillStyle |
-| `ArrowIconComponent` | Up-pointing triangle | size, color, fillStyle |
-| `XIconComponent` | Overlaid X mark | size, color, fillStyle |
-| `BarIconComponent` | Horizontal bar | size, color, fillStyle |
+| `MarkerIconComponent` (`<app-marker-icon>`) | **Canonical entry point.** Renders the right shape (incl. `dashed-line`) with the shared fill / NLE / inner-mark rules. Used by timeline grid, marker drawer header, bullseye Recent Markers, catalyst category cell. | shape, color, size, fillStyle, innerMark, isNle |
+| `CircleIconComponent` / `DiamondIconComponent` / `SquareIconComponent` | Shape primitives (with optional `innerMark`) | size, color, fillStyle, innerMark |
+| `FlagIconComponent` / `TriangleIconComponent` | Shape primitives (no inner mark) | size, color, fillStyle |
+| `NleOverlayComponent` | Strikethrough bar drawn over the shape when a marker is `no_longer_expected` | size |
 
 All support four fill styles via SVG `<defs>`: `filled`, `outline`, `striped`, `gradient`.
 
