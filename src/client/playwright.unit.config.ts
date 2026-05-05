@@ -13,6 +13,7 @@ export default defineConfig({
     'e2e/tests/palette-service-debounce.spec.ts',
     'e2e/tests/palette-command-registry.spec.ts',
     '**/error-message.spec.ts',
+    '**/intelligence-router-link.spec.ts',
   ],
   reporter: [['list']],
   fullyParallel: true,
