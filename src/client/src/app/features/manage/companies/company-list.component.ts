@@ -88,6 +88,15 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   // the first click because the MenuItem[] is a new array every render.
   private readonly menuCache = new Map<string, MenuItem[]>();
 
+  // canEdit() resolves async after SpaceRoleService fetches the role. When
+  // rows render before that resolves, the cache fixes a menu without
+  // Edit/Delete. Invalidate when the role flips so freshly built menus pick
+  // up the new shape.
+  private readonly menuCacheInvalidator = effect(() => {
+    this.spaceRole.canEdit();
+    this.menuCache.clear();
+  });
+
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
