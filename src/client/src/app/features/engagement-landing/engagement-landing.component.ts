@@ -91,6 +91,20 @@ export class EngagementLandingComponent implements OnInit {
     return `/t/${tid}/s/${sid}/catalysts`;
   });
 
+  readonly statsRoutes = computed(() => {
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    if (!tid || !sid) return {};
+    const base = `/t/${tid}/s/${sid}`;
+    return {
+      activeTrials: `${base}/manage/trials`,
+      companies: `${base}/manage/companies`,
+      programs: `${base}/manage/products`,
+      catalysts: `${base}/catalysts`,
+      intelligence: `${base}/intelligence`,
+    };
+  });
+
   readonly activeSinceLabel = computed(() => {
     const s = this.space();
     if (!s?.created_at) return '';
