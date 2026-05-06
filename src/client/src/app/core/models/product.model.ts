@@ -14,5 +14,5 @@ export interface Product {
   trials?: Trial[];
   mechanisms_of_action?: { id: string; name: string }[];
   routes_of_administration?: { id: string; name: string; abbreviation: string | null }[];
-  companies?: { id: string; name: string } | null;
+  companies?: { id: string; name: string; logo_url: string | null } | null;
 }

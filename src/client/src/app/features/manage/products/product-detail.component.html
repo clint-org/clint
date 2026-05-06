@@ -10,8 +10,16 @@
       @if (p.companies; as co) {
         <a
           [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
-          class="inline-block font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500 hover:text-brand-700 hover:underline"
+          class="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500 hover:text-brand-700 hover:underline"
         >
+          @if (co.logo_url) {
+            <img
+              [src]="co.logo_url"
+              [alt]="co.name + ' logo'"
+              class="h-3 w-auto max-w-[3rem] object-contain"
+              loading="lazy"
+            />
+          }
           {{ co.name }}
         </a>
       }
