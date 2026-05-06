@@ -251,6 +251,10 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /manage/products   ProductListComponent
     /manage/trials   TrialListComponent
     /manage/trials/:id   TrialDetailComponent
+    /manage/companies/:id   CompanyDetailComponent
+    /manage/products/:id   ProductDetailComponent
+    /manage/markers/:id   MarkerDetailComponent
+    /manage/engagement   EngagementDetailComponent
     /settings/marker-types   MarkerTypeListComponent
     /settings/taxonomies   TaxonomiesPageComponent
     /settings/general   SpaceGeneralComponent
