@@ -33,6 +33,7 @@ export interface ChangeEvent {
   trial_name: string;
   trial_identifier: string | null;
   marker_title: string | null;
+  marker_color: string | null;
 }
 
 export interface ActivityFeedFilters {

@@ -3,7 +3,9 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
 import { BrandContextService } from '../../../core/services/brand-context.service';
-import { summaryFor } from '../../utils/change-event-summary';
+import { summarySegmentsFor } from '../../utils/change-event-summary';
+
+const DEFAULT_ROW_COLOR = '#334155'; // slate-700
 
 @Component({
   selector: 'app-change-event-row',
@@ -25,7 +27,15 @@ export class ChangeEventRowComponent {
   private readonly brand = inject(BrandContextService);
 
   readonly iconClass = computed(() => iconFor(this.event().event_type));
-  readonly summary = computed(() => summaryFor(this.event()));
+  /**
+   * Structured segments + a color hint. Color is the destination phase color
+   * for phase_transitioned, the marker's category color for marker_* events,
+   * and null otherwise (template falls back to slate-700). Pulls from
+   * established taxonomies so a teal "3" in a row is the same teal as the
+   * P3 phase bar on the timeline.
+   */
+  readonly rich = computed(() => summarySegmentsFor(this.event()));
+  readonly accentColor = computed(() => this.rich().color ?? DEFAULT_ROW_COLOR);
   readonly sourceLabel = computed(() => {
     if (this.event().source === 'ctgov') return 'CT.GOV';
     return this.brand.agency()?.name ?? this.brand.appDisplayName();

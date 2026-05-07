@@ -4,7 +4,7 @@
     [queryParams]="queryParams()"
     class="group flex items-start gap-3 border-b border-slate-200 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
   >
-    <i [class]="iconClass()" class="mt-1 w-5 text-slate-500"></i>
+    <i [class]="iconClass()" class="mt-1 w-5" [style.color]="accentColor()"></i>
     <div class="min-w-0 flex-1">
       <div class="mb-1 flex items-center gap-2 text-xs text-slate-500">
         <span class="font-mono uppercase tracking-wide tabular-nums">{{ sourceLabel() }}</span>
@@ -13,12 +13,32 @@
         <span>&bull;</span>
         <span>{{ event().trial_identifier ?? event().trial_name }}</span>
       </div>
-      <div class="text-sm text-slate-900 group-hover:text-brand-700">{{ summary() }}</div>
+      <div class="text-sm text-slate-900">
+        @for (seg of rich().segments; track $index) {
+          @switch (seg.kind) {
+            @case ('plain') {
+              <span>{{ seg.text }}</span>
+            }
+            @case ('old') {
+              <span class="text-slate-500 line-through decoration-slate-300">{{ seg.text }}</span>
+            }
+            @case ('new') {
+              <span class="font-semibold" [style.color]="accentColor()">{{ seg.text }}</span>
+            }
+            @case ('arrow') {
+              <span class="mx-1 font-mono text-slate-400">→</span>
+            }
+            @case ('muted') {
+              <span class="text-slate-500">{{ seg.text }}</span>
+            }
+          }
+        }
+      </div>
     </div>
   </a>
 } @else {
   <div class="flex items-start gap-3 border-b border-slate-200 py-3">
-    <i [class]="iconClass()" class="mt-1 w-5 text-slate-500"></i>
+    <i [class]="iconClass()" class="mt-1 w-5" [style.color]="accentColor()"></i>
     <div class="min-w-0 flex-1">
       <div class="mb-1 flex items-center gap-2 text-xs text-slate-500">
         <span class="font-mono uppercase tracking-wide tabular-nums">{{ sourceLabel() }}</span>
@@ -27,7 +47,27 @@
         <span>&bull;</span>
         <span>{{ event().trial_identifier ?? event().trial_name }}</span>
       </div>
-      <div class="text-sm text-slate-900">{{ summary() }}</div>
+      <div class="text-sm text-slate-900">
+        @for (seg of rich().segments; track $index) {
+          @switch (seg.kind) {
+            @case ('plain') {
+              <span>{{ seg.text }}</span>
+            }
+            @case ('old') {
+              <span class="text-slate-500 line-through decoration-slate-300">{{ seg.text }}</span>
+            }
+            @case ('new') {
+              <span class="font-semibold" [style.color]="accentColor()">{{ seg.text }}</span>
+            }
+            @case ('arrow') {
+              <span class="mx-1 font-mono text-slate-400">→</span>
+            }
+            @case ('muted') {
+              <span class="text-slate-500">{{ seg.text }}</span>
+            }
+          }
+        }
+      </div>
     </div>
   </div>
 }

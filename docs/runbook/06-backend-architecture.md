@@ -68,7 +68,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
 | `finalize_material` | materials | - |
-| `get_activity_feed` | - | marker_changes, markers, trial_change_events, trials |
+| `get_activity_feed` | - | marker_changes, marker_types, markers, trial_change_events, trials |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
@@ -92,7 +92,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
-| `get_trial_activity` | - | marker_changes, markers, trial_change_events, trials |
+| `get_trial_activity` | - | marker_changes, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trials_for_polling` | - | trials |
 | `handle_new_user` | agency_invites, agency_members | - |
