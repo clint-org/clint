@@ -226,6 +226,8 @@ flowchart LR
 - **Intel feed mixing** in the existing intelligence feed: change events interleave with primary intelligence rows.
 - **Trial-detail Activity section**: per-trial change log on the trial detail page.
 
+**Row treatment.** Every surface above renders rows through the shared `app-change-event-row` component, which calls `summarySegmentsFor()` in `shared/utils/change-event-summary.ts` to produce structured segments (`plain`, `old`, `new`, `arrow`, `muted`). The template renders `old` with strikethrough + slate-300 line color and `new` bold + tinted. Color is **inherited from existing taxonomies, not invented**: `phase_transitioned` events take the destination phase color from `PHASE_COLORS` (so a P2 → P3 transition reads in the same teal as the P3 phase bar); `marker_*` events take the marker's category color via `marker_color` (joined from `marker_types.color` in `get_activity_feed` and `get_trial_activity`, with a `marker_changes` fallback for deleted markers); every other event type stays slate-700. This keeps a single color vocabulary across the timeline, marker legend, and change feed.
+
 ## CT.gov Integration
 
 The `CtgovSyncService` can fetch trial data from the ClinicalTrials.gov API v2 by NCT ID and map it to internal fields. Trials can store 35+ fields from the ClinicalTrials.gov data model, including:
