@@ -7,6 +7,7 @@
 @import './app/shared/styles/animations.css';
 @import './app/shared/styles/admin-brand.css';
 @import './app/features/landscape/landscape.css';
+@import './app/features/engagement-landing/engagement-landing.css';
 @plugin "tailwindcss-primeui";
 
 /* Search-term highlight used by intelligence feed rows and other browse
@@ -22,7 +23,7 @@ mark.search-hit {
 }
 
 @theme {
-  --color-brand-50:  var(--brand-50,  #f0fdfa);
+  --color-brand-50: var(--brand-50, #f0fdfa);
   --color-brand-100: var(--brand-100, #ccfbf1);
   --color-brand-200: var(--brand-200, #99f6e4);
   --color-brand-300: var(--brand-300, #5eead4);

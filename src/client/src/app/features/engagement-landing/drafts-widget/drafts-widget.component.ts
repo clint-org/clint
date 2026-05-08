@@ -20,8 +20,18 @@ import {
   template: `
     <section class="card" aria-labelledby="drafts-heading">
       <header class="card-head">
-        <h2 id="drafts-heading">Your drafts</h2>
-        <span class="agency-tag" aria-label="Visible to agency members only">Agency only</span>
+        <h2 id="drafts-heading">
+          Your drafts
+          <span class="agency-tag" aria-label="Visible to agency members only">Agency only</span>
+        </h2>
+        @if (drafts().length > 0 && allDraftsRoute()) {
+          <a
+            [routerLink]="allDraftsRoute()"
+            [queryParams]="{ status: 'drafts' }"
+            class="card-action"
+            >All drafts →</a
+          >
+        }
       </header>
       @if (drafts().length === 0) {
         <div class="empty">
@@ -43,68 +53,78 @@ import {
               >
               <p class="draft-meta">
                 <span class="draft-entity">{{ entityLabel(draft) }}</span>
-                <span aria-hidden="true" class="dot">.</span>
+                <span aria-hidden="true" class="dot">·</span>
                 <span class="draft-stamp">{{ formatStamp(draft.updated_at) }}</span>
               </p>
             </li>
           }
         </ul>
-        @if (allDraftsRoute()) {
-          <a
-            [routerLink]="allDraftsRoute()"
-            [queryParams]="{ status: 'drafts' }"
-            class="section-action-link drafts-all-link"
-          >
-            All drafts
-          </a>
-        }
       }
     </section>
   `,
   styles: [
     `
       :host {
-        display: block;
+        display: flex;
       }
       .card {
         background: white;
         border: 1px solid #e2e8f0;
         border-left: 3px solid #f59e0b;
-        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
       }
       .card-head {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: space-between;
         gap: 8px;
-        padding-bottom: 10px;
+        padding: 10px 14px;
         border-bottom: 1px solid #f1f5f9;
-        margin-bottom: 12px;
+        background: #f8fafc;
       }
       .card-head h2 {
         font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 10.5px;
-        font-weight: 700;
+        font-size: 10px;
+        font-weight: 600;
         color: #334155;
-        letter-spacing: 0.18em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         margin: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
       }
       .agency-tag {
         font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 8.5px;
+        font-size: 9px;
         font-weight: 700;
-        color: #d97706;
-        letter-spacing: 0.16em;
+        color: #92400e;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        padding: 2px 6px;
+        padding: 1px 6px;
         background: #fef3c7;
+      }
+      .card-action {
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--brand-600, #0d9488);
+        text-decoration: none;
+      }
+      .card-action:hover,
+      .card-action:focus-visible {
+        color: var(--brand-700, #0f766e);
       }
       .empty {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        padding: 6px 0 4px;
+        padding: 14px;
       }
       .empty-line {
         margin: 0;
@@ -124,19 +144,24 @@ import {
         padding: 0;
         display: flex;
         flex-direction: column;
-        gap: 10px;
       }
       .draft-row {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
+        padding: 10px 14px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .draft-row:last-child {
+        border-bottom: 0;
       }
       .draft-headline {
         font-size: 12.5px;
-        font-weight: 600;
+        font-weight: 500;
         color: #0f172a;
         text-decoration: none;
         line-height: 1.35;
+        letter-spacing: -0.005em;
       }
       .draft-headline:hover {
         color: var(--brand-700);
@@ -144,22 +169,22 @@ import {
       .draft-meta {
         margin: 0;
         font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-        font-size: 10px;
+        font-size: 9.5px;
         color: #94a3b8;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         display: flex;
         align-items: center;
         gap: 6px;
       }
+      .draft-entity {
+        color: #475569;
+        font-weight: 600;
+      }
       .dot {
         font-size: 10px;
         line-height: 1;
         opacity: 0.6;
-      }
-      .drafts-all-link {
-        margin-top: 12px;
-        display: inline-block;
       }
     `,
   ],

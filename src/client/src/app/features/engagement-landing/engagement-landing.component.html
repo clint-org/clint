@@ -1,12 +1,4 @@
 <div class="engagement-landing">
-  <app-engagement-context-strip
-    [spaceName]="spaceName()"
-    [activeSinceLabel]="activeSinceLabel()"
-    [stats]="stats()"
-    [loading]="statsLoading()"
-    [routes]="statsRoutes()"
-  />
-
   @if (loadError()) {
     <div class="error-bar">
       <p-message severity="error" [closable]="false">
@@ -16,76 +8,249 @@
   }
 
   <div class="page">
-    <div class="col-main">
-      <app-what-changed-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
+    <!-- Pulse: title + integrated stats strip -->
+    <header class="pulse" aria-label="Engagement summary">
+      <div class="pulse-title">
+        @if (eyebrowParts().length > 0) {
+          <span class="eyebrow">{{ eyebrowParts().join(' · ') }}</span>
+        }
+        <h1>{{ spaceName() || 'Engagement' }}</h1>
+        @if (activeSinceLabel()) {
+          <span class="since">{{ activeSinceLabel() }}</span>
+        }
+      </div>
+      <ul class="pulse-stats" role="list" aria-label="Engagement statistics">
+        @for (stat of pulseStats(); track trackStat($index, stat)) {
+          <li
+            class="stat"
+            [ngClass]="{ warn: stat.warn }"
+            [attr.aria-busy]="stat.value === null ? true : null"
+          >
+            @if (stat.route && stat.value !== null) {
+              <a
+                class="stat-link"
+                [routerLink]="stat.route"
+                [attr.aria-label]="stat.label + ': ' + stat.value"
+              >
+                <span class="num">{{ stat.value }}</span>
+                <span class="lbl">{{ stat.label }}</span>
+              </a>
+            } @else {
+              <div class="stat-link stat-link--static">
+                @if (stat.value === null) {
+                  <span class="num"><app-skeleton w="36px" h="22px" /></span>
+                } @else {
+                  <span class="num">{{ stat.value }}</span>
+                }
+                <span class="lbl">{{ stat.label }}</span>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </header>
 
-      <section aria-labelledby="latest-heading" class="latest">
-        <header class="sect-head">
+    <!-- Today brief -->
+    @if (briefVisible()) {
+      <div class="brief" role="status">
+        <span class="e">Today · {{ todayLabel() }}</span>
+        <span class="l" [innerHTML]="briefHtml()"></span>
+        <a class="x" [routerLink]="catalystsRoute()" aria-label="View catalysts"
+          ><i class="fa-solid fa-arrow-right"></i
+        ></a>
+      </div>
+    }
+
+    <!-- Three-up panels -->
+    <section class="three" aria-label="Above the fold">
+      <app-what-changed-widget [spaceId]="spaceId()" [tenantId]="tenantId()" class="panel-host" />
+
+      <div class="panel" aria-labelledby="next14-heading">
+        <div class="p-h">
+          <span class="t" id="next14-heading">Next 14 days</span>
+          <span class="meta"
+            >{{ upcoming().length }} catalyst{{ upcoming().length === 1 ? '' : 's' }}</span
+          >
+          @if (catalystsRoute()) {
+            <a class="x" [routerLink]="catalystsRoute()">Calendar →</a>
+          }
+        </div>
+        <div class="p-b">
+          @if (upcomingLoading()) {
+            <ul class="cal" aria-hidden="true">
+              @for (i of skeletonRows; track i) {
+                <li class="day">
+                  <div class="date">
+                    <app-skeleton w="22px" h="14px" /><app-skeleton w="22px" h="9px" />
+                  </div>
+                  <div class="what">
+                    <app-skeleton [block]="true" w="80%" h="13px" />
+                    <app-skeleton w="55%" h="10px" />
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else if (nextFortnightDays().length === 0) {
+            <p class="empty">No catalysts in the next 14 days.</p>
+          } @else {
+            <ul class="cal" role="list">
+              @for (d of nextFortnightDays(); track trackDay($index, d)) {
+                <li>
+                  <button
+                    type="button"
+                    class="day"
+                    (click)="onCalendarClick(d.marker_id)"
+                    [attr.aria-label]="d.title + ' on ' + d.day"
+                  >
+                    <div class="date" [ngClass]="{ today: d.isToday }">
+                      <span class="d">{{ d.day }}</span>
+                      <span class="m">{{ d.weekday }}</span>
+                    </div>
+                    <div class="what">
+                      <div class="ev">{{ d.title }}</div>
+                      @if (d.who) {
+                        <div class="who">{{ d.who }}</div>
+                      }
+                    </div>
+                    <div class="marker" aria-hidden="true">
+                      <svg width="12" height="12">
+                        <circle cx="6" cy="6" r="4.5" [attr.fill]="d.color" />
+                      </svg>
+                    </div>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+
+      @if (isAgency()) {
+        <app-drafts-widget
+          [drafts]="drafts()"
+          [tenantId]="tenantId()"
+          [spaceId]="spaceId()"
+          class="panel-host"
+        />
+      }
+    </section>
+
+    <!-- Latest from Stout -->
+    <section class="latest" aria-labelledby="latest-heading">
+      <div class="feed-h">
+        <div class="grp">
           <h2 id="latest-heading">Latest from Stout</h2>
           @if (hasFeedItems()) {
-            <a [routerLink]="intelligenceBrowseRoute()" class="section-action-link"> View feed </a>
+            <span class="tag"
+              ><b>{{ feedHeaderTag().total }}</b> intelligence post{{
+                feedHeaderTag().total === 1 ? '' : 's'
+              }}
+              @if (feedHeaderTag().week > 0) {
+                · <b>{{ feedHeaderTag().week }}</b> this week
+              }
+            </span>
           } @else {
-            <span class="meta">Notices, post-readouts, and thesis updates</span>
+            <span class="tag">Notices, post-readouts, and thesis updates</span>
           }
-        </header>
-        @if (latestLoading()) {
-          <ul
-            class="divide-y divide-slate-100 border border-slate-200 bg-white"
-            aria-busy="true"
-            aria-label="Loading latest intelligence"
-          >
-            @for (i of skeletonRows; track i) {
-              <li class="px-4 py-3" aria-hidden="true">
-                <div class="mb-1 flex items-baseline gap-2">
-                  <app-skeleton w="44px" h="14px" />
-                  <app-skeleton w="180px" h="14px" />
-                  <span class="ml-auto inline-flex">
-                    <app-skeleton w="62px" h="10px" />
-                  </span>
-                </div>
-                <div class="mt-1.5">
-                  <app-skeleton [block]="true" w="100%" h="11px" />
-                </div>
-                <div class="mt-1">
-                  <app-skeleton [block]="true" w="62%" h="11px" />
-                </div>
-                <div class="mt-2">
-                  <app-skeleton w="84px" h="10px" />
-                </div>
-              </li>
+        </div>
+        @if (hasFeedItems() && feedFilters().length > 1) {
+          <div class="filters">
+            @for (f of feedFilters(); track trackFilter($index, f)) {
+              <button
+                type="button"
+                class="chip"
+                [ngClass]="{ on: feedFilter() === f.key }"
+                (click)="setFeedFilter(f.key)"
+              >
+                {{ f.label }}
+              </button>
             }
-          </ul>
-        } @else if (hasFeedItems()) {
-          <app-intelligence-feed
-            [rows]="latestIntelligence()"
-            [tenantId]="tenantId()"
-            [spaceId]="spaceId()"
-          />
-        } @else {
-          <div class="latest-empty">
-            <p class="latest-empty-title">No published intelligence yet.</p>
-            <p class="latest-empty-hint">
-              Once your agency publishes a primary intelligence read against this engagement, it
-              will appear here in recency order.
-            </p>
           </div>
         }
-      </section>
+      </div>
 
-      <app-recent-materials-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
-    </div>
+      @if (latestLoading()) {
+        <ul class="feed-skel" aria-busy="true" aria-label="Loading latest intelligence">
+          @for (i of skeletonRows; track i) {
+            <li>
+              <div class="skel-head">
+                <app-skeleton w="64px" h="14px" />
+                <app-skeleton w="80px" h="10px" />
+              </div>
+              <app-skeleton [block]="true" w="100%" h="14px" />
+              <app-skeleton [block]="true" w="62%" h="11px" />
+            </li>
+          }
+        </ul>
+      } @else if (!hasFeedItems()) {
+        <div class="latest-empty">
+          <p class="latest-empty-title">No published intelligence yet.</p>
+          <p class="latest-empty-hint">
+            Once your agency publishes a primary intelligence read against this engagement, it will
+            appear here in recency order.
+          </p>
+        </div>
+      } @else if (visibleFeed().length === 0) {
+        <div class="latest-empty">
+          <p class="latest-empty-title">No posts in this category.</p>
+          <p class="latest-empty-hint">Try a different filter to see other reads.</p>
+        </div>
+      } @else {
+        <div class="feed">
+          @if (featuredPost(); as fp) {
+            <article class="post featured">
+              <div class="side">
+                <span class="kind kind--{{ fp.entity_type }}">{{ postKindLabel(fp) }}</span>
+                <span class="date">{{ fp.updated_at | date: 'mediumDate' }}</span>
+              </div>
+              <div class="content">
+                <a [routerLink]="postRouterLink(fp)" class="post-link">
+                  <h3>{{ fp.headline }}</h3>
+                </a>
+                @if (postExcerpt(fp); as e) {
+                  <p [innerHTML]="e"></p>
+                }
+                <a [routerLink]="postRouterLink(fp)" class="read"
+                  >Read brief <i class="fa-solid fa-arrow-right"></i
+                ></a>
+              </div>
+            </article>
+          }
 
-    <aside class="col-side" aria-label="Engagement side rail">
-      @if (isAgency()) {
-        <app-drafts-widget [drafts]="drafts()" [tenantId]="tenantId()" [spaceId]="spaceId()" />
+          @if (restPosts().length > 0) {
+            <div class="grid">
+              @for (p of restPosts(); track trackPost($index, p)) {
+                <article class="post">
+                  <div class="side">
+                    <span class="kind kind--{{ p.entity_type }}">{{ postKindLabel(p) }}</span>
+                    <span class="date">{{ p.updated_at | date: 'mediumDate' }}</span>
+                  </div>
+                  <div class="content">
+                    <a [routerLink]="postRouterLink(p)" class="post-link">
+                      <h3>{{ p.headline }}</h3>
+                    </a>
+                    @if (postExcerpt(p); as e) {
+                      <p [innerHTML]="e"></p>
+                    }
+                    <a [routerLink]="postRouterLink(p)" class="read"
+                      >Read brief <i class="fa-solid fa-arrow-right"></i
+                    ></a>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </div>
+
+        @if (intelligenceBrowseRoute()) {
+          <div class="footer">
+            <a class="more" [routerLink]="intelligenceBrowseRoute()">View all intelligence</a>
+          </div>
+        }
       }
+    </section>
 
-      <app-upcoming-catalysts-widget
-        [loading]="upcomingLoading()"
-        [catalysts]="upcoming()"
-        [allCatalystsRoute]="catalystsRoute()"
-        (rowClick)="onUpcomingRowClick($event)"
-      />
-    </aside>
+    <!-- Recent materials (kept below the fold) -->
+    <app-recent-materials-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
   </div>
 </div>

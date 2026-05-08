@@ -1,16 +1,26 @@
 <section
-  class="border border-slate-200 bg-white"
+  class="flex h-full flex-col border border-slate-200 bg-white"
   aria-label="What changed in the past 7 days"
   [attr.aria-busy]="loading() || null"
 >
   <header
-    class="flex items-center justify-between border-b border-slate-100 px-4 py-3"
+    class="flex items-baseline justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3.5 py-2.5"
   >
-    <h2 class="text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-700">
+    <h2 class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700">
       What changed
     </h2>
+    <span
+      class="ml-auto mr-2 font-mono text-[10px] tracking-[0.04em] text-slate-400"
+      aria-hidden="true"
+    >
+      last 7d · {{ events().length }} event{{ events().length === 1 ? '' : 's' }}
+    </span>
     @if (activityLink()) {
-      <a [routerLink]="activityLink()" class="section-action-link">View all</a>
+      <a
+        [routerLink]="activityLink()"
+        class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 hover:text-brand-700"
+        >View all →</a
+      >
     }
   </header>
 
