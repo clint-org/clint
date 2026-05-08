@@ -131,7 +131,7 @@ src/client/
       environment.ts            # Supabase URL + anon key + apexDomain (empty = disable cookie session storage)
     assets/                     # Static resources
     main.ts                     # Bootstrap file
-    styles.css                  # Global Tailwind CSS + manage-table.css + catalyst-table.css
+    styles.css                  # Global Tailwind CSS + theme tokens + feature stylesheet imports (manage-table, catalyst-table, landscape, engagement-landing)
 ```
 
 ## Angular Conventions
