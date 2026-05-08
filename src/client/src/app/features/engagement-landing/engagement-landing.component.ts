@@ -73,7 +73,7 @@ interface FeedFilter {
     WhatChangedWidgetComponent,
   ],
   templateUrl: './engagement-landing.component.html',
-  styleUrls: ['./engagement-landing.component.css'],
+  host: { class: 'block h-full overflow-y-auto bg-white' },
 })
 export class EngagementLandingComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -319,6 +319,23 @@ export class EngagementLandingComponent implements OnInit {
 
   postKindLabel(row: IntelligenceFeedRow): string {
     return ENTITY_TYPE_LABEL[row.entity_type] ?? row.entity_type;
+  }
+
+  kindBgClass(row: IntelligenceFeedRow): string {
+    switch (row.entity_type) {
+      case 'trial':
+        return 'bg-sky-900';
+      case 'company':
+        return 'bg-slate-700';
+      case 'product':
+        return 'bg-brand-700';
+      case 'marker':
+        return 'bg-orange-900';
+      case 'space':
+        return 'bg-slate-600';
+      default:
+        return 'bg-slate-900';
+    }
   }
 
   postExcerpt(row: IntelligenceFeedRow): string {
