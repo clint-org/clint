@@ -54,6 +54,15 @@ jobs:
       - name: Reset database
         run: supabase db reset
 
+      - name: Run Supabase advisors (gate on ERROR)
+        # Source of truth for advisor findings: the Splinter engine the
+        # dashboard uses. --local catches the auth_rls_initplan perf class
+        # and basic security lints; auth_users_exposed / security_definer_view
+        # only fire against --linked, so a scheduled job covers those.
+        # Currently green at --fail-on error (24 warns, 0 errors). Tighten
+        # to `warn` once the legacy auth.uid() sweep is done.
+        run: supabase db advisors --local --type all --fail-on error
+
       - name: Get Supabase keys
         id: supabase
         run: |

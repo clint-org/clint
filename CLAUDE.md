@@ -131,6 +131,14 @@ docs/
 cd src/client && ng lint && ng build
 ```
 
+After any migration change, also run the Supabase advisor against local — same Splinter engine the dashboard uses, with remediation links:
+
+```bash
+supabase db advisors --local --type all
+```
+
+CI gates on `--fail-on error` (see `.github/workflows/ci.yml`). The two dashboard CRITICAL classes (`auth_users_exposed`, `security_definer_view`) only fire against `--linked`; treat the dashboard as the canonical view for those after deploy.
+
 ## Documentation Conventions
 
 The runbook at `docs/runbook/` is the single source of truth for architecture, schema, and operational knowledge. Two rules govern how it stays current:

@@ -14,7 +14,7 @@
     "test:integration": "vitest run --config integration/vitest.config.ts",
     "test:units": "vitest run --config vitest.units.config.ts",
     "test:worker": "vitest run --config worker/vitest.config.mts",
-    "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh",
+    "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh && ./scripts/check-supabase-rls.sh",
     "docs:arch": "node scripts/gen-architecture.mjs"
   },
   "dependencies": {
