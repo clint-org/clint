@@ -137,7 +137,7 @@ After any migration change, also run the Supabase advisor against local — same
 supabase db advisors --local --type all
 ```
 
-CI gates on `--fail-on error` (see `.github/workflows/ci.yml`). The two dashboard CRITICAL classes (`auth_users_exposed`, `security_definer_view`) only fire against `--linked`; treat the dashboard as the canonical view for those after deploy.
+CI and `npm run lint` both gate on `--fail-on warn` (see `.github/workflows/ci.yml` and `src/client/scripts/check-supabase-rls.sh`). Set `CHECK_SUPABASE_RLS_RELAX=1` to downgrade the local gate to ERROR-level for an emergency fix; CI does not honor that flag. The two dashboard CRITICAL classes (`auth_users_exposed`, `security_definer_view`) only fire against `--linked`; treat the dashboard as the canonical view for those after deploy.
 
 ## Documentation Conventions
 

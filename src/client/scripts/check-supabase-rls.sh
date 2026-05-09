@@ -17,14 +17,15 @@
 # Behavior:
 #   - If local Supabase is not running, skip silently. Devs without docker
 #     up shouldn't fail their lint pass.
-#   - Otherwise, run advisors and print findings. Local exit is gated to
-#     ERROR-level only so devs see warns without being blocked. CI uses the
-#     same command with --fail-on error explicit (see .github/workflows/ci.yml).
+#   - Otherwise, run advisors and fail the lint pass on any WARN+ finding.
+#     The legacy sweep (20260509120000..0300) cleared all warnings, so a new
+#     warning means a regression and should block. CI runs the same command;
+#     see .github/workflows/ci.yml.
 #
-# Mode:
-#   - SOFT (default): always exits 0 unless an ERROR-level lint exists.
-#   - HARD (CHECK_SUPABASE_RLS_HARD=1): pass --fail-on warn instead, blocks
-#     on any new warning. Flip on once the legacy sweep is done.
+# Escape hatch:
+#   - CHECK_SUPABASE_RLS_RELAX=1 downgrades the gate to ERROR-level so a
+#     dev can land an emergency fix while a follow-up fix for the warning is
+#     drafted. Use sparingly; CI does not honor this flag.
 
 set -euo pipefail
 
@@ -42,9 +43,10 @@ if ! (cd "$ROOT" && supabase status >/dev/null 2>&1); then
   exit 0
 fi
 
-FAIL_ON="error"
-if [ "${CHECK_SUPABASE_RLS_HARD:-0}" = "1" ]; then
-  FAIL_ON="warn"
+FAIL_ON="warn"
+if [ "${CHECK_SUPABASE_RLS_RELAX:-0}" = "1" ]; then
+  FAIL_ON="error"
+  echo "INFO: CHECK_SUPABASE_RLS_RELAX=1 set; gate downgraded to ERROR-level." >&2
 fi
 
 cd "$ROOT"
