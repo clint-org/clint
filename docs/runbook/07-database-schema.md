@@ -698,4 +698,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260505201132_intel_revision_changed_fields.sql`
 - `20260505220000_intel_payload_resolve_names_for_agency.sql`
 - `20260507000000_change_feed_marker_color.sql`
+- `20260509120000_advisor_sweep_auth_uid_initplan.sql`
+- `20260509120100_advisor_sweep_function_search_path.sql`
+- `20260509120200_advisor_sweep_multiple_permissive_policies.sql`
+- `20260509120300_advisor_sweep_pg_trgm_to_extensions.sql`
 <!-- /AUTO-GEN:DRIFT -->
