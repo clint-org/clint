@@ -39,8 +39,8 @@ module.exports = tseslint.config(
       "@angular-eslint/relative-url-prefix": "error",
       "@angular-eslint/runtime-localize": "error",
       "@angular-eslint/use-injectable-provided-in": "error",
+      "@angular-eslint/prefer-on-push-component-change-detection": "error",
       // Still warn pending cleanup of the migration backlog
-      "@angular-eslint/prefer-on-push-component-change-detection": "warn",
       "@angular-eslint/prefer-signals": "warn",
       "@angular-eslint/prefer-output-readonly": "warn",
       // New v21 rules; warn for now, ratchet as the backlog clears.
