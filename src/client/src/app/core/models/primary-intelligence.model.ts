@@ -12,7 +12,10 @@ export type IntelligenceEntityType = 'trial' | 'marker' | 'company' | 'product' 
 
 export type IntelligenceLinkEntityType = Exclude<IntelligenceEntityType, 'space'>;
 
-export type IntelligenceState = 'draft' | 'published';
+export type IntelligenceState = 'draft' | 'published' | 'archived' | 'withdrawn';
+
+/** States that count as "a version" in the history panel (excludes draft). */
+export type VersionState = Exclude<IntelligenceState, 'draft'>;
 
 export interface PrimaryIntelligence {
   id: string;
@@ -149,3 +152,54 @@ export const ENTITY_TYPE_LABEL: Record<IntelligenceEntityType, string> = {
   product: 'Product',
   space: 'Engagement',
 };
+
+/**
+ * One row in the version history list returned by
+ * `get_primary_intelligence_history`. Each version is a snapshot of a
+ * primary_intelligence row that was once published, with the original
+ * publish change_note attached.
+ */
+export interface IntelligenceVersionRow {
+  id: string;
+  version_number: number;
+  state: VersionState;
+  headline: string;
+  thesis_md: string;
+  watch_md: string;
+  implications_md: string;
+  change_note: string | null;
+  edited_by: string;
+  published_at: string;
+  withdrawn_at: string | null;
+  withdrawn_by: string | null;
+}
+
+/**
+ * Payload returned by `get_primary_intelligence_history`. `current` is
+ * the live published row (or null if withdrawn or never published).
+ * `draft` is the agency-only working draft. `versions` includes the
+ * live published row alongside archived and withdrawn versions, ordered
+ * version_number desc.
+ */
+export interface IntelligenceHistoryPayload {
+  current: PrimaryIntelligence | null;
+  draft: PrimaryIntelligence | null;
+  versions: IntelligenceVersionRow[];
+}
+
+/**
+ * One revision snapshot returned by
+ * `get_intelligence_version_revisions`. Used to render adjacent-save
+ * word diffs in the agency view.
+ */
+export interface IntelligenceVersionRevision {
+  id: string;
+  state: IntelligenceState;
+  headline: string;
+  thesis_md: string;
+  watch_md: string;
+  implications_md: string;
+  change_note: string | null;
+  edited_by: string;
+  edited_at: string;
+}
