@@ -206,7 +206,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [header]="editingArea() ? 'Edit therapeutic area' : 'Add therapeutic area'"
       [(visible)]="taModalOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="closeModal()"
     >
       @if (taModalOpen()) {
@@ -223,7 +223,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [header]="editingMoa() ? 'Edit mechanism of action' : 'Add mechanism of action'"
       [(visible)]="moaModalOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="closeModal()"
     >
       @if (moaModalOpen()) {
@@ -240,7 +240,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       [header]="editingRoa() ? 'Edit route of administration' : 'Add route of administration'"
       [(visible)]="roaModalOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="closeModal()"
     >
       @if (roaModalOpen()) {

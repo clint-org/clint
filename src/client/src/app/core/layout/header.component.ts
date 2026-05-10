@@ -50,7 +50,7 @@ import { Tenant } from '../models/tenant.model';
               (ngModelChange)="switchTenant($event)"
               optionLabel="name"
               optionValue="id"
-              [style]="{ width: '10rem' }"
+              styleClass="w-[10rem]"
               size="small"
               placeholder="Tenant"
             />
@@ -69,7 +69,7 @@ import { Tenant } from '../models/tenant.model';
               (ngModelChange)="switchSpace($event)"
               optionLabel="name"
               optionValue="id"
-              [style]="{ width: '11rem' }"
+              styleClass="w-[11rem]"
               size="small"
             />
           }

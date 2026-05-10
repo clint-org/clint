@@ -7,11 +7,7 @@
         aria-label="Loading entries"
       >
         @for (i of skeletonCards; track i) {
-          <div
-            class="landscape-index-card pointer-events-none"
-            aria-hidden="true"
-            style="border-color: #e2e8f0;"
-          >
+          <div class="landscape-index-card border-slate-200 pointer-events-none" aria-hidden="true">
             <app-skeleton w="62%" h="16px" />
             <div class="mt-1.5">
               <app-skeleton w="40%" h="11px" />

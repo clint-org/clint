@@ -89,7 +89,7 @@ interface PendingFile {
       header="Upload material"
       [(visible)]="dialogOpen"
       [modal]="true"
-      [style]="{ width: '40rem' }"
+      styleClass="!w-[40rem]"
       [closable]="!uploading()"
       [closeOnEscape]="!uploading()"
       [dismissableMask]="!uploading()"

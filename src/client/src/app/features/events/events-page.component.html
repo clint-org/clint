@@ -198,7 +198,7 @@
     >
       @if (selectedItem() && detailLoading()) {
         <div class="flex h-full items-center justify-center py-12">
-          <p-progress-spinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+          <p-progress-spinner strokeWidth="3" styleClass="w-[28px] h-[28px]" />
         </div>
       } @else {
         <app-event-detail-panel
@@ -224,7 +224,7 @@
   [header]="editingEventId() ? 'Edit event' : 'New event'"
   [(visible)]="modalOpen"
   [modal]="true"
-  [style]="{ width: '42rem' }"
+  styleClass="!w-[42rem]"
   (onHide)="closeModal()"
 >
   <app-event-form [eventId]="editingEventId()" (saved)="onSaved()" (cancelled)="closeModal()" />

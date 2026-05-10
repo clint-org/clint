@@ -73,7 +73,9 @@
         </td>
         <td class="col-identifier">
           @if (row.product.generic_name) {
-            <span [innerHTML]="row.product.generic_name | highlight: grid.debouncedGlobalSearch()"></span>
+            <span
+              [innerHTML]="row.product.generic_name | highlight: grid.debouncedGlobalSearch()"
+            ></span>
           } @else {
             --
           }
@@ -81,7 +83,15 @@
         <td class="col-secondary">
           @if (row.product.company_id) {
             <a
-              [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'companies', row.product.company_id]"
+              [routerLink]="[
+                '/t',
+                tenantId,
+                's',
+                spaceId,
+                'manage',
+                'companies',
+                row.product.company_id,
+              ]"
               class="text-brand-700 hover:underline"
             >
               <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
@@ -146,7 +156,7 @@
   [header]="editingProduct() ? 'Edit product' : 'Add product'"
   [(visible)]="modalOpen"
   [modal]="true"
-  [style]="{ width: '32rem' }"
+  styleClass="!w-[32rem]"
   (onHide)="closeModal()"
 >
   @if (modalOpen()) {

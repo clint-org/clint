@@ -95,7 +95,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
                   optionLabel="label"
                   optionValue="value"
                   size="small"
-                  [style]="{ minWidth: '8rem' }"
+                  styleClass="min-w-[8rem]"
                 />
               } @else {
                 <app-status-tag
@@ -187,7 +187,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
       header="Invite to space"
       [(visible)]="addDialogOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="resetInviteForm()"
     >
       <p class="mb-3 text-xs text-slate-500">
@@ -223,7 +223,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
           (ngModelChange)="inviteRole.set($event)"
           optionLabel="label"
           optionValue="value"
-          [style]="{ width: '100%' }"
+          styleClass="w-full"
         />
       </div>
       @if (inviteResult()) {

@@ -17,13 +17,13 @@ import { Dialog } from 'primeng/dialog';
       (visibleChange)="onVisibleChange($event)"
       header="Purge this read"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       [closable]="true"
     >
       <div class="space-y-3">
         <p class="text-sm text-slate-700">
-          This permanently deletes the read{{ purgeAnchor() ? ' and every prior version' : '' }}.
-          It cannot be undone.
+          This permanently deletes the read{{ purgeAnchor() ? ' and every prior version' : '' }}. It
+          cannot be undone.
         </p>
         <p class="text-xs uppercase tracking-[0.16em] text-slate-500">
           Type the version headline to confirm:

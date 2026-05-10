@@ -45,7 +45,7 @@
       optionLabel="name"
       optionValue="id"
       placeholder="Select company"
-      [style]="{ width: '100%' }"
+      styleClass="w-full"
       [attr.aria-required]="true"
     />
   </app-form-field>
@@ -74,7 +74,7 @@
       placeholder="Select mechanisms"
       [filter]="true"
       [showClear]="true"
-      [style]="{ width: '100%' }"
+      styleClass="w-full"
       [maxSelectedLabels]="0"
       [selectedItemsLabel]="'MOA (' + selectedMoaIds().length + ')'"
     />
@@ -92,7 +92,7 @@
       placeholder="Select routes"
       [filter]="true"
       [showClear]="true"
-      [style]="{ width: '100%' }"
+      styleClass="w-full"
       [maxSelectedLabels]="0"
       [selectedItemsLabel]="'ROA (' + selectedRoaIds().length + ')'"
     />
@@ -104,7 +104,7 @@
       name="displayOrder"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
-      [style]="{ width: '100%' }"
+      styleClass="w-full"
     />
   </app-form-field>
 

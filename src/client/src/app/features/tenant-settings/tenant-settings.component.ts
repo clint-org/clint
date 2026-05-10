@@ -359,7 +359,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
       header="Add tenant owner"
       [(visible)]="inviteDialogOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="resetInviteForm()"
     >
       <p class="mb-3 text-xs text-slate-500">

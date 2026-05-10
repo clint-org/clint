@@ -75,7 +75,7 @@ interface SourceRow {
             optionLabel="label"
             optionValue="value"
             placeholder="Select level"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
           />
         </div>
 
@@ -100,7 +100,7 @@ interface SourceRow {
               optionValue="id"
               placeholder="Select..."
               [filter]="true"
-              [style]="{ width: '100%' }"
+              styleClass="w-full"
             />
           </div>
         }
@@ -130,7 +130,7 @@ interface SourceRow {
             (ngModelChange)="eventDateValue.set($event)"
             name="eventDate"
             dateFormat="yy-mm-dd"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
             appendTo="body"
           />
         </div>
@@ -151,7 +151,7 @@ interface SourceRow {
             optionLabel="name"
             optionValue="id"
             placeholder="Select category"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
           />
         </div>
         <div>
@@ -166,7 +166,7 @@ interface SourceRow {
             name="priority"
             optionLabel="label"
             optionValue="value"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
           />
         </div>
       </div>
@@ -258,7 +258,7 @@ interface SourceRow {
             optionValue="id"
             placeholder="None"
             [showClear]="true"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
           />
         </div>
         @if (!threadId()) {

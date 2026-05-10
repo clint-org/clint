@@ -81,12 +81,38 @@ interface PlottedBubble {
       width: 100%;
       height: 100%;
     }
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .quadrant-blue-ocean {
+      fill: var(--brand-600);
+    }
+    .axis-tick-label {
+      font-size: 14px;
+      font-family: ui-monospace, monospace;
+    }
+    .axis-title-label {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .bubble-label-primary {
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .bubble-label-secondary {
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .empty-state-label {
+      font-size: 18px;
+    }
   `,
   template: `
     <svg
       [attr.viewBox]="'0 0 ' + width() + ' ' + height()"
       preserveAspectRatio="xMidYMid meet"
-      style="width: 100%; height: 100%; display: block;"
       role="img"
       [attr.aria-label]="
         'Competitive positioning scatter chart with ' + bubbles().length + ' bubbles'
@@ -100,7 +126,7 @@ interface PlottedBubble {
         [attr.y]="quadrantMidY()"
         [attr.width]="quadrantMidX() - margin.left"
         [attr.height]="height() - margin.bottom - quadrantMidY()"
-        style="fill: var(--brand-600)"
+        class="quadrant-blue-ocean"
         opacity="0.04"
       />
       <!-- Quadrant shading: red-ocean (top-right) -->
@@ -147,7 +173,7 @@ interface PlottedBubble {
           [attr.y]="phaseY(phase) + 5"
           text-anchor="end"
           fill="#94a3b8"
-          style="font-size: 14px; font-family: ui-monospace, monospace;"
+          class="axis-tick-label"
         >
           {{ phase }}
         </text>
@@ -160,7 +186,7 @@ interface PlottedBubble {
           [attr.y]="height() - margin.bottom + 24"
           text-anchor="middle"
           fill="#94a3b8"
-          style="font-size: 14px; font-family: ui-monospace, monospace;"
+          class="axis-tick-label"
         >
           {{ tick }}
         </text>
@@ -172,7 +198,7 @@ interface PlottedBubble {
         [attr.y]="height() - 8"
         text-anchor="middle"
         fill="#64748b"
-        style="font-size: 15px; font-weight: 600;"
+        class="axis-title-label"
       >
         {{ xLabel() }}
       </text>
@@ -183,7 +209,7 @@ interface PlottedBubble {
         [attr.y]="(margin.top + height() - margin.bottom) / 2"
         text-anchor="middle"
         fill="#64748b"
-        style="font-size: 15px; font-weight: 600;"
+        class="axis-title-label"
         [attr.transform]="'rotate(-90, 24, ' + (margin.top + height() - margin.bottom) / 2 + ')'"
       >
         Highest Phase
@@ -231,7 +257,7 @@ interface PlottedBubble {
               text-anchor="middle"
               fill="white"
               [style.font-size.px]="pb.fontSize"
-              style="font-weight: 600; pointer-events: none;"
+              class="bubble-label-primary"
             >
               {{ pb.labelLines[0] }}
             </text>
@@ -244,7 +270,7 @@ interface PlottedBubble {
               text-anchor="middle"
               fill="white"
               [style.font-size.px]="pb.fontSize"
-              style="font-weight: 600; pointer-events: none;"
+              class="bubble-label-primary"
             >
               {{ pb.labelLines[0] }}
             </text>
@@ -254,7 +280,7 @@ interface PlottedBubble {
               text-anchor="middle"
               fill="rgba(255,255,255,0.85)"
               [style.font-size.px]="pb.fontSize - 1"
-              style="font-weight: 500; pointer-events: none;"
+              class="bubble-label-secondary"
             >
               {{ pb.labelLines[1] }}
             </text>
@@ -269,7 +295,7 @@ interface PlottedBubble {
           [attr.y]="height() / 2"
           text-anchor="middle"
           fill="#94a3b8"
-          style="font-size: 18px;"
+          class="empty-state-label"
         >
           No data matches current filters
         </text>

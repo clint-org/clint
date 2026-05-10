@@ -69,7 +69,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
       >
         <ng-template #header>
           <tr>
-            <th style="width: 60px"></th>
+            <th class="w-[60px]"></th>
             <th>Name</th>
             <th>Subdomain</th>
             <th class="text-right">Members</th>

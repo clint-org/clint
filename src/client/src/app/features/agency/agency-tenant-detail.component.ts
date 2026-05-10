@@ -254,7 +254,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
       header="Add tenant owner"
       [(visible)]="addOwnerDialogOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="resetAddOwnerForm()"
     >
       <p class="mb-3 text-xs text-slate-500">

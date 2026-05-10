@@ -66,7 +66,7 @@ interface AgencyOption {
             [ngModel]="agencyFilter()"
             (ngModelChange)="agencyFilter.set($event)"
             placeholder="All agencies"
-            [style]="{ width: '14rem' }"
+            styleClass="w-[14rem]"
             optionLabel="label"
             optionValue="value"
           />
@@ -165,7 +165,7 @@ interface AgencyOption {
       [closable]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       [header]="selected()?.name || 'Tenant'"
       (onHide)="resetDialog()"
     >
