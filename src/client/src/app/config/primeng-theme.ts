@@ -30,6 +30,9 @@ export const TEAL_SCALE: BrandScale = {
 };
 
 export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
+  // Token shapes tightened from v19 to v20 (overlay.shadow, button.disabled*,
+  // toast.text.fontSize) are still emitted as CSS vars at runtime; cast keeps
+  // the brand preset intact pending a token-cleanup pass.
   return definePreset(Aura, {
     semantic: {
       primary: scale,
@@ -299,7 +302,7 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
         },
       },
     },
-  });
+  } as Parameters<typeof definePreset>[1]);
 }
 
 const ClinicalTheme = buildBrandPreset();

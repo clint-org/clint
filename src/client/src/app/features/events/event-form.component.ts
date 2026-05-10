@@ -5,7 +5,7 @@ import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
-import { Chips } from 'primeng/chips';
+import { AutoComplete } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -40,7 +40,7 @@ interface SourceRow {
     Textarea,
     Select,
     DatePicker,
-    Chips,
+    AutoComplete,
     ButtonModule,
     MessageModule,
   ],
@@ -180,13 +180,15 @@ interface SourceRow {
       <!-- Tags -->
       <div>
         <label for="event-tags" class="mb-1 block text-xs font-medium text-slate-600">Tags</label>
-        <p-chips
+        <p-autoComplete
           inputId="event-tags"
           [ngModel]="tags()"
           (ngModelChange)="tags.set($event ?? [])"
           name="tags"
+          [multiple]="true"
+          [typeahead]="false"
           placeholder="Add tags..."
-          [style]="{ width: '100%' }"
+          styleClass="w-full"
         />
       </div>
 

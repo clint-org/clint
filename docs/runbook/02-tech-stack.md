@@ -26,14 +26,14 @@ The table below is auto-generated from `src/client/package.json`. Edit the curat
 <!-- AUTO-GEN:VERSIONS -->
 | Package | Version |
 |---|---|
-| `@angular/core` | ^19.0.0 |
-| `@angular/cdk` | ^19.2.19 |
-| `typescript` | ~5.6.0 |
+| `@angular/core` | ^20.3.20 |
+| `@angular/cdk` | ^20.2.14 |
+| `typescript` | ~5.9.3 |
 | `rxjs` | ~7.8.0 |
 | `zone.js` | ~0.15.0 |
 | `tslib` | ^2.6.0 |
-| `primeng` | ^19.1.4 |
-| `@primeng/themes` | ^19.1.4 |
+| `primeng` | ^20.4.0 |
+| `@primeng/themes` | ^20.4.0 |
 | `tailwindcss` | ^4.0.0 |
 | `tailwindcss-primeui` | ^0.6.1 |
 | `@supabase/supabase-js` | ^2.49.0 |

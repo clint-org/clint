@@ -116,19 +116,19 @@ export class PositioningViewComponent implements OnInit {
   }
 
   readonly positioningData = resource({
-    request: () => ({
+    params: () => ({
       spaceId: this.spaceId(),
       grouping: this.state.positioningGrouping(),
       countUnit: this.state.countUnit(),
       filters: this.state.filters(),
     }),
-    loader: async ({ request }) => {
-      if (!request.spaceId) return null;
+    loader: async ({ params }) => {
+      if (!params.spaceId) return null;
       return this.landscapeService.getPositioningData(
-        request.spaceId,
-        request.grouping,
-        request.countUnit,
-        request.filters
+        params.spaceId,
+        params.grouping,
+        params.countUnit,
+        params.filters
       );
     },
   });

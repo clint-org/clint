@@ -130,14 +130,14 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   /** Load entity index for the entity dropdown. */
   readonly entityIndex = resource({
-    request: () => ({
+    params: () => ({
       spaceId: this.spaceId(),
       dimension: this.dimension(),
       active: this.viewMode() === 'bullseye',
     }),
-    loader: async ({ request }) => {
-      if (!request.spaceId || !request.active) return [];
-      return this.landscapeService.getLandscapeIndex(request.spaceId, request.dimension);
+    loader: async ({ params }) => {
+      if (!params.spaceId || !params.active) return [];
+      return this.landscapeService.getLandscapeIndex(params.spaceId, params.dimension);
     },
   });
 
