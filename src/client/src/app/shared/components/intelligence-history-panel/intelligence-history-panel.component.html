@@ -1,0 +1,36 @@
+<section class="mt-6 border-t border-slate-200 pt-4" aria-labelledby="history-heading">
+  <button
+    type="button"
+    class="flex w-full items-center justify-between text-left"
+    [attr.aria-expanded]="expanded()"
+    [disabled]="!canExpand()"
+    (click)="toggle()"
+  >
+    <span id="history-heading" class="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+      History
+    </span>
+    <span class="flex items-center gap-3 text-xs text-slate-500">
+      @if (versionCount() <= 1) {
+        <span>No prior versions</span>
+      } @else {
+        <span>{{ versionCount() }} versions</span>
+        @if (latest(); as v) {
+          <span class="font-mono">v{{ v.version_number }}</span>
+          <span>{{ formatDate(v.published_at) }}</span>
+        }
+      }
+      <span
+        class="inline-block h-2 w-2 border-r border-b border-slate-400"
+        [class.rotate-45]="!expanded()"
+        [class.-rotate-135]="expanded()"
+        aria-hidden="true"
+      ></span>
+    </span>
+  </button>
+
+  @if (expanded()) {
+    <div class="mt-4 space-y-3">
+      <!-- Version cards added in Task 16 -->
+    </div>
+  }
+</section>
