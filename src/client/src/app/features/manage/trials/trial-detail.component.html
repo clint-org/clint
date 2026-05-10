@@ -164,6 +164,16 @@
             [spaceId]="spaceIdSig()"
             (edit)="onIntelligenceEdit()"
             (discardDraft)="onIntelligenceDelete()"
+            (withdraw)="withdrawDialogOpen.set(true)"
+            (purge)="
+              onPurgeRequested(
+                {
+                  id: historyHost.payload().current?.id ?? '',
+                  headline: historyHost.payload().current?.headline ?? ''
+                },
+                false
+              )
+            "
           />
         } @else {
           <app-intelligence-empty
@@ -172,6 +182,30 @@
             (add)="onIntelligenceEdit()"
           />
         }
+        <app-intelligence-history-panel
+          [payload]="historyHost.payload()"
+          [currentUserCanEdit]="spaceRole.canEdit()"
+          (withdraw)="withdrawDialogOpen.set(true)"
+          (purgeVersion)="
+            onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
+          "
+          (purgeAnchor)="
+            onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
+          "
+          (versionRevisionsRequested)="loadHistoryVersionRevisions($event)"
+        />
+        <app-withdraw-intelligence-dialog
+          [visible]="withdrawDialogOpen()"
+          (cancelled)="withdrawDialogOpen.set(false)"
+          (confirmed)="onWithdrawConfirmed($event)"
+        />
+        <app-purge-intelligence-dialog
+          [visible]="purgeDialogOpen()"
+          [headline]="purgeTargetHeadline()"
+          [purgeAnchor]="purgeAnchorMode()"
+          (cancelled)="purgeDialogOpen.set(false)"
+          (confirmed)="onPurgeConfirmed($event)"
+        />
       </div>
 
       <!-- Referenced in -->

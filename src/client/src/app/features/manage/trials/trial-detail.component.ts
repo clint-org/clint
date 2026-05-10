@@ -1,5 +1,14 @@
 import { DatePipe, Location } from '@angular/common';
-import { Component, computed, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -33,6 +42,10 @@ import { StatusTagComponent } from '../../../shared/components/status-tag.compon
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
+import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
+import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
+import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
+import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
@@ -64,6 +77,9 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
+    IntelligenceHistoryPanelComponent,
+    WithdrawIntelligenceDialogComponent,
+    PurgeIntelligenceDialogComponent,
     RecentActivityFeedComponent,
     MaterialsSectionComponent,
     CtgovFieldRendererComponent,
@@ -161,6 +177,15 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   readonly intelligenceDrawerOpen = signal(false);
+
+  // Intelligence history (version list, withdraw / purge dialogs)
+  protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
+  protected readonly historyPanelRef = viewChild(IntelligenceHistoryPanelComponent);
+  protected readonly withdrawDialogOpen = signal(false);
+  protected readonly purgeDialogOpen = signal(false);
+  protected readonly purgeAnchorMode = signal(false);
+  protected readonly purgeTargetHeadline = signal('');
+  protected readonly purgeTargetId = signal<string | null>(null);
 
   // CT.gov data + activity feed
   readonly snapshot = signal<{ payload: unknown; fetched_at: string } | null>(null);
@@ -337,6 +362,9 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       const trial = await this.trialService.getById(this.trialId());
       this.trial.set(trial);
       this.menuCache.clear();
+      // History panel depends on the loaded trial's space_id; refresh once
+      // the trial resolves so the inline panel reflects the latest versions.
+      await this.refreshHistory();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load trial');
     } finally {
@@ -352,6 +380,80 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
       // Intelligence load failures shouldn't block the trial page; the
       // empty state simply renders. Real errors surface elsewhere.
       this.intelligence.set(null);
+    }
+  }
+
+  private async refreshHistory(): Promise<void> {
+    const t = this.trial();
+    if (!t) return;
+    try {
+      await this.historyHost.load(t.space_id, 'trial', t.id);
+    } catch {
+      // History panel mirrors the intelligence-block: load failures should
+      // not block the page. The panel renders an empty state on its own.
+    }
+  }
+
+  protected async onWithdrawConfirmed(reason: string): Promise<void> {
+    const id = this.historyHost.payload().current?.id;
+    if (!id) return;
+    try {
+      await this.historyHost.withdraw(id, reason);
+      this.withdrawDialogOpen.set(false);
+      // Refresh the intelligence bundle for IntelligenceBlock and reload the
+      // trial bundle (which also refreshes history) so the page reflects the
+      // new state end-to-end.
+      await Promise.all([this.loadIntelligence(), this.loadTrial()]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Read withdrawn.',
+        life: 3000,
+      });
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Withdraw failed',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected onPurgeRequested(target: { id: string; headline: string }, anchor: boolean): void {
+    this.purgeTargetId.set(target.id);
+    this.purgeTargetHeadline.set(target.headline);
+    this.purgeAnchorMode.set(anchor);
+    this.purgeDialogOpen.set(true);
+  }
+
+  protected async onPurgeConfirmed(confirmation: string): Promise<void> {
+    const id = this.purgeTargetId();
+    if (!id) return;
+    try {
+      await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
+      this.purgeDialogOpen.set(false);
+      await Promise.all([this.loadIntelligence(), this.loadTrial()]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Read purged.',
+        life: 3000,
+      });
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Purge failed',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected async loadHistoryVersionRevisions(versionId: string): Promise<void> {
+    try {
+      const revs = await this.historyHost.loadVersionRevisions(versionId);
+      this.historyPanelRef()?.setVersionRevisions(versionId, revs);
+    } catch {
+      // Silent: per-version diff fetch failures degrade gracefully.
     }
   }
 
