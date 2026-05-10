@@ -119,6 +119,16 @@ begin
 end;
 $$;
 
+revoke execute on function public.upsert_primary_intelligence(
+  uuid, uuid, text, uuid, text, text, text, text, text, text, jsonb
+) from public;
+revoke execute on function public.upsert_primary_intelligence(
+  uuid, uuid, text, uuid, text, text, text, text, text, text, jsonb
+) from anon;
+grant execute on function public.upsert_primary_intelligence(
+  uuid, uuid, text, uuid, text, text, text, text, text, text, jsonb
+) to authenticated;
+
 -- =============================================================================
 -- delete_primary_intelligence (narrow to drafts only)
 -- =============================================================================
@@ -148,6 +158,10 @@ begin
   delete from public.primary_intelligence where id = p_id;
 end;
 $$;
+
+revoke execute on function public.delete_primary_intelligence(uuid) from public;
+revoke execute on function public.delete_primary_intelligence(uuid) from anon;
+grant  execute on function public.delete_primary_intelligence(uuid) to authenticated;
 
 -- =============================================================================
 -- withdraw_primary_intelligence (new)
