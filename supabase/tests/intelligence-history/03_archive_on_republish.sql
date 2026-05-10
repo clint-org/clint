@@ -10,6 +10,7 @@ declare
   v_id2 uuid;
   v_state text;
   v_archived_count int;
+  v_added_membership boolean := false;
 begin
   -- Pick a company whose space sits in a tenant that has an agency with members,
   -- since upsert_primary_intelligence gates on is_agency_member_of_space().
@@ -33,6 +34,20 @@ begin
     return;
   end if;
 
+  -- Ensure the agency member also has read access via space_members. Seed data
+  -- does not always overlap these two memberships, but the SELECT RLS on
+  -- primary_intelligence relies on has_space_access(), which is gated on an
+  -- explicit space_members row. Add one for the test if missing, and remove
+  -- it during cleanup so the test is hermetic.
+  if not exists (
+    select 1 from public.space_members
+     where space_id = v_space and user_id = v_user
+  ) then
+    insert into public.space_members (space_id, user_id, role)
+    values (v_space, v_user, 'editor');
+    v_added_membership := true;
+  end if;
+
   perform set_config('request.jwt.claims', json_build_object('sub', v_user)::text, true);
   perform set_config('role', 'authenticated', true);
 
@@ -48,12 +63,11 @@ begin
     'V2 headline', '', '', '', 'published', 'updated thesis', '[]'::jsonb
   );
 
-  -- Reset role so assertions can read archived rows (RLS hides state='archived'
-  -- from authenticated readers; the read policy only exposes draft + published).
-  perform set_config('role', 'postgres', true);
-
   -- v1 should still exist, now archived
   select state into v_state from public.primary_intelligence where id = v_id1;
+  if v_state is null then
+    raise exception 'expected v1 to be readable, got null (RLS hid the row)';
+  end if;
   if v_state <> 'archived' then
     raise exception 'expected v1 to be archived after republish, got state=%', v_state;
   end if;
@@ -71,6 +85,16 @@ begin
     raise exception 'expected 1 archived row, got %', v_archived_count;
   end if;
 
-  -- cleanup
+  -- cleanup: data rows first (still as authenticated, agency member can delete)
   delete from public.primary_intelligence where id in (v_id1, v_id2);
+
+  -- cleanup space membership added above. Switch back to postgres so the
+  -- owner-only delete RLS doesn't block us, and flip the cascade-bypass
+  -- setting so the self-protection trigger (which checks auth.uid()) lets
+  -- the row through.
+  if v_added_membership then
+    perform set_config('role', 'postgres', true);
+    perform set_config('clint.member_guard_cascade', 'on', true);
+    delete from public.space_members where space_id = v_space and user_id = v_user;
+  end if;
 end $$;
