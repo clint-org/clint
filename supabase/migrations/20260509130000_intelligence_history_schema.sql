@@ -32,6 +32,8 @@ comment on column public.primary_intelligence.published_at is
   'Timestamp of the most recent transition into state=published. Preserved through archive/withdraw.';
 comment on column public.primary_intelligence.withdrawn_at is
   'Timestamp of the published -> withdrawn transition. Null otherwise.';
+comment on column public.primary_intelligence.withdrawn_by is
+  'auth.users id of the agency member who withdrew this version. Null otherwise.';
 
 -- =============================================================================
 -- index for the history panel (versions list, newest first)
@@ -61,7 +63,7 @@ begin
        where space_id    = new.space_id
          and entity_type = new.entity_type
          and entity_id   = new.entity_id
-         and (TG_OP = 'INSERT' or id <> new.id)
+         and id is distinct from new.id
          and version_number is not null
     ), 1);
     new.published_at := now();
