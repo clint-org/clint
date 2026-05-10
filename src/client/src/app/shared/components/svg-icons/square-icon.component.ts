@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
 @Component({
@@ -35,6 +35,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
       />
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SquareIconComponent {
   readonly size = input<number>(16);
@@ -44,5 +45,5 @@ export class SquareIconComponent {
 
   readonly padding = computed(() => this.size() * 0.1);
   readonly innerSize = computed(() => this.size() * 0.8);
-  readonly markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
+  readonly markColor = computed(() => (this.fillStyle() === 'outline' ? this.color() : 'white'));
 }

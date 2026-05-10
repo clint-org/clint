@@ -49,8 +49,8 @@
               <p class="mt-1 text-xs text-slate-500">
                 Diverges from current:
                 <span class="text-slate-700">
-                  @for (sec of s.changedSections; track sec; let last = $last) {
-                    {{ sectionLabel(sec) }}@if (!last) {, }
+                  @for (sec of s.changedSections; track sec) {
+                    {{ sectionLabel(sec) }}@if (!$last) {, }
                   }
                 </span>
               </p>

@@ -6,6 +6,8 @@
  * the selected TA. Companies sit on spokes around the perimeter.
  */
 
+import type { MarkerShape } from './marker.model';
+
 export type RingPhase = 'PRECLIN' | 'P1' | 'P2' | 'P3' | 'P4' | 'APPROVED' | 'LAUNCHED';
 
 /**
@@ -93,7 +95,7 @@ export interface BullseyeMarker {
   event_date: string;
   marker_type_name: string;
   icon: string | null;
-  shape: string;
+  shape: MarkerShape;
   color: string;
   projection: string;
   category_name: string;

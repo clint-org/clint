@@ -1,4 +1,12 @@
-import { Component, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { SelectButton } from 'primeng/selectbutton';
@@ -75,6 +83,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExportDialogComponent {
   private pptxService = inject(PptxExportService);

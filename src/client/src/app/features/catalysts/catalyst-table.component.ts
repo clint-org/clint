@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -33,7 +33,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
       styleClass="data-table"
       [filters]="gridFilters()"
       [lazy]="true"
-      (onLazyLoad)="filterChange.emit($any($event))"
+      (onLazyLoad)="onLazyLoad($event)"
     >
       <ng-template #header>
         <tr>
@@ -129,7 +129,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           <td>
             <span class="inline-flex items-center gap-1.5">
               <app-marker-icon
-                [shape]="$any(catalyst.marker_type_shape)"
+                [shape]="catalyst.marker_type_shape"
                 [color]="catalyst.marker_type_color"
                 [size]="14"
                 [fillStyle]="catalyst.is_projected ? 'outline' : 'filled'"
@@ -200,6 +200,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
       </ng-template>
     </p-table>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystTableComponent {
   readonly catalysts = input.required<FlatCatalyst[]>();
@@ -212,4 +213,11 @@ export class CatalystTableComponent {
   readonly query = input<string>('');
   readonly rowSelect = output<string>();
   readonly filterChange = output<Record<string, unknown>>();
+
+  protected onLazyLoad(event: unknown): void {
+    // PrimeNG emits TableLazyLoadEvent here. We forward the whole event
+    // so the grid-state machinery can read filters/sort/page off it; the
+    // cast keeps a single sink for typing rather than scattering casts.
+    this.filterChange.emit(event as Record<string, unknown>);
+  }
 }

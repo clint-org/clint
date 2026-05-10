@@ -1,11 +1,17 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { PositioningBubble, RING_ORDER, RingPhase } from '../../core/models/landscape.model';
 
 const Y_PHASES: readonly RingPhase[] = RING_ORDER;
 
 const PHASE_Y_RANK: Record<RingPhase, number> = {
-  PRECLIN: 0, P1: 1, P2: 2, P3: 3, P4: 4, APPROVED: 5, LAUNCHED: 6,
+  PRECLIN: 0,
+  P1: 1,
+  P2: 2,
+  P3: 3,
+  P4: 4,
+  APPROVED: 5,
+  LAUNCHED: 6,
 };
 
 /** Minimum and maximum bubble radius (scales with unit_count). */
@@ -82,7 +88,9 @@ interface PlottedBubble {
       preserveAspectRatio="xMidYMid meet"
       style="width: 100%; height: 100%; display: block;"
       role="img"
-      [attr.aria-label]="'Competitive positioning scatter chart with ' + bubbles().length + ' bubbles'"
+      [attr.aria-label]="
+        'Competitive positioning scatter chart with ' + bubbles().length + ' bubbles'
+      "
       (click)="onBackgroundClick($event)"
       (keydown.escape)="onBackgroundClick($event)"
     >
@@ -140,7 +148,9 @@ interface PlottedBubble {
           text-anchor="end"
           fill="#94a3b8"
           style="font-size: 14px; font-family: ui-monospace, monospace;"
-        >{{ phase }}</text>
+        >
+          {{ phase }}
+        </text>
       }
 
       <!-- X-axis tick labels -->
@@ -151,7 +161,9 @@ interface PlottedBubble {
           text-anchor="middle"
           fill="#94a3b8"
           style="font-size: 14px; font-family: ui-monospace, monospace;"
-        >{{ tick }}</text>
+        >
+          {{ tick }}
+        </text>
       }
 
       <!-- X-axis title -->
@@ -161,7 +173,9 @@ interface PlottedBubble {
         text-anchor="middle"
         fill="#64748b"
         style="font-size: 15px; font-weight: 600;"
-      >{{ xLabel() }}</text>
+      >
+        {{ xLabel() }}
+      </text>
 
       <!-- Y-axis title -->
       <text
@@ -170,8 +184,10 @@ interface PlottedBubble {
         text-anchor="middle"
         fill="#64748b"
         style="font-size: 15px; font-weight: 600;"
-        [attr.transform]="'rotate(-90, 24, ' + ((margin.top + height() - margin.bottom) / 2) + ')'"
-      >Highest Phase</text>
+        [attr.transform]="'rotate(-90, 24, ' + (margin.top + height() - margin.bottom) / 2 + ')'"
+      >
+        Highest Phase
+      </text>
 
       <!-- Bubbles -->
       @for (pb of plottedBubbles(); track pb.bubble.label) {
@@ -179,7 +195,17 @@ interface PlottedBubble {
           class="cursor-pointer outline-none"
           [class.opacity-30]="selectedBubble() !== null && selectedBubble() !== pb.bubble"
           tabindex="0"
-          [attr.aria-label]="pb.bubble.label + ': ' + pb.bubble.competitor_count + ' competitors, highest phase ' + pb.bubble.highest_phase + ', ' + pb.bubble.unit_count + ' ' + countUnit()"
+          [attr.aria-label]="
+            pb.bubble.label +
+            ': ' +
+            pb.bubble.competitor_count +
+            ' competitors, highest phase ' +
+            pb.bubble.highest_phase +
+            ', ' +
+            pb.bubble.unit_count +
+            ' ' +
+            countUnit()
+          "
           (click)="onBubbleClick($event, pb.bubble)"
           (mouseenter)="bubbleHover.emit(pb.bubble)"
           (mouseleave)="bubbleHover.emit(null)"
@@ -206,7 +232,9 @@ interface PlottedBubble {
               fill="white"
               [style.font-size.px]="pb.fontSize"
               style="font-weight: 600; pointer-events: none;"
-            >{{ pb.labelLines[0] }}</text>
+            >
+              {{ pb.labelLines[0] }}
+            </text>
           }
           <!-- Two-line label -->
           @if (pb.labelLines.length === 2) {
@@ -217,7 +245,9 @@ interface PlottedBubble {
               fill="white"
               [style.font-size.px]="pb.fontSize"
               style="font-weight: 600; pointer-events: none;"
-            >{{ pb.labelLines[0] }}</text>
+            >
+              {{ pb.labelLines[0] }}
+            </text>
             <text
               [attr.x]="pb.cx"
               [attr.y]="pb.cy + pb.fontSize * 0.95"
@@ -225,7 +255,9 @@ interface PlottedBubble {
               fill="rgba(255,255,255,0.85)"
               [style.font-size.px]="pb.fontSize - 1"
               style="font-weight: 500; pointer-events: none;"
-            >{{ pb.labelLines[1] }}</text>
+            >
+              {{ pb.labelLines[1] }}
+            </text>
           }
         </g>
       }
@@ -238,10 +270,13 @@ interface PlottedBubble {
           text-anchor="middle"
           fill="#94a3b8"
           style="font-size: 18px;"
-        >No data matches current filters</text>
+        >
+          No data matches current filters
+        </text>
       }
     </svg>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PositioningChartComponent {
   readonly bubbles = input.required<PositioningBubble[]>();
@@ -263,9 +298,7 @@ export class PositioningChartComponent {
     return Math.max(max, 2);
   });
 
-  readonly maxUnitCount = computed(() =>
-    Math.max(...this.bubbles().map((b) => b.unit_count), 1),
-  );
+  readonly maxUnitCount = computed(() => Math.max(...this.bubbles().map((b) => b.unit_count), 1));
 
   /** Quadrant boundary: midpoint of the X plot area. */
   readonly quadrantMidX = computed(() => {

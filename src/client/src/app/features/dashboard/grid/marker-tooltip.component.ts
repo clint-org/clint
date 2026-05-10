@@ -1,12 +1,13 @@
 import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   ElementRef,
   inject,
   input,
-  AfterViewInit,
   signal,
-  ChangeDetectorRef,
 } from '@angular/core';
 import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
@@ -185,6 +186,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerTooltipComponent implements AfterViewInit {
   private el = inject(ElementRef);

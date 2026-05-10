@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 /**
  * Canonical container for every detail pane (marker, event, positioning,
@@ -80,6 +80,7 @@ import { Component, computed, input, output } from '@angular/core';
       <ng-content select="[footer]" />
     </aside>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelShellComponent {
   readonly label = input<string>('');

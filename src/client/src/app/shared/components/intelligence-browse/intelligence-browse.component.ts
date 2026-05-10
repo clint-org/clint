@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -194,6 +202,7 @@ const DRAFTS_LIMIT = 200;
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceBrowseComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -240,11 +249,7 @@ export class IntelligenceBrowseComponent implements OnInit {
   });
 
   protected readonly hasAnyActive = computed(() => {
-    return (
-      this.query().trim().length > 0 ||
-      this.entityTypes().length > 0 ||
-      this.since() !== null
-    );
+    return this.query().trim().length > 0 || this.entityTypes().length > 0 || this.since() !== null;
   });
 
   // Re-fetch when the route's spaceId changes.

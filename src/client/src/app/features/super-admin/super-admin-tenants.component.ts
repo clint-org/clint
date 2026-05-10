@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -16,8 +23,7 @@ import {
 } from '../../core/services/super-admin.service';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 
-const HOSTNAME_REGEX =
-  /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+const HOSTNAME_REGEX = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
 interface AgencyOption {
   label: string;
@@ -113,7 +119,9 @@ interface AgencyOption {
             <td class="text-xs text-slate-700">
               {{ tenant.agency_name || '--' }}
               @if (tenant.agency_slug) {
-                <span class="ml-1 text-[10px] text-slate-400 font-mono">{{ tenant.agency_slug }}</span>
+                <span class="ml-1 text-[10px] text-slate-400 font-mono">{{
+                  tenant.agency_slug
+                }}</span>
               }
             </td>
             <td class="col-identifier text-xs">
@@ -192,7 +200,6 @@ interface AgencyOption {
                 class="w-full font-mono text-xs"
                 [ngModel]="customDomain()"
                 (ngModelChange)="onDomainChange($event)"
-                (ngModelChange)="onDomainChange($event)"
                 name="customDomain"
                 placeholder="trials.client.com"
                 spellcheck="false"
@@ -232,6 +239,7 @@ interface AgencyOption {
       }
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuperAdminTenantsComponent implements OnInit {
   private readonly service = inject(SuperAdminService);

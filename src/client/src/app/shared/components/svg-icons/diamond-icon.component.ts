@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle, InnerMark } from '../../../core/models/marker.model';
 
 @Component({
@@ -31,6 +31,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
       />
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DiamondIconComponent {
   readonly size = input<number>(16);
@@ -38,7 +39,7 @@ export class DiamondIconComponent {
   readonly fillStyle = input<FillStyle>('filled');
   readonly innerMark = input<InnerMark>('none');
 
-  readonly markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
+  readonly markColor = computed(() => (this.fillStyle() === 'outline' ? this.color() : 'white'));
 
   readonly diamondPoints = computed(() => {
     const s = this.size();

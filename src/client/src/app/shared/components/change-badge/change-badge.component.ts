@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TooltipModule } from 'primeng/tooltip';
 
 const PRIORITY_TYPES = new Set<string>(['date_moved', 'phase_transitioned', 'trial_withdrawn']);
@@ -41,6 +41,7 @@ const TYPE_LABELS: Record<string, string> = {
   standalone: true,
   imports: [TooltipModule],
   templateUrl: './change-badge.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeBadgeComponent {
   readonly count = input.required<number>();

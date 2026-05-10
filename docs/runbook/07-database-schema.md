@@ -718,4 +718,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260509130050_intelligence_history_rls.sql`
 - `20260509130100_intelligence_history_rpcs.sql`
 - `20260509131000_intelligence_history_restore_changed_fields.sql`
+- `20260510120100_change_feed_product_company_marker_type.sql`
+- `20260510120200_seed_demo_activity_variety.sql`
 <!-- /AUTO-GEN:DRIFT -->

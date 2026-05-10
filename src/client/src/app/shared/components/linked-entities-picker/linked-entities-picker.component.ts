@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
@@ -30,7 +39,7 @@ interface EntityOption {
   template: `
     <div class="space-y-3">
       <ul class="space-y-2" aria-label="Linked entities">
-        @for (link of links(); track link.entity_type + link.entity_id; let i = $index) {
+        @for (link of links(); track link.entity_type + link.entity_id) {
           <li
             class="flex flex-wrap items-center gap-2 rounded-sm border border-slate-200 bg-slate-50/50 px-2.5 py-2"
           >
@@ -45,7 +54,7 @@ interface EntityOption {
             <p-select
               [options]="relationshipOptions"
               [ngModel]="link.relationship_type"
-              (ngModelChange)="updateRelationship(i, $event)"
+              (ngModelChange)="updateRelationship($index, $event)"
               [editable]="true"
               placeholder="Relationship"
               styleClass="w-44 text-xs"
@@ -55,7 +64,7 @@ interface EntityOption {
               pInputText
               type="text"
               [ngModel]="link.gloss ?? ''"
-              (ngModelChange)="updateGloss(i, $event)"
+              (ngModelChange)="updateGloss($index, $event)"
               placeholder="Gloss (optional)"
               class="!h-8 w-48 text-xs"
             />
@@ -65,7 +74,7 @@ interface EntityOption {
               size="small"
               severity="secondary"
               ariaLabel="Remove link"
-              (onClick)="removeLink(i)"
+              (onClick)="removeLink($index)"
             />
           </li>
         } @empty {
@@ -113,6 +122,7 @@ interface EntityOption {
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LinkedEntitiesPickerComponent implements OnInit {
   private supabase = inject(SupabaseService);
@@ -135,13 +145,18 @@ export class LinkedEntitiesPickerComponent implements OnInit {
     { label: 'Product', value: 'product' },
   ];
 
-  protected readonly relationshipOptions = RELATIONSHIP_OPTIONS.map((r) => ({ label: r, value: r }));
+  protected readonly relationshipOptions = RELATIONSHIP_OPTIONS.map((r) => ({
+    label: r,
+    value: r,
+  }));
 
   protected readonly filteredEntityOptions = computed(() => {
     const t = this.addEntityType();
     if (!t) return [];
     const taken = new Set(
-      this.links().filter((l) => l.entity_type === t).map((l) => l.entity_id)
+      this.links()
+        .filter((l) => l.entity_type === t)
+        .map((l) => l.entity_id)
     );
     return this.entityOptions()
       .filter((o) => o.entity_type === t && !taken.has(o.entity_id))
@@ -213,13 +228,26 @@ export class LinkedEntitiesPickerComponent implements OnInit {
 
     const [trials, markers, companies, products] = await Promise.all([
       client.from('trials').select('id, name, identifier').eq('space_id', sid).order('name'),
-      client.from('markers').select('id, title, event_date').eq('space_id', sid).order('event_date', { ascending: false }).limit(500),
+      client
+        .from('markers')
+        .select('id, title, event_date')
+        .eq('space_id', sid)
+        .order('event_date', { ascending: false })
+        .limit(500),
       client.from('companies').select('id, name').eq('space_id', sid).order('name'),
-      client.from('products').select('id, name, company_id, companies(name)').eq('space_id', sid).order('name'),
+      client
+        .from('products')
+        .select('id, name, company_id, companies(name)')
+        .eq('space_id', sid)
+        .order('name'),
     ]);
 
     const opts: EntityOption[] = [];
-    for (const t of (trials.data ?? []) as { id: string; name: string; identifier: string | null }[]) {
+    for (const t of (trials.data ?? []) as {
+      id: string;
+      name: string;
+      identifier: string | null;
+    }[]) {
       opts.push({
         entity_type: 'trial',
         entity_id: t.id,

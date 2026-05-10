@@ -1,4 +1,12 @@
-import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -35,6 +43,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './engagement-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EngagementDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

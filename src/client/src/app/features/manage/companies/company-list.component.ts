@@ -1,4 +1,13 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -23,6 +32,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   selector: 'app-company-list',
   standalone: true,
   imports: [
+    NgOptimizedImage,
     RouterLink,
     TableModule,
     ButtonModule,
@@ -36,6 +46,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     HighlightPipe,
   ],
   templateUrl: './company-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompanyListComponent implements OnInit, OnDestroy {
   readonly companies = signal<Company[]>([]);
@@ -55,7 +66,12 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'Add company', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+        {
+          label: 'Add company',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -156,7 +172,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDelete(company),
-        },
+        }
       );
     }
     this.menuCache.set(company.id, items);

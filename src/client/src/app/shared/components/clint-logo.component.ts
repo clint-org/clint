@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /**
  * Triple C logo mark for Clint. Three nested open squares forming the letter C
@@ -52,6 +52,7 @@ import { Component, computed, input } from '@angular/core';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClintLogoComponent {
   readonly size = input<number>(28);

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Popover } from 'primeng/popover';
 
 import { TrialNote } from '../../../core/models/trial.model';
@@ -57,6 +57,7 @@ import { TrialNote } from '../../../core/models/trial.model';
       </div>
     </p-popover>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RowNotesComponent {
   readonly notes = input<TrialNote[]>([]);
@@ -64,7 +65,5 @@ export class RowNotesComponent {
 
   readonly hasNotes = computed(() => !!this.trialNotes() || this.notes().length > 0);
 
-  readonly totalCount = computed(
-    () => (this.trialNotes() ? 1 : 0) + this.notes().length,
-  );
+  readonly totalCount = computed(() => (this.trialNotes() ? 1 : 0) + this.notes().length);
 }

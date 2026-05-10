@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -21,6 +30,7 @@ interface SelectOption {
   standalone: true,
   imports: [Dialog, ButtonModule, InputTextModule, Select, FormsModule],
   templateUrl: './trial-create-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialCreateDialogComponent {
   private trialService = inject(TrialService);

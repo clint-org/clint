@@ -1,4 +1,12 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -30,6 +38,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     TableSkeletonBodyComponent,
   ],
   templateUrl: './route-of-administration-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   readonly items = signal<RouteOfAdministration[]>([]);
@@ -50,7 +59,12 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'Add route', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+        {
+          label: 'Add route',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -86,7 +100,7 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDelete(item),
-        },
+        }
       );
     }
     this.menuCache.set(item.id, items);

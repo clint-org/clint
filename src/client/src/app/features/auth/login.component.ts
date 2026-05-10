@@ -1,4 +1,12 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -8,7 +16,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ClintLogoComponent],
+  imports: [ClintLogoComponent, NgOptimizedImage],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50">
       <div class="w-full max-w-sm border border-slate-200 bg-white">
@@ -27,8 +35,11 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             <div class="flex justify-center">
               @if (logoUrl()) {
                 <img
-                  [src]="logoUrl()"
+                  [ngSrc]="logoUrl()!"
                   [alt]="appName() + ' logo'"
+                  width="192"
+                  height="48"
+                  priority
                   class="h-12 w-auto object-contain"
                 />
               } @else {
@@ -43,8 +54,11 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             <div class="flex justify-center">
               @if (logoUrl()) {
                 <img
-                  [src]="logoUrl()"
+                  [ngSrc]="logoUrl()!"
                   [alt]="appName() + ' logo'"
+                  width="192"
+                  height="48"
+                  priority
                   class="h-12 w-auto object-contain"
                 />
               } @else {
@@ -148,8 +162,10 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             </p>
             @if (ag.logo_url) {
               <img
-                [src]="ag.logo_url"
+                [ngSrc]="ag.logo_url"
                 [alt]="ag.name + ' logo'"
+                width="140"
+                height="28"
                 class="h-7 w-auto max-w-[140px] object-contain"
               />
             } @else {
@@ -160,6 +176,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);

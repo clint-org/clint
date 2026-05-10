@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { BullseyeProduct } from '../../core/models/landscape.model';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
@@ -35,6 +35,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
       </div>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BullseyeTooltipComponent {
   readonly product = input<BullseyeProduct | null>(null);

@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -42,6 +43,7 @@ import { LandscapeStateService } from './landscape-state.service';
   ],
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandscapeComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);

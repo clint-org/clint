@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
@@ -42,6 +51,7 @@ interface RingHistogramEntry {
     MarkerIconComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BullseyeDetailPanelComponent {
   readonly data = input.required<BullseyeData | null>();

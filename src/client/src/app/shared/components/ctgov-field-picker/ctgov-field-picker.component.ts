@@ -1,4 +1,12 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { CtgovField } from '../../../core/models/ctgov-field.model';
 
@@ -23,6 +31,7 @@ import { CtgovField } from '../../../core/models/ctgov-field.model';
   standalone: true,
   imports: [CdkDropList, CdkDrag],
   templateUrl: './ctgov-field-picker.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CtgovFieldPickerComponent {
   readonly available = input.required<CtgovField[]>();

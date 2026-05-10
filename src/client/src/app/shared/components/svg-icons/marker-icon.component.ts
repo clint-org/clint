@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.model';
 import { CircleIconComponent } from './circle-icon.component';
@@ -95,6 +95,7 @@ import { TriangleIconComponent } from './triangle-icon.component';
       </svg>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerIconComponent {
   readonly shape = input.required<MarkerShape>();

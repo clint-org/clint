@@ -39,7 +39,7 @@ const STORAGE_PREFIX = 'landscape-state:';
  *
  * State is persisted to sessionStorage so it survives page refreshes.
  */
-@Injectable()
+@Injectable({ providedIn: 'any' })
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
   private readonly supabase = inject(SupabaseService);
@@ -123,12 +123,34 @@ export class LandscapeStateService {
     await this.loadData();
   }
 
-  /** Select a marker and fetch its detail. */
+  /**
+   * Select a marker and fetch its detail. In-app clicks toggle (clicking the
+   * already-selected row closes the drawer); deep links must force-open via
+   * openMarker() so an existing selection from restored sessionStorage doesn't
+   * close the drawer on the user.
+   */
   async selectMarker(markerId: string): Promise<void> {
     if (this.selectedMarkerId() === markerId) {
       this.clearSelection();
       return;
     }
+    await this.fetchAndSet(markerId);
+  }
+
+  /**
+   * Force-open the detail drawer for a marker. Used by deep links
+   * (e.g. ?markerId= from the activity feed) where toggle semantics would
+   * close a drawer that the URL just asked to open.
+   */
+  async openMarker(markerId: string): Promise<void> {
+    if (this.selectedMarkerId() === markerId && this.selectedDetail() !== null) {
+      // Already open with detail loaded; nothing to do.
+      return;
+    }
+    await this.fetchAndSet(markerId);
+  }
+
+  private async fetchAndSet(markerId: string): Promise<void> {
     this.selectedMarkerId.set(markerId);
     this.selectedDetail.set(null);
     this.detailLoading.set(true);
@@ -141,7 +163,6 @@ export class LandscapeStateService {
         this.selectedDetail.set(data as CatalystDetail);
       }
     } catch {
-      // On error, close the panel
       this.clearSelection();
     } finally {
       this.detailLoading.set(false);
@@ -300,7 +321,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             marker_type_name: mt?.name ?? '',
             marker_type_icon: mt?.icon ?? null,
             marker_type_color: mt?.color ?? '',
-            marker_type_shape: mt?.shape ?? '',
+            marker_type_shape: mt?.shape ?? 'circle',
             is_projected: marker.is_projected,
             company_name: company.name,
             company_id: company.id,

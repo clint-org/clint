@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PHASE_DESCRIPTORS } from '../../core/models/phase-colors';
@@ -89,6 +89,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
       </div>
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhasesHelpComponent {
   private readonly route = inject(ActivatedRoute);

@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-manage-page-shell',
@@ -8,6 +8,7 @@ import { Component, input } from '@angular/core';
       <ng-content />
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ManagePageShellComponent {
   /** Cap the shell to a narrower width for form-heavy detail pages. */

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 type TagTone = 'neutral' | 'teal' | 'amber' | 'slate';
 
@@ -91,6 +91,7 @@ const TRIAL_STATUS_TONE: Record<string, TagTone> = {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatusTagComponent {
   /** The raw status string to render. Null / empty renders a muted dash. */

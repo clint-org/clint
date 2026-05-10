@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -135,6 +143,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpaceListComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

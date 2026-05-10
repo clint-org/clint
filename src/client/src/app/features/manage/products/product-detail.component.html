@@ -14,8 +14,10 @@
         >
           @if (co.logo_url) {
             <img
-              [src]="co.logo_url"
+              [ngSrc]="co.logo_url"
               [alt]="co.name + ' logo'"
+              width="48"
+              height="12"
               class="h-3 w-auto max-w-[3rem] object-contain"
               loading="lazy"
             />
@@ -26,8 +28,10 @@
       <div class="mt-0.5 flex items-center gap-3">
         @if (p.logo_url) {
           <img
-            [src]="p.logo_url"
+            [ngSrc]="p.logo_url"
             [alt]="p.name + ' logo'"
+            width="128"
+            height="24"
             class="h-6 w-auto max-w-[8rem] object-contain"
             loading="lazy"
           />

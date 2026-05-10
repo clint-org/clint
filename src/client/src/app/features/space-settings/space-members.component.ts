@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -49,16 +58,13 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
   ],
   template: `
     <app-manage-page-shell>
-
       <p class="mb-4 text-[11px] text-slate-500 max-w-2xl">
-        Space members can see and (with Contributor or Owner role) edit data in
-        this space. Invite anyone by email, agency colleagues or pharma client
-        users. Owners can manage members; Contributors can edit data; Readers
-        have read-only access.
-        <a
-          [routerLink]="rolesHelpLink()"
-          class="ml-1 text-brand-700 hover:underline"
-        >Roles and permissions</a>.
+        Space members can see and (with Contributor or Owner role) edit data in this space. Invite
+        anyone by email, agency colleagues or pharma client users. Owners can manage members;
+        Contributors can edit data; Readers have read-only access.
+        <a [routerLink]="rolesHelpLink()" class="ml-1 text-brand-700 hover:underline"
+          >Roles and permissions</a
+        >.
       </p>
 
       <p-table
@@ -127,52 +133,52 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
 
       <!-- Pending invites: owner-only (invite codes are sensitive) -->
       @if (spaceRole.isOwner()) {
-      <div class="mt-10 mb-3 flex items-baseline justify-between">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Pending invites
-        </h2>
-        <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
-      </div>
-      <p-table
-        styleClass="data-table"
-        [value]="invites()"
-        [tableStyle]="{ 'min-width': '40rem' }"
-        aria-label="Pending invites"
-      >
-        <ng-template #header>
-          <tr>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Code</th>
-            <th>Expires</th>
-            <th class="col-actions"></th>
-          </tr>
-        </ng-template>
-        <ng-template #body let-invite>
-          <tr>
-            <td>{{ invite.email }}</td>
-            <td>
-              <app-status-tag
-                [label]="roleLabel(invite.role)"
-                [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
-              />
-            </td>
-            <td class="col-identifier">{{ invite.invite_code }}</td>
-            <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
-            <td class="col-actions">
-              <app-row-actions
-                [items]="inviteMenu(invite)"
-                [ariaLabel]="'Actions for invite ' + invite.email"
-              />
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template #emptymessage>
-          <tr>
-            <td colspan="5">No pending invites.</td>
-          </tr>
-        </ng-template>
-      </p-table>
+        <div class="mt-10 mb-3 flex items-baseline justify-between">
+          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Pending invites
+          </h2>
+          <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
+        </div>
+        <p-table
+          styleClass="data-table"
+          [value]="invites()"
+          [tableStyle]="{ 'min-width': '40rem' }"
+          aria-label="Pending invites"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Code</th>
+              <th>Expires</th>
+              <th class="col-actions"></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-invite>
+            <tr>
+              <td>{{ invite.email }}</td>
+              <td>
+                <app-status-tag
+                  [label]="roleLabel(invite.role)"
+                  [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
+                />
+              </td>
+              <td class="col-identifier">{{ invite.invite_code }}</td>
+              <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
+              <td class="col-actions">
+                <app-row-actions
+                  [items]="inviteMenu(invite)"
+                  [ariaLabel]="'Actions for invite ' + invite.email"
+                />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="5">No pending invites.</td>
+            </tr>
+          </ng-template>
+        </p-table>
       }
     </app-manage-page-shell>
 
@@ -185,8 +191,8 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
       (onHide)="resetInviteForm()"
     >
       <p class="mb-3 text-xs text-slate-500">
-        Invite by email. Existing users are added immediately; otherwise an invite
-        code is held for them to accept after sign-in.
+        Invite by email. Existing users are added immediately; otherwise an invite code is held for
+        them to accept after sign-in.
       </p>
       <div class="mb-3">
         <label for="invite-email" class="mb-1 block text-sm font-medium text-slate-700">
@@ -205,13 +211,10 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
       </div>
       <div>
         <div class="mb-1 flex items-baseline justify-between">
-          <label for="invite-role" class="block text-sm font-medium text-slate-700">
-            Role
-          </label>
-          <a
-            [routerLink]="rolesHelpLink()"
-            class="text-[11px] text-brand-700 hover:underline"
-          >What does each role mean?</a>
+          <label for="invite-role" class="block text-sm font-medium text-slate-700"> Role </label>
+          <a [routerLink]="rolesHelpLink()" class="text-[11px] text-brand-700 hover:underline"
+            >What does each role mean?</a
+          >
         </div>
         <p-select
           inputId="invite-role"
@@ -249,6 +252,7 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpaceMembersComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

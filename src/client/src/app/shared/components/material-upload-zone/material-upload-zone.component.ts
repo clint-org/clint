@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -94,8 +102,10 @@ interface PendingFile {
             class="flex items-center gap-3 rounded-sm border border-slate-200 bg-slate-50 px-3 py-2"
           >
             <span
-              class="flex h-10 w-8 shrink-0 items-center justify-center rounded-sm text-[10px] font-bold uppercase tracking-wider"
-              [class]="kindBadgeClass()"
+              [class]="
+                'flex h-10 w-8 shrink-0 items-center justify-center rounded-sm text-[10px] font-bold uppercase tracking-wider ' +
+                kindBadgeClass()
+              "
             >
               {{ kindLabel() }}
             </span>
@@ -192,6 +202,7 @@ interface PendingFile {
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialUploadZoneComponent {
   private readonly materialService = inject(MaterialService);
@@ -444,7 +455,10 @@ export class MaterialUploadZoneComponent {
       //    visibility flip.) We could also update file_path here via
       //    a second RPC; keep the current shape for now since
       //    download_material returns whatever path is in the column.
-      await this.materialService.updateFilePathDirect(materialId, `${sid}/${materialId}/${file.name}`);
+      await this.materialService.updateFilePathDirect(
+        materialId,
+        `${sid}/${materialId}/${file.name}`
+      );
       await this.materialService.finalize(materialId);
 
       this.messageService.add({

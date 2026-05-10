@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-color-swatch',
@@ -11,6 +11,7 @@ import { Component, input } from '@angular/core';
       role="img"
     ></span>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorSwatchComponent {
   readonly color = input.required<string>();

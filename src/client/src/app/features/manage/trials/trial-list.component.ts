@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -60,8 +69,18 @@ interface TrialRow {
     HighlightPipe,
   ],
   templateUrl: './trial-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialListComponent implements OnInit, OnDestroy {
+  /**
+   * Read the current value from a native `<input>` change/input event.
+   * Used inside `p-column-filter` ng-templates to avoid `$any($event.target).value`
+   * patterns that violate `template/no-any`.
+   */
+  protected filterInputValue(ev: Event): string {
+    return (ev.target as HTMLInputElement).value;
+  }
+
   private trialService = inject(TrialService);
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);
@@ -300,7 +319,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
         this.productService.list(spaceId),
         this.companyService.list(spaceId),
         this.fieldVisibilityService.get(spaceId).catch(() => ({}) as Record<string, string[]>),
-        this.trialService.getLatestSnapshotsForSpace(spaceId).catch(() => new Map<string, unknown>()),
+        this.trialService
+          .getLatestSnapshotsForSpace(spaceId)
+          .catch(() => new Map<string, unknown>()),
       ]);
       this.trials.set(trials);
       this.products.set(products);

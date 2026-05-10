@@ -1,4 +1,12 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
@@ -59,7 +67,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         (navItemClick)="onNavItemClick($event)"
         (logoClick)="onLogoClick()"
         (avatarClick)="toggleAccount()"
-        (sectionClick)="onSectionClick($any($event))"
+        (sectionClick)="onSectionClick($event)"
         (hoverChange)="onSidebarHoverChange($event)"
       />
 
@@ -296,6 +304,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppShellComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);

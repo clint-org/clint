@@ -1,4 +1,4 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { CtgovField } from '../../../core/models/ctgov-field.model';
 import { lookupCtgovField, walkCtgovPath } from '../../utils/ctgov-field-format';
@@ -13,6 +13,7 @@ interface RenderedField {
   standalone: true,
   imports: [DatePipe],
   templateUrl: './ctgov-field-renderer.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CtgovFieldRendererComponent {
   readonly snapshot = input.required<unknown>();
@@ -68,4 +69,3 @@ export class CtgovFieldRendererComponent {
     return null;
   }
 }
-

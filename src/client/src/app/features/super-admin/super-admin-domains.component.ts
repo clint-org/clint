@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -8,10 +15,7 @@ import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 
-import {
-  SuperAdminService,
-  RetiredHostname,
-} from '../../core/services/super-admin.service';
+import { SuperAdminService, RetiredHostname } from '../../core/services/super-admin.service';
 import { StatusTagComponent } from '../../shared/components/status-tag.component';
 
 @Component({
@@ -44,9 +48,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
             (onChange)="load()"
             [binary]="true"
           />
-          <label for="include-expired" class="cursor-pointer">
-            Include expired (released)
-          </label>
+          <label for="include-expired" class="cursor-pointer"> Include expired (released) </label>
         </div>
       </div>
 
@@ -136,13 +138,12 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
           <p class="text-sm text-slate-700">
             Release
             <code class="font-mono text-slate-900">{{ target.hostname }}</code>
-            from the holdback list. The hostname will be immediately re-claimable
-            via provisioning.
+            from the holdback list. The hostname will be immediately re-claimable via provisioning.
           </p>
           <p class="text-xs text-slate-500">
-            Use this only after a deliberate super-admin delete. For real customer
-            decommissions, leave the 90-day holdback in place — it prevents
-            takeover via stale session cookies and bookmarked links.
+            Use this only after a deliberate super-admin delete. For real customer decommissions,
+            leave the 90-day holdback in place — it prevents takeover via stale session cookies and
+            bookmarked links.
           </p>
           @if (releaseError()) {
             <p-message severity="error" [closable]="false">{{ releaseError() }}</p-message>
@@ -167,6 +168,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
       }
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuperAdminDomainsComponent implements OnInit {
   private readonly service = inject(SuperAdminService);
@@ -197,9 +199,7 @@ export class SuperAdminDomainsComponent implements OnInit {
       const data = await this.service.listRetiredHostnames(this.includeExpired());
       this.rows.set(data);
     } catch (e) {
-      this.loadError.set(
-        e instanceof Error ? e.message : 'Failed to load retired hostnames.'
-      );
+      this.loadError.set(e instanceof Error ? e.message : 'Failed to load retired hostnames.');
     } finally {
       this.loading.set(false);
     }

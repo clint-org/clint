@@ -4,14 +4,34 @@
     [queryParams]="queryParams()"
     class="group flex items-start gap-3 border-b border-slate-200 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
   >
-    <i [class]="iconClass()" class="mt-1 w-5" [style.color]="accentColor()"></i>
+    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()"></i>
     <div class="min-w-0 flex-1">
-      <div class="mb-1 flex items-center gap-2 text-xs text-slate-500">
-        <span class="font-mono uppercase tracking-wide tabular-nums">{{ sourceLabel() }}</span>
-        <span>&bull;</span>
-        <span class="font-mono tabular-nums">{{ event().observed_at | date: 'medium' }}</span>
-        <span>&bull;</span>
-        <span>{{ event().trial_identifier ?? event().trial_name }}</span>
+      <div class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
+        @if (event().company_name; as company) {
+          <span class="font-mono font-semibold uppercase tracking-[0.08em] text-slate-700">{{
+            company
+          }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        @if (event().product_name; as product) {
+          <span class="text-slate-600">{{ product }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        @if (event().trial_identifier; as nct) {
+          <span class="font-mono tabular-nums text-slate-500">{{ nct }}</span>
+          <span class="text-slate-300">&middot;</span>
+        } @else {
+          <span class="text-slate-600">{{ event().trial_name }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        <span class="font-mono tabular-nums text-slate-500">{{
+          event().observed_at | date: 'medium'
+        }}</span>
+        <span
+          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500"
+        >
+          {{ sourceLabel() }}
+        </span>
       </div>
       <div class="text-sm text-slate-900">
         @for (seg of rich().segments; track $index) {
@@ -26,7 +46,7 @@
               <span class="font-semibold" [style.color]="accentColor()">{{ seg.text }}</span>
             }
             @case ('arrow') {
-              <span class="mx-1 font-mono text-slate-400">→</span>
+              <span class="mx-1 font-mono text-slate-400">&rarr;</span>
             }
             @case ('muted') {
               <span class="text-slate-500">{{ seg.text }}</span>
@@ -38,14 +58,34 @@
   </a>
 } @else {
   <div class="flex items-start gap-3 border-b border-slate-200 py-3">
-    <i [class]="iconClass()" class="mt-1 w-5" [style.color]="accentColor()"></i>
+    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()"></i>
     <div class="min-w-0 flex-1">
-      <div class="mb-1 flex items-center gap-2 text-xs text-slate-500">
-        <span class="font-mono uppercase tracking-wide tabular-nums">{{ sourceLabel() }}</span>
-        <span>&bull;</span>
-        <span class="font-mono tabular-nums">{{ event().observed_at | date: 'medium' }}</span>
-        <span>&bull;</span>
-        <span>{{ event().trial_identifier ?? event().trial_name }}</span>
+      <div class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
+        @if (event().company_name; as company) {
+          <span class="font-mono font-semibold uppercase tracking-[0.08em] text-slate-700">{{
+            company
+          }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        @if (event().product_name; as product) {
+          <span class="text-slate-600">{{ product }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        @if (event().trial_identifier; as nct) {
+          <span class="font-mono tabular-nums text-slate-500">{{ nct }}</span>
+          <span class="text-slate-300">&middot;</span>
+        } @else {
+          <span class="text-slate-600">{{ event().trial_name }}</span>
+          <span class="text-slate-300">&middot;</span>
+        }
+        <span class="font-mono tabular-nums text-slate-500">{{
+          event().observed_at | date: 'medium'
+        }}</span>
+        <span
+          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500"
+        >
+          {{ sourceLabel() }}
+        </span>
       </div>
       <div class="text-sm text-slate-900">
         @for (seg of rich().segments; track $index) {
@@ -60,7 +100,7 @@
               <span class="font-semibold" [style.color]="accentColor()">{{ seg.text }}</span>
             }
             @case ('arrow') {
-              <span class="mx-1 font-mono text-slate-400">→</span>
+              <span class="mx-1 font-mono text-slate-400">&rarr;</span>
             }
             @case ('muted') {
               <span class="text-slate-500">{{ seg.text }}</span>

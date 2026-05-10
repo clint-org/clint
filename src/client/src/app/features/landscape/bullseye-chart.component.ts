@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import {
   BullseyeData,
@@ -72,6 +72,7 @@ const DIMMED_OPACITY = 0.55;
   standalone: true,
   imports: [],
   templateUrl: './bullseye-chart.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BullseyeChartComponent {
   readonly data = input.required<BullseyeData | null>();

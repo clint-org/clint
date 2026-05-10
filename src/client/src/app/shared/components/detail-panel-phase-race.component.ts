@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { PHASE_COLOR, RING_DEV_RANK, RingPhase } from '../../core/models/landscape.model';
 import { DetailPanelMiniPhaseBarComponent } from './detail-panel-mini-phase-bar.component';
@@ -58,6 +58,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelPhaseRaceComponent {
   readonly label = input<string>('Phase progress');

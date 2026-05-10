@@ -1,10 +1,24 @@
 // src/client/src/app/core/services/topbar-state.service.ts
 import { Injectable, signal } from '@angular/core';
 
+/**
+ * PrimeNG p-button severity union. Mirrors the values accepted by the
+ * `severity` input on `primeng/button`. Keep in sync if PrimeNG widens it.
+ */
+export type TopbarActionSeverity =
+  | 'success'
+  | 'info'
+  | 'warn'
+  | 'danger'
+  | 'help'
+  | 'primary'
+  | 'secondary'
+  | 'contrast';
+
 export interface TopbarAction {
   label: string;
   icon: string;
-  severity?: string;
+  severity?: TopbarActionSeverity;
   outlined?: boolean;
   text?: boolean;
   callback: () => void;

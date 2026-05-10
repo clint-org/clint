@@ -1,4 +1,13 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
@@ -40,6 +49,7 @@ interface FilterChip {
   standalone: true,
   imports: [FormsModule, MultiSelect, Select, ButtonModule, SelectButton, ProgressSpinner],
   templateUrl: './landscape-filter-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandscapeFilterBarComponent implements OnInit {
   private readonly companyService = inject(CompanyService);

@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SelectButton } from 'primeng/selectbutton';
 
@@ -19,6 +19,7 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
       size="small"
     />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ZoomControlComponent {
   readonly zoomLevel = input.required<ZoomLevel>();

@@ -1,4 +1,12 @@
-import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -29,6 +37,7 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     FormActionsComponent,
   ],
   templateUrl: './marker-type-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerTypeFormComponent implements OnInit {
   readonly markerType = input<MarkerType | null>(null);
@@ -74,7 +83,9 @@ export class MarkerTypeFormComponent implements OnInit {
     const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     try {
       this.categories.set(await this.categoryService.list(spaceId));
-    } catch { /* categories will be empty */ }
+    } catch {
+      /* categories will be empty */
+    }
 
     const existing = this.markerType();
     if (existing) {

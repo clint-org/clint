@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -23,6 +23,7 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
   standalone: true,
   imports: [ButtonModule, RouterLink, Tooltip],
   templateUrl: './intelligence-block.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceBlockComponent {
   private readonly brand = inject(BrandContextService);

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 /**
  * Wraps a stack of <app-detail-panel-entity-row> elements. Tiny but exists
@@ -13,5 +13,6 @@ import { Component } from '@angular/core';
       <ng-content />
     </ul>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelEntityListComponent {}

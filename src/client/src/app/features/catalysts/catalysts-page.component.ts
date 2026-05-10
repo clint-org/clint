@@ -1,4 +1,11 @@
-import { Component, computed, DestroyRef, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -37,6 +44,7 @@ import { LandscapeStateService } from '../landscape/landscape-state.service';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystsPageComponent {
   readonly state = inject(LandscapeStateService);
@@ -65,10 +73,12 @@ export class CatalystsPageComponent {
   constructor() {
     this.destroyRef.onDestroy(() => this.topbarState.clear());
 
-    // Honor ?markerId=<id> from the URL (e.g. command-palette deep link).
+    // Honor ?markerId=<id> from the URL (command-palette deep link or
+    // activity-feed row). openMarker (not selectMarker) so a previously
+    // restored selection of the same marker does not toggle the drawer closed.
     const markerId = this.route.snapshot.queryParamMap.get('markerId');
     if (markerId) {
-      this.state.selectMarker(markerId);
+      void this.state.openMarker(markerId);
     }
   }
 

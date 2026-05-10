@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
 
@@ -20,10 +20,11 @@ export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
   },
   template: `
     @if (showDot()) {
-      <span class="h-1.5 w-1.5 rounded-full" [class]="dotClass()"></span>
+      <span [class]="'h-1.5 w-1.5 rounded-full ' + dotClass()"></span>
     }
     <ng-content />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelPillComponent {
   readonly tone = input<PillTone>('slate');

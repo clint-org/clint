@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+  resource,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -12,6 +19,7 @@ import { LandscapeService } from '../../core/services/landscape.service';
   standalone: true,
   imports: [RouterLink, ButtonModule, MessageModule, SkeletonComponent],
   templateUrl: './landscape-index.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandscapeIndexComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
@@ -69,19 +77,20 @@ export class LandscapeIndexComponent implements OnInit {
   protected dimensionLabel(): string {
     const labels: Record<BullseyeDimension, string> = {
       'therapeutic-area': 'All therapeutic areas',
-      'company': 'All companies',
-      'moa': 'All mechanisms of action',
-      'roa': 'All routes of administration',
+      company: 'All companies',
+      moa: 'All mechanisms of action',
+      roa: 'All routes of administration',
     };
     return labels[this.dimension()];
   }
 
   protected emptyMessage(): string {
     const messages: Record<BullseyeDimension, string> = {
-      'therapeutic-area': 'No therapeutic areas tracked yet. Add one to start building a landscape view.',
-      'company': 'No companies tracked yet. Add companies and products to see them here.',
-      'moa': 'No mechanisms of action defined yet. Add them in Manage to start.',
-      'roa': 'No routes of administration defined yet. Add them in Manage to start.',
+      'therapeutic-area':
+        'No therapeutic areas tracked yet. Add one to start building a landscape view.',
+      company: 'No companies tracked yet. Add companies and products to see them here.',
+      moa: 'No mechanisms of action defined yet. Add them in Manage to start.',
+      roa: 'No routes of administration defined yet. Add them in Manage to start.',
     };
     return messages[this.dimension()];
   }
@@ -89,9 +98,9 @@ export class LandscapeIndexComponent implements OnInit {
   protected routeSegment(): string {
     const segments: Record<BullseyeDimension, string> = {
       'therapeutic-area': 'by-therapy-area',
-      'company': 'by-company',
-      'moa': 'by-moa',
-      'roa': 'by-roa',
+      company: 'by-company',
+      moa: 'by-moa',
+      roa: 'by-roa',
     };
     return segments[this.dimension()];
   }

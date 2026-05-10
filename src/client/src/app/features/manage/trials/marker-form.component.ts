@@ -1,4 +1,12 @@
-import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -26,15 +34,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-marker-form',
   standalone: true,
-  imports: [
-    FormsModule,
-    InputText,
-    Textarea,
-    Select,
-    MultiSelect,
-    ButtonModule,
-    MessageModule,
-  ],
+  imports: [FormsModule, InputText, Textarea, Select, MultiSelect, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4" aria-label="Marker form">
       @if (error()) {
@@ -244,6 +244,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
       </div>
     </form>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerFormComponent implements OnInit {
   readonly marker = input<Marker | null>(null);

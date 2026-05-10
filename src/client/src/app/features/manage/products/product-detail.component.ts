@@ -1,4 +1,13 @@
-import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -24,6 +33,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   selector: 'app-product-detail',
   standalone: true,
   imports: [
+    NgOptimizedImage,
     RouterLink,
     ConfirmDialogModule,
     ToastModule,
@@ -38,6 +48,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './product-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

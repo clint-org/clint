@@ -1,4 +1,12 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
@@ -131,11 +139,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
           </ng-template>
           <ng-template #loadingbody>
             <app-table-skeleton-body
-              [cells]="[
-                { w: '42%' },
-                { w: '72%' },
-                { w: '14px', class: 'col-actions' },
-              ]"
+              [cells]="[{ w: '42%' }, { w: '72%' }, { w: '14px', class: 'col-actions' }]"
             />
           </ng-template>
           <ng-template #emptymessage>
@@ -248,6 +252,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       }
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   // Tab state
@@ -408,7 +413,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDeleteArea(area),
-        },
+        }
       );
       // Only cache once populated; otherwise a row that renders before
       // SpaceRoleService.fetchRole resolves would lock in an empty menu.
@@ -434,7 +439,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDeleteMoa(item),
-        },
+        }
       );
       this.moaMenuCache.set(item.id, items);
     }
@@ -458,7 +463,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDeleteRoa(item),
-        },
+        }
       );
       this.roaMenuCache.set(item.id, items);
     }

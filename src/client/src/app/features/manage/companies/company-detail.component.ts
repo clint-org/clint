@@ -1,4 +1,13 @@
-import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,6 +34,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   standalone: true,
   imports: [
     ConfirmDialogModule,
+    NgOptimizedImage,
     ToastModule,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
@@ -37,6 +47,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './company-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompanyDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

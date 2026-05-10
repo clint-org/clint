@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
@@ -267,6 +267,7 @@ const CATEGORY_COLOR: Record<string, string> = {
       }
     </app-detail-panel-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventDetailPanelComponent {
   readonly detail = input<EventDetail | null>(null);

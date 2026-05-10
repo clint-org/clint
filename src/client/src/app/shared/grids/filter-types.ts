@@ -1,4 +1,5 @@
 import type { Signal, WritableSignal } from '@angular/core';
+import type { TableLazyLoadEvent } from 'primeng/table';
 
 /**
  * The committed value for a single column filter. Shape depends on filter kind.
@@ -84,7 +85,7 @@ export interface GridState<T> {
 
   filteredRows: (raw: Signal<T[]>) => Signal<T[]>;
 
-  onLazyLoad: (e: { first?: number | null; rows?: number | null; sortField?: string | null; sortOrder?: number | null; filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }> }) => void;
+  onLazyLoad: (e: TableLazyLoadEvent) => void;
   onGlobalSearchInput: (value: string) => void;
 
   /** PrimeNG filter-metadata shape derived from the unified state, for two-way binding to `<p-table [filters]>`. */

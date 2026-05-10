@@ -141,7 +141,7 @@
             @for (marker of product.recent_markers; track marker.id) {
               <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
                 <app-marker-icon
-                  [shape]="$any(marker.shape)"
+                  [shape]="marker.shape"
                   [color]="marker.color"
                   [size]="14"
                   [fillStyle]="marker.projection === 'actual' ? 'filled' : 'outline'"

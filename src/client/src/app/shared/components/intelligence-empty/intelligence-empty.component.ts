@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
 import { BrandContextService } from '../../../core/services/brand-context.service';
@@ -25,7 +25,8 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
               Primary intelligence
             </h3>
             <p class="mt-1 text-sm text-slate-600">
-              No read yet. Capture {{ agencyName() }}'s thesis, what to watch, and implications for this {{ entityLabel() }}.
+              No read yet. Capture {{ agencyName() }}'s thesis, what to watch, and implications for
+              this {{ entityLabel() }}.
             </p>
           </div>
           <p-button
@@ -39,6 +40,7 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
       </section>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceEmptyComponent {
   private readonly brand = inject(BrandContextService);

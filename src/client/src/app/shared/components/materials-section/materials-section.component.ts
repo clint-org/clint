@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
@@ -27,6 +36,7 @@ type MaterialFilter = MaterialType | 'all';
   standalone: true,
   imports: [MaterialRowComponent, MaterialUploadZoneComponent],
   templateUrl: './materials-section.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialsSectionComponent implements OnInit {
   private readonly materialService = inject(MaterialService);

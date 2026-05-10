@@ -1,4 +1,12 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -24,6 +32,7 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     FormActionsComponent,
   ],
   templateUrl: './company-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompanyFormComponent implements OnInit {
   readonly company = input<Company | null>(null);

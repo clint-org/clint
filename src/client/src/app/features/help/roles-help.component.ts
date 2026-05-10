@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -25,15 +25,13 @@ interface CapabilityRow {
     <app-manage-page-shell>
       <div class="max-w-3xl">
         <header class="mb-6">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-            Help
-          </p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Help</p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
             Roles and permissions
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
-            What each role can do inside a space. Use this when deciding what role
-            to give a new {{ teammateLabel() }} or a client team member.
+            What each role can do inside a space. Use this when deciding what role to give a new
+            {{ teammateLabel() }} or a client team member.
           </p>
         </header>
 
@@ -43,7 +41,9 @@ interface CapabilityRow {
           </h2>
           <div class="border border-slate-200 bg-white">
             @for (role of roleColumns; track role.key) {
-              <div class="grid grid-cols-[8rem_1fr] gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0">
+              <div
+                class="grid grid-cols-[8rem_1fr] gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
+              >
                 <div class="text-sm font-semibold text-slate-900">{{ role.label }}</div>
                 <div class="text-sm text-slate-600">{{ role.summary }}</div>
               </div>
@@ -135,6 +135,7 @@ interface CapabilityRow {
       </div>
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RolesHelpComponent {
   private readonly route = inject(ActivatedRoute);

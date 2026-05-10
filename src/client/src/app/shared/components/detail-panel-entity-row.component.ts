@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 /**
  * Single clickable (or static) row in a detail-pane entity list. Owns the
@@ -43,6 +43,7 @@ import { Component, input, output } from '@angular/core';
       }
     </li>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelEntityRowComponent {
   readonly clickable = input<boolean>(true);

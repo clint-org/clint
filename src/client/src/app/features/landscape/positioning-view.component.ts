@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnInit, resource, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnInit,
+  resource,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
@@ -91,6 +100,7 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       [countUnit]="state.countUnit()"
     />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PositioningViewComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);

@@ -1,4 +1,12 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -28,12 +36,7 @@ type EntityFilter = MaterialEntityType | 'all';
 @Component({
   selector: 'app-materials-browse-page',
   standalone: true,
-  imports: [
-    FormsModule,
-    ButtonModule,
-    ManagePageShellComponent,
-    MaterialRowComponent,
-  ],
+  imports: [FormsModule, ButtonModule, ManagePageShellComponent, MaterialRowComponent],
   template: `
     <app-manage-page-shell>
       <div
@@ -109,6 +112,7 @@ type EntityFilter = MaterialEntityType | 'all';
       </div>
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);

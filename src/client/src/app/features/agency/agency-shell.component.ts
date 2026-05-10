@@ -1,4 +1,13 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +27,7 @@ interface AgencyNavItem {
 @Component({
   selector: 'app-agency-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, ButtonModule],
+  imports: [RouterOutlet, RouterLink, ButtonModule, NgOptimizedImage],
   template: `
     <div class="agency-shell">
       <!-- Topbar -->
@@ -26,14 +35,15 @@ interface AgencyNavItem {
         <div class="flex items-center gap-3">
           @if (brand.logoUrl()) {
             <img
-              [src]="brand.logoUrl()"
+              [ngSrc]="brand.logoUrl()!"
               [alt]="brand.appDisplayName() + ' logo'"
+              width="28"
+              height="28"
               class="h-7 w-7 rounded object-contain"
             />
           }
           <div class="flex flex-col">
-            <span
-              class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
+            <span class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400"
               >Agency portal</span
             >
             <span class="text-sm font-semibold text-slate-900">
@@ -120,7 +130,9 @@ interface AgencyNavItem {
         font-size: 13px;
         color: #475569;
         text-decoration: none;
-        transition: background-color 120ms ease, color 120ms ease;
+        transition:
+          background-color 120ms ease,
+          color 120ms ease;
       }
       .agency-nav-item:hover {
         background: #f1f5f9;
@@ -175,6 +187,7 @@ interface AgencyNavItem {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyShellComponent implements OnInit {
   private readonly router = inject(Router);

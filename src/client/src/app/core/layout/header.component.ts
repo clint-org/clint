@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -77,11 +78,7 @@ import { Tenant } from '../models/tenant.model';
         <!-- Center: primary nav (space-scoped) -->
         @if (spaceId()) {
           <nav class="flex items-center gap-7">
-            <a
-              [routerLink]="spaceBase()"
-              routerLinkActive="nav-active"
-              class="nav-link"
-            >
+            <a [routerLink]="spaceBase()" routerLinkActive="nav-active" class="nav-link">
               Landscape
             </a>
             <a
@@ -209,6 +206,7 @@ import { Tenant } from '../models/tenant.model';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);

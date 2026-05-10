@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -196,9 +203,8 @@ import { extractErrorMessage } from '../../core/util/error-message';
             </div>
           </div>
           <p class="mb-3 text-[11px] text-slate-500 max-w-xl">
-            Tenant owners can manage this tenant and add/remove other owners.
-            They do NOT automatically see space data &mdash; they must be added
-            to a space explicitly.
+            Tenant owners can manage this tenant and add/remove other owners. They do NOT
+            automatically see space data &mdash; they must be added to a space explicitly.
           </p>
           <p-table
             styleClass="data-table"
@@ -252,9 +258,9 @@ import { extractErrorMessage } from '../../core/util/error-message';
       (onHide)="resetAddOwnerForm()"
     >
       <p class="mb-3 text-xs text-slate-500">
-        Enter the new owner's email. If your agency has an email-domain
-        restriction set, the email must be on that domain. Existing users are
-        added immediately; otherwise an invite code is held.
+        Enter the new owner's email. If your agency has an email-domain restriction set, the email
+        must be on that domain. Existing users are added immediately; otherwise an invite code is
+        held.
       </p>
       <div>
         <label for="owner-email" class="mb-1 block text-sm font-medium text-slate-700">
@@ -297,6 +303,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyTenantDetailComponent implements OnInit {
   private readonly agencyService = inject(AgencyService);

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,9 +14,30 @@ import { environment } from '../../../environments/environment';
         <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div class="flex items-center gap-2.5">
             <svg viewBox="0 0 140 140" fill="none" class="h-6 w-6" aria-hidden="true">
-              <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-              <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-              <polyline points="80,56 56,56 56,84 80,84" stroke="var(--p-primary-700, #0f766e)" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="var(--p-primary-700, #0f766e)"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <span class="text-sm font-semibold tracking-[0.22em] text-slate-900">CLINT</span>
           </div>
@@ -28,9 +49,30 @@ import { environment } from '../../../environments/environment';
         <div class="w-full max-w-md">
           <div class="flex flex-col items-center text-center">
             <svg viewBox="0 0 140 140" fill="none" class="h-14 w-14" aria-hidden="true">
-              <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-              <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-              <polyline points="80,56 56,56 56,84 80,84" stroke="var(--p-primary-700, #0f766e)" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="var(--p-primary-700, #0f766e)"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <h1 class="mt-5 text-2xl font-semibold tracking-tight text-slate-900">Clint</h1>
             <p class="mt-2 font-mono text-xs uppercase tracking-[0.16em] text-brand-700">
@@ -54,7 +96,9 @@ import { environment } from '../../../environments/environment';
                   class="flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
                   aria-label="Workspace subdomain"
                 />
-                <span class="border-l border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                <span
+                  class="border-l border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
+                >
                   .{{ apexDisplay }}
                 </span>
               </div>
@@ -67,12 +111,15 @@ import { environment } from '../../../environments/environment';
 
           <p class="mt-8 text-center text-xs text-slate-500">
             Are you a consulting partner?
-            <a routerLink="/login" class="underline hover:text-slate-700">Sign in to your agency portal.</a>
+            <a routerLink="/login" class="underline hover:text-slate-700"
+              >Sign in to your agency portal.</a
+            >
           </p>
         </div>
       </main>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarketingLandingComponent {
   private readonly router = inject(Router);

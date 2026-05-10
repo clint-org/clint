@@ -1,14 +1,15 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
+  effect,
   ElementRef,
   inject,
   input,
   OnDestroy,
   output,
-  ViewChild,
-  effect,
   signal,
+  ViewChild,
 } from '@angular/core';
 import type { EditorView } from 'prosemirror-view';
 import { Tooltip } from 'primeng/tooltip';
@@ -176,6 +177,7 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProseMirrorEditorComponent implements AfterViewInit, OnDestroy {
   @ViewChild('host', { static: true }) hostRef!: ElementRef<HTMLDivElement>;

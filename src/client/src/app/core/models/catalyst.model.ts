@@ -1,3 +1,5 @@
+import type { MarkerShape } from './marker.model';
+
 export interface Catalyst {
   marker_id: string;
   title: string;
@@ -8,7 +10,7 @@ export interface Catalyst {
   marker_type_name: string;
   marker_type_icon: string | null;
   marker_type_color: string;
-  marker_type_shape: string;
+  marker_type_shape: MarkerShape;
   is_projected: boolean;
   company_name: string | null;
   company_id: string | null;
