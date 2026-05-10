@@ -30,6 +30,36 @@
 
   @if (expanded()) {
     <div class="mt-4 space-y-3">
+      @if (currentUserCanEdit() && draft()) {
+        <button
+          type="button"
+          class="block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-left hover:border-slate-400"
+          (click)="draftClicked.emit()"
+        >
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-600">Working draft</span>
+            <span class="text-xs text-slate-500">
+              Edited {{ formatDate(draft()?.updated_at) }} by {{ authorInitials(draft()?.last_edited_by ?? '') }}
+            </span>
+          </div>
+          @if (draftSummary(); as s) {
+            @if (s.isFirst) {
+              <p class="mt-1 text-xs text-slate-500">No published version yet.</p>
+            } @else if (s.changedSections.length > 0) {
+              <p class="mt-1 text-xs text-slate-500">
+                Diverges from current:
+                <span class="text-slate-700">
+                  @for (sec of s.changedSections; track sec; let last = $last) {
+                    {{ sectionLabel(sec) }}@if (!last) {, }
+                  }
+                </span>
+              </p>
+            } @else {
+              <p class="mt-1 text-xs text-slate-500">Identical to the current version (no edits yet).</p>
+            }
+          }
+        </button>
+      }
       @for (v of versions(); track v.id) {
         <article
           class="rounded-md border border-slate-200 bg-white"

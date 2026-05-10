@@ -31,6 +31,7 @@ export class IntelligenceHistoryPanelComponent {
   readonly purgeVersion = output<{ id: string; confirmation: string }>();
   readonly purgeAnchor = output<{ id: string; confirmation: string }>();
   readonly versionRevisionsRequested = output<string>();
+  readonly draftClicked = output<void>();
 
   protected readonly expanded = signal(false);
 
@@ -42,6 +43,32 @@ export class IntelligenceHistoryPanelComponent {
     () => this.versions()[0] ?? null,
   );
   protected readonly canExpand = computed(() => this.versionCount() > 1);
+
+  protected readonly draft = computed(() => this.payload().draft);
+  protected readonly current = computed(() => this.payload().current);
+
+  protected readonly draftSummary = computed(() => {
+    const d = this.draft();
+    const c = this.current();
+    if (!d) return null;
+    if (!c) {
+      return { isFirst: true, changedSections: [] as VersionSection[] };
+    }
+    return summarizeVersionChange(
+      {
+        headline: d.headline,
+        thesis_md: d.thesis_md,
+        watch_md: d.watch_md,
+        implications_md: d.implications_md,
+      },
+      {
+        headline: c.headline,
+        thesis_md: c.thesis_md,
+        watch_md: c.watch_md,
+        implications_md: c.implications_md,
+      },
+    );
+  });
 
   protected readonly expandedVersionIds = signal<ReadonlySet<string>>(new Set());
 
