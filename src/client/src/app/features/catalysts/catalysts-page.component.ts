@@ -73,10 +73,12 @@ export class CatalystsPageComponent {
   constructor() {
     this.destroyRef.onDestroy(() => this.topbarState.clear());
 
-    // Honor ?markerId=<id> from the URL (e.g. command-palette deep link).
+    // Honor ?markerId=<id> from the URL (command-palette deep link or
+    // activity-feed row). openMarker (not selectMarker) so a previously
+    // restored selection of the same marker does not toggle the drawer closed.
     const markerId = this.route.snapshot.queryParamMap.get('markerId');
     if (markerId) {
-      this.state.selectMarker(markerId);
+      void this.state.openMarker(markerId);
     }
   }
 

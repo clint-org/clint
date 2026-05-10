@@ -702,4 +702,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260509120100_advisor_sweep_function_search_path.sql`
 - `20260509120200_advisor_sweep_multiple_permissive_policies.sql`
 - `20260509120300_advisor_sweep_pg_trgm_to_extensions.sql`
+- `20260510120100_change_feed_product_company_marker_type.sql`
+- `20260510120200_seed_demo_activity_variety.sql`
 <!-- /AUTO-GEN:DRIFT -->

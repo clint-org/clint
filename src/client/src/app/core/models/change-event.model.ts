@@ -32,8 +32,13 @@ export interface ChangeEvent {
   // joined for display
   trial_name: string;
   trial_identifier: string | null;
+  product_name: string | null;
+  company_name: string | null;
   marker_title: string | null;
   marker_color: string | null;
+  marker_type_name: string | null;
+  from_marker_type_name: string | null;
+  to_marker_type_name: string | null;
 }
 
 export interface ActivityFeedFilters {

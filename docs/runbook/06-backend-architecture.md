@@ -36,6 +36,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
+| `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_companies` | companies | - |
 | `_seed_demo_events` | events | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
@@ -68,7 +69,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
 | `finalize_material` | materials | - |
-| `get_activity_feed` | - | marker_changes, marker_types, markers, trial_change_events, trials |
+| `get_activity_feed` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
@@ -92,7 +93,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
-| `get_trial_activity` | - | marker_changes, marker_types, markers, trial_change_events, trials |
+| `get_trial_activity` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trials_for_polling` | - | trials |
 | `handle_new_user` | agency_invites, agency_members | - |
@@ -221,6 +222,8 @@ seed_demo_data(p_space_id uuid) -> void
 Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 products across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
 
 Two helpers added on 2026-05-01: `_seed_demo_primary_intelligence` (4 trial-anchored published reads, 1 space-level thematic read, 2 drafts; cross-entity links across products and companies; revisions written by the existing trigger) and `_seed_demo_materials` (briefing PPTX, priority notice PDF, ad hoc DOCX with multi-entity links). Material rows reference plausible storage paths but do not upload files; demo download flows 404 cleanly.
+
+Helper added on 2026-05-10: `_seed_demo_activity_variety` emits one demo event of every supported `event_type` (12 CT.gov-source via direct insert with payload shapes matching `_classify_change`, plus 5 analyst-source via direct insert and one `marker_removed` via the marker trigger on a deleted marker) so the Activity page renders the full row-renderer matrix on a freshly-seeded cardiometabolic space. Bails out silently if the realistic cardiometabolic seed is not loaded (no `REDEFINE-2` trial in the space).
 
 The intelligence helper runs as `security definer` because the `primary_intelligence` write RLS requires `is_agency_member_of_space`, which a typical space-owner test user does not satisfy. The orchestrator's existing space-owner gate is the authoritative permission check, so bypassing the agency-only write RLS for the seed insert path is safe. The materials helper stays `security invoker` because its RLS uses `has_space_access`, which space owners do satisfy.
 
@@ -522,7 +525,7 @@ flowchart TD
 
 **User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
 
-- `get_activity_feed(p_space_id, p_filters, p_limit, p_offset)`: backs the activity page; reads `trial_change_events` joined to trial / marker context.
+- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `products` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
 - `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
