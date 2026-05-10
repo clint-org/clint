@@ -40,14 +40,13 @@ module.exports = tseslint.config(
       "@angular-eslint/runtime-localize": "error",
       "@angular-eslint/use-injectable-provided-in": "error",
       "@angular-eslint/prefer-on-push-component-change-detection": "error",
-      // Still warn pending cleanup of the migration backlog
-      "@angular-eslint/prefer-signals": "warn",
-      "@angular-eslint/prefer-output-readonly": "warn",
-      // New v21 rules; warn for now, ratchet as the backlog clears.
+      "@angular-eslint/prefer-signals": "error",
+      "@angular-eslint/prefer-output-readonly": "error",
+      // Ratcheted to error (zero violations at ratchet time).
       // no-uncalled-signals requires typed linting (parserOptions.project);
       // revisit once typed linting is enabled workspace-wide.
-      "@angular-eslint/prefer-inject": "warn",
-      "@angular-eslint/prefer-output-emitter-ref": "warn",
+      "@angular-eslint/prefer-inject": "error",
+      "@angular-eslint/prefer-output-emitter-ref": "error",
     },
   },
   {
@@ -68,8 +67,8 @@ module.exports = tseslint.config(
       // Still warn pending cleanup of the migration backlog
       "@angular-eslint/template/no-call-expression": "warn",
       "@angular-eslint/template/no-inline-styles": "warn",
-      // New v21 rules; warn for now, ratchet as the backlog clears
-      "@angular-eslint/template/prefer-at-empty": "warn",
+      // Ratcheted to error (zero violations at ratchet time).
+      "@angular-eslint/template/prefer-at-empty": "error",
     },
   }
 );

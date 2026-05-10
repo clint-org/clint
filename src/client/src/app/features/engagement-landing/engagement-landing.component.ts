@@ -10,6 +10,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { MessageModule } from 'primeng/message';
 
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
@@ -74,6 +75,7 @@ interface FeedFilter {
     DatePipe,
     RouterLink,
     MessageModule,
+    MarkerIconComponent,
     SkeletonComponent,
     DraftsWidgetComponent,
     RecentMaterialsWidgetComponent,
@@ -261,6 +263,10 @@ export class EngagementLandingComponent implements OnInit {
             .filter((p): p is string => !!p)
             .join(' · '),
           color: c.marker_type_color || '#16a34a',
+          shape: c.marker_type_shape,
+          fillStyle: c.is_projected ? ('outline' as const) : c.marker_type_fill_style,
+          innerMark: c.marker_type_inner_mark,
+          isNle: c.no_longer_expected,
         };
       });
   });
@@ -454,8 +460,12 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
             title: marker.title ?? mt?.name ?? 'Catalyst',
             event_date: marker.event_date,
             is_projected: marker.is_projected,
+            no_longer_expected: marker.no_longer_expected,
             category_name: mt?.marker_categories?.name ?? '',
             marker_type_color: mt?.color ?? '',
+            marker_type_shape: mt?.shape ?? 'circle',
+            marker_type_fill_style: mt?.fill_style ?? 'filled',
+            marker_type_inner_mark: mt?.inner_mark ?? 'none',
             company_name: company.name,
             product_name: product.name,
             trial_name: trial.name ?? null,

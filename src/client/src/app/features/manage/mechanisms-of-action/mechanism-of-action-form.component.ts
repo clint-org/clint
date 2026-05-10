@@ -39,8 +39,8 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
 export class MechanismOfActionFormComponent implements OnInit {
   readonly item = input<MechanismOfAction | null>(null);
 
-  saved = output<MechanismOfAction>();
-  cancelled = output<void>();
+  readonly saved = output<MechanismOfAction>();
+  readonly cancelled = output<void>();
 
   readonly name = signal('');
   readonly description = signal('');

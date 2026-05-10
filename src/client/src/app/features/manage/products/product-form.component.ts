@@ -53,8 +53,8 @@ const PRODUCT_FIELD_LABELS: Record<string, string> = {
 export class ProductFormComponent implements OnInit {
   readonly product = input<Product | null>(null);
 
-  saved = output<Product>();
-  cancelled = output<void>();
+  readonly saved = output<Product>();
+  readonly cancelled = output<void>();
 
   readonly name = signal('');
   readonly genericName = signal('');

@@ -93,7 +93,7 @@ export class ExportDialogComponent {
   readonly endYear = input.required<number>();
   readonly open = input(false);
   readonly visible = signal(false);
-  closed = output<void>();
+  readonly closed = output<void>();
 
   constructor() {
     effect(() => this.visible.set(this.open()));

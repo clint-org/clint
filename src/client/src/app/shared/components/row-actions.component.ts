@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Menu, MenuModule } from 'primeng/menu';
+import { MenuModule } from 'primeng/menu';
 
 /**
  * Single-row overflow menu used across manage tables.
@@ -35,6 +35,4 @@ import { Menu, MenuModule } from 'primeng/menu';
 export class RowActionsComponent {
   readonly items = input.required<MenuItem[]>();
   readonly ariaLabel = input<string>('Row actions');
-
-  @ViewChild('menu') menu!: Menu;
 }

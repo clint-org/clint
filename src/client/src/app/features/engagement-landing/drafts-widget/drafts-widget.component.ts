@@ -219,14 +219,22 @@ export class DraftsWidgetComponent {
     const t = this.tenantId();
     const s = this.spaceId();
     if (!t || !s) return [];
-    if (draft.entity_type === 'trial') {
-      return ['/t', t, 's', s, 'manage', 'trials', draft.entity_id];
+    switch (draft.entity_type) {
+      case 'trial':
+        return ['/t', t, 's', s, 'manage', 'trials', draft.entity_id];
+      case 'marker':
+        return ['/t', t, 's', s, 'manage', 'markers', draft.entity_id];
+      case 'company':
+        return ['/t', t, 's', s, 'manage', 'companies', draft.entity_id];
+      case 'product':
+        return ['/t', t, 's', s, 'manage', 'products', draft.entity_id];
+      default:
+        return ['/t', t, 's', s, 'intelligence'];
     }
-    return ['/t', t, 's', s, 'intelligence'];
   }
 
   protected draftQueryParams(draft: IntelligenceFeedRow): Record<string, string> | null {
-    return draft.entity_type === 'trial' ? null : { status: 'drafts' };
+    return draft.entity_type === 'space' ? { status: 'drafts' } : null;
   }
 
   protected formatStamp(iso: string): string {

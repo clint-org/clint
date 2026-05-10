@@ -35,8 +35,8 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
 export class TherapeuticAreaFormComponent implements OnInit {
   readonly area = input<TherapeuticArea | null>(null);
 
-  saved = output<TherapeuticArea>();
-  cancelled = output<void>();
+  readonly saved = output<TherapeuticArea>();
+  readonly cancelled = output<void>();
 
   readonly name = signal('');
   readonly abbreviation = signal('');

@@ -51,9 +51,9 @@ export class TrialEditDialogComponent {
   private messageService = inject(MessageService);
 
   readonly visible = input<boolean>(false);
-  visibleChange = output<boolean>();
+  readonly visibleChange = output<boolean>();
   readonly trial = input.required<Trial>();
-  saved = output<Trial>();
+  readonly saved = output<Trial>();
 
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);

@@ -9,7 +9,7 @@ import {
   OnDestroy,
   output,
   signal,
-  ViewChild,
+  viewChild,
 } from '@angular/core';
 import type { EditorView } from 'prosemirror-view';
 import { Tooltip } from 'primeng/tooltip';
@@ -180,7 +180,7 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProseMirrorEditorComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('host', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
+  readonly hostRef = viewChild.required<ElementRef<HTMLDivElement>>('host');
 
   private readonly proseMirror = inject(ProseMirrorService);
   private editorView: EditorView | null = null;
@@ -206,24 +206,22 @@ export class ProseMirrorEditorComponent implements AfterViewInit, OnDestroy {
   });
 
   ngAfterViewInit(): void {
-    this.editorView = this.proseMirror.createEditor(
-      this.hostRef.nativeElement,
-      this.value() ?? '',
-      (md) => {
-        this.suppressNextSync = true;
-        this.valueChange.emit(md);
-        this.refreshActive();
-      }
-    );
-    this.hostRef.nativeElement.addEventListener('keyup', this.refreshActive);
-    this.hostRef.nativeElement.addEventListener('mouseup', this.refreshActive);
+    const host = this.hostRef().nativeElement;
+    this.editorView = this.proseMirror.createEditor(host, this.value() ?? '', (md) => {
+      this.suppressNextSync = true;
+      this.valueChange.emit(md);
+      this.refreshActive();
+    });
+    host.addEventListener('keyup', this.refreshActive);
+    host.addEventListener('mouseup', this.refreshActive);
     this.refreshActive();
   }
 
   ngOnDestroy(): void {
     if (this.editorView) {
-      this.hostRef.nativeElement.removeEventListener('keyup', this.refreshActive);
-      this.hostRef.nativeElement.removeEventListener('mouseup', this.refreshActive);
+      const host = this.hostRef().nativeElement;
+      host.removeEventListener('keyup', this.refreshActive);
+      host.removeEventListener('mouseup', this.refreshActive);
       this.proseMirror.destroyEditor(this.editorView);
       this.editorView = null;
     }
