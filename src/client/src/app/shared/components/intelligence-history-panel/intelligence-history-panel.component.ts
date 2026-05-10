@@ -4,6 +4,8 @@ import {
   IntelligenceHistoryPayload,
   IntelligenceVersionRow,
 } from '../../../core/models/primary-intelligence.model';
+import { renderMarkdownInline } from '../../utils/markdown-render';
+import { summarizeVersionChange, VersionSection } from '../../utils/version-summary';
 
 /**
  * Inline panel mounted below IntelligenceBlock on every entity detail
@@ -38,6 +40,54 @@ export class IntelligenceHistoryPanelComponent {
     () => this.versions()[0] ?? null,
   );
   protected readonly canExpand = computed(() => this.versionCount() > 1);
+
+  protected readonly expandedVersionIds = signal<ReadonlySet<string>>(new Set());
+
+  protected isVersionExpanded(id: string): boolean {
+    return this.expandedVersionIds().has(id);
+  }
+
+  protected toggleVersion(id: string): void {
+    this.expandedVersionIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  protected priorOf(version: IntelligenceVersionRow): IntelligenceVersionRow | null {
+    const all = this.versions();
+    const idx = all.findIndex((v) => v.id === version.id);
+    if (idx === -1 || idx === all.length - 1) return null;
+    return all[idx + 1];
+  }
+
+  protected summaryFor(version: IntelligenceVersionRow): {
+    changedSections: VersionSection[];
+    isFirst: boolean;
+  } {
+    return summarizeVersionChange(version, this.priorOf(version));
+  }
+
+  private static readonly SECTION_LABEL: Record<VersionSection, string> = {
+    headline: 'Headline',
+    thesis: 'Thesis',
+    watch: 'What to watch',
+    implications: 'Implications',
+  };
+
+  protected sectionLabel(section: VersionSection): string {
+    return IntelligenceHistoryPanelComponent.SECTION_LABEL[section];
+  }
+
+  protected renderInline(md: string): string {
+    return renderMarkdownInline(md ?? '');
+  }
+
+  protected authorInitials(id: string): string {
+    return this.authorMap()[id] ?? id.slice(0, 2).toUpperCase();
+  }
 
   protected toggle(): void {
     if (!this.canExpand()) return;

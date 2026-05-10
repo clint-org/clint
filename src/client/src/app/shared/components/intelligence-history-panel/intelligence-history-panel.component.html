@@ -30,7 +30,79 @@
 
   @if (expanded()) {
     <div class="mt-4 space-y-3">
-      <!-- Version cards added in Task 16 -->
+      @for (v of versions(); track v.id) {
+        <article
+          class="rounded-md border border-slate-200 bg-white"
+          [class.border-amber-300]="v.state === 'withdrawn'"
+        >
+          <button
+            type="button"
+            class="flex w-full items-start justify-between gap-4 p-3 text-left"
+            [attr.aria-expanded]="isVersionExpanded(v.id)"
+            (click)="toggleVersion(v.id)"
+          >
+            <div class="flex-1">
+              <div class="flex items-baseline gap-2">
+                <span class="font-mono text-sm font-medium text-slate-700">v{{ v.version_number }}</span>
+                @if (v.state === 'archived') {
+                  <span class="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">Archived</span>
+                }
+                @if (v.state === 'withdrawn') {
+                  <span class="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">Withdrawn</span>
+                }
+                <span class="text-xs text-slate-500">
+                  Published {{ formatDate(v.published_at) }} by {{ authorInitials(v.edited_by) }}
+                </span>
+              </div>
+              @if (v.change_note) {
+                <p class="mt-1 text-sm italic text-slate-700">"{{ v.change_note }}"</p>
+              } @else if (summaryFor(v).isFirst) {
+                <p class="mt-1 text-sm text-slate-500">Initial publication</p>
+              }
+              @if (!summaryFor(v).isFirst && summaryFor(v).changedSections.length > 0) {
+                <p class="mt-1 text-xs text-slate-500">
+                  Sections changed:
+                  <span class="text-slate-700">
+                    @for (s of summaryFor(v).changedSections; track s; let last = $last) {
+                      {{ sectionLabel(s) }}@if (!last) {, }
+                    }
+                  </span>
+                </p>
+              }
+            </div>
+            <span
+              class="mt-1 inline-block h-2 w-2 border-r border-b border-slate-400 shrink-0"
+              [class.rotate-45]="!isVersionExpanded(v.id)"
+              [class.-rotate-135]="isVersionExpanded(v.id)"
+              aria-hidden="true"
+            ></span>
+          </button>
+
+          @if (isVersionExpanded(v.id)) {
+            <div class="border-t border-slate-100 p-4 space-y-3">
+              <h3 class="text-base font-semibold text-slate-900">{{ v.headline }}</h3>
+              @if (v.thesis_md) {
+                <section>
+                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Thesis</h4>
+                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.thesis_md)"></div>
+                </section>
+              }
+              @if (v.watch_md) {
+                <section>
+                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">What to watch</h4>
+                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.watch_md)"></div>
+                </section>
+              }
+              @if (v.implications_md) {
+                <section>
+                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Implications</h4>
+                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.implications_md)"></div>
+                </section>
+              }
+            </div>
+          }
+        </article>
+      }
     </div>
   }
 </section>
