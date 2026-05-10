@@ -40,9 +40,9 @@ export class TrialCreateDialogComponent {
   private messageService = inject(MessageService);
 
   readonly visible = input<boolean>(false);
-  visibleChange = output<boolean>();
+  readonly visibleChange = output<boolean>();
   readonly spaceId = input.required<string>();
-  saved = output<{ trialId: string }>();
+  readonly saved = output<{ trialId: string }>();
 
   // Form fields are signals because they participate in the isValid() computed
   // and are bound via [ngModel]+(ngModelChange) instead of [(ngModel)] for the

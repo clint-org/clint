@@ -37,8 +37,8 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
 export class CompanyFormComponent implements OnInit {
   readonly company = input<Company | null>(null);
 
-  saved = output<Company>();
-  cancelled = output<void>();
+  readonly saved = output<Company>();
+  readonly cancelled = output<void>();
 
   readonly name = signal('');
   readonly logoUrl = signal('');

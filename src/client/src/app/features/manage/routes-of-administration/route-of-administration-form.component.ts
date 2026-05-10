@@ -37,8 +37,8 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
 export class RouteOfAdministrationFormComponent implements OnInit {
   readonly item = input<RouteOfAdministration | null>(null);
 
-  saved = output<RouteOfAdministration>();
-  cancelled = output<void>();
+  readonly saved = output<RouteOfAdministration>();
+  readonly cancelled = output<void>();
 
   readonly name = signal('');
   readonly abbreviation = signal('');

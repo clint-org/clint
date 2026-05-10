@@ -35,7 +35,7 @@ export class MarkerComponent {
   readonly companyName = input<string>('');
   readonly productName = input<string>('');
 
-  markerClick = output<Marker>();
+  readonly markerClick = output<Marker>();
 
   readonly showTooltip = signal(false);
 

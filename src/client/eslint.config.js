@@ -41,8 +41,7 @@ module.exports = tseslint.config(
       "@angular-eslint/use-injectable-provided-in": "error",
       "@angular-eslint/prefer-on-push-component-change-detection": "error",
       "@angular-eslint/prefer-signals": "error",
-      // Still warn pending cleanup of the migration backlog
-      "@angular-eslint/prefer-output-readonly": "warn",
+      "@angular-eslint/prefer-output-readonly": "error",
       // Ratcheted to error (zero violations at ratchet time).
       // no-uncalled-signals requires typed linting (parserOptions.project);
       // revisit once typed linting is enabled workspace-wide.

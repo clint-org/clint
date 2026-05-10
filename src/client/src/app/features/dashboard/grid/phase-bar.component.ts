@@ -23,7 +23,7 @@ export class PhaseBarComponent {
   readonly endYear = input.required<number>();
   readonly totalWidth = input.required<number>();
 
-  phaseClick = output<void>();
+  readonly phaseClick = output<void>();
 
   protected readonly barX = computed(() =>
     Math.max(

@@ -74,11 +74,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly startYear = input.required<number>();
   readonly endYear = input.required<number>();
 
-  phaseClick = output<Trial>();
-  markerClick = output<Marker>();
-  trialClick = output<Trial>();
-  companyClick = output<string>();
-  productClick = output<string>();
+  readonly phaseClick = output<Trial>();
+  readonly markerClick = output<Marker>();
+  readonly trialClick = output<Trial>();
+  readonly companyClick = output<string>();
+  readonly productClick = output<string>();
 
   readonly isScrolled = signal(false);
   readonly showMoaColumn = signal(true);
