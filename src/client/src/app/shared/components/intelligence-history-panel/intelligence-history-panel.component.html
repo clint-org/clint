@@ -1,12 +1,13 @@
-<section class="mt-6 border-t border-slate-200 pt-4" aria-labelledby="history-heading">
+<section class="mb-4 border border-slate-200 bg-white" aria-labelledby="history-heading">
   <button
     type="button"
-    class="flex w-full items-center justify-between text-left"
+    class="flex w-full items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2 text-left"
+    [class.border-b-0]="!expanded()"
     [attr.aria-expanded]="expanded()"
     [disabled]="!canExpand()"
     (click)="toggle()"
   >
-    <span id="history-heading" class="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+    <span id="history-heading" class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
       History
     </span>
     <span class="flex items-center gap-3 text-xs text-slate-500">
@@ -29,7 +30,7 @@
   </button>
 
   @if (expanded()) {
-    <div class="mt-4 space-y-3">
+    <div class="space-y-3 px-4 py-3">
       @if (currentUserCanEdit() && draft()) {
         <button
           type="button"
