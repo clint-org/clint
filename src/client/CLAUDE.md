@@ -1,6 +1,6 @@
 # Angular Client -- Guardrails
 
-Rules in this file apply to **all Angular work in `src/client/`**, including edits to existing files. When you touch a component or service that uses an outdated pattern, migrate that file to current conventions in the same change. Don't half-migrate; don't defer. The lint config (`eslint.config.js`) flags deprecated patterns at `warn` today and will ratchet to `error` after the v21 migration.
+Rules in this file apply to **all Angular work in `src/client/`**, including edits to existing files. When you touch a component or service that uses an outdated pattern, migrate that file to current conventions in the same change. Don't half-migrate; don't defer. The lint config (`eslint.config.js`) is mixed: clean rules ratchet to `error` (standalone, no-input-rename, native control flow, self-closing tags, etc.); rules with backlog stay at `warn` (`prefer-on-push`, `prefer-signals`, `prefer-output-readonly`, `template/no-call-expression`, ...). New v21 rules (`prefer-inject`, `prefer-output-emitter-ref`, `use-injectable-provided-in`, `template/prefer-at-empty`, `template/prefer-contextual-for-variables`) are at `warn` and will ratchet as the backlog clears. `no-uncalled-signals` is intentionally not enabled: it requires typed linting, which we'll consider enabling workspace-wide as a separate decision.
 
 If a file's existing style contradicts these rules, prioritize the rules over file-local consistency. Bring the file forward.
 
@@ -83,7 +83,7 @@ If a file's existing style contradicts these rules, prioritize the rules over fi
 
 ## 11. When updating an existing file
 
-- If the file uses any deprecated pattern from sections 1-4, migrate the whole file in the same change. Lint flags it at `warn` today; the v21 migration will ratchet to `error`.
+- If the file uses any deprecated pattern from sections 1-4, migrate the whole file in the same change. Several rules already block at `error`; the rest at `warn` will tighten as the backlog clears.
 - If the migration would balloon the diff (e.g., a 1500-line component with 40 `*ngIf`s, paired with a 5-line bug fix), pause and ask whether to split into a focused modernization commit first.
 - Don't introduce new code in old patterns to match the file's existing style. Consistency yields to current conventions.
 
