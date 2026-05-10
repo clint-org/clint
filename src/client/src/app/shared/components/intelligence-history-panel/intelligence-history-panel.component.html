@@ -99,6 +99,40 @@
                   <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.implications_md)"></div>
                 </section>
               }
+              @if (currentUserCanEdit()) {
+                <div class="border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500 hover:text-slate-700"
+                    [attr.aria-expanded]="isDiffShown(v.id)"
+                    (click)="toggleDiff(v.id); $event.stopPropagation()"
+                  >
+                    {{ isDiffShown(v.id) ? 'Hide edits within this version' : 'Show edits within this version' }}
+                  </button>
+                  @if (isDiffShown(v.id)) {
+                    <div class="mt-2 space-y-3">
+                      @for (pair of diffPairsFor(v.id); track pair.toAt) {
+                        <div class="rounded border border-slate-100 bg-slate-50 p-2 text-xs">
+                          <div class="text-slate-500">
+                            {{ formatDate(pair.fromAt) }} -> {{ formatDate(pair.toAt) }}
+                            @if (pair.changeNote) {
+                              <span class="text-slate-700">-- "{{ pair.changeNote }}"</span>
+                            }
+                          </div>
+                          @for (f of pair.fields; track f.section) {
+                            <div class="mt-1">
+                              <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ sectionLabel(f.section) }}</span>
+                              <div class="text-slate-800" [innerHTML]="f.html"></div>
+                            </div>
+                          }
+                        </div>
+                      } @empty {
+                        <p class="text-xs text-slate-500">Loading edits...</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           }
         </article>

@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { diffWords } from 'diff';
 
 import {
   IntelligenceHistoryPayload,
+  IntelligenceVersionRevision,
   IntelligenceVersionRow,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
@@ -89,6 +91,81 @@ export class IntelligenceHistoryPanelComponent {
     return this.authorMap()[id] ?? id.slice(0, 2).toUpperCase();
   }
 
+  protected readonly versionRevisions = signal<Record<string, IntelligenceVersionRevision[]>>({});
+  protected readonly diffShownIds = signal<ReadonlySet<string>>(new Set());
+
+  protected isDiffShown(id: string): boolean {
+    return this.diffShownIds().has(id);
+  }
+
+  protected toggleDiff(id: string): void {
+    const has = this.diffShownIds().has(id);
+    if (!has && !(id in this.versionRevisions())) {
+      this.versionRevisionsRequested.emit(id);
+    }
+    this.diffShownIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  setVersionRevisions(versionId: string, revs: IntelligenceVersionRevision[]): void {
+    this.versionRevisions.update((prev) => ({ ...prev, [versionId]: revs }));
+  }
+
+  protected diffPairsFor(versionId: string): {
+    fromAt: string;
+    toAt: string;
+    changeNote: string | null;
+    fields: { section: VersionSection; html: string }[];
+  }[] {
+    const revs = this.versionRevisions()[versionId] ?? [];
+    const pairs: {
+      fromAt: string;
+      toAt: string;
+      changeNote: string | null;
+      fields: { section: VersionSection; html: string }[];
+    }[] = [];
+    for (let i = 1; i < revs.length; i++) {
+      const prev = revs[i - 1];
+      const curr = revs[i];
+      const fields: { section: VersionSection; html: string }[] = [];
+      for (const [section, key] of [
+        ['headline', 'headline'],
+        ['thesis', 'thesis_md'],
+        ['watch', 'watch_md'],
+        ['implications', 'implications_md'],
+      ] as [VersionSection, keyof IntelligenceVersionRevision][]) {
+        const before = (prev[key] as string) ?? '';
+        const after = (curr[key] as string) ?? '';
+        if (before !== after) {
+          fields.push({ section, html: this.renderWordDiff(before, after) });
+        }
+      }
+      pairs.push({
+        fromAt: prev.edited_at,
+        toAt: curr.edited_at,
+        changeNote: curr.change_note,
+        fields,
+      });
+    }
+    return pairs;
+  }
+
+  private renderWordDiff(before: string, after: string): string {
+    const parts = diffWords(before, after);
+    return parts
+      .map((p) => {
+        const text = escapeHtml(p.value);
+        if (p.added) return `<ins class="bg-brand-100 text-slate-900 no-underline">${text}</ins>`;
+        if (p.removed) return `<del class="text-slate-500 line-through">${text}</del>`;
+        return `<span>${text}</span>`;
+      })
+      .join('');
+  }
+
   protected toggle(): void {
     if (!this.canExpand()) return;
     this.expanded.update((v) => !v);
@@ -99,4 +176,13 @@ export class IntelligenceHistoryPanelComponent {
     const d = new Date(iso);
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
