@@ -40,8 +40,8 @@ module.exports = tseslint.config(
       "@angular-eslint/runtime-localize": "error",
       "@angular-eslint/use-injectable-provided-in": "error",
       "@angular-eslint/prefer-on-push-component-change-detection": "error",
+      "@angular-eslint/prefer-signals": "error",
       // Still warn pending cleanup of the migration backlog
-      "@angular-eslint/prefer-signals": "warn",
       "@angular-eslint/prefer-output-readonly": "warn",
       // Ratcheted to error (zero violations at ratchet time).
       // no-uncalled-signals requires typed linting (parserOptions.project);
