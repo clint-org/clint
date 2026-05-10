@@ -26,17 +26,17 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
   templateUrl: './company-form.component.html',
 })
 export class CompanyFormComponent implements OnInit {
-  company = input<Company | null>(null);
+  readonly company = input<Company | null>(null);
 
   saved = output<Company>();
   cancelled = output<void>();
 
-  name = signal('');
-  logoUrl = signal('');
-  displayOrder = signal(0);
-  submitting = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
+  readonly name = signal('');
+  readonly logoUrl = signal('');
+  readonly displayOrder = signal(0);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
 
   private companyService = inject(CompanyService);
   private route = inject(ActivatedRoute);

@@ -144,12 +144,12 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
 
-  tenant = signal<Tenant | null>(null);
-  spaces = signal<Space[]>([]);
-  loading = signal(true);
-  createDialogOpen = signal(false);
-  creating = signal(false);
-  createError = signal<string | null>(null);
+  readonly tenant = signal<Tenant | null>(null);
+  readonly spaces = signal<Space[]>([]);
+  readonly loading = signal(true);
+  readonly createDialogOpen = signal(false);
+  readonly creating = signal(false);
+  readonly createError = signal<string | null>(null);
   newSpaceName = '';
   newSpaceDesc = '';
 

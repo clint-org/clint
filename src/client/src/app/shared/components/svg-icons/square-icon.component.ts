@@ -37,12 +37,12 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
   `,
 })
 export class SquareIconComponent {
-  size = input<number>(16);
-  color = input<string>('#000000');
-  fillStyle = input<FillStyle>('filled');
-  innerMark = input<InnerMark>('none');
+  readonly size = input<number>(16);
+  readonly color = input<string>('#000000');
+  readonly fillStyle = input<FillStyle>('filled');
+  readonly innerMark = input<InnerMark>('none');
 
-  padding = computed(() => this.size() * 0.1);
-  innerSize = computed(() => this.size() * 0.8);
-  markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
+  readonly padding = computed(() => this.size() * 0.1);
+  readonly innerSize = computed(() => this.size() * 0.8);
+  readonly markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
 }

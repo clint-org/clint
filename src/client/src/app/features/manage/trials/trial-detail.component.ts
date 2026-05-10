@@ -115,7 +115,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     ]);
   });
 
-  editingTrial = signal(false);
+  readonly editingTrial = signal(false);
 
   // Lightweight CT.gov existence probe so the trial-detail readonly view
   // surfaces "Not found at CT.gov" when an NCT was entered but doesn't
@@ -148,32 +148,32 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     })();
   });
 
-  trial = signal<Trial | null>(null);
-  trialId = signal('');
-  loading = signal(true);
-  error = signal<string | null>(null);
+  readonly trial = signal<Trial | null>(null);
+  readonly trialId = signal('');
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
-  addingMarker = signal(false);
-  editingMarker = signal<Marker | null>(null);
-  addingNote = signal(false);
-  editingNote = signal<TrialNote | null>(null);
+  readonly addingMarker = signal(false);
+  readonly editingMarker = signal<Marker | null>(null);
+  readonly addingNote = signal(false);
+  readonly editingNote = signal<TrialNote | null>(null);
 
   // Primary intelligence
-  intelligence = signal<IntelligenceDetailBundle | null>(null);
-  intelligenceDrawerOpen = signal(false);
+  readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
+  readonly intelligenceDrawerOpen = signal(false);
 
   // CT.gov data + activity feed
-  snapshot = signal<{ payload: unknown; fetched_at: string } | null>(null);
-  trialActivity = signal<ChangeEvent[]>([]);
-  showAllCtgovModal = signal(false);
-  syncing = signal(false);
+  readonly snapshot = signal<{ payload: unknown; fetched_at: string } | null>(null);
+  readonly trialActivity = signal<ChangeEvent[]>([]);
+  readonly showAllCtgovModal = signal(false);
+  readonly syncing = signal(false);
 
   // Per-space override of which CT.gov fields render below Phase / Recruitment
   // / Study type. Loaded once when the trial resolves; falls back to the
   // catalogue defaults when the space hasn't customized this surface.
   private readonly fieldVisibilityService = inject(SpaceFieldVisibilityService);
   private readonly perSpaceDetailPaths = signal<string[] | null>(null);
-  detailExtraPaths = computed(() => this.perSpaceDetailPaths() ?? CTGOV_DETAIL_DEFAULT_PATHS);
+  readonly detailExtraPaths = computed(() => this.perSpaceDetailPaths() ?? CTGOV_DETAIL_DEFAULT_PATHS);
   readonly allCatalogPaths = CTGOV_FIELD_CATALOGUE.map((f) => f.path);
 
   protected readonly hasIntelligence = computed(() => {

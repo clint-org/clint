@@ -122,9 +122,9 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
   private topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
 
-  space = signal<Space | null>(null);
-  loading = signal(true);
-  saving = signal(false);
+  readonly space = signal<Space | null>(null);
+  readonly loading = signal(true);
+  readonly saving = signal(false);
   name = '';
   description = '';
 

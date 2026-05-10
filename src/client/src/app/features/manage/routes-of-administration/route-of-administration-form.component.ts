@@ -26,17 +26,17 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
   templateUrl: './route-of-administration-form.component.html',
 })
 export class RouteOfAdministrationFormComponent implements OnInit {
-  item = input<RouteOfAdministration | null>(null);
+  readonly item = input<RouteOfAdministration | null>(null);
 
   saved = output<RouteOfAdministration>();
   cancelled = output<void>();
 
-  name = signal('');
-  abbreviation = signal('');
-  displayOrder = signal(0);
-  submitting = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
+  readonly name = signal('');
+  readonly abbreviation = signal('');
+  readonly displayOrder = signal(0);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
 
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);

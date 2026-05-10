@@ -111,8 +111,8 @@ export class OnboardingComponent {
   });
 
   inviteCode = '';
-  joining = signal(false);
-  joinError = signal<string | null>(null);
+  readonly joining = signal(false);
+  readonly joinError = signal<string | null>(null);
 
   async joinTenant(): Promise<void> {
     const code = this.inviteCode.trim();

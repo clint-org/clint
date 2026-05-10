@@ -280,11 +280,11 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
   private readonly menuCache = new Map<string, MenuItem[]>();
   private readonly inviteMenuCache = new Map<string, MenuItem[]>();
 
-  members = signal<SpaceMember[]>([]);
-  invites = signal<SpaceInvite[]>([]);
-  loading = signal(true);
-  addDialogOpen = signal(false);
-  adding = signal(false);
+  readonly members = signal<SpaceMember[]>([]);
+  readonly invites = signal<SpaceInvite[]>([]);
+  readonly loading = signal(true);
+  readonly addDialogOpen = signal(false);
+  readonly adding = signal(false);
   readonly inviteEmail = signal('');
   readonly inviteRole = signal<SpaceRole>('viewer');
   readonly inviteResult = signal<string | null>(null);

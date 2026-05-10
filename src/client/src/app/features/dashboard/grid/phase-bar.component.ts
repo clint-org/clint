@@ -15,23 +15,23 @@ const MIN_LABEL_WIDTH = 40;
 export class PhaseBarComponent {
   private readonly timeline = inject(TimelineService);
 
-  phaseType = input.required<string>();
-  startDate = input.required<string>();
-  endDate = input<string | null>(null);
-  startYear = input.required<number>();
-  endYear = input.required<number>();
-  totalWidth = input.required<number>();
+  readonly phaseType = input.required<string>();
+  readonly startDate = input.required<string>();
+  readonly endDate = input<string | null>(null);
+  readonly startYear = input.required<number>();
+  readonly endYear = input.required<number>();
+  readonly totalWidth = input.required<number>();
 
   phaseClick = output<void>();
 
-  protected barX = computed(() =>
+  protected readonly barX = computed(() =>
     Math.max(
       0,
       this.timeline.dateToX(this.startDate(), this.startYear(), this.endYear(), this.totalWidth())
     )
   );
 
-  protected barWidth = computed(() => {
+  protected readonly barWidth = computed(() => {
     const endDate = this.endDate();
     if (!endDate) {
       return 0;
@@ -50,25 +50,25 @@ export class PhaseBarComponent {
     return Math.max(0, endX - clampedStart);
   });
 
-  protected barColor = computed(() => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR);
+  protected readonly barColor = computed(() => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR);
 
-  protected labelText = computed(() => this.phaseType());
+  protected readonly labelText = computed(() => this.phaseType());
 
-  protected showLabelInside = computed(() => this.barWidth() >= MIN_LABEL_WIDTH);
+  protected readonly showLabelInside = computed(() => this.barWidth() >= MIN_LABEL_WIDTH);
 
-  labelColor = computed(() => {
+  readonly labelColor = computed(() => {
     if (!this.showLabelInside()) return '#64748b';
     return this.barColor();
   });
 
-  protected labelX = computed(() => {
+  protected readonly labelX = computed(() => {
     if (this.showLabelInside()) {
       return this.barX() + this.barWidth() / 2;
     }
     return this.barX() + this.barWidth() + 4;
   });
 
-  protected labelAnchor = computed(() => (this.showLabelInside() ? 'middle' : 'start'));
+  protected readonly labelAnchor = computed(() => (this.showLabelInside() ? 'middle' : 'start'));
 
   protected barHeight = BAR_HEIGHT;
   protected cornerRadius = CORNER_RADIUS;

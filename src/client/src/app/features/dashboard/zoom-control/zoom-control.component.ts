@@ -21,7 +21,7 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
   `,
 })
 export class ZoomControlComponent {
-  zoomLevel = input.required<ZoomLevel>();
+  readonly zoomLevel = input.required<ZoomLevel>();
   zoomChange = output<ZoomLevel>();
 
   readonly zoomOptions: { value: ZoomLevel; label: string }[] = [

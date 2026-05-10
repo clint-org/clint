@@ -23,13 +23,13 @@ import { FillStyle } from '../../../core/models/marker.model';
   `,
 })
 export class FlagIconComponent {
-  size = input<number>(16);
-  color = input<string>('#000000');
-  fillStyle = input<FillStyle>('filled');
+  readonly size = input<number>(16);
+  readonly color = input<string>('#000000');
+  readonly fillStyle = input<FillStyle>('filled');
 
-  poleX = computed(() => this.size() * 0.15);
+  readonly poleX = computed(() => this.size() * 0.15);
 
-  flagPath = computed(() => {
+  readonly flagPath = computed(() => {
     const s = this.size();
     const px = this.poleX();
     const fw = s * 0.8;

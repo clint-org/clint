@@ -276,7 +276,7 @@ export interface TopbarTab {
             (click)="action.callback()"
           />
         }
-        <ng-content select="[topbar-actions]"></ng-content>
+        <ng-content select="[topbar-actions]" />
       </div>
     </div>
   `,

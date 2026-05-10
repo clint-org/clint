@@ -91,18 +91,18 @@ export class TrialListComponent implements OnInit, OnDestroy {
     }
   });
 
-  spaceId = signal('');
-  tenantId = signal('');
+  readonly spaceId = signal('');
+  readonly tenantId = signal('');
 
   private readonly menuCache = new Map<string, MenuItem[]>();
 
-  trials = signal<Trial[]>([]);
-  products = signal<Product[]>([]);
-  companies = signal<Company[]>([]);
-  loading = signal(false);
-  error = signal<string | null>(null);
+  readonly trials = signal<Trial[]>([]);
+  readonly products = signal<Product[]>([]);
+  readonly companies = signal<Company[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
 
-  creating = signal(false);
+  readonly creating = signal(false);
 
   // Per-space CT.gov field columns (trial_list_columns surface). Loaded once
   // alongside trials; falls back to CTGOV_TRIAL_LIST_DEFAULT_PATHS when the

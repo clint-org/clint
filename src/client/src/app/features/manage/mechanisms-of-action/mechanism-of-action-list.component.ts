@@ -32,11 +32,11 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   templateUrl: './mechanism-of-action-list.component.html',
 })
 export class MechanismOfActionListComponent implements OnInit, OnDestroy {
-  items = signal<MechanismOfAction[]>([]);
-  loading = signal(false);
-  modalOpen = signal(false);
-  editingItem = signal<MechanismOfAction | null>(null);
-  deleteError = signal<string | null>(null);
+  readonly items = signal<MechanismOfAction[]>([]);
+  readonly loading = signal(false);
+  readonly modalOpen = signal(false);
+  readonly editingItem = signal<MechanismOfAction | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   private moaService = inject(MechanismOfActionService);
   private route = inject(ActivatedRoute);

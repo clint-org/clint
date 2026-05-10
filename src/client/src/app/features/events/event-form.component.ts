@@ -305,33 +305,33 @@ export class EventFormComponent implements OnInit {
     { label: 'High', value: 'high' },
   ];
 
-  categories = signal<EventCategory[]>([]);
-  threads = signal<EventThread[]>([]);
-  companies = signal<Company[]>([]);
-  products = signal<Product[]>([]);
-  trials = signal<Trial[]>([]);
-  entityOptions = signal<{ id: string; name: string }[]>([]);
+  readonly categories = signal<EventCategory[]>([]);
+  readonly threads = signal<EventThread[]>([]);
+  readonly companies = signal<Company[]>([]);
+  readonly products = signal<Product[]>([]);
+  readonly trials = signal<Trial[]>([]);
+  readonly entityOptions = signal<{ id: string; name: string }[]>([]);
 
   // Form fields -- signals so writes from loadExisting trigger change detection
   // and so reset() between edits clears stale state. Plain class properties
   // with [(ngModel)] retained values across dialog opens (the dialog does not
   // destroy on hide), causing edit-on-existing to show the previous form's data
   // and risking silent overwrite on Save.
-  entityLevel = signal<EntityLevel>('space');
-  entityId = signal('');
-  title = signal('');
-  eventDateValue = signal<Date | null>(null);
-  categoryId = signal('');
-  priority = signal<EventPriority>('low');
-  description = signal('');
-  tags = signal<string[]>([]);
-  sources = signal<SourceRow[]>([]);
-  threadId = signal<string | null>(null);
-  newThreadTitle = signal('');
-  linkedEventIds = signal<string[]>([]);
+  readonly entityLevel = signal<EntityLevel>('space');
+  readonly entityId = signal('');
+  readonly title = signal('');
+  readonly eventDateValue = signal<Date | null>(null);
+  readonly categoryId = signal('');
+  readonly priority = signal<EventPriority>('low');
+  readonly description = signal('');
+  readonly tags = signal<string[]>([]);
+  readonly sources = signal<SourceRow[]>([]);
+  readonly threadId = signal<string | null>(null);
+  readonly newThreadTitle = signal('');
+  readonly linkedEventIds = signal<string[]>([]);
 
-  saving = signal(false);
-  error = signal<string | null>(null);
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
 
   constructor() {
     // React to eventId changes: each time the parent passes a different id

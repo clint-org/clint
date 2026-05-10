@@ -15,11 +15,11 @@ import { FillStyle } from '../../../core/models/marker.model';
   `,
 })
 export class TriangleIconComponent {
-  size = input<number>(16);
-  color = input<string>('#000000');
-  fillStyle = input<FillStyle>('filled');
+  readonly size = input<number>(16);
+  readonly color = input<string>('#000000');
+  readonly fillStyle = input<FillStyle>('filled');
 
-  trianglePoints = computed(() => {
+  readonly trianglePoints = computed(() => {
     const s = this.size();
     const x1 = s * 0.15;
     const y1 = s * 0.1;

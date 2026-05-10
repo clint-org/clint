@@ -15,27 +15,27 @@ import { MarkerTooltipComponent } from './marker-tooltip.component';
 export class MarkerComponent {
   private readonly timeline = inject(TimelineService);
 
-  marker = input.required<Marker>();
-  startYear = input.required<number>();
-  endYear = input.required<number>();
-  totalWidth = input.required<number>();
+  readonly marker = input.required<Marker>();
+  readonly startYear = input.required<number>();
+  readonly endYear = input.required<number>();
+  readonly totalWidth = input.required<number>();
 
-  trialName = input<string>('');
-  trialPhase = input<string>('');
-  recruitmentStatus = input<string>('');
-  companyName = input<string>('');
-  productName = input<string>('');
+  readonly trialName = input<string>('');
+  readonly trialPhase = input<string>('');
+  readonly recruitmentStatus = input<string>('');
+  readonly companyName = input<string>('');
+  readonly productName = input<string>('');
 
   markerClick = output<Marker>();
 
-  showTooltip = signal(false);
+  readonly showTooltip = signal(false);
 
   readonly iconSize = MARKER_ICON_SIZE;
   readonly topOffset = MARKER_TOP_OFFSET;
 
-  markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
+  readonly markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
 
-  markerX = computed(() =>
+  readonly markerX = computed(() =>
     Math.max(
       0,
       this.timeline.dateToX(
@@ -47,17 +47,17 @@ export class MarkerComponent {
     )
   );
 
-  effectiveFillStyle = computed<FillStyle>(() => {
+  readonly effectiveFillStyle = computed<FillStyle>(() => {
     return this.marker().projection === 'actual' ? 'filled' : 'outline';
   });
 
-  isNle = computed(() => this.marker().no_longer_expected);
+  readonly isNle = computed(() => this.marker().no_longer_expected);
 
-  isDashedLine = computed(() => this.markerType()?.shape === 'dashed-line');
+  readonly isDashedLine = computed(() => this.markerType()?.shape === 'dashed-line');
 
-  nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
+  readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
-  shortDate = computed(() => {
+  readonly shortDate = computed(() => {
     const d = new Date(this.marker().event_date);
     const months = [
       'Jan',
@@ -76,7 +76,7 @@ export class MarkerComponent {
     return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
   });
 
-  ariaLabel = computed(() => {
+  readonly ariaLabel = computed(() => {
     const m = this.marker();
     return m.title || this.markerType()?.name || '';
   });

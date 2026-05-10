@@ -15,5 +15,5 @@ import { Component, input } from '@angular/core';
   `,
 })
 export class NleOverlayComponent {
-  size = input<number>(16);
+  readonly size = input<number>(16);
 }
