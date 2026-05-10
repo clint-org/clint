@@ -60,7 +60,7 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       @let data = positioningData.value();
       @if (data && chartBubbles().length > 0) {
         <div class="landscape-layout">
-          <div class="landscape-chart-wrap" style="min-width: 0; min-height: 0; overflow: hidden;">
+          <div class="landscape-chart-wrap min-w-0 min-h-0 overflow-hidden">
             <app-positioning-chart
               [bubbles]="chartBubbles()"
               [width]="1200"

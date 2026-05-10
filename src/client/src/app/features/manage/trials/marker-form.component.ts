@@ -55,7 +55,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionLabel="name"
             optionValue="id"
             placeholder="Select category"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
             class="mt-1"
             (ngModelChange)="onCategoryChange($event)"
             [attr.aria-required]="true"
@@ -75,7 +75,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionLabel="name"
             optionValue="id"
             placeholder="Select marker type"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
             class="mt-1"
             [disabled]="!categoryId"
             (ngModelChange)="onMarkerTypeChange($event)"
@@ -118,7 +118,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionLabel="label"
             optionValue="value"
             placeholder="Select projection"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
             class="mt-1"
           />
         </div>
@@ -198,7 +198,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
               optionLabel="label"
               optionValue="value"
               placeholder="Select pathway"
-              [style]="{ width: '100%' }"
+              styleClass="w-full"
               class="mt-1"
             />
           </div>
@@ -217,7 +217,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionLabel="name"
             optionValue="id"
             placeholder="Select trials"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
             class="mt-1"
             (ngModelChange)="selectedTrialIds = $event ?? []"
             aria-required="true"

@@ -122,7 +122,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       [closable]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '28rem' }"
+      styleClass="!w-[28rem]"
       header="Provision agency"
       (onHide)="resetForm()"
     >
@@ -309,7 +309,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       [closable]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '28rem' }"
+      styleClass="!w-[28rem]"
       header="Delete agency"
       (onHide)="resetDelete()"
     >

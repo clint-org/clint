@@ -45,11 +45,7 @@
     </ng-template>
     <ng-template #loadingbody>
       <app-table-skeleton-body
-        [cells]="[
-          { w: '52%' },
-          { w: '52px', h: '11px' },
-          { w: '14px', class: 'col-actions' },
-        ]"
+        [cells]="[{ w: '52%' }, { w: '52px', h: '11px' }, { w: '14px', class: 'col-actions' }]"
       />
     </ng-template>
     <ng-template #emptymessage>
@@ -76,7 +72,7 @@
   [header]="editingArea() ? 'Edit therapeutic area' : 'Add therapeutic area'"
   [(visible)]="modalOpen"
   [modal]="true"
-  [style]="{ width: '32rem' }"
+  styleClass="!w-[32rem]"
   (onHide)="closeModal()"
 >
   @if (modalOpen()) {

@@ -17,7 +17,7 @@ import { Dialog } from 'primeng/dialog';
       (visibleChange)="onVisibleChange($event)"
       header="Withdraw this read"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       [closable]="true"
     >
       <div class="space-y-3">

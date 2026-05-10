@@ -23,11 +23,7 @@
     </ng-template>
     <ng-template #loadingbody>
       <app-table-skeleton-body
-        [cells]="[
-          { w: '42%' },
-          { w: '72%' },
-          { w: '14px', class: 'col-actions' },
-        ]"
+        [cells]="[{ w: '42%' }, { w: '72%' }, { w: '14px', class: 'col-actions' }]"
       />
     </ng-template>
     <ng-template #emptymessage>
@@ -48,7 +44,7 @@
   [header]="editingItem() ? 'Edit mechanism of action' : 'Add mechanism of action'"
   [(visible)]="modalOpen"
   [modal]="true"
-  [style]="{ width: '32rem' }"
+  styleClass="!w-[32rem]"
   (onHide)="closeModal()"
 >
   @if (modalOpen()) {

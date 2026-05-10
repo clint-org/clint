@@ -132,7 +132,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         header="Create space"
         [(visible)]="createSpaceDialogOpen"
         [modal]="true"
-        [style]="{ width: '32rem' }"
+        styleClass="!w-[32rem]"
         (onHide)="resetCreateSpaceForm()"
       >
         <form (ngSubmit)="createSpace()" class="space-y-4">

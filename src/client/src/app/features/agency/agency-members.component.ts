@@ -100,7 +100,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
                   optionLabel="label"
                   optionValue="value"
                   size="small"
-                  [style]="{ minWidth: '7rem' }"
+                  styleClass="min-w-[7rem]"
                 />
               } @else {
                 <app-status-tag
@@ -136,7 +136,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
       header="Add agency member"
       [(visible)]="addDialogOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="resetAddForm()"
     >
       <form (ngSubmit)="onAdd()" class="space-y-4">
@@ -171,7 +171,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
             name="role"
             optionLabel="label"
             optionValue="value"
-            [style]="{ width: '100%' }"
+            styleClass="w-full"
           />
         </div>
         @if (addResult()) {

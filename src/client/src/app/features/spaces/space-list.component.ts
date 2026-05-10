@@ -92,7 +92,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       header="Create space"
       [(visible)]="createDialogOpen"
       [modal]="true"
-      [style]="{ width: '32rem' }"
+      styleClass="!w-[32rem]"
       (onHide)="resetCreateForm()"
     >
       <form (ngSubmit)="createSpace()" class="space-y-4">

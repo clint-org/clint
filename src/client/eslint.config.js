@@ -66,7 +66,13 @@ module.exports = tseslint.config(
       "@angular-eslint/template/prefer-contextual-for-variables": "error",
       // Still warn pending cleanup of the migration backlog
       "@angular-eslint/template/no-call-expression": "warn",
-      "@angular-eslint/template/no-inline-styles": "warn",
+      // allowBindToStyle so [style.X] per-property bindings stay legal
+      // (Angular's idiomatic dynamic styling). The [style] object form
+      // and raw style="..." attribute both still get flagged.
+      "@angular-eslint/template/no-inline-styles": [
+        "error",
+        { "allowBindToStyle": true },
+      ],
       // Ratcheted to error (zero violations at ratchet time).
       "@angular-eslint/template/prefer-at-empty": "error",
     },

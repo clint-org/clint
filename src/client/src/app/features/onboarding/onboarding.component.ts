@@ -76,12 +76,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
                   joinError()
                 }}</p-message>
               }
-              <p-button
-                label="Join"
-                type="submit"
-                [loading]="joining()"
-                [style]="{ width: '100%' }"
-              />
+              <p-button label="Join" type="submit" [loading]="joining()" styleClass="w-full" />
             </form>
             <p class="mt-4 text-center text-[11px] text-slate-400">
               Don't have an invite? Ask your administrator to send you one.

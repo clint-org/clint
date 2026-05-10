@@ -41,10 +41,20 @@
     <app-manage-page-shell [narrow]="true">
       <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
         @if (t.products; as prod) {
-          <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">
+          <div
+            class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
+          >
             @if (prod.companies; as co) {
               <a
-                [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
+                [routerLink]="[
+                  '/t',
+                  tenantIdSig(),
+                  's',
+                  spaceIdSig(),
+                  'manage',
+                  'companies',
+                  co.id,
+                ]"
                 class="hover:text-brand-700 hover:underline"
               >
                 {{ co.name }}
@@ -169,7 +179,7 @@
               onPurgeRequested(
                 {
                   id: historyHost.payload().current?.id ?? '',
-                  headline: historyHost.payload().current?.headline ?? ''
+                  headline: historyHost.payload().current?.headline ?? '',
                 },
                 false
               )
@@ -186,12 +196,8 @@
           [payload]="historyHost.payload()"
           [currentUserCanEdit]="spaceRole.canEdit()"
           (withdraw)="withdrawDialogOpen.set(true)"
-          (purgeVersion)="
-            onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-          "
-          (purgeAnchor)="
-            onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-          "
+          (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+          (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
           (versionRevisionsRequested)="loadHistoryVersionRevisions($event)"
         />
         <app-withdraw-intelligence-dialog
@@ -351,7 +357,7 @@
         [(visible)]="showAllCtgovModal"
         header="All CT.gov data"
         [modal]="true"
-        [style]="{ width: '60rem' }"
+        styleClass="!w-[60rem]"
       >
         @if (snapshot(); as snap) {
           <app-ctgov-field-renderer [snapshot]="snap.payload" [paths]="allCatalogPaths" />
@@ -493,7 +499,15 @@
                 <td class="col-secondary max-w-xs">
                   <div class="flex items-center gap-1.5">
                     <a
-                      [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'markers', marker.id]"
+                      [routerLink]="[
+                        '/t',
+                        tenantIdSig(),
+                        's',
+                        spaceIdSig(),
+                        'manage',
+                        'markers',
+                        marker.id,
+                      ]"
                       class="truncate text-brand-700 hover:underline"
                     >
                       {{ marker.title }}

@@ -27,7 +27,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
       header="Export to PowerPoint"
       [(visible)]="visible"
       [modal]="true"
-      [style]="{ width: '24rem' }"
+      styleClass="!w-[24rem]"
       (onHide)="closed.emit()"
     >
       <div class="flex flex-col gap-4">
@@ -50,7 +50,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
           <div class="flex items-center justify-center gap-2 py-2">
             <p-progressspinner
               strokeWidth="4"
-              [style]="{ width: '1.25rem', height: '1.25rem' }"
+              styleClass="w-[1.25rem] h-[1.25rem]"
               aria-label="Exporting to PowerPoint"
             />
             <span class="text-[11px] uppercase tracking-wider text-slate-400">

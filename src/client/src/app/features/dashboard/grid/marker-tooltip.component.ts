@@ -30,8 +30,7 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
   ],
   template: `
     <div
-      class="fixed pointer-events-none overflow-hidden"
-      style="border-radius: 8px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(15,23,42,0.08), 0 1px 3px rgba(15,23,42,0.04); display: flex;"
+      class="fixed pointer-events-none overflow-hidden flex rounded-lg bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.08),_0_1px_3px_rgba(15,23,42,0.04)]"
       [style.z-index]="99999"
       [style.left.px]="tooltipX()"
       [style.top.px]="tooltipY()"

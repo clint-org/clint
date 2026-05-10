@@ -129,7 +129,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
       [closable]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '26rem' }"
+      styleClass="!w-[26rem]"
       header="Release hostname"
       (onHide)="resetRelease()"
     >
