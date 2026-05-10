@@ -6,6 +6,8 @@ import {
   IntelligenceEntityType,
   IntelligenceFeedResult,
   IntelligenceFeedRow,
+  IntelligenceHistoryPayload,
+  IntelligenceVersionRevision,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -122,6 +124,47 @@ export class PrimaryIntelligenceService {
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase.client.rpc('delete_primary_intelligence', {
       p_id: id,
+    });
+    if (error) throw error;
+  }
+
+  async loadHistory(
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string
+  ): Promise<IntelligenceHistoryPayload> {
+    const { data, error } = await this.supabase.client.rpc(
+      'get_primary_intelligence_history',
+      { p_space_id: spaceId, p_entity_type: entityType, p_entity_id: entityId }
+    );
+    if (error) throw error;
+    return (
+      (data as IntelligenceHistoryPayload) ?? { current: null, draft: null, versions: [] }
+    );
+  }
+
+  async loadVersionRevisions(versionId: string): Promise<IntelligenceVersionRevision[]> {
+    const { data, error } = await this.supabase.client.rpc(
+      'get_intelligence_version_revisions',
+      { p_version_id: versionId }
+    );
+    if (error) throw error;
+    return (data as IntelligenceVersionRevision[]) ?? [];
+  }
+
+  async withdraw(id: string, changeNote: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('withdraw_primary_intelligence', {
+      p_id: id,
+      p_change_note: changeNote,
+    });
+    if (error) throw error;
+  }
+
+  async purge(id: string, confirmation: string, purgeAnchor = false): Promise<void> {
+    const { error } = await this.supabase.client.rpc('purge_primary_intelligence', {
+      p_id: id,
+      p_confirmation: confirmation,
+      p_purge_anchor: purgeAnchor,
     });
     if (error) throw error;
   }
