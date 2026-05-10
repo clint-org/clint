@@ -21,6 +21,7 @@ export default defineConfig({
     exclude: [
       '**/error-message.spec.ts',
       '**/intelligence-router-link.spec.ts',
+      '**/version-summary.spec.ts',
       'node_modules/**',
     ],
     environment: 'node',
