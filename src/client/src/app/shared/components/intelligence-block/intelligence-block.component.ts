@@ -37,10 +37,21 @@ export class IntelligenceBlockComponent {
   readonly spaceId = input<string | null>(null);
 
   readonly edit = output<void>();
-  readonly deleted = output<void>();
+  readonly discardDraft = output<void>();
+  readonly withdraw = output<void>();
+  readonly purge = output<void>();
+  readonly purgeAnchor = output<void>();
 
   protected readonly current = computed<IntelligencePayload | null>(() => {
     return this.published() ?? this.draft() ?? null;
+  });
+
+  protected readonly primaryDestructiveAction = computed<'discard' | 'withdraw' | null>(() => {
+    const c = this.current()?.record;
+    if (!c) return null;
+    if (c.state === 'draft') return 'discard';
+    if (c.state === 'published') return 'withdraw';
+    return null;
   });
 
   /**

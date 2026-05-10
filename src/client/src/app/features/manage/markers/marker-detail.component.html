@@ -25,7 +25,7 @@
         [tenantId]="tenantIdSig()"
         [spaceId]="spaceIdSig()"
         (edit)="onIntelligenceEdit()"
-        (deleted)="onIntelligenceDelete()"
+        (discardDraft)="onIntelligenceDelete()"
       />
     } @else {
       <app-intelligence-empty

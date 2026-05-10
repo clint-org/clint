@@ -45,14 +45,35 @@
             size="small"
             (onClick)="edit.emit()"
           />
-          <p-button
-            label="Delete"
-            icon="fa-solid fa-trash"
-            [text]="true"
-            severity="danger"
-            size="small"
-            (onClick)="deleted.emit()"
-          />
+          @if (primaryDestructiveAction() === 'discard') {
+            <p-button
+              label="Discard draft"
+              icon="fa-solid fa-trash"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              (onClick)="discardDraft.emit()"
+            />
+          } @else if (primaryDestructiveAction() === 'withdraw') {
+            <p-button
+              label="Withdraw"
+              icon="fa-solid fa-eye-slash"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              (onClick)="withdraw.emit()"
+            />
+            <p-button
+              icon="pi pi-ellipsis-h"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              pTooltip="Purge"
+              tooltipPosition="bottom"
+              aria-label="Purge this version"
+              (onClick)="purge.emit()"
+            />
+          }
         </div>
       }
     </header>
