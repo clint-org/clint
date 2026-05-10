@@ -12,6 +12,18 @@
 
 ---
 
+## Execution split (Angular 21 / PrimeNG 21 upgrade in flight)
+
+A separate worktree is upgrading Angular and PrimeNG to v21. To avoid writing UI twice against soon-to-change APIs, this plan splits into two phases:
+
+**Phase 1 (parallel-safe): Tasks 1-14.** Migrations, RPCs, SQL tests, frontend types, service methods, the pure `summarizeVersionChange` helper, and the `diff` dependency. None of these touch PrimeNG or Angular framework surfaces, so they merge cleanly with the upgrade.
+
+**Phase 2 (after upgrade lands): Tasks 15-29.** `IntelligenceHistoryPanel`, withdraw / purge dialogs, `IntelligenceBlock` control changes, detail-page mounts, E2E, runbook regen. These rely on PrimeNG `Dialog`, `Button`, template projection, and severity tokens that v21 reshuffled. Hold this phase until the upgrade is on `main`, then implement against PrimeNG 21 APIs from the start.
+
+A boundary marker is placed between Task 14 and Task 15 below.
+
+---
+
 ## File Map
 
 **Database (created):**
@@ -1513,6 +1525,23 @@ Expected: passes.
 git add src/client/package.json src/client/package-lock.json
 git commit -m "build(client): add diff (jsdiff) for word-level intelligence diffs"
 ```
+
+---
+
+---
+
+## STOP HERE if the Angular 21 / PrimeNG 21 upgrade has not landed
+
+Tasks 1-14 above are the parallel-safe phase. They produce a fully working backend (versioned schema, RPCs, integration tests) plus the frontend plumbing (types, service methods, pure helper, `diff` dep) that the UI will sit on. None of it imports PrimeNG components.
+
+Tasks 15-29 below build the visual surfaces (`IntelligenceHistoryPanel`, withdraw / purge dialogs, `IntelligenceBlock` control changes, detail-page mounts, E2E, runbook regen). They use PrimeNG `Dialog`, `Button`, template projection, and severity tokens that v21 reshapes. Resume after the upgrade is merged so the dialogs and panel chrome are written once against PrimeNG 21 APIs.
+
+When resuming, sanity-check before starting Task 15:
+- `cd src/client && ng version` reports Angular 21.x and PrimeNG 21.x
+- `git log --oneline | grep -i 'ng21\|primeng 21\|angular 21'` shows the upgrade commits on the branch
+- The `Dialog`, `ButtonModule`, `Tooltip` imports referenced in Tasks 15-21 still exist (or rename per migration guide)
+
+If any of those drift, the dialog template syntax (`<ng-template pTemplate="footer">`, `severity="danger"`, `(onClick)`) likely needs adjustment per the PrimeNG 21 migration guide before Tasks 19, 20, and 21.
 
 ---
 
