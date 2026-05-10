@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -9,6 +9,10 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
+import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
+import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
+import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
+import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 
 import { MarkerService } from '../../../core/services/marker.service';
@@ -28,6 +32,9 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
+    IntelligenceHistoryPanelComponent,
+    WithdrawIntelligenceDialogComponent,
+    PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
   ],
   providers: [ConfirmationService, MessageService],
@@ -46,6 +53,15 @@ export class MarkerDetailComponent implements OnInit {
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
   protected readonly loading = signal(true);
+
+  // Intelligence history (version list, withdraw / purge dialogs)
+  protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
+  protected readonly historyPanelRef = viewChild(IntelligenceHistoryPanelComponent);
+  protected readonly withdrawDialogOpen = signal(false);
+  protected readonly purgeDialogOpen = signal(false);
+  protected readonly purgeAnchorMode = signal(false);
+  protected readonly purgeTargetHeadline = signal('');
+  protected readonly purgeTargetId = signal<string | null>(null);
 
   protected readonly hasIntelligence = computed(() => {
     const i = this.intelligence();
@@ -79,10 +95,84 @@ export class MarkerDetailComponent implements OnInit {
   private async loadMarker(): Promise<void> {
     try {
       this.marker.set(await this.markerService.getById(this.markerId()));
+      // History panel depends on the loaded marker's space_id; refresh once
+      // the marker resolves so the inline panel reflects the latest versions.
+      await this.refreshHistory();
     } catch {
       this.marker.set(null);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async refreshHistory(): Promise<void> {
+    const m = this.marker();
+    if (!m) return;
+    try {
+      await this.historyHost.load(m.space_id, 'marker', m.id);
+    } catch {
+      // History panel mirrors the intelligence-block: load failures should
+      // not block the page. The panel renders an empty state on its own.
+    }
+  }
+
+  protected async onWithdrawConfirmed(reason: string): Promise<void> {
+    const id = this.historyHost.payload().current?.id;
+    if (!id) return;
+    try {
+      await this.historyHost.withdraw(id, reason);
+      this.withdrawDialogOpen.set(false);
+      await Promise.all([this.loadIntelligence(), this.loadMarker()]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Read withdrawn.',
+        life: 3000,
+      });
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Withdraw failed',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected onPurgeRequested(target: { id: string; headline: string }, anchor: boolean): void {
+    this.purgeTargetId.set(target.id);
+    this.purgeTargetHeadline.set(target.headline);
+    this.purgeAnchorMode.set(anchor);
+    this.purgeDialogOpen.set(true);
+  }
+
+  protected async onPurgeConfirmed(confirmation: string): Promise<void> {
+    const id = this.purgeTargetId();
+    if (!id) return;
+    try {
+      await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
+      this.purgeDialogOpen.set(false);
+      await Promise.all([this.loadIntelligence(), this.loadMarker()]);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Read purged.',
+        life: 3000,
+      });
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Purge failed',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected async loadHistoryVersionRevisions(versionId: string): Promise<void> {
+    try {
+      const revs = await this.historyHost.loadVersionRevisions(versionId);
+      this.historyPanelRef()?.setVersionRevisions(versionId, revs);
+    } catch {
+      // Silent: per-version diff fetch failures degrade gracefully.
     }
   }
 
