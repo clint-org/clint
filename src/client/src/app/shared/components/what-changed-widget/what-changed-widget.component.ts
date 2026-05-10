@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ChangeEvent } from '../../../core/models/change-event.model';
@@ -18,6 +26,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
   standalone: true,
   imports: [RouterLink, ChangeEventRowComponent, SkeletonComponent],
   templateUrl: './what-changed-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WhatChangedWidgetComponent {
   private readonly feed = inject(ChangeEventService);

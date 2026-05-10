@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -28,15 +35,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 @Component({
   selector: 'app-super-admin-agencies',
   standalone: true,
-  imports: [
-    DatePipe,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    Dialog,
-    InputText,
-    MessageModule,
-  ],
+  imports: [DatePipe, FormsModule, TableModule, ButtonModule, Dialog, InputText, MessageModule],
   template: `
     <div class="p-6">
       <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -256,8 +255,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             autocomplete="off"
           />
           <p class="mt-1 text-[11px] text-slate-400">
-            If they have signed in before, they get owner access immediately.
-            Otherwise the invite is held and granted on first sign-in.
+            If they have signed in before, they get owner access immediately. Otherwise the invite
+            is held and granted on first sign-in.
           </p>
         </div>
 
@@ -328,8 +327,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           </p>
           @if (target.tenant_count > 0) {
             <p-message severity="error" [closable]="false">
-              This agency has {{ target.tenant_count }} tenant(s). Detach or delete
-              those tenants first.
+              This agency has {{ target.tenant_count }} tenant(s). Detach or delete those tenants
+              first.
             </p-message>
           } @else {
             <div>
@@ -376,6 +375,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       }
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuperAdminAgenciesComponent implements OnInit {
   private readonly service = inject(SuperAdminService);

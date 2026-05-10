@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonComponent } from './skeleton.component';
 
@@ -41,6 +41,7 @@ export interface SkeletonCell {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableSkeletonBodyComponent {
   readonly cells = input.required<SkeletonCell[]>();

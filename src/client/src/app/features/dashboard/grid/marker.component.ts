@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -11,6 +19,7 @@ import { MarkerTooltipComponent } from './marker-tooltip.component';
   standalone: true,
   imports: [MarkerIconComponent, MarkerTooltipComponent],
   templateUrl: './marker.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerComponent {
   private readonly timeline = inject(TimelineService);

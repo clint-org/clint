@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Empty-state primitive for detail panes. Renders the action prompt eyebrow
@@ -19,6 +19,7 @@ import { Component, input } from '@angular/core';
     </p>
     <ng-content />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelEmptyStateComponent {
   readonly prompt = input.required<string>();

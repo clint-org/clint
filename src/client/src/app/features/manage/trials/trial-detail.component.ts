@@ -1,5 +1,14 @@
 import { DatePipe, Location } from '@angular/common';
-import { Component, computed, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -72,6 +81,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     TrialEditDialogComponent,
   ],
   templateUrl: './trial-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialDetailComponent implements OnInit, OnDestroy {
   private location = inject(Location);
@@ -173,7 +183,9 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   // catalogue defaults when the space hasn't customized this surface.
   private readonly fieldVisibilityService = inject(SpaceFieldVisibilityService);
   private readonly perSpaceDetailPaths = signal<string[] | null>(null);
-  readonly detailExtraPaths = computed(() => this.perSpaceDetailPaths() ?? CTGOV_DETAIL_DEFAULT_PATHS);
+  readonly detailExtraPaths = computed(
+    () => this.perSpaceDetailPaths() ?? CTGOV_DETAIL_DEFAULT_PATHS
+  );
   readonly allCatalogPaths = CTGOV_FIELD_CATALOGUE.map((f) => f.path);
 
   protected readonly hasIntelligence = computed(() => {

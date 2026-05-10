@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -49,6 +58,7 @@ interface ProductRow {
     HighlightPipe,
   ],
   templateUrl: './product-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductListComponent implements OnInit, OnDestroy {
   readonly products = signal<Product[]>([]);
@@ -72,7 +82,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
-        { label: 'Add product', icon: 'fa-solid fa-plus', text: true, callback: () => this.openCreateModal() },
+        {
+          label: 'Add product',
+          icon: 'fa-solid fa-plus',
+          text: true,
+          callback: () => this.openCreateModal(),
+        },
       ]);
     } else {
       this.topbarState.actions.set([]);
@@ -164,7 +179,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDelete(row.product),
-        },
+        }
       );
     }
     this.menuCache.set(row.product.id, items);

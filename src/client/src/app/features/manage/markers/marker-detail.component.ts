@@ -1,4 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -32,6 +39,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './marker-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

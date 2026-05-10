@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { Material } from '../../../core/models/material.model';
@@ -25,15 +33,11 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
         aria-label="Recent materials"
         [attr.aria-busy]="loading() || null"
       >
-        <header
-          class="flex items-center justify-between border-b border-slate-100 px-4 py-3"
-        >
+        <header class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <h2 class="text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-700">
             Recent materials
           </h2>
-          <a [href]="allMaterialsLink()" class="section-action-link">
-            All materials
-          </a>
+          <a [href]="allMaterialsLink()" class="section-action-link"> All materials </a>
         </header>
         <div class="materials-section__list">
           @if (loading()) {
@@ -73,6 +77,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
       </section>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecentMaterialsWidgetComponent {
   private readonly materialService = inject(MaterialService);

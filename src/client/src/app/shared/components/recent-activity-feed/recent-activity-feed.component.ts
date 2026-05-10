@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import {
   IntelligencePayload,
@@ -56,7 +56,9 @@ interface ActivityEntry {
                   <p class="mt-1 pl-1 text-xs italic text-slate-500">{{ entry.changeNote }}</p>
                 }
                 @if (agencyView()) {
-                  <p class="mt-0.5 pl-1 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                  <p
+                    class="mt-0.5 pl-1 font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                  >
                     {{ entry.authorInitials }}
                   </p>
                 }
@@ -71,6 +73,7 @@ interface ActivityEntry {
       </div>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecentActivityFeedComponent {
   readonly published = input<IntelligencePayload | null>(null);
@@ -106,8 +109,7 @@ export class RecentActivityFeedComponent {
   });
 
   protected pillClass(category: ActivityCategory): string {
-    const base =
-      'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider border';
+    const base = 'rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider border';
     switch (category) {
       case 'read':
         return `${base} border-brand-200 bg-brand-50 text-brand-700`;

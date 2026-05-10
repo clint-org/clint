@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
@@ -140,7 +147,9 @@ interface SuperAdminNavItem {
         font-size: 13px;
         color: #475569;
         text-decoration: none;
-        transition: background-color 120ms ease, color 120ms ease;
+        transition:
+          background-color 120ms ease,
+          color 120ms ease;
       }
       .sa-nav-item:hover {
         background: #f1f5f9;
@@ -192,6 +201,7 @@ interface SuperAdminNavItem {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuperAdminShellComponent implements OnInit {
   private readonly router = inject(Router);

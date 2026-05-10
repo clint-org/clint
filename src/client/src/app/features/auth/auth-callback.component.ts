@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -31,6 +31,7 @@ import { TenantService } from '../../core/services/tenant.service';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthCallbackComponent implements OnInit {
   private readonly router = inject(Router);
@@ -104,9 +105,7 @@ export class AuthCallbackComponent implements OnInit {
               await this.tenantService.selfJoinTenant(subdomain);
             } catch (e: unknown) {
               const msg =
-                e instanceof Error
-                  ? e.message
-                  : 'self-join not available for this workspace';
+                e instanceof Error ? e.message : 'self-join not available for this workspace';
               try {
                 sessionStorage.setItem('login_error', msg);
               } catch {

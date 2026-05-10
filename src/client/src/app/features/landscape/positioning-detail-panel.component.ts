@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import {
   PositioningBubble,
@@ -84,7 +84,10 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
                     <span class="truncate text-slate-500">{{ product.company_name }}</span>
-                    <span class="shrink-0">{{ product.trial_count }} {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span>
+                    <span class="shrink-0"
+                      >{{ product.trial_count }}
+                      {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span
+                    >
                   </span>
                 </span>
               </app-detail-panel-entity-row>
@@ -116,6 +119,7 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
       }
     </app-detail-panel-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PositioningDetailPanelComponent {
   readonly bubble = input<PositioningBubble | null>(null);
@@ -135,8 +139,12 @@ export class PositioningDetailPanelComponent {
     const b = this.bubble();
     if (!b) return '';
     const k = b.group_keys;
-    const parts = [k['moa_name'], k['therapeutic_area_name'], k['company_name'], k['roa_name']]
-      .filter(Boolean);
+    const parts = [
+      k['moa_name'],
+      k['therapeutic_area_name'],
+      k['company_name'],
+      k['roa_name'],
+    ].filter(Boolean);
     return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 

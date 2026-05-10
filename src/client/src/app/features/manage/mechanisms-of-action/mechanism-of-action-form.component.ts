@@ -1,4 +1,12 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -26,6 +34,7 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     FormActionsComponent,
   ],
   templateUrl: './mechanism-of-action-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MechanismOfActionFormComponent implements OnInit {
   readonly item = input<MechanismOfAction | null>(null);

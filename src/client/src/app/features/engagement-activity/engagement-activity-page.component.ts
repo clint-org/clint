@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -73,6 +81,7 @@ interface TrialOption {
     SkeletonComponent,
   ],
   templateUrl: './engagement-activity-page.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EngagementActivityPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

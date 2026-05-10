@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
@@ -12,6 +12,7 @@ const DEFAULT_ROW_COLOR = '#334155'; // slate-700
   standalone: true,
   imports: [DatePipe, RouterLink],
   templateUrl: './change-event-row.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeEventRowComponent {
   readonly event = input.required<ChangeEvent>();

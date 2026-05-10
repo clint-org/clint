@@ -1,4 +1,12 @@
-import { Component, effect, inject, OnDestroy, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -40,6 +48,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     HighlightPipe,
   ],
   templateUrl: './marker-type-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerTypeListComponent implements OnInit, OnDestroy {
   private markerTypeService = inject(MarkerTypeService);

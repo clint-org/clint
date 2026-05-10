@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'g[app-nle-overlay]',
@@ -13,6 +13,7 @@ import { Component, input } from '@angular/core';
       stroke-width="2.5"
     />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NleOverlayComponent {
   readonly size = input<number>(16);

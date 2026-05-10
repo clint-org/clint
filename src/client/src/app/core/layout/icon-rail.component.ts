@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { Tooltip } from 'primeng/tooltip';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
@@ -225,6 +225,7 @@ interface NavSection {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconRailComponent {
   readonly activeSection = input<Section>('landscape');

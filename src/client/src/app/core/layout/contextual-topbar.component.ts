@@ -1,4 +1,14 @@
-import { Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  HostListener,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TopbarAction } from '../services/topbar-state.service';
@@ -30,7 +40,13 @@ export interface TopbarTab {
               aria-label="Switch tenant"
             >
               @if (tenantLogoUrl()) {
-                <img [ngSrc]="tenantLogoUrl()!" width="20" height="20" class="tenant-badge-img" alt="" />
+                <img
+                  [ngSrc]="tenantLogoUrl()!"
+                  width="20"
+                  height="20"
+                  class="tenant-badge-img"
+                  alt=""
+                />
               } @else {
                 <span class="tenant-badge" aria-hidden="true">{{ tenantInitial() }}</span>
               }
@@ -77,7 +93,13 @@ export interface TopbarTab {
                 [attr.aria-expanded]="tenantDropdownOpen()"
               >
                 @if (tenantLogoUrl()) {
-                  <img [ngSrc]="tenantLogoUrl()!" width="20" height="20" class="tenant-badge-img" alt="" />
+                  <img
+                    [ngSrc]="tenantLogoUrl()!"
+                    width="20"
+                    height="20"
+                    class="tenant-badge-img"
+                    alt=""
+                  />
                 } @else {
                   <span class="tenant-badge">{{ tenantInitial() }}</span>
                 }
@@ -196,9 +218,7 @@ export interface TopbarTab {
                       aria-live="polite"
                       aria-label="Onboarding hint"
                     >
-                      <p class="topbar-hint__copy">
-                        Your timeline is now under the Timeline tab.
-                      </p>
+                      <p class="topbar-hint__copy">Your timeline is now under the Timeline tab.</p>
                       <button
                         type="button"
                         class="topbar-hint__dismiss"
@@ -771,6 +791,7 @@ export interface TopbarTab {
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContextualTopbarComponent {
   // ---- Tenant/Space inputs ----

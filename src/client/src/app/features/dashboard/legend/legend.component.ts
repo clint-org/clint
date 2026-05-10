@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MarkerType } from '../../../core/models/marker.model';
@@ -21,6 +29,7 @@ import { SquareIconComponent } from '../../../shared/components/svg-icons/square
     SquareIconComponent,
   ],
   templateUrl: './legend.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LegendComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);

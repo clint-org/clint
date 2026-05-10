@@ -1,4 +1,14 @@
-import { Component, effect, inject, input, OnInit, output, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
@@ -278,6 +288,7 @@ interface SourceRow {
       </div>
     </form>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventFormComponent implements OnInit {
   readonly eventId = input<string | null>(null);
@@ -384,7 +395,7 @@ export class EventFormComponent implements OnInit {
 
   updateSourceField(index: number, field: 'url' | 'label', value: string): void {
     this.sources.update((rows) =>
-      rows.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+      rows.map((row, i) => (i === index ? { ...row, [field]: value } : row))
     );
   }
 

@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
@@ -90,7 +99,15 @@ interface CtgovProvenanceBlock {
       @if (d.catalyst.marker_id && tenantIdSig() && spaceId()) {
         <div class="mt-2 flex justify-end">
           <a
-            [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'markers', d.catalyst.marker_id]"
+            [routerLink]="[
+              '/t',
+              tenantIdSig(),
+              's',
+              spaceId(),
+              'manage',
+              'markers',
+              d.catalyst.marker_id,
+            ]"
             class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
           >
             View detail
@@ -113,7 +130,15 @@ interface CtgovProvenanceBlock {
             <p>
               @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
                 <a
-                  [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'companies', d.catalyst.company_id]"
+                  [routerLink]="[
+                    '/t',
+                    tenantIdSig(),
+                    's',
+                    spaceId(),
+                    'manage',
+                    'companies',
+                    d.catalyst.company_id,
+                  ]"
                   class="font-semibold uppercase text-brand-700 hover:underline"
                 >
                   {{ d.catalyst.company_name }}
@@ -125,7 +150,15 @@ interface CtgovProvenanceBlock {
                 &middot;
                 @if (d.catalyst.product_id && tenantIdSig() && spaceId()) {
                   <a
-                    [routerLink]="['/t', tenantIdSig(), 's', spaceId(), 'manage', 'products', d.catalyst.product_id]"
+                    [routerLink]="[
+                      '/t',
+                      tenantIdSig(),
+                      's',
+                      spaceId(),
+                      'manage',
+                      'products',
+                      d.catalyst.product_id,
+                    ]"
                     class="text-brand-700 hover:underline"
                   >
                     {{ d.catalyst.product_name }}
@@ -291,6 +324,7 @@ interface CtgovProvenanceBlock {
       </app-detail-panel-section>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerDetailContentComponent {
   private changeEventService = inject(ChangeEventService);

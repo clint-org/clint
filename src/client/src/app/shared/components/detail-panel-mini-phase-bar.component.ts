@@ -1,6 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { PHASE_COLOR, RING_DEV_RANK, RING_ORDER, RingPhase } from '../../core/models/landscape.model';
+import {
+  PHASE_COLOR,
+  RING_DEV_RANK,
+  RING_ORDER,
+  RingPhase,
+} from '../../core/models/landscape.model';
 
 const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
 
@@ -29,6 +34,7 @@ const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
       ></span>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelMiniPhaseBarComponent {
   readonly currentPhase = input.required<RingPhase>();

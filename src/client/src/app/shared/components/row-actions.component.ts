@@ -1,4 +1,4 @@
-import { Component, input, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, ViewChild } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -30,6 +30,7 @@ import { Menu, MenuModule } from 'primeng/menu';
     />
     <p-menu #menu [model]="items()" [popup]="true" appendTo="body" />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RowActionsComponent {
   readonly items = input.required<MenuItem[]>();

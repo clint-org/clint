@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle } from '../../../core/models/marker.model';
 
 @Component({
@@ -21,6 +21,7 @@ import { FillStyle } from '../../../core/models/marker.model';
       [attr.stroke-width]="fillStyle() === 'outline' ? 1.2 : 0.5"
     />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlagIconComponent {
   readonly size = input<number>(16);

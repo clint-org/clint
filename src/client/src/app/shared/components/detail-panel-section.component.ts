@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Section primitive for detail panes. Owns the eyebrow + top divider rhythm
@@ -10,11 +10,7 @@ import { Component, input } from '@angular/core';
   selector: 'app-detail-panel-section',
   standalone: true,
   template: `
-    <section
-      class="border-t border-slate-100 pt-3"
-      [class.mt-4]="first()"
-      [class.mt-3]="!first()"
-    >
+    <section class="border-t border-slate-100 pt-3" [class.mt-4]="first()" [class.mt-3]="!first()">
       @if (label()) {
         <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
           {{ label() }}
@@ -23,6 +19,7 @@ import { Component, input } from '@angular/core';
       <ng-content />
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelSectionComponent {
   readonly label = input<string>('');

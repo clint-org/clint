@@ -1,4 +1,12 @@
-import { Component, input, output, signal, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Textarea } from 'primeng/textarea';
@@ -56,6 +64,7 @@ const NOTE_FIELD_LABELS: Record<string, string> = {
       </div>
     </form>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NoteFormComponent implements OnInit {
   readonly note = input<TrialNote | null>(null);

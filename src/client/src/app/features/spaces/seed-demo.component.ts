@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
 
@@ -24,13 +24,12 @@ import { DashboardService } from '../../core/services/dashboard.service';
             role="status"
             aria-label="Seeding demo data"
           ></div>
-          <p class="mt-4 text-xs uppercase tracking-wider text-slate-400">
-            Seeding demo data
-          </p>
+          <p class="mt-4 text-xs uppercase tracking-wider text-slate-400">Seeding demo data</p>
         }
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SeedDemoComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

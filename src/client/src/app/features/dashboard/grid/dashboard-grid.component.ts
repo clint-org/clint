@@ -1,14 +1,15 @@
 import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
   ElementRef,
   inject,
   input,
+  OnDestroy,
   output,
   signal,
-  AfterViewInit,
-  OnDestroy,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -58,6 +59,7 @@ export interface FlattenedTrial {
     RowNotesComponent,
   ],
   templateUrl: './dashboard-grid.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private static readonly STORAGE_KEY = 'timeline-column-visibility';

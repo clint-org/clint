@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -290,6 +297,7 @@ function urlValidationError(value: string): string | null {
       </form>
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyTenantNewComponent implements OnInit {
   private readonly agencyService = inject(AgencyService);

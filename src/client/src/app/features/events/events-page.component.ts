@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -52,6 +61,7 @@ import { SpaceRoleService } from '../../core/services/space-role.service';
   ],
   templateUrl: './events-page.component.html',
   animations: [slidePanelAnimation],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);

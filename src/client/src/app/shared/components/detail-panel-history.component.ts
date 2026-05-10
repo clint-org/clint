@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { DatePipe, JsonPipe } from '@angular/common';
 
 export interface HistoryFieldDiff {
@@ -114,7 +114,9 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
                     @if (entry.diffs.length > 0) {
                       <table class="mt-2 w-full text-[11px]">
                         <thead>
-                          <tr class="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                          <tr
+                            class="text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400"
+                          >
                             <th class="py-1 pr-3">Field</th>
                             <th class="py-1 pr-3">Before</th>
                             <th class="py-1">After</th>
@@ -149,7 +151,9 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
                       @if (isRawOpen(entry.id)) {
                         <div class="mt-2 grid grid-cols-2 gap-2">
                           <div>
-                            <p class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
+                            <p
+                              class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+                            >
                               Old
                             </p>
                             <pre
@@ -158,7 +162,9 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
                             >
                           </div>
                           <div>
-                            <p class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
+                            <p
+                              class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400"
+                            >
                               New
                             </p>
                             <pre
@@ -208,6 +214,7 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
       </div>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelHistoryComponent {
   /**

@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -181,6 +182,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
       }
     </p-drawer>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceDrawerComponent implements OnDestroy {
   private intelligence = inject(PrimaryIntelligenceService);

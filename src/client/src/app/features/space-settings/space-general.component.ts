@@ -1,4 +1,11 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -112,6 +119,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
       }
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpaceGeneralComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -60,6 +69,7 @@ interface TrialRow {
     HighlightPipe,
   ],
   templateUrl: './trial-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialListComponent implements OnInit, OnDestroy {
   /**
@@ -309,7 +319,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
         this.productService.list(spaceId),
         this.companyService.list(spaceId),
         this.fieldVisibilityService.get(spaceId).catch(() => ({}) as Record<string, string[]>),
-        this.trialService.getLatestSnapshotsForSpace(spaceId).catch(() => new Map<string, unknown>()),
+        this.trialService
+          .getLatestSnapshotsForSpace(spaceId)
+          .catch(() => new Map<string, unknown>()),
       ]);
       this.trials.set(trials);
       this.products.set(products);

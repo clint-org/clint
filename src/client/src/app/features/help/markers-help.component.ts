@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MarkerType } from '../../core/models/marker.model';
@@ -78,17 +85,13 @@ interface MarkerGroup {
                 <svg width="14" height="14" aria-hidden="true">
                   <circle cx="7" cy="7" r="5" fill="#64748b" />
                 </svg>
-                <span
-                  ><span class="font-semibold text-slate-900">Filled:</span> actual</span
-                >
+                <span><span class="font-semibold text-slate-900">Filled:</span> actual</span>
               </div>
               <div class="flex items-center gap-2">
                 <svg width="14" height="14" aria-hidden="true">
                   <circle cx="7" cy="7" r="5" fill="none" stroke="#64748b" stroke-width="1.4" />
                 </svg>
-                <span
-                  ><span class="font-semibold text-slate-900">Outline:</span> projected</span
-                >
+                <span><span class="font-semibold text-slate-900">Outline:</span> projected</span>
               </div>
               <div class="flex items-center gap-2">
                 <svg width="20" height="14" aria-hidden="true">
@@ -219,6 +222,7 @@ interface MarkerGroup {
       </div>
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkersHelpComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

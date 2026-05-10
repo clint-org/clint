@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
@@ -139,10 +146,9 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               placeholder="e.g. acme.com"
             />
             <p class="mt-1 text-[11px] text-slate-500">
-              When set, every agency member and every tenant owner under this
-              agency must have an email on this domain. Leave blank to allow any
-              domain. Editing this does NOT remove existing members; it only
-              gates future additions.
+              When set, every agency member and every tenant owner under this agency must have an
+              email on this domain. Leave blank to allow any domain. Editing this does NOT remove
+              existing members; it only gates future additions.
             </p>
           </div>
         </div>
@@ -182,6 +188,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
       }
     </app-manage-page-shell>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyBrandingComponent implements OnInit {
   private readonly agencyService = inject(AgencyService);

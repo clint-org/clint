@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -54,6 +54,7 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
       }
     </ul>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceFeedComponent {
   private readonly brand = inject(BrandContextService);

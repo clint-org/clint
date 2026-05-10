@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import {
   MATERIAL_ENTITY_LABEL,
@@ -81,6 +81,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialRowComponent {
   private readonly supabase = inject(SupabaseService);

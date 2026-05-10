@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -40,8 +47,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
         <div>
           <h1 class="text-base font-semibold text-slate-900">Members</h1>
           <p class="mt-1 text-xs text-slate-500">
-            Users who can act on behalf of this agency. Owners can provision tenants and edit
-            agency or tenant branding.
+            Users who can act on behalf of this agency. Owners can provision tenants and edit agency
+            or tenant branding.
           </p>
         </div>
         <p-button
@@ -109,7 +116,9 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
               @if (isOwner() && !isSelf(member)) {
                 <app-row-actions
                   [items]="memberMenu(member)"
-                  [ariaLabel]="'Actions for ' + (member.display_name || member.email || member.user_id)"
+                  [ariaLabel]="
+                    'Actions for ' + (member.display_name || member.email || member.user_id)
+                  "
                 />
               }
             </td>
@@ -117,9 +126,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="5" class="text-center py-6 text-sm text-slate-500">
-              No agency members.
-            </td>
+            <td colspan="5" class="text-center py-6 text-sm text-slate-500">No agency members.</td>
           </tr>
         </ng-template>
       </p-table>
@@ -134,8 +141,8 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     >
       <form (ngSubmit)="onAdd()" class="space-y-4">
         <p class="text-xs text-slate-500">
-          Enter the email of the new agency member. Existing users are added immediately; new
-          users get a held invite that takes effect on their first sign-in.
+          Enter the email of the new agency member. Existing users are added immediately; new users
+          get a held invite that takes effect on their first sign-in.
         </p>
         <div>
           <label for="add-email" class="mb-1 block text-sm font-medium text-slate-700">
@@ -190,6 +197,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
       </ng-template>
     </p-dialog>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgencyMembersComponent implements OnInit {
   private readonly agencyService = inject(AgencyService);
@@ -272,9 +280,7 @@ export class AgencyMembersComponent implements OnInit {
     try {
       const result = await this.agencyService.addAgencyMemberByEmail(a.id, email, this.newRole());
       if (result.member_invited) {
-        this.addResult.set(
-          `Invite held for ${email}. They will be added on first sign-in.`
-        );
+        this.addResult.set(`Invite held for ${email}. They will be added on first sign-in.`);
       } else {
         this.addResult.set(`${email} added as agency member.`);
       }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { Tooltip } from 'primeng/tooltip';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
@@ -598,6 +598,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
   private readonly brandContext = inject(BrandContextService);

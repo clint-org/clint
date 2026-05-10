@@ -1,4 +1,11 @@
-import { Component, computed, DestroyRef, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -37,6 +44,7 @@ import { LandscapeStateService } from '../landscape/landscape-state.service';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystsPageComponent {
   readonly state = inject(LandscapeStateService);

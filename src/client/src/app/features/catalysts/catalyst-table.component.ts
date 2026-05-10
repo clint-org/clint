@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -200,6 +200,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
       </ng-template>
     </p-table>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystTableComponent {
   readonly catalysts = input.required<FlatCatalyst[]>();

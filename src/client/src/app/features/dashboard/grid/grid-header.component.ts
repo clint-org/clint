@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { TimelineColumn } from '../../../core/services/timeline.service';
 
@@ -58,6 +58,7 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridHeaderComponent {
   readonly columns = input.required<TimelineColumn[]>();

@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
 
@@ -24,6 +24,7 @@ export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
     }
     <ng-content />
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DetailPanelPillComponent {
   readonly tone = input<PillTone>('slate');

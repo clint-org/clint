@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR } from '../../../core/models/phase-colors';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -11,6 +11,7 @@ const MIN_LABEL_WIDTH = 40;
   selector: 'g[app-phase-bar]',
   standalone: true,
   templateUrl: './phase-bar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhaseBarComponent {
   private readonly timeline = inject(TimelineService);
@@ -50,7 +51,9 @@ export class PhaseBarComponent {
     return Math.max(0, endX - clampedStart);
   });
 
-  protected readonly barColor = computed(() => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR);
+  protected readonly barColor = computed(
+    () => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR
+  );
 
   protected readonly labelText = computed(() => this.phaseType());
 

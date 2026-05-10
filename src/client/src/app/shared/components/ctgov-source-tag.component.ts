@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CtgovMarkerMetadata } from '../../core/models/catalyst.model';
 
@@ -32,6 +32,7 @@ import { CtgovMarkerMetadata } from '../../core/models/catalyst.model';
       </span>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CtgovSourceTagComponent {
   readonly metadata = input<Record<string, unknown> | null>(null);

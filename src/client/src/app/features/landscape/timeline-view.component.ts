@@ -1,4 +1,12 @@
-import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -23,6 +31,7 @@ import { LandscapeStateService } from './landscape-state.service';
     SkeletonComponent,
   ],
   templateUrl: './timeline-view.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineViewComponent {
   private readonly router = inject(Router);

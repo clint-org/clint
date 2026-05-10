@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { MessageModule } from 'primeng/message';
@@ -74,6 +81,7 @@ interface FeedFilter {
   ],
   templateUrl: './engagement-landing.component.html',
   host: { class: 'block h-full overflow-y-auto bg-white' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EngagementLandingComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

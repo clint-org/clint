@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -73,6 +74,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);

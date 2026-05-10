@@ -1,4 +1,12 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -40,6 +48,7 @@ const PRODUCT_FIELD_LABELS: Record<string, string> = {
     FormActionsComponent,
   ],
   templateUrl: './product-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductFormComponent implements OnInit {
   readonly product = input<Product | null>(null);

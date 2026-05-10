@@ -1,4 +1,12 @@
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -35,6 +43,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     HighlightPipe,
   ],
   templateUrl: './therapeutic-area-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   readonly areas = signal<TherapeuticArea[]>([]);
@@ -110,7 +119,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
           command: () => this.confirmDelete(area),
-        },
+        }
       );
     }
     this.menuCache.set(area.id, items);

@@ -1,4 +1,12 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
@@ -22,6 +30,7 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     FormActionsComponent,
   ],
   templateUrl: './therapeutic-area-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TherapeuticAreaFormComponent implements OnInit {
   readonly area = input<TherapeuticArea | null>(null);

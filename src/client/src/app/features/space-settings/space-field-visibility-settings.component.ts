@@ -1,4 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -57,6 +64,7 @@ const SURFACES: SurfaceTab[] = [
     SkeletonComponent,
   ],
   templateUrl: './space-field-visibility-settings.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpaceFieldVisibilitySettingsComponent implements OnInit {
   private route = inject(ActivatedRoute);
