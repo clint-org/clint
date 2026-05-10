@@ -167,8 +167,10 @@
               @if (row.isFirstInCompany) {
                 @if (row.companyLogoUrl) {
                   <img
-                    [src]="row.companyLogoUrl"
+                    [ngSrc]="row.companyLogoUrl"
                     [alt]="row.companyName"
+                    width="20"
+                    height="20"
                     class="h-5 w-5 rounded object-contain flex-none"
                   />
                 }
@@ -366,14 +368,14 @@
             </div>
           }
 
-          @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+          @for (row of flattenedTrials(); track row.trial.id) {
             <div
               class="border-slate-200"
               [class.border-b-2]="row.isLastInCompany"
               [class.border-b]="!row.isLastInCompany"
               [class.border-slate-300]="row.isLastInCompany"
-              [class.bg-white]="idx % 2 === 0"
-              [class.bg-slate-50]="idx % 2 !== 0"
+              [class.bg-white]="$even"
+              [class.bg-slate-50]="$odd"
               [style.height.px]="36"
             >
               <app-row-notes

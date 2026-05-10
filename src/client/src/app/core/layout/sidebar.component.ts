@@ -1,8 +1,16 @@
 import { Component, computed, inject, input, output } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { Tooltip } from 'primeng/tooltip';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { BrandContextService } from '../services/brand-context.service';
+
+/**
+ * Section IDs the sidebar emits via `sectionClick`. Keep in sync with the
+ * `Section` union in `app-shell.component.ts` and the `NAV_SECTIONS` array
+ * below.
+ */
+export type SidebarSectionId = 'landscape' | 'intelligence' | 'manage' | 'settings';
 
 interface NavItem {
   label: string;
@@ -12,7 +20,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id: string;
+  id: SidebarSectionId;
   label: string;
   items: NavItem[];
   bottom?: boolean;
@@ -93,7 +101,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [Tooltip, ClintLogoComponent],
+  imports: [Tooltip, ClintLogoComponent, NgOptimizedImage],
   template: `
     <div
       class="sidebar"
@@ -115,7 +123,13 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         >
           @if (agencyBrand(); as ag) {
             @if (isExpanded() && ag.logo_url) {
-              <img [src]="ag.logo_url" [alt]="ag.name" class="agency-wordmark" />
+              <img
+                [ngSrc]="ag.logo_url"
+                [alt]="ag.name"
+                width="312"
+                height="48"
+                class="agency-wordmark"
+              />
             } @else {
               <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
             }
@@ -616,7 +630,7 @@ export class SidebarComponent {
   readonly navItemClick = output<string>();
   readonly logoClick = output<void>();
   readonly avatarClick = output<void>();
-  readonly sectionClick = output<string>();
+  readonly sectionClick = output<SidebarSectionId>();
   readonly hoverChange = output<boolean>();
 
   readonly isExpanded = computed(() => this.expanded() || this.pinned());
@@ -654,7 +668,7 @@ export class SidebarComponent {
     this.navItemClick.emit(route);
   }
 
-  onSectionClick(sectionId: string): void {
+  onSectionClick(sectionId: SidebarSectionId): void {
     this.sectionClick.emit(sectionId);
   }
 

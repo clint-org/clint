@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TopbarAction } from '../services/topbar-state.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
@@ -13,7 +14,7 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [ButtonModule, NgOptimizedImage],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -29,7 +30,7 @@ export interface TopbarTab {
               aria-label="Switch tenant"
             >
               @if (tenantLogoUrl()) {
-                <img [src]="tenantLogoUrl()" class="tenant-badge-img" alt="" />
+                <img [ngSrc]="tenantLogoUrl()!" width="20" height="20" class="tenant-badge-img" alt="" />
               } @else {
                 <span class="tenant-badge" aria-hidden="true">{{ tenantInitial() }}</span>
               }
@@ -76,7 +77,7 @@ export interface TopbarTab {
                 [attr.aria-expanded]="tenantDropdownOpen()"
               >
                 @if (tenantLogoUrl()) {
-                  <img [src]="tenantLogoUrl()" class="tenant-badge-img" alt="" />
+                  <img [ngSrc]="tenantLogoUrl()!" width="20" height="20" class="tenant-badge-img" alt="" />
                 } @else {
                   <span class="tenant-badge">{{ tenantInitial() }}</span>
                 }
@@ -184,7 +185,7 @@ export interface TopbarTab {
                     (click)="onTabClick(tab.value)"
                   >
                     @if (tab.icon) {
-                      <i [class]="tab.icon" class="topbar-tab__icon" aria-hidden="true"></i>
+                      <i [class]="tab.icon + ' topbar-tab__icon'" aria-hidden="true"></i>
                     }
                     {{ tab.label }}
                   </button>
@@ -230,7 +231,7 @@ export interface TopbarTab {
           @case ('list') {
             <div class="topbar-divider" aria-hidden="true"></div>
             @if (listIcon()) {
-              <i [class]="listIcon()" class="topbar-list-icon" aria-hidden="true"></i>
+              <i [class]="listIcon() + ' topbar-list-icon'" aria-hidden="true"></i>
             }
             <span class="topbar-list-title">{{ listTitle() }}</span>
             @if (recordCount()) {
@@ -269,7 +270,7 @@ export interface TopbarTab {
           <p-button
             [label]="action.label"
             [icon]="action.icon"
-            [severity]="$any(action.severity)"
+            [severity]="action.severity ?? null"
             [outlined]="action.outlined ?? false"
             [text]="action.text ?? false"
             size="small"

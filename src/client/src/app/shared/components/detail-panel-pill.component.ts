@@ -20,7 +20,7 @@ export type PillTone = 'green' | 'amber' | 'red' | 'slate' | 'blue' | 'brand';
   },
   template: `
     @if (showDot()) {
-      <span class="h-1.5 w-1.5 rounded-full" [class]="dotClass()"></span>
+      <span [class]="'h-1.5 w-1.5 rounded-full ' + dotClass()"></span>
     }
     <ng-content />
   `,

@@ -1,6 +1,6 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -31,6 +31,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
   standalone: true,
   imports: [
     DatePipe,
+    NgOptimizedImage,
     FormsModule,
     TableModule,
     ButtonModule,
@@ -65,7 +66,9 @@ import { extractErrorMessage } from '../../core/util/error-message';
             <div class="flex flex-col items-center gap-2">
               @if (tenant()?.logo_url) {
                 <img
-                  [src]="tenant()!.logo_url"
+                  [ngSrc]="tenant()!.logo_url!"
+                  width="64"
+                  height="64"
                   class="h-16 w-16 rounded-xl object-cover border border-slate-200"
                   alt="Tenant logo"
                 />
@@ -121,7 +124,9 @@ import { extractErrorMessage } from '../../core/util/error-message';
           <div class="flex items-start gap-3">
             @if (tenant()?.logo_url) {
               <img
-                [src]="tenant()!.logo_url"
+                [ngSrc]="tenant()!.logo_url!"
+                width="40"
+                height="40"
                 class="h-10 w-10 rounded object-cover border border-slate-200"
                 alt="Tenant logo"
               />

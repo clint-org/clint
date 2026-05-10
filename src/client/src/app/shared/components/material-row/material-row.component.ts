@@ -23,8 +23,10 @@ import { SupabaseService } from '../../../core/services/supabase.service';
     <div class="group flex w-full items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
       <!-- File-type badge (PPTX amber, PDF red, DOCX blue, other slate) -->
       <span
-        class="flex h-9 w-7 shrink-0 items-center justify-center rounded-sm text-[9px] font-bold uppercase tracking-wider"
-        [class]="iconClasses()"
+        [class]="
+          'flex h-9 w-7 shrink-0 items-center justify-center rounded-sm text-[9px] font-bold uppercase tracking-wider ' +
+          iconClasses()
+        "
         aria-hidden="true"
       >
         {{ kindLabel() }}

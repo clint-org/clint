@@ -10,8 +10,10 @@
       <div class="flex items-center gap-3">
         @if (c.logo_url) {
           <img
-            [src]="c.logo_url"
+            [ngSrc]="c.logo_url"
             [alt]="c.name + ' logo'"
+            width="128"
+            height="24"
             class="h-6 w-auto max-w-[8rem] object-contain"
             loading="lazy"
           />

@@ -62,6 +62,15 @@ interface TrialRow {
   templateUrl: './trial-list.component.html',
 })
 export class TrialListComponent implements OnInit, OnDestroy {
+  /**
+   * Read the current value from a native `<input>` change/input event.
+   * Used inside `p-column-filter` ng-templates to avoid `$any($event.target).value`
+   * patterns that violate `template/no-any`.
+   */
+  protected filterInputValue(ev: Event): string {
+    return (ev.target as HTMLInputElement).value;
+  }
+
   private trialService = inject(TrialService);
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);

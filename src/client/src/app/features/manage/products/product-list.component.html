@@ -7,7 +7,7 @@
     [loading]="loading()"
     [tableStyle]="{ 'min-width': '56rem' }"
     [lazy]="true"
-    (onLazyLoad)="grid.onLazyLoad($any($event))"
+    (onLazyLoad)="grid.onLazyLoad($event)"
     [paginator]="true"
     [rows]="grid.page().rows"
     [first]="grid.page().first"

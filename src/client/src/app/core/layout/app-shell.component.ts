@@ -59,7 +59,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         (navItemClick)="onNavItemClick($event)"
         (logoClick)="onLogoClick()"
         (avatarClick)="toggleAccount()"
-        (sectionClick)="onSectionClick($any($event))"
+        (sectionClick)="onSectionClick($event)"
         (hoverChange)="onSidebarHoverChange($event)"
       />
 

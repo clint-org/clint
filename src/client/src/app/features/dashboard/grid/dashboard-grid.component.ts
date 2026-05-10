@@ -10,6 +10,7 @@ import {
   AfterViewInit,
   OnDestroy,
 } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Company } from '../../../core/models/company.model';
@@ -51,6 +52,7 @@ export interface FlattenedTrial {
     FormsModule,
     GridHeaderComponent,
     MarkerComponent,
+    NgOptimizedImage,
     PhaseBarComponent,
     Popover,
     RowNotesComponent,

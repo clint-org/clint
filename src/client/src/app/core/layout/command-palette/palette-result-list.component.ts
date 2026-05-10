@@ -17,14 +17,14 @@ import { PaletteItem } from '../../models/palette.model';
       </div>
     }
     <ul role="listbox" id="palette-results" class="max-h-[60vh] overflow-y-auto">
-      @for (it of items(); track trackKey(it, $index); let i = $index) {
+      @for (it of items(); track trackKey(it, $index)) {
         <li>
           <app-palette-result-row
             [item]="it"
-            [index]="i"
-            [selected]="selectedIndex() === i"
-            (hover)="indexSelect.emit(i)"
-            (activated)="activated.emit({ index: i, item: it })"
+            [index]="$index"
+            [selected]="selectedIndex() === $index"
+            (hover)="indexSelect.emit($index)"
+            (activated)="activated.emit({ index: $index, item: it })"
           />
         </li>
       }

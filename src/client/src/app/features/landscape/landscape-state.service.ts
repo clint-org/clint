@@ -39,7 +39,7 @@ const STORAGE_PREFIX = 'landscape-state:';
  *
  * State is persisted to sessionStorage so it survives page refreshes.
  */
-@Injectable()
+@Injectable({ providedIn: 'any' })
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
   private readonly supabase = inject(SupabaseService);
@@ -300,7 +300,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             marker_type_name: mt?.name ?? '',
             marker_type_icon: mt?.icon ?? null,
             marker_type_color: mt?.color ?? '',
-            marker_type_shape: mt?.shape ?? '',
+            marker_type_shape: mt?.shape ?? 'circle',
             is_projected: marker.is_projected,
             company_name: company.name,
             company_id: company.id,

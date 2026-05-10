@@ -11,13 +11,13 @@ import { EmptyState, PaletteItem } from '../../models/palette.model';
     @if (state().pinned.length > 0) {
       <div class="border-b border-slate-100 py-2">
         <div class="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pinned</div>
-        @for (p of state().pinned; track p.id; let i = $index) {
+        @for (p of state().pinned; track p.id) {
           <app-palette-result-row
             [item]="p"
-            [index]="i"
-            [selected]="selectedFlatIndex() === i"
-            (hover)="indexSelect.emit(i)"
-            (activated)="activated.emit({ index: i, item: p })"
+            [index]="$index"
+            [selected]="selectedFlatIndex() === $index"
+            (hover)="indexSelect.emit($index)"
+            (activated)="activated.emit({ index: $index, item: p })"
           />
         }
       </div>
@@ -25,13 +25,13 @@ import { EmptyState, PaletteItem } from '../../models/palette.model';
     @if (state().recents.length > 0) {
       <div class="border-b border-slate-100 py-2">
         <div class="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Recent</div>
-        @for (r of state().recents; track r.id; let i = $index) {
+        @for (r of state().recents; track r.id) {
           <app-palette-result-row
             [item]="r"
-            [index]="state().pinned.length + i"
-            [selected]="selectedFlatIndex() === state().pinned.length + i"
-            (hover)="indexSelect.emit(state().pinned.length + i)"
-            (activated)="activated.emit({ index: state().pinned.length + i, item: r })"
+            [index]="state().pinned.length + $index"
+            [selected]="selectedFlatIndex() === state().pinned.length + $index"
+            (hover)="indexSelect.emit(state().pinned.length + $index)"
+            (activated)="activated.emit({ index: state().pinned.length + $index, item: r })"
           />
         }
       </div>
@@ -39,13 +39,13 @@ import { EmptyState, PaletteItem } from '../../models/palette.model';
     @if (state().commands.length > 0) {
       <div class="py-2">
         <div class="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Commands</div>
-        @for (c of state().commands; track c.id; let i = $index) {
+        @for (c of state().commands; track c.id) {
           <app-palette-result-row
             [item]="{ kind: 'command', command: c }"
-            [index]="state().pinned.length + state().recents.length + i"
-            [selected]="selectedFlatIndex() === state().pinned.length + state().recents.length + i"
-            (hover)="indexSelect.emit(state().pinned.length + state().recents.length + i)"
-            (activated)="activated.emit({ index: state().pinned.length + state().recents.length + i, item: { kind: 'command', command: c } })"
+            [index]="state().pinned.length + state().recents.length + $index"
+            [selected]="selectedFlatIndex() === state().pinned.length + state().recents.length + $index"
+            (hover)="indexSelect.emit(state().pinned.length + state().recents.length + $index)"
+            (activated)="activated.emit({ index: state().pinned.length + state().recents.length + $index, item: { kind: 'command', command: c } })"
           />
         }
       </div>

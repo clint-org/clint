@@ -18,7 +18,7 @@ import { ParsedQuery, PaletteScope } from '../../models/palette.model';
         aria-controls="palette-results"
         [attr.aria-activedescendant]="activeDescendantId()"
         [value]="query()"
-        (input)="queryChange.emit($any($event.target).value)"
+        (input)="onInput($event)"
         (keydown)="onKeydown($event)"
         class="flex-1 bg-transparent font-mono text-sm text-slate-900 outline-none placeholder:text-slate-400"
         placeholder="Search..."
@@ -58,6 +58,11 @@ export class PaletteSearchInputComponent implements AfterViewInit {
     })();
     const base = this.scope() === 'all-spaces' ? 'All spaces' : (this.scopeName() || 'Space');
     return base + tokenSuffix;
+  }
+
+  onInput(ev: Event) {
+    const target = ev.target as HTMLInputElement;
+    this.queryChange.emit(target.value);
   }
 
   onKeydown(ev: KeyboardEvent) {

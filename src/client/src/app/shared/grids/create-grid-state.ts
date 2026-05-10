@@ -1,5 +1,6 @@
 import { computed, effect, inject, signal, Signal, WritableSignal } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import type { TableLazyLoadEvent } from 'primeng/table';
 
 import type {
   ActiveFilterChip,
@@ -168,13 +169,10 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
   });
 
   // --- event handlers wired to p-table [lazy] -------------------------------
-  function onLazyLoad(event: {
-    first?: number | null;
-    rows?: number | null;
-    sortField?: string | null;
-    sortOrder?: number | null;
-    filters?: Record<string, { value: unknown; matchMode?: string }[] | { value: unknown; matchMode?: string }>;
-  }): void {
+  // Accept TableLazyLoadEvent verbatim so templates can wire
+  // `(onLazyLoad)="grid.onLazyLoad($event)"` without an `$any` cast. PrimeNG
+  // declares filters/sortField/etc. with broader types than we read here.
+  function onLazyLoad(event: TableLazyLoadEvent): void {
     // Skip the initial onLazyLoad call: PrimeNG fires it on table init with
     // stale defaults (first=0) regardless of what [first] is bound to. We
     // already have the correct state from URL decoding. Subsequent calls are
@@ -307,7 +305,7 @@ function formatFilterLabel<T>(col: ColumnDef<T>, value: FilterValue): string {
 
 function primengToFilterValue(
   kind: 'text' | 'select' | 'numeric' | 'date',
-  meta: { value: unknown; matchMode?: string }
+  meta: { value?: unknown; matchMode?: string }
 ): FilterValue | null {
   switch (kind) {
     case 'text':

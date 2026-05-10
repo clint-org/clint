@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
@@ -14,15 +15,18 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [FormsModule, InputText, ButtonModule, MessageModule, ClintLogoComponent],
+  imports: [FormsModule, NgOptimizedImage, InputText, ButtonModule, MessageModule, ClintLogoComponent],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="w-full max-w-md">
         <div class="mb-6 flex flex-col items-center text-center">
           @if (logoUrl()) {
             <img
-              [src]="logoUrl()"
+              [ngSrc]="logoUrl()!"
               [alt]="appName() + ' logo'"
+              width="192"
+              height="48"
+              priority
               class="h-12 w-auto object-contain"
             />
           } @else {

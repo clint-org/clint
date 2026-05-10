@@ -57,7 +57,7 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
         <span headerLeading class="inline-flex shrink-0 items-center">
           @if (detail(); as d) {
             <app-marker-icon
-              [shape]="$any(d.catalyst.marker_type_shape)"
+              [shape]="d.catalyst.marker_type_shape"
               [color]="d.catalyst.marker_type_color"
               [size]="12"
               [fillStyle]="effectiveFillStyle()"

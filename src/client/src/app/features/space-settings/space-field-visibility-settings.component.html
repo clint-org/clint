@@ -17,7 +17,7 @@
         <app-skeleton [block]="true" w="100%" h="20rem" />
       </div>
     } @else {
-      <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+      <p-tabs [value]="activeTab()" (valueChange)="onActiveTabChange($event)">
         <p-tablist>
           @for (s of surfaces; track s.key) {
             <p-tab [value]="s.key">{{ s.label }}</p-tab>

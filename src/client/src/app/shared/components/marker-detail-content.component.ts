@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
 import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
@@ -50,6 +50,7 @@ interface CtgovProvenanceBlock {
   standalone: true,
   imports: [
     RouterLink,
+    NgOptimizedImage,
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
     DatePipe,
@@ -102,8 +103,10 @@ interface CtgovProvenanceBlock {
           <div class="flex items-center gap-2 text-[13px] text-slate-900">
             @if (d.catalyst.company_logo_url) {
               <img
-                [src]="d.catalyst.company_logo_url"
+                [ngSrc]="d.catalyst.company_logo_url"
                 [alt]="d.catalyst.company_name"
+                width="20"
+                height="20"
                 class="h-5 w-5 flex-none rounded object-contain"
               />
             }

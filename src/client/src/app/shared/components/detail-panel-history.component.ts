@@ -91,8 +91,10 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
                     >
                       <div class="flex items-center gap-2 text-[11px]">
                         <span
-                          class="font-mono font-semibold uppercase tracking-wide"
-                          [class]="changeTypeColor(entry.changeType)"
+                          [class]="
+                            'font-mono font-semibold uppercase tracking-wide ' +
+                            changeTypeColor(entry.changeType)
+                          "
                         >
                           {{ changeTypeLabel(entry.changeType) }}
                         </span>
@@ -177,8 +179,10 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
                     <div class="flex-1">
                       <div class="flex items-center gap-2 text-[11px]">
                         <span
-                          class="font-mono font-semibold uppercase tracking-wide"
-                          [class]="changeTypeColor(entry.changeType)"
+                          [class]="
+                            'font-mono font-semibold uppercase tracking-wide ' +
+                            changeTypeColor(entry.changeType)
+                          "
                         >
                           {{ changeTypeLabel(entry.changeType) }}
                         </span>

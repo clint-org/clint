@@ -69,6 +69,15 @@ export class SpaceFieldVisibilitySettingsComponent implements OnInit {
   readonly canEdit = computed(() => this.spaceRole.isOwner());
 
   readonly activeTab = signal<string>(SURFACES[0].key);
+
+  /**
+   * `p-tabs` emits `valueChange` typed as `string | number` (or `unknown` on
+   * older PrimeNG builds). Funnel through a typed handler so the template can
+   * stay free of `$any()` and we coerce to the string keys our surfaces use.
+   */
+  protected onActiveTabChange(value: unknown): void {
+    if (typeof value === 'string') this.activeTab.set(value);
+  }
   readonly spaceId = signal('');
   readonly loaded = signal<Record<string, string[]>>({});
   readonly draft = signal<Record<string, string[]>>({});

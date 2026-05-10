@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -20,6 +21,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   selector: 'app-product-detail',
   standalone: true,
   imports: [
+    NgOptimizedImage,
     RouterLink,
     ConfirmDialogModule,
     ToastModule,

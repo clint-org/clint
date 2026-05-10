@@ -1,4 +1,5 @@
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +19,7 @@ interface AgencyNavItem {
 @Component({
   selector: 'app-agency-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, ButtonModule],
+  imports: [RouterOutlet, RouterLink, ButtonModule, NgOptimizedImage],
   template: `
     <div class="agency-shell">
       <!-- Topbar -->
@@ -26,8 +27,10 @@ interface AgencyNavItem {
         <div class="flex items-center gap-3">
           @if (brand.logoUrl()) {
             <img
-              [src]="brand.logoUrl()"
+              [ngSrc]="brand.logoUrl()!"
               [alt]="brand.appDisplayName() + ' logo'"
+              width="28"
+              height="28"
               class="h-7 w-7 rounded object-contain"
             />
           }

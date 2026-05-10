@@ -30,7 +30,7 @@ interface EntityOption {
   template: `
     <div class="space-y-3">
       <ul class="space-y-2" aria-label="Linked entities">
-        @for (link of links(); track link.entity_type + link.entity_id; let i = $index) {
+        @for (link of links(); track link.entity_type + link.entity_id) {
           <li
             class="flex flex-wrap items-center gap-2 rounded-sm border border-slate-200 bg-slate-50/50 px-2.5 py-2"
           >
@@ -45,7 +45,7 @@ interface EntityOption {
             <p-select
               [options]="relationshipOptions"
               [ngModel]="link.relationship_type"
-              (ngModelChange)="updateRelationship(i, $event)"
+              (ngModelChange)="updateRelationship($index, $event)"
               [editable]="true"
               placeholder="Relationship"
               styleClass="w-44 text-xs"
@@ -55,7 +55,7 @@ interface EntityOption {
               pInputText
               type="text"
               [ngModel]="link.gloss ?? ''"
-              (ngModelChange)="updateGloss(i, $event)"
+              (ngModelChange)="updateGloss($index, $event)"
               placeholder="Gloss (optional)"
               class="!h-8 w-48 text-xs"
             />
@@ -65,7 +65,7 @@ interface EntityOption {
               size="small"
               severity="secondary"
               ariaLabel="Remove link"
-              (onClick)="removeLink(i)"
+              (onClick)="removeLink($index)"
             />
           </li>
         } @empty {

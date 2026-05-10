@@ -192,7 +192,6 @@ interface AgencyOption {
                 class="w-full font-mono text-xs"
                 [ngModel]="customDomain()"
                 (ngModelChange)="onDomainChange($event)"
-                (ngModelChange)="onDomainChange($event)"
                 name="customDomain"
                 placeholder="trials.client.com"
                 spellcheck="false"

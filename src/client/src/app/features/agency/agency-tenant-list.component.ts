@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
@@ -17,6 +17,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
   standalone: true,
   imports: [
     DatePipe,
+    NgOptimizedImage,
     TableModule,
     ButtonModule,
     MessageModule,
@@ -79,8 +80,10 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
             <td>
               @if (tenant.logo_url) {
                 <img
-                  [src]="tenant.logo_url"
+                  [ngSrc]="tenant.logo_url"
                   [alt]="tenant.name + ' logo'"
+                  width="28"
+                  height="28"
                   class="h-7 w-7 rounded object-contain border border-slate-200"
                 />
               } @else {
