@@ -199,7 +199,6 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   protected readonly open = signal<boolean>(false);
   protected readonly loading = signal<boolean>(false);
   protected readonly currentId = signal<string | null>(null);
-  protected readonly publishedId = signal<string | null>(null);
 
   protected readonly headline = signal<string>('');
   protected readonly thesis = signal<string>('');
@@ -323,9 +322,11 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     const draft = bundle?.draft ?? null;
     const pub = bundle?.published ?? null;
     const source = draft ?? pub;
-    this.publishedId.set(pub?.record.id ?? null);
 
     if (source) {
+      // Only adopt a draft id as the upsert target; a published id stays
+      // null so Save Draft / Publish fork into a new versioned row instead
+      // of overwriting the live read in place.
       this.currentId.set(draft?.record.id ?? null);
       this.headline.set(source.record.headline ?? '');
       this.thesis.set(source.record.thesis_md ?? '');
@@ -355,7 +356,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
 
     this.saveState.set('saving');
     const input: UpsertIntelligenceInput = {
-      id: state === 'draft' ? this.currentId() : (this.currentId() ?? this.publishedId()),
+      id: this.currentId(),
       space_id: this.spaceId(),
       entity_type: this.entityType(),
       entity_id: this.entityId(),
@@ -373,9 +374,6 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       this.currentId.set(id);
       this.saveState.set('saved');
       this.dirty.set(false);
-      if (state === 'published') {
-        this.publishedId.set(id);
-      }
       if (notify) {
         this.messageService.add({
           severity: 'success',

@@ -10,15 +10,9 @@ import {
 
 /**
  * Drives the intelligence version-history UI: history panel rendering,
- * Withdraw dialog flow, and Purge dialog flow.
- *
- * Prior versions are seeded directly via the admin client rather than
- * exercising the IntelligenceDrawer's republish path. The drawer
- * currently updates the loaded published row in place, which intentionally
- * does NOT bump version_number (republish-as-new-version requires a
- * separate "fork to new draft" flow that the drawer does not yet
- * implement). Seeding lets the E2E focus on the history panel and
- * withdraw/purge UI we just built.
+ * Withdraw dialog flow, and Purge dialog flow. Prior versions are seeded
+ * directly via the admin client to keep these tests focused on the
+ * panel/dialog surface; drawer-driven forking is covered separately.
  */
 test.describe.configure({ mode: 'serial' });
 
