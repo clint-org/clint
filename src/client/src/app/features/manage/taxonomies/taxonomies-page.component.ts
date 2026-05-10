@@ -257,30 +257,30 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     { label: 'ROA', value: 'roa' },
   ];
 
-  activeTab = signal<TabValue>('therapeutic-areas');
+  readonly activeTab = signal<TabValue>('therapeutic-areas');
   /** Two-way binding helper for p-selectbutton; kept in sync with activeTab signal. */
   activeTabModel: TabValue = 'therapeutic-areas';
 
   // Shared state
-  loading = signal(false);
-  deleteError = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly deleteError = signal<string | null>(null);
 
   // Therapeutic area state
-  areas = signal<TherapeuticArea[]>([]);
-  taModalOpen = signal(false);
-  editingArea = signal<TherapeuticArea | null>(null);
+  readonly areas = signal<TherapeuticArea[]>([]);
+  readonly taModalOpen = signal(false);
+  readonly editingArea = signal<TherapeuticArea | null>(null);
   private readonly areaMenuCache = new Map<string, MenuItem[]>();
 
   // MOA state
-  moas = signal<MechanismOfAction[]>([]);
-  moaModalOpen = signal(false);
-  editingMoa = signal<MechanismOfAction | null>(null);
+  readonly moas = signal<MechanismOfAction[]>([]);
+  readonly moaModalOpen = signal(false);
+  readonly editingMoa = signal<MechanismOfAction | null>(null);
   private readonly moaMenuCache = new Map<string, MenuItem[]>();
 
   // ROA state
-  roas = signal<RouteOfAdministration[]>([]);
-  roaModalOpen = signal(false);
-  editingRoa = signal<RouteOfAdministration | null>(null);
+  readonly roas = signal<RouteOfAdministration[]>([]);
+  readonly roaModalOpen = signal(false);
+  readonly editingRoa = signal<RouteOfAdministration | null>(null);
   private readonly roaMenuCache = new Map<string, MenuItem[]>();
 
   // Services

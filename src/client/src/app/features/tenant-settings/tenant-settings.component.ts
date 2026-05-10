@@ -22,7 +22,6 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { environment } from '../../../environments/environment';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
-import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { extractErrorMessage } from '../../core/util/error-message';
@@ -43,7 +42,6 @@ import { extractErrorMessage } from '../../core/util/error-message';
     Tooltip,
     ManagePageShellComponent,
     RowActionsComponent,
-    StatusTagComponent,
     RouterLink,
   ],
   template: `
@@ -414,17 +412,17 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   }
 
   tenantId = '';
-  tenant = signal<Tenant | null>(null);
-  members = signal<TenantMember[]>([]);
-  invites = signal<TenantInvite[]>([]);
-  loading = signal(true);
-  inviteDialogOpen = signal(false);
-  inviting = signal(false);
-  inviteError = signal<string | null>(null);
-  inviteResult = signal<string | null>(null);
-  removeError = signal<string | null>(null);
-  savingName = signal(false);
-  deletingTenant = signal(false);
+  readonly tenant = signal<Tenant | null>(null);
+  readonly members = signal<TenantMember[]>([]);
+  readonly invites = signal<TenantInvite[]>([]);
+  readonly loading = signal(true);
+  readonly inviteDialogOpen = signal(false);
+  readonly inviting = signal(false);
+  readonly inviteError = signal<string | null>(null);
+  readonly inviteResult = signal<string | null>(null);
+  readonly removeError = signal<string | null>(null);
+  readonly savingName = signal(false);
+  readonly deletingTenant = signal(false);
   readonly inviteEmail = signal('');
   readonly tenantNameDraft = signal('');
 
@@ -467,7 +465,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   // Parent agency record, populated only when the current user is a member
   // of the tenant's parent agency. Drives the cross-host "Open agency portal"
   // link on the read-only branding card; null leaves only the contact prompt.
-  parentAgency = signal<Agency | null>(null);
+  readonly parentAgency = signal<Agency | null>(null);
 
   readonly agencyPortalUrl = computed(() => {
     const a = this.parentAgency();

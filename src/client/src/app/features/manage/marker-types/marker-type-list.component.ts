@@ -65,11 +65,11 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     }
   });
 
-  markerTypes = signal<MarkerType[]>([]);
-  loading = signal(true);
-  error = signal<string | null>(null);
-  modalOpen = signal(false);
-  editingType = signal<MarkerType | null>(null);
+  readonly markerTypes = signal<MarkerType[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly modalOpen = signal(false);
+  readonly editingType = signal<MarkerType | null>(null);
 
   // Stable menu-item references per row id (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();

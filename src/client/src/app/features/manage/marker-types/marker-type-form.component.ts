@@ -39,7 +39,7 @@ export class MarkerTypeFormComponent implements OnInit {
   private categoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
 
-  categories = signal<MarkerCategory[]>([]);
+  readonly categories = signal<MarkerCategory[]>([]);
 
   readonly shapeOptions = [
     { label: 'Circle', value: 'circle' },
@@ -62,9 +62,9 @@ export class MarkerTypeFormComponent implements OnInit {
   color = '#14b8a6';
   icon = '';
   displayOrder: number | null = 0;
-  saving = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
 
   get nameInvalid(): boolean {
     return this.nameBlurred() && !this.name.trim();

@@ -42,24 +42,24 @@ const PRODUCT_FIELD_LABELS: Record<string, string> = {
   templateUrl: './product-form.component.html',
 })
 export class ProductFormComponent implements OnInit {
-  product = input<Product | null>(null);
+  readonly product = input<Product | null>(null);
 
   saved = output<Product>();
   cancelled = output<void>();
 
-  name = signal('');
-  genericName = signal('');
-  companyId = signal('');
-  logoUrl = signal('');
-  displayOrder = signal(0);
-  submitting = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
-  companies = signal<Company[]>([]);
-  moaOptions = signal<MechanismOfAction[]>([]);
-  roaOptions = signal<RouteOfAdministration[]>([]);
-  selectedMoaIds = signal<string[]>([]);
-  selectedRoaIds = signal<string[]>([]);
+  readonly name = signal('');
+  readonly genericName = signal('');
+  readonly companyId = signal('');
+  readonly logoUrl = signal('');
+  readonly displayOrder = signal(0);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
+  readonly companies = signal<Company[]>([]);
+  readonly moaOptions = signal<MechanismOfAction[]>([]);
+  readonly roaOptions = signal<RouteOfAdministration[]>([]);
+  readonly selectedMoaIds = signal<string[]>([]);
+  readonly selectedRoaIds = signal<string[]>([]);
 
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);

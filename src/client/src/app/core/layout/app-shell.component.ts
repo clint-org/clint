@@ -96,7 +96,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (newSpaceClick)="onNewSpaceClick()"
           (joinTenantClick)="onJoinTenantClick()"
           (timelineHintDismiss)="onboardingTooltip.dismiss()"
-        ></app-contextual-topbar>
+        />
 
         <!-- Page content -->
         <div class="content-area" [@routeFade]="activeSpaceRoute()">
@@ -328,7 +328,7 @@ export class AppShellComponent implements OnInit {
   readonly activeSpaceRoute = signal('');
 
   // Current URL segments after spaceId for determining page context
-  private fullUrl = signal('');
+  private readonly fullUrl = signal('');
 
   readonly initials = computed(() => {
     const email = this.user()?.email ?? '';

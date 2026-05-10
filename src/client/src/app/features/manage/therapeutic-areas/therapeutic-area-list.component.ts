@@ -37,11 +37,11 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   templateUrl: './therapeutic-area-list.component.html',
 })
 export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
-  areas = signal<TherapeuticArea[]>([]);
-  loading = signal(false);
-  modalOpen = signal(false);
-  editingArea = signal<TherapeuticArea | null>(null);
-  deleteError = signal<string | null>(null);
+  readonly areas = signal<TherapeuticArea[]>([]);
+  readonly loading = signal(false);
+  readonly modalOpen = signal(false);
+  readonly editingArea = signal<TherapeuticArea | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   private areaService = inject(TherapeuticAreaService);
   private route = inject(ActivatedRoute);

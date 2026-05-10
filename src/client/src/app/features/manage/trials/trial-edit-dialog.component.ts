@@ -40,21 +40,21 @@ export class TrialEditDialogComponent {
   private taService = inject(TherapeuticAreaService);
   private messageService = inject(MessageService);
 
-  visible = input<boolean>(false);
+  readonly visible = input<boolean>(false);
   visibleChange = output<boolean>();
-  trial = input.required<Trial>();
+  readonly trial = input.required<Trial>();
   saved = output<Trial>();
 
-  name = signal('');
-  identifier = signal<string | null>(null);
-  productId = signal<string | null>(null);
-  therapeuticAreaId = signal<string | null>(null);
+  readonly name = signal('');
+  readonly identifier = signal<string | null>(null);
+  readonly productId = signal<string | null>(null);
+  readonly therapeuticAreaId = signal<string | null>(null);
 
-  products = signal<SelectOption[]>([]);
-  therapeuticAreas = signal<SelectOption[]>([]);
-  saving = signal(false);
+  readonly products = signal<SelectOption[]>([]);
+  readonly therapeuticAreas = signal<SelectOption[]>([]);
+  readonly saving = signal(false);
 
-  isValid = computed(() => {
+  readonly isValid = computed(() => {
     const id = this.identifier();
     const idValid = !id || id.trim() === '' || /^NCT\d{8}$/i.test(id.trim());
     return (

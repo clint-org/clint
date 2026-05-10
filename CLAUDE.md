@@ -35,48 +35,9 @@ Pharma competitive intelligence professionals and the teams they support -- busi
 4. **Authority through restraint.** Premium feel comes from precision alignment, consistent spacing, and typographic discipline -- not from effects, gradients, or animation. Motion is purposeful and small.
 5. **Accessibility as baseline, not polish.** WCAG AA is a hard floor; it is checked during the feature, not after.
 
-## Angular Conventions
+## Angular / PrimeNG / Tailwind / a11y
 
-- Use **standalone components** exclusively (no NgModules)
-- Use the `inject()` function for dependency injection, not constructor injection
-- Use **signals** for reactive state where possible (`signal()`, `computed()`, `effect()`)
-- Use the new control flow syntax: `@if`, `@for`, `@switch` (not `*ngIf`, `*ngFor`)
-- Lazy-load feature routes via `loadComponent` / `loadChildren`
-- No SSR -- static client-side build only
-- Keep components lean; business logic belongs in services
-
-## Accessibility
-
-- All interactive elements must be keyboard navigable with visible focus indicators
-- Use semantic HTML, proper ARIA labels, and `aria-live` for dynamic content
-- Forms need associated labels, `aria-required`, `aria-invalid`, and error descriptions
-- Modals need focus trapping and Escape to close
-
-## Component Patterns
-
-- **Page components** handle routing, data fetching, and layout
-- **Presenter components** are pure UI -- receive data via inputs, emit events via outputs
-- Keep data access logic in services, not components
-- Cross-cutting validation logic goes in shared services, not inline in components
-
-## PrimeNG Conventions
-
-- Use **PrimeNG 19** as the baseline UI component library
-- Custom theme preset in `src/app/config/primeng-theme.ts` (Aura base, teal primary, slate surface)
-- Import PrimeNG components directly in standalone component `imports` arrays (e.g., `TableModule`, `ButtonModule`, `Dialog`)
-- Use `p-table` for all data tables, `p-dialog` for modals, `p-button` for buttons
-- Use PrimeNG form components (`pInputText`, `p-inputnumber`, `p-select`, `p-colorpicker`, `pTextarea`, `p-checkbox`) over native HTML inputs
-- Use design tokens for theming -- do not override PrimeNG colors with inline Tailwind color classes
-- Domain-specific visualization components (SVG timeline, phase bars, markers) remain custom
-- For hover labels on interactive elements (icons, badges, constrained buttons), always use `pTooltip` from `primeng/tooltip` -- never the native `title=` attribute. `tooltipPosition` convention: `right` for nav rails, `top` for inline badges and form actions, `bottom` for editor/toolbar buttons. Rich multi-section content uses the marker hovercard pattern, not a tooltip.
-
-## Tailwind CSS Conventions
-
-- Use **Tailwind CSS v4** with the PostCSS plugin (`.postcssrc.json`)
-- Import via `@import "tailwindcss"` in `src/styles.css`
-- Use utility classes for layout (`flex`, `grid`, `gap`, `p-*`, `m-*`), spacing, and responsive design
-- Tailwind handles layout around PrimeNG components; PrimeNG handles interactive component styling
-- Responsive design via Tailwind breakpoint prefixes (`sm:`, `md:`, `lg:`)
+Rules and conventions for Angular components, PrimeNG, Tailwind, accessibility, security, and performance live in `src/client/CLAUDE.md`. That file applies to all Angular work in `src/client/`, including edits to existing files.
 
 ## Supabase Local Development
 

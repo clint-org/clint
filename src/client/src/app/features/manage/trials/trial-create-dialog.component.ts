@@ -29,23 +29,23 @@ export class TrialCreateDialogComponent {
   private changeEventService = inject(ChangeEventService);
   private messageService = inject(MessageService);
 
-  visible = input<boolean>(false);
+  readonly visible = input<boolean>(false);
   visibleChange = output<boolean>();
-  spaceId = input.required<string>();
+  readonly spaceId = input.required<string>();
   saved = output<{ trialId: string }>();
 
   // Form fields are signals because they participate in the isValid() computed
   // and are bound via [ngModel]+(ngModelChange) instead of [(ngModel)] for the
   // signal-friendly one-way pattern.
-  name = signal('');
-  identifier = signal<string | null>(null);
-  productId = signal<string | null>(null);
-  therapeuticAreaId = signal<string | null>(null);
+  readonly name = signal('');
+  readonly identifier = signal<string | null>(null);
+  readonly productId = signal<string | null>(null);
+  readonly therapeuticAreaId = signal<string | null>(null);
 
-  products = signal<SelectOption[]>([]);
-  therapeuticAreas = signal<SelectOption[]>([]);
+  readonly products = signal<SelectOption[]>([]);
+  readonly therapeuticAreas = signal<SelectOption[]>([]);
 
-  saving = signal(false);
+  readonly saving = signal(false);
 
   // Autopopulate state for the NCT-first flow. The dialog opens with focus on
   // the NCT input; on a valid NCT format (NCT + 8 digits) we hit
@@ -67,7 +67,7 @@ export class TrialCreateDialogComponent {
     return /^NCT\d{8}$/i.test(id.trim());
   });
 
-  isValid = computed(() => {
+  readonly isValid = computed(() => {
     return (
       this.name().trim().length > 0 &&
       !!this.productId() &&

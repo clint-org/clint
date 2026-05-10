@@ -270,10 +270,10 @@ export class MarkerFormComponent implements OnInit {
     { label: 'CNPV', value: 'cnpv' },
   ];
 
-  categories = signal<MarkerCategory[]>([]);
-  markerTypes = signal<MarkerType[]>([]);
-  trials = signal<Trial[]>([]);
-  showRegulatoryPathway = signal(false);
+  readonly categories = signal<MarkerCategory[]>([]);
+  readonly markerTypes = signal<MarkerType[]>([]);
+  readonly trials = signal<Trial[]>([]);
+  readonly showRegulatoryPathway = signal(false);
 
   // Form fields
   categoryId = '';
@@ -287,8 +287,8 @@ export class MarkerFormComponent implements OnInit {
   regulatoryPathway = '';
   selectedTrialIds: string[] = [];
 
-  saving = signal(false);
-  error = signal<string | null>(null);
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadData();

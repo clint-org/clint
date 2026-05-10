@@ -104,7 +104,7 @@ const DRAFTS_LIMIT = 200;
         <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
           Entity
         </span>
-        <p-multiSelect
+        <p-multi-select
           [options]="entityTypeOptions"
           [ngModel]="entityTypes()"
           (ngModelChange)="entityTypes.set($event ?? []); resetAndLoad()"

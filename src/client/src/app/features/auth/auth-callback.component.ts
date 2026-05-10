@@ -37,7 +37,7 @@ export class AuthCallbackComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
   private readonly brand = inject(BrandContextService);
   private readonly tenantService = inject(TenantService);
-  error = signal<string | null>(null);
+  readonly error = signal<string | null>(null);
 
   ngOnInit() {
     // Supabase JS client auto-processes the hash fragment tokens.

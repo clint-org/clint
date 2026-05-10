@@ -38,11 +38,11 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   templateUrl: './company-list.component.html',
 })
 export class CompanyListComponent implements OnInit, OnDestroy {
-  companies = signal<Company[]>([]);
-  loading = signal(false);
-  modalOpen = signal(false);
-  editingCompany = signal<Company | null>(null);
-  deleteError = signal<string | null>(null);
+  readonly companies = signal<Company[]>([]);
+  readonly loading = signal(false);
+  readonly modalOpen = signal(false);
+  readonly editingCompany = signal<Company | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   private companyService = inject(CompanyService);
   private route = inject(ActivatedRoute);

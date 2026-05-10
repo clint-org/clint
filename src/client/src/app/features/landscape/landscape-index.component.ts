@@ -33,13 +33,13 @@ export class LandscapeIndexComponent implements OnInit {
   }
 
   readonly indexData = resource({
-    request: () => ({
+    params: () => ({
       spaceId: this.spaceId(),
       dimension: this.dimension(),
     }),
-    loader: async ({ request }) => {
-      if (!request.spaceId) return [];
-      return this.landscapeService.getLandscapeIndex(request.spaceId, request.dimension);
+    loader: async ({ params }) => {
+      if (!params.spaceId) return [];
+      return this.landscapeService.getLandscapeIndex(params.spaceId, params.dimension);
     },
   });
 

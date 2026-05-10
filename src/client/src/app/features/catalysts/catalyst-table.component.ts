@@ -40,7 +40,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           <th class="col-date-short">Date</th>
           <th class="col-category">
             Category
-            <p-columnFilter
+            <p-column-filter
               field="category_name"
               display="menu"
               matchMode="in"
@@ -61,12 +61,12 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                   appendTo="body"
                 />
               </ng-template>
-            </p-columnFilter>
+            </p-column-filter>
           </th>
           <th>Catalyst</th>
           <th class="col-company">
             Company / Product
-            <p-columnFilter
+            <p-column-filter
               field="company_name"
               display="menu"
               matchMode="in"
@@ -87,7 +87,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                   appendTo="body"
                 />
               </ng-template>
-            </p-columnFilter>
+            </p-column-filter>
           </th>
           <th class="col-status">Status</th>
         </tr>

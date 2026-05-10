@@ -59,12 +59,12 @@ import { TrialNote } from '../../../core/models/trial.model';
   `,
 })
 export class RowNotesComponent {
-  notes = input<TrialNote[]>([]);
-  trialNotes = input<string | null>(null);
+  readonly notes = input<TrialNote[]>([]);
+  readonly trialNotes = input<string | null>(null);
 
-  hasNotes = computed(() => !!this.trialNotes() || this.notes().length > 0);
+  readonly hasNotes = computed(() => !!this.trialNotes() || this.notes().length > 0);
 
-  totalCount = computed(
+  readonly totalCount = computed(
     () => (this.trialNotes() ? 1 : 0) + this.notes().length,
   );
 }

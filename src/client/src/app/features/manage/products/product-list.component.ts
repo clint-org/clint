@@ -51,13 +51,13 @@ interface ProductRow {
   templateUrl: './product-list.component.html',
 })
 export class ProductListComponent implements OnInit, OnDestroy {
-  products = signal<Product[]>([]);
-  companies = signal<Company[]>([]);
-  trialCounts = signal<Record<string, number>>({});
-  loading = signal(false);
-  modalOpen = signal(false);
-  editingProduct = signal<Product | null>(null);
-  deleteError = signal<string | null>(null);
+  readonly products = signal<Product[]>([]);
+  readonly companies = signal<Company[]>([]);
+  readonly trialCounts = signal<Record<string, number>>({});
+  readonly loading = signal(false);
+  readonly modalOpen = signal(false);
+  readonly editingProduct = signal<Product | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   private productService = inject(ProductService);
   private companyService = inject(CompanyService);

@@ -60,8 +60,8 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
   `,
 })
 export class GridHeaderComponent {
-  columns = input.required<TimelineColumn[]>();
-  totalWidth = input.required<number>();
+  readonly columns = input.required<TimelineColumn[]>();
+  readonly totalWidth = input.required<number>();
 
   hasSubColumns(): boolean {
     return this.columns().some((c) => c.subColumns && c.subColumns.length > 0);

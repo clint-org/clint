@@ -79,19 +79,19 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
 export class ExportDialogComponent {
   private pptxService = inject(PptxExportService);
 
-  companies = input.required<Company[]>();
-  startYear = input.required<number>();
-  endYear = input.required<number>();
-  open = input(false);
-  visible = signal(false);
+  readonly companies = input.required<Company[]>();
+  readonly startYear = input.required<number>();
+  readonly endYear = input.required<number>();
+  readonly open = input(false);
+  readonly visible = signal(false);
   closed = output<void>();
 
   constructor() {
     effect(() => this.visible.set(this.open()));
   }
 
-  exporting = signal(false);
-  error = signal<string | null>(null);
+  readonly exporting = signal(false);
+  readonly error = signal<string | null>(null);
   selectedZoom: ZoomLevel = 'yearly';
 
   readonly zoomOptions = [

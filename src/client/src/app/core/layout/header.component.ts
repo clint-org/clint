@@ -219,11 +219,11 @@ export class HeaderComponent implements OnInit {
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly user = this.supabase.currentUser;
-  tenantId = signal('');
-  spaceId = signal('');
-  spaces = signal<Space[]>([]);
-  tenants = signal<Tenant[]>([]);
-  accountOpen = signal(false);
+  readonly tenantId = signal('');
+  readonly spaceId = signal('');
+  readonly spaces = signal<Space[]>([]);
+  readonly tenants = signal<Tenant[]>([]);
+  readonly accountOpen = signal(false);
 
   readonly initials = computed(() => {
     const email = this.user()?.email ?? '';

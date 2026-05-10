@@ -32,11 +32,11 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   templateUrl: './route-of-administration-list.component.html',
 })
 export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
-  items = signal<RouteOfAdministration[]>([]);
-  loading = signal(false);
-  modalOpen = signal(false);
-  editingItem = signal<RouteOfAdministration | null>(null);
-  deleteError = signal<string | null>(null);
+  readonly items = signal<RouteOfAdministration[]>([]);
+  readonly loading = signal(false);
+  readonly modalOpen = signal(false);
+  readonly editingItem = signal<RouteOfAdministration | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);

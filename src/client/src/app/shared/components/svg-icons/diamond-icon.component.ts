@@ -33,14 +33,14 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
   `,
 })
 export class DiamondIconComponent {
-  size = input<number>(16);
-  color = input<string>('#000000');
-  fillStyle = input<FillStyle>('filled');
-  innerMark = input<InnerMark>('none');
+  readonly size = input<number>(16);
+  readonly color = input<string>('#000000');
+  readonly fillStyle = input<FillStyle>('filled');
+  readonly innerMark = input<InnerMark>('none');
 
-  markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
+  readonly markColor = computed(() => this.fillStyle() === 'outline' ? this.color() : 'white');
 
-  diamondPoints = computed(() => {
+  readonly diamondPoints = computed(() => {
     const s = this.size();
     const cx = s / 2;
     const cy = s / 2;
@@ -49,7 +49,7 @@ export class DiamondIconComponent {
     return `${cx},${cy - hh} ${cx + hw},${cy} ${cx},${cy + hh} ${cx - hw},${cy}`;
   });
 
-  checkPoints = computed(() => {
+  readonly checkPoints = computed(() => {
     const s = this.size();
     const x1 = s * 0.32;
     const y1 = s * 0.5;

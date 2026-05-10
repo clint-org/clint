@@ -54,7 +54,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
             <div
               class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
             >
-              <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+              <p-progress-spinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
             </div>
           } @else {
             <app-marker-detail-panel
@@ -130,14 +130,14 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   /** Load entity index for the entity dropdown. */
   readonly entityIndex = resource({
-    request: () => ({
+    params: () => ({
       spaceId: this.spaceId(),
       dimension: this.dimension(),
       active: this.viewMode() === 'bullseye',
     }),
-    loader: async ({ request }) => {
-      if (!request.spaceId || !request.active) return [];
-      return this.landscapeService.getLandscapeIndex(request.spaceId, request.dimension);
+    loader: async ({ params }) => {
+      if (!params.spaceId || !params.active) return [];
+      return this.landscapeService.getLandscapeIndex(params.spaceId, params.dimension);
     },
   });
 

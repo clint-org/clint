@@ -190,52 +190,52 @@ export class MarkerTooltipComponent implements AfterViewInit {
   private el = inject(ElementRef);
   private cdr = inject(ChangeDetectorRef);
 
-  title = input.required<string>();
-  typeName = input.required<string>();
-  typeColor = input.required<string>();
-  date = input.required<string>();
-  projection = input<string>('actual');
-  categoryName = input<string>('');
-  description = input<string | null>(null);
-  sourceUrl = input<string | null>(null);
-  metadata = input<Record<string, unknown> | null>(null);
-  noLongerExpected = input<boolean>(false);
+  readonly title = input.required<string>();
+  readonly typeName = input.required<string>();
+  readonly typeColor = input.required<string>();
+  readonly date = input.required<string>();
+  readonly projection = input<string>('actual');
+  readonly categoryName = input<string>('');
+  readonly description = input<string | null>(null);
+  readonly sourceUrl = input<string | null>(null);
+  readonly metadata = input<Record<string, unknown> | null>(null);
+  readonly noLongerExpected = input<boolean>(false);
 
-  shape = input<string>('');
-  fillStyle = input<string>('filled');
-  innerMark = input<string>('none');
+  readonly shape = input<string>('');
+  readonly fillStyle = input<string>('filled');
+  readonly innerMark = input<string>('none');
 
-  trialName = input<string>('');
-  trialPhase = input<string>('');
-  recruitmentStatus = input<string>('');
-  companyName = input<string>('');
-  productName = input<string>('');
+  readonly trialName = input<string>('');
+  readonly trialPhase = input<string>('');
+  readonly recruitmentStatus = input<string>('');
+  readonly companyName = input<string>('');
+  readonly productName = input<string>('');
 
   /**
    * Optional primary-intelligence headline to surface on the tooltip.
    * The grid hosts this only when the marker has a published read; the
    * tooltip stays lean and does not query for the read itself.
    */
-  intelligenceHeadline = input<string | null>(null);
+  readonly intelligenceHeadline = input<string | null>(null);
 
-  tooltipX = signal(0);
-  tooltipY = signal(0);
-  flipAbove = signal(false);
+  readonly tooltipX = signal(0);
+  readonly tooltipY = signal(0);
+  readonly flipAbove = signal(false);
 
-  typedFillStyle = computed<FillStyle>(() => (this.fillStyle() as FillStyle) ?? 'filled');
-  typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
+  readonly typedFillStyle = computed<FillStyle>(() => (this.fillStyle() as FillStyle) ?? 'filled');
+  readonly typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
 
-  trialContext = computed(() =>
+  readonly trialContext = computed(() =>
     [this.trialPhase(), this.recruitmentStatus()].filter((v) => !!v).join(' \u00b7 ')
   );
 
-  formattedDate = computed(() => {
+  readonly formattedDate = computed(() => {
     if (!this.date()) return '';
     const d = new Date(this.date());
     return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   });
 
-  projectionLabel = computed(() => {
+  readonly projectionLabel = computed(() => {
     switch (this.projection()) {
       case 'stout':
         return 'Stout estimate';

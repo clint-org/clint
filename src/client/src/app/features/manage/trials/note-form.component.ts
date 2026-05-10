@@ -67,8 +67,8 @@ export class NoteFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   content = '';
-  saving = signal(false);
-  error = signal<string | null>(null);
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     const existing = this.note();

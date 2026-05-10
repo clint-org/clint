@@ -275,8 +275,8 @@ export class BullseyeChartComponent {
     return CY - radius + 14;
   }
 
-  protected scopeName = computed(() => this.data()?.scope?.name ?? '');
-  protected scopeAbbreviation = computed(() => this.data()?.scope?.abbreviation ?? '');
+  protected readonly scopeName = computed(() => this.data()?.scope?.name ?? '');
+  protected readonly scopeAbbreviation = computed(() => this.data()?.scope?.abbreviation ?? '');
 }
 
 function abbreviateSpokeName(name: string): string {

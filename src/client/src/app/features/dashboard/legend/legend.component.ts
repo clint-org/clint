@@ -26,9 +26,9 @@ export class LegendComponent implements OnInit {
   private markerTypeService = inject(MarkerTypeService);
   private route = inject(ActivatedRoute);
 
-  spaceId = input<string>();
-  markerTypes = signal<MarkerType[]>([]);
-  loading = signal(true);
+  readonly spaceId = input<string>();
+  readonly markerTypes = signal<MarkerType[]>([]);
+  readonly loading = signal(true);
 
   protected markersHelpLink(): string[] | null {
     const tenantId = this.route.snapshot.paramMap.get('tenantId');
@@ -43,7 +43,7 @@ export class LegendComponent implements OnInit {
     return ['/t', tenantId, 'help', 'phases'];
   }
 
-  groupedMarkerTypes = computed(() => {
+  readonly groupedMarkerTypes = computed(() => {
     const types = this.markerTypes().filter((t) => t.display_order > 0);
     const groupMap = new Map<string, { label: string; order: number; types: MarkerType[] }>();
 

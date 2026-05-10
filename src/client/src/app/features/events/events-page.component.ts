@@ -83,21 +83,21 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   spaceId = '';
 
   // Data
-  feedItems = signal<FeedItem[]>([]);
-  eventCategories = signal<EventCategory[]>([]);
-  markerCategories = signal<MarkerCategory[]>([]);
+  readonly feedItems = signal<FeedItem[]>([]);
+  readonly eventCategories = signal<EventCategory[]>([]);
+  readonly markerCategories = signal<MarkerCategory[]>([]);
 
   // UI state
-  loading = signal(false);
-  error = signal<string | null>(null);
-  modalOpen = signal(false);
-  editingEventId = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly modalOpen = signal(false);
+  readonly editingEventId = signal<string | null>(null);
 
   // Detail panel
-  selectedItem = signal<FeedItem | null>(null);
-  selectedDetail = signal<EventDetail | null>(null);
-  selectedCatalystDetail = signal<CatalystDetail | null>(null);
-  detailLoading = signal(false);
+  readonly selectedItem = signal<FeedItem | null>(null);
+  readonly selectedDetail = signal<EventDetail | null>(null);
+  readonly selectedCatalystDetail = signal<CatalystDetail | null>(null);
+  readonly detailLoading = signal(false);
 
   // All categories combined for the category filter
   readonly allCategoryOptions = computed(() => {

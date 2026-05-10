@@ -24,16 +24,16 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
   templateUrl: './therapeutic-area-form.component.html',
 })
 export class TherapeuticAreaFormComponent implements OnInit {
-  area = input<TherapeuticArea | null>(null);
+  readonly area = input<TherapeuticArea | null>(null);
 
   saved = output<TherapeuticArea>();
   cancelled = output<void>();
 
-  name = signal('');
-  abbreviation = signal('');
-  submitting = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
+  readonly name = signal('');
+  readonly abbreviation = signal('');
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
 
   private areaService = inject(TherapeuticAreaService);
   private route = inject(ActivatedRoute);

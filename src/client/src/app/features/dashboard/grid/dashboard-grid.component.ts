@@ -65,10 +65,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private scrollListener: (() => void) | null = null;
   private scrollRafId: number | null = null;
 
-  companies = input.required<Company[]>();
-  zoomLevel = input.required<ZoomLevel>();
-  startYear = input.required<number>();
-  endYear = input.required<number>();
+  readonly companies = input.required<Company[]>();
+  readonly zoomLevel = input.required<ZoomLevel>();
+  readonly startYear = input.required<number>();
+  readonly endYear = input.required<number>();
 
   phaseClick = output<Trial>();
   markerClick = output<Marker>();
@@ -76,11 +76,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   companyClick = output<string>();
   productClick = output<string>();
 
-  isScrolled = signal(false);
-  showMoaColumn = signal(true);
-  showRoaColumn = signal(true);
-  showNotesColumn = signal(true);
-  columnSettingsOpen = signal(false);
+  readonly isScrolled = signal(false);
+  readonly showMoaColumn = signal(true);
+  readonly showRoaColumn = signal(true);
+  readonly showNotesColumn = signal(true);
+  readonly columnSettingsOpen = signal(false);
 
   constructor() {
     try {
@@ -111,15 +111,15 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  columns = computed<TimelineColumn[]>(() =>
+  readonly columns = computed<TimelineColumn[]>(() =>
     this.timeline.getColumns(this.startYear(), this.endYear(), this.zoomLevel())
   );
 
-  totalWidth = computed<number>(() =>
+  readonly totalWidth = computed<number>(() =>
     this.timeline.getTimelineWidth(this.startYear(), this.endYear(), this.zoomLevel())
   );
 
-  flattenedTrials = computed<FlattenedTrial[]>(() => {
+  readonly flattenedTrials = computed<FlattenedTrial[]>(() => {
     const rows: FlattenedTrial[] = [];
     for (const company of this.companies()) {
       let isFirstInCompany = true;

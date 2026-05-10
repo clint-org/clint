@@ -28,11 +28,11 @@
           <tr>
             <th pSortableColumn="event_date" class="col-date">
               Date <p-sortIcon field="event_date" />
-              <p-columnFilter type="date" field="event_date" display="menu" />
+              <p-column-filter type="date" field="event_date" display="menu" />
             </th>
             <th pSortableColumn="source_type" class="col-source">
               Source <p-sortIcon field="source_type" />
-              <p-columnFilter
+              <p-column-filter
                 field="source_type"
                 display="menu"
                 matchMode="in"
@@ -56,23 +56,23 @@
                     appendTo="body"
                   />
                 </ng-template>
-              </p-columnFilter>
+              </p-column-filter>
             </th>
             <th pSortableColumn="title">
               Title <p-sortIcon field="title" />
-              <p-columnFilter type="text" field="title" display="menu" />
+              <p-column-filter type="text" field="title" display="menu" />
             </th>
             <th pSortableColumn="category_name" class="col-secondary">
               Category <p-sortIcon field="category_name" />
-              <p-columnFilter type="text" field="category_name" display="menu" />
+              <p-column-filter type="text" field="category_name" display="menu" />
             </th>
             <th pSortableColumn="entity_display" class="col-secondary">
               Entity <p-sortIcon field="entity_display" />
-              <p-columnFilter type="text" field="entity_display" display="menu" />
+              <p-column-filter type="text" field="entity_display" display="menu" />
             </th>
             <th pSortableColumn="priority" class="col-priority">
               Priority <p-sortIcon field="priority" />
-              <p-columnFilter
+              <p-column-filter
                 field="priority"
                 display="menu"
                 matchMode="in"
@@ -96,7 +96,7 @@
                     appendTo="body"
                   />
                 </ng-template>
-              </p-columnFilter>
+              </p-column-filter>
             </th>
           </tr>
         </ng-template>
@@ -198,7 +198,7 @@
     >
       @if (selectedItem() && detailLoading()) {
         <div class="flex h-full items-center justify-center py-12">
-          <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+          <p-progress-spinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
         </div>
       } @else {
         <app-event-detail-panel

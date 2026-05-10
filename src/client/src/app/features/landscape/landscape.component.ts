@@ -61,17 +61,17 @@ export class LandscapeComponent implements OnInit {
   readonly tooltipY = signal(0);
 
   readonly bullseyeData = resource({
-    request: () => ({
+    params: () => ({
       spaceId: this.spaceId(),
       dimension: this.dimension(),
       entityId: this.entityId(),
     }),
-    loader: async ({ request }) => {
-      if (!request.spaceId || !request.entityId) return null;
+    loader: async ({ params }) => {
+      if (!params.spaceId || !params.entityId) return null;
       return this.landscapeService.getBullseyeData(
-        request.spaceId,
-        request.dimension,
-        request.entityId
+        params.spaceId,
+        params.dimension,
+        params.entityId
       );
     },
   });

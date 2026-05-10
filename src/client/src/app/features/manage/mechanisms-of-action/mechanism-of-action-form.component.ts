@@ -28,17 +28,17 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
   templateUrl: './mechanism-of-action-form.component.html',
 })
 export class MechanismOfActionFormComponent implements OnInit {
-  item = input<MechanismOfAction | null>(null);
+  readonly item = input<MechanismOfAction | null>(null);
 
   saved = output<MechanismOfAction>();
   cancelled = output<void>();
 
-  name = signal('');
-  description = signal('');
-  displayOrder = signal(0);
-  submitting = signal(false);
-  error = signal<string | null>(null);
-  nameBlurred = signal(false);
+  readonly name = signal('');
+  readonly description = signal('');
+  readonly displayOrder = signal(0);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly nameBlurred = signal(false);
 
   private moaService = inject(MechanismOfActionService);
   private route = inject(ActivatedRoute);
