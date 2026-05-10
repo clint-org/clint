@@ -37,6 +37,50 @@ export async function createTestTenant(name: string): Promise<string> {
   return data.id;
 }
 
+/**
+ * Creates an agency, links the test user as an agency owner, and (optionally)
+ * attaches an existing tenant to that agency. Required for tests that exercise
+ * primary_intelligence write RPCs, which check is_agency_member_of_space().
+ */
+export async function createTestAgency(
+  name: string,
+  opts?: { tenantId?: string },
+): Promise<string> {
+  const admin = getAdminClient();
+  const stamp = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const slug =
+    name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + stamp;
+  const subdomain = ('a' + slug).slice(0, 60);
+
+  const { data, error } = await admin
+    .from('agencies')
+    .insert({
+      name,
+      slug,
+      subdomain,
+      app_display_name: name,
+      contact_email: `agency-${stamp}@clint.local`,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create agency: ${error.message}`);
+
+  const { error: memberError } = await admin
+    .from('agency_members')
+    .insert({ agency_id: data.id, user_id: getUserId(), role: 'owner' });
+  if (memberError) throw new Error(`Failed to add agency member: ${memberError.message}`);
+
+  if (opts?.tenantId) {
+    const { error: linkError } = await admin
+      .from('tenants')
+      .update({ agency_id: data.id })
+      .eq('id', opts.tenantId);
+    if (linkError) throw new Error(`Failed to link tenant to agency: ${linkError.message}`);
+  }
+
+  return data.id;
+}
+
 export async function createTestSpace(tenantId: string, name: string): Promise<string> {
   const admin = getAdminClient();
 
