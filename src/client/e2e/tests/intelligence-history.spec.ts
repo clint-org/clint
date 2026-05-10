@@ -169,7 +169,10 @@ test.describe('intelligence version history', () => {
     });
     await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
 
-    // History panel still has 2 versions: v1 Archived + v2 Withdrawn.
+    // Reload to remount the history panel (its `expanded` signal persists
+    // across the withdraw round-trip; reloading guarantees a known-collapsed
+    // starting state for the second expand).
+    await page.reload({ waitUntil: 'networkidle' });
     const historyAfter = page.getByRole('region', { name: 'History' });
     await expect(historyAfter.getByText('2 versions')).toBeVisible();
     await historyAfter.locator('button[aria-expanded]').first().click();
