@@ -51,6 +51,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
+| `assign_primary_intelligence_version` | - | primary_intelligence |
 | `backfill_marker_history` | marker_changes | markers |
 | `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, primary_intelligence_revisions, products, trials |
 | `bulk_update_last_polled` | trials | - |
@@ -80,6 +81,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
+| `get_intelligence_version_revisions` | - | primary_intelligence_revisions |
 | `get_landscape_index` | - | companies, products, therapeutic_areas, trials |
 | `get_landscape_index_by_company` | - | companies, products, trials |
 | `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
@@ -88,6 +90,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
+| `get_primary_intelligence_history` | - | primary_intelligence, primary_intelligence_revisions |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
@@ -118,6 +121,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `prepare_material_upload` | - | materials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
+| `purge_primary_intelligence` | primary_intelligence | - |
 | `recompute_trial_change_events` | trial_change_events, trial_field_changes | trial_ctgov_snapshots, trials |
 | `record_sync_run` | ctgov_sync_runs | - |
 | `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
@@ -135,6 +139,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_tenant_access` | tenants | - |
 | `update_tenant_branding` | tenants | - |
 | `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
+| `withdraw_primary_intelligence` | primary_intelligence | - |
 | `write_primary_intelligence_revision` | primary_intelligence_revisions | - |
 <!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
 
@@ -280,6 +285,23 @@ is_platform_admin() -> boolean
 ```
 
 Returns true if `auth.uid()` is in `platform_admins`. Used in RLS disjuncts and as a permission gate in super-admin RPCs.
+
+## Primary intelligence version history
+
+Published reads are versioned. Each `primary_intelligence` row carries a per-anchor `version_number` (stamped on entry into `state='published'` by a BEFORE trigger) and a `published_at` timestamp that is preserved through later archive or withdraw transitions. The state machine is `draft -> published -> archived | withdrawn`; archived and withdrawn are terminal except for an explicit purge (which hard-deletes the row). A second BEFORE trigger rejects illegal transitions (`published -> draft`, `archived -> *`, `withdrawn -> *`).
+
+`upsert_primary_intelligence` was updated so republish archives the prior published row rather than deleting it, and so a republish raises `change_note required when republishing` whenever any prior non-draft version exists for the anchor. The function preserves the `changed_fields` scalar + link diff tracking added in `20260505201132_intel_revision_changed_fields.sql` -- both pieces live in the same RPC body and feed the revision trigger via two session variables (`app.change_note`, `app.changed_fields_json`).
+
+New RPCs:
+
+- `withdraw_primary_intelligence(p_id, p_change_note)` -- soft-deletes the current published version. Sets `state='withdrawn'`, stamps `withdrawn_at` and `withdrawn_by`, and writes a revision row with the supplied change note. Only valid when the target row is `state='published'`; requires a non-empty change note.
+- `purge_primary_intelligence(p_id, p_confirmation, p_purge_anchor)` -- hard-deletes a single version when `p_confirmation` exactly matches the row's `headline` (case-sensitive). When `p_purge_anchor=true`, cascades the delete across every row (drafts, published, archived, withdrawn) for the same anchor. Used for "this read should never have existed" recovery; the typed-confirmation gate protects against fat-fingered destructive clicks.
+- `get_primary_intelligence_history(p_space_id, p_entity_type, p_entity_id)` -- `security invoker`, returns `{ current, draft, versions[] }`. The `versions` array is ordered `version_number desc` and includes the live published row alongside archived and withdrawn versions. Each version carries the `change_note` from its first published-state revision, so the publish-time note survives later archive/withdraw mutations.
+- `get_intelligence_version_revisions(p_version_id)` -- `security invoker`, returns the per-version edit trail from `primary_intelligence_revisions` ordered `edited_at asc`. Used by the agency-only "Show edits within this version" disclosure on the history panel to render word-level diffs between adjacent saves.
+
+`delete_primary_intelligence` is narrowed to drafts only; it raises with errcode `22023` when called on a non-draft row, pointing the caller at withdraw or purge.
+
+The RLS extension in `20260509130050_intelligence_history_rls.sql` widens the SELECT policy on `primary_intelligence` from `state='published'` to `state in ('published','archived','withdrawn')` for callers with space access. Without this, `get_primary_intelligence_history` (which is `security invoker`) would silently return an empty `versions` array because RLS would filter out the archived and withdrawn rows. Drafts stay agency-only via the existing branch on the same policy.
 
 ## Whitelabel RPCs
 
@@ -541,6 +563,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_map_phase_array`
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
+- `assign_primary_intelligence_version`
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`
@@ -556,17 +579,20 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
+- `get_intelligence_version_revisions`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
+- `get_primary_intelligence_history`
 - `get_product_detail_with_intelligence`
 - `get_space_intelligence`
 - `get_space_landing_stats`
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
+- `guard_primary_intelligence_state`
 - `list_draft_intelligence_for_space`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
@@ -579,12 +605,14 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_set_pinned`
 - `palette_touch_recent`
 - `palette_unpin`
+- `purge_primary_intelligence`
 - `referenced_in_entity`
 - `register_material`
 - `search_palette`
 - `update_material`
 - `upsert_primary_intelligence`
 - `validate_material_links_payload`
+- `withdraw_primary_intelligence`
 - `write_primary_intelligence_revision`
 
 **Edge functions in `supabase/functions/` not documented:**

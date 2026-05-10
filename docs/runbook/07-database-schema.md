@@ -90,6 +90,18 @@ erDiagram
 ```
 <!-- /AUTO-GEN:ER -->
 
+### primary_intelligence version columns
+
+The `primary_intelligence` table carries four columns that support the version-history feature added on 2026-05-09:
+
+- `version_number int` -- per-anchor sequence assigned by the `assign_primary_intelligence_version` BEFORE trigger on entry into `state='published'`. Null for drafts. Preserved through archive and withdraw transitions, so each version row keeps the same number for its lifetime.
+- `published_at timestamptz` -- stamped on the same trigger fire. Survives the row transitioning out of `published`, so the history panel can render "Published May 9" against an archived row.
+- `withdrawn_at timestamptz`, `withdrawn_by uuid` -- populated by `withdraw_primary_intelligence` when a published row is soft-deleted. Null otherwise.
+
+The CHECK constraint allows `state in ('draft','published','archived','withdrawn')`. Archived means superseded by a later publish; withdrawn means explicitly retracted without replacement. A second BEFORE UPDATE trigger (`guard_primary_intelligence_state`) rejects illegal transitions out of the terminal states and back from `published -> draft`.
+
+The unique partial index `primary_intelligence_one_published` (one published row per anchor) continues to be the concurrency control around republish.
+
 ## Migration History
 
 | # | File | Purpose |
@@ -702,4 +714,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260509120100_advisor_sweep_function_search_path.sql`
 - `20260509120200_advisor_sweep_multiple_permissive_policies.sql`
 - `20260509120300_advisor_sweep_pg_trgm_to_extensions.sql`
+- `20260509130000_intelligence_history_schema.sql`
+- `20260509130050_intelligence_history_rls.sql`
+- `20260509130100_intelligence_history_rpcs.sql`
+- `20260509131000_intelligence_history_restore_changed_fields.sql`
 <!-- /AUTO-GEN:DRIFT -->

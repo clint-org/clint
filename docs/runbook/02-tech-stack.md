@@ -56,6 +56,8 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `@fortawesome/fontawesome-free`
 - `@primeng/themes`
 - `@supabase/supabase-js`
+- `@types/diff`
+- `diff`
 - `primeng`
 - `prosemirror-commands`
 - `prosemirror-history`
