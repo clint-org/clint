@@ -54,7 +54,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
             <div
               class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
             >
-              <p-progressSpinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
+              <p-progress-spinner strokeWidth="3" [style]="{ width: '28px', height: '28px' }" />
             </div>
           } @else {
             <app-marker-detail-panel

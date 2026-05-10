@@ -180,7 +180,7 @@ interface SourceRow {
       <!-- Tags -->
       <div>
         <label for="event-tags" class="mb-1 block text-xs font-medium text-slate-600">Tags</label>
-        <p-autoComplete
+        <p-auto-complete
           inputId="event-tags"
           [ngModel]="tags()"
           (ngModelChange)="tags.set($event ?? [])"

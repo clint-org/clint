@@ -23,15 +23,15 @@
       <tr>
         <th pSortableColumn="trial.name">
           Trial <p-sortIcon field="trial.name" />
-          <p-columnFilter type="text" field="trial.name" display="menu" />
+          <p-column-filter type="text" field="trial.name" display="menu" />
         </th>
         <th pSortableColumn="trial.identifier">
           NCT ID <p-sortIcon field="trial.identifier" />
-          <p-columnFilter type="text" field="trial.identifier" display="menu" />
+          <p-column-filter type="text" field="trial.identifier" display="menu" />
         </th>
         <th pSortableColumn="productName">
           Product <p-sortIcon field="productName" />
-          <p-columnFilter
+          <p-column-filter
             field="trial.product_id"
             display="menu"
             matchMode="in"
@@ -53,11 +53,11 @@
                 appendTo="body"
               />
             </ng-template>
-          </p-columnFilter>
+          </p-column-filter>
         </th>
         <th pSortableColumn="companyName">
           Company <p-sortIcon field="companyName" />
-          <p-columnFilter
+          <p-column-filter
             field="companyId"
             display="menu"
             matchMode="in"
@@ -79,11 +79,11 @@
                 appendTo="body"
               />
             </ng-template>
-          </p-columnFilter>
+          </p-column-filter>
         </th>
         <th pSortableColumn="trial.status">
           Status <p-sortIcon field="trial.status" />
-          <p-columnFilter
+          <p-column-filter
             field="trial.status"
             display="menu"
             matchMode="in"
@@ -101,15 +101,15 @@
                 placeholder="Status..."
               />
             </ng-template>
-          </p-columnFilter>
+          </p-column-filter>
         </th>
         <th class="col-num" pSortableColumn="phaseCount">
           Phases <p-sortIcon field="phaseCount" />
-          <p-columnFilter type="numeric" field="phaseCount" display="menu" />
+          <p-column-filter type="numeric" field="phaseCount" display="menu" />
         </th>
         <th class="col-num" pSortableColumn="markerCount">
           Markers <p-sortIcon field="markerCount" />
-          <p-columnFilter type="numeric" field="markerCount" display="menu" />
+          <p-column-filter type="numeric" field="markerCount" display="menu" />
         </th>
         @for (col of extraColumns(); track col.path) {
           <th>{{ col.label }}</th>

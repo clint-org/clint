@@ -30,9 +30,6 @@ export const TEAL_SCALE: BrandScale = {
 };
 
 export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
-  // Token shapes tightened from v19 to v20 (overlay.shadow, button.disabled*,
-  // toast.text.fontSize) are still emitted as CSS vars at runtime; cast keeps
-  // the brand preset intact pending a token-cleanup pass.
   return definePreset(Aura, {
     semantic: {
       primary: scale,
@@ -77,11 +74,9 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
           overlay: {
             select: {
               borderColor: '{slate.200}',
-              shadow: '0 10px 24px -12px rgba(15, 23, 42, 0.18)',
             },
             modal: {
               borderColor: '{slate.200}',
-              shadow: '0 10px 24px -12px rgba(15, 23, 42, 0.18)',
             },
           },
           list: {
@@ -100,6 +95,7 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
       dialog: {
         root: {
           borderRadius: '0',
+          shadow: '0 10px 24px -12px rgba(15, 23, 42, 0.18)',
         },
         header: {
           padding: '0.75rem 1.25rem',
@@ -132,22 +128,12 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
                 color: '#ffffff',
                 hoverColor: '#ffffff',
                 activeColor: '#ffffff',
-                disabledBackground: '{slate.200}',
-                disabledBorderColor: '{slate.200}',
-                disabledColor: '{slate.400}',
               },
               secondary: {
                 borderColor: '{slate.300}',
                 hoverBackground: '{slate.50}',
                 activeBackground: '{slate.100}',
                 color: '{slate.700}',
-              },
-              text: {
-                primary: {
-                  hoverBackground: '{primary.50}',
-                  activeBackground: '{primary.100}',
-                  color: '{primary.600}',
-                },
               },
             },
             outlined: {
@@ -164,12 +150,22 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
                 color: '{slate.700}',
               },
             },
+            text: {
+              primary: {
+                hoverBackground: '{primary.50}',
+                activeBackground: '{primary.100}',
+                color: '{primary.600}',
+              },
+            },
           },
         },
       },
       select: {
         root: {
           borderRadius: '0',
+        },
+        overlay: {
+          shadow: '0 10px 24px -12px rgba(15, 23, 42, 0.18)',
         },
         dropdown: {
           width: '2rem',
@@ -225,10 +221,6 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
         },
         content: {
           padding: '0.625rem 1rem',
-        },
-        text: {
-          fontSize: '13px',
-          fontWeight: '500',
         },
         summary: {
           fontSize: '13px',
@@ -302,7 +294,7 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
         },
       },
     },
-  } as Parameters<typeof definePreset>[1]);
+  });
 }
 
 const ClinicalTheme = buildBrandPreset();
