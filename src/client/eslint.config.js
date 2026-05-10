@@ -64,8 +64,10 @@ module.exports = tseslint.config(
       "@angular-eslint/template/no-any": "error",
       "@angular-eslint/template/no-duplicate-attributes": "error",
       "@angular-eslint/template/prefer-contextual-for-variables": "error",
-      // Still warn pending cleanup of the migration backlog
-      "@angular-eslint/template/no-call-expression": "warn",
+      // template/no-call-expression is intentionally not enabled: the rule
+      // predates signals and cannot distinguish a signal read (`color()`)
+      // from a method call. The TS-side equivalent is `no-uncalled-signals`,
+      // which requires typed linting -- revisit once that's enabled.
       // allowBindToStyle so [style.X] per-property bindings stay legal
       // (Angular's idiomatic dynamic styling). The [style] object form
       // and raw style="..." attribute both still get flagged.
