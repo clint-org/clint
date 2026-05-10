@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   OnInit,
@@ -50,14 +51,14 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           <p-select
             inputId="marker-category"
             [options]="categories()"
-            [(ngModel)]="categoryId"
+            [ngModel]="categoryId()"
+            (ngModelChange)="onCategoryChange($event)"
             name="categoryId"
             optionLabel="name"
             optionValue="id"
             placeholder="Select category"
             styleClass="w-full"
             class="mt-1"
-            (ngModelChange)="onCategoryChange($event)"
             [attr.aria-required]="true"
           />
         </div>
@@ -70,15 +71,15 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           <p-select
             inputId="marker-type"
             [options]="markerTypes()"
-            [(ngModel)]="markerTypeId"
+            [ngModel]="markerTypeId()"
+            (ngModelChange)="onMarkerTypeChange($event)"
             name="markerTypeId"
             optionLabel="name"
             optionValue="id"
             placeholder="Select marker type"
             styleClass="w-full"
             class="mt-1"
-            [disabled]="!categoryId"
-            (ngModelChange)="onMarkerTypeChange($event)"
+            [disabled]="!categoryId()"
             [attr.aria-required]="true"
           />
           @if (showCtgovAutoMarkerHint()) {
@@ -98,7 +99,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             pInputText
             id="marker-title"
             class="w-full mt-1"
-            [(ngModel)]="title"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
             name="title"
             required
             aria-required="true"
@@ -113,7 +115,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           <p-select
             inputId="marker-projection"
             [options]="projectionOptions"
-            [(ngModel)]="projection"
+            [ngModel]="projection()"
+            (ngModelChange)="projection.set($event)"
             name="projection"
             optionLabel="label"
             optionValue="value"
@@ -132,7 +135,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             type="date"
             id="marker-event-date"
             class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [(ngModel)]="eventDate"
+            [ngModel]="eventDate()"
+            (ngModelChange)="eventDate.set($event)"
             name="eventDate"
             required
             aria-required="true"
@@ -148,7 +152,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             type="date"
             id="marker-end-date"
             class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [(ngModel)]="endDate"
+            [ngModel]="endDate()"
+            (ngModelChange)="endDate.set($event)"
             name="endDate"
           />
         </div>
@@ -162,7 +167,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             pTextarea
             id="marker-description"
             class="w-full mt-1"
-            [(ngModel)]="description"
+            [ngModel]="description()"
+            (ngModelChange)="description.set($event)"
             name="description"
             rows="3"
           ></textarea>
@@ -177,7 +183,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             pInputText
             id="marker-source-url"
             class="w-full mt-1"
-            [(ngModel)]="sourceUrl"
+            [ngModel]="sourceUrl()"
+            (ngModelChange)="sourceUrl.set($event)"
             name="sourceUrl"
             placeholder="https://..."
             type="url"
@@ -193,7 +200,8 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             <p-select
               inputId="marker-pathway"
               [options]="regulatoryPathwayOptions"
-              [(ngModel)]="regulatoryPathway"
+              [ngModel]="regulatoryPathway()"
+              (ngModelChange)="regulatoryPathway.set($event)"
               name="regulatoryPathway"
               optionLabel="label"
               optionValue="value"
@@ -212,17 +220,17 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           <p-multiselect
             inputId="marker-trials"
             [options]="trials()"
-            [(ngModel)]="selectedTrialIds"
+            [ngModel]="selectedTrialIds()"
+            (ngModelChange)="selectedTrialIds.set($event ?? [])"
             name="selectedTrialIds"
             optionLabel="name"
             optionValue="id"
             placeholder="Select trials"
             styleClass="w-full"
             class="mt-1"
-            (ngModelChange)="selectedTrialIds = $event ?? []"
             aria-required="true"
             [maxSelectedLabels]="0"
-            [selectedItemsLabel]="'Trial (' + selectedTrialIds.length + ')'"
+            [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
           />
         </div>
       </div>
@@ -239,7 +247,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           [label]="marker() ? 'Update Marker' : 'Add Marker'"
           type="submit"
           [loading]="saving()"
-          [disabled]="!canSubmit"
+          [disabled]="!canSubmit()"
         />
       </div>
     </form>
@@ -277,45 +285,55 @@ export class MarkerFormComponent implements OnInit {
   readonly showRegulatoryPathway = signal(false);
 
   // Form fields
-  categoryId = '';
-  markerTypeId = '';
-  title = '';
-  projection: Projection = 'actual';
-  eventDate = '';
-  endDate = '';
-  description = '';
-  sourceUrl = '';
-  regulatoryPathway = '';
-  selectedTrialIds: string[] = [];
+  readonly categoryId = signal('');
+  readonly markerTypeId = signal('');
+  readonly title = signal('');
+  readonly projection = signal<Projection>('actual');
+  readonly eventDate = signal('');
+  readonly endDate = signal('');
+  readonly description = signal('');
+  readonly sourceUrl = signal('');
+  readonly regulatoryPathway = signal('');
+  readonly selectedTrialIds = signal<string[]>([]);
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+
+  readonly canSubmit = computed(
+    () =>
+      !!this.categoryId() &&
+      !!this.markerTypeId() &&
+      this.title().trim().length > 0 &&
+      !!this.eventDate() &&
+      this.selectedTrialIds().length > 0,
+  );
 
   ngOnInit(): void {
     this.loadData();
 
     const existing = this.marker();
     if (existing) {
-      this.markerTypeId = existing.marker_type_id;
-      this.title = existing.title;
-      this.projection = existing.projection;
-      this.eventDate = existing.event_date;
-      this.endDate = existing.end_date ?? '';
-      this.description = existing.description ?? '';
-      this.sourceUrl = existing.source_url ?? '';
-      this.regulatoryPathway =
-        (existing.metadata as Record<string, string> | null)?.['pathway'] ?? '';
+      this.markerTypeId.set(existing.marker_type_id);
+      this.title.set(existing.title);
+      this.projection.set(existing.projection);
+      this.eventDate.set(existing.event_date);
+      this.endDate.set(existing.end_date ?? '');
+      this.description.set(existing.description ?? '');
+      this.sourceUrl.set(existing.source_url ?? '');
+      this.regulatoryPathway.set(
+        (existing.metadata as Record<string, string> | null)?.['pathway'] ?? '',
+      );
 
       // Pre-populate selected trials from existing assignments
       if (existing.marker_assignments) {
-        this.selectedTrialIds = existing.marker_assignments.map((a) => a.trial_id);
+        this.selectedTrialIds.set(existing.marker_assignments.map((a) => a.trial_id));
       }
     }
 
     // Pre-select trial from route context if provided
     const routeTrialId = this.trialId();
-    if (routeTrialId && !this.selectedTrialIds.includes(routeTrialId)) {
-      this.selectedTrialIds = [...this.selectedTrialIds, routeTrialId];
+    if (routeTrialId && !this.selectedTrialIds().includes(routeTrialId)) {
+      this.selectedTrialIds.update((ids) => [...ids, routeTrialId]);
     }
   }
 
@@ -326,7 +344,7 @@ export class MarkerFormComponent implements OnInit {
     // If editing, resolve the category from the existing marker type
     const existing = this.marker();
     if (existing?.marker_types?.category_id) {
-      this.categoryId = existing.marker_types.category_id;
+      this.categoryId.set(existing.marker_types.category_id);
       await this.loadMarkerTypesByCategory(existing.marker_types.category_id, spaceId);
     }
   }
@@ -371,7 +389,8 @@ export class MarkerFormComponent implements OnInit {
   }
 
   onCategoryChange(categoryId: string): void {
-    this.markerTypeId = '';
+    this.categoryId.set(categoryId);
+    this.markerTypeId.set('');
     this.markerTypes.set([]);
     this.showRegulatoryPathway.set(false);
     if (categoryId) {
@@ -381,75 +400,63 @@ export class MarkerFormComponent implements OnInit {
   }
 
   onMarkerTypeChange(typeId: string): void {
+    this.markerTypeId.set(typeId);
     const selected = this.markerTypes().find((t) => t.id === typeId);
     this.showRegulatoryPathway.set(selected?.name === 'FDA Submission');
     if (!this.showRegulatoryPathway()) {
-      this.regulatoryPathway = '';
+      this.regulatoryPathway.set('');
     }
   }
 
-  get canSubmit(): boolean {
-    return (
-      !!this.categoryId &&
-      !!this.markerTypeId &&
-      this.title.trim().length > 0 &&
-      !!this.eventDate &&
-      this.selectedTrialIds.length > 0
-    );
-  }
-
-  /**
-   * True when the picked marker type is one of the three the CT.gov sync
-   * auto-derives (Trial Start / Primary Completion / Trial End) AND at
-   * least one of the selected trials has an NCT identifier (so it'll
-   * actually get a sync run). Read directly from non-signal form state;
-   * called as a method from the template, so re-evaluates each CD cycle
-   * without needing form fields to be signals.
-   */
-  protected showCtgovAutoMarkerHint(): boolean {
-    if (!this.markerTypeId || this.selectedTrialIds.length === 0) return false;
-    const selectedType = this.markerTypes().find((t) => t.id === this.markerTypeId);
+  protected readonly showCtgovAutoMarkerHint = computed(() => {
+    const typeId = this.markerTypeId();
+    const selectedIds = this.selectedTrialIds();
+    if (!typeId || selectedIds.length === 0) return false;
+    const selectedType = this.markerTypes().find((t) => t.id === typeId);
     if (!selectedType) return false;
     const autoTypeName =
       selectedType.name === 'Trial Start' ||
       selectedType.name === 'Primary Completion Date (PCD)' ||
       selectedType.name === 'Trial End';
     if (!autoTypeName) return false;
-    const selectedTrials = this.trials().filter((t) => this.selectedTrialIds.includes(t.id));
+    const selectedTrials = this.trials().filter((t) => selectedIds.includes(t.id));
     return selectedTrials.some((t) => !!t.identifier);
-  }
+  });
 
   async onSubmit(): Promise<void> {
-    if (!this.canSubmit) return;
+    if (!this.canSubmit()) return;
 
     this.saving.set(true);
     this.error.set(null);
 
     const spaceId = this.getSpaceId();
 
-    const metadata: Record<string, unknown> | null = this.regulatoryPathway
-      ? { pathway: this.regulatoryPathway }
+    const regulatoryPathway = this.regulatoryPathway();
+    const metadata: Record<string, unknown> | null = regulatoryPathway
+      ? { pathway: regulatoryPathway }
       : null;
 
     const payload: Partial<Marker> = {
-      marker_type_id: this.markerTypeId,
-      title: this.title,
-      projection: this.projection,
-      event_date: this.eventDate,
-      end_date: this.endDate || null,
-      description: this.description || null,
-      source_url: this.sourceUrl || null,
+      marker_type_id: this.markerTypeId(),
+      title: this.title(),
+      projection: this.projection(),
+      event_date: this.eventDate(),
+      end_date: this.endDate() || null,
+      description: this.description() || null,
+      source_url: this.sourceUrl() || null,
       metadata,
     };
+
+    const trialIds = this.selectedTrialIds();
 
     try {
       const existing = this.marker();
 
       if (existing) {
         await this.markerService.update(existing.id, payload);
-        await this.markerService.updateAssignments(existing.id, this.selectedTrialIds);
+        await this.markerService.updateAssignments(existing.id, trialIds);
       } else {
-        await this.markerService.create(spaceId, payload, this.selectedTrialIds);
+        await this.markerService.create(spaceId, payload, trialIds);
       }
 
       this.saved.emit();

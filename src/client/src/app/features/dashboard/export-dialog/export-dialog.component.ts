@@ -39,7 +39,8 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
           </span>
           <p-selectbutton
             [options]="zoomOptions"
-            [(ngModel)]="selectedZoom"
+            [ngModel]="selectedZoom()"
+            (ngModelChange)="selectedZoom.set($event)"
             optionLabel="label"
             optionValue="value"
             [allowEmpty]="false"
@@ -101,7 +102,7 @@ export class ExportDialogComponent {
 
   readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
-  selectedZoom: ZoomLevel = 'yearly';
+  readonly selectedZoom = signal<ZoomLevel>('yearly');
 
   readonly zoomOptions = [
     { label: 'Year', value: 'yearly' as ZoomLevel },
@@ -116,7 +117,7 @@ export class ExportDialogComponent {
 
     try {
       await this.pptxService.exportDashboard(this.companies(), {
-        zoomLevel: this.selectedZoom,
+        zoomLevel: this.selectedZoom(),
         startYear: this.startYear(),
         endYear: this.endYear(),
       });

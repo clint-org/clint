@@ -325,9 +325,9 @@ export class EventFormComponent implements OnInit {
 
   // Form fields -- signals so writes from loadExisting trigger change detection
   // and so reset() between edits clears stale state. Plain class properties
-  // with [(ngModel)] retained values across dialog opens (the dialog does not
-  // destroy on hide), causing edit-on-existing to show the previous form's data
-  // and risking silent overwrite on Save.
+  // with two-way ngModel retained values across dialog opens (the dialog does
+  // not destroy on hide), causing edit-on-existing to show the previous form's
+  // data and risking silent overwrite on Save.
   readonly entityLevel = signal<EntityLevel>('space');
   readonly entityId = signal('');
   readonly title = signal('');

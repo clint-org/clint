@@ -13,10 +13,10 @@
 #   <input [ngModel]="fieldName()" (ngModelChange)="fieldName.set($event)" />
 #
 # Mode:
-#   - SOFT (default): prints a warning + count of legacy violations, exit 0.
-#     Used while we incrementally migrate legacy form components.
-#   - HARD (CHECK_NGMODEL_HARD=1): exits non-zero on any violation.
-#     Flip to this once all legacy forms are converted.
+#   - HARD (default): exits non-zero on any violation. All legacy forms have
+#     been converted, so any new banana-box ngModel is a regression.
+#   - SOFT (CHECK_NGMODEL_HARD=0): prints a warning + count, exit 0.
+#     Emergency escape hatch only.
 #
 # See memory entry: feedback_angular_computed_short_circuit.md.
 
@@ -37,9 +37,10 @@ echo "  Reason:  plain props are invisible to computed() — see feedback_angula
 echo "  Files with legacy two-way bindings ($COUNT):" >&2
 echo "$HITS" | sed 's/^/    /' >&2
 
-if [ "${CHECK_NGMODEL_HARD:-0}" = "1" ]; then
+if [ "${CHECK_NGMODEL_HARD:-1}" = "1" ]; then
   echo "" >&2
-  echo "ERROR: hard mode active (CHECK_NGMODEL_HARD=1) — refusing to proceed." >&2
+  echo "ERROR: refusing to proceed. Convert to one-way [ngModel]+(ngModelChange) on a signal." >&2
+  echo "       Set CHECK_NGMODEL_HARD=0 to bypass (emergency only)." >&2
   exit 1
 fi
 

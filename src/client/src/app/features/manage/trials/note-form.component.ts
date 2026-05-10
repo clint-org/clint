@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   OnInit,
@@ -38,7 +39,8 @@ const NOTE_FIELD_LABELS: Record<string, string> = {
         <textarea
           pTextarea
           id="note-content"
-          [(ngModel)]="content"
+          [ngModel]="content()"
+          (ngModelChange)="content.set($event)"
           name="content"
           rows="4"
           required
@@ -59,7 +61,7 @@ const NOTE_FIELD_LABELS: Record<string, string> = {
           [label]="note() ? 'Update Note' : 'Add Note'"
           type="submit"
           [loading]="saving()"
-          [disabled]="!canSubmit"
+          [disabled]="!canSubmit()"
         />
       </div>
     </form>
@@ -75,36 +77,35 @@ export class NoteFormComponent implements OnInit {
   private noteService = inject(TrialNoteService);
   private route = inject(ActivatedRoute);
 
-  content = '';
+  readonly content = signal('');
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+
+  readonly canSubmit = computed(() => this.content().trim().length > 0);
 
   ngOnInit(): void {
     const existing = this.note();
     if (existing) {
-      this.content = existing.content;
+      this.content.set(existing.content);
     }
   }
 
-  get canSubmit(): boolean {
-    return this.content.trim().length > 0;
-  }
-
   async onSubmit(): Promise<void> {
-    if (!this.canSubmit) return;
+    if (!this.canSubmit()) return;
 
     this.saving.set(true);
     this.error.set(null);
 
     try {
       const existing = this.note();
+      const content = this.content();
       if (existing) {
-        await this.noteService.update(existing.id, { content: this.content });
+        await this.noteService.update(existing.id, { content });
       } else {
         const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
         await this.noteService.create(spaceId, {
           trial_id: this.trialId(),
-          content: this.content,
+          content,
         });
       }
       this.saved.emit();

@@ -45,8 +45,8 @@ export class TrialCreateDialogComponent {
   readonly saved = output<{ trialId: string }>();
 
   // Form fields are signals because they participate in the isValid() computed
-  // and are bound via [ngModel]+(ngModelChange) instead of [(ngModel)] for the
-  // signal-friendly one-way pattern.
+  // and are bound via one-way [ngModel] + (ngModelChange) instead of the
+  // two-way banana-box form, which is invisible to signal reactivity.
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);
   readonly productId = signal<string | null>(null);

@@ -62,7 +62,8 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
                   pInputText
                   id="invite-code"
                   class="w-full"
-                  [(ngModel)]="inviteCode"
+                  [ngModel]="inviteCode()"
+                  (ngModelChange)="inviteCode.set($event)"
                   name="inviteCode"
                   placeholder="e.g. AB3K9X2M"
                   required
@@ -115,12 +116,12 @@ export class OnboardingComponent {
     return 'Join your team';
   });
 
-  inviteCode = '';
+  readonly inviteCode = signal('');
   readonly joining = signal(false);
   readonly joinError = signal<string | null>(null);
 
   async joinTenant(): Promise<void> {
-    const code = this.inviteCode.trim();
+    const code = this.inviteCode().trim();
     if (!code) return;
     this.joining.set(true);
     this.joinError.set(null);

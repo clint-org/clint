@@ -108,7 +108,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             pInputText
             id="space-name"
             class="w-full"
-            [(ngModel)]="newSpaceName"
+            [ngModel]="newSpaceName()"
+            (ngModelChange)="newSpaceName.set($event)"
             name="spaceName"
             placeholder="e.g. SGLT2 Pipeline"
             required
@@ -122,7 +123,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
             pTextarea
             id="space-desc"
             class="w-full"
-            [(ngModel)]="newSpaceDesc"
+            [ngModel]="newSpaceDesc()"
+            (ngModelChange)="newSpaceDesc.set($event)"
             name="spaceDesc"
             rows="2"
             placeholder="Optional description"
@@ -159,8 +161,8 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   readonly createDialogOpen = signal(false);
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
-  newSpaceName = '';
-  newSpaceDesc = '';
+  readonly newSpaceName = signal('');
+  readonly newSpaceDesc = signal('');
 
   private tenantId = '';
 
@@ -223,25 +225,26 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   }
 
   resetCreateForm(): void {
-    this.newSpaceName = '';
-    this.newSpaceDesc = '';
+    this.newSpaceName.set('');
+    this.newSpaceDesc.set('');
     this.createError.set(null);
   }
 
   async createSpace(): Promise<void> {
-    if (!this.newSpaceName.trim()) return;
+    const name = this.newSpaceName().trim();
+    if (!name) return;
     this.creating.set(true);
     this.createError.set(null);
 
     try {
       const space = await this.spaceService.createSpace(
         this.tenantId,
-        this.newSpaceName.trim(),
-        this.newSpaceDesc.trim() || undefined
+        name,
+        this.newSpaceDesc().trim() || undefined
       );
       this.createDialogOpen.set(false);
-      this.newSpaceName = '';
-      this.newSpaceDesc = '';
+      this.newSpaceName.set('');
+      this.newSpaceDesc.set('');
       this.messageService.add({ severity: 'success', summary: 'Space created.', life: 3000 });
       this.openSpace(space);
     } catch (e) {

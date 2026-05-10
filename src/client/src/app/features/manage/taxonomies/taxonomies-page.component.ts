@@ -56,12 +56,12 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       <div class="mb-4">
         <p-selectbutton
           [options]="tabOptions"
-          [(ngModel)]="activeTabModel"
+          [ngModel]="activeTab()"
+          (ngModelChange)="onTabChange($event)"
           optionLabel="label"
           optionValue="value"
           [allowEmpty]="false"
           size="small"
-          (ngModelChange)="onTabChange($event)"
           aria-label="Select taxonomy type"
         />
       </div>
@@ -263,8 +263,6 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   ];
 
   readonly activeTab = signal<TabValue>('therapeutic-areas');
-  /** Two-way binding helper for p-selectbutton; kept in sync with activeTab signal. */
-  activeTabModel: TabValue = 'therapeutic-areas';
 
   // Shared state
   readonly loading = signal(false);
@@ -321,7 +319,6 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     const tabParam = this.route.snapshot.queryParamMap.get('tab') as TabValue | null;
     if (tabParam && ['therapeutic-areas', 'moa', 'roa'].includes(tabParam)) {
       this.activeTab.set(tabParam);
-      this.activeTabModel = tabParam;
     }
   }
 

@@ -13,7 +13,8 @@
       <p-select
         inputId="mt-category"
         [options]="categories()"
-        [(ngModel)]="categoryId"
+        [ngModel]="categoryId()"
+        (ngModelChange)="categoryId.set($event)"
         name="categoryId"
         optionLabel="name"
         optionValue="id"
@@ -27,19 +28,20 @@
       label="Name"
       fieldId="mt-name"
       [required]="true"
-      [error]="nameInvalid ? 'Name is required.' : null"
+      [error]="nameInvalid() ? 'Name is required.' : null"
       spacing="sm:col-span-2"
     >
       <input
         pInputText
         id="mt-name"
         class="w-full mt-1"
-        [(ngModel)]="name"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
         name="name"
         required
         placeholder="e.g. FDA Approval, Data Readout"
         (blur)="nameBlurred.set(true)"
-        [attr.aria-invalid]="nameInvalid"
+        [attr.aria-invalid]="nameInvalid()"
       />
     </app-form-field>
 
@@ -47,7 +49,8 @@
       <p-select
         inputId="mt-shape"
         [options]="shapeOptions"
-        [(ngModel)]="shape"
+        [ngModel]="shape()"
+        (ngModelChange)="shape.set($event)"
         name="shape"
         optionLabel="label"
         optionValue="value"
@@ -60,7 +63,8 @@
       <p-select
         inputId="mt-fill-style"
         [options]="fillStyleOptions"
-        [(ngModel)]="fillStyle"
+        [ngModel]="fillStyle()"
+        (ngModelChange)="fillStyle.set($event)"
         name="fillStyle"
         optionLabel="label"
         optionValue="value"
@@ -70,7 +74,12 @@
     </app-form-field>
 
     <app-form-field label="Color" fieldId="mt-color" spacing="">
-      <p-colorpicker [(ngModel)]="color" name="color" inputId="mt-color" />
+      <p-colorpicker
+        [ngModel]="color()"
+        (ngModelChange)="color.set($event)"
+        name="color"
+        inputId="mt-color"
+      />
     </app-form-field>
 
     <app-form-field label="Icon" fieldId="mt-icon" spacing="">
@@ -78,7 +87,8 @@
         pInputText
         id="mt-icon"
         class="w-full mt-1"
-        [(ngModel)]="icon"
+        [ngModel]="icon()"
+        (ngModelChange)="icon.set($event)"
         name="icon"
         placeholder="e.g. fa-solid fa-check"
       />
@@ -87,7 +97,8 @@
     <app-form-field label="Display Order" fieldId="mt-display-order" spacing="">
       <p-inputnumber
         inputId="mt-display-order"
-        [(ngModel)]="displayOrder"
+        [ngModel]="displayOrder()"
+        (ngModelChange)="displayOrder.set($event)"
         name="displayOrder"
         [min]="0"
         styleClass="w-full"
@@ -104,42 +115,42 @@
         width="32"
         height="32"
         viewBox="0 0 32 32"
-        [attr.aria-label]="'Preview: ' + shape + ' ' + fillStyle"
+        [attr.aria-label]="'Preview: ' + shape() + ' ' + fillStyle()"
         role="img"
       >
-        @switch (shape) {
+        @switch (shape()) {
           @case ('circle') {
             <circle
               cx="16"
               cy="16"
               r="12"
-              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
-              [attr.stroke]="color"
+              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
+              [attr.stroke]="color()"
               stroke-width="2"
             />
           }
           @case ('diamond') {
             <polygon
               points="16,2 30,16 16,30 2,16"
-              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
-              [attr.stroke]="color"
+              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
+              [attr.stroke]="color()"
               stroke-width="2"
             />
           }
           @case ('flag') {
-            <line [attr.stroke]="color" stroke-width="2" x1="8" y1="4" x2="8" y2="28" />
+            <line [attr.stroke]="color()" stroke-width="2" x1="8" y1="4" x2="8" y2="28" />
             <polygon
               points="8,4 26,10 8,16"
-              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
-              [attr.stroke]="color"
+              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
+              [attr.stroke]="color()"
               stroke-width="2"
             />
           }
           @case ('triangle') {
             <polygon
               points="6,4 28,16 6,28"
-              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
-              [attr.stroke]="color"
+              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
+              [attr.stroke]="color()"
               stroke-width="2"
             />
           }
@@ -149,8 +160,8 @@
               y="4"
               width="24"
               height="24"
-              [attr.fill]="fillStyle === 'filled' ? color : 'none'"
-              [attr.stroke]="color"
+              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
+              [attr.stroke]="color()"
               stroke-width="2"
             />
           }
@@ -160,7 +171,7 @@
               y1="4"
               x2="16"
               y2="28"
-              [attr.stroke]="color"
+              [attr.stroke]="color()"
               stroke-width="2"
               stroke-dasharray="4,3"
               stroke-linecap="round"
@@ -169,7 +180,7 @@
         }
       </svg>
       <span class="text-sm text-slate-600"
-        >{{ name || 'Untitled' }} -- {{ shape }}, {{ fillStyle }}</span
+        >{{ name() || 'Untitled' }} -- {{ shape() }}, {{ fillStyle() }}</span
       >
     </div>
   </div>

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -64,7 +65,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               pInputText
               id="space-name"
               class="w-full"
-              [(ngModel)]="name"
+              [ngModel]="name()"
+              (ngModelChange)="name.set($event)"
               [readonly]="!spaceRole.isOwner()"
             />
           </div>
@@ -80,7 +82,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               pTextarea
               id="space-desc"
               class="w-full"
-              [(ngModel)]="description"
+              [ngModel]="description()"
+              (ngModelChange)="description.set($event)"
               rows="3"
               [readonly]="!spaceRole.isOwner()"
             ></textarea>
@@ -133,8 +136,17 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
   readonly space = signal<Space | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
-  name = '';
-  description = '';
+  readonly name = signal('');
+  readonly description = signal('');
+
+  readonly hasChanges = computed(() => {
+    const s = this.space();
+    if (!s) return false;
+    return (
+      this.name().trim() !== s.name ||
+      (this.description().trim() || '') !== (s.description || '')
+    );
+  });
 
   private tenantId = '';
   private spaceId = '';
@@ -149,12 +161,6 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  hasChanges(): boolean {
-    const s = this.space();
-    if (!s) return false;
-    return this.name.trim() !== s.name || (this.description.trim() || '') !== (s.description || '');
-  }
-
   async saveIfChanged(): Promise<void> {
     const s = this.space();
     if (!s) return;
@@ -163,8 +169,8 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
     this.saving.set(true);
     try {
       const updated = await this.spaceService.updateSpace(this.spaceId, {
-        name: this.name.trim(),
-        description: this.description.trim() || null,
+        name: this.name().trim(),
+        description: this.description().trim() || null,
       });
       this.space.set(updated);
       this.messageService.add({
@@ -216,8 +222,8 @@ export class SpaceGeneralComponent implements OnInit, OnDestroy {
     try {
       const space = await this.spaceService.getSpace(this.spaceId);
       this.space.set(space);
-      this.name = space.name;
-      this.description = space.description ?? '';
+      this.name.set(space.name);
+      this.description.set(space.description ?? '');
     } finally {
       this.loading.set(false);
     }

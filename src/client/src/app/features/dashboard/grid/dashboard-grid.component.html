@@ -72,7 +72,8 @@
             >
             <div class="flex items-center gap-2">
               <p-checkbox
-                [(ngModel)]="showMoaColumn"
+                [ngModel]="showMoaColumn()"
+                (ngModelChange)="showMoaColumn.set($event)"
                 [binary]="true"
                 inputId="col-moa"
                 size="small"
@@ -81,7 +82,8 @@
             </div>
             <div class="flex items-center gap-2">
               <p-checkbox
-                [(ngModel)]="showRoaColumn"
+                [ngModel]="showRoaColumn()"
+                (ngModelChange)="showRoaColumn.set($event)"
                 [binary]="true"
                 inputId="col-roa"
                 size="small"
@@ -90,7 +92,8 @@
             </div>
             <div class="flex items-center gap-2">
               <p-checkbox
-                [(ngModel)]="showNotesColumn"
+                [ngModel]="showNotesColumn()"
+                (ngModelChange)="showNotesColumn.set($event)"
                 [binary]="true"
                 inputId="col-notes"
                 size="small"
