@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
+import { FillStyle, InnerMark, MarkerShape } from '../../core/models/marker.model';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 
@@ -26,8 +27,12 @@ export interface UpcomingCatalyst {
   title: string;
   event_date: string;
   is_projected: boolean;
+  no_longer_expected: boolean;
   category_name: string;
   marker_type_color: string;
+  marker_type_shape: MarkerShape;
+  marker_type_fill_style: FillStyle;
+  marker_type_inner_mark: InnerMark;
   company_name: string | null;
   product_name: string | null;
   trial_name: string | null;

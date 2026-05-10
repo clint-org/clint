@@ -195,9 +195,14 @@
                     }
                   </div>
                   <div class="flex w-3.5 justify-center" aria-hidden="true">
-                    <svg width="12" height="12">
-                      <circle cx="6" cy="6" r="4.5" [attr.fill]="d.color" />
-                    </svg>
+                    <app-marker-icon
+                      [shape]="d.shape"
+                      [color]="d.color"
+                      [size]="12"
+                      [fillStyle]="d.fillStyle"
+                      [innerMark]="d.innerMark"
+                      [isNle]="d.isNle"
+                    />
                   </div>
                 </button>
               </li>
