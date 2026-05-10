@@ -22,7 +22,6 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { environment } from '../../../environments/environment';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
-import { StatusTagComponent } from '../../shared/components/status-tag.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { extractErrorMessage } from '../../core/util/error-message';
@@ -43,7 +42,6 @@ import { extractErrorMessage } from '../../core/util/error-message';
     Tooltip,
     ManagePageShellComponent,
     RowActionsComponent,
-    StatusTagComponent,
     RouterLink,
   ],
   template: `
