@@ -33,7 +33,42 @@ describe('computeBrief', () => {
       window: 'THIS WEEK',
       lead: list[0],
       additional: 0,
+      whenPhrase: 'today',
     });
+  });
+
+  it('whenPhrase is "today" when the event is today', () => {
+    const list = [c('m1', plusDays(0))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('today');
+  });
+
+  it('whenPhrase is "tomorrow" when the event is in 1 day', () => {
+    const list = [c('m1', plusDays(1))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('tomorrow');
+  });
+
+  it('whenPhrase is a day-of-week abbreviation for events 2-7 days out', () => {
+    // ANCHOR is 2026-05-11 (Mon). 2026-05-13 is Wed.
+    const list = [c('m1', plusDays(2))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('Wed');
+  });
+
+  it('whenPhrase is day-of-week on day 7 (still THIS WEEK)', () => {
+    // 2026-05-11 + 7d = 2026-05-18 = Mon.
+    const list = [c('m1', plusDays(7))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('Mon');
+  });
+
+  it('whenPhrase is "expected {Mon DD}" for THIS MONTH', () => {
+    // 2026-05-11 + 17d = 2026-05-28.
+    const list = [c('m1', plusDays(17))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('expected May 28');
+  });
+
+  it('whenPhrase is "expected {Mon DD}" for NEXT QUARTER', () => {
+    // 2026-05-11 + 64d = 2026-07-14.
+    const list = [c('m1', plusDays(64))];
+    expect(computeBrief(list, ANCHOR)?.whenPhrase).toBe('expected Jul 14');
   });
 
   it('returns THIS WEEK on day 7 (inclusive boundary)', () => {
