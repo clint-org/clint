@@ -43,8 +43,8 @@
       <app-dashboard-grid
         [companies]="companies()"
         [zoomLevel]="state.zoomLevel()"
-        [startYear]="startYear()"
-        [endYear]="endYear()"
+        [startYear]="resolvedStartYear()"
+        [endYear]="resolvedEndYear()"
         (phaseClick)="onPhaseClick($event)"
         (markerClick)="onMarkerClick($event)"
         (trialClick)="onTrialClick($event)"
@@ -70,8 +70,8 @@
 
 <app-export-dialog
   [companies]="companies()"
-  [startYear]="startYear()"
-  [endYear]="endYear()"
+  [startYear]="resolvedStartYear()"
+  [endYear]="resolvedEndYear()"
   [open]="exportDialogOpen()"
   (closed)="exportDialogOpen.set(false)"
 />

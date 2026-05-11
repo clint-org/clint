@@ -5,6 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -40,10 +41,18 @@ export class TimelineViewComponent {
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
-  readonly startYear = signal(2016);
-  readonly endYear = signal(2026);
-  readonly exportDialogOpen = signal(false);
 
+  /** Optional caller-supplied window. When null, the component auto-fits to data. */
+  readonly startYear = input<number | null>(null);
+  readonly endYear = input<number | null>(null);
+
+  private readonly autoStartYear = signal(2016);
+  private readonly autoEndYear = signal(2026);
+
+  readonly resolvedStartYear = computed(() => this.startYear() ?? this.autoStartYear());
+  readonly resolvedEndYear = computed(() => this.endYear() ?? this.autoEndYear());
+
+  readonly exportDialogOpen = signal(false);
   readonly companies = computed(() => this.state.filteredCompanies());
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
 
@@ -65,6 +74,9 @@ export class TimelineViewComponent {
     }
 
     effect(() => {
+      // Skip auto-fit when caller provides both year inputs.
+      if (this.startYear() !== null && this.endYear() !== null) return;
+
       const companies = this.companies();
       if (!companies.length) return;
 
@@ -92,8 +104,8 @@ export class TimelineViewComponent {
       }
 
       if (minYear !== Infinity) {
-        this.startYear.set(minYear - 1);
-        this.endYear.set(Math.max(maxYear + 1, new Date().getFullYear() + 1));
+        this.autoStartYear.set(minYear - 1);
+        this.autoEndYear.set(Math.max(maxYear + 1, new Date().getFullYear() + 1));
       }
     });
   }
