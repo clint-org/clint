@@ -44,9 +44,9 @@ test.describe('Entity-page timeline + events panel', () => {
     await expect(page.locator('app-entity-events-panel')).toContainText('Events');
   });
 
-  test('product detail page renders Timeline + Events panel', async () => {
+  test('asset detail page renders Timeline + Events panel', async () => {
     await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/products/${productId}`,
+      `/t/${tenantId}/s/${spaceId}/manage/assets/${productId}`,
       { waitUntil: 'networkidle' },
     );
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });

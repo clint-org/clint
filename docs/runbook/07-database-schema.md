@@ -54,7 +54,6 @@ erDiagram
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
-  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_REVISIONS : "primary_intelligence_id"
   MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
   PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
   PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
@@ -611,7 +610,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
-- `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`

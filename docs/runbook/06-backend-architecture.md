@@ -56,7 +56,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, primary_intelligence_revisions, products, trials |
+| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
 | `create_space` | space_members, spaces | tenant_members, tenants |
@@ -85,7 +85,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
-| `get_intelligence_version_revisions` | - | primary_intelligence_revisions |
 | `get_landscape_index` | - | companies, products, therapeutic_areas, trials |
 | `get_landscape_index_by_company` | - | companies, products, trials |
 | `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
@@ -94,7 +93,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_primary_intelligence_history` | - | primary_intelligence, primary_intelligence_revisions |
+| `get_primary_intelligence_history` | - | events, primary_intelligence |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
@@ -113,11 +112,11 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
 | `is_tenant_owner_strict` | - | tenant_members |
 | `list_audit_events` | - | audit_events |
-| `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_revisions |
+| `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
 | `list_materials_for_entity` | - | material_links, materials |
 | `list_materials_for_space` | - | material_links, materials |
-| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links, primary_intelligence_revisions |
+| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
 | `list_recent_materials_for_space` | - | material_links, materials |
 | `lookup_user_by_email` | - | agency_members |
 | `palette_empty_state` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
@@ -148,7 +147,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_tenant_branding` | tenants | - |
 | `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
 | `withdraw_primary_intelligence` | primary_intelligence | - |
-| `write_primary_intelligence_revision` | primary_intelligence_revisions | - |
 <!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
 
 ## Supabase Services Used
@@ -597,7 +595,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
-- `get_intelligence_version_revisions`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
@@ -632,7 +629,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `search_palette`
 - `update_material`
 - `validate_material_links_payload`
-- `write_primary_intelligence_revision`
 
 **Edge functions in `supabase/functions/` not documented:**
 _All edge functions documented._

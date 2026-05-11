@@ -454,12 +454,13 @@ Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts`
 - `by-roa/:entityId`
 - `by-therapy-area`
 - `by-therapy-area/:entityId`
+- `manage/assets`
+- `manage/assets/:id`
 - `manage/companies/:id`
 - `manage/engagement`
 - `manage/marker-types`
 - `manage/markers/:id`
 - `manage/mechanisms-of-action`
-- `manage/products/:id`
 - `manage/routes-of-administration`
 - `manage/therapeutic-areas`
 - `seed-demo`
