@@ -93,6 +93,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly showNotesColumn = signal(true);
   readonly columnSettingsOpen = signal(false);
 
+  protected readonly hasAnyToggleableColumn = computed(() =>
+    !this.hideMoaColumn() || !this.hideRoaColumn() || !this.hideNotesColumn()
+  );
+
   constructor() {
     try {
       const stored = sessionStorage.getItem(DashboardGridComponent.STORAGE_KEY);
@@ -218,5 +222,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   roaTooltipText(roas: { id: string; name: string; abbreviation: string | null }[]): string {
     return roas.map((r) => r.name).join(' \u00B7 ');
+  }
+
+  protected isMarkerInWindow(marker: Marker): boolean {
+    const year = new Date(marker.event_date).getFullYear();
+    return year >= this.startYear() && year <= this.endYear();
   }
 }
