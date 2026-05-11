@@ -23,6 +23,7 @@ import {
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { parseDayOffset } from '../../utils/parse-day-offset';
 
 const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
@@ -263,9 +264,22 @@ export class IntelligenceBrowseComponent implements OnInit {
   ngOnInit(): void {
     this.tenantId.set(this.route.parent?.snapshot.paramMap.get('tenantId') ?? null);
     this.spaceId.set(this.route.parent?.snapshot.paramMap.get('spaceId') ?? null);
-    const statusParam = this.route.snapshot.queryParamMap.get('status');
+    const qp = this.route.snapshot.queryParamMap;
+    const statusParam = qp.get('status');
     if (statusParam === 'drafts' || statusParam === 'published') {
       this.status.set(statusParam);
+    }
+    // motion-strip deep-link: since=7d (or 30d, etc.) pre-sets the Since
+    // date-picker to today minus N days so the list lands already filtered.
+    const sinceParam = qp.get('since');
+    if (sinceParam) {
+      const days = parseDayOffset(sinceParam);
+      if (days !== null) {
+        const d = new Date();
+        d.setDate(d.getDate() - days);
+        d.setHours(0, 0, 0, 0);
+        this.since.set(d);
+      }
     }
   }
 
@@ -343,3 +357,4 @@ export class IntelligenceBrowseComponent implements OnInit {
     });
   }
 }
+

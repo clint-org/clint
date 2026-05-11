@@ -190,6 +190,33 @@ export class EngagementActivityPageComponent implements OnInit {
       if (snap.paramMap.has('spaceId')) this.spaceId.set(snap.paramMap.get('spaceId')!);
       snap = snap.parent;
     }
+
+    // motion-strip deep-link: pre-set filters from query params so the
+    // activity page lands already scoped to the cell's intent.
+    const qp = this.route.snapshot.queryParamMap;
+
+    // eventTypes=phase_transitioned,status_changed
+    const eventTypesParam = qp.get('eventTypes');
+    if (eventTypesParam) {
+      const types = eventTypesParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s): s is ChangeEventType =>
+          (this.eventTypeOptions as { value: ChangeEventType }[]).some((o) => o.value === s)
+        );
+      if (types.length > 0) {
+        this.selectedEventTypes.set(types);
+      }
+    }
+
+    // within=30d -> dateRange signal ('7d' | '30d' | 'all')
+    const withinParam = qp.get('within');
+    if (withinParam === '7d' || withinParam === '30d') {
+      this.dateRange.set(withinParam);
+    } else if (withinParam === 'all') {
+      this.dateRange.set('all');
+    }
+
     const id = this.spaceId();
     if (!id) return;
     void this.trialService
