@@ -7,7 +7,6 @@ import {
   IntelligenceFeedResult,
   IntelligenceFeedRow,
   IntelligenceHistoryPayload,
-  IntelligenceVersionRevision,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -146,15 +145,6 @@ export class PrimaryIntelligenceService {
         events: [],
       }
     );
-  }
-
-  async loadVersionRevisions(versionId: string): Promise<IntelligenceVersionRevision[]> {
-    const { data, error } = await this.supabase.client.rpc(
-      'get_intelligence_version_revisions',
-      { p_version_id: versionId }
-    );
-    if (error) throw error;
-    return (data as IntelligenceVersionRevision[]) ?? [];
   }
 
   async withdraw(id: string, changeNote: string): Promise<void> {

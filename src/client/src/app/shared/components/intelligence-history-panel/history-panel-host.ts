@@ -3,7 +3,6 @@ import { signal } from '@angular/core';
 import {
   IntelligenceEntityType,
   IntelligenceHistoryPayload,
-  IntelligenceVersionRevision,
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 
@@ -31,10 +30,6 @@ export class IntelligenceHistoryHost {
     this.payload.set(
       await this.service.loadHistory(spaceId, entityType, entityId),
     );
-  }
-
-  async loadVersionRevisions(versionId: string): Promise<IntelligenceVersionRevision[]> {
-    return this.service.loadVersionRevisions(versionId);
   }
 
   async withdraw(id: string, changeNote: string): Promise<void> {
