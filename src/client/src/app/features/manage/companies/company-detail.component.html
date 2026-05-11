@@ -29,6 +29,31 @@
       }
     </header>
 
+    <!-- Timeline + events panel -->
+    <section id="timeline" class="mb-4 bg-white border border-slate-200">
+      <header class="px-5 py-3 border-b border-slate-200">
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+          Timeline
+        </h2>
+      </header>
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
+        <div class="border-r border-slate-200 min-w-0">
+          <app-timeline-view
+            [startYear]="timelineStartYear()"
+            [endYear]="timelineEndYear()"
+          />
+        </div>
+        @if (company(); as c) {
+          <app-entity-events-panel
+            [spaceId]="spaceIdSig()"
+            [tenantId]="tenantIdSig()"
+            entityLevel="company"
+            [entityId]="c.id"
+          />
+        }
+      </div>
+    </section>
+
     @if (hasIntelligence()) {
       <app-intelligence-block
         [published]="intelligence()?.published ?? null"
