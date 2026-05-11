@@ -1,0 +1,46 @@
+<section class="border border-slate-200 bg-white">
+  <header class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+    <h3 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+      Events
+    </h3>
+    <a
+      [routerLink]="seeAllLink()"
+      [queryParams]="seeAllQueryParams()"
+      class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800"
+    >
+      See all
+    </a>
+  </header>
+
+  @if (loading()) {
+    <div class="px-4 py-6 text-sm text-slate-500">Loading events...</div>
+  } @else if (error()) {
+    <div class="px-4 py-6 text-sm text-red-600">{{ error() }}</div>
+  } @else if (rows().length === 0) {
+    <div class="px-4 py-6 text-sm text-slate-500">
+      No external events recorded for this {{ entityLevel() }}.
+    </div>
+  } @else {
+    <ul class="divide-y divide-slate-100">
+      @for (row of rows(); track row.id) {
+        <li class="px-4 py-3">
+          <div class="flex items-baseline gap-3">
+            <span class="font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap">
+              {{ row.event_date | date: 'yyyy-MM-dd' }}
+            </span>
+            <span class="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-700">
+              {{ row.category_name }}
+            </span>
+          </div>
+          <div class="mt-1 text-sm text-slate-800 leading-snug">{{ row.title }}</div>
+          @if (row.entity_name && row.entity_level !== entityLevel()) {
+            <div class="mt-0.5 text-xs text-slate-500">
+              <span class="uppercase tracking-wider">{{ row.entity_level }}</span>
+              {{ ' . ' }}{{ row.entity_name }}
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
