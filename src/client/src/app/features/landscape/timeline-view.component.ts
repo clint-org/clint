@@ -11,11 +11,9 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
-import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
@@ -29,9 +27,7 @@ import { LandscapeStateService } from './landscape-state.service';
     DashboardGridComponent,
     ExportDialogComponent,
     LegendComponent,
-    MarkerDetailPanelComponent,
     MessageModule,
-    ProgressSpinner,
     SkeletonComponent,
   ],
   templateUrl: './timeline-view.component.html',
@@ -166,17 +162,6 @@ export class TimelineViewComponent {
   onAssetClick(assetId: string): void {
     if (!assetId) return;
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
-  }
-
-  onEventClick(eventId: string): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'events'], {
-      queryParams: { eventId },
-    });
-  }
-
-  navigateToTrial(trialId: string): void {
-    if (!trialId) return;
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
   }
 
   retry(): void {
