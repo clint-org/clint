@@ -72,7 +72,7 @@ export const MATERIAL_ENTITY_LABEL: Record<MaterialEntityType, string> = {
   trial: 'Trial',
   marker: 'Marker',
   company: 'Company',
-  product: 'Product',
+  product: 'Asset',
   space: 'Engagement',
 };
 

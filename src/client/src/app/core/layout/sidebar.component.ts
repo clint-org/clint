@@ -78,7 +78,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Manage',
     items: [
       { label: 'Companies', route: 'manage/companies', icon: NAV_ICONS['companies'] },
-      { label: 'Products', route: 'manage/products', icon: NAV_ICONS['products'] },
+      { label: 'Assets', route: 'manage/assets', icon: NAV_ICONS['assets'] },
       { label: 'Trials', route: 'manage/trials', icon: NAV_ICONS['trials'] },
     ],
   },

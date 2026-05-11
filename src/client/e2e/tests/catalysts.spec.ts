@@ -21,9 +21,9 @@ test.describe('Catalysts View', () => {
 
     // Seed reference data for context
     const companyId = await createTestCompany(spaceId, 'Catalyst Co');
-    const productId = await createTestProduct(spaceId, companyId, 'Catalyst Drug');
+    const assetId = await createTestProduct(spaceId, companyId, 'Catalyst Drug');
     const taId = await createTestTherapeuticArea(spaceId, 'Oncology');
-    await createTestTrial(spaceId, productId, taId, 'Catalyst Trial');
+    await createTestTrial(spaceId, assetId, taId, 'Catalyst Trial');
 
     page = await authenticatedPage(browser);
   });

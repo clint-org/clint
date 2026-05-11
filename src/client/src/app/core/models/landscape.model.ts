@@ -58,7 +58,7 @@ export const PHASE_COLOR: Record<RingPhase, string> = {
 
 export type BullseyeDimension = 'therapeutic-area' | 'company' | 'moa' | 'roa';
 
-export type SpokeMode = 'grouped' | 'products';
+export type SpokeMode = 'grouped' | 'assets';
 
 export interface BullseyeScope {
   id: string;
@@ -101,7 +101,7 @@ export interface BullseyeMarker {
   category_name: string;
 }
 
-export interface BullseyeProduct {
+export interface BullseyeAsset {
   id: string;
   name: string;
   generic_name: string | null;
@@ -121,7 +121,7 @@ export interface BullseyeSpoke {
   name: string;
   display_order: number;
   highest_phase_rank: number;
-  products: BullseyeProduct[];
+  products: BullseyeAsset[];
 }
 
 export interface BullseyeData {
@@ -134,7 +134,7 @@ export interface BullseyeData {
 
 export interface LandscapeFilters {
   companyIds: string[];
-  productIds: string[];
+  assetIds: string[];
   therapeuticAreaIds: string[];
   mechanismOfActionIds: string[];
   routeOfAdministrationIds: string[];
@@ -146,7 +146,7 @@ export interface LandscapeFilters {
 
 export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   companyIds: [],
-  productIds: [],
+  assetIds: [],
   therapeuticAreaIds: [],
   mechanismOfActionIds: [],
   routeOfAdministrationIds: [],
@@ -210,9 +210,9 @@ export type PositioningGrouping =
   | 'company'
   | 'roa';
 
-export type CountUnit = 'products' | 'trials' | 'companies';
+export type CountUnit = 'assets' | 'trials' | 'companies';
 
-export interface PositioningProduct {
+export interface PositioningAsset {
   id: string;
   name: string;
   generic_name: string | null;
@@ -230,7 +230,7 @@ export interface PositioningBubble {
   highest_phase: RingPhase;
   highest_phase_rank: number;
   unit_count: number;
-  products: PositioningProduct[];
+  products: PositioningAsset[];
 }
 
 export interface PositioningData {
@@ -278,7 +278,7 @@ export const POSITIONING_SEGMENTS = [
 ] as const;
 
 export const COUNT_UNIT_OPTIONS: { label: string; value: CountUnit }[] = [
-  { label: 'Products', value: 'products' },
+  { label: 'Assets', value: 'assets' },
   { label: 'Trials', value: 'trials' },
   { label: 'Companies', value: 'companies' },
 ];

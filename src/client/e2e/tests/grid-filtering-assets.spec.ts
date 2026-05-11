@@ -9,21 +9,21 @@ import {
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Products grid — filtering, sorting, pagination', () => {
+test.describe('Assets grid — filtering, sorting, pagination', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
   let pfizerId: string;
   let merckId: string;
-  // Use pageSize=10 in the URL so 20 seeded products span 2 pages.
-  const productsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/products?pageSize=10`;
+  // Use pageSize=10 in the URL so 20 seeded assets span 2 pages.
+  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/assets?pageSize=10`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Grid Filter Org');
     spaceId = await createTestSpace(tenantId, 'Grid Filter Space');
     pfizerId = await createTestCompany(spaceId, 'Pfizer');
     merckId = await createTestCompany(spaceId, 'Merck');
-    // Seed enough products to exercise pagination (10-per-page view has 2 pages).
+    // Seed enough assets to exercise pagination (10-per-page view has 2 pages).
     for (let i = 0; i < 12; i++) {
       await createTestProduct(spaceId, pfizerId, `PfizerProduct${i}`);
     }
@@ -38,13 +38,13 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
   });
 
   test('grid loads with toolbar and paginator', async () => {
-    await page.goto(productsUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByPlaceholder('Search products...')).toBeVisible();
+    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByPlaceholder('Search assets...')).toBeVisible();
     await expect(page.locator('.p-paginator')).toBeVisible();
   });
 
   test('global search filters rows and updates URL', async () => {
-    await page.getByPlaceholder('Search products...').fill('Pfizer');
+    await page.getByPlaceholder('Search assets...').fill('Pfizer');
     await expect(page).toHaveURL(/q=Pfizer/, { timeout: 2000 });
     // All visible rows should be PfizerProduct*
     const rows = await page.locator('table tbody tr').all();
@@ -58,7 +58,7 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
     // inner button rendered by PrimeNG has text "Clear all". Use the text label.
     await page.getByRole('button', { name: 'Clear all' }).click();
     await expect(page).not.toHaveURL(/q=/);
-    await expect(page.getByPlaceholder('Search products...')).toHaveValue('');
+    await expect(page.getByPlaceholder('Search assets...')).toHaveValue('');
   });
 
   test('sort by Name ascending updates URL and orders rows', async () => {
@@ -69,8 +69,8 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
   });
 
   test('paginator click updates URL with page number', async () => {
-    // Navigate fresh with pageSize=10 so 20 products span 2 pages.
-    await page.goto(productsUrl(), { waitUntil: 'networkidle' });
+    // Navigate fresh with pageSize=10 so 20 assets span 2 pages.
+    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
     // Wait for rows to render — this ensures totalRecords is populated so the
     // paginator enables the Next Page button before we click it.
     await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 5000 });
@@ -82,40 +82,40 @@ test.describe('Products grid — filtering, sorting, pagination', () => {
   });
 
   test('deep-link to page 2 lands on page 2', async () => {
-    await page.goto(`${productsUrl()}&page=2`, { waitUntil: 'networkidle' });
+    await page.goto(`${assetsUrl()}&page=2`, { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(/page=2/, { timeout: 2000 });
     // Verify the paginator shows page 2 as active.
     await expect(page.locator('.p-paginator .p-paginator-page.p-paginator-page-selected')).toContainText('2');
   });
 
-  test('browser back navigates away from products page', async () => {
-    // Navigate to companies page first (pushes to history), then to products page.
-    // Since products uses replaceUrl:true for state changes, going back should
+  test('browser back navigates away from assets page', async () => {
+    // Navigate to companies page first (pushes to history), then to assets page.
+    // Since assets uses replaceUrl:true for state changes, going back should
     // return to companies (the last page that pushed a history entry).
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
     await page.goto(companiesUrl, { waitUntil: 'networkidle' });
-    await page.goto(productsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
     await page.goBack();
     await expect(page).toHaveURL(/manage\/companies/);
   });
 
-  test('inbound deep-link via company "View products" lands pre-filtered', async () => {
+  test('inbound deep-link via company "View assets" lands pre-filtered', async () => {
     // The company-name cell now links to the company detail page; the
-    // "click name -> filtered products" affordance moved to the row-actions
-    // menu's "View products" item, which still calls openProducts(pfizerId)
+    // "click name -> filtered assets" affordance moved to the row-actions
+    // menu's "View assets" item, which still calls openAssets(pfizerId)
     // using buildFilterQueryParams.
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
     await page.goto(companiesUrl, { waitUntil: 'networkidle' });
 
     const row = page.locator('tr', { hasText: 'Pfizer' }).first();
     await row.locator('app-row-actions button').click();
-    await page.getByRole('menuitem', { name: 'View products' }).click();
+    await page.getByRole('menuitem', { name: 'View assets' }).click();
 
-    // Landed on products page with the filter applied via the unified URL shape.
+    // Landed on assets page with the filter applied via the unified URL shape.
     await expect(page).toHaveURL(new RegExp(`filter\\.product\\.company_id=${pfizerId}`));
     await expect(page.getByRole('list', { name: 'Active filters' })).toContainText('Pfizer');
 
-    // All visible rows are Pfizer products.
+    // All visible rows are Pfizer assets.
     const rows = await page.locator('table tbody tr').all();
     for (const row of rows) {
       await expect(row).toContainText(/PfizerProduct/);

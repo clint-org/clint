@@ -4,8 +4,8 @@
 <app-manage-page-shell [narrow]="true">
   @if (loading()) {
     <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
-  } @else if (product()) {
-    @let p = product()!;
+  } @else if (asset()) {
+    @let p = asset()!;
     <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
       @if (p.companies; as co) {
         <a
@@ -74,7 +74,7 @@
     } @else {
       <app-intelligence-empty
         [canEdit]="spaceRole.canEdit()"
-        entityLabel="product"
+        entityLabel="asset"
         (add)="onIntelligenceEdit()"
       />
     }
@@ -102,7 +102,7 @@
       (confirmed)="onPurgeConfirmed($event)"
     />
 
-    <section class="mb-4 border border-slate-200 bg-white" aria-label="Reads referencing this product">
+    <section class="mb-4 border border-slate-200 bg-white" aria-label="Reads referencing this asset">
       <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Referenced in</h2>
         <span class="font-mono text-[10px] text-slate-400">
@@ -111,7 +111,7 @@
       </header>
       <div class="px-4 py-3">
         @if ((intelligence()?.referenced_in ?? []).length === 0) {
-          <p class="text-xs text-slate-400">No published reads link to this product yet.</p>
+          <p class="text-xs text-slate-400">No published reads link to this asset yet.</p>
         } @else {
           <ul class="divide-y divide-slate-100">
             @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
@@ -131,7 +131,7 @@
       <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
         <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
       </header>
-      <app-materials-section entityType="product" [entityId]="productId()" [spaceId]="spaceIdSig()" />
+      <app-materials-section entityType="product" [entityId]="assetId()" [spaceId]="spaceIdSig()" />
     </section>
 
     @if (spaceIdSig()) {
@@ -139,12 +139,12 @@
         [visible]="drawerOpen()"
         [spaceId]="spaceIdSig()"
         entityType="product"
-        [entityId]="productId()"
+        [entityId]="assetId()"
         (closed)="onIntelligenceClosed()"
         (published)="onIntelligencePublished()"
       />
     }
   } @else {
-    <div class="px-4 py-8 text-sm text-slate-500">Product not found.</div>
+    <div class="px-4 py-8 text-sm text-slate-500">Asset not found.</div>
   }
 </app-manage-page-shell>

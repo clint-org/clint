@@ -10,7 +10,7 @@ import type { GridState } from '../grids/filter-types';
 // The toolbar never calls `filteredRows` (the only T-dependent method on
 // GridState<T>), so the T parameter is effectively unused here. Using
 // `GridState<any>` lets any concrete row type bind cleanly via structural
-// assignment. GridState<ProductRow> is not assignable to GridState<unknown>
+// assignment. GridState<AssetRow> is not assignable to GridState<unknown>
 // because the generic is invariant through the filteredRows signature.
 @Component({
   selector: 'app-grid-toolbar',
@@ -20,7 +20,10 @@ import type { GridState } from '../grids/filter-types';
   template: `
     <div class="grid-toolbar mb-3">
       <div class="flex items-center justify-between gap-3">
-        <p-iconfield iconPosition="left" [styleClass]="'search-tinted' + (state().globalSearch() ? ' has-value' : '')">
+        <p-iconfield
+          iconPosition="left"
+          [styleClass]="'search-tinted' + (state().globalSearch() ? ' has-value' : '')"
+        >
           <p-inputicon><i class="fa-solid fa-magnifying-glass text-[11px]"></i></p-inputicon>
           <input
             pInputText

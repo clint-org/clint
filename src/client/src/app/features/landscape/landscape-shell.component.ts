@@ -280,12 +280,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private applyQueryParamFilters(): void {
     const qp = this.route.snapshot.queryParamMap;
-    const productIds = this.parseIdList(qp.get('productIds'));
+    const assetIds = this.parseIdList(qp.get('assetIds'));
     const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
-    if (productIds || therapeuticAreaIds) {
+    if (assetIds || therapeuticAreaIds) {
       this.state.filters.update((f) => ({
         ...f,
-        productIds: productIds ?? f.productIds,
+        assetIds: assetIds ?? f.assetIds,
         therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
       }));
     }

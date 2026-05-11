@@ -14,7 +14,7 @@ export type FilterValue =
  * Declarative column definition. Each filterable column also drives chip labels.
  */
 export interface ColumnDef<T> {
-  /** Dotted path into the row view-model, e.g. 'product.company_id' or 'companyName'. */
+  /** Dotted path into the row view-model, e.g. 'asset.company_id' or 'companyName'. */
   field: string;
   /** Display header — also used as the chip label prefix. */
   header: string;

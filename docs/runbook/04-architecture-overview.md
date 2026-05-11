@@ -63,7 +63,7 @@ flowchart TD
   tenants --> tenant_invites[tenant_invites]
   tenants --> spaces["spaces<br/>(engagements / pipelines)"]
   spaces --> space_members["space_members<br/>(owner | editor | viewer)"]
-  spaces --> space_data["companies, products,<br/>trials, ..."]
+  spaces --> space_data["companies, assets,<br/>trials, ..."]
 ```
 
 Direct customers without an agency (`agency_id IS NULL`) keep working unchanged on the apex. See [Multi-Tenant Model](09-multi-tenant-model.md) for the role-access matrix.

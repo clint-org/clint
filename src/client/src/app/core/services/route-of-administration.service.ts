@@ -28,7 +28,10 @@ export class RouteOfAdministrationService {
     return data as RouteOfAdministration;
   }
 
-  async create(spaceId: string, roa: Partial<RouteOfAdministration>): Promise<RouteOfAdministration> {
+  async create(
+    spaceId: string,
+    roa: Partial<RouteOfAdministration>
+  ): Promise<RouteOfAdministration> {
     const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('routes_of_administration')
@@ -39,7 +42,10 @@ export class RouteOfAdministrationService {
     return data as RouteOfAdministration;
   }
 
-  async update(id: string, changes: Partial<RouteOfAdministration>): Promise<RouteOfAdministration> {
+  async update(
+    id: string,
+    changes: Partial<RouteOfAdministration>
+  ): Promise<RouteOfAdministration> {
     const { data, error } = await this.supabase.client
       .from('routes_of_administration')
       .update(changes)
@@ -58,7 +64,7 @@ export class RouteOfAdministrationService {
     if (error) throw error;
   }
 
-  async countAssignedProducts(id: string): Promise<number> {
+  async countAssignedAssets(id: string): Promise<number> {
     const { count, error } = await this.supabase.client
       .from('product_routes_of_administration')
       .select('*', { count: 'exact', head: true })

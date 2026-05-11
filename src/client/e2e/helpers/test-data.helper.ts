@@ -21,13 +21,15 @@ function getUserId(): string {
 
 export async function createTestTenant(name: string): Promise<string> {
   const admin = getAdminClient();
-  const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+  const slug =
+    name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '') +
+    '-' +
+    Date.now();
 
-  const { data, error } = await admin
-    .from('tenants')
-    .insert({ name, slug })
-    .select('id')
-    .single();
+  const { data, error } = await admin.from('tenants').insert({ name, slug }).select('id').single();
   if (error) throw new Error(`Failed to create tenant: ${error.message}`);
 
   await admin
@@ -44,12 +46,17 @@ export async function createTestTenant(name: string): Promise<string> {
  */
 export async function createTestAgency(
   name: string,
-  opts?: { tenantId?: string },
+  opts?: { tenantId?: string }
 ): Promise<string> {
   const admin = getAdminClient();
   const stamp = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const slug =
-    name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + stamp;
+    name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '') +
+    '-' +
+    stamp;
   const subdomain = ('a' + slug).slice(0, 60);
 
   const { data, error } = await admin
@@ -98,10 +105,7 @@ export async function createTestSpace(tenantId: string, name: string): Promise<s
   return data.id;
 }
 
-export async function createTestCompany(
-  spaceId: string,
-  name: string,
-): Promise<string> {
+export async function createTestCompany(spaceId: string, name: string): Promise<string> {
   const admin = getAdminClient();
 
   const { data, error } = await admin
@@ -117,7 +121,7 @@ export async function createTestCompany(
 export async function createTestProduct(
   spaceId: string,
   companyId: string,
-  name: string,
+  name: string
 ): Promise<string> {
   const admin = getAdminClient();
 
@@ -134,7 +138,7 @@ export async function createTestProduct(
 export async function createTestTherapeuticArea(
   spaceId: string,
   name: string,
-  abbreviation?: string,
+  abbreviation?: string
 ): Promise<string> {
   const admin = getAdminClient();
 
@@ -150,9 +154,9 @@ export async function createTestTherapeuticArea(
 
 export async function createTestTrial(
   spaceId: string,
-  productId: string,
+  assetId: string,
   therapeuticAreaId: string,
-  name: string,
+  name: string
 ): Promise<string> {
   const admin = getAdminClient();
 
@@ -161,7 +165,7 @@ export async function createTestTrial(
     .insert({
       space_id: spaceId,
       created_by: getUserId(),
-      product_id: productId,
+      product_id: assetId,
       therapeutic_area_id: therapeuticAreaId,
       name,
     })
@@ -186,7 +190,7 @@ export async function createTestTrialPhase(
   trialId: string,
   phaseType: string,
   startDate: string,
-  endDate?: string,
+  endDate?: string
 ): Promise<string> {
   const admin = getAdminClient();
 
@@ -209,7 +213,7 @@ export async function createTestMarkerType(
   spaceId: string,
   name: string,
   categoryId: string,
-  opts?: { shape?: string; fill_style?: string; color?: string },
+  opts?: { shape?: string; fill_style?: string; color?: string }
 ): Promise<string> {
   const admin = getAdminClient();
 
@@ -243,10 +247,7 @@ export async function getSystemMarkerCategoryId(name: string): Promise<string> {
   return data.id;
 }
 
-export async function createTestMoa(
-  spaceId: string,
-  name: string,
-): Promise<string> {
+export async function createTestMoa(spaceId: string, name: string): Promise<string> {
   const admin = getAdminClient();
   const { data, error } = await admin
     .from('mechanisms_of_action')
@@ -257,10 +258,7 @@ export async function createTestMoa(
   return data.id;
 }
 
-export async function createTestRoa(
-  spaceId: string,
-  name: string,
-): Promise<string> {
+export async function createTestRoa(spaceId: string, name: string): Promise<string> {
   const admin = getAdminClient();
   const { data, error } = await admin
     .from('routes_of_administration')
@@ -274,7 +272,7 @@ export async function createTestRoa(
 export async function navigateToSpace(
   page: Page,
   tenantId: string,
-  spaceId: string,
+  spaceId: string
 ): Promise<void> {
   await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
 }

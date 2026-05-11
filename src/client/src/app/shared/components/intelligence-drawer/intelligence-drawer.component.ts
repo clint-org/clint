@@ -310,7 +310,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       case 'company':
         return this.intelligence.getCompanyDetail(this.entityId());
       case 'product':
-        return this.intelligence.getProductDetail(this.entityId());
+        return this.intelligence.getAssetDetail(this.entityId());
       case 'space':
         return this.intelligence.getSpaceIntelligence(this.entityId());
       default:

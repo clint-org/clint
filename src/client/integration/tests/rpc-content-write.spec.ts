@@ -21,13 +21,13 @@ let p: Personas;
 let trialAId: string;
 let trialBId: string;
 let companyId: string;
-let productId: string;
+let assetId: string;
 
 beforeAll(async () => {
   p = await buildPersonas();
 
   // Seed a minimal entity graph in the persona space. The personas fixture
-  // doesn't create companies/products/trials -- those are domain rows the
+  // doesn.t create companies/assets/trials -- those are domain rows the
   // gate-only tests didn't need.
   const admin = adminClient();
   const userId = p.ids.tenant_owner;
@@ -39,12 +39,12 @@ beforeAll(async () => {
     .single();
   companyId = company!.id;
 
-  const { data: product } = await admin
+  const { data: asset } = await admin
     .from('products')
     .insert({ space_id: p.org.spaceId, company_id: companyId, name: 'AcmeMab', created_by: userId })
     .select('id')
     .single();
-  productId = product!.id;
+  assetId = asset!.id;
 
   const { data: ta } = await admin
     .from('therapeutic_areas')
@@ -57,7 +57,7 @@ beforeAll(async () => {
     .insert([
       {
         space_id: p.org.spaceId,
-        product_id: productId,
+        product_id: assetId,
         therapeutic_area_id: ta!.id,
         name: 'Trial Alpha',
         identifier: 'NCT00000001',
@@ -66,7 +66,7 @@ beforeAll(async () => {
       },
       {
         space_id: p.org.spaceId,
-        product_id: productId,
+        product_id: assetId,
         therapeutic_area_id: ta!.id,
         name: 'Trial Beta',
         identifier: 'NCT00000002',
@@ -154,7 +154,7 @@ describe('rpc build_intelligence_payload (gate)', () => {
 
 /**
  * Round-trip suite. Anchors the read on Trial Alpha, links to Trial Beta and
- * the product. Covers what the gate-only tests don't: that links survive,
+ * the asset. Covers what the gate-only tests don't: that links survive,
  * entity_name resolves, and publish_note round-trips through the record.
  */
 describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)', () => {
@@ -262,7 +262,7 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     expect(next!.record.publish_note).toBeNull();
   });
 
-  it('add a product link: both links present with entity_name resolved', async () => {
+  it('add an asset link: both links present with entity_name resolved', async () => {
     const draft = await read('draft');
     const id = draft!.record.id;
     const links: Link[] = [
@@ -275,7 +275,7 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
       })),
       {
         entity_type: 'product',
-        entity_id: productId,
+        entity_id: assetId,
         relationship_type: 'Predecessor',
         gloss: null,
         display_order: 1,
@@ -291,8 +291,8 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
 
     const next = await read('draft');
     expect(next!.links).toHaveLength(2);
-    const product = next!.links.find((l) => l.entity_type === 'product');
-    expect(product?.entity_name).toBe('AcmeMab');
+    const asset = next!.links.find((l) => l.entity_type === 'product');
+    expect(asset?.entity_name).toBe('AcmeMab');
   });
 
   it('publish: row reads under "published"; publish_note null on first publish', async () => {

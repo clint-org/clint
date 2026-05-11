@@ -21,7 +21,7 @@ export const NAV_ICONS: Record<string, string> = {
 
   // Manage pages
   companies: 'fa-solid fa-building',
-  products: 'fa-solid fa-capsules',
+  assets: 'fa-solid fa-capsules',
   trials: 'fa-solid fa-flask',
 
   // Settings pages

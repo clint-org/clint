@@ -39,7 +39,7 @@ export class PositioningTooltipComponent {
   readonly bubble = input<PositioningBubble | null>(null);
   readonly x = input<number>(0);
   readonly y = input<number>(0);
-  readonly countUnit = input<string>('products');
+  readonly countUnit = input<string>('assets');
 
   /** Derive full name from group_keys instead of the abbreviation-based label. */
   readonly fullLabel = computed<string>(() => {

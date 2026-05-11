@@ -489,10 +489,10 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['companies'],
           },
           {
-            label: 'Products',
-            value: 'products',
-            active: route === 'manage/products',
-            icon: NAV_ICONS['products'],
+            label: 'Assets',
+            value: 'assets',
+            active: route === 'manage/assets',
+            icon: NAV_ICONS['assets'],
           },
           {
             label: 'Trials',
@@ -514,7 +514,7 @@ export class AppShellComponent implements OnInit {
     const route = this.activeSpaceRoute();
     const titleMap: Record<string, string> = {
       'manage/companies': 'Companies',
-      'manage/products': 'Products',
+      'manage/assets': 'Assets',
       'manage/trials': 'Trials',
       events: 'Events',
       catalysts: 'Future Catalysts',

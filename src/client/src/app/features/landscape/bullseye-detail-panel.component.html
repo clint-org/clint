@@ -1,7 +1,7 @@
 <app-detail-panel-shell
   [label]="headerLabel()"
-  [labelTone]="selectedProduct() ? 'brand' : 'muted'"
-  [showClose]="!!selectedProduct()"
+  [labelTone]="selectedAsset() ? 'brand' : 'muted'"
+  [showClose]="!!selectedAsset()"
   (closed)="onClearSelection()"
 >
   @if (loading()) {
@@ -14,11 +14,11 @@
       <div class="h-3 animate-pulse rounded bg-slate-100"></div>
     </div>
   } @else {
-    @if (selectedProduct(); as product) {
+    @if (selectedAsset(); as asset) {
       <div>
-        <h2 class="text-base font-semibold leading-snug text-slate-900">{{ product.name }}</h2>
-        @if (product.generic_name) {
-          <p class="mt-0.5 text-[13px] italic text-slate-500">{{ product.generic_name }}</p>
+        <h2 class="text-base font-semibold leading-snug text-slate-900">{{ asset.name }}</h2>
+        @if (asset.generic_name) {
+          <p class="mt-0.5 text-[13px] italic text-slate-500">{{ asset.generic_name }}</p>
         }
       </div>
 
@@ -29,7 +29,7 @@
             class="group flex items-center gap-1 text-[13px] font-medium text-slate-900 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
             (click)="onCompanyClick()"
           >
-            {{ product.company_name }}
+            {{ asset.company_name }}
             <i
               class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
               aria-hidden="true"
@@ -38,10 +38,10 @@
         </app-detail-panel-section>
       }
 
-      @if (product.moas.length > 0) {
+      @if (asset.moas.length > 0) {
         <app-detail-panel-section [first]="dimension() === 'company'" label="Mechanism of action">
           <div class="flex flex-wrap gap-1">
-            @for (moa of product.moas; track moa.id) {
+            @for (moa of asset.moas; track moa.id) {
               <span
                 class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
                 [class.bg-brand-100]="isScopedMoa(moa.id)"
@@ -56,10 +56,10 @@
         </app-detail-panel-section>
       }
 
-      @if (product.roas.length > 0) {
+      @if (asset.roas.length > 0) {
         <app-detail-panel-section label="Route of administration">
           <div class="flex flex-wrap gap-1">
-            @for (roa of product.roas; track roa.id) {
+            @for (roa of asset.roas; track roa.id) {
               <span
                 class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
                 [class.bg-brand-100]="isScopedRoa(roa.id)"
@@ -75,8 +75,8 @@
         </app-detail-panel-section>
       }
 
-      <app-detail-panel-section [label]="'Trials (' + product.trials.length + ')'">
-        @if (product.trials.length === 0) {
+      <app-detail-panel-section [label]="'Trials (' + asset.trials.length + ')'">
+        @if (asset.trials.length === 0) {
           <p class="text-[12px] text-slate-500">No trials tracked.</p>
         } @else {
           <app-detail-panel-entity-list>
@@ -129,16 +129,16 @@
               class="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-1 border border-dashed border-slate-300 bg-transparent px-2 py-1.5 text-[11px] text-slate-500 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
               (click)="onShowAllTrials()"
             >
-              Show all {{ product.trials.length }} trials
+              Show all {{ asset.trials.length }} trials
             </button>
           }
         }
       </app-detail-panel-section>
 
-      @if (product.recent_markers.length > 0) {
+      @if (asset.recent_markers.length > 0) {
         <app-detail-panel-section label="Recent markers">
           <app-detail-panel-entity-list>
-            @for (marker of product.recent_markers; track marker.id) {
+            @for (marker of asset.recent_markers; track marker.id) {
               <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
                 <app-marker-icon
                   [shape]="marker.shape"
@@ -174,9 +174,9 @@
       <app-detail-panel-empty-state prompt="Click a drug to see details">
         <p class="mt-2 text-[13px] text-slate-700">
           <span class="text-base font-semibold tabular-nums text-slate-900">{{
-            totalProducts()
+            totalAssets()
           }}</span>
-          {{ totalProducts() === 1 ? 'product' : 'products' }} across
+          {{ totalAssets() === 1 ? 'asset' : 'assets' }} across
           <span class="font-medium text-slate-900">{{ totalSpokes() }}</span>
           {{ spokeLabel().toLowerCase() }}
         </p>
@@ -185,7 +185,7 @@
           <app-detail-panel-entity-list>
             @for (entry of ringHistogram(); track entry.phase) {
               <app-detail-panel-entity-row
-                [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' products'"
+                [ariaLabel]="'Highlight ' + entry.phase + ' ring, ' + entry.count + ' assets'"
                 (rowClick)="onRingRowClick(entry.phase)"
               >
                 <span
@@ -211,7 +211,7 @@
     }
   }
 
-  @if (selectedProduct()) {
+  @if (selectedAsset()) {
     <div footer class="border-t border-slate-100 px-5 py-3">
       <button
         type="button"

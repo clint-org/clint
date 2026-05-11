@@ -60,7 +60,7 @@
               <div class="landscape-index-card-stats">
                 <span
                   >{{ entry.product_count }}
-                  {{ entry.product_count === 1 ? 'product' : 'products' }}</span
+                  {{ entry.product_count === 1 ? 'asset' : 'assets' }}</span
                 >
                 <span class="landscape-index-card-sep">&middot;</span>
                 <span>{{ entry.secondary_count }} {{ entry.secondary_label }}</span>
@@ -68,7 +68,7 @@
               @if (entry.products_missing_phase > 0) {
                 <div class="landscape-index-card-warning">
                   {{ entry.products_missing_phase }}
-                  {{ entry.products_missing_phase === 1 ? 'product' : 'products' }}
+                  {{ entry.products_missing_phase === 1 ? 'asset' : 'assets' }}
                   missing phase data
                 </div>
               }

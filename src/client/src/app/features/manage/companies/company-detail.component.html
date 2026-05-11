@@ -18,11 +18,13 @@
             loading="lazy"
           />
         }
-        <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">{{ c.name }}</h1>
+        <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
+          {{ c.name }}
+        </h1>
       </div>
       @if ((c.products?.length ?? 0) > 0) {
         <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500 tabular-nums">
-          {{ c.products?.length }} {{ c.products?.length === 1 ? 'product' : 'products' }}
+          {{ c.products?.length }} {{ c.products?.length === 1 ? 'asset' : 'assets' }}
         </p>
       }
     </header>
@@ -41,7 +43,7 @@
           onPurgeRequested(
             {
               id: historyHost.payload().current?.id ?? '',
-              headline: historyHost.payload().current?.headline ?? ''
+              headline: historyHost.payload().current?.headline ?? '',
             },
             false
           )
@@ -78,9 +80,16 @@
       (confirmed)="onPurgeConfirmed($event)"
     />
 
-    <section class="mb-4 border border-slate-200 bg-white" aria-label="Reads referencing this company">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Referenced in</h2>
+    <section
+      class="mb-4 border border-slate-200 bg-white"
+      aria-label="Reads referencing this company"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+      >
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Referenced in
+        </h2>
         <span class="font-mono text-[10px] text-slate-400">
           {{ (intelligence()?.referenced_in ?? []).length }} reads
         </span>
@@ -92,7 +101,9 @@
           <ul class="divide-y divide-slate-100">
             @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
               <li class="flex flex-wrap items-baseline gap-2 py-2">
-                <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <span
+                  class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+                >
                   {{ ref.entity_type }}
                 </span>
                 <span class="text-sm text-slate-800">{{ ref.headline }}</span>
@@ -103,11 +114,22 @@
       </div>
     </section>
 
-    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+    <section
+      class="materials-section mb-4 border border-slate-200 bg-white"
+      aria-label="Engagement materials"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+      >
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Materials
+        </h2>
       </header>
-      <app-materials-section entityType="company" [entityId]="companyId()" [spaceId]="spaceIdSig()" />
+      <app-materials-section
+        entityType="company"
+        [entityId]="companyId()"
+        [spaceId]="spaceIdSig()"
+      />
     </section>
 
     @if (spaceIdSig()) {

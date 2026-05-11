@@ -15,10 +15,15 @@ export function buildEntityRouterLink(
   if (!tenantId || !spaceId) return null;
   const base = ['/t', tenantId, 's', spaceId, 'manage'];
   switch (entityType) {
-    case 'trial':   return [...base, 'trials', entityId];
-    case 'company': return [...base, 'companies', entityId];
-    case 'product': return [...base, 'products', entityId];
-    case 'marker':  return [...base, 'markers', entityId];
-    case 'space':   return [...base, 'engagement'];
+    case 'trial':
+      return [...base, 'trials', entityId];
+    case 'company':
+      return [...base, 'companies', entityId];
+    case 'product':
+      return [...base, 'assets', entityId];
+    case 'marker':
+      return [...base, 'markers', entityId];
+    case 'space':
+      return [...base, 'engagement'];
   }
 }

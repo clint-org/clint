@@ -22,14 +22,14 @@ import { PurgeIntelligenceDialogComponent } from '../../../shared/components/int
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 
-import { ProductService } from '../../../core/services/product.service';
+import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { Product } from '../../../core/models/product.model';
+import { Asset } from '../../../core/models/asset.model';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 
 @Component({
-  selector: 'app-product-detail',
+  selector: 'app-asset-detail',
   standalone: true,
   imports: [
     NgOptimizedImage,
@@ -46,19 +46,19 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     MaterialsSectionComponent,
   ],
   providers: [ConfirmationService, MessageService],
-  templateUrl: './product-detail.component.html',
+  templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductDetailComponent implements OnInit {
+export class AssetDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
 
-  protected readonly productId = signal<string>('');
-  protected readonly product = signal<Product | null>(null);
+  protected readonly assetId = signal<string>('');
+  protected readonly asset = signal<Asset | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
   protected readonly loading = signal(true);
@@ -85,8 +85,8 @@ export class ProductDetailComponent implements OnInit {
       this.loading.set(false);
       return;
     }
-    this.productId.set(id);
-    void this.loadProduct();
+    this.assetId.set(id);
+    void this.loadAsset();
     void this.loadIntelligence();
   }
 
@@ -100,21 +100,21 @@ export class ProductDetailComponent implements OnInit {
     return null;
   }
 
-  private async loadProduct(): Promise<void> {
+  private async loadAsset(): Promise<void> {
     try {
-      this.product.set(await this.productService.getById(this.productId()));
-      // History panel depends on the loaded product's space_id; refresh once
-      // the product resolves so the inline panel reflects the latest versions.
+      this.asset.set(await this.assetService.getById(this.assetId()));
+      // History panel depends on the loaded asset space_id; refresh once
+      // the asset resolves so the inline panel reflects the latest versions.
       await this.refreshHistory();
     } catch {
-      this.product.set(null);
+      this.asset.set(null);
     } finally {
       this.loading.set(false);
     }
   }
 
   private async refreshHistory(): Promise<void> {
-    const p = this.product();
+    const p = this.asset();
     if (!p) return;
     try {
       await this.historyHost.load(p.space_id, 'product', p.id);
@@ -130,7 +130,7 @@ export class ProductDetailComponent implements OnInit {
     try {
       await this.historyHost.withdraw(id, reason);
       this.withdrawDialogOpen.set(false);
-      await Promise.all([this.loadIntelligence(), this.loadProduct()]);
+      await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
         summary: 'Read withdrawn.',
@@ -159,7 +159,7 @@ export class ProductDetailComponent implements OnInit {
     try {
       await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
       this.purgeDialogOpen.set(false);
-      await Promise.all([this.loadIntelligence(), this.loadProduct()]);
+      await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
         summary: 'Read purged.',
@@ -177,7 +177,7 @@ export class ProductDetailComponent implements OnInit {
 
   private async loadIntelligence(): Promise<void> {
     try {
-      this.intelligence.set(await this.intelligenceService.getProductDetail(this.productId()));
+      this.intelligence.set(await this.intelligenceService.getAssetDetail(this.assetId()));
     } catch {
       this.intelligence.set(null);
     }

@@ -349,9 +349,9 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
       case 'therapeutic-areas':
         return 'Disease areas used to tag trials and products.';
       case 'moa':
-        return 'Ways a drug produces its therapeutic effect; used to classify programs and filter the landscape.';
+        return 'Ways a drug produces its therapeutic effect; used to classify assets and filter the landscape.';
       case 'roa':
-        return 'Administration routes used to classify drug programs and filter the landscape.';
+        return 'Administration routes used to classify drug assets and filter the landscape.';
     }
   }
 

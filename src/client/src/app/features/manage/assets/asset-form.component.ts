@@ -16,11 +16,11 @@ import { Select } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
-import { Product } from '../../../core/models/product.model';
+import { Asset } from '../../../core/models/asset.model';
 import { Company } from '../../../core/models/company.model';
 import { MechanismOfAction } from '../../../core/models/mechanism-of-action.model';
 import { RouteOfAdministration } from '../../../core/models/route-of-administration.model';
-import { ProductService } from '../../../core/services/product.service';
+import { AssetService } from '../../../core/services/asset.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
@@ -28,13 +28,13 @@ import { extractConstraintMessage } from '../../../core/util/db-error';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
-const PRODUCT_FIELD_LABELS: Record<string, string> = {
+const ASSET_FIELD_LABELS: Record<string, string> = {
   name: 'Name',
   company_id: 'Company',
 };
 
 @Component({
-  selector: 'app-product-form',
+  selector: 'app-asset-form',
   standalone: true,
   imports: [
     FormsModule,
@@ -47,13 +47,13 @@ const PRODUCT_FIELD_LABELS: Record<string, string> = {
     FormFieldComponent,
     FormActionsComponent,
   ],
-  templateUrl: './product-form.component.html',
+  templateUrl: './asset-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductFormComponent implements OnInit {
-  readonly product = input<Product | null>(null);
+export class AssetFormComponent implements OnInit {
+  readonly asset = input<Asset | null>(null);
 
-  readonly saved = output<Product>();
+  readonly saved = output<Asset>();
   readonly cancelled = output<void>();
 
   readonly name = signal('');
@@ -70,14 +70,14 @@ export class ProductFormComponent implements OnInit {
   readonly selectedMoaIds = signal<string[]>([]);
   readonly selectedRoaIds = signal<string[]>([]);
 
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private companyService = inject(CompanyService);
   private moaService = inject(MechanismOfActionService);
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<void> {
-    const p = this.product();
+    const p = this.asset();
     if (p) {
       this.name.set(p.name);
       this.genericName.set(p.generic_name ?? '');
@@ -109,7 +109,7 @@ export class ProductFormComponent implements OnInit {
   }
 
   get isEdit(): boolean {
-    return this.product() !== null;
+    return this.asset() !== null;
   }
 
   get nameInvalid(): boolean {
@@ -128,7 +128,7 @@ export class ProductFormComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const payload: Partial<Product> = {
+      const payload: Partial<Asset> = {
         name: this.name().trim(),
         generic_name: this.genericName().trim() || null,
         company_id: this.companyId(),
@@ -136,23 +136,23 @@ export class ProductFormComponent implements OnInit {
         display_order: this.displayOrder(),
       };
 
-      let result: Product;
-      const existing = this.product();
+      let result: Asset;
+      const existing = this.asset();
       if (existing) {
-        result = await this.productService.update(existing.id, payload);
+        result = await this.assetService.update(existing.id, payload);
       } else {
         const sid = this.route.snapshot.paramMap.get('spaceId')!;
-        result = await this.productService.create(sid, payload);
+        result = await this.assetService.create(sid, payload);
       }
 
       try {
         await Promise.all([
-          this.productService.setMechanisms(result.id, this.selectedMoaIds()),
-          this.productService.setRoutes(result.id, this.selectedRoaIds()),
+          this.assetService.setMechanisms(result.id, this.selectedMoaIds()),
+          this.assetService.setRoutes(result.id, this.selectedRoaIds()),
         ]);
       } catch (e: unknown) {
         this.error.set(
-          'Product saved but MOA/ROA assignment failed: ' +
+          'Asset saved but MOA/ROA assignment failed: ' +
             (e instanceof Error ? e.message : 'unknown error')
         );
         this.submitting.set(false);
@@ -160,14 +160,14 @@ export class ProductFormComponent implements OnInit {
       }
       this.saved.emit(result);
     } catch (err) {
-      const constraint = extractConstraintMessage(err, PRODUCT_FIELD_LABELS);
+      const constraint = extractConstraintMessage(err, ASSET_FIELD_LABELS);
       if (constraint) {
         this.error.set(constraint);
       } else {
         this.error.set(
           err instanceof Error
             ? err.message
-            : 'Could not save product. Check your connection and try again.'
+            : 'Could not save asset. Check your connection and try again.'
         );
       }
     } finally {

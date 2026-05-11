@@ -82,7 +82,7 @@ Use the zoom buttons to change the timeline granularity:
 ### Filtering
 
 The filter panel provides dropdowns for:
-- Companies and products
+- Companies and assets
 - Therapeutic areas
 - Date range (start/end year)
 - Recruitment status (Active, Completed, etc.)
@@ -124,8 +124,8 @@ Access the management screens via the header navigation links.
 
 - **Add Company** -- Enter name, optional logo URL and display order
 - **Logo column** -- When a company has a `logo_url` set, the Logo column renders the image as a small preview (lazy-loaded, 20px tall, max 128px wide). Broken / missing URLs fall back to a muted placeholder.
-- **Click a company name** -- Drills into the Products list filtered to that company (`?company=<id>`). A "Clear filter" button in the Products header pops back to the unfiltered view.
-- **Edit / Delete / View products** -- Use the row overflow (`...`) menu. Delete is destructive and cascades to all linked products and trials.
+- **Click a company name** -- Drills into the Assets list filtered to that company (`?company=<id>`). A "Clear filter" button in the Products header pops back to the unfiltered view.
+- **Edit / Delete / View assets** -- Use the row overflow (`...`) menu. Delete is destructive and cascades to all linked assets and trials.
 - Companies are ordered by `display_order`.
 
 ### Products
@@ -133,8 +133,8 @@ Access the management screens via the header navigation links.
 **Navigate:** Products link in header
 
 - **Add Product** -- Enter name, optional generic name, select parent company
-- **Click a product name or its trial count** -- Drills into the Trials list filtered to that product (`?product=<id>`).
-- **Company filter** -- Products list supports a `?company=<id>` query parameter (set automatically when drilling in from Companies) with a "Clear filter" button in the header to return to the unfiltered view.
+- **Click an asset name or its trial count** -- Drills into the Trials list filtered to that asset (`?product=<id>`).
+- **Company filter** -- Assets list supports a `?company=<id>` query parameter (set automatically when drilling in from Companies) with a "Clear filter" button in the header to return to the unfiltered view.
 - **Edit / Delete / View trials** -- Use the row overflow (`...`) menu.
 - Products are ordered by `display_order` within their company.
 
@@ -142,7 +142,7 @@ Access the management screens via the header navigation links.
 
 **Navigate:** Trials link in header (dense list of every trial in the space), or click a trial name on the dashboard
 
-The Trials list supports a `?product=<id>` query filter (set automatically when you click a product's trial count) with a "Clear filter" button to return to the unfiltered view. Each row deep-links to the Trial Detail page via the overflow menu's **Open detail** action, or by clicking the trial name.
+The Trials list supports a `?product=<id>` query filter (set automatically when you click an asset trial count) with a "Clear filter" button to return to the unfiltered view. Each row deep-links to the Trial Detail page via the overflow menu's **Open detail** action, or by clicking the trial name.
 
 The Trial Detail page provides a comprehensive form with sections:
 

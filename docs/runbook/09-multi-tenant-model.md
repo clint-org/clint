@@ -17,7 +17,7 @@ flowchart TD
   Tenants --> Spaces["Spaces (Engagements /<br/>pipeline projects)"]
   Spaces --> SpaceMembers["SpaceMembers<br/>(role: owner | editor | viewer; ANY email)"]
   Spaces --> SpaceInvites["SpaceInvites<br/>(code-based; consumed by accept_space_invite)"]
-  Spaces --> Data["Data (companies, products,<br/>trials, ...)"]
+  Spaces --> Data["Data (companies, assets,<br/>trials, ...)"]
 ```
 
 `tenants.agency_id` is nullable. Direct customers (no agency) live on the apex (`yourproduct.com`) or claim their own subdomain via tenant settings; they keep working unchanged from the pre-whitelabel design.
@@ -35,7 +35,7 @@ A user can be an owner of multiple agencies AND multiple tenants directly.
 | Space Viewer (Reader in UI) | Space | Read-only access to space data |
 | Platform Admin | Global | Cross-cutting read access; writes only via super-admin RPCs; bypasses agency.email_domain enforcement |
 
-`tenant_members.role` and `agency_members.role` are both constrained to `owner` only -- non-owner roles at those levels carry no surface area in the product. Space-level access uses the three-tier `owner | editor | viewer` (rendered as Owner / Contributor / Reader in the UI).
+`tenant_members.role` and `agency_members.role` are both constrained to `owner` only -- non-owner roles at those levels carry no surface area in the platform. Space-level access uses the three-tier `owner | editor | viewer` (rendered as Owner / Contributor / Reader in the UI).
 
 **Authority cascade was removed in migration 75.** Tenant owners and agency owners get NO implicit space access. Data visibility is space-scoped, period. To see a tenant's catalysts, you must hold a `space_members` row for the relevant space -- being a tenant or agency owner is not enough. This protects firewalled engagements: a Stout consultant on the Pfizer engagement does not see Boehringer's data just because Stout owns both tenants.
 
@@ -56,7 +56,7 @@ A user can be an owner of multiple agencies AND multiple tenants directly.
 | Agency owner | spaces they're members of | spaces they're members of | tenants under agency | full | none |
 | Platform admin | all (read) | only via write RPCs | all (via super-admin) | all (read) | all |
 
-Write access on tenant child tables (companies, products, trials, etc.) goes through `has_space_access(space_id, ['owner', 'editor'])` -- the row check enforces an explicit `space_members` membership.
+Write access on tenant child tables (companies, assets, trials, etc.) goes through `has_space_access(space_id, ['owner', 'editor'])` -- the row check enforces an explicit `space_members` membership.
 
 ## Tenant Suspension
 
@@ -135,4 +135,5 @@ Auto-generated. Lists multi-tenant helper functions (`is_*`, `has_*`, `enforce_*
 - `is_agency_member`
 - `is_agency_member_of_space`
 - `is_platform_admin`
+- `is_tenant_owner_strict`
 <!-- /AUTO-GEN:DRIFT -->

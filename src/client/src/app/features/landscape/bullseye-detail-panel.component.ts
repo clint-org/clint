@@ -14,7 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
   BullseyeData,
   BullseyeDimension,
-  BullseyeProduct,
+  BullseyeAsset,
   PHASE_COLOR,
   RING_ORDER,
   RingPhase,
@@ -55,14 +55,14 @@ interface RingHistogramEntry {
 })
 export class BullseyeDetailPanelComponent {
   readonly data = input.required<BullseyeData | null>();
-  readonly selectedProduct = input<BullseyeProduct | null>(null);
+  readonly selectedAsset = input<BullseyeAsset | null>(null);
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
   readonly dimension = input<BullseyeDimension>('therapeutic-area');
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
-  readonly openInTimeline = output<{ productId: string; therapeuticAreaId: string }>();
+  readonly openInTimeline = output<{ assetId: string; therapeuticAreaId: string }>();
   readonly openMarker = output<string>();
   readonly ringHighlightToggle = output<RingPhase | null>();
   readonly clearSelection = output<void>();
@@ -72,7 +72,7 @@ export class BullseyeDetailPanelComponent {
   // Per-space CT.gov field overlay (bullseye_detail_panel surface). Loaded
   // once when the panel sees a spaceId on its containing route; lazy-loads
   // snapshots only for the trials currently visible in the selected
-  // product's trial list.
+  // asset trial list.
   private readonly route = inject(ActivatedRoute);
   private readonly fieldVisibility = inject(SpaceFieldVisibilityService);
   private readonly trialService = inject(TrialService);
@@ -83,9 +83,9 @@ export class BullseyeDetailPanelComponent {
   readonly bullseyePaths = computed(() => this.perSpacePaths() ?? CTGOV_BULLSEYE_DEFAULT_PATHS);
 
   constructor() {
-    // Reset the "show all" toggle whenever the user selects a different product
+    // Reset the "show all" toggle whenever the user selects a different asset
     effect(() => {
-      this.selectedProduct();
+      this.selectedAsset();
       this.showAllTrials.set(false);
     });
 
@@ -150,47 +150,47 @@ export class BullseyeDetailPanelComponent {
   }
 
   protected readonly visibleTrials = computed(() => {
-    const product = this.selectedProduct();
-    if (!product) return [];
-    if (this.showAllTrials() || product.trials.length <= this.trialListCap()) {
-      return product.trials;
+    const asset = this.selectedAsset();
+    if (!asset) return [];
+    if (this.showAllTrials() || asset.trials.length <= this.trialListCap()) {
+      return asset.trials;
     }
-    return product.trials.slice(0, this.trialListCap());
+    return asset.trials.slice(0, this.trialListCap());
   });
 
   protected readonly hasMoreTrials = computed(() => {
-    const product = this.selectedProduct();
-    if (!product) return false;
-    return product.trials.length > this.trialListCap() && !this.showAllTrials();
+    const asset = this.selectedAsset();
+    if (!asset) return false;
+    return asset.trials.length > this.trialListCap() && !this.showAllTrials();
   });
 
   protected readonly hiddenTrialCount = computed(() => {
-    const product = this.selectedProduct();
-    if (!product) return 0;
-    return Math.max(0, product.trials.length - this.trialListCap());
+    const asset = this.selectedAsset();
+    if (!asset) return 0;
+    return Math.max(0, asset.trials.length - this.trialListCap());
   });
 
-  protected readonly allProducts = computed(() => {
+  protected readonly allAssets = computed(() => {
     return this.data()?.spokes.flatMap((s) => s.products) ?? [];
   });
 
   protected readonly ringHistogram = computed<RingHistogramEntry[]>(() => {
-    const products = this.allProducts();
+    const assets = this.allAssets();
     const counts = new Map<RingPhase, number>();
     for (const phase of RING_ORDER) counts.set(phase, 0);
-    for (const product of products) {
-      counts.set(product.highest_phase, (counts.get(product.highest_phase) ?? 0) + 1);
+    for (const asset of assets) {
+      counts.set(asset.highest_phase, (counts.get(asset.highest_phase) ?? 0) + 1);
     }
     // Present in descending development order (launched at the top)
     return [...RING_ORDER].reverse().map((phase) => ({ phase, count: counts.get(phase) ?? 0 }));
   });
 
-  protected readonly totalProducts = computed(() => this.allProducts().length);
+  protected readonly totalAssets = computed(() => this.allAssets().length);
   protected readonly totalSpokes = computed(() => this.data()?.spokes.length ?? 0);
   protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
 
   protected readonly headerLabel = computed(() =>
-    this.selectedProduct() ? 'Drug' : 'Bullseye · overview'
+    this.selectedAsset() ? 'Drug' : 'Bullseye · overview'
   );
 
   protected isScopedMoa(moaId: string): boolean {
@@ -212,15 +212,15 @@ export class BullseyeDetailPanelComponent {
   }
 
   protected onCompanyClick(): void {
-    const p = this.selectedProduct();
+    const p = this.selectedAsset();
     if (p) this.openCompany.emit(p.company_id);
   }
 
   protected onOpenTimeline(): void {
-    const p = this.selectedProduct();
+    const p = this.selectedAsset();
     const d = this.data();
     if (p && d?.scope) {
-      this.openInTimeline.emit({ productId: p.id, therapeuticAreaId: d.scope.id });
+      this.openInTimeline.emit({ assetId: p.id, therapeuticAreaId: d.scope.id });
     }
   }
 

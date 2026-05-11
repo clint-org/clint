@@ -127,7 +127,7 @@ async function deleteSpaceCascade(spaceId: string): Promise<void> {
     await pg.connect();
     // Mirror public.delete_space: markers first (so the trigger inserts
     // marker_changes audit rows while the space still exists for FK), then
-    // the space (cascade handles space_members, companies, products, trials,
+    // the space (cascade handles space_members, companies, assets, trials,
     // trial_change_events, marker_changes, marker_types).
     await pg.query(`delete from public.markers where space_id = $1`, [spaceId]);
     await pg.query(`delete from public.spaces where id = $1`, [spaceId]);
@@ -143,7 +143,7 @@ async function deleteTenantCascade(tenantId: string): Promise<void> {
     await pg.query(
       `delete from public.markers where space_id in
          (select id from public.spaces where tenant_id = $1)`,
-      [tenantId],
+      [tenantId]
     );
     await pg.query(`delete from public.spaces where tenant_id = $1`, [tenantId]);
     await pg.query(`delete from public.tenants where id = $1`, [tenantId]);
@@ -162,12 +162,12 @@ async function deleteAgencyCascade(agencyId: string): Promise<void> {
          join public.tenants t on s.tenant_id = t.id
          where t.agency_id = $1
        )`,
-      [agencyId],
+      [agencyId]
     );
     await pg.query(
       `delete from public.spaces where tenant_id in
          (select id from public.tenants where agency_id = $1)`,
-      [agencyId],
+      [agencyId]
     );
     await pg.query(`delete from public.tenants where agency_id = $1`, [agencyId]);
     await pg.query(`delete from public.agencies where id = $1`, [agencyId]);

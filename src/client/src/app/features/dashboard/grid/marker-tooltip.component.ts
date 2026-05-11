@@ -143,13 +143,13 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
           </div>
         }
 
-        <!-- Program context -->
+        <!-- Asset context -->
         @if (companyName()) {
           <div class="mt-1.5">
             <span class="text-[9px] text-slate-500 tracking-[0.03em]">
               <span class="uppercase">{{ companyName() }}</span>
-              @if (productName()) {
-                · {{ productName() }}
+              @if (assetName()) {
+                · {{ assetName() }}
               }
             </span>
           </div>
@@ -210,7 +210,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');
   readonly companyName = input<string>('');
-  readonly productName = input<string>('');
+  readonly assetName = input<string>('');
 
   /**
    * Optional primary-intelligence headline to surface on the tooltip.

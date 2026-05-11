@@ -308,7 +308,7 @@ export class PositioningChartComponent {
   readonly bubbles = input.required<PositioningBubble[]>();
   readonly width = input<number>(1200);
   readonly height = input<number>(700);
-  readonly countUnit = input<string>('products');
+  readonly countUnit = input<string>('assets');
   readonly xLabel = input<string>('Competitors');
   readonly selectedBubble = input<PositioningBubble | null>(null);
 

@@ -126,7 +126,7 @@ export const ENTITY_TYPE_LABEL: Record<IntelligenceEntityType, string> = {
   trial: 'Trial',
   marker: 'Marker',
   company: 'Company',
-  product: 'Product',
+  product: 'Asset',
   space: 'Engagement',
 };
 

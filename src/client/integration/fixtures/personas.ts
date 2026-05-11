@@ -77,7 +77,7 @@ const PERSONA_ROLES: Exclude<PersonaName, 'anon'>[] = [
 ];
 
 /** Service-role client. Bypasses RLS; used for fixture setup/teardown and
- *  for tests that need to seed entity-graph rows (companies/products/trials)
+ *  for tests that need to seed entity-graph rows (companies/assets/trials)
  *  the personas fixture doesn't create on its own. */
 export function adminClient(): SupabaseClient {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY!, {
@@ -167,7 +167,7 @@ async function wipe(admin: SupabaseClient): Promise<void> {
         [personaIds, TENANT_SUBDOMAIN]
       );
 
-      // Spaces, products, companies, trials etc. reference auth.users via
+      // Spaces, assets, companies, trials etc. reference auth.users via
       // created_by without cascade. Delete every space the persona created
       // (cascades to space-scoped data) plus everything under the test tenant.
       await pg.query(

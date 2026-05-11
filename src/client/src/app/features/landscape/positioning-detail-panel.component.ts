@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import {
   PositioningBubble,
   PositioningGrouping,
-  PositioningProduct,
+  PositioningAsset,
 } from '../../core/models/landscape.model';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -69,10 +69,10 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
           </app-detail-panel-section>
         }
 
-        <app-detail-panel-section [label]="'Products (' + b.products.length + ')'">
+        <app-detail-panel-section [label]="'Assets (' + b.products.length + ')'">
           <app-detail-panel-entity-list>
-            @for (product of sortedProducts(); track product.id) {
-              <app-detail-panel-entity-row (rowClick)="openProduct.emit(product.id)">
+            @for (product of sortedAssets(); track product.id) {
+              <app-detail-panel-entity-row (rowClick)="openAsset.emit(product.id)">
                 <span class="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span class="truncate text-[13px] font-medium text-slate-900">
                     {{ product.name }}
@@ -123,12 +123,12 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
 })
 export class PositioningDetailPanelComponent {
   readonly bubble = input<PositioningBubble | null>(null);
-  readonly countUnit = input<string>('products');
+  readonly countUnit = input<string>('assets');
   readonly totalBubbles = input<number>(0);
   readonly grouping = input<PositioningGrouping>('moa');
 
   readonly clearSelection = output<void>();
-  readonly openProduct = output<string>();
+  readonly openAsset = output<string>();
   readonly openInBullseye = output<void>();
 
   readonly headerLabel = computed(() =>
@@ -148,14 +148,14 @@ export class PositioningDetailPanelComponent {
     return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 
-  readonly sortedProducts = computed<PositioningProduct[]>(() => {
+  readonly sortedAssets = computed<PositioningAsset[]>(() => {
     const b = this.bubble();
     if (!b) return [];
     return [...b.products].sort((a, x) => x.highest_phase_rank - a.highest_phase_rank);
   });
 
   readonly raceEntries = computed<PhaseRaceEntry[]>(() =>
-    this.sortedProducts().map((p) => ({
+    this.sortedAssets().map((p) => ({
       id: p.id,
       name: p.name,
       subtitle: p.company_name,

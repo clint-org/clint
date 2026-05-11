@@ -28,7 +28,7 @@ const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
   { label: 'Marker', value: 'marker' },
   { label: 'Company', value: 'company' },
-  { label: 'Product', value: 'product' },
+  { label: 'Asset', value: 'product' },
   { label: 'Engagement', value: 'space' },
 ];
 
@@ -51,7 +51,7 @@ const DRAFTS_LIMIT = 200;
  *
  * The toolbar deliberately mirrors the materials browse surface (slate-50
  * stripe + mono labels + same density) so the two pages read as one
- * product surface, even though their filter controls differ.
+ * platform surface, even though their filter controls differ.
  */
 @Component({
   selector: 'app-intelligence-browse',

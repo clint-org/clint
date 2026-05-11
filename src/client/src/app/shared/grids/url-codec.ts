@@ -124,7 +124,9 @@ export function decodeFilterState<T>(
       if (parsed !== null) {
         state.filters[field] = parsed;
       } else {
-        console.warn(`[grid] Dropping malformed filter value for ${field}: ${JSON.stringify(value)}`);
+        console.warn(
+          `[grid] Dropping malformed filter value for ${field}: ${JSON.stringify(value)}`
+        );
       }
     }
   }
@@ -156,7 +158,11 @@ function parseFilterValue(
       const v = firstString(raw);
       const match = /^(gte|lte|gt|lt):(-?\d+(\.\d+)?)$/.exec(v);
       if (match) {
-        return { kind: 'numeric', op: match[1] as 'gte' | 'lte' | 'gt' | 'lt', value: Number(match[2]) };
+        return {
+          kind: 'numeric',
+          op: match[1] as 'gte' | 'lte' | 'gt' | 'lt',
+          value: Number(match[2]),
+        };
       }
       const bare = Number(v);
       return Number.isFinite(bare) ? { kind: 'numeric', op: 'eq', value: bare } : null;
@@ -177,7 +183,7 @@ function parseFilterValue(
  * Build query params for deep-linking into a grid with specific filters
  * pre-applied. Thin wrapper over encodeFilterState for the common case of
  * "just set these filters, start on page 1, default page size, no sort".
- * Consumers like company-list::openProducts() use this so they don't have
+ * Consumers like company-list::openAssets() use this so they don't have
  * to know the full URL schema.
  */
 export function buildFilterQueryParams(

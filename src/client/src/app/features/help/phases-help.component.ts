@@ -19,8 +19,8 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
             Phase bars are the timeline backdrop. Color encodes the development phase so the eye can
-            scan a portfolio and identify where pivotal (P3) and launched programs sit. Bars recede
-            so markers stay the visual foreground.
+            scan a portfolio and identify where pivotal (P3) and launched assets sit. Bars recede so
+            markers stay the visual foreground.
           </p>
         </header>
 
@@ -119,11 +119,11 @@ export class PhasesHelpComponent {
       },
       {
         q: 'Why are APPROVED and LAUNCHED separate?',
-        a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot programs that are approved-but-not-launched at a glance.`,
+        a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot assets that are approved-but-not-launched at a glance.`,
       },
       {
         q: 'What does PRECLIN mean for a competitor read?',
-        a: 'Preclinical programs are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
+        a: 'Preclinical assets are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
       },
       {
         q: 'Can the colors change per tenant?',

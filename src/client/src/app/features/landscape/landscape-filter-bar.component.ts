@@ -27,7 +27,7 @@ import { ZoomLevel } from '../../core/models/dashboard.model';
 import { CompanyService } from '../../core/services/company.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
-import { ProductService } from '../../core/services/product.service';
+import { AssetService } from '../../core/services/asset.service';
 import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
 import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
 import { LandscapeStateService } from './landscape-state.service';
@@ -53,7 +53,7 @@ interface FilterChip {
 })
 export class LandscapeFilterBarComponent implements OnInit {
   private readonly companyService = inject(CompanyService);
-  private readonly productService = inject(ProductService);
+  private readonly assetService = inject(AssetService);
   private readonly taService = inject(TherapeuticAreaService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
@@ -86,7 +86,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
   readonly spokeModeOptions: { label: string; value: string }[] = [
     { label: 'Grouped', value: 'grouped' },
-    { label: 'Products', value: 'products' },
+    { label: 'Assets', value: 'assets' },
   ];
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
@@ -132,7 +132,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     };
 
     addChips(f.companyIds, this.companyOptions(), 'companyIds', 'Company');
-    addChips(f.productIds, this.productOptions(), 'productIds', 'Product');
+    addChips(f.assetIds, this.productOptions(), 'assetIds', 'Asset');
     addChips(f.therapeuticAreaIds, this.taOptions(), 'therapeuticAreaIds', 'Therapy Area');
     addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
@@ -156,7 +156,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     const f = this.state.filters();
     return (
       f.companyIds.length > 0 ||
-      f.productIds.length > 0 ||
+      f.assetIds.length > 0 ||
       f.therapeuticAreaIds.length > 0 ||
       f.mechanismOfActionIds.length > 0 ||
       f.routeOfAdministrationIds.length > 0 ||
@@ -176,7 +176,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     try {
       const [companies, products, areas, moas, roas, markerCategories] = await Promise.all([
         this.companyService.list(sid),
-        this.productService.list(sid),
+        this.assetService.list(sid),
         this.taService.list(sid),
         this.moaService.list(sid),
         this.roaService.list(sid),

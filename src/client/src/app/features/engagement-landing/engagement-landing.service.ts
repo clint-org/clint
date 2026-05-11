@@ -8,8 +8,18 @@ import { TenantService } from '../../core/services/tenant.service';
  * Stats returned by `get_space_landing_stats` (see migration
  * 20260501152530_add_space_landing_stats.sql). `intelligence_total` is always
  * 0 in phase 1; the primary_intelligence table is not yet shipped.
+ * The RPC returns `programs` on the wire; the service aliases it to `assets`
+ * so the frontend uses the unified vocabulary.
  */
 export interface SpaceLandingStats {
+  active_trials: number;
+  companies: number;
+  assets: number;
+  catalysts_90d: number;
+  intelligence_total: number;
+}
+
+interface RawSpaceLandingStats {
   active_trials: number;
   companies: number;
   programs: number;
@@ -48,7 +58,15 @@ export class EngagementLandingService {
       p_space_id: spaceId,
     });
     if (error) throw error;
-    return (data as SpaceLandingStats | null) ?? null;
+    const raw = data as RawSpaceLandingStats | null;
+    if (!raw) return null;
+    return {
+      active_trials: raw.active_trials,
+      companies: raw.companies,
+      assets: raw.programs,
+      catalysts_90d: raw.catalysts_90d,
+      intelligence_total: raw.intelligence_total,
+    };
   }
 
   /**

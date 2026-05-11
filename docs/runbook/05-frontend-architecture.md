@@ -32,7 +32,7 @@ src/client/
         models/                 # TypeScript interfaces for all domain entities
           trial.model.ts        # Trial, TrialPhase, TrialNote, TherapeuticArea
           company.model.ts      # Company
-          product.model.ts      # Product
+          asset.model.ts      # Product
           marker.model.ts       # MarkerType, TrialMarker
           catalyst.model.ts     # Catalyst, CatalystDetail, CatalystFilters, CatalystGroup, FlatCatalyst
           event.model.ts        # AppEvent, FeedItem, EventDetail, EventsPageFilters
@@ -62,7 +62,7 @@ src/client/
         dashboard/              # Main timeline grid + sub-components
         manage/                 # CRUD UIs for all entities
           companies/            # company-list, company-form
-          products/             # product-list, product-form
+          assets/             # asset-list, asset-form
           trials/               # trial-detail, trial-list, trial-create-dialog, trial-edit-dialog, marker-form, note-form
           marker-types/         # marker-type-list, marker-type-form
           therapeutic-areas/    # therapeutic-area-list, therapeutic-area-form
@@ -200,15 +200,18 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
   /tenants/:id   AgencyTenantDetailComponent
   /members   AgencyMembersComponent
   /branding   AgencyBrandingComponent
+  /audit-log   auditAgencyGuard | AgencyAuditLogComponent
 /super-admin   superAdminGuard + authGuard | SuperAdminShellComponent
   (empty)   -> agencies
   /agencies   SuperAdminAgenciesComponent
   /tenants   SuperAdminTenantsComponent
   /domains   SuperAdminDomainsComponent
+  /audit-log   SuperAdminAuditLogComponent
 /onboarding   authGuard | OnboardingComponent
 /t/:tenantId   authGuard + tenantGuard | AppShellComponent
   /spaces   SpaceListComponent
   /settings   tenantSettingsGuard | TenantSettingsComponent
+  /settings/audit-log   auditTenantGuard | TenantAuditLogComponent
   /help/roles   RolesHelpComponent
   /help/phases   PhasesHelpComponent
   /s/:spaceId   spaceGuard
@@ -248,11 +251,11 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /landscape/by-roa/:entityId   -> bullseye/by-roa/:entityId
     /landscape/:therapeuticAreaId   -> bullseye/by-therapy-area/:therapeuticAreaId
     /manage/companies   CompanyListComponent
-    /manage/products   ProductListComponent
+    /manage/assets   AssetListComponent
     /manage/trials   TrialListComponent
     /manage/trials/:id   TrialDetailComponent
     /manage/companies/:id   CompanyDetailComponent
-    /manage/products/:id   ProductDetailComponent
+    /manage/assets/:id   AssetDetailComponent
     /manage/markers/:id   MarkerDetailComponent
     /manage/engagement   EngagementDetailComponent
     /settings/marker-types   MarkerTypeListComponent
@@ -260,6 +263,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /settings/general   SpaceGeneralComponent
     /settings/members   SpaceMembersComponent
     /settings/fields   SpaceFieldVisibilitySettingsComponent
+    /settings/audit-log   auditSpaceGuard | SpaceAuditLogComponent
     /manage/marker-types   -> settings/marker-types
     /manage/therapeutic-areas   -> settings/taxonomies
     /manage/mechanisms-of-action   -> settings/taxonomies
@@ -283,7 +287,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | `SuperAdminService` | Super-admin data layer: `listAllAgencies`, `listAllTenants`, `listRetiredHostnames`, `provisionAgency`, `registerCustomDomain`, `checkSubdomainAvailable`, `lookupUserByEmail` |
 | `SpaceService` | Space CRUD via `create_space()` RPC, member management, role updates |
 | `CompanyService` | Company CRUD within a space (with display_order) |
-| `ProductService` | Product CRUD linked to a company (with display_order) |
+| `AssetService` | Product CRUD linked to a company (with display_order) |
 | `TrialService` | Trial CRUD with nested relations (phases, markers, notes, therapeutic areas). Exposes `listByProduct(productId)` and `listBySpace(spaceId)`. |
 | `TrialPhaseService` | Phase records (phase_type, start/end dates, color, label) |
 | `TrialMarkerService` | Event markers (event_date, end_date, tooltip_text, is_projected) |
@@ -307,7 +311,7 @@ DashboardComponent               # Orchestrates state, filters, loading
   ExportDialogComponent          # PowerPoint export dialog
   DashboardGridComponent         # The timeline table (scrollable container, gear icon toggles MOA/ROA/Notes columns)
     GridHeaderComponent          # Column headers (date labels, sticky)
-    RowLabel                     # Left column: company/product/trial labels (sticky)
+    RowLabel                     # Left column: company/asset/trial labels (sticky)
     TrialRow                     # One row per trial
       PhaseBarComponent          # SVG <g> phase bar with rounded corners + label
       MarkerComponent            # SVG marker icon (6 shapes x 4 fills), receives trial/program context
@@ -328,7 +332,7 @@ The root dashboard component uses Angular signals extensively:
 
 Click events on phase bars and trials navigate to trial detail pages. Marker clicks call `LandscapeStateService.selectMarker()`, which opens the shared detail panel rendered by the landscape shell. The detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) fetches full detail via `get_catalyst_detail` RPC. Body composition is detailed in the "Detail Panel Pattern" section below; the header uses the shared `<app-marker-icon>` (single source of truth for shape + color + projection-derived fill + inner mark + NLE overlay) projected into the shell's `headerLeading` slot — identical rendering to the timeline grid markers, the catalyst category cell, and the bullseye Recent Markers list. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel persists between timeline <-> catalysts (same marker data, different layout) and across same-mode dimension switches; entering bullseye or positioning clears the selection (no marker referent in those views) -- the clear is wired in `LandscapeShellComponent`'s router-events subscription. The shell also consumes `?markerId=` on /timeline so cross-pane jumps (e.g. bullseye Recent Markers row → timeline) auto-open the drawer on arrival.
 
-Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `productIds` + `therapeuticAreaIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension; the product-row click in the same pane navigates to `/timeline?productIds=` so the analyst lands on that product's trial timeline rather than re-entering the bullseye view. Marker pane (catalysts) provides "Open trial" and a clickable Trial section that routes to `/manage/trials/:id`. Event pane provides "Open thread", and its Related events / Thread events / Category histogram rows now stay in-pane (loading detail by id directly rather than searching the limited feed window). Bullseye Recent Markers rows route through `?markerId=` to open the timeline drawer.
+Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `assetIds` + `therapeuticAreaIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension; the asset-row click in the same pane navigates to `/timeline?assetIds=` so the analyst lands on that asset trial timeline rather than re-entering the bullseye view. Marker pane (catalysts) provides "Open trial" and a clickable Trial section that routes to `/manage/trials/:id`. Event pane provides "Open thread", and its Related events / Thread events / Category histogram rows now stay in-pane (loading detail by id directly rather than searching the limited feed window). Bullseye Recent Markers rows route through `?markerId=` to open the timeline drawer.
 
 ### AppShellComponent (Layout)
 
@@ -352,17 +356,17 @@ All non-timeline management pages (Companies, Products, Trials, Marker Types, Th
   - **Scroll-container caveat for pages under `LandscapeShellComponent`**: the landscape shell wraps the routed outlet in a `relative flex-1 overflow-hidden` div so its bounded chart pages (Timeline / Bullseye / Positioning) can size their canvases against a fixed viewport. List-style pages routed under landscape (currently only Catalysts) flow naturally past that wrapper's height and would be clipped. Such pages MUST own their scroll container -- set `:host { display: block; height: 100%; overflow-y: auto }` with a mobile override (`overflow: visible; height: auto`) to fall back to the natural body scroll path. Pages under `AppShellComponent.content-area` (manage pages, agency portal, super-admin) inherit a scroll-capable parent and don't need this.
 - **`SectionCardComponent`** -- flat white card with a `bg-slate-50/60` header strip (shaded zone for the uppercase tracked section label) and a white body (content zone). Used for sections on trial detail and each group inside the trial edit form. Supports `<div actions>` content projection in the header.
 - **`manage-table.css`** (imported from `styles.css`) -- a single CSS layer that applies to any `<p-table>` opted in via `styleClass="manage-table"`. Produces a white card with slate-200 border, uppercase tracked 10px thead on a subtly-shaded slate-50/60 background, 13px dense rows with slate-100 row dividers, teal-50/55% row hover, and supports column modifiers `col-identifier` (mono tabular for NCT / generic names / codes), `col-num` (right-aligned tabular-nums), `col-secondary` (slate-500), and `col-actions` (narrow, right-aligned).
-- **`RowActionsComponent`** -- `<app-row-actions [items]="...">` renders an ellipsis trigger button and an anchored PrimeNG `p-menu` popup. Destructive items set `styleClass: 'row-actions-danger'` so the shared CSS colors them red. Used on every manage-table row; replaces the bootstrap-style Edit/Delete text link pair. **Callers MUST memoize the `MenuItem[]`** — typically via a `private readonly menuCache = new Map<string, MenuItem[]>()` keyed by row id, cleared in the list's load method. Returning a fresh array from a `rowMenu(row)` template-call causes `p-menu` to re-render between `pointerdown` and `click`, which swallows the first click and forces the user to click every menu option twice. All existing list components (companies / products / trials / marker-types / therapeutic-areas / trial-detail / tenant-settings) use this pattern; copy it when adding a new list.
+- **`RowActionsComponent`** -- `<app-row-actions [items]="...">` renders an ellipsis trigger button and an anchored PrimeNG `p-menu` popup. Destructive items set `styleClass: 'row-actions-danger'` so the shared CSS colors them red. Used on every manage-table row; replaces the bootstrap-style Edit/Delete text link pair. **Callers MUST memoize the `MenuItem[]`** — typically via a `private readonly menuCache = new Map<string, MenuItem[]>()` keyed by row id, cleared in the list's load method. Returning a fresh array from a `rowMenu(row)` template-call causes `p-menu` to re-render between `pointerdown` and `click`, which swallows the first click and forces the user to click every menu option twice. All existing list components (companies / assets / trials / marker-types / therapeutic-areas / trial-detail / tenant-settings) use this pattern; copy it when adding a new list.
 - **`StatusTagComponent`** -- `<app-status-tag [label]="t.status" />` auto-maps trial status strings to brand-safe tones (teal for Active/Recruiting, amber for Suspended/Not yet recruiting, slate for Completed/Terminated). Accepts an explicit `[tone]="'teal'|'amber'|'slate'|'neutral'"` override.
 - **`CtgovSourceTagComponent`** -- `<app-ctgov-source-tag [metadata]="m.metadata" />` renders a small slate `CT.gov` chip when the marker's `metadata.source === 'ctgov'`, and nothing otherwise. Use `[variant]="'detailed'"` for the longer "Synced from CT.gov" pill in the marker detail panel header. Drop it next to any marker title (table cell, hover tooltip, panel header) without conditional `@if` -- it self-suppresses for analyst-created markers. The marker detail panel pairs the badge with a richer provenance block (source field path, anticipated/actual date type, last sync timestamp, link to clinicaltrials.gov) when the same metadata signal is present.
 
-The Products list **no longer** renders its trials inline (the old chevron-expand + nested p-table pattern is removed). Instead, the Trials column shows a count that deep-links to `/manage/trials?product=<id>`, which filters the dedicated Trials list to that product. The "Add Trial" action moved with it: trials are created from the Trials list with a product dropdown, or from a product-filtered Trials view where the product is preselected.
+The Assets list **no longer** renders its trials inline (the old chevron-expand + nested p-table pattern is removed). Instead, the Trials column shows a count that deep-links to `/manage/trials?product=<id>`, which filters the dedicated Trials list to that asset. The "Add Trial" action moved with it: trials are created from the Trials list with an asset dropdown, or from an asset-filtered Trials view where the asset is preselected.
 
 The trial edit form (`TrialFormComponent`) **does not use `p-fieldset`**. The previous collapsible fieldset pattern for CT.gov sections (Study Design / Eligibility / Timeline / Regulatory) caused content-leakage bugs during collapse animations and has been replaced with sibling `SectionCard`s that are always expanded — users scroll. When adding new grouped form sections, follow the same pattern.
 
 ## Detail Panel Pattern (Shell + Primitives)
 
-Every detail pane in the product (marker, event, positioning, bullseye) is built by composing a small set of standalone primitives in `shared/components/detail-panel-*.component.ts`. The pane components themselves are thin compositions that map domain data into the primitive slots; the primitives own all spacing, colour, divider, eyebrow, focus-ring, and empty-state rules so the visual family stays consistent without per-pane drift.
+Every detail pane in the platform (marker, event, positioning, bullseye) is built by composing a small set of standalone primitives in `shared/components/detail-panel-*.component.ts`. The pane components themselves are thin compositions that map domain data into the primitive slots; the primitives own all spacing, colour, divider, eyebrow, focus-ring, and empty-state rules so the visual family stays consistent without per-pane drift.
 
 ### The primitives
 
@@ -373,13 +377,13 @@ Every detail pane in the product (marker, event, positioning, bullseye) is built
 - **`DetailPanelPillComponent`** (`<app-detail-panel-pill [tone]="...">`) — status / projection / priority pill. One source of truth for `rounded-full`, padding, dot, and the tone-to-color map (`green | amber | red | slate | blue | brand`). Replaces the prior pillbox markup that diverged across panes.
 - **`DetailPanelHistoryComponent`** (`<app-detail-panel-history>`) — collapsible audit trail. Caller projects `MarkerChangeRow[]` into `HistoryEntry[]` (with field labels + value formatters) and the primitive renders a `Field | Before | After` diff table per entry. The "View raw JSON" toggle preserves the engineering case. Lazy-load is wired via the `(toggleOpen)` event so the caller can fetch on first expand.
 - **`DetailPanelMiniPhaseBarComponent`** (`<app-detail-panel-mini-phase-bar>`) — compact 7-segment phase bar (PRECLIN → P1 → P2 → P3 → P4 → APPROVED → LAUNCHED). Each filled segment uses its own `PHASE_COLOR`; segments past `[currentPhase]` render in slate-200. Distinct from the dashboard's SVG `PhaseBarComponent`, which is a date-axis visualization.
-- **`DetailPanelPhaseRaceComponent`** (`<app-detail-panel-phase-race>`) — visual race comparison: two-line label (product / company) + mini phase bar + phase glyph. Sorted by phase rank descending so the leader sits at the top. Used by the positioning detail pane to answer "who's winning this race and by how much" at a glance.
+- **`DetailPanelPhaseRaceComponent`** (`<app-detail-panel-phase-race>`) — visual race comparison: two-line label (asset / company) + mini phase bar + phase glyph. Sorted by phase rank descending so the leader sits at the top. Used by the positioning detail pane to answer "who's winning this race and by how much" at a glance.
 
 ### Consumers
 
 - **Timeline + Catalysts** — `MarkerDetailPanelComponent` (`mode='drawer'`, `density='compact'`) rendered by `LandscapeShellComponent`. Body is `MarkerDetailContentComponent` composed from the primitives above. The catalyst's projection state is collapsed into a single status pill ("Confirmed actual" or "Projected · Stout estimate") in the meta strip directly under the title — there is no separate Date/Status grid. Source treatment is unified: the slate-50 box is gone; CT.gov-derived markers render a small `Field / Date type / Last synced` dl under the standard `Source` section eyebrow, analyst-created markers render just the URL link in the same slot. History uses `DetailPanelHistoryComponent` with field-level diff (`event_date`, `projection`, `is_projected`, etc. via `MARKER_FIELD_LABELS` from `shared/utils/marker-fields.ts` — same vocabulary used by the activity feed's `summaryFor()` so a `marker_updated` event reads with the same field names as the History pane).
 - **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Selected state uses `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events, and a slim ghost footer button "Open thread" when the event has a thread. Thread / related-event / category-filter outputs are wired in `EventsPageComponent`: `relatedEventClick` and `threadEventClick` both call `openByEventId(id)` (which loads detail directly by id rather than searching the feed window), and `categoryFilter` updates the grid's `category_name` text filter so the chip row stays in sync. The `?eventId=` deep-link uses a `queryParamMap` subscription (not a one-shot `ngOnInit` read) so cross-page jumps from the marker drawer continue to work when the events page is already mounted. All `&mdash;` separators are gone (project rule); replaced with middle dots.
-- **Positioning** — `PositioningDetailPanelComponent` is **always** rendered. Header eyebrow now reflects the active grouping ("MOA group" / "Therapy area group" / "MOA + TA group" / "Company group" / "ROA group") instead of generic "COMPETITIVE GROUP". Selected state replaces the old phase-breakdown chips with a `DetailPanelPhaseRace` (every product, leader at top, 7-segment bar). Empty state pattern matches bullseye.
+- **Positioning** — `PositioningDetailPanelComponent` is **always** rendered. Header eyebrow now reflects the active grouping ("MOA group" / "Therapy area group" / "MOA + TA group" / "Company group" / "ROA group") instead of generic "COMPETITIVE GROUP". Selected state replaces the old phase-breakdown chips with a `DetailPanelPhaseRace` (every asset, leader at top, 7-segment bar). Empty state pattern matches bullseye.
 - **Bullseye** — `BullseyeDetailPanelComponent` header eyebrow renamed `SELECTED` → `Drug` (says what is selected, not that something is). Selected and empty states migrated onto the shell + primitives. Recent markers list renders the real `<app-marker-icon>` (not a colored dot) and each row is clickable: emits `openMarker` on the panel, which `LandscapeComponent` routes to `/timeline?markerId=` so the timeline drawer opens on arrival. Trial list keeps the inline CT.gov field renderer.
 
 ### Layout structure (overlay vs in-column)
@@ -441,7 +445,7 @@ TenantInvite  { id, tenant_id, email, role, invite_code, created_by, accepted_at
 
 // Aggregates
 DashboardData    { companies: CompanyWithProducts[] }
-DashboardFilters { companyIds, productIds, therapeuticAreaIds, startYear, endYear,
+DashboardFilters { companyIds, assetIds, therapeuticAreaIds, startYear, endYear,
                    recruitmentStatuses, studyTypes, phases }
 ZoomLevel        'yearly' | 'quarterly' | 'monthly' | 'daily'
 ```
@@ -559,7 +563,7 @@ Many older catches still use the buggy `instanceof Error` pattern; convert them 
 
 ## Grids and list pages
 
-All five manage-section list pages (companies, products, trials, therapeutic-areas, marker-types) share a single filtering, sorting, and pagination pattern built on PrimeNG `p-table`. Do not add new grids without following this pattern.
+All five manage-section list pages (companies, assets, trials, therapeutic-areas, marker-types) share a single filtering, sorting, and pagination pattern built on PrimeNG `p-table`. Do not add new grids without following this pattern.
 
 **Three units:**
 
@@ -581,9 +585,9 @@ All five manage-section list pages (companies, products, trials, therapeutic-are
 
 **URL schema:** `?q=<text>&filter.<field>=<value>&sort=[-]<field>&page=<n>&pageSize=<n>`. See the design spec at `docs/superpowers/specs/2026-04-11-grid-filtering-design.md` for the full encoding rules, numeric operator syntax, and date range syntax.
 
-**Deep-linking into a filtered grid:** consumers that navigate *into* a grid with specific filters pre-applied (e.g., `company-list::openProducts(id)` landing on a pre-filtered products grid) use `buildFilterQueryParams` from `shared/grids`. Do not hand-roll query params. The helper accepts a `Record<string, FilterValue>` and returns the query-param object to pass to `router.navigate(..., { queryParams })`. Consumers must know the target grid's filterable field names (e.g., `product.company_id`, `trial.product_id`) — see the per-grid column list in the spec for the public deep-link fields.
+**Deep-linking into a filtered grid:** consumers that navigate *into* a grid with specific filters pre-applied (e.g., `company-list::openAssets(id)` landing on a pre-filtered assets grid) use `buildFilterQueryParams` from `shared/grids`. Do not hand-roll query params. The helper accepts a `Record<string, FilterValue>` and returns the query-param object to pass to `router.navigate(..., { queryParams })`. Consumers must know the target grid's filterable field names (e.g., `asset.company_id`, `trial.product_id`) — see the per-grid column list in the spec for the public deep-link fields.
 
-**`?selected=<id>` on companies and products lists:** the company and product list pages also honor `?selected=<id>` from the URL. On init they look up the entity by id and call `grid.onGlobalSearchInput(target.name)` so the grid filters to that single row. The `selected` param must be read from `route.snapshot.queryParamMap` BEFORE `await loadData()` because the grid's URL-sync effect rewrites query params to its own state during init, which would otherwise drop `selected`. Used by the command palette for company/product activation.
+**`?selected=<id>` on companies and assets lists:** the company and asset list pages also honor `?selected=<id>` from the URL. On init they look up the entity by id and call `grid.onGlobalSearchInput(target.name)` so the grid filters to that single row. The `selected` param must be read from `route.snapshot.queryParamMap` BEFORE `await loadData()` because the grid's URL-sync effect rewrites query params to its own state during init, which would otherwise drop `selected`. Used by the command palette for company/asset activation.
 
 **Why `$any($event)` on `onLazyLoad`:** PrimeNG's `TableLazyLoadEvent.sortField` type is `string | string[] | null`, which is wider than what our handler accepts. The `$any()` template helper bypasses the strict template type check at this single binding point. If you find a cleaner way to align the types, replace it — but do not narrow PrimeNG's type, that breaks bindings.
 
@@ -593,6 +597,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 
 <!-- AUTO-GEN:DRIFT -->
 **Services:**
+- `AuditEventService`
 - `ChangeEventService`
 - `EventCategoryService`
 - `EventThreadService`
@@ -612,6 +617,8 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `SpaceFieldVisibilityService`
 
 **Models:**
+- `Asset`
+- `AuditEvent`
 - `ChangeEvent`
 - `CtgovField`
 - `MechanismOfAction`

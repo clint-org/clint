@@ -298,7 +298,7 @@ export class MarkersHelpComponent implements OnInit {
       },
       {
         q: 'What does a marker with a strike-through line mean?',
-        a: `NLE: no longer expected. The event was projected, but ${actor} no longer expects it to happen (program shelved, indication dropped, sponsor change). The marker stays so the earlier call is still visible.`,
+        a: `NLE: no longer expected. The event was projected, but ${actor} no longer expects it to happen (asset shelved, indication dropped, sponsor change). The marker stays so the earlier call is still visible.`,
       },
       {
         q: 'How do I tell two markers of the same shape apart?',

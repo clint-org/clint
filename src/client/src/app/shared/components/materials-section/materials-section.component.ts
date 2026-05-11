@@ -26,7 +26,7 @@ import { MaterialUploadZoneComponent } from '../material-upload-zone/material-up
 type MaterialFilter = MaterialType | 'all';
 
 /**
- * Entity-level Materials section. Drops onto trial / company / product /
+ * Entity-level Materials section. Drops onto trial / company / asset /
  * marker detail pages. Loads via list_materials_for_entity, supports a
  * type-filter chip strip (All / Briefing / Priority Notice / Ad Hoc),
  * and exposes an upload zone. Each row has inline download + delete.

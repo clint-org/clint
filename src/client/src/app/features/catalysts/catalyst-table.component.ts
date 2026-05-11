@@ -65,7 +65,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           </th>
           <th>Catalyst</th>
           <th class="col-company">
-            Company / Product
+            Company / Asset
             <p-column-filter
               field="company_name"
               display="menu"

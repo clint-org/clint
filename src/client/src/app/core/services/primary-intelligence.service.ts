@@ -36,19 +36,17 @@ export class PrimaryIntelligenceService {
   }
 
   async getCompanyDetail(companyId: string): Promise<IntelligenceDetailBundle | null> {
-    const { data, error } = await this.supabase.client.rpc(
-      'get_company_detail_with_intelligence',
-      { p_company_id: companyId }
-    );
+    const { data, error } = await this.supabase.client.rpc('get_company_detail_with_intelligence', {
+      p_company_id: companyId,
+    });
     if (error) throw error;
     return (data as IntelligenceDetailBundle | null) ?? null;
   }
 
-  async getProductDetail(productId: string): Promise<IntelligenceDetailBundle | null> {
-    const { data, error } = await this.supabase.client.rpc(
-      'get_product_detail_with_intelligence',
-      { p_product_id: productId }
-    );
+  async getAssetDetail(assetId: string): Promise<IntelligenceDetailBundle | null> {
+    const { data, error } = await this.supabase.client.rpc('get_product_detail_with_intelligence', {
+      p_product_id: assetId,
+    });
     if (error) throw error;
     return (data as IntelligenceDetailBundle | null) ?? null;
   }
@@ -132,10 +130,11 @@ export class PrimaryIntelligenceService {
     entityType: IntelligenceEntityType,
     entityId: string
   ): Promise<IntelligenceHistoryPayload> {
-    const { data, error } = await this.supabase.client.rpc(
-      'get_primary_intelligence_history',
-      { p_space_id: spaceId, p_entity_type: entityType, p_entity_id: entityId }
-    );
+    const { data, error } = await this.supabase.client.rpc('get_primary_intelligence_history', {
+      p_space_id: spaceId,
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+    });
     if (error) throw error;
     return (
       (data as IntelligenceHistoryPayload) ?? {
@@ -146,6 +145,7 @@ export class PrimaryIntelligenceService {
       }
     );
   }
+
 
   async withdraw(id: string, changeNote: string): Promise<void> {
     const { error } = await this.supabase.client.rpc('withdraw_primary_intelligence', {

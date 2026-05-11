@@ -57,7 +57,7 @@ export class CatalystsPageComponent {
       { field: 'category_name', header: 'Category', filter: { kind: 'text' } },
       { field: 'company_name', header: 'Company', filter: { kind: 'text' } },
       { field: 'title', header: 'Catalyst', filter: { kind: 'text' } },
-      { field: 'product_name', header: 'Product', filter: { kind: 'text' } },
+      { field: 'product_name', header: 'Asset', filter: { kind: 'text' } },
     ],
     globalSearchFields: ['title', 'company_name', 'product_name', 'category_name'],
     defaultSort: { field: 'event_date', order: 1 },

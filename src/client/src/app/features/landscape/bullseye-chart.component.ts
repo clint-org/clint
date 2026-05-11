@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import {
   BullseyeData,
-  BullseyeProduct,
+  BullseyeAsset,
   PHASE_COLOR,
   RingPhase,
 } from '../../core/models/landscape.model';
@@ -54,7 +54,7 @@ interface SpokeLabelSpec extends SpokeLabelTransform {
 }
 
 interface DotSpec {
-  product: BullseyeProduct;
+  product: BullseyeAsset;
   x: number;
   y: number;
 }
@@ -76,13 +76,13 @@ const DIMMED_OPACITY = 0.55;
 })
 export class BullseyeChartComponent {
   readonly data = input.required<BullseyeData | null>();
-  readonly selectedProductId = input<string | null>(null);
-  readonly hoveredProductId = input<string | null>(null);
+  readonly selectedAssetId = input<string | null>(null);
+  readonly hoveredAssetId = input<string | null>(null);
   readonly highlightedRing = input<RingPhase | null>(null);
-  readonly matchedProductIds = input<Set<string> | null>(null);
+  readonly matchedAssetIds = input<Set<string> | null>(null);
 
   readonly productHover = output<string | null>();
-  readonly productClick = output<string>();
+  readonly assetClick = output<string>();
   readonly backgroundClick = output<void>();
 
   // Expose geometry constants to the template
@@ -179,7 +179,7 @@ export class BullseyeChartComponent {
 
     spokes.forEach((spoke, spokeIndex) => {
       // Group products by dev rank so we can jitter overlapping dots
-      const byRank = new Map<number, BullseyeProduct[]>();
+      const byRank = new Map<number, BullseyeAsset[]>();
       for (const product of spoke.products) {
         const list = byRank.get(product.highest_phase_rank) ?? [];
         list.push(product);
@@ -212,12 +212,12 @@ export class BullseyeChartComponent {
     const d = this.data();
     if (!d) return '';
     const productCount = this.dots().length;
-    return `${productCount} ${productCount === 1 ? 'product' : 'products'}`;
+    return `${productCount} ${productCount === 1 ? 'asset' : 'assets'}`;
   });
 
   protected dotRadius(dot: DotSpec): number {
-    if (this.selectedProductId() === dot.product.id) return SELECTED_RADIUS;
-    if (this.hoveredProductId() === dot.product.id) return HOVER_RADIUS;
+    if (this.selectedAssetId() === dot.product.id) return SELECTED_RADIUS;
+    if (this.hoveredAssetId() === dot.product.id) return HOVER_RADIUS;
     return DEFAULT_RADIUS;
   }
 
@@ -229,14 +229,14 @@ export class BullseyeChartComponent {
     return PHASE_COLOR[phase] ?? '#64748b';
   }
 
-  protected isProductMatched(productId: string): boolean {
-    const set = this.matchedProductIds();
-    return set === null || set.has(productId);
+  protected isAssetMatched(assetId: string): boolean {
+    const set = this.matchedAssetIds();
+    return set === null || set.has(assetId);
   }
 
   protected dotOpacity(dot: DotSpec): number {
-    if (!this.isProductMatched(dot.product.id)) return 0.15;
-    const selected = this.selectedProductId();
+    if (!this.isAssetMatched(dot.product.id)) return 0.15;
+    const selected = this.selectedAssetId();
     const highlightRing = this.highlightedRing();
     if (selected && selected !== dot.product.id) return DIMMED_OPACITY;
     if (highlightRing && dot.product.highest_phase !== highlightRing) return DIMMED_OPACITY;
@@ -247,21 +247,21 @@ export class BullseyeChartComponent {
     return `${dot.product.name}, ${dot.product.company_name}, highest phase ${dot.product.highest_phase}`;
   }
 
-  protected onDotClick(event: Event, productId: string): void {
+  protected onDotClick(event: Event, assetId: string): void {
     event.stopPropagation();
-    this.productClick.emit(productId);
+    this.assetClick.emit(assetId);
   }
 
-  protected onDotKeydown(event: KeyboardEvent, productId: string): void {
+  protected onDotKeydown(event: KeyboardEvent, assetId: string): void {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       event.stopPropagation();
-      this.productClick.emit(productId);
+      this.assetClick.emit(assetId);
     }
   }
 
-  protected onHoverStart(productId: string): void {
-    this.productHover.emit(productId);
+  protected onHoverStart(assetId: string): void {
+    this.productHover.emit(assetId);
   }
 
   protected onHoverEnd(): void {

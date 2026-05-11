@@ -5,13 +5,13 @@
 
   <app-form-field
     label="Name"
-    fieldId="product-name"
+    fieldId="asset-name"
     [required]="true"
     [error]="nameInvalid ? 'Name is required.' : null"
   >
     <input
       pInputText
-      id="product-name"
+      id="asset-name"
       name="name"
       class="w-full"
       [ngModel]="name()"
@@ -19,14 +19,14 @@
       (blur)="nameBlurred.set(true)"
       [attr.aria-required]="true"
       [attr.aria-invalid]="nameInvalid"
-      [attr.aria-describedby]="nameInvalid ? 'product-name-error' : null"
+      [attr.aria-describedby]="nameInvalid ? 'asset-name-error' : null"
     />
   </app-form-field>
 
-  <app-form-field label="Generic Name" fieldId="product-generic-name">
+  <app-form-field label="Generic Name" fieldId="asset-generic-name">
     <input
       pInputText
-      id="product-generic-name"
+      id="asset-generic-name"
       name="genericName"
       class="w-full"
       [ngModel]="genericName()"
@@ -35,9 +35,9 @@
     />
   </app-form-field>
 
-  <app-form-field label="Company" fieldId="product-company" [required]="true">
+  <app-form-field label="Company" fieldId="asset-company" [required]="true">
     <p-select
-      inputId="product-company"
+      inputId="asset-company"
       name="companyId"
       [options]="companies()"
       [ngModel]="companyId()"
@@ -50,10 +50,10 @@
     />
   </app-form-field>
 
-  <app-form-field label="Logo URL" fieldId="product-logo-url">
+  <app-form-field label="Logo URL" fieldId="asset-logo-url">
     <input
       pInputText
-      id="product-logo-url"
+      id="asset-logo-url"
       name="logoUrl"
       class="w-full"
       [ngModel]="logoUrl()"
@@ -62,9 +62,9 @@
     />
   </app-form-field>
 
-  <app-form-field label="Mechanisms of Action" fieldId="product-moas">
+  <app-form-field label="Mechanisms of Action" fieldId="asset-moas">
     <p-multiselect
-      inputId="product-moas"
+      inputId="asset-moas"
       name="moas"
       [options]="moaOptions()"
       [ngModel]="selectedMoaIds()"
@@ -80,9 +80,9 @@
     />
   </app-form-field>
 
-  <app-form-field label="Routes of Administration" fieldId="product-roas">
+  <app-form-field label="Routes of Administration" fieldId="asset-roas">
     <p-multiselect
-      inputId="product-roas"
+      inputId="asset-roas"
       name="roas"
       [options]="roaOptions()"
       [ngModel]="selectedRoaIds()"
@@ -98,9 +98,9 @@
     />
   </app-form-field>
 
-  <app-form-field label="Display Order" fieldId="product-display-order" spacing="mb-6">
+  <app-form-field label="Display Order" fieldId="asset-display-order" spacing="mb-6">
     <p-inputnumber
-      inputId="product-display-order"
+      inputId="asset-display-order"
       name="displayOrder"
       [ngModel]="displayOrder()"
       (ngModelChange)="displayOrder.set($event)"
@@ -109,7 +109,7 @@
   </app-form-field>
 
   <app-form-actions
-    [submitLabel]="isEdit ? 'Update Product' : 'Create Product'"
+    [submitLabel]="isEdit ? 'Update Asset' : 'Create Asset'"
     [loading]="submitting()"
     [disabled]="!canSubmit"
     (cancelled)="cancelled.emit()"

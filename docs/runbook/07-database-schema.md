@@ -54,6 +54,7 @@ erDiagram
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_REVISIONS : "primary_intelligence_id"
   MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
   PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
   PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
@@ -83,6 +84,7 @@ erDiagram
   PRODUCTS ||--o{ TRIALS : "product_id"
   SPACES ||--o{ TRIALS : "space_id"
   THERAPEUTIC_AREAS ||--o{ TRIALS : "therapeutic_area_id"
+  AUDIT_EVENTS { }
   CTGOV_SYNC_RUNS { }
   PLATFORM_ADMINS { }
   RETIRED_HOSTNAMES { }
@@ -147,7 +149,7 @@ The unique partial index `primary_intelligence_one_published` (one published row
 | 72 | `20260428215813_fix_agency_members_view_and_contact_email.sql` | Recreates `agency_members_view` without `security_invoker = true`, with an inline `is_agency_member()` / `is_platform_admin()` WHERE clause — same fix migration 40 applied to `tenant_members_view` and `space_members_view`. Previously the view tried to read `auth.users` as the calling `authenticated` role, failed with 42501, and the agency service silently fell back to raw `agency_members` so the Members table rendered "--" for name and the user_id under email. `provision_agency` now defaults `contact_email` to `p_owner_email` when not supplied, instead of writing the literal placeholder `unknown@unknown.invalid` (which surfaced verbatim on the branding page). Backfills any existing agencies still holding the placeholder using the owner row from `agency_members` |
 | 73 | `20260428220000_member_self_protection_guards.sql` | Defense-in-depth row triggers on `tenant_members`, `space_members`, and `agency_members` that block (a) deletes targeting `auth.uid()`'s own membership row -- another member must remove you -- and (b) any DELETE or role UPDATE that would leave the parent entity with zero owners. Errors raise as `42501` with a user-readable message. Cascading deletes from `tenants`, `spaces`, `agencies`, and `auth.users` still work via statement-level BEFORE/AFTER DELETE triggers on each parent that flip a transaction-local `clint.member_guard_cascade` flag; the row-level guard short-circuits when that flag is `'on'`. The agency-members UI already hid these controls for self -- this migration extends the same protection to tenant and space members and makes the rule authoritative regardless of client. |
 | 74 | `20260429000000_remove_accent_color.sql` | Drops the unused `accent_color` column from `tenants` and `agencies`. Was plumbed end-to-end (validation, RPC whitelists, brand projection, BrandContextService signal, branding form inputs) but never consumed at render -- no CSS variable was set from it. Recreates `update_tenant_branding`, `update_agency_branding`, `provision_tenant`, and `get_brand_by_host` without the column references first, then drops the column from both tables. Easy to re-introduce when a specific surface needs a second brand color. |
-| 75 | `20260429010000_owner_only_explicit_space_access.sql` | Collapses the access model to match how the product is actually used. **Schema:** `agency_members.role` and `tenant_members.role` constrained to `owner` only; `tenant_invites.role` same; new `agencies.email_domain` (optional lock) with regex check; new `space_invites` table (mirrors tenant_invites). **Triggers:** `enforce_member_email_domain` BEFORE INSERT/UPDATE on agency_members and tenant_members rejects users whose email domain doesn't match `agencies.email_domain` (when set; platform admin bypass). **Functions:** `has_space_access` rewritten -- only explicit `space_members` rows grant data access; tenant/agency owners get NO implicit cascade. `provision_tenant` auto-adds the calling user as tenant owner + space owner of the default Workspace. New RPCs: `add_tenant_owner(uuid, text)`, `invite_to_space(uuid, text, text)`, `accept_space_invite(text)`. `update_agency_branding` whitelist gains `email_domain`. **Data:** wipes existing non-owner rows from agency_members + tenant_members, backfills agency-owner -> tenant-owner -> space-owner across existing data so prior visibility is preserved, backfills `agencies.email_domain` from each agency owner's email when null. |
+| 75 | `20260429010000_owner_only_explicit_space_access.sql` | Collapses the access model to match how the platform is actually used. **Schema:** `agency_members.role` and `tenant_members.role` constrained to `owner` only; `tenant_invites.role` same; new `agencies.email_domain` (optional lock) with regex check; new `space_invites` table (mirrors tenant_invites). **Triggers:** `enforce_member_email_domain` BEFORE INSERT/UPDATE on agency_members and tenant_members rejects users whose email domain doesn't match `agencies.email_domain` (when set; platform admin bypass). **Functions:** `has_space_access` rewritten -- only explicit `space_members` rows grant data access; tenant/agency owners get NO implicit cascade. `provision_tenant` auto-adds the calling user as tenant owner + space owner of the default Workspace. New RPCs: `add_tenant_owner(uuid, text)`, `invite_to_space(uuid, text, text)`, `accept_space_invite(text)`. `update_agency_branding` whitelist gains `email_domain`. **Data:** wipes existing non-owner rows from agency_members + tenant_members, backfills agency-owner -> tenant-owner -> space-owner across existing data so prior visibility is preserved, backfills `agencies.email_domain` from each agency owner's email when null. |
 | 76 | `20260429230652_brand_include_agency_for_tenants.sql` | Extends `get_brand_by_host` so tenant brands also surface a small public-safe `agency: { name, logo_url } \| null` descriptor (drives the "intelligence delivered by {agency}" framing on login + app shell). Null for non-tenant kinds and for tenants with no `agency_id`. **Latent bug:** the rewrite reintroduced `t.accent_color` / `a.accent_color` references in the SELECT lists even though migration 74 dropped those columns; plpgsql doesn't resolve column refs at function-creation time, so the migration applied cleanly but every runtime call returned `column does not exist` → PostgREST 400. Fixed in migration 77. |
 | 77 | `20260430032945_fix_get_brand_by_host_drop_accent_color.sql` | Recreates `get_brand_by_host` without the broken `accent_color` references reintroduced by migration 76. Preserves the agency-attribution payload from migration 76 and the magic `admin.<apex>` super-admin branch from `20260428124819_whitelabel_rpc_get_brand_by_host_super_admin`. Same return contract as migration 76 minus the `accent_color` field (which migration 74 had already removed from the contract). Unblocked an authenticated agency-host redirect loop: 400 on the RPC collapsed every host to `kind='default'`, `agencyGuard` redirected `/admin` → `/`, `marketingLandingGuard` saw the user had agencies and did `window.location.href = <agency>.<apex>/admin`, full reload, repeat. |
 | 78 | `20260430120000_drop_self_provision_paths.sql` | Drops the legacy self-provisioning RPCs `create_tenant(text, text)` and `provision_demo_workspace()`. Both let any authenticated user spawn an agency-less ("orphan") tenant from `/onboarding` or `/provision-demo`, which broke the whitelabel hierarchy and produced the `-4fd31044`-suffixed orphans cleaned up on 2026-04-30. All tenant creation now goes through `provision_tenant` (agency owner or platform admin). The frontend onboarding page collapsed to a single "Join with Code" form; `/provision-demo` route + component deleted. Direct-customer (no-agency) provisioning, if needed later, can be added as a platform-admin-only branch on `provision_tenant`. |
@@ -604,10 +606,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
+- `audit_events`
 - `mechanisms_of_action`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
+- `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`
@@ -717,6 +721,26 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260509130050_intelligence_history_rls.sql`
 - `20260509130100_intelligence_history_rpcs.sql`
 - `20260509131000_intelligence_history_restore_changed_fields.sql`
+- `20260510000100_audit_events_table.sql`
+- `20260510000200_is_tenant_owner_strict.sql`
+- `20260510000300_audit_events_rls.sql`
+- `20260510000400_record_audit_event.sql`
+- `20260510000500_redact_user_pii.sql`
+- `20260510000600_list_audit_events.sql`
+- `20260510000700_audit_safety_net_triggers.sql`
+- `20260510001000_audit_instrument_provision.sql`
+- `20260510001100_audit_instrument_branding.sql`
+- `20260510001200_audit_instrument_access.sql`
+- `20260510001300_audit_instrument_invites.sql`
+- `20260510001400_audit_instrument_spaces.sql`
+- `20260510001500_audit_instrument_domains.sql`
+- `20260510002000_audit_coverage_smoke.sql`
+- `20260510002100_audit_isolation_smoke.sql`
+- `20260510002200_audit_locked_write_smoke.sql`
+- `20260510002300_audit_redaction_smoke.sql`
+- `20260510002400_audit_safety_net_smoke.sql`
+- `20260510002500_audit_drop_scope_fks.sql`
+- `20260510120000_events_rpc_hierarchical_scope.sql`
 - `20260510120100_change_feed_product_company_marker_type.sql`
 - `20260510120200_seed_demo_activity_variety.sql`
 - `20260510120300_change_feed_company_logo_url.sql`

@@ -51,14 +51,11 @@ export class MechanismOfActionService {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('mechanisms_of_action')
-      .delete()
-      .eq('id', id);
+    const { error } = await this.supabase.client.from('mechanisms_of_action').delete().eq('id', id);
     if (error) throw error;
   }
 
-  async countAssignedProducts(id: string): Promise<number> {
+  async countAssignedAssets(id: string): Promise<number> {
     const { count, error } = await this.supabase.client
       .from('product_mechanisms_of_action')
       .select('*', { count: 'exact', head: true })

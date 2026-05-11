@@ -25,7 +25,7 @@ test.describe('Landscape bullseye', () => {
 
     // HFpEF with three competing companies, one of which is Launched
     taHfpefId = await createTestTherapeuticArea(spaceId, 'Heart Failure HFpEF', 'HFpEF');
-    // An empty TA with no products at all
+    // An empty TA with no assets at all
     await createTestTherapeuticArea(spaceId, 'Empty Space TA', 'EMPTY');
 
     const azId = await createTestCompany(spaceId, 'AstraZeneca');
@@ -74,14 +74,9 @@ test.describe('Landscape bullseye', () => {
 
   test('clicking a TA card opens the bullseye for that TA', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'networkidle' });
-    await page
-      .locator('.landscape-index-card')
-      .filter({ hasText: 'Heart Failure HFpEF' })
-      .click();
+    await page.locator('.landscape-index-card').filter({ hasText: 'Heart Failure HFpEF' }).click();
 
-    await expect(page).toHaveURL(
-      new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`)
-    );
+    await expect(page).toHaveURL(new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`));
     await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
 
     // The chart should render one dot per qualifying product (3 total)
@@ -125,16 +120,15 @@ test.describe('Landscape bullseye', () => {
   });
 
   test('Escape key clears the selection', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}?product=${farxigaId}`,
-      { waitUntil: 'networkidle' }
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}?product=${farxigaId}`, {
+      waitUntil: 'networkidle',
+    });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
     await page.keyboard.press('Escape');
     await expect(page).not.toHaveURL(/product=/);
   });
 
-  test('empty TA shows the empty state and manage products link', async () => {
+  test('empty TA shows the empty state and manage assets link', async () => {
     // Create a new product-less TA on the fly for this test
     const emptyId = await createTestTherapeuticArea(
       spaceId,
@@ -144,6 +138,6 @@ test.describe('Landscape bullseye', () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${emptyId}`, {
       waitUntil: 'networkidle',
     });
-    await expect(page.getByText(/No products tracked/)).toBeVisible();
+    await expect(page.getByText(/No assets tracked/)).toBeVisible();
   });
 });

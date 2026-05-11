@@ -29,7 +29,7 @@ interface EntityOption {
 
 /**
  * Chip picker rendered at the bottom of the authoring drawer. Lets the
- * author attach trials, markers, companies, and products with a
+ * author attach trials, markers, companies, and assets with a
  * relationship type. Loads options from the current space on demand.
  */
 @Component({
@@ -142,7 +142,7 @@ export class LinkedEntitiesPickerComponent implements OnInit {
     { label: 'Trial', value: 'trial' },
     { label: 'Marker', value: 'marker' },
     { label: 'Company', value: 'company' },
-    { label: 'Product', value: 'product' },
+    { label: 'Asset', value: 'product' },
   ];
 
   protected readonly relationshipOptions = RELATIONSHIP_OPTIONS.map((r) => ({
@@ -226,7 +226,7 @@ export class LinkedEntitiesPickerComponent implements OnInit {
     const sid = this.spaceId();
     const client = this.supabase.client;
 
-    const [trials, markers, companies, products] = await Promise.all([
+    const [trials, markers, companies, assets] = await Promise.all([
       client.from('trials').select('id, name, identifier').eq('space_id', sid).order('name'),
       client
         .from('markers')
@@ -266,7 +266,7 @@ export class LinkedEntitiesPickerComponent implements OnInit {
     for (const c of (companies.data ?? []) as { id: string; name: string }[]) {
       opts.push({ entity_type: 'company', entity_id: c.id, label: c.name, sub_label: '' });
     }
-    for (const p of (products.data ?? []) as {
+    for (const p of (assets.data ?? []) as {
       id: string;
       name: string;
       companies: { name: string } | { name: string }[] | null;

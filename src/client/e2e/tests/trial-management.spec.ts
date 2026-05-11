@@ -26,9 +26,9 @@ test.describe('Trial Management CRUD', () => {
     tenantId = await createTestTenant('Trial CRUD Org');
     spaceId = await createTestSpace(tenantId, 'Trial Test Space');
     const companyId = await createTestCompany(spaceId, 'Trial Test Co');
-    const productId = await createTestProduct(spaceId, companyId, 'Trial Test Product');
+    const assetId = await createTestProduct(spaceId, companyId, 'Trial Test Asset');
     const taId = await createTestTherapeuticArea(spaceId, 'Trial TA');
-    trialId = await createTestTrial(spaceId, productId, taId, 'Test Trial');
+    trialId = await createTestTrial(spaceId, assetId, taId, 'Test Trial');
 
     page = await authenticatedPage(browser);
   });
@@ -57,7 +57,9 @@ test.describe('Trial Management CRUD', () => {
     await page.waitForTimeout(2000);
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('heading', { name: 'Updated Trial' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Updated Trial' })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('add a trial marker', async () => {
@@ -101,9 +103,9 @@ test.describe('Trial Management CRUD', () => {
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     // Scope the assertion to the markers table -- the activity feed still
     // shows "Marker removed: Test marker title" after the deletion.
-    await expect(
-      page.locator('p-table tbody').getByText('Test marker title'),
-    ).not.toBeVisible({ timeout: 5000 });
+    await expect(page.locator('p-table tbody').getByText('Test marker title')).not.toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('add a trial note', async () => {
@@ -116,7 +118,9 @@ test.describe('Trial Management CRUD', () => {
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     // Scope to the Notes section -- the activity feed also surfaces note text.
-    const notesSection = page.locator('app-section-card', { has: page.getByRole('heading', { name: 'Notes' }) });
+    const notesSection = page.locator('app-section-card', {
+      has: page.getByRole('heading', { name: 'Notes' }),
+    });
     await expect(notesSection.getByText('This is a test note for the trial.')).toBeVisible({
       timeout: 5000,
     });
@@ -134,7 +138,9 @@ test.describe('Trial Management CRUD', () => {
 
     await page.goto(trialUrl(), { waitUntil: 'networkidle' });
     // Scope to the Notes section -- the activity feed retains "Note removed" text.
-    const notesSection = page.locator('app-section-card', { has: page.getByRole('heading', { name: 'Notes' }) });
+    const notesSection = page.locator('app-section-card', {
+      has: page.getByRole('heading', { name: 'Notes' }),
+    });
     await expect(notesSection.getByText('This is a test note for the trial.')).not.toBeVisible({
       timeout: 5000,
     });
@@ -153,7 +159,7 @@ test.describe('Trial List CRUD', () => {
   let tenantId: string;
   let spaceId: string;
   let companyId: string;
-  let productId: string;
+  let assetId: string;
   let taId: string;
   const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/trials`;
 
@@ -161,7 +167,7 @@ test.describe('Trial List CRUD', () => {
     tenantId = await createTestTenant('Trial List Org');
     spaceId = await createTestSpace(tenantId, 'Trial List Space');
     companyId = await createTestCompany(spaceId, 'Trial Co');
-    productId = await createTestProduct(spaceId, companyId, 'Trial Product');
+    assetId = await createTestProduct(spaceId, companyId, 'Trial Asset');
     taId = await createTestTherapeuticArea(spaceId, 'Oncology');
     page = await authenticatedPage(browser);
   });
@@ -179,7 +185,7 @@ test.describe('Trial List CRUD', () => {
     // The trial form has many fields with complex Angular bindings that are
     // difficult to set reliably via Playwright. Create via DB helper instead
     // and verify it renders in the list.
-    await createTestTrial(spaceId, productId, taId, 'KEYNOTE-001');
+    await createTestTrial(spaceId, assetId, taId, 'KEYNOTE-001');
     await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('KEYNOTE-001')).toBeVisible({ timeout: 10000 });
   });

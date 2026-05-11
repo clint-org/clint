@@ -15,11 +15,11 @@ export interface ExportOptions {
 
 interface FlatRow {
   companyName: string;
-  productName: string;
+  assetName: string;
   trialName: string;
   trial: Trial;
   isFirstInCompany: boolean;
-  isFirstInProduct: boolean;
+  isFirstInAsset: boolean;
 }
 
 const PHASE_COLORS: Record<string, string> = {
@@ -195,18 +195,18 @@ export class PptxExportService {
     for (const company of companies) {
       let isFirstInCompany = true;
       for (const product of company.products ?? []) {
-        let isFirstInProduct = true;
+        let isFirstInAsset = true;
         for (const trial of product.trials ?? []) {
           rows.push({
             companyName: company.name,
-            productName: product.name,
+            assetName: product.name,
             trialName: trial.name,
             trial,
             isFirstInCompany,
-            isFirstInProduct,
+            isFirstInAsset,
           });
           isFirstInCompany = false;
-          isFirstInProduct = false;
+          isFirstInAsset = false;
         }
       }
     }
@@ -259,7 +259,7 @@ export class PptxExportService {
     const headerY = TITLE_H;
     const hStyle = { fontSize: 6, fontFace: 'Arial' as const, bold: true, color: '64748b' };
     slide.addText('Company', { x: COMPANY_X, y: headerY, w: COMPANY_W, h: HEADER_H, ...hStyle });
-    slide.addText('Product', { x: PRODUCT_X, y: headerY, w: PRODUCT_W, h: HEADER_H, ...hStyle });
+    slide.addText('Asset', { x: PRODUCT_X, y: headerY, w: PRODUCT_W, h: HEADER_H, ...hStyle });
     slide.addText('Trial', { x: TRIAL_X, y: headerY, w: TRIAL_W, h: HEADER_H, ...hStyle });
 
     const columns = this.timeline.getColumns(startYear, endYear, zoom);
@@ -353,8 +353,8 @@ export class PptxExportService {
         });
       }
 
-      if (row.isFirstInProduct) {
-        slide.addText(row.productName, {
+      if (row.isFirstInAsset) {
+        slide.addText(row.assetName, {
           x: PRODUCT_X,
           y,
           w: PRODUCT_W,

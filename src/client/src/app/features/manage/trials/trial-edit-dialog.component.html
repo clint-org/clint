@@ -40,15 +40,15 @@
     </div>
     <div class="flex flex-col gap-1">
       <label for="edit-trial-product" class="text-sm font-medium text-slate-700">
-        Product <span class="text-red-500">*</span>
+        Asset <span class="text-red-500">*</span>
       </label>
       <p-select
         inputId="edit-trial-product"
         [options]="products()"
         optionLabel="name"
         optionValue="id"
-        [ngModel]="productId()"
-        (ngModelChange)="productId.set($event)"
+        [ngModel]="assetId()"
+        (ngModelChange)="assetId.set($event)"
         name="product"
         placeholder="Select product"
         [filter]="true"

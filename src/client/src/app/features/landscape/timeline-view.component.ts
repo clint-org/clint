@@ -139,17 +139,9 @@ export class TimelineViewComponent {
     ]);
   }
 
-  onProductClick(productId: string): void {
-    if (!productId) return;
-    this.router.navigate([
-      '/t',
-      this.tenantId(),
-      's',
-      this.spaceId(),
-      'manage',
-      'products',
-      productId,
-    ]);
+  onAssetClick(assetId: string): void {
+    if (!assetId) return;
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
   }
 
   retry(): void {

@@ -1,5 +1,11 @@
 import {
-  Component, ChangeDetectionStrategy, OnInit, effect, inject, signal, computed,
+  Component,
+  ChangeDetectionStrategy,
+  OnInit,
+  effect,
+  inject,
+  signal,
+  computed,
 } from '@angular/core';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -21,14 +27,21 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (hotkey.isOpen()) {
-      <div class="fixed inset-0 z-[1000]" role="dialog" aria-modal="true" aria-labelledby="palette-title">
+      <div
+        class="fixed inset-0 z-[1000]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="palette-title"
+      >
         <button
           type="button"
           aria-label="Close palette"
           class="absolute inset-0 cursor-default bg-slate-900/40"
           (click)="close()"
         ></button>
-        <div class="absolute left-1/2 top-[15vh] flex max-h-[70vh] w-[720px] max-w-[92vw] -translate-x-1/2 flex-col rounded-md border border-slate-200 bg-white shadow-2xl">
+        <div
+          class="absolute left-1/2 top-[15vh] flex max-h-[70vh] w-[720px] max-w-[92vw] -translate-x-1/2 flex-col rounded-md border border-slate-200 bg-white shadow-2xl"
+        >
           <h2 id="palette-title" class="sr-only">Search</h2>
           <app-palette-search-input
             [query]="palette.query()"
@@ -110,12 +123,10 @@ export class CommandPaletteComponent implements OnInit {
       return this.registry.list(this.tenantId, this.spaceId);
     });
 
-    this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(() => {
-        this.captureRouteContext();
-        this.close();
-      });
+    this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
+      this.captureRouteContext();
+      this.close();
+    });
     this.captureRouteContext();
   }
 
@@ -135,17 +146,19 @@ export class CommandPaletteComponent implements OnInit {
     this.spaceShortName.set('');
   }
 
-  close() { this.hotkey.close(); }
+  close() {
+    this.hotkey.close();
+  }
 
   toggleScope() {
     this.palette.scope.update((s) => (s === 'space' ? 'all-spaces' : 'space'));
   }
 
   onArrow(dir: 'up' | 'down' | 'home' | 'end') {
-    if (dir === 'up')   this.palette.moveSelection(-1);
+    if (dir === 'up') this.palette.moveSelection(-1);
     if (dir === 'down') this.palette.moveSelection(+1);
     if (dir === 'home') this.palette.selectIndex(0);
-    if (dir === 'end')  this.palette.selectIndex(this.palette.results().length - 1);
+    if (dir === 'end') this.palette.selectIndex(this.palette.results().length - 1);
   }
 
   onEnter(withModifier: boolean) {
@@ -188,11 +201,16 @@ export class CommandPaletteComponent implements OnInit {
     if (!this.tenantId || !this.spaceId) return null;
     const base = `/t/${this.tenantId}/s/${this.spaceId}`;
     switch (item.kind) {
-      case 'trial':    return `${base}/manage/trials/${item.id}`;
-      case 'company':  return `${base}/manage/companies/${item.id}`;
-      case 'product':  return `${base}/manage/products/${item.id}`;
-      case 'event':    return `${base}/events?eventId=${item.id}`;
-      case 'catalyst': return `${base}/catalysts?markerId=${item.id}`;
+      case 'trial':
+        return `${base}/manage/trials/${item.id}`;
+      case 'company':
+        return `${base}/manage/companies/${item.id}`;
+      case 'product':
+        return `${base}/manage/assets/${item.id}`;
+      case 'event':
+        return `${base}/events?eventId=${item.id}`;
+      case 'catalyst':
+        return `${base}/catalysts?markerId=${item.id}`;
     }
   }
 }

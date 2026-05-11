@@ -5,7 +5,7 @@
  * back to its generic copy.
  *
  * `columnLabels` is the per-form map of DB column name to user-visible field
- * label, e.g. `{ product_id: 'Product', therapeutic_area_id: 'Therapeutic area' }`.
+ * label, e.g. `{ product_id: 'Asset', therapeutic_area_id: 'Therapeutic area' }`.
  * Unknown columns fall back to a humanized form of the raw column name.
  */
 export function extractConstraintMessage(

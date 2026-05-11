@@ -1,4 +1,4 @@
-import { Product } from './product.model';
+import { Asset } from './asset.model';
 
 export interface Company {
   id: string;
@@ -9,5 +9,5 @@ export interface Company {
   display_order: number;
   created_at: string;
   updated_at: string;
-  products?: Product[];
+  products?: Asset[];
 }

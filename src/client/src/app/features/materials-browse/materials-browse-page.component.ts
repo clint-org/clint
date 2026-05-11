@@ -142,7 +142,7 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
     { label: 'Trial', value: 'trial' },
     { label: 'Marker', value: 'marker' },
     { label: 'Company', value: 'company' },
-    { label: 'Product', value: 'product' },
+    { label: 'Asset', value: 'product' },
     { label: 'Engagement', value: 'space' },
   ];
 

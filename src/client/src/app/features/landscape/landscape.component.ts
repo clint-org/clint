@@ -16,7 +16,7 @@ import { MessageModule } from 'primeng/message';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import {
   BullseyeDimension,
-  BullseyeProduct,
+  BullseyeAsset,
   BullseyeSpoke,
   LandscapeFilters,
   RingPhase,
@@ -56,8 +56,8 @@ export class LandscapeComponent implements OnInit {
   readonly entityId = signal('');
   readonly dimension = signal<BullseyeDimension>('therapeutic-area');
 
-  readonly selectedProductId = signal<string | null>(null);
-  readonly hoveredProductId = signal<string | null>(null);
+  readonly selectedAssetId = signal<string | null>(null);
+  readonly hoveredAssetId = signal<string | null>(null);
   readonly highlightedRing = signal<RingPhase | null>(null);
   readonly tooltipX = signal(0);
   readonly tooltipY = signal(0);
@@ -78,7 +78,7 @@ export class LandscapeComponent implements OnInit {
     },
   });
 
-  readonly allProducts = computed<BullseyeProduct[]>(
+  readonly allAssets = computed<BullseyeAsset[]>(
     () => this.bullseyeData.value()?.spokes.flatMap((s) => s.products) ?? []
   );
 
@@ -87,28 +87,28 @@ export class LandscapeComponent implements OnInit {
     if (!data) return null;
     if (this.state.spokeMode() === 'grouped') return data;
 
-    const allProducts = data.spokes.flatMap((s) => s.products);
-    const productSpokes: BullseyeSpoke[] = allProducts.map((p) => ({
+    const allAssets = data.spokes.flatMap((s) => s.products);
+    const productSpokes: BullseyeSpoke[] = allAssets.map((p) => ({
       id: p.id,
       name: p.name,
       display_order: 0,
       highest_phase_rank: p.highest_phase_rank,
       products: [p],
     }));
-    return { ...data, spokes: productSpokes, spoke_label: 'Products' };
+    return { ...data, spokes: productSpokes, spoke_label: 'Assets' };
   });
 
-  readonly selectedProduct = computed<BullseyeProduct | null>(() => {
-    const id = this.selectedProductId();
+  readonly selectedAsset = computed<BullseyeAsset | null>(() => {
+    const id = this.selectedAssetId();
     if (!id) return null;
-    return this.allProducts().find((p) => p.id === id) ?? null;
+    return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
-  readonly matchedProductIds = computed<Set<string> | null>(() => {
+  readonly matchedAssetIds = computed<Set<string> | null>(() => {
     const f = this.state.filters();
     const noneActive =
       f.companyIds.length === 0 &&
-      f.productIds.length === 0 &&
+      f.assetIds.length === 0 &&
       f.therapeuticAreaIds.length === 0 &&
       f.mechanismOfActionIds.length === 0 &&
       f.routeOfAdministrationIds.length === 0 &&
@@ -118,26 +118,26 @@ export class LandscapeComponent implements OnInit {
     if (noneActive) return null;
 
     const matched = new Set<string>();
-    for (const product of this.allProducts()) {
+    for (const product of this.allAssets()) {
       if (this.productMatches(product, f)) matched.add(product.id);
     }
     return matched;
   });
 
-  readonly hoveredProduct = computed<BullseyeProduct | null>(() => {
-    const id = this.hoveredProductId();
+  readonly hoveredAsset = computed<BullseyeAsset | null>(() => {
+    const id = this.hoveredAssetId();
     if (!id) return null;
-    return this.allProducts().find((p) => p.id === id) ?? null;
+    return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
   constructor() {
     effect(() => {
       const data = this.bullseyeData.value();
-      const currentSelected = this.selectedProductId();
+      const currentSelected = this.selectedAssetId();
       if (!data || !currentSelected) return;
       const exists = data.spokes.some((s) => s.products.some((p) => p.id === currentSelected));
       if (!exists) {
-        this.selectedProductId.set(null);
+        this.selectedAssetId.set(null);
         this.updateQueryParam(null);
       }
     });
@@ -157,7 +157,7 @@ export class LandscapeComponent implements OnInit {
     this.tenantId.set(this.collectParam('tenantId'));
     this.spaceId.set(this.collectParam('spaceId'));
     this.entityId.set(this.collectParam('entityId'));
-    this.selectedProductId.set(this.route.snapshot.queryParamMap.get('product'));
+    this.selectedAssetId.set(this.route.snapshot.queryParamMap.get('product'));
 
     const urlSegments = this.route.snapshot.url;
     const dimensionSegment = urlSegments.find((s) =>
@@ -173,13 +173,13 @@ export class LandscapeComponent implements OnInit {
       this.entityId.set(this.collectParam('entityId'));
     });
     this.route.queryParamMap.subscribe((qp) => {
-      this.selectedProductId.set(qp.get('product'));
+      this.selectedAssetId.set(qp.get('product'));
     });
   }
 
-  onProductHover(productId: string | null): void {
-    this.hoveredProductId.set(productId);
-    if (productId) {
+  onAssetHover(assetId: string | null): void {
+    this.hoveredAssetId.set(assetId);
+    if (assetId) {
       const handler = (e: MouseEvent) => {
         this.tooltipX.set(e.clientX);
         this.tooltipY.set(e.clientY);
@@ -189,21 +189,21 @@ export class LandscapeComponent implements OnInit {
     }
   }
 
-  onProductClick(productId: string): void {
-    this.selectedProductId.set(productId);
+  onAssetClick(assetId: string): void {
+    this.selectedAssetId.set(assetId);
     this.highlightedRing.set(null);
-    this.updateQueryParam(productId);
+    this.updateQueryParam(assetId);
   }
 
   onBackgroundClick(): void {
-    if (this.selectedProductId() !== null) {
-      this.selectedProductId.set(null);
+    if (this.selectedAssetId() !== null) {
+      this.selectedAssetId.set(null);
       this.updateQueryParam(null);
     }
   }
 
   onClearSelection(): void {
-    this.selectedProductId.set(null);
+    this.selectedAssetId.set(null);
     this.updateQueryParam(null);
   }
 
@@ -232,23 +232,23 @@ export class LandscapeComponent implements OnInit {
     ]);
   }
 
-  onOpenInTimeline(payload: { productId: string; therapeuticAreaId: string }): void {
+  onOpenInTimeline(payload: { assetId: string; therapeuticAreaId: string }): void {
     // Land on the actual timeline view, not the space root (which renders
     // the landscape index). Filters thread through as query params and are
     // applied in landscape-shell's applyQueryParamFilters().
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: {
-        productIds: payload.productId,
+        assetIds: payload.assetId,
         therapeuticAreaIds: payload.therapeuticAreaId,
       },
     });
   }
 
   onOpenMarker(markerId: string): void {
-    const product = this.selectedProduct();
+    const product = this.selectedAsset();
     const taId = this.entityId();
     const queryParams: Record<string, string> = { markerId };
-    if (product) queryParams['productIds'] = product.id;
+    if (product) queryParams['assetIds'] = product.id;
     if (taId) queryParams['therapeuticAreaIds'] = taId;
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams,
@@ -259,9 +259,9 @@ export class LandscapeComponent implements OnInit {
     this.bullseyeData.reload();
   }
 
-  private productMatches(product: BullseyeProduct, f: LandscapeFilters): boolean {
+  private productMatches(product: BullseyeAsset, f: LandscapeFilters): boolean {
     if (f.companyIds.length > 0 && !f.companyIds.includes(product.company_id)) return false;
-    if (f.productIds.length > 0 && !f.productIds.includes(product.id)) return false;
+    if (f.assetIds.length > 0 && !f.assetIds.includes(product.id)) return false;
     if (f.mechanismOfActionIds.length > 0) {
       const ok = (product.moas ?? []).some((m) => f.mechanismOfActionIds.includes(m.id));
       if (!ok) return false;
@@ -288,15 +288,15 @@ export class LandscapeComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.selectedProductId() !== null) {
+    if (this.selectedAssetId() !== null) {
       this.onClearSelection();
     }
   }
 
-  private updateQueryParam(productId: string | null): void {
+  private updateQueryParam(assetId: string | null): void {
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { product: productId },
+      queryParams: { product: assetId },
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });

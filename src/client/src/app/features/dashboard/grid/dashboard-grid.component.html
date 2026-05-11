@@ -38,7 +38,7 @@
           <div
             class="w-28 md:w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 lg:border-l border-slate-700"
           >
-            Product
+            Asset
           </div>
           @if (showMoaColumn()) {
             <div
@@ -185,40 +185,38 @@
                 }
               }
             </div>
-            <!-- Product column -->
+            <!-- Asset column -->
             <div
               class="w-28 md:w-32 px-3 flex items-center gap-1.5 truncate lg:border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-              [title]="row.productName"
+              [title]="row.assetName"
               role="button"
               tabindex="0"
-              (click)="onProductClick(row.productId)"
-              (keydown.enter)="onProductClick(row.productId)"
-              (keydown.space)="onProductClick(row.productId)"
+              (click)="onAssetClick(row.assetId)"
+              (keydown.enter)="onAssetClick(row.assetId)"
+              (keydown.space)="onAssetClick(row.assetId)"
             >
-              @if (row.isFirstInProduct) {
-                <span class="text-sm text-slate-600 font-medium truncate">{{
-                  row.productName
-                }}</span>
+              @if (row.isFirstInAsset) {
+                <span class="text-sm text-slate-600 font-medium truncate">{{ row.assetName }}</span>
               }
             </div>
             <!-- MOA column -->
             @if (showMoaColumn()) {
               <div
                 class="w-28 px-2 flex items-center border-l border-slate-200 overflow-hidden"
-                [title]="row.isFirstInProduct ? moaTooltipText(row.productMoas) : ''"
+                [title]="row.isFirstInAsset ? moaTooltipText(row.assetMoas) : ''"
               >
-                @if (row.isFirstInProduct) {
-                  @if (row.productMoas.length > 0) {
+                @if (row.isFirstInAsset) {
+                  @if (row.assetMoas.length > 0) {
                     <div class="flex flex-col gap-0.5 min-w-0">
-                      @for (moa of row.productMoas.slice(0, 2); track moa.id) {
+                      @for (moa of row.assetMoas.slice(0, 2); track moa.id) {
                         <span
                           class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
                           >{{ moa.name }}</span
                         >
                       }
-                      @if (row.productMoas.length > 2) {
+                      @if (row.assetMoas.length > 2) {
                         <span class="text-[10px] text-slate-500"
-                          >+{{ row.productMoas.length - 2 }}</span
+                          >+{{ row.assetMoas.length - 2 }}</span
                         >
                       }
                     </div>
@@ -232,20 +230,20 @@
             @if (showRoaColumn()) {
               <div
                 class="w-24 px-2 flex items-center border-l border-slate-200 overflow-hidden"
-                [title]="row.isFirstInProduct ? roaTooltipText(row.productRoas) : ''"
+                [title]="row.isFirstInAsset ? roaTooltipText(row.assetRoas) : ''"
               >
-                @if (row.isFirstInProduct) {
-                  @if (row.productRoas.length > 0) {
+                @if (row.isFirstInAsset) {
+                  @if (row.assetRoas.length > 0) {
                     <div class="flex flex-col gap-0.5 min-w-0">
-                      @for (roa of row.productRoas.slice(0, 2); track roa.id) {
+                      @for (roa of row.assetRoas.slice(0, 2); track roa.id) {
                         <span
                           class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
                           >{{ roa.abbreviation ?? roa.name }}</span
                         >
                       }
-                      @if (row.productRoas.length > 2) {
+                      @if (row.assetRoas.length > 2) {
                         <span class="text-[10px] text-slate-500"
-                          >+{{ row.productRoas.length - 2 }}</span
+                          >+{{ row.assetRoas.length - 2 }}</span
                         >
                       }
                     </div>
@@ -258,7 +256,7 @@
             <!-- Trial column -->
             <div
               class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
-              [title]="row.companyName + ' / ' + row.productName + ' / ' + row.trial.name"
+              [title]="row.companyName + ' / ' + row.assetName + ' / ' + row.trial.name"
               role="button"
               tabindex="0"
               (click)="onTrialClick(row.trial)"
@@ -347,7 +345,7 @@
                     [trialPhase]="row.trial.phase_type ?? ''"
                     [recruitmentStatus]="row.trial.recruitment_status ?? ''"
                     [companyName]="row.companyName"
-                    [productName]="row.productName"
+                    [assetName]="row.assetName"
                     (markerClick)="onMarkerClick($event)"
                   />
                 }

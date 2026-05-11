@@ -1,21 +1,23 @@
 import { inject, Injectable } from '@angular/core';
 
-import { Product } from '../models/product.model';
+import { Asset } from '../models/asset.model';
 import { SupabaseService } from './supabase.service';
 
 /**
- * Shape returned by the nested product fetch. The Supabase join expands
+ * Shape returned by the nested asset fetch. The Supabase join expands
  * `product_mechanisms_of_action.moa` and `product_routes_of_administration.roa`
- * as nested arrays; we flatten them into the Product interface shape.
+ * as nested arrays; we flatten them into the Asset interface shape.
+ * Note: DB table names retain the `product_*` prefix. Only the frontend
+ * vocabulary has moved to "asset".
  */
-interface RawProductRow extends Product {
+interface RawAssetRow extends Asset {
   product_mechanisms_of_action?: { moa: { id: string; name: string } | null }[];
   product_routes_of_administration?: {
     roa: { id: string; name: string; abbreviation: string | null } | null;
   }[];
 }
 
-const PRODUCT_WITH_MOA_ROA_SELECT = `
+const ASSET_WITH_MOA_ROA_SELECT = `
   *,
   companies ( id, name, logo_url ),
   product_mechanisms_of_action (
@@ -26,7 +28,7 @@ const PRODUCT_WITH_MOA_ROA_SELECT = `
   )
 `;
 
-function flattenProduct(row: RawProductRow): Product {
+function flattenAsset(row: RawAssetRow): Asset {
   const mechanisms_of_action = (row.product_mechanisms_of_action ?? [])
     .map((j) => j.moa)
     .filter((m): m is { id: string; name: string } => m !== null);
@@ -50,33 +52,33 @@ function flattenProduct(row: RawProductRow): Product {
 }
 
 @Injectable({ providedIn: 'root' })
-export class ProductService {
+export class AssetService {
   private supabase = inject(SupabaseService);
 
-  async list(spaceId: string): Promise<Product[]> {
+  async list(spaceId: string): Promise<Asset[]> {
     const { data, error } = await this.supabase.client
       .from('products')
-      .select(PRODUCT_WITH_MOA_ROA_SELECT)
+      .select(ASSET_WITH_MOA_ROA_SELECT)
       .eq('space_id', spaceId)
       .order('display_order');
     if (error) throw error;
-    return (data ?? []).map((row) => flattenProduct(row as unknown as RawProductRow));
+    return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
   }
 
-  async getById(id: string): Promise<Product> {
+  async getById(id: string): Promise<Asset> {
     const { data, error } = await this.supabase.client
       .from('products')
-      .select(PRODUCT_WITH_MOA_ROA_SELECT)
+      .select(ASSET_WITH_MOA_ROA_SELECT)
       .eq('id', id)
       .single();
     if (error) throw error;
-    return flattenProduct(data as unknown as RawProductRow);
+    return flattenAsset(data as unknown as RawAssetRow);
   }
 
-  async create(spaceId: string, product: Partial<Product>): Promise<Product> {
+  async create(spaceId: string, asset: Partial<Asset>): Promise<Asset> {
     const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     // Strip virtual join fields before insert
-    const { mechanisms_of_action: _m, routes_of_administration: _r, ...insertable } = product;
+    const { mechanisms_of_action: _m, routes_of_administration: _r, ...insertable } = asset;
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
@@ -85,10 +87,10 @@ export class ProductService {
       .select()
       .single();
     if (error) throw error;
-    return data as Product;
+    return data as Asset;
   }
 
-  async update(id: string, changes: Partial<Product>): Promise<Product> {
+  async update(id: string, changes: Partial<Asset>): Promise<Asset> {
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...updatable } = changes;
     void _m;
     void _r;
@@ -99,7 +101,7 @@ export class ProductService {
       .select()
       .single();
     if (error) throw error;
-    return data as Product;
+    return data as Asset;
   }
 
   async delete(id: string): Promise<void> {
@@ -108,19 +110,19 @@ export class ProductService {
   }
 
   /**
-   * Replace all MOA assignments for a product with the given set.
+   * Replace all MOA assignments for an asset with the given set.
    * Two-call pattern: delete all existing join rows, then insert the new set.
    */
-  async setMechanisms(productId: string, moaIds: string[]): Promise<void> {
+  async setMechanisms(assetId: string, moaIds: string[]): Promise<void> {
     const { error: deleteError } = await this.supabase.client
       .from('product_mechanisms_of_action')
       .delete()
-      .eq('product_id', productId);
+      .eq('product_id', assetId);
     if (deleteError) throw deleteError;
 
     if (moaIds.length === 0) return;
 
-    const rows = moaIds.map((moa_id) => ({ product_id: productId, moa_id }));
+    const rows = moaIds.map((moa_id) => ({ product_id: assetId, moa_id }));
     const { error: insertError } = await this.supabase.client
       .from('product_mechanisms_of_action')
       .insert(rows);
@@ -128,19 +130,19 @@ export class ProductService {
   }
 
   /**
-   * Replace all ROA assignments for a product with the given set.
+   * Replace all ROA assignments for an asset with the given set.
    * Two-call pattern: delete all existing join rows, then insert the new set.
    */
-  async setRoutes(productId: string, roaIds: string[]): Promise<void> {
+  async setRoutes(assetId: string, roaIds: string[]): Promise<void> {
     const { error: deleteError } = await this.supabase.client
       .from('product_routes_of_administration')
       .delete()
-      .eq('product_id', productId);
+      .eq('product_id', assetId);
     if (deleteError) throw deleteError;
 
     if (roaIds.length === 0) return;
 
-    const rows = roaIds.map((roa_id) => ({ product_id: productId, roa_id }));
+    const rows = roaIds.map((roa_id) => ({ product_id: assetId, roa_id }));
     const { error: insertError } = await this.supabase.client
       .from('product_routes_of_administration')
       .insert(rows);

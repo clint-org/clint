@@ -132,10 +132,10 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  openProducts(companyId: string): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'products'], {
+  openAssets(companyId: string): void {
+    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'assets'], {
       queryParams: buildFilterQueryParams({
-        'product.company_id': { kind: 'select', values: [companyId] },
+        'asset.company_id': { kind: 'select', values: [companyId] },
       }),
     });
   }
@@ -154,9 +154,9 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     if (cached) return cached;
     const items: MenuItem[] = [
       {
-        label: 'View products',
+        label: 'View assets',
         icon: 'fa-solid fa-box',
-        command: () => this.openProducts(company.id),
+        command: () => this.openAssets(company.id),
       },
     ];
     if (this.spaceRole.canEdit()) {
@@ -221,7 +221,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete company. It may have associated products.'
+          : 'Could not delete company. It may have associated assets.'
       );
     }
   }

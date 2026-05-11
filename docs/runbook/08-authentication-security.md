@@ -260,6 +260,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agencies` | yes | 3 |
 | `agency_invites` | yes | 1 |
 | `agency_members` | yes | 4 |
+| `audit_events` | yes | 1 |
 | `companies` | yes | 4 |
 | `ctgov_sync_runs` | yes | 1 |
 | `event_categories` | yes | 4 |
@@ -280,6 +281,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `platform_admins` | yes | 0 |
 | `primary_intelligence` | yes | 4 |
 | `primary_intelligence_links` | yes | 4 |
+| `primary_intelligence_revisions` | yes | 1 |
 | `product_mechanisms_of_action` | yes | 3 |
 | `product_routes_of_administration` | yes | 3 |
 | `products` | yes | 4 |
@@ -304,5 +306,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` whose conventional name does not appear anywhere in this file.
 
 <!-- AUTO-GEN:DRIFT -->
-_All route guards documented._
+- `auditAgencyGuard`
+- `auditSpaceGuard`
+- `auditTenantGuard`
 <!-- /AUTO-GEN:DRIFT -->

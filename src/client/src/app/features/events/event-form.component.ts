@@ -27,13 +27,13 @@ import {
   EventThread,
 } from '../../core/models/event.model';
 import { Company } from '../../core/models/company.model';
-import { Product } from '../../core/models/product.model';
+import { Asset } from '../../core/models/asset.model';
 import { Trial } from '../../core/models/trial.model';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
 import { EventThreadService } from '../../core/services/event-thread.service';
 import { CompanyService } from '../../core/services/company.service';
-import { ProductService } from '../../core/services/product.service';
+import { AssetService } from '../../core/services/asset.service';
 import { TrialService } from '../../core/services/trial.service';
 
 interface SourceRow {
@@ -86,7 +86,7 @@ interface SourceRow {
                 entityLevel() === 'company'
                   ? 'Company'
                   : entityLevel() === 'product'
-                    ? 'Product'
+                    ? 'Asset'
                     : 'Trial'
               }}
             </label>
@@ -300,14 +300,14 @@ export class EventFormComponent implements OnInit {
   private eventCategoryService = inject(EventCategoryService);
   private eventThreadService = inject(EventThreadService);
   private companyService = inject(CompanyService);
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private trialService = inject(TrialService);
   private route = inject(ActivatedRoute);
 
   readonly entityLevelOptions: { label: string; value: EntityLevel }[] = [
     { label: 'Industry (space-wide)', value: 'space' },
     { label: 'Company', value: 'company' },
-    { label: 'Product', value: 'product' },
+    { label: 'Asset', value: 'product' },
     { label: 'Trial', value: 'trial' },
   ];
 
@@ -319,7 +319,7 @@ export class EventFormComponent implements OnInit {
   readonly categories = signal<EventCategory[]>([]);
   readonly threads = signal<EventThread[]>([]);
   readonly companies = signal<Company[]>([]);
-  readonly products = signal<Product[]>([]);
+  readonly assets = signal<Asset[]>([]);
   readonly trials = signal<Trial[]>([]);
   readonly entityOptions = signal<{ id: string; name: string }[]>([]);
 
@@ -377,7 +377,7 @@ export class EventFormComponent implements OnInit {
     if (level === 'company') {
       this.entityOptions.set(this.companies().map((c) => ({ id: c.id, name: c.name })));
     } else if (level === 'product') {
-      this.entityOptions.set(this.products().map((p) => ({ id: p.id, name: p.name })));
+      this.entityOptions.set(this.assets().map((p) => ({ id: p.id, name: p.name })));
     } else if (level === 'trial') {
       this.entityOptions.set(this.trials().map((t) => ({ id: t.id, name: t.name })));
     } else {
@@ -481,17 +481,17 @@ export class EventFormComponent implements OnInit {
 
   private async loadData(spaceId: string): Promise<void> {
     try {
-      const [cats, threads, companies, products, trials] = await Promise.all([
+      const [cats, threads, companies, assets, trials] = await Promise.all([
         this.eventCategoryService.list(spaceId),
         this.eventThreadService.listBySpace(spaceId),
         this.companyService.list(spaceId),
-        this.productService.list(spaceId),
+        this.assetService.list(spaceId),
         this.trialService.listBySpace(spaceId),
       ]);
       this.categories.set(cats);
       this.threads.set(threads);
       this.companies.set(companies);
-      this.products.set(products);
+      this.assets.set(assets);
       this.trials.set(trials);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not load form data.');
@@ -517,7 +517,7 @@ export class EventFormComponent implements OnInit {
       } else if (detail.entity_level === 'product' && detail.entity_id) {
         this.entityLevel.set('product');
         this.entityId.set(detail.entity_id);
-        this.entityOptions.set(this.products().map((p) => ({ id: p.id, name: p.name })));
+        this.entityOptions.set(this.assets().map((p) => ({ id: p.id, name: p.name })));
       } else if (detail.entity_level === 'trial' && detail.entity_id) {
         this.entityLevel.set('trial');
         this.entityId.set(detail.entity_id);

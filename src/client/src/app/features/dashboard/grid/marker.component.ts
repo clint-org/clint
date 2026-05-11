@@ -33,7 +33,7 @@ export class MarkerComponent {
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');
   readonly companyName = input<string>('');
-  readonly productName = input<string>('');
+  readonly assetName = input<string>('');
 
   readonly markerClick = output<Marker>();
 

@@ -16,7 +16,7 @@ import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 
 import { TrialService } from '../../../core/services/trial.service';
-import { ProductService } from '../../../core/services/product.service';
+import { AssetService } from '../../../core/services/asset.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
 import { Trial } from '../../../core/models/trial.model';
 
@@ -46,7 +46,7 @@ interface SelectOption {
 })
 export class TrialEditDialogComponent {
   private trialService = inject(TrialService);
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private taService = inject(TherapeuticAreaService);
   private messageService = inject(MessageService);
 
@@ -57,7 +57,7 @@ export class TrialEditDialogComponent {
 
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);
-  readonly productId = signal<string | null>(null);
+  readonly assetId = signal<string | null>(null);
   readonly therapeuticAreaId = signal<string | null>(null);
 
   readonly products = signal<SelectOption[]>([]);
@@ -68,7 +68,7 @@ export class TrialEditDialogComponent {
     const id = this.identifier();
     const idValid = !id || id.trim() === '' || /^NCT\d{8}$/i.test(id.trim());
     return (
-      this.name().trim().length > 0 && !!this.productId() && !!this.therapeuticAreaId() && idValid
+      this.name().trim().length > 0 && !!this.assetId() && !!this.therapeuticAreaId() && idValid
     );
   });
 
@@ -80,7 +80,7 @@ export class TrialEditDialogComponent {
         const t = this.trial();
         this.name.set(t.name ?? '');
         this.identifier.set(t.identifier ?? null);
-        this.productId.set(t.product_id ?? null);
+        this.assetId.set(t.product_id ?? null);
         this.therapeuticAreaId.set(t.therapeutic_area_id ?? null);
         void this.loadOptions(t.space_id);
       }
@@ -89,7 +89,7 @@ export class TrialEditDialogComponent {
 
   private async loadOptions(spaceId: string): Promise<void> {
     const [products, tas] = await Promise.all([
-      this.productService.list(spaceId),
+      this.assetService.list(spaceId),
       this.taService.list(spaceId),
     ]);
     this.products.set(products.map((p) => ({ id: p.id, name: p.name })));
@@ -107,7 +107,7 @@ export class TrialEditDialogComponent {
       const updated = await this.trialService.update(this.trial().id, {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,
-        product_id: this.productId()!,
+        product_id: this.assetId()!,
         therapeutic_area_id: this.therapeuticAreaId()!,
       });
       this.saved.emit(updated);

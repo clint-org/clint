@@ -1,6 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 
-import { BullseyeData, BullseyeDimension, CountUnit, LandscapeFilters, LandscapeIndexEntry, PositioningData, PositioningGrouping } from '../models/landscape.model';
+import {
+  BullseyeData,
+  BullseyeDimension,
+  CountUnit,
+  LandscapeFilters,
+  LandscapeIndexEntry,
+  PositioningData,
+  PositioningGrouping,
+} from '../models/landscape.model';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
@@ -48,22 +56,34 @@ export class LandscapeService {
     spaceId: string,
     grouping: PositioningGrouping,
     countUnit: CountUnit,
-    filters: LandscapeFilters,
+    filters: LandscapeFilters
   ): Promise<PositioningData> {
+    // Map frontend 'assets' value to the wire-format 'products' the RPC expects.
+    const wireCountUnit = countUnit === 'assets' ? 'products' : countUnit;
     const { data, error } = await this.supabase.client.rpc('get_positioning_data', {
       p_space_id: spaceId,
       p_grouping: grouping,
-      p_count_unit: countUnit,
+      p_count_unit: wireCountUnit,
       p_company_ids: filters.companyIds.length ? filters.companyIds : null,
-      p_product_ids: filters.productIds.length ? filters.productIds : null,
+      p_product_ids: filters.assetIds.length ? filters.assetIds : null,
       p_therapeutic_area_ids: filters.therapeuticAreaIds.length ? filters.therapeuticAreaIds : null,
-      p_mechanism_of_action_ids: filters.mechanismOfActionIds.length ? filters.mechanismOfActionIds : null,
-      p_route_of_administration_ids: filters.routeOfAdministrationIds.length ? filters.routeOfAdministrationIds : null,
+      p_mechanism_of_action_ids: filters.mechanismOfActionIds.length
+        ? filters.mechanismOfActionIds
+        : null,
+      p_route_of_administration_ids: filters.routeOfAdministrationIds.length
+        ? filters.routeOfAdministrationIds
+        : null,
       p_phases: filters.phases.length ? filters.phases : null,
-      p_recruitment_statuses: filters.recruitmentStatuses.length ? filters.recruitmentStatuses : null,
+      p_recruitment_statuses: filters.recruitmentStatuses.length
+        ? filters.recruitmentStatuses
+        : null,
       p_study_types: filters.studyTypes.length ? filters.studyTypes : null,
     });
     if (error) throw error;
-    return data as PositioningData;
+    const raw = data as Omit<PositioningData, 'count_unit'> & { count_unit: string };
+    return {
+      ...raw,
+      count_unit: (raw.count_unit === 'products' ? 'assets' : raw.count_unit) as CountUnit,
+    };
   }
 }

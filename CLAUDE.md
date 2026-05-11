@@ -30,7 +30,7 @@ Pharma competitive intelligence professionals and the teams they support -- busi
 
 ### Design Principles
 1. **Data density over decoration.** Maximize information per screen. If a pixel doesn't carry meaning or grouping, remove it.
-2. **Instant visual parsing.** Markers pop, phase bars recede into the backdrop, company/product grouping structures the left rail. The eye should land on the answer, not hunt for it.
+2. **Instant visual parsing.** Markers pop, phase bars recede into the backdrop, company/asset grouping structures the left rail. The eye should land on the answer, not hunt for it.
 3. **Tinted neutrals, not flat grays.** Slate gives warmth and depth without introducing color noise. Never reach for generic gray-* or indigo-* utilities.
 4. **Authority through restraint.** Premium feel comes from precision alignment, consistent spacing, and typographic discipline -- not from effects, gradients, or animation. Motion is purposeful and small.
 5. **Accessibility as baseline, not polish.** WCAG AA is a hard floor; it is checked during the feature, not after.

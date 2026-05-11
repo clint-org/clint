@@ -1,6 +1,10 @@
 import { Trial } from './trial.model';
 
-export interface Product {
+/**
+ * Frontend Asset record: a drug asset belonging to a company within a space.
+ * Backed by the `products` table; the rename is vocabulary-only.
+ */
+export interface Asset {
   id: string;
   space_id: string;
   created_by: string;

@@ -175,7 +175,7 @@ export class RolesHelpComponent {
   protected readonly capabilityRows: CapabilityRow[] = [
     {
       group: 'Engagement data',
-      capability: 'View companies, products, trials, catalysts, events',
+      capability: 'View companies, assets, trials, catalysts, events',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',

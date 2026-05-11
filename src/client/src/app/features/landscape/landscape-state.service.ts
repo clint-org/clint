@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import { Company } from '../../core/models/company.model';
-import { Product } from '../../core/models/product.model';
+import { Asset } from '../../core/models/asset.model';
 import { Catalyst, CatalystDetail, FlatCatalyst } from '../../core/models/catalyst.model';
 import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
@@ -61,7 +61,7 @@ export class LandscapeStateService {
   readonly zoomLevel = signal<ZoomLevel>('yearly');
   readonly spokeMode = signal<SpokeMode>('grouped');
   readonly positioningGrouping = signal<PositioningGrouping>('moa+therapeutic-area');
-  readonly countUnit = signal<CountUnit>('products');
+  readonly countUnit = signal<CountUnit>('assets');
 
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
@@ -184,7 +184,7 @@ export class LandscapeStateService {
     try {
       const nullFilters = {
         companyIds: null,
-        productIds: null,
+        assetIds: null,
         therapeuticAreaIds: null,
         startYear: null,
         endYear: null,
@@ -232,8 +232,8 @@ function filterDashboardData(companies: Company[], filters: LandscapeFilters): C
     .map((c) => {
       let products = c.products ?? [];
 
-      if (filters.productIds.length > 0) {
-        products = products.filter((p) => filters.productIds.includes(p.id));
+      if (filters.assetIds.length > 0) {
+        products = products.filter((p) => filters.assetIds.includes(p.id));
       }
       if (filters.mechanismOfActionIds.length > 0) {
         products = products.filter((p) =>
@@ -287,9 +287,9 @@ function filterDashboardData(companies: Company[], filters: LandscapeFilters): C
           }
 
           if (trials.length === 0) return null;
-          return { ...p, trials } as Product;
+          return { ...p, trials } as Asset;
         })
-        .filter((p): p is Product => p !== null);
+        .filter((p): p is Asset => p !== null);
 
       if (products.length === 0) return null;
       return { ...c, products } as Company;
@@ -298,15 +298,15 @@ function filterDashboardData(companies: Company[], filters: LandscapeFilters): C
 }
 
 /**
- * Flatten the company > product > trial > marker hierarchy into a flat
+ * Flatten the company > asset > trial > marker hierarchy into a flat
  * Catalyst[] array, keeping only markers with event_date >= today.
  */
 function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
   const catalysts: Catalyst[] = [];
 
   for (const company of companies) {
-    for (const product of company.products ?? []) {
-      for (const trial of product.trials ?? []) {
+    for (const asset of company.products ?? []) {
+      for (const trial of asset.trials ?? []) {
         for (const marker of trial.markers ?? []) {
           if (marker.event_date < today) continue;
 
@@ -325,8 +325,8 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             is_projected: marker.is_projected,
             company_name: company.name,
             company_id: company.id,
-            product_name: product.name,
-            product_id: product.id,
+            product_name: asset.name,
+            product_id: asset.id,
             trial_name: trial.name,
             trial_id: trial.id,
             trial_phase: trial.phase_type ?? trial.phase ?? null,

@@ -17,14 +17,14 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Trial } from '../../../core/models/trial.model';
-import { Product } from '../../../core/models/product.model';
+import { Asset } from '../../../core/models/asset.model';
 import { Company } from '../../../core/models/company.model';
 import {
   CTGOV_FIELD_CATALOGUE,
   CTGOV_TRIAL_LIST_DEFAULT_PATHS,
 } from '../../../core/models/ctgov-field.model';
 import { TrialService } from '../../../core/services/trial.service';
-import { ProductService } from '../../../core/services/product.service';
+import { AssetService } from '../../../core/services/asset.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
 import { formatCtgovFieldValue } from '../../../shared/utils/ctgov-field-format';
@@ -42,8 +42,8 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
 
 interface TrialRow {
   readonly trial: Trial;
-  readonly productName: string;
-  readonly productId: string;
+  readonly assetName: string;
+  readonly assetId: string;
   readonly companyName: string;
   readonly companyId: string;
   readonly phaseCount: number;
@@ -82,7 +82,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   private trialService = inject(TrialService);
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private companyService = inject(CompanyService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -116,7 +116,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private readonly menuCache = new Map<string, MenuItem[]>();
 
   readonly trials = signal<Trial[]>([]);
-  readonly products = signal<Product[]>([]);
+  readonly products = signal<Asset[]>([]);
   readonly companies = signal<Company[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -167,8 +167,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
       const company = product ? companyMap.get(product.company_id) : undefined;
       return {
         trial,
-        productName: product?.name ?? '--',
-        productId: product?.id ?? '',
+        assetName: product?.name ?? '--',
+        assetId: product?.id ?? '',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
         phaseCount: trial.phase_type ? 1 : 0,
@@ -183,7 +183,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       { field: 'trial.identifier', header: 'NCT ID', filter: { kind: 'text' } },
       {
         field: 'trial.product_id',
-        header: 'Product',
+        header: 'Asset',
         filter: {
           kind: 'select',
           options: () => this.products().map((p) => ({ label: p.name, value: p.id })),
@@ -217,7 +217,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
     globalSearchFields: [
       'trial.name',
       'trial.identifier',
-      'productName',
+      'assetName',
       'companyName',
       'trial.status',
     ],
@@ -316,7 +316,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       const spaceId = this.spaceId();
       const [trials, products, companies, visibilityMap, snapshots] = await Promise.all([
         this.trialService.listBySpace(spaceId),
-        this.productService.list(spaceId),
+        this.assetService.list(spaceId),
         this.companyService.list(spaceId),
         this.fieldVisibilityService.get(spaceId).catch(() => ({}) as Record<string, string[]>),
         this.trialService

@@ -89,11 +89,11 @@ import { Tenant } from '../models/tenant.model';
               Companies
             </a>
             <a
-              [routerLink]="spaceBase().concat('manage', 'products')"
+              [routerLink]="spaceBase().concat('manage', 'assets')"
               routerLinkActive="nav-active"
               class="nav-link"
             >
-              Products
+              Assets
             </a>
             <a
               [routerLink]="spaceBase().concat('manage', 'trials')"

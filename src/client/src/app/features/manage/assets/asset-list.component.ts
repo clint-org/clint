@@ -17,12 +17,12 @@ import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 
-import { Product } from '../../../core/models/product.model';
+import { Asset } from '../../../core/models/asset.model';
 import { Company } from '../../../core/models/company.model';
-import { ProductService } from '../../../core/services/product.service';
+import { AssetService } from '../../../core/services/asset.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { TrialService } from '../../../core/services/trial.service';
-import { ProductFormComponent } from './product-form.component';
+import { AssetFormComponent } from './asset-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
@@ -33,14 +33,14 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 
-interface ProductRow {
-  readonly product: Product;
+interface AssetRow {
+  readonly asset: Asset;
   readonly companyName: string;
   readonly trialCount: number;
 }
 
 @Component({
-  selector: 'app-product-list',
+  selector: 'app-asset-list',
   standalone: true,
   imports: [
     RouterLink,
@@ -50,26 +50,26 @@ interface ProductRow {
     ButtonModule,
     Dialog,
     MessageModule,
-    ProductFormComponent,
+    AssetFormComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
     HighlightPipe,
   ],
-  templateUrl: './product-list.component.html',
+  templateUrl: './asset-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductListComponent implements OnInit, OnDestroy {
-  readonly products = signal<Product[]>([]);
+export class AssetListComponent implements OnInit, OnDestroy {
+  readonly assets = signal<Asset[]>([]);
   readonly companies = signal<Company[]>([]);
   readonly trialCounts = signal<Record<string, number>>({});
   readonly loading = signal(false);
   readonly modalOpen = signal(false);
-  readonly editingProduct = signal<Product | null>(null);
+  readonly editingAsset = signal<Asset | null>(null);
   readonly deleteError = signal<string | null>(null);
 
-  private productService = inject(ProductService);
+  private assetService = inject(AssetService);
   private companyService = inject(CompanyService);
   private trialService = inject(TrialService);
   private route = inject(ActivatedRoute);
@@ -83,7 +83,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
         {
-          label: 'Add product',
+          label: 'Add asset',
           icon: 'fa-solid fa-plus',
           text: true,
           callback: () => this.openCreateModal(),
@@ -99,22 +99,22 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   private readonly menuCache = new Map<string, MenuItem[]>();
 
-  readonly rows = computed<ProductRow[]>(() => {
+  readonly rows = computed<AssetRow[]>(() => {
     const companyMap = new Map(this.companies().map((c) => [c.id, c]));
     const counts = this.trialCounts();
-    return this.products().map((product) => ({
-      product,
-      companyName: companyMap.get(product.company_id)?.name ?? '--',
-      trialCount: counts[product.id] ?? 0,
+    return this.assets().map((asset) => ({
+      asset,
+      companyName: companyMap.get(asset.company_id)?.name ?? '--',
+      trialCount: counts[asset.id] ?? 0,
     }));
   });
 
-  readonly grid = createGridState<ProductRow>({
+  readonly grid = createGridState<AssetRow>({
     columns: [
-      { field: 'product.name', header: 'Name', filter: { kind: 'text' } },
-      { field: 'product.generic_name', header: 'Generic', filter: { kind: 'text' } },
+      { field: 'asset.name', header: 'Name', filter: { kind: 'text' } },
+      { field: 'asset.generic_name', header: 'Generic', filter: { kind: 'text' } },
       {
-        field: 'product.company_id',
+        field: 'asset.company_id',
         header: 'Company',
         filter: {
           kind: 'select',
@@ -122,10 +122,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
         },
       },
       { field: 'trialCount', header: 'Trials', filter: { kind: 'numeric' } },
-      { field: 'product.display_order', header: 'Order' },
+      { field: 'asset.display_order', header: 'Order' },
     ],
-    globalSearchFields: ['product.name', 'product.generic_name', 'companyName'],
-    defaultSort: { field: 'product.display_order', order: 1 },
+    globalSearchFields: ['asset.name', 'asset.generic_name', 'companyName'],
+    defaultSort: { field: 'asset.display_order', order: 1 },
   });
 
   readonly visibleRows = this.grid.filteredRows(this.rows);
@@ -145,7 +145,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     await this.loadData();
 
     if (selectedId) {
-      const target = this.products().find((p) => p.id === selectedId);
+      const target = this.assets().find((a) => a.id === selectedId);
       if (target) {
         this.grid.onGlobalSearchInput(target.name);
       }
@@ -156,14 +156,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  rowMenu(row: ProductRow): MenuItem[] {
-    const cached = this.menuCache.get(row.product.id);
+  rowMenu(row: AssetRow): MenuItem[] {
+    const cached = this.menuCache.get(row.asset.id);
     if (cached) return cached;
     const items: MenuItem[] = [
       {
         label: 'View trials',
         icon: 'fa-solid fa-flask',
-        command: () => this.openTrials(row.product.id),
+        command: () => this.openTrials(row.asset.id),
       },
     ];
     if (this.spaceRole.canEdit()) {
@@ -171,72 +171,72 @@ export class ProductListComponent implements OnInit, OnDestroy {
         {
           label: 'Edit',
           icon: 'fa-solid fa-pen',
-          command: () => this.openEditModal(row.product),
+          command: () => this.openEditModal(row.asset),
         },
         { separator: true },
         {
           label: 'Delete',
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
-          command: () => this.confirmDelete(row.product),
+          command: () => this.confirmDelete(row.asset),
         }
       );
     }
-    this.menuCache.set(row.product.id, items);
+    this.menuCache.set(row.asset.id, items);
     return items;
   }
 
   openCreateModal(): void {
-    this.editingProduct.set(null);
+    this.editingAsset.set(null);
     this.modalOpen.set(true);
   }
 
-  openEditModal(product: Product): void {
-    this.editingProduct.set(product);
+  openEditModal(asset: Asset): void {
+    this.editingAsset.set(asset);
     this.modalOpen.set(true);
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
-    this.editingProduct.set(null);
+    this.editingAsset.set(null);
   }
 
   async onSaved(): Promise<void> {
-    const isEdit = !!this.editingProduct();
+    const isEdit = !!this.editingAsset();
     this.closeModal();
     await this.loadData();
     this.messageService.add({
       severity: 'success',
-      summary: isEdit ? 'Product updated.' : 'Product created.',
+      summary: isEdit ? 'Asset updated.' : 'Asset created.',
       life: 3000,
     });
   }
 
-  openTrials(productId: string): void {
+  openTrials(assetId: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
       queryParams: buildFilterQueryParams({
-        'trial.product_id': { kind: 'select', values: [productId] },
+        'trial.product_id': { kind: 'select', values: [assetId] },
       }),
     });
   }
 
-  async confirmDelete(product: Product): Promise<void> {
+  async confirmDelete(asset: Asset): Promise<void> {
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete product',
-      message: `Delete "${product.name}"? This cannot be undone.`,
+      header: 'Delete asset',
+      message: `Delete "${asset.name}"? This cannot be undone.`,
     });
     if (!ok) return;
 
     this.deleteError.set(null);
     try {
-      await this.productService.delete(product.id);
+      await this.assetService.delete(asset.id);
       await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Product deleted.', life: 3000 });
+      this.messageService.add({ severity: 'success', summary: 'Asset deleted.', life: 3000 });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete product. It may have associated trials.'
+          : 'Could not delete asset. It may have associated trials.'
       );
     }
   }
@@ -244,12 +244,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      const [products, companies, trials] = await Promise.all([
-        this.productService.list(this.spaceId),
+      const [assets, companies, trials] = await Promise.all([
+        this.assetService.list(this.spaceId),
         this.companyService.list(this.spaceId),
         this.trialService.listBySpace(this.spaceId),
       ]);
-      this.products.set(products);
+      this.assets.set(assets);
       this.companies.set(companies);
       const counts: Record<string, number> = {};
       for (const trial of trials) {

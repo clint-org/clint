@@ -1,5 +1,5 @@
 <app-manage-page-shell>
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search products..." />
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search assets..." />
 
   <p-table
     styleClass="data-table"
@@ -17,18 +17,18 @@
   >
     <ng-template #header>
       <tr>
-        <th pSortableColumn="product.name">
-          Name <p-sortIcon field="product.name" />
-          <p-column-filter type="text" field="product.name" display="menu" />
+        <th pSortableColumn="asset.name">
+          Name <p-sortIcon field="asset.name" />
+          <p-column-filter type="text" field="asset.name" display="menu" />
         </th>
-        <th pSortableColumn="product.generic_name">
-          Generic <p-sortIcon field="product.generic_name" />
-          <p-column-filter type="text" field="product.generic_name" display="menu" />
+        <th pSortableColumn="asset.generic_name">
+          Generic <p-sortIcon field="asset.generic_name" />
+          <p-column-filter type="text" field="asset.generic_name" display="menu" />
         </th>
         <th pSortableColumn="companyName">
           Company <p-sortIcon field="companyName" />
           <p-column-filter
-            field="product.company_id"
+            field="asset.company_id"
             display="menu"
             matchMode="in"
             [showMatchModes]="false"
@@ -55,8 +55,8 @@
           Trials <p-sortIcon field="trialCount" />
           <p-column-filter type="numeric" field="trialCount" display="menu" />
         </th>
-        <th class="col-num" pSortableColumn="product.display_order">
-          Order <p-sortIcon field="product.display_order" />
+        <th class="col-num" pSortableColumn="asset.display_order">
+          Order <p-sortIcon field="asset.display_order" />
         </th>
         <th class="col-actions"></th>
       </tr>
@@ -65,23 +65,23 @@
       <tr>
         <td>
           <a
-            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'products', row.product.id]"
+            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'assets', row.asset.id]"
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
-            <span [innerHTML]="row.product.name | highlight: grid.debouncedGlobalSearch()"></span>
+            <span [innerHTML]="row.asset.name | highlight: grid.debouncedGlobalSearch()"></span>
           </a>
         </td>
         <td class="col-identifier">
-          @if (row.product.generic_name) {
+          @if (row.asset.generic_name) {
             <span
-              [innerHTML]="row.product.generic_name | highlight: grid.debouncedGlobalSearch()"
+              [innerHTML]="row.asset.generic_name | highlight: grid.debouncedGlobalSearch()"
             ></span>
           } @else {
             --
           }
         </td>
         <td class="col-secondary">
-          @if (row.product.company_id) {
+          @if (row.asset.company_id) {
             <a
               [routerLink]="[
                 '/t',
@@ -90,7 +90,7 @@
                 spaceId,
                 'manage',
                 'companies',
-                row.product.company_id,
+                row.asset.company_id,
               ]"
               class="text-brand-700 hover:underline"
             >
@@ -105,7 +105,7 @@
             <button
               type="button"
               class="tabular-nums text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
-              (click)="openTrials(row.product.id)"
+              (click)="openTrials(row.asset.id)"
             >
               {{ row.trialCount }}
               <i class="fa-solid fa-arrow-right text-[9px] ml-0.5 opacity-60"></i>
@@ -114,9 +114,9 @@
             <span class="tabular-nums text-slate-300">0</span>
           }
         </td>
-        <td class="col-num">{{ row.product.display_order }}</td>
+        <td class="col-num">{{ row.asset.display_order }}</td>
         <td class="col-actions">
-          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.product.name" />
+          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.asset.name" />
         </td>
       </tr>
     </ng-template>
@@ -136,9 +136,9 @@
       <tr>
         <td colspan="6">
           @if (grid.isFiltered()) {
-            No products match your filters.
+            No assets match your filters.
           } @else {
-            No products yet. Add one to get started.
+            No assets yet. Add one to get started.
           }
         </td>
       </tr>
@@ -153,13 +153,13 @@
 </app-manage-page-shell>
 
 <p-dialog
-  [header]="editingProduct() ? 'Edit product' : 'Add product'"
+  [header]="editingAsset() ? 'Edit asset' : 'Add asset'"
   [(visible)]="modalOpen"
   [modal]="true"
   styleClass="!w-[32rem]"
   (onHide)="closeModal()"
 >
   @if (modalOpen()) {
-    <app-product-form [product]="editingProduct()" (saved)="onSaved()" (cancelled)="closeModal()" />
+    <app-asset-form [asset]="editingAsset()" (saved)="onSaved()" (cancelled)="closeModal()" />
   }
 </p-dialog>

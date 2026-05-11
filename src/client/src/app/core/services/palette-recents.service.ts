@@ -4,11 +4,15 @@ import { filter } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
 import { PaletteKind } from '../models/palette.model';
 
-interface ParsedRoute { kind: PaletteKind; spaceId: string; entityId: string; }
+interface ParsedRoute {
+  kind: PaletteKind;
+  spaceId: string;
+  entityId: string;
+}
 
 const PATTERNS: { re: RegExp; kind: PaletteKind }[] = [
   { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/trials\/([0-9a-f-]{36})/, kind: 'trial' },
-  { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/products\/([0-9a-f-]{36})/, kind: 'product' },
+  { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/assets\/([0-9a-f-]{36})/, kind: 'product' },
   { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/companies\/([0-9a-f-]{36})/, kind: 'company' },
 ];
 

@@ -105,7 +105,7 @@
   <!-- dots -->
   @for (dot of dots(); track dot.product.id) {
     <g class="bullseye-dot-group">
-      @if (selectedProductId() === dot.product.id) {
+      @if (selectedAssetId() === dot.product.id) {
         <circle
           [attr.cx]="dot.x"
           [attr.cy]="dot.y"
@@ -122,19 +122,19 @@
         [attr.r]="dotRadius(dot)"
         [attr.fill]="dotFill(dot)"
         [attr.opacity]="dotOpacity(dot)"
-        [attr.stroke]="isProductMatched(dot.product.id) ? 'white' : '#cbd5e1'"
+        [attr.stroke]="isAssetMatched(dot.product.id) ? 'white' : '#cbd5e1'"
         stroke-width="1.5"
-        [attr.tabindex]="isProductMatched(dot.product.id) ? 0 : -1"
+        [attr.tabindex]="isAssetMatched(dot.product.id) ? 0 : -1"
         role="button"
         class="bullseye-dot"
-        [class.bullseye-dot-faded]="!isProductMatched(dot.product.id)"
+        [class.bullseye-dot-faded]="!isAssetMatched(dot.product.id)"
         [attr.aria-label]="dotAriaLabel(dot)"
-        (click)="isProductMatched(dot.product.id) && onDotClick($event, dot.product.id)"
-        (mouseenter)="isProductMatched(dot.product.id) && onHoverStart(dot.product.id)"
-        (mouseleave)="isProductMatched(dot.product.id) && onHoverEnd()"
-        (focus)="isProductMatched(dot.product.id) && onHoverStart(dot.product.id)"
-        (blur)="isProductMatched(dot.product.id) && onHoverEnd()"
-        (keydown)="isProductMatched(dot.product.id) && onDotKeydown($event, dot.product.id)"
+        (click)="isAssetMatched(dot.product.id) && onDotClick($event, dot.product.id)"
+        (mouseenter)="isAssetMatched(dot.product.id) && onHoverStart(dot.product.id)"
+        (mouseleave)="isAssetMatched(dot.product.id) && onHoverEnd()"
+        (focus)="isAssetMatched(dot.product.id) && onHoverStart(dot.product.id)"
+        (blur)="isAssetMatched(dot.product.id) && onHoverEnd()"
+        (keydown)="isAssetMatched(dot.product.id) && onDotKeydown($event, dot.product.id)"
       />
     </g>
   }

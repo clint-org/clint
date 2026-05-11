@@ -378,10 +378,10 @@ export const routes: Routes = [
               ),
           },
           {
-            path: 'manage/products',
+            path: 'manage/assets',
             loadComponent: () =>
-              import('./features/manage/products/product-list.component').then(
-                (m) => m.ProductListComponent
+              import('./features/manage/assets/asset-list.component').then(
+                (m) => m.AssetListComponent
               ),
           },
           {
@@ -406,10 +406,10 @@ export const routes: Routes = [
               ),
           },
           {
-            path: 'manage/products/:id',
+            path: 'manage/assets/:id',
             loadComponent: () =>
-              import('./features/manage/products/product-detail.component').then(
-                (m) => m.ProductDetailComponent
+              import('./features/manage/assets/asset-detail.component').then(
+                (m) => m.AssetDetailComponent
               ),
           },
           {

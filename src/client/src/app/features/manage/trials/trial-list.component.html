@@ -29,8 +29,8 @@
           NCT ID <p-sortIcon field="trial.identifier" />
           <p-column-filter type="text" field="trial.identifier" display="menu" />
         </th>
-        <th pSortableColumn="productName">
-          Product <p-sortIcon field="productName" />
+        <th pSortableColumn="assetName">
+          Asset <p-sortIcon field="assetName" />
           <p-column-filter
             field="trial.product_id"
             display="menu"
@@ -138,21 +138,29 @@
           }
         </td>
         <td class="col-secondary">
-          @if (row.productId) {
+          @if (row.assetId) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'products', row.productId]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', row.assetId]"
               class="text-brand-700 hover:underline"
             >
-              <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+              <span [innerHTML]="row.assetName | highlight: grid.debouncedGlobalSearch()"></span>
             </a>
           } @else {
-            <span [innerHTML]="row.productName | highlight: grid.debouncedGlobalSearch()"></span>
+            <span [innerHTML]="row.assetName | highlight: grid.debouncedGlobalSearch()"></span>
           }
         </td>
         <td class="col-secondary">
           @if (row.companyId) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', row.companyId]"
+              [routerLink]="[
+                '/t',
+                tenantId(),
+                's',
+                spaceId(),
+                'manage',
+                'companies',
+                row.companyId,
+              ]"
               class="text-brand-700 hover:underline"
             >
               <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>

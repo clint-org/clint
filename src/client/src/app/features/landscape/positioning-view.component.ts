@@ -79,7 +79,7 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
               [totalBubbles]="data.bubbles.length"
               [grouping]="state.positioningGrouping()"
               (clearSelection)="selectedBubble.set(null)"
-              (openProduct)="onOpenProduct($event)"
+              (openAsset)="onOpenAsset($event)"
               (openInBullseye)="onOpenInBullseye()"
             />
           </div>
@@ -146,7 +146,7 @@ export class PositioningViewComponent implements OnInit {
   /** X-axis label changes based on grouping type. */
   readonly xAxisLabel = computed(() => {
     const g = this.state.positioningGrouping();
-    return g === 'company' ? 'Products' : 'Competitors';
+    return g === 'company' ? 'Assets' : 'Competitors';
   });
 
   /**
@@ -198,12 +198,12 @@ export class PositioningViewComponent implements OnInit {
     }
   }
 
-  onOpenProduct(productId: string): void {
+  onOpenAsset(assetId: string): void {
     // Open the timeline filtered by this product so the analyst sees the
     // product's trials and markers in time. The footer "Open in bullseye"
     // button still routes to bullseye for the cross-positional view.
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
-      queryParams: { productIds: productId },
+      queryParams: { assetIds: assetId },
     });
   }
 

@@ -116,7 +116,7 @@ interface CtgovProvenanceBlock {
       }
 
       @if (d.catalyst.company_name) {
-        <app-detail-panel-section [first]="true" label="Program">
+        <app-detail-panel-section [first]="true" label="Asset">
           <div class="flex items-center gap-2 text-[13px] text-slate-900">
             @if (d.catalyst.company_logo_url) {
               <img
@@ -156,7 +156,7 @@ interface CtgovProvenanceBlock {
                       's',
                       spaceId(),
                       'manage',
-                      'products',
+                      'assets',
                       d.catalyst.product_id,
                     ]"
                     class="text-brand-700 hover:underline"

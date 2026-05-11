@@ -13,7 +13,7 @@ export class DashboardService {
     const { data, error } = await this.supabase.client.rpc('get_dashboard_data', {
       p_space_id: spaceId,
       p_company_ids: filters.companyIds,
-      p_product_ids: filters.productIds,
+      p_product_ids: filters.assetIds,
       p_therapeutic_area_ids: filters.therapeuticAreaIds,
       p_start_year: filters.startYear,
       p_end_year: filters.endYear,

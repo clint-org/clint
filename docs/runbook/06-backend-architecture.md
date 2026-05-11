@@ -32,6 +32,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 <!-- AUTO-GEN:RPC_TABLE_MATRIX -->
 | RPC | Writes | Reads |
 |---|---|---|
+| `_audit_trigger_space_invite_issued` | - | spaces |
+| `_audit_trigger_space_members` | - | spaces |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
@@ -54,14 +56,14 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
+| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, primary_intelligence_revisions, products, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
-| `create_space` | space_members, spaces | tenant_members |
+| `create_space` | space_members, spaces | tenant_members, tenants |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_material` | materials | - |
 | `delete_primary_intelligence` | primary_intelligence | - |
-| `delete_space` | markers, spaces | - |
+| `delete_space` | markers, spaces | tenants |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
 | `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
@@ -69,6 +71,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_space_member_guards` | - | space_members |
 | `enforce_subdomain_unique_across_tables` | - | agencies, tenants |
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
+| `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
 | `get_activity_feed` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |
 | `get_brand_by_host` | - | agencies, tenants |
@@ -82,6 +85,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
+| `get_intelligence_version_revisions` | - | primary_intelligence_revisions |
 | `get_landscape_index` | - | companies, products, therapeutic_areas, trials |
 | `get_landscape_index_by_company` | - | companies, products, trials |
 | `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
@@ -90,7 +94,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_primary_intelligence_history` | - | events, primary_intelligence |
+| `get_primary_intelligence_history` | - | primary_intelligence, primary_intelligence_revisions |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, markers, products, trials |
 | `get_space_tags` | - | events |
@@ -107,11 +111,13 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_agency_member_of_space` | - | spaces, tenants |
 | `is_platform_admin` | - | platform_admins |
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
-| `list_draft_intelligence_for_space` | - | primary_intelligence |
+| `is_tenant_owner_strict` | - | tenant_members |
+| `list_audit_events` | - | audit_events |
+| `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_revisions |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
 | `list_materials_for_entity` | - | material_links, materials |
 | `list_materials_for_space` | - | material_links, materials |
-| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
+| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links, primary_intelligence_revisions |
 | `list_recent_materials_for_space` | - | material_links, materials |
 | `lookup_user_by_email` | - | agency_members |
 | `palette_empty_state` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
@@ -123,7 +129,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `provision_tenant` | tenant_members, tenants | agencies |
 | `purge_primary_intelligence` | primary_intelligence | - |
 | `recompute_trial_change_events` | trial_change_events, trial_field_changes | trial_ctgov_snapshots, trials |
+| `record_audit_event` | audit_events | - |
 | `record_sync_run` | ctgov_sync_runs | - |
+| `redact_user_pii` | audit_events | - |
 | `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
 | `register_custom_domain` | tenants | agencies, retired_hostnames |
 | `register_material` | material_links, materials | spaces, tenants |
@@ -140,6 +148,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_tenant_branding` | tenants | - |
 | `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
 | `withdraw_primary_intelligence` | primary_intelligence | - |
+| `write_primary_intelligence_revision` | primary_intelligence_revisions | - |
 <!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
 
 ## Supabase Services Used
@@ -222,7 +231,7 @@ Creates a new space and adds the calling user as the space owner. Verifies the c
 seed_demo_data(p_space_id uuid) -> void
 ```
 
-Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 products across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
+Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 assets across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
 
 Two helpers added on 2026-05-01: `_seed_demo_primary_intelligence` (4 trial-anchored published reads, 1 space-level thematic read, 2 drafts; cross-entity links across products and companies; revisions written by the existing trigger) and `_seed_demo_materials` (briefing PPTX, priority notice PDF, ad hoc DOCX with multi-entity links). Material rows reference plausible storage paths but do not upload files; demo download flows 404 cleanly.
 
@@ -558,6 +567,15 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 
 <!-- AUTO-GEN:DRIFT -->
 **RPCs in `pg_proc` not documented:**
+- `_audit_trigger_agency_members`
+- `_audit_trigger_platform_admins`
+- `_audit_trigger_retired_hostnames`
+- `_audit_trigger_should_skip`
+- `_audit_trigger_space_invite_issued`
+- `_audit_trigger_space_members`
+- `_audit_trigger_tenant_invite_issued`
+- `_audit_trigger_tenant_members`
+- `_audit_trigger_tenant_suspension`
 - `_emit_events_from_marker_change`
 - `_log_marker_change`
 - `_map_phase_array`
@@ -568,6 +586,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `build_intelligence_payload`
 - `delete_material`
 - `delete_space`
+- `export_audit_events_csv`
 - `finalize_material`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`
@@ -578,6 +597,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
+- `get_intelligence_version_revisions`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
@@ -590,6 +610,9 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
 - `guard_primary_intelligence_state`
+- `is_tenant_owner_strict`
+- `jsonb_strip_pii_keys`
+- `list_audit_events`
 - `list_draft_intelligence_for_space`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
@@ -602,11 +625,14 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_set_pinned`
 - `palette_touch_recent`
 - `palette_unpin`
+- `record_audit_event`
+- `redact_user_pii`
 - `referenced_in_entity`
 - `register_material`
 - `search_palette`
 - `update_material`
 - `validate_material_links_payload`
+- `write_primary_intelligence_revision`
 
 **Edge functions in `supabase/functions/` not documented:**
 _All edge functions documented._

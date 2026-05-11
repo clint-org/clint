@@ -6,7 +6,7 @@ import { DetailPanelMiniPhaseBarComponent } from './detail-panel-mini-phase-bar.
 export interface PhaseRaceEntry {
   id: string;
   name: string;
-  /** Subtitle (typically the company name) shown beneath the product name. */
+  /** Subtitle (typically the company name) shown beneath the asset name. */
   subtitle: string;
   phase: RingPhase;
 }
@@ -19,7 +19,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
 
 /**
  * Visual race comparison used in the positioning detail pane. Each row is a
- * product with a 7-segment mini phase bar (variant B from the mockup:
+ * asset with a 7-segment mini phase bar (variant B from the mockup:
  * two-line label, multi-color bar). Sorted by phase rank descending so the
  * leader sits at the top.
  *

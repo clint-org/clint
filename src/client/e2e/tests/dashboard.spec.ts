@@ -22,9 +22,9 @@ test.describe('Dashboard', () => {
 
     // Seed data so the dashboard has something to render
     const companyId = await createTestCompany(spaceId, 'Dashboard Co');
-    const productId = await createTestProduct(spaceId, companyId, 'Dashboard Product');
+    const assetId = await createTestProduct(spaceId, companyId, 'Dashboard Asset');
     const taId = await createTestTherapeuticArea(spaceId, 'Dashboard TA');
-    await createTestTrial(spaceId, productId, taId, 'Dashboard Trial');
+    await createTestTrial(spaceId, assetId, taId, 'Dashboard Trial');
 
     page = await authenticatedPage(browser);
     // Engagement landing is now the space root; the timeline lives one

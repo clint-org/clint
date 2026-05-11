@@ -1,10 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
-import {
-  createTestTenant,
-  createTestSpace,
-  navigateToSpace,
-} from '../helpers/test-data.helper';
+import { createTestTenant, createTestSpace, navigateToSpace } from '../helpers/test-data.helper';
 
 test.describe('Navigation', () => {
   let page: Page;
@@ -30,7 +26,7 @@ test.describe('Navigation', () => {
     // The sidebar uses button elements with nav-item class when expanded,
     // or icon-btn with aria-label when collapsed. Check for key nav items.
     await expect(sidebar.locator('button[aria-label="Companies"]')).toBeVisible();
-    await expect(sidebar.locator('button[aria-label="Products"]')).toBeVisible();
+    await expect(sidebar.locator('button[aria-label="Assets"]')).toBeVisible();
     await expect(sidebar.locator('button[aria-label="Trials"]')).toBeVisible();
   });
 
@@ -55,9 +51,6 @@ test.describe('Navigation', () => {
 
     // Navigate back to space root
     await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
-    await expect(page).toHaveURL(
-      new RegExp(`/t/${tenantId}/s/${spaceId}`),
-      { timeout: 10000 },
-    );
+    await expect(page).toHaveURL(new RegExp(`/t/${tenantId}/s/${spaceId}`), { timeout: 10000 });
   });
 });

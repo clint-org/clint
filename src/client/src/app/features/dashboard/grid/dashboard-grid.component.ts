@@ -32,14 +32,14 @@ export interface FlattenedTrial {
   companyName: string;
   companyId: string;
   companyLogoUrl: string | null;
-  productName: string;
-  productId: string;
-  productLogoUrl: string | null;
-  productMoas: { id: string; name: string }[];
-  productRoas: { id: string; name: string; abbreviation: string | null }[];
+  assetName: string;
+  assetId: string;
+  assetLogoUrl: string | null;
+  assetMoas: { id: string; name: string }[];
+  assetRoas: { id: string; name: string; abbreviation: string | null }[];
   trial: Trial;
   isFirstInCompany: boolean;
-  isFirstInProduct: boolean;
+  isFirstInAsset: boolean;
   isLastInCompany: boolean;
 }
 
@@ -78,7 +78,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly markerClick = output<Marker>();
   readonly trialClick = output<Trial>();
   readonly companyClick = output<string>();
-  readonly productClick = output<string>();
+  readonly assetClick = output<string>();
 
   readonly isScrolled = signal(false);
   readonly showMoaColumn = signal(true);
@@ -127,27 +127,27 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     const rows: FlattenedTrial[] = [];
     for (const company of this.companies()) {
       let isFirstInCompany = true;
-      const products = company.products ?? [];
-      for (const product of products) {
-        let isFirstInProduct = true;
-        const trials = product.trials ?? [];
+      const assets = company.products ?? [];
+      for (const asset of assets) {
+        let isFirstInAsset = true;
+        const trials = asset.trials ?? [];
         for (const trial of trials) {
           rows.push({
             companyName: company.name,
             companyId: company.id,
             companyLogoUrl: company.logo_url ?? null,
-            productName: product.name,
-            productId: product.id,
-            productLogoUrl: product.logo_url ?? null,
-            productMoas: product.mechanisms_of_action ?? [],
-            productRoas: product.routes_of_administration ?? [],
+            assetName: asset.name,
+            assetId: asset.id,
+            assetLogoUrl: asset.logo_url ?? null,
+            assetMoas: asset.mechanisms_of_action ?? [],
+            assetRoas: asset.routes_of_administration ?? [],
             trial,
             isFirstInCompany,
-            isFirstInProduct,
+            isFirstInAsset,
             isLastInCompany: false,
           });
           isFirstInCompany = false;
-          isFirstInProduct = false;
+          isFirstInAsset = false;
         }
       }
       if (rows.length > 0) {
@@ -201,8 +201,8 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     this.companyClick.emit(companyId);
   }
 
-  onProductClick(productId: string): void {
-    this.productClick.emit(productId);
+  onAssetClick(assetId: string): void {
+    this.assetClick.emit(assetId);
   }
 
   moaTooltipText(moas: { id: string; name: string }[]): string {
