@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -21,6 +22,10 @@ import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
+import { TimelineViewComponent } from '../../landscape/timeline-view.component';
+import { LandscapeStateService } from '../../landscape/landscape-state.service';
+import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
@@ -44,8 +49,10 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
+    TimelineViewComponent,
+    EntityEventsPanelComponent,
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -78,6 +85,20 @@ export class AssetDetailComponent implements OnInit {
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
+
+  private readonly landscape = inject(LandscapeStateService);
+
+  private readonly landscapeInitEffect = effect(() => {
+    const space = this.spaceIdSig();
+    const asset = this.asset();
+    if (!space || !asset) return;
+    void this.initLandscape(space, asset.id);
+  });
+
+  private async initLandscape(spaceId: string, assetId: string): Promise<void> {
+    await this.landscape.init(spaceId, { disablePersistence: true });
+    this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, assetIds: [assetId] });
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
