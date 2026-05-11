@@ -6,10 +6,9 @@ import { TenantService } from '../../core/services/tenant.service';
 
 /**
  * Stats returned by `get_space_landing_stats` (see migration
- * 20260501152530_add_space_landing_stats.sql). `intelligence_total` is always
- * 0 in phase 1; the primary_intelligence table is not yet shipped.
- * The RPC returns `programs` on the wire; the service aliases it to `assets`
- * so the frontend uses the unified vocabulary.
+ * 20260511120000_landing_stats_motion_signals.sql). The RPC returns
+ * `programs` on the wire; the service aliases it to `assets` so the frontend
+ * uses the unified vocabulary.
  */
 export interface SpaceLandingStats {
   active_trials: number;
@@ -17,6 +16,10 @@ export interface SpaceLandingStats {
   assets: number;
   catalysts_90d: number;
   intelligence_total: number;
+  p3_readouts_90d: number;
+  new_intel_7d: number;
+  trial_moves_30d: number;
+  loe_365d: number;
 }
 
 interface RawSpaceLandingStats {
@@ -25,6 +28,10 @@ interface RawSpaceLandingStats {
   programs: number;
   catalysts_90d: number;
   intelligence_total: number;
+  p3_readouts_90d: number;
+  new_intel_7d: number;
+  trial_moves_30d: number;
+  loe_365d: number;
 }
 
 /**
@@ -66,6 +73,10 @@ export class EngagementLandingService {
       assets: raw.programs,
       catalysts_90d: raw.catalysts_90d,
       intelligence_total: raw.intelligence_total,
+      p3_readouts_90d: raw.p3_readouts_90d,
+      new_intel_7d: raw.new_intel_7d,
+      trial_moves_30d: raw.trial_moves_30d,
+      loe_365d: raw.loe_365d,
     };
   }
 
