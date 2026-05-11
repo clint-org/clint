@@ -16,6 +16,7 @@ import {
   PrimaryIntelligence,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
+import { foldArchivedEvents, TimelineRow } from './history-timeline';
 
 type VersionSection = 'headline' | 'thesis' | 'watch' | 'implications';
 
@@ -83,36 +84,7 @@ export class IntelligenceHistoryPanelComponent {
     return out;
   });
 
-  /**
-   * The events list with archive sub-events folded under their causing
-   * publish: an `archived` event at the same timestamp as a `published`
-   * event renders as a child of that publish row, not a peer.
-   */
-  protected readonly timeline = computed<
-    { event: IntelligenceHistoryEvent; archivedChildren: IntelligenceHistoryEvent[] }[]
-  >(() => {
-    const all = this.events();
-    const rows: {
-      event: IntelligenceHistoryEvent;
-      archivedChildren: IntelligenceHistoryEvent[];
-    }[] = [];
-    const archivedAt = new Map<string, IntelligenceHistoryEvent[]>();
-
-    for (const e of all) {
-      if (e.kind === 'archived') {
-        const list = archivedAt.get(e.at) ?? [];
-        list.push(e);
-        archivedAt.set(e.at, list);
-      }
-    }
-
-    for (const e of all) {
-      if (e.kind === 'archived') continue;
-      const children = e.kind === 'published' ? (archivedAt.get(e.at) ?? []) : [];
-      rows.push({ event: e, archivedChildren: children });
-    }
-    return rows;
-  });
+  protected readonly timeline = computed<TimelineRow[]>(() => foldArchivedEvents(this.events()));
 
   protected isEventExpanded(rowId: string): boolean {
     return this.expandedEventIds().has(rowId);

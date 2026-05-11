@@ -14,7 +14,7 @@ export default defineConfig({
     'e2e/tests/palette-command-registry.spec.ts',
     '**/error-message.spec.ts',
     '**/intelligence-router-link.spec.ts',
-    '**/version-summary.spec.ts',
+    '**/history-timeline.spec.ts',
   ],
   reporter: [['list']],
   fullyParallel: true,
