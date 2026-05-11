@@ -452,15 +452,6 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected async loadHistoryVersionRevisions(versionId: string): Promise<void> {
-    try {
-      const revs = await this.historyHost.loadVersionRevisions(versionId);
-      this.historyPanelRef()?.setVersionRevisions(versionId, revs);
-    } catch {
-      // Silent: per-version diff fetch failures degrade gracefully.
-    }
-  }
-
   async onMarkerSaved(): Promise<void> {
     this.addingMarker.set(false);
     this.editingMarker.set(null);

@@ -176,15 +176,6 @@ export class CompanyDetailComponent implements OnInit {
     }
   }
 
-  protected async loadHistoryVersionRevisions(versionId: string): Promise<void> {
-    try {
-      const revs = await this.historyHost.loadVersionRevisions(versionId);
-      this.historyPanelRef()?.setVersionRevisions(versionId, revs);
-    } catch {
-      // Silent: per-version diff fetch failures degrade gracefully.
-    }
-  }
-
   private async loadIntelligence(): Promise<void> {
     try {
       this.intelligence.set(await this.intelligenceService.getCompanyDetail(this.companyId()));

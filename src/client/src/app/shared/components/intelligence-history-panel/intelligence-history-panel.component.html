@@ -11,13 +11,13 @@
       History
     </span>
     <span class="flex items-center gap-3 text-xs text-slate-500">
-      @if (versionCount() <= 1) {
+      @if (eventCount() === 0) {
         <span>No prior versions</span>
       } @else {
-        <span>{{ versionCount() }} versions</span>
-        @if (latest(); as v) {
-          <span class="font-mono">v{{ v.version_number }}</span>
-          <span>{{ formatDate(v.published_at) }}</span>
+        <span>{{ versionCount() }} {{ versionCount() === 1 ? 'version' : 'versions' }}</span>
+        @if (latestPublished(); as e) {
+          <span class="font-mono">v{{ e.version_number }}</span>
+          <span>{{ formatDate(e.at) }}</span>
         }
       }
       <span
@@ -31,7 +31,7 @@
 
   @if (expanded()) {
     <div class="space-y-3 px-4 py-3">
-      @if (currentUserCanEdit() && draft()) {
+      @if (hasDraft() && draft(); as d) {
         <button
           type="button"
           class="block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-left hover:border-slate-400"
@@ -40,129 +40,104 @@
           <div class="flex items-baseline gap-2">
             <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-600">Working draft</span>
             <span class="text-xs text-slate-500">
-              Edited {{ formatDate(draft()?.updated_at) }} by {{ authorInitials(draft()?.last_edited_by ?? '') }}
+              Edited {{ formatDate(d.updated_at) }} by {{ authorInitials(d.last_edited_by) }}
             </span>
           </div>
-          @if (draftSummary(); as s) {
-            @if (s.isFirst) {
-              <p class="mt-1 text-xs text-slate-500">No published version yet.</p>
-            } @else if (s.changedSections.length > 0) {
-              <p class="mt-1 text-xs text-slate-500">
-                Diverges from current:
-                <span class="text-slate-700">
-                  @for (sec of s.changedSections; track sec) {
-                    {{ sectionLabel(sec) }}@if (!$last) {, }
-                  }
-                </span>
-              </p>
-            } @else {
-              <p class="mt-1 text-xs text-slate-500">Identical to the current version (no edits yet).</p>
-            }
-          }
         </button>
       }
-      @for (v of versions(); track v.id) {
+
+      @for (row of timeline(); track row.event.row_id + ':' + row.event.kind + ':' + row.event.at) {
+        @let event = row.event;
+        @let kind = event.kind;
+        @let expandable = isExpandable(kind);
+        @let expandedNow = isEventExpanded(event.row_id);
+        @let version = versionForEvent(event);
+
         <article
-          class="rounded-md border border-slate-200 bg-white"
-          [class.border-amber-300]="v.state === 'withdrawn'"
+          class="rounded-md border bg-white"
+          [class.border-slate-200]="kind !== 'withdrawn'"
+          [class.border-amber-300]="kind === 'withdrawn'"
         >
           <button
             type="button"
             class="flex w-full items-start justify-between gap-4 p-3 text-left"
-            [attr.aria-expanded]="isVersionExpanded(v.id)"
-            (click)="toggleVersion(v.id)"
+            [attr.aria-expanded]="expandable ? expandedNow : null"
+            [disabled]="!expandable"
+            (click)="expandable ? toggleEvent(event.row_id) : null"
           >
             <div class="flex-1">
-              <div class="flex items-baseline gap-2">
-                <span class="font-mono text-sm font-medium text-slate-700">v{{ v.version_number }}</span>
-                @if (v.state === 'archived') {
-                  <span class="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">Archived</span>
-                }
-                @if (v.state === 'withdrawn') {
-                  <span class="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">Withdrawn</span>
-                }
-                <span class="text-xs text-slate-500">
-                  Published {{ formatDate(v.published_at) }} by {{ authorInitials(v.published_by) }}
+              <div class="flex flex-wrap items-baseline gap-2">
+                <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                  {{ formatDate(event.at) }} {{ formatTime(event.at) }}
                 </span>
+                <span
+                  class="rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                  [class.bg-brand-50]="kind === 'published'"
+                  [class.text-brand-700]="kind === 'published'"
+                  [class.border]="true"
+                  [class.border-brand-200]="kind === 'published'"
+                  [class.bg-slate-100]="kind === 'draft_started' || kind === 'archived'"
+                  [class.text-slate-700]="kind === 'draft_started' || kind === 'archived'"
+                  [class.border-slate-200]="kind === 'draft_started' || kind === 'archived'"
+                  [class.bg-amber-50]="kind === 'withdrawn'"
+                  [class.text-amber-700]="kind === 'withdrawn'"
+                  [class.border-amber-200]="kind === 'withdrawn'"
+                >
+                  {{ eventKindLabel(kind) }}
+                </span>
+                @if (eventVersionChip(event); as chip) {
+                  <span class="font-mono text-sm font-medium text-slate-700">{{ chip }}</span>
+                }
+                @if (event.by) {
+                  <span class="text-xs text-slate-500">by {{ authorInitials(event.by) }}</span>
+                }
               </div>
-              @if (v.publish_note) {
-                <p class="mt-1 text-sm italic text-slate-700">"{{ v.publish_note }}"</p>
-              } @else if (summaryFor(v).isFirst) {
-                <p class="mt-1 text-sm text-slate-500">Initial publication</p>
+              @if (event.note) {
+                <p class="mt-1 text-sm italic text-slate-700">"{{ event.note }}"</p>
               }
-              @if (!summaryFor(v).isFirst && summaryFor(v).changedSections.length > 0) {
-                <p class="mt-1 text-xs text-slate-500">
-                  Sections changed:
-                  <span class="text-slate-700">
-                    @for (s of summaryFor(v).changedSections; track s; let last = $last) {
-                      {{ sectionLabel(s) }}@if (!last) {, }
-                    }
-                  </span>
-                </p>
+              @if (row.archivedChildren.length > 0) {
+                @for (child of row.archivedChildren; track child.row_id) {
+                  <p class="mt-1 pl-3 text-xs text-slate-500 border-l border-slate-200">
+                    v{{ child.version_number }} archived
+                  </p>
+                }
               }
             </div>
-            <span
-              class="mt-1 inline-block h-2 w-2 border-r border-b border-slate-400 shrink-0"
-              [class.rotate-45]="!isVersionExpanded(v.id)"
-              [class.-rotate-135]="isVersionExpanded(v.id)"
-              aria-hidden="true"
-            ></span>
+            @if (expandable) {
+              <span
+                class="mt-1 inline-block h-2 w-2 border-r border-b border-slate-400 shrink-0"
+                [class.rotate-45]="!expandedNow"
+                [class.-rotate-135]="expandedNow"
+                aria-hidden="true"
+              ></span>
+            }
           </button>
 
-          @if (isVersionExpanded(v.id)) {
+          @if (expandable && expandedNow && version) {
             <div class="border-t border-slate-100 p-4 space-y-3">
-              <h3 class="text-base font-semibold text-slate-900">{{ v.headline }}</h3>
-              @if (v.thesis_md) {
-                <section>
-                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Thesis</h4>
-                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.thesis_md)"></div>
-                </section>
-              }
-              @if (v.watch_md) {
-                <section>
-                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">What to watch</h4>
-                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.watch_md)"></div>
-                </section>
-              }
-              @if (v.implications_md) {
-                <section>
-                  <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Implications</h4>
-                  <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="renderInline(v.implications_md)"></div>
-                </section>
-              }
-              @if (currentUserCanEdit()) {
-                <div class="border-t border-slate-100 pt-3">
-                  <button
-                    type="button"
-                    class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500 hover:text-slate-700"
-                    [attr.aria-expanded]="isDiffShown(v.id)"
-                    (click)="toggleDiff(v.id); $event.stopPropagation()"
-                  >
-                    {{ isDiffShown(v.id) ? 'Hide edits within this version' : 'Show edits within this version' }}
-                  </button>
-                  @if (isDiffShown(v.id)) {
-                    <div class="mt-2 space-y-3">
-                      @for (pair of diffPairsFor(v.id); track pair.toAt) {
-                        <div class="rounded border border-slate-100 bg-slate-50 p-2 text-xs">
-                          <div class="text-slate-500">
-                            {{ formatDate(pair.fromAt) }} -> {{ formatDate(pair.toAt) }}
-                            @if (pair.changeNote) {
-                              <span class="text-slate-700">-- "{{ pair.changeNote }}"</span>
-                            }
-                          </div>
-                          @for (f of pair.fields; track f.section) {
-                            <div class="mt-1">
-                              <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ sectionLabel(f.section) }}</span>
-                              <div class="text-slate-800" [innerHTML]="f.html"></div>
-                            </div>
-                          }
-                        </div>
-                      } @empty {
-                        <p class="text-xs text-slate-500">Loading edits...</p>
-                      }
-                    </div>
-                  }
-                </div>
+              @if (kind === 'published') {
+                @let base = diffBaseFor(version);
+                @if (!base) {
+                  <p class="text-[10px] uppercase tracking-[0.18em] text-slate-400">Initial publication</p>
+                } @else {
+                  <p class="text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                    Changes vs v{{ base.version_number }}
+                  </p>
+                }
+                @for (s of renderDiff(version, base); track s.section) {
+                  <section>
+                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ s.label }}</h4>
+                    <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="s.html"></div>
+                  </section>
+                }
+              } @else if (kind === 'withdrawn') {
+                <p class="text-[10px] uppercase tracking-[0.18em] text-amber-700">Withdrawn snapshot</p>
+                @for (s of renderDiff(version, null); track s.section) {
+                  <section>
+                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ s.label }}</h4>
+                    <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="s.html"></div>
+                  </section>
+                }
               }
             </div>
           }

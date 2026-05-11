@@ -165,15 +165,6 @@ export class EngagementDetailComponent implements OnInit {
     }
   }
 
-  protected async loadHistoryVersionRevisions(versionId: string): Promise<void> {
-    try {
-      const revs = await this.historyHost.loadVersionRevisions(versionId);
-      this.historyPanelRef()?.setVersionRevisions(versionId, revs);
-    } catch {
-      // Silent: per-version diff fetch failures degrade gracefully.
-    }
-  }
-
   protected onIntelligenceEdit(): void {
     this.drawerOpen.set(true);
   }

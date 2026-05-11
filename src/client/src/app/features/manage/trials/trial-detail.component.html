@@ -198,7 +198,6 @@
           (withdraw)="withdrawDialogOpen.set(true)"
           (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
           (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
-          (versionRevisionsRequested)="loadHistoryVersionRevisions($event)"
         />
         <app-withdraw-intelligence-dialog
           [visible]="withdrawDialogOpen()"
