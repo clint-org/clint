@@ -72,23 +72,34 @@
   <div class="flex-none">
     @if (!hideLegend()) {
       <app-legend [spaceId]="spaceId()" />
-    } @else {
-      <div class="px-4 py-2 flex items-center justify-end">
-        <button
-          type="button"
-          class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
-          (click)="toggleLegend()"
-        >
-          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-        </button>
+    } @else if (legendVisible()) {
+      <div class="border-t border-slate-200">
+        <app-legend [spaceId]="spaceId()" />
       </div>
-      @if (legendVisible()) {
-        <div class="border-t border-slate-200">
-          <app-legend [spaceId]="spaceId()" />
-        </div>
-      }
     }
   </div>
+
+  @if (hideLegend() && state.selectedMarkerId()) {
+    @if (state.detailLoading() && !state.selectedDetail()) {
+      <div
+        class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
+      >
+        <p-progress-spinner strokeWidth="3" styleClass="w-[28px] h-[28px]" />
+      </div>
+    } @else {
+      <app-marker-detail-panel
+        mode="drawer"
+        [detail]="state.selectedDetail()"
+        [spaceId]="state.spaceIdSig()"
+        surfaceKey="timeline_detail"
+        [open]="!!state.selectedMarkerId()"
+        (panelClose)="state.clearSelection()"
+        (markerClick)="state.selectMarker($event)"
+        (eventClick)="onEventClick($event)"
+        (trialClick)="navigateToTrial($event)"
+      />
+    }
+  }
 </div>
 
 <app-export-dialog

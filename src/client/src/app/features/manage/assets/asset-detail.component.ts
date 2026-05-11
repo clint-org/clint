@@ -68,6 +68,7 @@ export class AssetDetailComponent implements OnInit {
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
   protected readonly loading = signal(true);
+  protected readonly legendVisible = signal(false);
 
   // Intelligence history (version list, withdraw / purge dialogs)
   protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
