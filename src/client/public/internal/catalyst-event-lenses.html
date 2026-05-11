@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- Catalyst & Event Lenses (Trial / Product / Company)</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-300: #5eead4;
+        --brand-500: #14b8a6;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --cyan-500: #06b6d4;
+        --cyan-600: #0891b2;
+        --violet-500: #8b5cf6;
+        --violet-600: #7c3aed;
+        --amber-500: #f59e0b;
+        --amber-600: #d97706;
+        --amber-700: #b45309;
+        --amber-800: #92400e;
+        --amber-900: #78350f;
+        --green-400: #4ade80;
+        --green-500: #22c55e;
+        --green-600: #16a34a;
+        --orange-500: #f97316;
+        --blue-500: #3b82f6;
+        --blue-600: #2563eb;
+        --red-600: #dc2626;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .accent-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: var(--brand-600); z-index: 100; }
+      .page { max-width: 1340px; margin: 0 auto; padding: 56px 56px 96px; }
+
+      /* ------- Page header ------- */
+      .head { margin-bottom: 28px; }
+      .head .label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 12px; }
+      .head h1 { font-size: 28px; font-weight: 700; color: var(--slate-900); line-height: 1.2; letter-spacing: -0.005em; margin-bottom: 14px; max-width: 920px; }
+      .head p { font-size: 14.5px; color: var(--slate-600); max-width: 880px; }
+      .head p + p { margin-top: 8px; }
+      .head .meta { font-family: var(--font-mono); font-size: 11px; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 18px; display: flex; gap: 14px; align-items: center; }
+      .head .meta .dot { width: 4px; height: 4px; background: var(--slate-300); }
+
+      /* ------- Tab nav (anchor links) ------- */
+      .lens-nav {
+        position: sticky;
+        top: 12px;
+        z-index: 50;
+        background: white;
+        border: 1px solid var(--slate-200);
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 0 var(--slate-100);
+      }
+      .lens-nav a {
+        padding: 14px 18px;
+        text-decoration: none;
+        color: var(--slate-600);
+        border-right: 1px solid var(--slate-200);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: background 80ms ease;
+      }
+      .lens-nav a:last-child { border-right: none; }
+      .lens-nav a:hover { background: var(--slate-50); }
+      .lens-nav .step { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.18em; text-transform: uppercase; }
+      .lens-nav .title { font-size: 13.5px; font-weight: 600; color: var(--slate-900); }
+      .lens-nav .question { font-size: 12px; color: var(--slate-500); font-style: italic; }
+
+      /* ------- Section ------- */
+      .lens { margin-bottom: 80px; scroll-margin-top: 90px; }
+      .lens-header { background: white; border: 1px solid var(--slate-200); padding: 22px 28px; margin-bottom: 18px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+      .lens-header .crumb { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px; }
+      .lens-header .crumb .sep { color: var(--slate-300); margin: 0 8px; }
+      .lens-header .crumb .self { color: var(--slate-900); }
+      .lens-header h2 { font-size: 22px; font-weight: 700; color: var(--slate-900); letter-spacing: -0.005em; margin-bottom: 8px; }
+      .lens-header .sub { font-size: 13.5px; color: var(--slate-600); max-width: 720px; }
+      .lens-header .badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+      .badge {
+        font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+        padding: 4px 9px; letter-spacing: 0.12em; text-transform: uppercase;
+        border: 1px solid var(--slate-200); color: var(--slate-700); background: white;
+      }
+      .badge.b-phase3 { background: var(--brand-50); border-color: var(--brand-300); color: var(--brand-800); }
+      .badge.b-approved { background: #eff6ff; border-color: #bfdbfe; color: var(--blue-600); }
+      .badge.b-active { background: var(--slate-50); border-color: var(--slate-300); color: var(--slate-700); }
+      .badge.b-ticker { background: var(--slate-900); border-color: var(--slate-900); color: white; }
+
+      .lens-frame {
+        background: white; border: 1px solid var(--slate-200);
+        display: grid;
+        grid-template-columns: 1fr 320px;
+      }
+      .lens-frame .main { padding: 0; border-right: 1px solid var(--slate-200); min-width: 0; }
+      .lens-frame .side { padding: 0; background: var(--slate-50); }
+
+      .panel-head {
+        padding: 14px 22px;
+        font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+        color: var(--slate-600); letter-spacing: 0.16em; text-transform: uppercase;
+        border-bottom: 1px solid var(--slate-200);
+        background: white;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .panel-head .count { color: var(--slate-400); font-weight: 500; }
+
+      /* ============================================================
+         TRIAL VIEW -- list (data table)
+         ============================================================ */
+      .cat-table { width: 100%; border-collapse: collapse; }
+      .cat-table thead th {
+        font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+        color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase;
+        text-align: left; padding: 10px 14px;
+        border-bottom: 1px solid var(--slate-200);
+        background: var(--slate-50);
+      }
+      .cat-table tbody td {
+        font-size: 13px; color: var(--slate-700);
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--slate-100);
+        vertical-align: middle;
+      }
+      .cat-table tbody tr:hover { background: var(--slate-50); }
+      .cat-table .col-date { font-family: var(--font-mono); font-size: 12px; color: var(--slate-600); white-space: nowrap; width: 110px; }
+      .cat-table .col-mark { width: 30px; }
+      .cat-table .col-type { font-family: var(--font-mono); font-size: 10.5px; color: var(--slate-500); letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; width: 160px; }
+      .cat-table .col-title { color: var(--slate-900); font-weight: 500; }
+      .cat-table .col-status { width: 110px; }
+      .cat-table .col-status .pill {
+        font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+        padding: 3px 7px; letter-spacing: 0.1em; text-transform: uppercase;
+        border: 1px solid var(--slate-200); color: var(--slate-600);
+      }
+      .cat-table .col-status .pill.confirmed { color: var(--slate-700); }
+      .cat-table .col-status .pill.projected { color: var(--brand-700); background: var(--brand-50); border-color: var(--brand-300); }
+
+      .row-section td {
+        background: var(--slate-50) !important;
+        padding: 6px 14px !important;
+        font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+        color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase;
+        border-bottom: 1px solid var(--slate-200) !important;
+        border-top: 1px solid var(--slate-200) !important;
+      }
+
+      /* ------- Inline marker glyphs ------- */
+      .mk { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+      .mk svg { display: block; }
+
+      /* ------- Trial side panel: events feed ------- */
+      .ev-feed { padding: 6px 0; }
+      .ev-item { padding: 12px 22px; border-bottom: 1px solid var(--slate-200); display: grid; grid-template-columns: 56px 1fr; gap: 10px; }
+      .ev-item:last-child { border-bottom: none; }
+      .ev-item .ev-date { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.08em; padding-top: 1px; }
+      .ev-item .ev-kind { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; color: var(--brand-700); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 3px; }
+      .ev-item .ev-title { font-size: 12.5px; color: var(--slate-800); line-height: 1.45; }
+      .ev-item .ev-src { font-size: 11px; color: var(--slate-500); margin-top: 3px; font-style: italic; }
+
+      /* ============================================================
+         PRODUCT VIEW -- multi-trial arc (swimlane timeline)
+         ============================================================ */
+      .arc-frame { padding: 22px 22px 18px 22px; }
+      .arc-axis {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        margin-bottom: 10px;
+      }
+      .arc-axis .axis-label { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; align-self: end; padding-bottom: 4px; }
+      .arc-axis .axis-ticks { position: relative; height: 22px; border-bottom: 1px solid var(--slate-200); }
+      .arc-axis .tick { position: absolute; bottom: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.08em; }
+      .arc-axis .tick .bar { display: block; width: 1px; height: 5px; background: var(--slate-300); margin: 0 auto 3px; }
+
+      .arc-row { display: grid; grid-template-columns: 160px 1fr; align-items: center; height: 56px; border-top: 1px solid var(--slate-100); }
+      .arc-row:first-of-type { border-top: 1px solid var(--slate-200); }
+      .arc-row .row-label {
+        font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+        color: var(--slate-800); letter-spacing: 0.06em; padding-right: 16px;
+        display: flex; flex-direction: column; gap: 2px; line-height: 1.3;
+      }
+      .arc-row .row-label .sublabel { font-weight: 500; color: var(--slate-500); font-size: 10px; letter-spacing: 0.04em; text-transform: none; }
+      .arc-row .row-track { position: relative; height: 100%; }
+      .arc-row .phase-bar {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        height: 14px; border-radius: 1px;
+      }
+      .arc-row .phase-bar.ph-pre { background: var(--slate-200); }
+      .arc-row .phase-bar.ph-1 { background: #cbd5e1; }
+      .arc-row .phase-bar.ph-2 { background: var(--cyan-500); }
+      .arc-row .phase-bar.ph-3 { background: var(--brand-600); }
+      .arc-row .phase-bar.ph-filed { background: var(--violet-500); }
+      .arc-row .phase-bar.ph-approved { background: var(--amber-500); }
+      .arc-row .phase-bar .phase-label {
+        position: absolute; top: 50%; left: 8px; transform: translateY(-50%);
+        font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+        color: white; letter-spacing: 0.14em; text-transform: uppercase;
+      }
+      .arc-row .phase-bar.ph-pre .phase-label, .arc-row .phase-bar.ph-1 .phase-label { color: var(--slate-700); }
+
+      .arc-row .tick-marker {
+        position: absolute; top: 50%; transform: translate(-50%, -50%);
+        width: 12px; height: 12px;
+        cursor: default;
+        z-index: 2;
+      }
+      .arc-row .tick-marker svg { display: block; }
+
+      .arc-now-line {
+        position: absolute; top: 0; bottom: 0;
+        width: 1px; background: var(--red-600); opacity: 0.6;
+        z-index: 1;
+      }
+      .arc-now-line .now-label {
+        position: absolute; top: -16px; left: 4px;
+        font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+        color: var(--red-600); letter-spacing: 0.14em;
+      }
+
+      .arc-grid {
+        position: absolute; top: 0; bottom: 0;
+        width: 1px; background: var(--slate-100);
+        z-index: 0;
+      }
+
+      /* ------- Product side panel: event types ------- */
+      .ev-type-list { padding: 6px 0; }
+      .ev-type-row {
+        padding: 11px 22px; border-bottom: 1px solid var(--slate-200);
+        display: grid; grid-template-columns: 1fr auto; gap: 6px;
+      }
+      .ev-type-row:last-child { border-bottom: none; }
+      .ev-type-row .et-name { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-800); letter-spacing: 0.08em; text-transform: uppercase; }
+      .ev-type-row .et-count { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--brand-700); }
+      .ev-type-row .et-recent { grid-column: 1 / -1; font-size: 12px; color: var(--slate-600); margin-top: 2px; line-height: 1.4; }
+      .ev-type-row .et-bar {
+        grid-column: 1 / -1; margin-top: 6px; height: 4px;
+        background: var(--slate-100); position: relative;
+      }
+      .ev-type-row .et-bar .fill {
+        position: absolute; left: 0; top: 0; bottom: 0;
+        background: var(--brand-600);
+      }
+
+      /* ============================================================
+         COMPANY VIEW -- portfolio matrix
+         ============================================================ */
+      .matrix-frame { padding: 22px 22px 22px 22px; }
+      .matrix-axis {
+        display: grid; grid-template-columns: 200px 1fr;
+        margin-bottom: 6px;
+      }
+      .matrix-axis .axis-label { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; align-self: end; padding-bottom: 4px; }
+      .matrix-axis .axis-quarters {
+        position: relative; height: 28px;
+        border-bottom: 1px solid var(--slate-300);
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+      }
+      .matrix-axis .qcell {
+        font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+        color: var(--slate-700); letter-spacing: 0.08em;
+        border-left: 1px solid var(--slate-200);
+        padding: 6px 8px; align-self: end;
+      }
+      .matrix-axis .qcell:first-child { border-left: none; }
+      .matrix-axis .qcell .year { color: var(--slate-400); font-weight: 500; font-size: 9.5px; display: block; }
+
+      .matrix-row {
+        display: grid; grid-template-columns: 200px 1fr;
+        border-top: 1px solid var(--slate-100);
+        align-items: center;
+        height: 44px;
+      }
+      .matrix-row:first-of-type { border-top: none; }
+      .matrix-row:hover { background: var(--slate-50); }
+      .matrix-row .row-label { padding-right: 14px; display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+      .matrix-row .row-label .name { font-size: 12.5px; font-weight: 600; color: var(--slate-900); }
+      .matrix-row .row-label .gen { font-family: var(--font-mono); font-size: 10px; color: var(--slate-500); letter-spacing: 0.06em; }
+      .matrix-row .row-track { position: relative; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); }
+      .matrix-row .qslot { border-left: 1px solid var(--slate-100); position: relative; }
+      .matrix-row .qslot:first-child { border-left: none; }
+      .matrix-row .phase-tag {
+        position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+        font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+        letter-spacing: 0.1em; text-transform: uppercase;
+      }
+      .matrix-row .phase-tag.pre { color: var(--slate-500); }
+      .matrix-row .phase-tag.p1 { color: var(--slate-600); }
+      .matrix-row .phase-tag.p2 { color: var(--cyan-600); }
+      .matrix-row .phase-tag.p3 { color: var(--brand-700); }
+      .matrix-row .phase-tag.filed { color: var(--violet-600); }
+      .matrix-row .phase-tag.approved { color: var(--amber-700); }
+
+      .matrix-mark {
+        position: absolute; top: 50%; transform: translate(-50%, -50%);
+        z-index: 2;
+      }
+
+      /* ------- Variant header (for A/B comparison within a lens) ------- */
+      .variant-header {
+        display: flex; align-items: baseline; gap: 14px;
+        margin: 22px 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .variant-header .v-code {
+        font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+        color: white; background: var(--slate-900);
+        padding: 3px 8px; letter-spacing: 0.14em;
+      }
+      .variant-header .v-code.recommended { background: var(--brand-700); }
+      .variant-header .v-title { font-size: 14px; font-weight: 600; color: var(--slate-900); letter-spacing: -0.005em; }
+      .variant-header .v-sub { font-size: 12.5px; color: var(--slate-500); margin-left: auto; }
+
+      /* ============================================================
+         COMPANY VIEW -- Variant B: same timeline, company-scope defaults
+         ============================================================ */
+      .cmp-frame { padding: 22px 22px 18px 22px; }
+      .cmp-axis {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        margin-bottom: 8px;
+      }
+      .cmp-axis .axis-label { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; align-self: end; padding-bottom: 4px; }
+      .cmp-axis .axis-track {
+        position: relative; height: 28px;
+        border-bottom: 1px solid var(--slate-300);
+      }
+      .cmp-axis .qtick {
+        position: absolute; bottom: 0;
+        width: 1px; background: var(--slate-300);
+        height: 6px;
+      }
+      .cmp-axis .qlabel {
+        position: absolute; bottom: 8px; transform: translateX(0);
+        font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+        color: var(--slate-700); letter-spacing: 0.08em;
+        padding-left: 6px;
+      }
+      .cmp-axis .qlabel .year { color: var(--slate-400); font-weight: 500; font-size: 9.5px; display: block; line-height: 1; }
+
+      .cmp-row {
+        display: grid; grid-template-columns: 200px 1fr;
+        align-items: center;
+        height: 40px;
+        border-top: 1px solid var(--slate-100);
+      }
+      .cmp-row:first-of-type { border-top: 1px solid var(--slate-200); }
+      .cmp-row:hover { background: var(--slate-50); }
+      .cmp-row .row-label { padding-right: 14px; display: flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+      .cmp-row .row-label .name { font-size: 12.5px; font-weight: 600; color: var(--slate-900); }
+      .cmp-row .row-label .gen { font-family: var(--font-mono); font-size: 10px; color: var(--slate-500); letter-spacing: 0.06em; }
+      .cmp-row .row-track { position: relative; height: 100%; }
+
+      /* Heavier quarter gridlines (the "quantization cue" without losing precise dates) */
+      .cmp-row .qgrid {
+        position: absolute; top: 0; bottom: 0;
+        width: 1px; background: var(--slate-200);
+        z-index: 0;
+      }
+      .cmp-row .qgrid.minor { background: var(--slate-100); }
+
+      /* Phase underline at bottom of row -- de-emphasized phase indication */
+      .cmp-row .phase-underline {
+        position: absolute; left: 0; right: 0;
+        bottom: 6px;
+        height: 2px;
+      }
+      .cmp-row .phase-underline.approved { background: var(--amber-500); opacity: 0.45; }
+      .cmp-row .phase-underline.p3 { background: var(--brand-600); opacity: 0.45; }
+      .cmp-row .phase-underline.p2 { background: var(--cyan-500); opacity: 0.45; }
+
+      .cmp-row .cmp-mark {
+        position: absolute; top: 50%; transform: translate(-50%, -50%);
+        z-index: 2;
+      }
+
+      .cmp-now-line {
+        position: absolute; top: 0; bottom: 0;
+        width: 1px; background: var(--red-600); opacity: 0.5;
+        z-index: 1;
+      }
+
+      /* ------- Company side panel: events */
+      .ev-corp-section { padding: 12px 22px 8px; border-bottom: 1px solid var(--slate-200); }
+      .ev-corp-section:last-child { border-bottom: none; }
+      .ev-corp-section .sec-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+      .ev-corp-row { display: grid; grid-template-columns: 64px 1fr; gap: 8px; padding: 6px 0; font-size: 12px; line-height: 1.4; }
+      .ev-corp-row .d { font-family: var(--font-mono); font-size: 10.5px; color: var(--slate-500); letter-spacing: 0.06em; }
+      .ev-corp-row .t { color: var(--slate-800); }
+
+      .heatmap { padding: 14px 22px 18px; }
+      .heatmap .hm-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+      .heatmap .hm-grid {
+        display: grid;
+        grid-template-columns: 70px repeat(6, 1fr);
+        gap: 2px;
+        font-family: var(--font-mono); font-size: 9.5px;
+      }
+      .heatmap .hm-grid .hm-head { color: var(--slate-500); font-weight: 600; padding: 2px 0; text-align: center; }
+      .heatmap .hm-grid .hm-row-label { color: var(--slate-700); font-weight: 600; padding: 4px 6px; display: flex; align-items: center; }
+      .heatmap .hm-grid .hm-cell { height: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 700; }
+
+      /* ------- Legend ------- */
+      .legend-bar {
+        background: white; border: 1px solid var(--slate-200);
+        padding: 14px 20px; margin-bottom: 28px;
+        display: flex; gap: 22px; align-items: center; flex-wrap: wrap;
+      }
+      .legend-bar .legend-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; }
+      .legend-bar .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--slate-700); }
+      .legend-bar .legend-item .glyph { display: inline-flex; }
+
+      /* ------- Footnote / framing block ------- */
+      .frame-note {
+        margin-top: 14px; padding: 16px 20px;
+        border-left: 2px solid var(--brand-600); background: white;
+        font-size: 13px; color: var(--slate-700); line-height: 1.6;
+      }
+      .frame-note strong { color: var(--slate-900); font-weight: 600; }
+      .frame-note .q { font-style: italic; color: var(--brand-700); }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+    <div class="page">
+      <div class="head">
+        <div class="label">Sketch -- Catalyst & event lenses</div>
+        <h1>Same data, three lenses: trial / product / company.</h1>
+        <p>
+          Catalysts and events are trial-scoped in the data model. This sketch tests whether
+          the same underlying rows can earn their place on three different page types by changing
+          the visual idiom and the question each page answers, not by re-cutting the data.
+        </p>
+        <p>
+          Reference dataset: <strong>Eli Lilly / Donanemab (Kisunla) / TRAILBLAZER-ALZ 2</strong>.
+          The trial view is a dense chronological table. The product view is a multi-trial development
+          arc with catalysts overlaid on phase bars. The company view is a portfolio matrix where
+          each product is a row and catalysts are dots. Same rows, three frames.
+        </p>
+        <div class="meta">
+          <span>Approach</span><span class="dot"></span>
+          <span>Option 2 -- MECE by framing, not by data</span>
+          <span class="dot"></span>
+          <span>Today is 2026-05-10</span>
+        </div>
+      </div>
+
+      <nav class="lens-nav" aria-label="Lens sections">
+        <a href="#trial">
+          <span class="step">Lens 1 / Trial</span>
+          <span class="title">TRAILBLAZER-ALZ 2</span>
+          <span class="question">"What's happening with this trial?"</span>
+        </a>
+        <a href="#product">
+          <span class="step">Lens 2 / Product</span>
+          <span class="title">Donanemab / Kisunla</span>
+          <span class="question">"Where is this asset in its arc?"</span>
+        </a>
+        <a href="#company">
+          <span class="step">Lens 3 / Company</span>
+          <span class="title">Eli Lilly</span>
+          <span class="question">"What's coming up across the portfolio?"</span>
+        </a>
+      </nav>
+
+      <div class="legend-bar">
+        <span class="legend-title">Marker legend</span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" /></svg></span>
+          Data readout
+        </span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#475569" /></svg></span>
+          Trial milestone
+        </span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><polygon points="6,1 11,6 6,11 1,6" fill="#f97316" /></svg></span>
+          Regulatory
+        </span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><polygon points="2,2 10,2 10,8 6,11 2,8" fill="#3b82f6" /></svg></span>
+          Approval
+        </span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><polygon points="6,1 11,11 1,11" fill="#7c3aed" /></svg></span>
+          Launch
+        </span>
+        <span class="legend-item">
+          <span class="glyph"><svg width="12" height="12"><rect x="1" y="1" width="10" height="10" fill="#d97706" /></svg></span>
+          Loss of exclusivity
+        </span>
+      </div>
+
+      <!-- ============================================================
+           LENS 1 -- TRIAL VIEW
+           ============================================================ -->
+      <section class="lens" id="trial">
+        <header class="lens-header">
+          <div>
+            <div class="crumb">
+              <span>Eli Lilly</span><span class="sep">/</span>
+              <span>Donanemab</span><span class="sep">/</span>
+              <span class="self">TRAILBLAZER-ALZ 2</span>
+            </div>
+            <h2>TRAILBLAZER-ALZ 2 (NCT04437511)</h2>
+            <div class="sub">
+              Phase 3 pivotal trial of donanemab vs. placebo in early symptomatic Alzheimer's disease.
+              1,736 participants, MMRM model, primary endpoint iADRS change at week 76. Completed.
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge b-phase3">Phase 3</span>
+            <span class="badge b-active">Completed</span>
+            <span class="badge">N=1,736</span>
+          </div>
+        </header>
+
+        <div class="lens-frame">
+          <div class="main">
+            <div class="panel-head">
+              <span>Catalysts -- chronological</span>
+              <span class="count">14 total / 11 confirmed / 3 projected</span>
+            </div>
+            <table class="cat-table">
+              <thead>
+                <tr>
+                  <th class="col-date">Date</th>
+                  <th class="col-mark"></th>
+                  <th class="col-type">Type</th>
+                  <th class="col-title">Catalyst</th>
+                  <th class="col-status">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-section"><td colspan="5">2020 -- 2022 / setup & interim</td></tr>
+                <tr>
+                  <td class="col-date">2020-06-19</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><rect x="0" y="6" width="14" height="2" fill="#94a3b8" /></svg></span></td>
+                  <td class="col-type">Trial start</td>
+                  <td class="col-title">First patient enrolled</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2021-09-12</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#475569" /></svg></span></td>
+                  <td class="col-type">DMC review</td>
+                  <td class="col-title">First independent data monitoring committee review</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2022-04-15</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#4ade80" /></svg></span></td>
+                  <td class="col-type">Interim data</td>
+                  <td class="col-title">Pre-specified interim ARIA safety analysis (no halt)</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2022-11-30</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#475569" /></svg></span></td>
+                  <td class="col-type">PCD</td>
+                  <td class="col-title">Primary completion / database lock</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+
+                <tr class="row-section"><td colspan="5">2023 / data readouts</td></tr>
+                <tr>
+                  <td class="col-date">2023-01-04</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#4ade80" /></svg></span></td>
+                  <td class="col-type">Topline data</td>
+                  <td class="col-title">Primary endpoint hit: 35% iADRS slowing vs. placebo (p&lt;0.001)</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2023-07-18</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#16a34a" /></svg></span></td>
+                  <td class="col-type">Full data</td>
+                  <td class="col-title">AAIC oral + simultaneous JAMA publication</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+
+                <tr class="row-section"><td colspan="5">2023 -- 2024 / regulatory & approval</td></tr>
+                <tr>
+                  <td class="col-date">2023-12-15</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><polygon points="7,1 13,7 7,13 1,7" fill="#f97316" /></svg></span></td>
+                  <td class="col-type">Submission</td>
+                  <td class="col-title">BLA submitted to FDA</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2024-01-19</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><polygon points="7,1 13,7 7,13 1,7" fill="#f97316" /></svg></span></td>
+                  <td class="col-type">Acceptance</td>
+                  <td class="col-title">FDA accepts BLA, grants priority review (PDUFA Q2 2024)</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2024-06-10</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><polygon points="7,1 13,7 7,13 1,7" fill="#f97316" /></svg></span></td>
+                  <td class="col-type">AdCom</td>
+                  <td class="col-title">FDA PCNS Advisory Committee: 10-0 efficacy, 11-0 risk/benefit</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2024-07-02</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><polygon points="2,2 12,2 12,9 7,13 2,9" fill="#3b82f6" /></svg></span></td>
+                  <td class="col-type">Approval</td>
+                  <td class="col-title">FDA approves as Kisunla (donanemab-azbt) -- first once-monthly</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2024-09-15</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><polygon points="7,1 13,13 1,13" fill="#7c3aed" /></svg></span></td>
+                  <td class="col-type">Launch</td>
+                  <td class="col-title">US commercial launch; WAC $32,000 / yr</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+
+                <tr class="row-section"><td colspan="5">2025+ / OLE & post-marketing</td></tr>
+                <tr>
+                  <td class="col-date">2025-07-30</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#16a34a" /></svg></span></td>
+                  <td class="col-type">Full data</td>
+                  <td class="col-title">Long-term OLE data presented at CTAD 2025 (3-yr)</td>
+                  <td class="col-status"><span class="pill confirmed">Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2026-08-15</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#4ade80" /></svg></span></td>
+                  <td class="col-type">Interim data</td>
+                  <td class="col-title">Post-marketing pharmacovigilance cohort -- 18-mo ARIA update</td>
+                  <td class="col-status"><span class="pill projected">Projected</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2027-Q2</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#4ade80" /></svg></span></td>
+                  <td class="col-type">Interim data</td>
+                  <td class="col-title">Real-world evidence cohort interim (n~6,000)</td>
+                  <td class="col-status"><span class="pill projected">Projected</span></td>
+                </tr>
+                <tr>
+                  <td class="col-date">2028-Q4</td>
+                  <td class="col-mark"><span class="mk"><svg width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="#16a34a" /></svg></span></td>
+                  <td class="col-type">Full data</td>
+                  <td class="col-title">Long-term OLE final readout (5-yr)</td>
+                  <td class="col-status"><span class="pill projected">Projected</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <aside class="side">
+            <div class="panel-head">
+              <span>Events for this trial</span>
+              <span class="count">most recent 8</span>
+            </div>
+            <div class="ev-feed">
+              <div class="ev-item">
+                <span class="ev-date">2025-07-30</span>
+                <div>
+                  <div class="ev-kind">Abstract</div>
+                  <div class="ev-title">CTAD 2025: 3-yr OLE shows durable iADRS slowing in completers; no new ARIA signals.</div>
+                  <div class="ev-src">Source: Alzheimer's & Dementia (CTAD program)</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2024-09-15</span>
+                <div>
+                  <div class="ev-kind">Press release</div>
+                  <div class="ev-title">Lilly announces US launch of Kisunla and patient assistance program details.</div>
+                  <div class="ev-src">Source: Eli Lilly investor relations</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2024-07-03</span>
+                <div>
+                  <div class="ev-kind">Sell-side note</div>
+                  <div class="ev-title">Morgan Stanley raises peak donanemab estimate to $4.5B by 2030 post-approval.</div>
+                  <div class="ev-src">Source: MS Pharma research</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2024-07-02</span>
+                <div>
+                  <div class="ev-kind">FDA action</div>
+                  <div class="ev-title">FDA approves Kisunla; label includes ARIA monitoring schedule and APOE4 genotyping recommendation.</div>
+                  <div class="ev-src">Source: FDA approval letter</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2024-06-10</span>
+                <div>
+                  <div class="ev-kind">AdCom</div>
+                  <div class="ev-title">PCNS AdCom transcript: panel unanimously supports efficacy; risk-benefit 11-0 favorable.</div>
+                  <div class="ev-src">Source: FDA transcript</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2023-07-20</span>
+                <div>
+                  <div class="ev-kind">Publication</div>
+                  <div class="ev-title">JAMA publishes TRAILBLAZER-ALZ 2 full results; editorial notes amyloid-clearance correlation.</div>
+                  <div class="ev-src">Source: JAMA (Sims et al.)</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2023-01-05</span>
+                <div>
+                  <div class="ev-kind">Sell-side note</div>
+                  <div class="ev-title">Evercore upgrades LLY to Outperform on topline; cites 35% slowing as best-in-class signal.</div>
+                  <div class="ev-src">Source: Evercore ISI</div>
+                </div>
+              </div>
+              <div class="ev-item">
+                <span class="ev-date">2023-01-04</span>
+                <div>
+                  <div class="ev-kind">Press release</div>
+                  <div class="ev-title">Lilly: TRAILBLAZER-ALZ 2 hits primary endpoint with 35% iADRS slowing.</div>
+                  <div class="ev-src">Source: Eli Lilly</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="frame-note">
+          <strong>Lens 1 -- Trial:</strong> answers <span class="q">"what's happening with this trial?"</span>
+          Every catalyst is listed in full with type, title, status. Events are a parallel feed of
+          third-party signals (press, sell-side, AdCom transcripts, publications). High detail, low
+          aggregation. This is what today's trial detail page already does, made slightly more honest
+          about events.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           LENS 2 -- PRODUCT VIEW
+           ============================================================ -->
+      <section class="lens" id="product">
+        <header class="lens-header">
+          <div>
+            <div class="crumb">
+              <span>Eli Lilly</span><span class="sep">/</span>
+              <span class="self">Donanemab (Kisunla)</span>
+            </div>
+            <h2>Donanemab / Kisunla</h2>
+            <div class="sub">
+              Anti-amyloid mAb targeting N3pG-truncated amyloid beta. Indicated for early symptomatic
+              Alzheimer's disease. Six trials across the program; FDA-approved as Kisunla in July 2024.
+              Three trials still active, including a primary-prevention Ph3.
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge b-approved">Approved</span>
+            <span class="badge">Anti-amyloid mAb</span>
+            <span class="badge">6 trials</span>
+          </div>
+        </header>
+
+        <div class="lens-frame">
+          <div class="main">
+            <div class="panel-head">
+              <span>Development arc -- six trials, catalysts overlaid</span>
+              <span class="count">2020 -- 2028</span>
+            </div>
+            <div class="arc-frame">
+              <div class="arc-axis">
+                <div class="axis-label">Trial</div>
+                <div class="axis-ticks">
+                  <span class="tick" style="left: 0%;"><span class="bar"></span>2020</span>
+                  <span class="tick" style="left: 12.5%;"><span class="bar"></span>2021</span>
+                  <span class="tick" style="left: 25%;"><span class="bar"></span>2022</span>
+                  <span class="tick" style="left: 37.5%;"><span class="bar"></span>2023</span>
+                  <span class="tick" style="left: 50%;"><span class="bar"></span>2024</span>
+                  <span class="tick" style="left: 62.5%;"><span class="bar"></span>2025</span>
+                  <span class="tick" style="left: 75%;"><span class="bar"></span>2026</span>
+                  <span class="tick" style="left: 87.5%;"><span class="bar"></span>2027</span>
+                  <span class="tick" style="left: 100%;"><span class="bar"></span>2028</span>
+                </div>
+              </div>
+
+              <!-- TRAILBLAZER-ALZ 1 (Ph2 PoC) -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-ALZ 1<span class="sublabel">NCT03367403 / Ph2 PoC</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-2" style="left: 0%; width: 18%;"><span class="phase-label">P2</span></div>
+                  <div class="tick-marker" style="left: 14%;" title="Ph2 topline (Mar 2021)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                </div>
+              </div>
+
+              <!-- TRAILBLAZER-ALZ 2 (Ph3 pivotal) -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-ALZ 2<span class="sublabel">NCT04437511 / Ph3 pivotal</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-3" style="left: 5%; width: 32%;"><span class="phase-label">P3</span></div>
+                  <div class="phase-bar ph-filed" style="left: 37%; width: 6%;"><span class="phase-label">F</span></div>
+                  <div class="phase-bar ph-approved" style="left: 43%; width: 57%;"><span class="phase-label">APPROVED</span></div>
+                  <div class="tick-marker" style="left: 31%;" title="Topline (Jan 2023)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 36%;" title="AAIC full data (Jul 2023)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 41%;" title="BLA submission (Dec 2023)"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 47%;" title="AdCom (Jun 2024)"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 49.5%;" title="FDA approval (Jul 2024)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 52.5%;" title="US launch (Sep 2024)"><svg width="12" height="12"><polygon points="6,0.5 11.5,11.5 0.5,11.5" fill="#7c3aed" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 63.5%;" title="CTAD 2025 OLE (Jul 2025)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 77%;" title="Post-marketing interim (Aug 2026, projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" stroke-dasharray="2 1" opacity="0.7" /></svg></div>
+                  <div class="tick-marker" style="left: 91%;" title="RWE interim (Q2 2027, projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- TRAILBLAZER-ALZ 3 (Ph3 prevention) -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-ALZ 3<span class="sublabel">NCT05026866 / Ph3 prevention</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-3" style="left: 22%; width: 78%;"><span class="phase-label">P3 ACTIVE</span></div>
+                  <div class="tick-marker" style="left: 88%;" title="Topline readout (Q3 2027, projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- TRAILBLAZER-ALZ 4 (Head-to-head) -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-ALZ 4<span class="sublabel">NCT05108922 / Ph3 H2H vs. aducanumab</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-3" style="left: 28%; width: 28%;"><span class="phase-label">P3</span></div>
+                  <div class="tick-marker" style="left: 52%;" title="6-mo amyloid clearance readout (Jul 2024)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                </div>
+              </div>
+
+              <!-- TRAILBLAZER-ALZ 5 (Japan / China Ph3) -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-ALZ 5<span class="sublabel">NCT05108922-JP / Ph3 ex-US</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-3" style="left: 56%; width: 35%;"><span class="phase-label">P3 ACTIVE</span></div>
+                  <div class="tick-marker" style="left: 87%;" title="JP readout (Q1 2027, projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- OLE -->
+              <div class="arc-row">
+                <div class="row-label">TRAILBLAZER-EXT<span class="sublabel">OLE / safety extension</span></div>
+                <div class="row-track">
+                  <div class="arc-grid" style="left: 12.5%;"></div>
+                  <div class="arc-grid" style="left: 25%;"></div>
+                  <div class="arc-grid" style="left: 37.5%;"></div>
+                  <div class="arc-grid" style="left: 50%;"></div>
+                  <div class="arc-grid" style="left: 62.5%;"></div>
+                  <div class="arc-grid" style="left: 75%;"></div>
+                  <div class="arc-grid" style="left: 87.5%;"></div>
+                  <div class="phase-bar ph-3" style="left: 38%; width: 62%;"><span class="phase-label">OLE</span></div>
+                  <div class="tick-marker" style="left: 63%;" title="3-yr OLE (Jul 2025)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="tick-marker" style="left: 98%;" title="5-yr OLE final (Q4 2028, projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- NOW line at 2026-05 -> 70.4% across 2020-2028 (8 years span) -->
+              <div style="display: grid; grid-template-columns: 160px 1fr; position: relative; height: 0; pointer-events: none;">
+                <div></div>
+                <div style="position: relative; height: 0;">
+                  <div class="arc-now-line" style="left: 70.4%; top: -370px; height: 370px;">
+                    <span class="now-label">NOW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="side">
+            <div class="panel-head">
+              <span>Events by type</span>
+              <span class="count">all trials, last 24 mo</span>
+            </div>
+            <div class="ev-type-list">
+              <div class="ev-type-row">
+                <span class="et-name">Press release</span>
+                <span class="et-count">9</span>
+                <div class="et-recent">Most recent: launch announcement (Sep 2024); CTAD 2025 OLE comms.</div>
+                <div class="et-bar"><span class="fill" style="width: 100%;"></span></div>
+              </div>
+              <div class="ev-type-row">
+                <span class="et-name">Sell-side note</span>
+                <span class="et-count">14</span>
+                <div class="et-recent">Most recent: Stifel reiterates Buy on slower-than-expected uptake (Mar 2026).</div>
+                <div class="et-bar"><span class="fill" style="width: 88%;"></span></div>
+              </div>
+              <div class="ev-type-row">
+                <span class="et-name">Publication</span>
+                <span class="et-count">6</span>
+                <div class="et-recent">JAMA pivotal (2023); CTAD 2025 OLE; Alz & Dem position paper.</div>
+                <div class="et-bar"><span class="fill" style="width: 50%;"></span></div>
+              </div>
+              <div class="ev-type-row">
+                <span class="et-name">Conference abstract</span>
+                <span class="et-count">11</span>
+                <div class="et-recent">AAIC 2025, CTAD 2025, ADPD 2026 (pending).</div>
+                <div class="et-bar"><span class="fill" style="width: 72%;"></span></div>
+              </div>
+              <div class="ev-type-row">
+                <span class="et-name">FDA action</span>
+                <span class="et-count">3</span>
+                <div class="et-recent">BLA accept (Jan 2024); AdCom (Jun 2024); approval (Jul 2024).</div>
+                <div class="et-bar"><span class="fill" style="width: 30%;"></span></div>
+              </div>
+              <div class="ev-type-row">
+                <span class="et-name">Label expansion</span>
+                <span class="et-count">1</span>
+                <div class="et-recent">Pending sNDA for early-stage label expansion (filed Q1 2026).</div>
+                <div class="et-bar"><span class="fill" style="width: 12%;"></span></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="frame-note">
+          <strong>Lens 2 -- Product:</strong> answers <span class="q">"where is this asset in its arc?"</span>
+          Every trial becomes a row; phase bars carry the lifecycle; catalysts are dots placed where they
+          occurred in time. The eye picks up the program-level shape (Ph2 PoC, pivotal, approval, prevention
+          extension) in one pass. Events stop being a feed and become a histogram by type, because at the
+          product level the user wants pattern, not transcript.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           LENS 3 -- COMPANY VIEW
+           ============================================================ -->
+      <section class="lens" id="company">
+        <header class="lens-header">
+          <div>
+            <div class="crumb">
+              <span class="self">Eli Lilly</span>
+            </div>
+            <h2>Eli Lilly &amp; Co.</h2>
+            <div class="sub">
+              Cardiometabolic, neurology, oncology, immunology. 8 commercial-stage or late-stage
+              assets shown. Two variants below for the same data and the same job: a quarter-bin
+              portfolio matrix (A) and the existing timeline component re-skinned for company scope (B).
+            </div>
+          </div>
+          <div class="badges">
+            <span class="badge b-ticker">NYSE: LLY</span>
+            <span class="badge">8 assets</span>
+            <span class="badge">4 marketed</span>
+          </div>
+        </header>
+
+        <div class="variant-header">
+          <span class="v-code">Variant A</span>
+          <span class="v-title">Portfolio matrix (new component, quarter-binned)</span>
+          <span class="v-sub">Bloomberg / Evaluate Pharma idiom -- quarters as discrete columns</span>
+        </div>
+
+        <div class="lens-frame">
+          <div class="main">
+            <div class="panel-head">
+              <span>Portfolio matrix -- next 8 quarters</span>
+              <span class="count">2026-Q2 -- 2028-Q1</span>
+            </div>
+            <div class="matrix-frame">
+              <div class="matrix-axis">
+                <div class="axis-label">Asset</div>
+                <div class="axis-quarters">
+                  <div class="qcell"><span class="year">2026</span>Q2</div>
+                  <div class="qcell"><span class="year">2026</span>Q3</div>
+                  <div class="qcell"><span class="year">2026</span>Q4</div>
+                  <div class="qcell"><span class="year">2027</span>Q1</div>
+                  <div class="qcell"><span class="year">2027</span>Q2</div>
+                  <div class="qcell"><span class="year">2027</span>Q3</div>
+                  <div class="qcell"><span class="year">2027</span>Q4</div>
+                  <div class="qcell"><span class="year">2028</span>Q1</div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Tirzepatide</span><span class="gen">Mounjaro / Zepbound</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag approved">APR</span></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 35%;" title="SURMOUNT-MMO CV outcomes readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="sNDA pediatric label expansion"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 70%;" title="Pediatric approval (projected)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Donanemab</span><span class="gen">Kisunla</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag approved">APR</span></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 60%;" title="Post-marketing PV interim"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="TBA-ALZ 5 JP readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 30%;" title="RWE interim"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 65%;" title="TBA-ALZ 3 prevention readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Lebrikizumab</span><span class="gen">Ebglyss</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag approved">APR</span></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 40%;" title="Adolescent label expansion sNDA"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 55%;" title="Pediatric approval (projected)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Pirtobrutinib</span><span class="gen">Jaypirca</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag approved">APR</span></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 45%;" title="BRUIN CLL-321 readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="1L CLL sBLA submission"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 60%;" title="1L CLL approval (projected)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Orforglipron</span><span class="gen">oral GLP-1</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag p3">P3</span></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 40%;" title="ACHIEVE-1 T2D topline"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 55%;" title="ATTAIN-1 obesity topline"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 30%;" title="NDA submission (projected)"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 45%;" title="Approval (projected)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Retatrutide</span><span class="gen">triple agonist</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag p3">P3</span></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 35%;" title="TRIUMPH-1 obesity interim"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 60%;" title="TRIUMPH-1 topline (projected)"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="NDA submission (projected)"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Imlunestrant</span><span class="gen">oral SERD</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag p3">P3</span></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="EMBER-3 readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 45%;" title="NDA filing"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 35%;" title="ODAC AdCom (projected)"><svg width="12" height="12"><polygon points="6,0.5 11.5,6 6,11.5 0.5,6" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 55%;" title="Approval (projected)"><svg width="12" height="12"><polygon points="1,1 11,1 11,8 6,11.5 1,8" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="matrix-row">
+                <div class="row-label"><span class="name">Lepodisiran</span><span class="gen">Lp(a) siRNA</span></div>
+                <div class="row-track">
+                  <div class="qslot"><span class="phase-tag p2">P2</span></div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="ALPACA Ph2 readout"><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot">
+                    <span class="matrix-mark" style="left: 50%;" title="Ph3 start"><svg width="12" height="12"><rect x="0" y="5" width="12" height="2" fill="#94a3b8" /></svg></span>
+                  </div>
+                  <div class="qslot"></div>
+                  <div class="qslot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="side">
+            <div class="ev-corp-section">
+              <div class="sec-title">Corporate calendar</div>
+              <div class="ev-corp-row"><span class="d">2026-05-28</span><span class="t">Annual shareholder meeting</span></div>
+              <div class="ev-corp-row"><span class="d">2026-06-08</span><span class="t">ADA scientific sessions presentation</span></div>
+              <div class="ev-corp-row"><span class="d">2026-08-06</span><span class="t">Q2 2026 earnings</span></div>
+              <div class="ev-corp-row"><span class="d">2026-09-12</span><span class="t">ESMO oncology updates (pirtobrutinib, imlunestrant)</span></div>
+              <div class="ev-corp-row"><span class="d">2026-12-10</span><span class="t">R&amp;D day -- pipeline strategy</span></div>
+              <div class="ev-corp-row"><span class="d">2027-01-12</span><span class="t">JP Morgan Healthcare Conference</span></div>
+            </div>
+            <div class="heatmap">
+              <div class="hm-title">Event volume (last 6 mo) by product</div>
+              <div class="hm-grid">
+                <div></div>
+                <div class="hm-head">Dec</div>
+                <div class="hm-head">Jan</div>
+                <div class="hm-head">Feb</div>
+                <div class="hm-head">Mar</div>
+                <div class="hm-head">Apr</div>
+                <div class="hm-head">May</div>
+
+                <div class="hm-row-label">Tirzepatide</div>
+                <div class="hm-cell" style="background: #115e59;">22</div>
+                <div class="hm-cell" style="background: #134e4a;">31</div>
+                <div class="hm-cell" style="background: #115e59;">19</div>
+                <div class="hm-cell" style="background: #0f766e;">14</div>
+                <div class="hm-cell" style="background: #115e59;">21</div>
+                <div class="hm-cell" style="background: #0d9488;">11</div>
+
+                <div class="hm-row-label">Donanemab</div>
+                <div class="hm-cell" style="background: #0f766e;">14</div>
+                <div class="hm-cell" style="background: #115e59;">18</div>
+                <div class="hm-cell" style="background: #0d9488;">9</div>
+                <div class="hm-cell" style="background: #14b8a6;">7</div>
+                <div class="hm-cell" style="background: #0d9488;">10</div>
+                <div class="hm-cell" style="background: #14b8a6;">6</div>
+
+                <div class="hm-row-label">Orforglipron</div>
+                <div class="hm-cell" style="background: #0d9488;">8</div>
+                <div class="hm-cell" style="background: #0f766e;">13</div>
+                <div class="hm-cell" style="background: #115e59;">17</div>
+                <div class="hm-cell" style="background: #0d9488;">11</div>
+                <div class="hm-cell" style="background: #0f766e;">15</div>
+                <div class="hm-cell" style="background: #115e59;">22</div>
+
+                <div class="hm-row-label">Retatrutide</div>
+                <div class="hm-cell" style="background: #14b8a6;">5</div>
+                <div class="hm-cell" style="background: #0d9488;">8</div>
+                <div class="hm-cell" style="background: #14b8a6;">6</div>
+                <div class="hm-cell" style="background: #0d9488;">9</div>
+                <div class="hm-cell" style="background: #0f766e;">12</div>
+                <div class="hm-cell" style="background: #0d9488;">10</div>
+
+                <div class="hm-row-label">Imlunestrant</div>
+                <div class="hm-cell" style="background: #5eead4; color: #115e59;">3</div>
+                <div class="hm-cell" style="background: #14b8a6;">5</div>
+                <div class="hm-cell" style="background: #5eead4; color: #115e59;">2</div>
+                <div class="hm-cell" style="background: #14b8a6;">6</div>
+                <div class="hm-cell" style="background: #0d9488;">8</div>
+                <div class="hm-cell" style="background: #5eead4; color: #115e59;">4</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="variant-header">
+          <span class="v-code recommended">Variant B / recommended</span>
+          <span class="v-title">Same timeline component, company-scope defaults</span>
+          <span class="v-sub">Reuses landscape timeline-view -- no new chart, just scope params</span>
+        </div>
+
+        <div class="lens-frame">
+          <div class="main">
+            <div class="panel-head">
+              <span>Pipeline timeline -- products as rows, forward 8 quarters</span>
+              <span class="count">2026-Q2 -- 2028-Q1</span>
+            </div>
+            <div class="cmp-frame">
+              <div class="cmp-axis">
+                <div class="axis-label">Asset</div>
+                <div class="axis-track">
+                  <div class="qtick" style="left: 0%;"></div>
+                  <div class="qtick" style="left: 12.5%;"></div>
+                  <div class="qtick" style="left: 25%;"></div>
+                  <div class="qtick" style="left: 37.5%; height: 12px; background: var(--slate-500);"></div>
+                  <div class="qtick" style="left: 50%;"></div>
+                  <div class="qtick" style="left: 62.5%;"></div>
+                  <div class="qtick" style="left: 75%;"></div>
+                  <div class="qtick" style="left: 87.5%; height: 12px; background: var(--slate-500);"></div>
+                  <div class="qlabel" style="left: 0%;"><span class="year">2026</span>Q2</div>
+                  <div class="qlabel" style="left: 12.5%;"><span class="year">&nbsp;</span>Q3</div>
+                  <div class="qlabel" style="left: 25%;"><span class="year">&nbsp;</span>Q4</div>
+                  <div class="qlabel" style="left: 37.5%;"><span class="year">2027</span>Q1</div>
+                  <div class="qlabel" style="left: 50%;"><span class="year">&nbsp;</span>Q2</div>
+                  <div class="qlabel" style="left: 62.5%;"><span class="year">&nbsp;</span>Q3</div>
+                  <div class="qlabel" style="left: 75%;"><span class="year">&nbsp;</span>Q4</div>
+                  <div class="qlabel" style="left: 87.5%;"><span class="year">2028</span>Q1</div>
+                </div>
+              </div>
+
+              <!-- TIRZEPATIDE -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Tirzepatide</span><span class="gen">Mounjaro / Zepbound -- APR</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline approved"></div>
+                  <div class="cmp-mark" style="left: 19%;" title="SURMOUNT-MMO CV outcomes readout (Aug 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 27%;" title="Pediatric sNDA (Nov 2026)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 52%;" title="Pediatric approval (May 2027, projected)"><svg width="11" height="11"><polygon points="1,1 10.5,1 10.5,7 5.5,10.5 1,7" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- DONANEMAB -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Donanemab</span><span class="gen">Kisunla -- APR</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline approved"></div>
+                  <div class="cmp-mark" style="left: 19%;" title="Post-marketing PV interim (Aug 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 40%;" title="TRAILBLAZER-ALZ 5 JP readout (Feb 2027, projected)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 52%;" title="RWE interim (May 2027, projected)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 69%;" title="TRAILBLAZER-ALZ 3 prevention readout (Aug 2027, projected)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#16a34a" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- LEBRIKIZUMAB -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Lebrikizumab</span><span class="gen">Ebglyss -- APR</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline approved"></div>
+                  <div class="cmp-mark" style="left: 27%;" title="Adolescent label expansion sNDA (Nov 2026)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 52%;" title="Pediatric approval (May 2027, projected)"><svg width="11" height="11"><polygon points="1,1 10.5,1 10.5,7 5.5,10.5 1,7" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- PIRTOBRUTINIB -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Pirtobrutinib</span><span class="gen">Jaypirca -- APR</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline approved"></div>
+                  <div class="cmp-mark" style="left: 19%;" title="BRUIN CLL-321 readout (Aug 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 27%;" title="1L CLL sBLA submission (Nov 2026, projected)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 69%;" title="1L CLL approval (Aug 2027, projected)"><svg width="11" height="11"><polygon points="1,1 10.5,1 10.5,7 5.5,10.5 1,7" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- ORFORGLIPRON -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Orforglipron</span><span class="gen">oral GLP-1 -- P3</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline p3"></div>
+                  <div class="cmp-mark" style="left: 19%;" title="ACHIEVE-1 T2D topline (Aug 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 27%;" title="ATTAIN-1 obesity topline (Nov 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 40%;" title="NDA submission (Feb 2027, projected)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 69%;" title="Approval (Aug 2027, projected)"><svg width="11" height="11"><polygon points="1,1 10.5,1 10.5,7 5.5,10.5 1,7" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- RETATRUTIDE -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Retatrutide</span><span class="gen">triple agonist -- P3</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline p3"></div>
+                  <div class="cmp-mark" style="left: 27%;" title="TRIUMPH-1 obesity interim (Nov 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 52%;" title="TRIUMPH-1 topline (May 2027, projected)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 77%;" title="NDA submission (Nov 2027, projected)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- IMLUNESTRANT -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Imlunestrant</span><span class="gen">oral SERD -- P3</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline p3"></div>
+                  <div class="cmp-mark" style="left: 19%;" title="EMBER-3 readout (Aug 2026)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#16a34a" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 40%;" title="NDA filing (Feb 2027)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" /></svg></div>
+                  <div class="cmp-mark" style="left: 69%;" title="ODAC AdCom (Aug 2027, projected)"><svg width="11" height="11"><polygon points="5.5,0.5 10.5,5.5 5.5,10.5 0.5,5.5" fill="#f97316" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 77%;" title="Approval (Nov 2027, projected)"><svg width="11" height="11"><polygon points="1,1 10.5,1 10.5,7 5.5,10.5 1,7" fill="#3b82f6" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                </div>
+              </div>
+
+              <!-- LEPODISIRAN -->
+              <div class="cmp-row">
+                <div class="row-label"><span class="name">Lepodisiran</span><span class="gen">Lp(a) siRNA -- P2</span></div>
+                <div class="row-track">
+                  <div class="qgrid minor" style="left: 12.5%;"></div>
+                  <div class="qgrid minor" style="left: 25%;"></div>
+                  <div class="qgrid" style="left: 37.5%;"></div>
+                  <div class="qgrid minor" style="left: 50%;"></div>
+                  <div class="qgrid minor" style="left: 62.5%;"></div>
+                  <div class="qgrid minor" style="left: 75%;"></div>
+                  <div class="qgrid" style="left: 87.5%;"></div>
+                  <div class="phase-underline p2"></div>
+                  <div class="cmp-mark" style="left: 40%;" title="ALPACA Ph2 readout (Feb 2027, projected)"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" fill="#4ade80" stroke="white" stroke-width="1" opacity="0.7" /></svg></div>
+                  <div class="cmp-mark" style="left: 69%;" title="Ph3 start (Aug 2027, projected)"><svg width="11" height="11"><rect x="0" y="4.5" width="11" height="2" fill="#94a3b8" /></svg></div>
+                </div>
+              </div>
+
+              <!-- NOW line -->
+              <div style="display: grid; grid-template-columns: 200px 1fr; position: relative; height: 0; pointer-events: none;">
+                <div></div>
+                <div style="position: relative; height: 0;">
+                  <div class="cmp-now-line" style="left: 5%; top: -320px; height: 320px;">
+                    <span style="position: absolute; top: -16px; left: 4px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; color: var(--red-600); letter-spacing: 0.14em;">NOW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="side">
+            <div class="ev-corp-section">
+              <div class="sec-title">What changes vs. Variant A</div>
+              <div style="font-size: 12.5px; color: var(--slate-700); line-height: 1.55; padding: 4px 0;">
+                <ul style="padding-left: 18px; margin: 0;">
+                  <li style="margin-bottom: 6px;">Continuous time, not quarter bins. Aug and Nov sit at different x positions.</li>
+                  <li style="margin-bottom: 6px;">Quarter gridlines de-emphasized; year breaks (2027, 2028) carry weight.</li>
+                  <li style="margin-bottom: 6px;">Phase becomes a thin underline at row foot (still readable, no longer dominant).</li>
+                  <li style="margin-bottom: 6px;">Each product = one row. Trial-level detail collapses, click-to-expand.</li>
+                  <li>Same component as the product page. No second chart to build.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="ev-corp-section">
+              <div class="sec-title">Corporate calendar</div>
+              <div class="ev-corp-row"><span class="d">2026-05-28</span><span class="t">Annual shareholder meeting</span></div>
+              <div class="ev-corp-row"><span class="d">2026-06-08</span><span class="t">ADA scientific sessions</span></div>
+              <div class="ev-corp-row"><span class="d">2026-08-06</span><span class="t">Q2 2026 earnings</span></div>
+              <div class="ev-corp-row"><span class="d">2026-12-10</span><span class="t">R&amp;D day -- pipeline strategy</span></div>
+              <div class="ev-corp-row"><span class="d">2027-01-12</span><span class="t">JP Morgan Healthcare Conference</span></div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="frame-note">
+          <strong>Verdict on Lens 3 -- recommend Variant B.</strong>
+          The matrix (A) is the Evaluate Pharma / BioCentury idiom and reads as portfolio-native, but it
+          doesn't actually <em>add</em> information the timeline can't. It's a simplification: it loses
+          continuous date precision, drops trial granularity, hides phase progression. The timeline (B)
+          with company-scope defaults -- forward 8 quarters, products-as-rows, heavier year gridlines,
+          de-emphasized phase underlines -- recovers most of the matrix's skim-ability while reusing the
+          existing <code>timeline-view</code> component. One chart, three scopes (trial / product / company),
+          three default windows. That collapses the build, keeps the visual grammar consistent across
+          pages, and lets the same export / a11y / legend ride along everywhere.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           Trade-off & open questions
+           ============================================================ -->
+      <section style="margin-top: 60px;">
+        <div class="head" style="margin-bottom: 18px;">
+          <div class="label">Open calls</div>
+          <h1 style="font-size: 22px;">What's still unresolved</h1>
+        </div>
+        <div class="frame-note" style="border-left-color: var(--brand-600);">
+          <strong>1. Settled: one component, three scopes.</strong>
+          Lens 3 Variant B comparison confirms the existing <code>timeline-view</code> component carries
+          all three pages with scope params + per-page default time window. The matrix in Variant A reads
+          well but doesn't earn its build cost. Trial page keeps the existing "Markers" table as the
+          primary detail surface; timeline added above is optional and probably skipped.
+        </div>
+        <div class="frame-note" style="border-left-color: var(--amber-600); margin-top: 10px;">
+          <strong>2. Default time window per scope.</strong>
+          Trial: full history. Product: program span (first trial start through last projected catalyst).
+          Company: forward 8 quarters from today. All three should expose a window toggle, but the
+          defaults are the load-bearing decision because most users won't toggle.
+        </div>
+        <div class="frame-note" style="border-left-color: var(--amber-600); margin-top: 10px;">
+          <strong>3. Scope param shape on <code>timeline-view</code>.</strong>
+          Need to read the component to decide whether to add a <code>scope</code> input
+          (<code>'trial' | 'product' | 'company'</code>) plus <code>scopeId</code>, or whether to push
+          filtering into <code>LandscapeStateService</code> and have the component stay scope-agnostic.
+          Affects how product / company detail pages embed it.
+        </div>
+        <div class="frame-note" style="border-left-color: var(--amber-600); margin-top: 10px;">
+          <strong>4. Phase indication at company scope.</strong>
+          Variant B uses a thin underline at row foot (amber=approved, teal=P3, cyan=P2). De-emphasized
+          but still readable. Open call: do we render the underline as a real phase bar (with start/end
+          dates) so it's also informative at horizon edges, or keep it as a flat status indicator?
+        </div>
+        <div class="frame-note" style="border-left-color: var(--amber-600); margin-top: 10px;">
+          <strong>5. Events at company level.</strong>
+          Heatmap of event volume by product is the right idiom for "is the company busy?" but offers
+          no drill-through. Click a cell -> filtered activity feed scoped to product+month. Needs the
+          activity feed to accept those filters; check if it already does.
+        </div>
+        <div class="frame-note" style="border-left-color: var(--amber-600); margin-top: 10px;">
+          <strong>6. Placement on the existing pages.</strong>
+          Product detail: timeline goes above the existing intelligence block, since it's the new
+          primary read for the page. Company detail: timeline goes top-of-page, intelligence block
+          below. Trial detail: no change to ordering -- markers table stays where it is.
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
