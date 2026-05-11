@@ -45,6 +45,7 @@ export class LandscapeStateService {
   private readonly supabase = inject(SupabaseService);
   private storageKey = '';
   private spaceId = '';
+  private disablePersistence = false;
 
   /** Read-only signal exposing the bound space id (empty string before init). */
   readonly spaceIdSig = signal('');
@@ -89,6 +90,7 @@ export class LandscapeStateService {
   // ─── Persistence ─────────────────────────────────────────────────────
 
   private readonly persistEffect = effect(() => {
+    // Read signals first so the effect tracks them, even when we skip writing.
     const state: PersistedLandscapeState = {
       filters: this.filters(),
       zoomLevel: this.zoomLevel(),
@@ -96,7 +98,7 @@ export class LandscapeStateService {
       positioningGrouping: this.positioningGrouping(),
       countUnit: this.countUnit(),
     };
-    if (!this.storageKey) return;
+    if (!this.storageKey || this.disablePersistence) return;
     try {
       sessionStorage.setItem(this.storageKey, JSON.stringify(state));
     } catch {
@@ -110,11 +112,14 @@ export class LandscapeStateService {
    * Bind this service instance to a space, restore persisted state,
    * and fetch the full unfiltered dataset.
    */
-  async init(spaceId: string): Promise<void> {
+  async init(spaceId: string, opts?: { disablePersistence?: boolean }): Promise<void> {
     this.spaceId = spaceId;
     this.spaceIdSig.set(spaceId);
+    this.disablePersistence = opts?.disablePersistence ?? false;
     this.storageKey = STORAGE_PREFIX + spaceId;
-    this.restorePersistedState();
+    if (!this.disablePersistence) {
+      this.restorePersistedState();
+    }
     await this.loadData();
   }
 
