@@ -2,7 +2,12 @@
 // Returns { errors, warnings, skipped }.
 
 export function checkDrift(collection, live, opts = {}) {
-  const skipTags = opts.skipTags || { routes: {}, rpcs: {}, tables: {} };
+  const skipTags = {
+    routes: {},
+    rpcs: {},
+    tables: {},
+    ...(opts.skipTags || {}),
+  };
 
   const errors = [];
   const warnings = [];

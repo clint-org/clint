@@ -80,3 +80,62 @@ test('surfaces parse-time errors from collection.errors verbatim', () => {
   const report = checkDrift(collection, live);
   assert.ok(report.errors.some((e) => e.kind === 'parse-error'));
 });
+
+test('flags route in capability that does not exist in code as error', () => {
+  const collection = {
+    surfaces: [{ file: 'foo.md', name: 'Foo' }],
+    capabilities: [
+      {
+        ...baseCap,
+        id: 'a',
+        summary: 's',
+        routes: ['/nonexistent-route'],
+        surface: 'Foo',
+        sourceFile: 'foo.md',
+      },
+    ],
+    errors: [],
+  };
+  const live = { routes: new Set(), rpcs: new Set(), tables: new Set() };
+  const report = checkDrift(collection, live);
+  assert.ok(report.errors.some((e) => e.kind === 'route-not-in-code'));
+});
+
+test('flags table in capability that does not exist in db as error', () => {
+  const collection = {
+    surfaces: [{ file: 'foo.md', name: 'Foo' }],
+    capabilities: [
+      {
+        ...baseCap,
+        id: 'a',
+        summary: 's',
+        tables: ['nonexistent_table'],
+        surface: 'Foo',
+        sourceFile: 'foo.md',
+      },
+    ],
+    errors: [],
+  };
+  const live = { routes: new Set(), rpcs: new Set(), tables: new Set() };
+  const report = checkDrift(collection, live);
+  assert.ok(report.errors.some((e) => e.kind === 'table-not-in-db'));
+});
+
+test('flags table in db not mapped by any capability as warning', () => {
+  const collection = { surfaces: [], capabilities: [], errors: [] };
+  const live = { routes: new Set(), rpcs: new Set(), tables: new Set(['orphan_table']) };
+  const report = checkDrift(collection, live);
+  assert.equal(report.errors.length, 0);
+  assert.ok(report.warnings.some((w) => w.kind === 'table-unmapped'));
+});
+
+test('partial skipTags do not crash on lookup', () => {
+  const collection = { surfaces: [], capabilities: [], errors: [] };
+  const live = { routes: new Set(['r1']), rpcs: new Set(['rpc1']), tables: new Set(['t1']) };
+  // Caller provides only routes; rpcs and tables should default safely.
+  const skipTags = { routes: { r1: 'skip' } };
+  const report = checkDrift(collection, live, { skipTags });
+  // Should not throw; rpc1 still surfaces as error (unmapped), t1 as warning.
+  assert.ok(report.errors.some((e) => e.kind === 'rpc-unmapped'));
+  assert.ok(report.warnings.some((w) => w.kind === 'table-unmapped'));
+});
