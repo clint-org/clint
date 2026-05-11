@@ -102,6 +102,13 @@ export const routes: Routes = [
             (m) => m.SuperAdminDomainsComponent
           ),
       },
+      {
+        path: 'audit-log',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-audit-log.component').then(
+            (m) => m.SuperAdminAuditLogComponent
+          ),
+      },
     ],
   },
   {
