@@ -6,7 +6,6 @@ import { Tooltip } from 'primeng/tooltip';
 import { BrandContextService } from '../../../core/services/brand-context.service';
 import {
   IntelligencePayload,
-  IntelligenceRevisionField,
   PrimaryIntelligenceLink,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
@@ -110,35 +109,9 @@ export class IntelligenceBlockComponent {
     return `Contributors: ${contributors} -- updated ${updated} by ${publisher}`;
   });
 
-  protected readonly latestRevisionNote = computed<string | null>(() => {
-    const c = this.current();
-    if (!c) return null;
-    const latest = (c.recent_revisions ?? [])[0];
-    return latest?.change_note ?? null;
-  });
-
-  /**
-   * Display labels for the changed-section chips. Order matters here; we
-   * render in this sequence so a "headline + thesis" change always reads as
-   * "Headline | Thesis" instead of an unstable map ordering.
-   */
-  private static readonly FIELD_LABELS: [IntelligenceRevisionField, string][] = [
-    ['headline', 'Headline'],
-    ['thesis', 'Thesis'],
-    ['watch', 'What to watch'],
-    ['implications', 'Implications'],
-    ['links', 'Linked'],
-    ['state', 'Status'],
-  ];
-
-  protected readonly latestChangedFields = computed<string[]>(() => {
-    const c = this.current();
-    if (!c) return [];
-    const latest = (c.recent_revisions ?? [])[0];
-    const map = latest?.changed_fields ?? {};
-    return IntelligenceBlockComponent.FIELD_LABELS.filter(([k]) => map[k]).map(
-      ([, label]) => label
-    );
+  protected readonly publishNote = computed<string | null>(() => {
+    const note = this.current()?.record.publish_note ?? null;
+    return note && note.trim() ? note : null;
   });
 
   protected readonly linkedGroups = computed(() => {
