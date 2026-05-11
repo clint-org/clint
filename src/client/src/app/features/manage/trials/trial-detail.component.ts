@@ -54,6 +54,10 @@ import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { TimelineViewComponent } from '../../landscape/timeline-view.component';
+import { LandscapeStateService } from '../../landscape/landscape-state.service';
+import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 @Component({
   selector: 'app-trial-detail',
@@ -84,7 +88,10 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     CtgovSourceTagComponent,
     ChangeEventRowComponent,
     TrialEditDialogComponent,
+    TimelineViewComponent,
+    EntityEventsPanelComponent,
   ],
+  providers: [LandscapeStateService],
   templateUrl: './trial-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -210,6 +217,20 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   protected readonly tenantIdSig = computed(
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
+
+  private readonly landscape = inject(LandscapeStateService);
+
+  private readonly landscapeInitEffect = effect(() => {
+    const space = this.spaceIdSig();
+    const trial = this.trial();
+    if (!space || !trial) return;
+    void this.initLandscape(space, trial.id);
+  });
+
+  private async initLandscape(spaceId: string, trialId: string): Promise<void> {
+    await this.landscape.init(spaceId, { disablePersistence: true });
+    this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, trialIds: [trialId] });
+  }
 
   private findAncestorParam(key: string): string | null {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
