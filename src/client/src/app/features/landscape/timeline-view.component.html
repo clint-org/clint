@@ -45,6 +45,12 @@
         [zoomLevel]="state.zoomLevel()"
         [startYear]="resolvedStartYear()"
         [endYear]="resolvedEndYear()"
+        [hideCompanyColumn]="hideCompanyColumn()"
+        [hideAssetColumn]="hideAssetColumn()"
+        [hideTrialColumn]="hideTrialColumn()"
+        [hideMoaColumn]="hideMoaColumn()"
+        [hideRoaColumn]="hideRoaColumn()"
+        [hideNotesColumn]="hideNotesColumn()"
         (phaseClick)="onPhaseClick($event)"
         (markerClick)="onMarkerClick($event)"
         (trialClick)="onTrialClick($event)"
@@ -64,7 +70,29 @@
   </div>
 
   <div class="flex-none">
-    <app-legend [spaceId]="spaceId()" />
+    @if (!hideLegend()) {
+      <app-legend [spaceId]="spaceId()" />
+    } @else {
+      <div class="px-4 pb-3 pt-2 flex items-center justify-end">
+        <p-button
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          icon="pi pi-info-circle"
+          label="Show legend"
+          (onClick)="legendDialogOpen.set(true)"
+        />
+      </div>
+      <p-dialog
+        header="Timeline legend"
+        [modal]="true"
+        [(visible)]="legendDialogOpenModel"
+        styleClass="!w-[760px] !max-w-[95vw]"
+        [dismissableMask]="true"
+      >
+        <app-legend [spaceId]="spaceId()" />
+      </p-dialog>
+    }
   </div>
 </div>
 

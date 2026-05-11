@@ -26,39 +26,45 @@
               <i class="fa-solid fa-gear text-xs"></i>
             </button>
           }
-          <div
-            class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
-            [class.w-36]="!isScrolled()"
-            [class.w-10]="isScrolled()"
-          >
-            @if (!isScrolled()) {
-              Company
-            }
-          </div>
-          <div
-            class="w-28 md:w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 lg:border-l border-slate-700"
-          >
-            Asset
-          </div>
-          @if (showMoaColumn()) {
+          @if (!hideCompanyColumn()) {
+            <div
+              class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
+              [class.w-36]="!isScrolled()"
+              [class.w-10]="isScrolled()"
+            >
+              @if (!isScrolled()) {
+                Company
+              }
+            </div>
+          }
+          @if (!hideAssetColumn()) {
+            <div
+              class="w-28 md:w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 lg:border-l border-slate-700"
+            >
+              Asset
+            </div>
+          }
+          @if (showMoaColumn() && !hideMoaColumn()) {
             <div
               class="w-28 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
             >
               MOA
             </div>
           }
-          @if (showRoaColumn()) {
+          @if (showRoaColumn() && !hideRoaColumn()) {
             <div
               class="w-24 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
             >
               ROA
             </div>
           }
-          <div
-            class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
-          >
-            Trial
-          </div>
+          @if (!hideTrialColumn()) {
+            <div
+              class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
+            >
+              Trial
+            </div>
+          }
         </div>
         <p-popover
           #columnSettingsPanel
@@ -70,36 +76,42 @@
             <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
               >Columns</span
             >
-            <div class="flex items-center gap-2">
-              <p-checkbox
-                [ngModel]="showMoaColumn()"
-                (ngModelChange)="showMoaColumn.set($event)"
-                [binary]="true"
-                inputId="col-moa"
-                size="small"
-              />
-              <label for="col-moa" class="text-sm text-slate-700 cursor-pointer">MOA</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <p-checkbox
-                [ngModel]="showRoaColumn()"
-                (ngModelChange)="showRoaColumn.set($event)"
-                [binary]="true"
-                inputId="col-roa"
-                size="small"
-              />
-              <label for="col-roa" class="text-sm text-slate-700 cursor-pointer">ROA</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <p-checkbox
-                [ngModel]="showNotesColumn()"
-                (ngModelChange)="showNotesColumn.set($event)"
-                [binary]="true"
-                inputId="col-notes"
-                size="small"
-              />
-              <label for="col-notes" class="text-sm text-slate-700 cursor-pointer">Notes</label>
-            </div>
+            @if (!hideMoaColumn()) {
+              <div class="flex items-center gap-2">
+                <p-checkbox
+                  [ngModel]="showMoaColumn()"
+                  (ngModelChange)="showMoaColumn.set($event)"
+                  [binary]="true"
+                  inputId="col-moa"
+                  size="small"
+                />
+                <label for="col-moa" class="text-sm text-slate-700 cursor-pointer">MOA</label>
+              </div>
+            }
+            @if (!hideRoaColumn()) {
+              <div class="flex items-center gap-2">
+                <p-checkbox
+                  [ngModel]="showRoaColumn()"
+                  (ngModelChange)="showRoaColumn.set($event)"
+                  [binary]="true"
+                  inputId="col-roa"
+                  size="small"
+                />
+                <label for="col-roa" class="text-sm text-slate-700 cursor-pointer">ROA</label>
+              </div>
+            }
+            @if (!hideNotesColumn()) {
+              <div class="flex items-center gap-2">
+                <p-checkbox
+                  [ngModel]="showNotesColumn()"
+                  (ngModelChange)="showNotesColumn.set($event)"
+                  [binary]="true"
+                  inputId="col-notes"
+                  size="small"
+                />
+                <label for="col-notes" class="text-sm text-slate-700 cursor-pointer">Notes</label>
+              </div>
+            }
           </div>
         </p-popover>
         @if (hasSubColumns()) {
@@ -107,31 +119,37 @@
             @if (!isScrolled()) {
               <div class="w-8 flex-none" aria-hidden="true">&nbsp;</div>
             }
-            <div
-              class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
-              [class.w-36]="!isScrolled()"
-              [class.w-10]="isScrolled()"
-            >
-              &nbsp;
-            </div>
-            <div
-              class="w-28 md:w-32 px-3 py-0.5 text-xs text-slate-400 lg:border-l border-slate-200"
-            >
-              &nbsp;
-            </div>
-            @if (showMoaColumn()) {
+            @if (!hideCompanyColumn()) {
+              <div
+                class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
+                [class.w-36]="!isScrolled()"
+                [class.w-10]="isScrolled()"
+              >
+                &nbsp;
+              </div>
+            }
+            @if (!hideAssetColumn()) {
+              <div
+                class="w-28 md:w-32 px-3 py-0.5 text-xs text-slate-400 lg:border-l border-slate-200"
+              >
+                &nbsp;
+              </div>
+            }
+            @if (showMoaColumn() && !hideMoaColumn()) {
               <div class="w-28 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
                 &nbsp;
               </div>
             }
-            @if (showRoaColumn()) {
+            @if (showRoaColumn() && !hideRoaColumn()) {
               <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
                 &nbsp;
               </div>
             }
-            <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
-              &nbsp;
-            </div>
+            @if (!hideTrialColumn()) {
+              <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+                &nbsp;
+              </div>
+            }
           </div>
         }
 
@@ -152,55 +170,59 @@
               <div class="w-8 flex-none" aria-hidden="true"></div>
             }
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
-            <div
-              class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-              [class.w-36]="!isScrolled()"
-              [class.px-3]="!isScrolled()"
-              [class.gap-1.5]="!isScrolled()"
-              [class.w-10]="isScrolled()"
-              [class.justify-center]="isScrolled()"
-              [class.truncate]="!isScrolled()"
-              [title]="row.companyName"
-              role="button"
-              tabindex="0"
-              (click)="onCompanyClick(row.companyId)"
-              (keydown.enter)="onCompanyClick(row.companyId)"
-              (keydown.space)="onCompanyClick(row.companyId)"
-            >
-              @if (row.isFirstInCompany) {
-                @if (row.companyLogoUrl) {
-                  <img
-                    [ngSrc]="row.companyLogoUrl"
-                    [alt]="row.companyName"
-                    width="20"
-                    height="20"
-                    class="h-5 w-5 rounded object-contain flex-none"
-                  />
+            @if (!hideCompanyColumn()) {
+              <div
+                class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
+                [class.w-36]="!isScrolled()"
+                [class.px-3]="!isScrolled()"
+                [class.gap-1.5]="!isScrolled()"
+                [class.w-10]="isScrolled()"
+                [class.justify-center]="isScrolled()"
+                [class.truncate]="!isScrolled()"
+                [title]="row.companyName"
+                role="button"
+                tabindex="0"
+                (click)="onCompanyClick(row.companyId)"
+                (keydown.enter)="onCompanyClick(row.companyId)"
+                (keydown.space)="onCompanyClick(row.companyId)"
+              >
+                @if (row.isFirstInCompany) {
+                  @if (row.companyLogoUrl) {
+                    <img
+                      [ngSrc]="row.companyLogoUrl"
+                      [alt]="row.companyName"
+                      width="20"
+                      height="20"
+                      class="h-5 w-5 rounded object-contain flex-none"
+                    />
+                  }
+                  @if (!isScrolled()) {
+                    <span
+                      class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
+                      >{{ row.companyName }}</span
+                    >
+                  }
                 }
-                @if (!isScrolled()) {
-                  <span
-                    class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
-                    >{{ row.companyName }}</span
-                  >
-                }
-              }
-            </div>
+              </div>
+            }
             <!-- Asset column -->
-            <div
-              class="w-28 md:w-32 px-3 flex items-center gap-1.5 truncate lg:border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-              [title]="row.assetName"
-              role="button"
-              tabindex="0"
-              (click)="onAssetClick(row.assetId)"
-              (keydown.enter)="onAssetClick(row.assetId)"
-              (keydown.space)="onAssetClick(row.assetId)"
-            >
-              @if (row.isFirstInAsset) {
-                <span class="text-sm text-slate-600 font-medium truncate">{{ row.assetName }}</span>
-              }
-            </div>
+            @if (!hideAssetColumn()) {
+              <div
+                class="w-28 md:w-32 px-3 flex items-center gap-1.5 truncate lg:border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
+                [title]="row.assetName"
+                role="button"
+                tabindex="0"
+                (click)="onAssetClick(row.assetId)"
+                (keydown.enter)="onAssetClick(row.assetId)"
+                (keydown.space)="onAssetClick(row.assetId)"
+              >
+                @if (row.isFirstInAsset) {
+                  <span class="text-sm text-slate-600 font-medium truncate">{{ row.assetName }}</span>
+                }
+              </div>
+            }
             <!-- MOA column -->
-            @if (showMoaColumn()) {
+            @if (showMoaColumn() && !hideMoaColumn()) {
               <div
                 class="w-28 px-2 flex items-center border-l border-slate-200 overflow-hidden"
                 [title]="row.isFirstInAsset ? moaTooltipText(row.assetMoas) : ''"
@@ -227,7 +249,7 @@
               </div>
             }
             <!-- ROA column -->
-            @if (showRoaColumn()) {
+            @if (showRoaColumn() && !hideRoaColumn()) {
               <div
                 class="w-24 px-2 flex items-center border-l border-slate-200 overflow-hidden"
                 [title]="row.isFirstInAsset ? roaTooltipText(row.assetRoas) : ''"
@@ -254,27 +276,29 @@
               </div>
             }
             <!-- Trial column -->
-            <div
-              class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
-              [title]="row.companyName + ' / ' + row.assetName + ' / ' + row.trial.name"
-              role="button"
-              tabindex="0"
-              (click)="onTrialClick(row.trial)"
-              (keydown.enter)="onTrialClick(row.trial)"
-              (keydown.space)="onTrialClick(row.trial)"
-            >
-              {{ row.trial.name }}
-              <app-change-badge
-                class="ml-1 inline-flex items-center"
-                [count]="row.trial.recent_changes_count ?? 0"
-                [type]="row.trial.most_recent_change_type ?? null"
-              />
-              @if (row.trial.identifier) {
-                <span class="text-[10px] text-slate-400 font-mono ml-1">{{
-                  row.trial.identifier
-                }}</span>
-              }
-            </div>
+            @if (!hideTrialColumn()) {
+              <div
+                class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
+                [title]="row.companyName + ' / ' + row.assetName + ' / ' + row.trial.name"
+                role="button"
+                tabindex="0"
+                (click)="onTrialClick(row.trial)"
+                (keydown.enter)="onTrialClick(row.trial)"
+                (keydown.space)="onTrialClick(row.trial)"
+              >
+                {{ row.trial.name }}
+                <app-change-badge
+                  class="ml-1 inline-flex items-center"
+                  [count]="row.trial.recent_changes_count ?? 0"
+                  [type]="row.trial.most_recent_change_type ?? null"
+                />
+                @if (row.trial.identifier) {
+                  <span class="text-[10px] text-slate-400 font-mono ml-1">{{
+                    row.trial.identifier
+                  }}</span>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -356,7 +380,7 @@
       </div>
 
       <!-- Notes column (hidden below lg) -->
-      @if (showNotesColumn() && flattenedTrials().length > 0) {
+      @if (showNotesColumn() && !hideNotesColumn() && flattenedTrials().length > 0) {
         <div class="hidden lg:block flex-none w-48 bg-white border-l border-slate-200">
           <div
             class="border-b border-slate-300 bg-slate-800 px-3 h-8 flex items-center text-[10px] font-bold uppercase tracking-widest text-slate-400"

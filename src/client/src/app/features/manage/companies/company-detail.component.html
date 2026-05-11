@@ -36,22 +36,27 @@
           Timeline
         </h2>
       </header>
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-        <div class="border-r border-slate-200 min-w-0">
-          <app-timeline-view
-            [startYear]="timelineStartYear()"
-            [endYear]="timelineEndYear()"
-          />
-        </div>
-        @if (company(); as c) {
+      <div>
+        <app-timeline-view
+          [startYear]="timelineStartYear()"
+          [endYear]="timelineEndYear()"
+          [hideCompanyColumn]="true"
+          [hideMoaColumn]="true"
+          [hideRoaColumn]="true"
+          [hideNotesColumn]="true"
+          [hideLegend]="true"
+        />
+      </div>
+      @if (company(); as c) {
+        <div class="border-t border-slate-200">
           <app-entity-events-panel
             [spaceId]="spaceIdSig()"
             [tenantId]="tenantIdSig()"
             entityLevel="company"
             [entityId]="c.id"
           />
-        }
-      </div>
+        </div>
+      }
     </section>
 
     @if (hasIntelligence()) {

@@ -58,19 +58,26 @@
           Timeline
         </h2>
       </header>
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-        <div class="border-r border-slate-200 min-w-0">
-          <app-timeline-view />
-        </div>
-        @if (asset(); as a) {
+      <div>
+        <app-timeline-view
+          [hideCompanyColumn]="true"
+          [hideAssetColumn]="true"
+          [hideMoaColumn]="true"
+          [hideRoaColumn]="true"
+          [hideNotesColumn]="true"
+          [hideLegend]="true"
+        />
+      </div>
+      @if (asset(); as a) {
+        <div class="border-t border-slate-200">
           <app-entity-events-panel
             [spaceId]="spaceIdSig()"
             [tenantId]="tenantIdSig()"
             entityLevel="product"
             [entityId]="a.id"
           />
-        }
-      </div>
+        </div>
+      }
     </section>
 
     @if (hasIntelligence()) {
