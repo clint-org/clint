@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 
 import { Marker } from '../../core/models/marker.model';
@@ -24,11 +23,10 @@ import { LandscapeStateService } from './landscape-state.service';
 @Component({
   selector: 'app-timeline-view',
   imports: [
+    ButtonModule,
     DashboardGridComponent,
-    DialogModule,
     ExportDialogComponent,
     LegendComponent,
-    ButtonModule,
     MessageModule,
     SkeletonComponent,
   ],
@@ -55,7 +53,11 @@ export class TimelineViewComponent {
   readonly hideNotesColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
 
-  protected readonly legendDialogOpen = signal(false);
+  protected readonly legendVisible = signal(false);
+
+  protected toggleLegend(): void {
+    this.legendVisible.update(v => !v);
+  }
 
   private readonly autoStartYear = signal(2016);
   private readonly autoEndYear = signal(2026);
@@ -165,13 +167,6 @@ export class TimelineViewComponent {
   onAssetClick(assetId: string): void {
     if (!assetId) return;
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
-  }
-
-  protected get legendDialogOpenModel(): boolean {
-    return this.legendDialogOpen();
-  }
-  protected set legendDialogOpenModel(v: boolean) {
-    this.legendDialogOpen.set(v);
   }
 
   retry(): void {
