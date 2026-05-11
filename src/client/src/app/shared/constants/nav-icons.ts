@@ -30,4 +30,5 @@ export const NAV_ICONS: Record<string, string> = {
   fields: 'fa-solid fa-table-columns',
   taxonomies: 'fa-solid fa-tags',
   'marker-types': 'fa-solid fa-shapes',
+  'audit-log': 'fa-solid fa-clock-rotate-left',
 };

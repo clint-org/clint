@@ -92,6 +92,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Fields', route: 'settings/fields', icon: NAV_ICONS['fields'] },
       { label: 'Taxonomies', route: 'settings/taxonomies', icon: NAV_ICONS['taxonomies'] },
       { label: 'Marker Types', route: 'settings/marker-types', icon: NAV_ICONS['marker-types'] },
+      { label: 'Audit log', route: 'settings/audit-log', icon: NAV_ICONS['audit-log'] },
     ],
   },
 ];
@@ -100,7 +101,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
   imports: [Tooltip, ClintLogoComponent, NgOptimizedImage],
   template: `
     <div

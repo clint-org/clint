@@ -6,6 +6,7 @@ import { tenantGuard } from './core/guards/tenant.guard';
 import { spaceGuard } from './core/guards/space.guard';
 import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
 import { auditTenantGuard } from './core/guards/audit-tenant.guard';
+import { auditSpaceGuard } from './core/guards/audit-space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
@@ -443,6 +444,14 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/space-settings/space-field-visibility-settings.component').then(
                 (m) => m.SpaceFieldVisibilitySettingsComponent
+              ),
+          },
+          {
+            path: 'settings/audit-log',
+            canActivate: [auditSpaceGuard],
+            loadComponent: () =>
+              import('./features/space-settings/space-audit-log.component').then(
+                (m) => m.SpaceAuditLogComponent
               ),
           },
           // Redirects: old manage taxonomy/marker paths -> new settings paths
