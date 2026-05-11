@@ -178,7 +178,6 @@ When a tenant owner enters `email_domain_allowlist`, the UI soft-validates each 
 - Insider threat (a malicious agency owner exfiltrating their pharma clients' data) — mitigated by contracts, not technically prevented
 - Supply-chain attack on Supabase or Cloudflare — accepted vendor risk
 - Per-tenant SAML/SSO — deferred to enterprise tier
-- Audit logging of sensitive admin actions (`provision_*`, `register_custom_domain`, `update_tenant_branding`, `update_tenant_access`, suspending, adding a platform admin) — v2 deliverable; required for SOC 2
 
 ## Route Guards
 
@@ -236,6 +235,20 @@ The trial change feed's daily polling Worker runs as anonymous on Supabase but a
 3. The Worker uses the new secret on its next cron fire; in-flight calls finish against whichever value Postgres holds when they execute. No coordination needed because both sides are read in the same transaction.
 
 **User-facing manual sync is gated separately.** The `POST /admin/ctgov-backfill` endpoint on the Worker (used by the platform-admin "Backfill NCTs" UI and by `trigger_single_trial_sync`) is gated by `is_platform_admin()` over the user's JWT, NOT by the worker secret. The two gates are independent: the cron path uses the secret because there is no user JWT; the admin path uses the JWT because there is no need to ship a secret to the browser.
+
+## Audit Logging
+
+Tier 1 admin/security/governance actions are captured in `audit_events`. The DB is system of record; writes go through `record_audit_event()` (SECURITY DEFINER); direct INSERT/UPDATE/DELETE on the table is revoked from `authenticated` and `service_role`. Safety-net `AFTER` triggers on `platform_admins`, `tenant_members`, `agency_members`, `space_members`, `tenants.suspended_at`, `tenant_invites`, `space_invites`, and `retired_hostnames` backstop the RPC path.
+
+Visibility is **strict-scope owner-only**: agency owners see agency-scoped events; strict tenant owners (explicit `tenant_members.role = 'owner'`) see tenant-scoped events; space owners see space-scoped events. Editors and viewers see nothing. Platform admins see all. No cascade from a higher scope to a lower one: a tenant owner does not see space-scoped events for spaces in their tenant unless they are also a space owner of that space.
+
+UI surfaces: `/admin/audit-log` (agency portal), `/t/:tenantId/settings/audit-log` (tenant settings tab), `/t/:tenantId/s/:spaceId/settings/audit-log` (space settings tab), `/super-admin/audit-log` (platform-admin only). Each page supports actor/action/date-range filtering and CSV export.
+
+**GDPR right-to-erasure: always call `redact_user_pii(p_user_id)` BEFORE deleting the user from `auth.users`.** Deletion triggers `on delete set null` on `actor_user_id`, which makes scoped redaction impossible after the fact. The redact RPC scrubs `actor_email`, `actor_ip`, `actor_user_agent`, and PII keys in `metadata` while preserving the action record under legitimate-interest legal basis.
+
+**Function ownership deviation from spec:** `record_audit_event()` and `redact_user_pii()` are owned by the default `postgres` role rather than the `audit_writer` role described in the original spec. Transferring ownership to `audit_writer` breaks the SECURITY DEFINER call into the `auth` schema on Supabase Local (the `auth` schema grants are reset by `supabase_auth_admin`/GoTrue on container init). The locked write path is enforced by the table-level GRANT/REVOKE pattern from migration `20260510000100`, not by function ownership.
+
+Spec: `docs/superpowers/specs/2026-05-10-audit-log-design.md`.
 
 ## RLS Coverage
 

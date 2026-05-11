@@ -65,6 +65,7 @@ Follow these guides for all database work:
 - [Database Functions](docs/supabase-guides/database-functions.md) - PostgreSQL function best practices
 - [Create Migration](docs/supabase-guides/database-create-migration.md) - Migration file naming and SQL guidelines
 - [SQL Style Guide](docs/supabase-guides/sql-style-guide.md) - SQL formatting and naming conventions
+- Every Tier 1 admin/security/governance RPC (provisioning, branding, access, membership, invites, custom domains, space lifecycle, platform-admin grants) must call `record_audit_event()` and carry the `-- @audit:tier1` marker comment in its body. The `20260510002000_audit_coverage_smoke.sql` migration enforces this. See `docs/superpowers/specs/2026-05-10-audit-log-design.md`.
 
 ## Project Structure
 
