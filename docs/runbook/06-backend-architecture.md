@@ -95,7 +95,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
 | `get_primary_intelligence_history` | - | events, primary_intelligence |
 | `get_product_detail_with_intelligence` | - | products |
-| `get_space_landing_stats` | - | companies, markers, products, trials |
+| `get_space_landing_stats` | - | companies, marker_assignments, marker_types, markers, primary_intelligence, products, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
 | `get_trial_activity` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |

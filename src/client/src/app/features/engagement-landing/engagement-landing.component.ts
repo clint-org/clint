@@ -34,16 +34,9 @@ import {
   SpaceLandingStats,
   UpcomingCatalyst,
 } from './engagement-landing.service';
+import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
-
-interface Stat {
-  key: 'activeTrials' | 'companies' | 'assets' | 'catalysts' | 'intelligence';
-  label: string;
-  value: number | null;
-  route: string | null;
-  warn: boolean;
-}
 
 interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
@@ -51,13 +44,33 @@ interface FeedFilter {
   count: number;
 }
 
+interface MotionCell {
+  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves' | 'loe';
+  label: string;
+  windowLabel: string;
+  value: number | null;
+  display: string;
+  route: unknown[] | null;
+  queryParams: Record<string, string> | null;
+  warn: boolean;
+}
+
+interface InventoryTotals {
+  trials: number;
+  companies: number;
+  assets: number;
+}
+
 /**
  * Engagement landing page. Sits at the space root (`/t/:tenantId/s/:spaceId`).
- * Spec: docs/superpowers/specs/2026-05-10-home-redesign-design.md.
+ * Spec: docs/superpowers/specs/2026-05-11-engagement-header-redesign-design.md.
  *
  * Layout:
- *   - Pulse header: tracked eyebrow, h1, since-line, integrated 5-stat strip.
- *   - Today brief: optional one-line teal-accented catalysts-this-week rollup.
+ *   - Pulse panel: one bordered section with three rows. Row 1 is the mono
+ *     identity line carrying inventory totals. Row 2 is the adaptive brief
+ *     (tiers across week/month/quarter, hides on quiet days). Row 3 is the
+ *     five-cell motion strip (P3 readouts, catalysts, new intel, trial moves,
+ *     loss of exclusivity).
  *   - Two-column body: intelligence feed (2/3) + side rail (1/3) with the
  *     Next 90 days card stacked on the What changed widget.
  *   - Recent materials: legacy widget kept below the fold.
@@ -134,55 +147,77 @@ export class EngagementLandingComponent implements OnInit {
     };
   });
 
-  readonly pulseStats = computed<Stat[]>(() => {
+  readonly motionStats = computed<MotionCell[]>(() => {
     const s = this.stats();
-    const r = this.statsRoutes();
-    return [
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    const hasRoute = !!(tid && sid);
+    const v = (n: number | undefined | null): number | null => (n == null ? null : n);
+    const cells: MotionCell[] = [
       {
-        key: 'activeTrials',
-        label: 'Active trials',
-        value: s?.active_trials ?? null,
-        route: r?.activeTrials ?? null,
-        warn: false,
-      },
-      {
-        key: 'companies',
-        label: 'Companies',
-        value: s?.companies ?? null,
-        route: r?.companies ?? null,
-        warn: false,
-      },
-      {
-        key: 'assets',
-        label: 'Assets',
-        value: s?.assets ?? null,
-        route: r?.assets ?? null,
-        warn: false,
+        key: 'p3Readouts',
+        label: 'P3 readouts',
+        windowLabel: 'next 90d',
+        value: v(s?.p3_readouts_90d),
+        display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { phase: 'P3', within: '90d' } : null,
+        warn: (s?.p3_readouts_90d ?? 0) > 0,
       },
       {
         key: 'catalysts',
-        label: 'Catalysts < 90d',
-        value: s?.catalysts_90d ?? null,
-        route: r?.catalysts ?? null,
-        warn: true,
+        label: 'Catalysts',
+        windowLabel: 'next 90d',
+        value: v(s?.catalysts_90d),
+        display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { within: '90d' } : null,
+        warn: (s?.catalysts_90d ?? 0) > 0,
       },
       {
-        key: 'intelligence',
-        label: 'Intelligence',
-        value: s?.intelligence_total ?? null,
-        route: r?.intelligence ?? null,
+        key: 'newIntel',
+        label: 'New intel',
+        windowLabel: 'last 7d',
+        value: v(s?.new_intel_7d),
+        display:
+          s?.new_intel_7d == null
+            ? ''
+            : s.new_intel_7d > 0
+              ? `+${s.new_intel_7d}`
+              : '0',
+        route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
+        queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,
       },
+      {
+        key: 'trialMoves',
+        label: 'Trial moves',
+        windowLabel: 'last 30d',
+        value: v(s?.trial_moves_30d),
+        display: s?.trial_moves_30d == null ? '' : String(s.trial_moves_30d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'activity'] : null,
+        queryParams: hasRoute
+          ? { eventTypes: 'phase_transitioned,status_changed', within: '30d' }
+          : null,
+        warn: false,
+      },
+      {
+        key: 'loe',
+        label: 'Loss of excl.',
+        windowLabel: 'next 365d',
+        value: v(s?.loe_365d),
+        display: s?.loe_365d == null ? '' : String(s.loe_365d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { markerKind: 'loe', within: '365d' } : null,
+        warn: (s?.loe_365d ?? 0) > 0,
+      },
     ];
+    return cells;
   });
 
-  readonly eyebrowParts = computed(() => {
-    const t = this.tenantName();
-    const s = this.spaceName();
-    return [t, s, 'ENGAGEMENT'].filter((p): p is string => !!p).map((p) => p.toUpperCase());
-  });
+  readonly engagementName = computed(() => this.spaceName().toUpperCase());
 
-  readonly activeSinceLabel = computed(() => {
+  readonly activeSince = computed(() => {
     const s = this.space();
     if (!s?.created_at) return '';
     const d = new Date(s.created_at);
@@ -191,33 +226,32 @@ export class EngagementLandingComponent implements OnInit {
     return `Active since ${year}-Q${quarter}`;
   });
 
-  /** Catalysts within the next 7 days (subset of upcoming()). */
-  readonly catalystsThisWeek = computed(() => {
-    const horizon = addDaysIso(7);
-    const today = todayIso();
-    return this.upcoming().filter((c) => c.event_date >= today && c.event_date <= horizon);
+  readonly inventoryTotals = computed<InventoryTotals | null>(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return { trials: s.active_trials, companies: s.companies, assets: s.assets };
   });
 
-  readonly briefVisible = computed(
-    () => !this.statsLoading() && this.catalystsThisWeek().length > 0
-  );
+  readonly briefVisible = computed(() => this.brief() !== null);
 
-  readonly briefHtml = computed(() => {
-    const week = this.catalystsThisWeek();
-    if (week.length === 0) return '';
-    const lead = week[0];
-    const detail = lead
-      ? ` (${escapeHtml(lead.title)}${lead.company_name ? ' · ' + escapeHtml(lead.company_name.toUpperCase()) : ''})`
-      : '';
-    return `<b>${week.length} catalyst${week.length === 1 ? '' : 's'} this week</b>${detail}`;
+  readonly brief = computed<BriefResult | null>(() => {
+    if (this.statsLoading() || this.upcomingLoading()) return null;
+    const list = this.upcoming().map((c) => ({
+      marker_id: c.marker_id,
+      event_date: c.event_date,
+      title: c.title,
+      company_name: c.company_name,
+    }));
+    return computeBrief(list, new Date());
   });
 
-  readonly todayLabel = computed(() => {
-    return new Date().toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+  readonly dateAnchor = computed(() => {
+    const now = new Date();
+    const day = now.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const date = now
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      .toUpperCase();
+    return { day, date };
   });
 
   readonly nextNinetyDayItems = computed<CatalystDay[]>(() => {
@@ -343,7 +377,7 @@ export class EngagementLandingComponent implements OnInit {
   }
 
   trackPost = (_: number, row: IntelligenceFeedRow): string => row.id;
-  trackStat = (_: number, s: Stat): string => s.key;
+  trackStat = (_: number, s: MotionCell): string => s.key;
   trackFilter = (_: number, f: FeedFilter): string => f.key;
   trackDay = (_: number, d: CatalystDay): string => d.marker_id;
   trackMonth = (_: number, g: MonthGroup): string => g.monthLabel;
@@ -499,15 +533,6 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
 function recentCount(rows: IntelligenceFeedRow[], days: number): number {
   const cutoff = Date.now() - days * 86_400_000;
   return rows.filter((r) => new Date(r.updated_at).getTime() >= cutoff).length;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function formatError(err: unknown, fallback: string): string {
