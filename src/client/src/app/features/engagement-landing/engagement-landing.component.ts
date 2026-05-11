@@ -34,6 +34,7 @@ import {
   SpaceLandingStats,
   UpcomingCatalyst,
 } from './engagement-landing.service';
+import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
@@ -49,6 +50,23 @@ interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
   label: string;
   count: number;
+}
+
+interface MotionCell {
+  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves' | 'loe';
+  label: string;
+  windowLabel: string;
+  value: number | null;
+  display: string;
+  route: unknown[] | null;
+  queryParams: Record<string, string> | null;
+  warn: boolean;
+}
+
+interface InventoryTotals {
+  trials: number;
+  companies: number;
+  assets: number;
 }
 
 /**
@@ -176,6 +194,91 @@ export class EngagementLandingComponent implements OnInit {
     ];
   });
 
+  readonly motionStats = computed<MotionCell[]>(() => {
+    const s = this.stats();
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    const hasRoute = !!(tid && sid);
+    const v = (n: number | undefined | null): number | null => (n == null ? null : n);
+    const cells: MotionCell[] = [
+      {
+        key: 'p3Readouts',
+        label: 'P3 readouts',
+        windowLabel: 'next 90d',
+        value: v(s?.p3_readouts_90d),
+        display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { phase: 'P3', within: '90d' } : null,
+        warn: (s?.p3_readouts_90d ?? 0) > 0,
+      },
+      {
+        key: 'catalysts',
+        label: 'Catalysts',
+        windowLabel: 'next 90d',
+        value: v(s?.catalysts_90d),
+        display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { within: '90d' } : null,
+        warn: (s?.catalysts_90d ?? 0) > 0,
+      },
+      {
+        key: 'newIntel',
+        label: 'New intel',
+        windowLabel: 'last 7d',
+        value: v(s?.new_intel_7d),
+        display:
+          s?.new_intel_7d == null
+            ? ''
+            : s.new_intel_7d > 0
+              ? `+${s.new_intel_7d}`
+              : '0',
+        route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
+        queryParams: hasRoute ? { since: '7d' } : null,
+        warn: false,
+      },
+      {
+        key: 'trialMoves',
+        label: 'Trial moves',
+        windowLabel: 'last 30d',
+        value: v(s?.trial_moves_30d),
+        display: s?.trial_moves_30d == null ? '' : String(s.trial_moves_30d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'activity'] : null,
+        queryParams: hasRoute
+          ? { eventTypes: 'phase_transitioned,status_changed', within: '30d' }
+          : null,
+        warn: false,
+      },
+      {
+        key: 'loe',
+        label: 'Loss of excl.',
+        windowLabel: 'next 365d',
+        value: v(s?.loe_365d),
+        display: s?.loe_365d == null ? '' : String(s.loe_365d),
+        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        queryParams: hasRoute ? { markerKind: 'loe', within: '365d' } : null,
+        warn: (s?.loe_365d ?? 0) > 0,
+      },
+    ];
+    return cells;
+  });
+
+  readonly engagementName = computed(() => this.spaceName().toUpperCase());
+
+  readonly activeSince = computed(() => {
+    const s = this.space();
+    if (!s?.created_at) return '';
+    const d = new Date(s.created_at);
+    const year = d.getUTCFullYear();
+    const quarter = Math.floor(d.getUTCMonth() / 3) + 1;
+    return `Active since ${year}-Q${quarter}`;
+  });
+
+  readonly inventoryTotals = computed<InventoryTotals | null>(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return { trials: s.active_trials, companies: s.companies, assets: s.assets };
+  });
+
   readonly eyebrowParts = computed(() => {
     const t = this.tenantName();
     const s = this.spaceName();
@@ -218,6 +321,26 @@ export class EngagementLandingComponent implements OnInit {
       day: 'numeric',
       year: 'numeric',
     });
+  });
+
+  readonly brief = computed<BriefResult | null>(() => {
+    if (this.statsLoading() || this.upcomingLoading()) return null;
+    const list = this.upcoming().map((c) => ({
+      marker_id: c.marker_id,
+      event_date: c.event_date,
+      title: c.title,
+      company_name: c.company_name,
+    }));
+    return computeBrief(list, new Date());
+  });
+
+  readonly dateAnchor = computed(() => {
+    const now = new Date();
+    const day = now.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const date = now
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      .toUpperCase();
+    return { day, date };
   });
 
   readonly nextNinetyDayItems = computed<CatalystDay[]>(() => {
