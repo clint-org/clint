@@ -15,7 +15,12 @@
     "test:units": "vitest run --config vitest.units.config.ts",
     "test:worker": "vitest run --config worker/vitest.config.mts",
     "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh && ./scripts/check-supabase-rls.sh",
-    "docs:arch": "node scripts/gen-architecture.mjs"
+    "docs:arch": "node scripts/gen-architecture.mjs",
+    "features:check": "node scripts/features-drift.mjs check",
+    "features:stub": "node scripts/features-drift.mjs stub",
+    "features:near": "node scripts/features-drift.mjs near",
+    "features:surfaces-index": "node scripts/features-drift.mjs surfaces-index",
+    "test:scripts": "node --test scripts/features/__tests__/*.test.mjs"
   },
   "dependencies": {
     "@angular/animations": "^21.2.12",
@@ -62,6 +67,7 @@
     "@types/pg": "^8.20.0",
     "angular-eslint": "^21.3.1",
     "eslint": "^9.28.0",
+    "gray-matter": "^4.0.3",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
     "prettier": "^3.8.1",
