@@ -61,9 +61,18 @@ update public.primary_intelligence p
  where r.primary_intelligence_id = p.id
    and p.state = 'withdrawn';
 
+-- Pair archived_at to the next version's published_at where possible so the
+-- frontend timeline can fold the archive event under its causing publish.
 update public.primary_intelligence p
    set archived_at = coalesce(
-     (select min(edited_at)
+     (select min(p2.published_at)
+        from public.primary_intelligence p2
+       where p2.space_id    = p.space_id
+         and p2.entity_type = p.entity_type
+         and p2.entity_id   = p.entity_id
+         and p2.version_number > p.version_number
+         and p2.published_at is not null),
+     (select min(r.edited_at)
         from public.primary_intelligence_revisions r
        where r.primary_intelligence_id = p.id
          and r.state = 'archived'),

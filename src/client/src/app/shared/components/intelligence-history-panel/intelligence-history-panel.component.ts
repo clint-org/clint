@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { diffWords } from 'diff';
 
 import {
@@ -35,6 +43,15 @@ export class IntelligenceHistoryPanelComponent {
 
   protected readonly expanded = signal(false);
   protected readonly expandedEventIds = signal<ReadonlySet<string>>(new Set());
+
+  private readonly diffCache = new Map<string, DiffSection[]>();
+
+  constructor() {
+    effect(() => {
+      this.payload();
+      this.diffCache.clear();
+    });
+  }
 
   protected readonly events = computed<IntelligenceHistoryEvent[]>(
     () => this.payload().events ?? [],
@@ -132,6 +149,10 @@ export class IntelligenceHistoryPanelComponent {
     version: IntelligenceVersionRow,
     base: IntelligenceVersionRow | null,
   ): DiffSection[] {
+    const cacheKey = `${version.id}::${base?.id ?? 'none'}`;
+    const cached = this.diffCache.get(cacheKey);
+    if (cached) return cached;
+
     const sections: { key: VersionSection; label: string; field: keyof IntelligenceVersionRow }[] = [
       { key: 'headline', label: 'Headline', field: 'headline' },
       { key: 'thesis', label: 'Thesis', field: 'thesis_md' },
@@ -146,6 +167,7 @@ export class IntelligenceHistoryPanelComponent {
       const html = base ? renderWordDiff(before, after) : renderMarkdownInline(after);
       out.push({ section: s.key, label: s.label, html });
     }
+    this.diffCache.set(cacheKey, out);
     return out;
   }
 
