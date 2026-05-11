@@ -61,7 +61,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 @Component({
   selector: 'app-trial-detail',
-  standalone: true,
   imports: [
     RouterLink,
     DatePipe,

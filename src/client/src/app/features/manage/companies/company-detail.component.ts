@@ -35,7 +35,6 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
 
 @Component({
   selector: 'app-company-detail',
-  standalone: true,
   imports: [
     ConfirmDialogModule,
     NgOptimizedImage,

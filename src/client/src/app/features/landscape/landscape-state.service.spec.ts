@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { LandscapeStateService } from './landscape-state.service';
 import type { Company } from '../../core/models/company.model';
 import type { Product } from '../../core/models/product.model';
 import type { Trial } from '../../core/models/trial.model';
@@ -51,5 +52,14 @@ describe('filterDashboardData', () => {
     const filters: LandscapeFilters = { ...EMPTY_LANDSCAPE_FILTERS, trialIds: ['t2', 't1'] };
     const result = filterDashboardData(makeFixture(), filters);
     expect(result[0].products![0].trials!.map((t) => t.id)).toEqual(['t1', 't2']);
+  });
+});
+
+describe('LandscapeStateService.init', () => {
+  it('exposes an init method that accepts an optional opts arg', () => {
+    expect(typeof LandscapeStateService.prototype.init).toBe('function');
+    // init(spaceId, opts?) -- TypeScript optional params without a default
+    // value expression still count toward function.length, so length is 2.
+    expect(LandscapeStateService.prototype.init.length).toBe(2);
   });
 });

@@ -22,7 +22,6 @@ import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
   selector: 'app-timeline-view',
-  standalone: true,
   imports: [
     DashboardGridComponent,
     ExportDialogComponent,

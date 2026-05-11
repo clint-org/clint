@@ -35,7 +35,6 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
 
 @Component({
   selector: 'app-asset-detail',
-  standalone: true,
   imports: [
     NgOptimizedImage,
     RouterLink,

@@ -35,7 +35,7 @@ export class EntityEventsPanelComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly seeAllLink = computed(() => [
-    '/t', this.tenantId(), 's', this.spaceId(), 'activity',
+    '/t', this.tenantId(), 's', this.spaceId(), 'events',
   ]);
 
   protected readonly seeAllQueryParams = computed(() => ({
