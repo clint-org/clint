@@ -139,7 +139,12 @@ export class PrimaryIntelligenceService {
     );
     if (error) throw error;
     return (
-      (data as IntelligenceHistoryPayload) ?? { current: null, draft: null, versions: [] }
+      (data as IntelligenceHistoryPayload) ?? {
+        current: null,
+        draft: null,
+        versions: [],
+        events: [],
+      }
     );
   }
 

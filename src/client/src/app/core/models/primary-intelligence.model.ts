@@ -27,6 +27,7 @@ export interface PrimaryIntelligence {
   thesis_md: string;
   watch_md: string;
   implications_md: string;
+  publish_note: string | null;
   last_edited_by: string;
   created_at: string;
   updated_at: string;
@@ -167,11 +168,29 @@ export interface IntelligenceVersionRow {
   thesis_md: string;
   watch_md: string;
   implications_md: string;
-  change_note: string | null;
-  edited_by: string;
+  publish_note: string | null;
   published_at: string;
+  published_by: string;
+  archived_at: string | null;
   withdrawn_at: string | null;
   withdrawn_by: string | null;
+  withdraw_note: string | null;
+  diff_base_id: string | null;
+}
+
+export type IntelligenceHistoryEventKind =
+  | 'draft_started'
+  | 'published'
+  | 'archived'
+  | 'withdrawn';
+
+export interface IntelligenceHistoryEvent {
+  at: string;
+  kind: IntelligenceHistoryEventKind;
+  row_id: string;
+  version_number: number | null;
+  by: string | null;
+  note: string | null;
 }
 
 /**
@@ -179,12 +198,14 @@ export interface IntelligenceVersionRow {
  * the live published row (or null if withdrawn or never published).
  * `draft` is the agency-only working draft. `versions` includes the
  * live published row alongside archived and withdrawn versions, ordered
- * version_number desc.
+ * version_number desc. `events` is the lifecycle timeline
+ * (draft_started, published, archived, withdrawn) ordered by occurrence.
  */
 export interface IntelligenceHistoryPayload {
   current: PrimaryIntelligence | null;
   draft: PrimaryIntelligence | null;
   versions: IntelligenceVersionRow[];
+  events: IntelligenceHistoryEvent[];
 }
 
 /**

@@ -18,6 +18,7 @@ export class IntelligenceHistoryHost {
     current: null,
     draft: null,
     versions: [],
+    events: [],
   });
 
   constructor(private readonly service: PrimaryIntelligenceService) {}

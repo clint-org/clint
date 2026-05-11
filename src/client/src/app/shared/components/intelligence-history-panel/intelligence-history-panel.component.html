@@ -82,11 +82,11 @@
                   <span class="rounded-sm bg-amber-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">Withdrawn</span>
                 }
                 <span class="text-xs text-slate-500">
-                  Published {{ formatDate(v.published_at) }} by {{ authorInitials(v.edited_by) }}
+                  Published {{ formatDate(v.published_at) }} by {{ authorInitials(v.published_by) }}
                 </span>
               </div>
-              @if (v.change_note) {
-                <p class="mt-1 text-sm italic text-slate-700">"{{ v.change_note }}"</p>
+              @if (v.publish_note) {
+                <p class="mt-1 text-sm italic text-slate-700">"{{ v.publish_note }}"</p>
               } @else if (summaryFor(v).isFirst) {
                 <p class="mt-1 text-sm text-slate-500">Initial publication</p>
               }
