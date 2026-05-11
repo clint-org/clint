@@ -15,6 +15,18 @@ Conventions:
 
 ## Open
 
+### 6. Manual test plan for audit log feature
+- **Status:** open. Vitest integration suite covers the backend behavior (RPC emission, RLS, GDPR redaction, list/export, lockdown) but no human has walked the four UI surfaces (agency portal, tenant settings tab, space sidebar, super-admin) end-to-end against a real workspace. Need a written manual test plan a human can follow to verify and *understand* the feature.
+- **Spec:** `docs/superpowers/specs/2026-05-10-audit-log-design.md`.
+- **Trigger:** before the first paying pharma customer, or before a SOC 2 evidence collection pass. Useful as soon as a real workspace is provisioned with realistic actors so the audit rows look meaningful.
+- **Fix shape:** create `docs/test-plans/2026-05-??-audit-log-manual-test.md` mirroring the access-model test plan style. Should walk through:
+  - Per-scope visibility: sign in as agency owner, tenant owner, strict tenant owner without space membership, space owner, space editor, space viewer, no-memberships user, and confirm each sees the right subset of audit rows on their respective page.
+  - Action emission: trigger each Tier 1 action (provision tenant, update branding, update access policy, suspend tenant, invite tenant member, redeem invite, change space member role, register custom domain, grant platform admin) and confirm the corresponding event appears with the expected metadata.
+  - Filter + CSV export: exercise actor / action / date-range filters; export and inspect the CSV.
+  - GDPR redaction: call `redact_user_pii` as platform admin against a real test user; confirm the user's email/IP/UA are scrubbed in the UI but the action record is preserved.
+  - Edge cases: tenant suspension blocks writes but audit reads continue; deleted space's audit rows still show their UUID after the space is gone; agency owner without explicit tenant membership cannot see tenant-scoped rows.
+- **Surfaced:** 2026-05-10 by aadi529 after audit-log feature shipped; integration suite passes but no manual run-through has happened.
+
 ### 5. Read event capture for audit log
 - **Status:** open. Only act if HIPAA scope ever enters (Clint storing PHI-adjacent data) or a customer explicitly contracts for read-access audit. Current spec opts out: pharma CI is not PHI, SOC 2 doesn't require it.
 - **Spec:** `docs/superpowers/specs/2026-05-10-audit-log-design.md` (Read events section).
