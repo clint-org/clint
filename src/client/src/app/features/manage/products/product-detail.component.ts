@@ -5,7 +5,6 @@ import {
   inject,
   OnInit,
   signal,
-  viewChild,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -66,7 +65,6 @@ export class ProductDetailComponent implements OnInit {
 
   // Intelligence history (version list, withdraw / purge dialogs)
   protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
-  protected readonly historyPanelRef = viewChild(IntelligenceHistoryPanelComponent);
   protected readonly withdrawDialogOpen = signal(false);
   protected readonly purgeDialogOpen = signal(false);
   protected readonly purgeAnchorMode = signal(false);
