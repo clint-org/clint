@@ -89,9 +89,6 @@ export class CompanyDetailComponent implements OnInit {
 
   private readonly landscape = inject(LandscapeStateService);
 
-  protected readonly timelineStartYear = computed(() => new Date().getFullYear());
-  protected readonly timelineEndYear = computed(() => new Date().getFullYear() + 2);
-
   private readonly landscapeInitEffect = effect(() => {
     const space = this.spaceIdSig();
     const company = this.company();
