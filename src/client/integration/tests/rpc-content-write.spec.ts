@@ -4,8 +4,11 @@
  * 1. Agency firewall: tenant_owner cannot write, agency_only can.
  * 2. Round-trip behavior: real entities seeded via service-role client, then
  *    upsert -> read -> update -> read against the agency persona to verify
- *    links survive, entity_name resolves, and revisions.changed_fields
- *    records the right diff (the 5a1daae feature has zero other coverage).
+ *    links survive, entity_name resolves, and publish_note round-trips through
+ *    the record.
+ *
+ * After spec-2026-008, the payload contains only { record, links, contributors }.
+ * publish_note and published_by live on the record; there is no revisions array.
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -151,8 +154,8 @@ describe('rpc build_intelligence_payload (gate)', () => {
 
 /**
  * Round-trip suite. Anchors the read on Trial Alpha, links to Trial Beta and
- * the product. Covers what the gate-only tests don't: that links and
- * changed_fields actually behave end-to-end.
+ * the product. Covers what the gate-only tests don't: that links survive,
+ * entity_name resolves, and publish_note round-trips through the record.
  */
 describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)', () => {
   type Link = {
@@ -163,14 +166,13 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     display_order: number;
   };
   type Payload = {
-    record: { id: string; state: 'draft' | 'published'; headline: string };
-    links: (Link & { id: string; entity_name: string | null })[];
-    recent_revisions: {
+    record: {
       id: string;
       state: 'draft' | 'published';
-      change_note: string | null;
-      changed_fields: Record<string, true>;
-    }[];
+      headline: string;
+      publish_note: string | null;
+    };
+    links: (Link & { id: string; entity_name: string | null })[];
   };
 
   async function read(state: 'draft' | 'published'): Promise<Payload | null> {
@@ -206,7 +208,7 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     return expectOk(r) as string;
   }
 
-  it('create: persists links with entity_name resolved; creation revision has empty changed_fields', async () => {
+  it('create: persists links with entity_name resolved', async () => {
     const id = await upsert({
       id: null,
       state: 'draft',
@@ -234,13 +236,9 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
       entity_name: 'Trial Beta', // 5f86089: entity_name resolved by build_intelligence_payload
       relationship_type: 'Same class',
     });
-    // 5a1daae: creation revision leaves changed_fields empty -- the row's
-    // existence already implies "created".
-    expect(payload!.recent_revisions).toHaveLength(1);
-    expect(payload!.recent_revisions[0].changed_fields).toEqual({});
   });
 
-  it('update headline only: changed_fields = {headline: true}; links untouched', async () => {
+  it('update headline only: headline persisted; links untouched', async () => {
     const draft = await read('draft');
     const id = draft!.record.id;
     await upsert({
@@ -260,12 +258,11 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     const next = await read('draft');
     expect(next!.record.headline).toBe('Revised read');
     expect(next!.links).toHaveLength(1);
-    // recent_revisions is ordered by edited_at desc, so [0] is the latest.
-    expect(next!.recent_revisions[0].changed_fields).toEqual({ headline: true });
-    expect(next!.recent_revisions[0].change_note).toBe('Tightened headline');
+    // Drafts never carry a publish_note -- only the published row records one.
+    expect(next!.record.publish_note).toBeNull();
   });
 
-  it('add a product link: changed_fields = {links: true}; both links present', async () => {
+  it('add a product link: both links present with entity_name resolved', async () => {
     const draft = await read('draft');
     const id = draft!.record.id;
     const links: Link[] = [
@@ -296,10 +293,9 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     expect(next!.links).toHaveLength(2);
     const product = next!.links.find((l) => l.entity_type === 'product');
     expect(product?.entity_name).toBe('AcmeMab');
-    expect(next!.recent_revisions[0].changed_fields).toEqual({ links: true });
   });
 
-  it('publish: changed_fields = {state: true}; row reads under "published"', async () => {
+  it('publish: row reads under "published"; publish_note null on first publish', async () => {
     const draft = await read('draft');
     const id = draft!.record.id;
     await upsert({
@@ -320,11 +316,11 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     expect(published).not.toBeNull();
     expect(published!.record.state).toBe('published');
     expect(published!.links).toHaveLength(2);
-    // The publish update flips state, so the latest revision records that.
-    expect(published!.recent_revisions[0].changed_fields).toEqual({ state: true });
+    // First publish on a brand-new anchor: no change_note required, none stored.
+    expect(published!.record.publish_note).toBeNull();
   });
 
-  it('change relationship_type only: still counts as a links change', async () => {
+  it('change relationship_type only: link update round-trips', async () => {
     // After publish, currentId now points to a published row.
     const pub = await read('published');
     const id = pub!.record.id;
@@ -346,6 +342,5 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     const next = await read('published');
     const trial = next!.links.find((l) => l.entity_type === 'trial');
     expect(trial?.relationship_type).toBe('Competitor');
-    expect(next!.recent_revisions[0].changed_fields).toEqual({ links: true });
   });
 });
