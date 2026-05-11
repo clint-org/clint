@@ -68,7 +68,7 @@ test.describe('Landscape bullseye', () => {
     const hfpefCard = page
       .locator('.landscape-index-card')
       .filter({ hasText: 'Heart Failure HFpEF' });
-    await expect(hfpefCard).toContainText('3 products');
+    await expect(hfpefCard).toContainText('3 assets');
     await expect(hfpefCard).toContainText('3 companies');
   });
 

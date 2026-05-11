@@ -23,11 +23,11 @@
           <div class="flex items-center justify-center h-full">
             <div class="flex flex-col items-center gap-3 text-center max-w-md">
               <p-message severity="info" [closable]="false">
-                No products tracked for {{ bullseyeData.value()?.scope?.name }} yet. Add products
-                and trials to see them here.
+                No assets tracked for {{ bullseyeData.value()?.scope?.name }} yet. Add assets and
+                trials to see them here.
               </p-message>
               <p-button
-                label="Manage products"
+                label="Manage assets"
                 severity="secondary"
                 size="small"
                 [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets']"

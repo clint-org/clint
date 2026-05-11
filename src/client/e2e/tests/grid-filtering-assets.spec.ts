@@ -63,7 +63,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
 
   test('sort by Name ascending updates URL and orders rows', async () => {
     await page.getByRole('columnheader', { name: /Name/ }).click();
-    await expect(page).toHaveURL(/sort=product\.name/, { timeout: 2000 });
+    await expect(page).toHaveURL(/sort=asset\.name/, { timeout: 2000 });
     const firstRowName = await page.locator('table tbody tr:first-child td:first-child').innerText();
     expect(firstRowName).toMatch(/^Merck|^Pfizer/);
   });
@@ -112,7 +112,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     await page.getByRole('menuitem', { name: 'View assets' }).click();
 
     // Landed on assets page with the filter applied via the unified URL shape.
-    await expect(page).toHaveURL(new RegExp(`filter\\.product\\.company_id=${pfizerId}`));
+    await expect(page).toHaveURL(new RegExp(`filter\\.asset\\.company_id=${pfizerId}`));
     await expect(page.getByRole('list', { name: 'Active filters' })).toContainText('Pfizer');
 
     // All visible rows are Pfizer assets.
