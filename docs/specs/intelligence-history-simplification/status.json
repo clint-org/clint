@@ -1,0 +1,17 @@
+{
+  "specId": "spec-2026-008",
+  "status": "completed",
+  "branch": "worktree-intelligence-history-phase-1",
+  "tasks": {
+    "T1": { "status": "completed", "agent": null, "attempts": 2, "error": null },
+    "T2": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T3": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T4": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T5": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T7": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T8": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T9": { "status": "completed", "agent": null, "attempts": 1, "error": null }
+  },
+  "updatedAt": "2026-05-11T03:45:00Z"
+}
