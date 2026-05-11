@@ -1,5 +1,5 @@
--- Extends get_space_landing_stats with five motion signals consumed by the
--- redesigned engagement-landing header strip:
+-- Extends get_space_landing_stats with four new motion signals consumed by
+-- the redesigned engagement-landing header strip:
 --   p3_readouts_90d  - data-readout markers (Data category) on Phase 3 trials
 --                      with event_date in [now, now+90d].
 --   new_intel_7d     - primary_intelligence rows in state=published with
