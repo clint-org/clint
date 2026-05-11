@@ -173,6 +173,7 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
   readonly trialId = signal('');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  protected readonly legendVisible = signal(false);
 
   readonly addingMarker = signal(false);
   readonly editingMarker = signal<Marker | null>(null);
