@@ -23,6 +23,8 @@ async function seedArchivedVersion(opts: {
   headline: string;
   versionNumber: number;
   publishedAt: string;
+  archivedAt: string;
+  publishNote: string | null;
   userId: string;
 }): Promise<string> {
   const admin = getAdminClient();
@@ -40,6 +42,9 @@ async function seedArchivedVersion(opts: {
       last_edited_by: opts.userId,
       version_number: opts.versionNumber,
       published_at: opts.publishedAt,
+      published_by: opts.userId,
+      publish_note: opts.publishNote,
+      archived_at: opts.archivedAt,
     })
     .select('id')
     .single();
@@ -52,6 +57,10 @@ async function seedPublishedVersion(opts: {
   entityType: 'company';
   entityId: string;
   headline: string;
+  versionNumber?: number;
+  publishedAt?: string;
+  publishNote?: string | null;
+  thesis?: string;
   userId: string;
 }): Promise<string> {
   const admin = getAdminClient();
@@ -63,14 +72,58 @@ async function seedPublishedVersion(opts: {
       entity_id: opts.entityId,
       state: 'published',
       headline: opts.headline,
-      thesis_md: '',
+      thesis_md: opts.thesis ?? '',
       watch_md: '',
       implications_md: '',
       last_edited_by: opts.userId,
+      version_number: opts.versionNumber ?? null,
+      published_at: opts.publishedAt ?? new Date().toISOString(),
+      published_by: opts.userId,
+      publish_note: opts.publishNote ?? null,
     })
     .select('id')
     .single();
   if (error) throw new Error(`Failed to seed published version: ${error.message}`);
+  return data.id;
+}
+
+async function seedWithdrawnVersion(opts: {
+  spaceId: string;
+  entityType: 'company';
+  entityId: string;
+  headline: string;
+  versionNumber: number;
+  publishedAt: string;
+  withdrawnAt: string;
+  publishNote: string | null;
+  withdrawNote: string | null;
+  thesis?: string;
+  userId: string;
+}): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('primary_intelligence')
+    .insert({
+      space_id: opts.spaceId,
+      entity_type: opts.entityType,
+      entity_id: opts.entityId,
+      state: 'withdrawn',
+      headline: opts.headline,
+      thesis_md: opts.thesis ?? '',
+      watch_md: '',
+      implications_md: '',
+      last_edited_by: opts.userId,
+      version_number: opts.versionNumber,
+      published_at: opts.publishedAt,
+      published_by: opts.userId,
+      publish_note: opts.publishNote,
+      withdrawn_at: opts.withdrawnAt,
+      withdrawn_by: opts.userId,
+      withdraw_note: opts.withdrawNote,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to seed withdrawn version: ${error.message}`);
   return data.id;
 }
 
@@ -128,6 +181,8 @@ test.describe('intelligence version history', () => {
       headline: 'Acme thesis v1',
       versionNumber: 1,
       publishedAt: '2026-04-01T00:00:00Z',
+      archivedAt: '2026-04-05T00:00:00Z',
+      publishNote: 'initial release',
       userId,
     });
     await seedPublishedVersion({
@@ -135,6 +190,9 @@ test.describe('intelligence version history', () => {
       entityType: 'company',
       entityId: companyId,
       headline: 'Acme thesis v2',
+      versionNumber: 2,
+      publishedAt: '2026-04-05T00:00:00Z',
+      publishNote: 'expanded thesis',
       userId,
     });
 
@@ -143,15 +201,23 @@ test.describe('intelligence version history', () => {
       timeout: 10000,
     });
 
-    // History panel header summarises "2 versions" and an expand caret.
     const historyRegion = page.getByRole('region', { name: 'History' });
     await expect(historyRegion.getByText('2 versions')).toBeVisible();
     await historyRegion.locator('button[aria-expanded]').first().click();
 
-    // Expanded list shows the archived v1 chip.
-    await expect(historyRegion.getByText('Archived', { exact: true })).toBeVisible();
+    // Both publish events render with their version chips inside articles
+    // alongside their publish notes. Scope to articles to avoid colliding
+    // with the latestPublished chip in the panel header.
+    const v1Article = historyRegion.locator('article', { hasText: 'initial release' });
+    const v2Article = historyRegion.locator('article', { hasText: 'expanded thesis' });
+    await expect(v1Article.getByText('v1', { exact: true })).toBeVisible();
+    await expect(v2Article.getByText('v2', { exact: true })).toBeVisible();
+    await expect(historyRegion.getByText('"initial release"')).toBeVisible();
+    await expect(historyRegion.getByText('"expanded thesis"')).toBeVisible();
+    // The archived sub-line for v1 is nested under v2's publish row.
+    await expect(v2Article.getByText('v1 archived')).toBeVisible();
 
-    // Withdraw the current published v2.
+    // Withdraw v2 via the IntelligenceBlock control.
     await page.getByRole('button', { name: 'Withdraw' }).first().click();
     const withdrawDialog = page.getByRole('dialog', { name: 'Withdraw this read' });
     await expect(withdrawDialog).toBeVisible({ timeout: 5000 });
@@ -163,21 +229,73 @@ test.describe('intelligence version history', () => {
       withdrawDialog.getByRole('button', { name: 'Withdraw' }).click(),
     ]);
 
-    // Live area falls back to the empty state.
     await expect(page.getByRole('heading', { name: 'Acme thesis v2', level: 3 })).toBeHidden({
       timeout: 5000,
     });
     await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
 
-    // Reload to remount the history panel (its `expanded` signal persists
-    // across the withdraw round-trip; reloading guarantees a known-collapsed
-    // starting state for the second expand).
     await page.reload({ waitUntil: 'networkidle' });
     const historyAfter = page.getByRole('region', { name: 'History' });
     await expect(historyAfter.getByText('2 versions')).toBeVisible();
     await historyAfter.locator('button[aria-expanded]').first().click();
-    await expect(historyAfter.getByText('Withdrawn', { exact: true })).toBeVisible();
-    await expect(historyAfter.getByText('Archived', { exact: true })).toBeVisible();
+    await expect(historyAfter.getByText('Withdrawn').first()).toBeVisible();
+    await expect(historyAfter.getByText('"superseded by external press release"')).toBeVisible();
+  });
+
+  test('diff base skips withdrawn versions', async () => {
+    await ensureClean(spaceId, 'company', companyId);
+
+    await seedArchivedVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'Acme v1 headline',
+      versionNumber: 1,
+      publishedAt: '2026-04-01T00:00:00Z',
+      archivedAt: '2026-04-05T00:00:00Z',
+      publishNote: 'initial',
+      userId,
+    });
+    await seedWithdrawnVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'Acme v2 headline withdrawn branch',
+      versionNumber: 2,
+      publishedAt: '2026-04-05T00:00:00Z',
+      withdrawnAt: '2026-04-06T00:00:00Z',
+      publishNote: 'branch we abandoned',
+      withdrawNote: 'wrong data',
+      userId,
+    });
+    await seedPublishedVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'Acme v3 headline',
+      versionNumber: 3,
+      publishedAt: '2026-04-07T00:00:00Z',
+      publishNote: 'rewritten',
+      userId,
+    });
+
+    await page.goto(companyUrl, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { name: 'Acme v3 headline', level: 3 })).toBeVisible({
+      timeout: 10000,
+    });
+
+    const historyRegion = page.getByRole('region', { name: 'History' });
+    await historyRegion.locator('button[aria-expanded]').first().click();
+
+    // Expand v3's Published row.
+    const v3Row = historyRegion.locator('article', { hasText: 'v3' }).first();
+    await v3Row.locator('button[aria-expanded]').first().click();
+
+    // The diff base label should reference v1, not v2.
+    await expect(historyRegion.getByText('Changes vs v1')).toBeVisible();
+
+    // The diff body should include ins/del marks against v1's content.
+    await expect(historyRegion.locator('ins').first()).toBeVisible();
   });
 
   test('Purge dialog: typed-confirmation gate disables submit until the headline matches', async () => {
