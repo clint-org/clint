@@ -10,7 +10,7 @@ import matter from 'gray-matter';
 import { parse as parseYaml } from './yaml-mini.mjs';
 
 const CAPABILITIES_BLOCK_RE =
-  /^##\s+Capabilities\s*\n+```yaml\s*\n([\s\S]*?)\n```/m;
+  /^##\s+Capabilities\s*$\n+^```yaml\b[^\n]*\n([\s\S]*?)^```\s*$/m;
 
 export async function parseSurface(filePath) {
   const raw = await readFile(filePath, 'utf8');

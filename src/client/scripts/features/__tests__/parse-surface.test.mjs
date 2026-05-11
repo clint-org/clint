@@ -31,3 +31,15 @@ test('throws when ## Capabilities block is missing', async () => {
     message: /missing.*Capabilities/i,
   });
 });
+
+test('throws when surface name cannot be determined', async () => {
+  await assert.rejects(() => parseSurface(fixture('no-surface-name.md')), {
+    message: /surface name missing/i,
+  });
+});
+
+test('throws when the capabilities yaml block is not an array', async () => {
+  await assert.rejects(() => parseSurface(fixture('non-array-capabilities.md')), {
+    message: /must be a YAML array/i,
+  });
+});
