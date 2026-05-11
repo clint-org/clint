@@ -19,6 +19,7 @@ jobs:
       - run: cd src/client && npm ci
       - run: cd src/client && npx ng lint
       - run: cd src/client && npx ng build
+      - run: cd src/client && npm run test:scripts
 
   tests:
     needs: lint-and-build
@@ -64,6 +65,9 @@ jobs:
         # mutable search_path, multi-permissive policy, public extension)
         # blocks the build and surfaces the rule code + remediation link.
         run: supabase db advisors --local --type all --fail-on warn
+
+      - name: Run features-drift check
+        run: cd src/client && npm run features:check
 
       - name: Get Supabase keys
         id: supabase
