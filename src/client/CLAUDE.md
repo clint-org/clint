@@ -95,6 +95,21 @@ cd src/client && ng lint && ng build
 
 For UI changes, exercise the feature in a browser. Type checks verify code, not behavior.
 
+## 13. Empty-state audit
+
+Every user-facing surface must answer these questions in the UI itself, not in a help page:
+
+1. **First-row state.** When data exists, the row labels and primary value column communicate what each row is without external context. Column headers use domain vocabulary (Marker, Trial, Catalyst), never generic ones (Item, Record).
+2. **Empty state.** When there is no data, the empty state names what goes here and how to add one. For viewer-role surfaces (read-only), the empty state explains why it is empty without offering an action the role cannot take.
+3. **Action labels.** Every button and link uses domain vocabulary in imperative form (Register material, Open command palette, Publish intelligence). No generic CTAs (Submit, Click here, Add).
+4. **Tooltips on icon-only buttons.** Every button without text uses `pTooltip` from `primeng/tooltip`. Position right for nav rails, top for inline badges, bottom for editor toolbars.
+5. **Role-appropriate affordances.** Surfaces shown to multiple roles hide actions the current role cannot take. No greyed-out buttons; no permission-denied toasts after click.
+6. **Loading and error states.** Skeleton placeholder during fetch. Errors name what failed and what to do (retry, contact owner). Never silent empty.
+
+**Exception.** Three editorial conventions cannot be carried by the UI alone and have dedicated help pages: marker color rules (`help/markers`), phase color rules (`help/phases`), role and permission model (`help/roles`). Adding a fourth requires a deliberate decision. By default, work harder on the surface first.
+
+**When adding a new feature:** run `npm run features:near -- --tables <touched-tables> --rpcs <touched-rpcs>` to surface adjacent capabilities. Reference any hits in the spec under a "Related capabilities" header.
+
 ## Tooling available in-session
 
 - **Skills:** `angular-developer` and `angular-new-app` (installed via `npx skills add github.com/angular/skills`). Invoke via the Skill tool when implementing components, forms, DI, routing, SSR, a11y, testing, animations, or styling.
