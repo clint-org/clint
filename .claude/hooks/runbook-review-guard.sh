@@ -41,6 +41,29 @@ const helpRules = [
   },
 ];
 
+// path-pattern -> features matrix files that may need review.
+const featuresRules = [
+  {
+    patterns: [/supabase\/migrations\//, /\.sql$/i],
+    msg: "Migration changed. Review docs/runbook/features/*.md - add or update the capability row(s) for affected RPCs or tables.",
+  },
+  {
+    patterns: [/src\/client\/src\/app\/app\.routes\.ts/],
+    msg: "Routes changed. Review docs/runbook/features/*.md - update routes: arrays on the affected capability rows.",
+  },
+  {
+    patterns: [/src\/client\/src\/app\/features\/[^/]+\//],
+    msg: "Feature folder touched. Confirm the matching docs/runbook/features/<slug>.md exists and that its YAML capabilities block reflects the change.",
+  },
+];
+
+const featuresFlags = [];
+for (const rule of featuresRules) {
+  if (rule.patterns.some((re) => re.test(changed))) {
+    featuresFlags.push(rule.msg);
+  }
+}
+
 const flaggedHelp = [];
 for (const rule of helpRules) {
   if (rule.patterns.some((re) => re.test(changed))) {
@@ -52,6 +75,10 @@ let reason = "Code was modified this session under runbook-relevant paths. Revie
 
 if (flaggedHelp.length > 0) {
   reason += "\n\nHelp pages that may need editorial review (live-data parts auto-update; FAQ and prose do not):\n" + flaggedHelp.join("\n");
+}
+
+if (featuresFlags.length > 0) {
+  reason += "\n\nFeatures matrix files that may need review:\n" + featuresFlags.join("\n");
 }
 
 process.stdout.write(JSON.stringify({ decision: "block", reason }));
