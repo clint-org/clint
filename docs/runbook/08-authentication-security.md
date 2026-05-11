@@ -280,7 +280,6 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `platform_admins` | yes | 0 |
 | `primary_intelligence` | yes | 4 |
 | `primary_intelligence_links` | yes | 4 |
-| `primary_intelligence_revisions` | yes | 1 |
 | `product_mechanisms_of_action` | yes | 3 |
 | `product_routes_of_administration` | yes | 3 |
 | `products` | yes | 4 |

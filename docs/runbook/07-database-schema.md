@@ -54,7 +54,6 @@ erDiagram
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
-  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_REVISIONS : "primary_intelligence_id"
   MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
   PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
   PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
@@ -92,11 +91,13 @@ erDiagram
 
 ### primary_intelligence version columns
 
-The `primary_intelligence` table carries four columns that support the version-history feature added on 2026-05-09:
+The `primary_intelligence` table carries a per-anchor `version_number int` plus four lifecycle columns that drive the linear history timeline:
 
 - `version_number int` -- per-anchor sequence assigned by the `assign_primary_intelligence_version` BEFORE trigger on entry into `state='published'`. Null for drafts. Preserved through archive and withdraw transitions, so each version row keeps the same number for its lifetime.
-- `published_at timestamptz` -- stamped on the same trigger fire. Survives the row transitioning out of `published`, so the history panel can render "Published May 9" against an archived row.
-- `withdrawn_at timestamptz`, `withdrawn_by uuid` -- populated by `withdraw_primary_intelligence` when a published row is soft-deleted. Null otherwise.
+- `publish_note text` -- optional change note typed at publish time. Captured directly on the row by `upsert_primary_intelligence` when the new state is `published`. Null for drafts.
+- `published_by uuid` -- who pressed publish. Stamped on the same call as `publish_note`. Null for drafts.
+- `archived_at timestamptz` -- when this version was superseded. Stamped on the prior published row by `upsert_primary_intelligence` in the same transaction as the new publish. Null until then.
+- `withdraw_note text` -- change note captured by `withdraw_primary_intelligence` when a published row is explicitly retracted without replacement. Null otherwise.
 
 The CHECK constraint allows `state in ('draft','published','archived','withdrawn')`. Archived means superseded by a later publish; withdrawn means explicitly retracted without replacement. A second BEFORE UPDATE trigger (`guard_primary_intelligence_state`) rejects illegal transitions out of the terminal states and back from `published -> draft`.
 
@@ -607,7 +608,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
-- `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `routes_of_administration`
@@ -720,4 +720,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260510120100_change_feed_product_company_marker_type.sql`
 - `20260510120200_seed_demo_activity_variety.sql`
 - `20260510120300_change_feed_company_logo_url.sql`
+- `20260510130000_intelligence_history_simplify.sql`
 <!-- /AUTO-GEN:DRIFT -->
