@@ -135,6 +135,7 @@ export interface BullseyeData {
 export interface LandscapeFilters {
   companyIds: string[];
   assetIds: string[];
+  trialIds: string[];
   therapeuticAreaIds: string[];
   mechanismOfActionIds: string[];
   routeOfAdministrationIds: string[];
@@ -147,6 +148,7 @@ export interface LandscapeFilters {
 export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   companyIds: [],
   assetIds: [],
+  trialIds: [],
   therapeuticAreaIds: [],
   mechanismOfActionIds: [],
   routeOfAdministrationIds: [],

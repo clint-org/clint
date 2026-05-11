@@ -221,7 +221,7 @@ export class LandscapeStateService {
 
 // ─── Pure filtering functions ────────────────────────────────────────────
 
-function filterDashboardData(companies: Company[], filters: LandscapeFilters): Company[] {
+export function filterDashboardData(companies: Company[], filters: LandscapeFilters): Company[] {
   let result = companies;
 
   if (filters.companyIds.length > 0) {
@@ -251,6 +251,10 @@ function filterDashboardData(companies: Company[], filters: LandscapeFilters): C
       products = products
         .map((p) => {
           let trials = p.trials ?? [];
+
+          if (filters.trialIds.length > 0) {
+            trials = trials.filter((t) => filters.trialIds.includes(t.id));
+          }
 
           if (filters.therapeuticAreaIds.length > 0) {
             trials = trials.filter(
