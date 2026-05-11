@@ -6,6 +6,7 @@ import { tenantGuard } from './core/guards/tenant.guard';
 import { spaceGuard } from './core/guards/space.guard';
 import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
 import { auditTenantGuard } from './core/guards/audit-tenant.guard';
+import { auditAgencyGuard } from './core/guards/audit-agency.guard';
 import { auditSpaceGuard } from './core/guards/audit-space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
@@ -59,6 +60,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/agency/agency-branding.component').then(
             (m) => m.AgencyBrandingComponent
+          ),
+      },
+      {
+        path: 'audit-log',
+        canActivate: [auditAgencyGuard],
+        loadComponent: () =>
+          import('./features/agency/agency-audit-log.component').then(
+            (m) => m.AgencyAuditLogComponent
           ),
       },
     ],

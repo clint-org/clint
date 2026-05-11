@@ -219,6 +219,12 @@ export class AgencyShellComponent implements OnInit {
       routerLink: '/admin/branding',
       match: (url) => url.startsWith('/admin/branding'),
     },
+    {
+      label: 'Audit log',
+      icon: 'fa-solid fa-shield-halved',
+      routerLink: '/admin/audit-log',
+      match: (url) => url.startsWith('/admin/audit-log'),
+    },
   ];
 
   async ngOnInit(): Promise<void> {
