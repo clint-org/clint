@@ -47,7 +47,6 @@ import { IntelligenceHistoryPanelComponent } from '../../../shared/components/in
 import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
-import { RecentActivityFeedComponent } from '../../../shared/components/recent-activity-feed/recent-activity-feed.component';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
@@ -81,7 +80,6 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     IntelligenceHistoryPanelComponent,
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
-    RecentActivityFeedComponent,
     MaterialsSectionComponent,
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,

@@ -257,15 +257,6 @@
         </div>
       </section>
 
-      <!-- Recent activity -->
-      <div id="recent-activity">
-        <app-recent-activity-feed
-          [published]="intelligence()?.published ?? null"
-          [draft]="intelligence()?.draft ?? null"
-          [agencyView]="spaceRole.canEdit()"
-        />
-      </div>
-
       <!-- Materials section: file uploads linked to this trial. -->
       <section
         id="materials"
