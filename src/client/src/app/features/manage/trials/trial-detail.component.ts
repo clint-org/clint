@@ -55,6 +55,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
+import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
@@ -88,6 +89,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     ChangeEventRowComponent,
     TrialEditDialogComponent,
     TimelineViewComponent,
+    EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
   ],
   providers: [LandscapeStateService],

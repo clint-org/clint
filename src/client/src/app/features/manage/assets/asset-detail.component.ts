@@ -23,6 +23,7 @@ import { PurgeIntelligenceDialogComponent } from '../../../shared/components/int
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
+import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
@@ -49,6 +50,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
     TimelineViewComponent,
+    EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
