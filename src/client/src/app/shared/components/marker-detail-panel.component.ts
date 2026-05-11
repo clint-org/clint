@@ -12,9 +12,12 @@ import { DetailPanelShellComponent } from './detail-panel-shell.component';
 import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 
 /**
- * Container for the marker detail content. Two display modes:
+ * Container for the marker detail content. Three display modes:
  *   - `drawer`: 340px slide-in panel anchored to the right of the host (used
  *     by the timeline + catalysts views in the landscape shell).
+ *   - `page-drawer`: 340px slide-in panel anchored to the right of the
+ *     viewport (used on entity pages where the host is short and the user
+ *     should be able to scroll the parent page underneath).
  *   - `inline`: renders directly into a parent column without animation.
  *
  * The header eyebrow shows the marker shape glyph + "{category} ·
@@ -32,11 +35,11 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
   ],
   animations: [slidePanelAnimation],
   template: `
-    @if (mode() === 'drawer') {
+    @if (mode() === 'drawer' || mode() === 'page-drawer') {
       @if (open()) {
         <div
           @slidePanel
-          class="absolute top-0 right-0 bottom-0 z-10 w-[340px] border-l border-slate-200 bg-white shadow-[-4px_0_16px_rgba(0,0,0,0.08)]"
+          [class]="drawerClasses()"
         >
           <ng-container *ngTemplateOutlet="paneContent" />
         </div>
@@ -50,7 +53,7 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
     <ng-template #paneContent>
       <app-detail-panel-shell
         [label]="headerLabel()"
-        [density]="mode() === 'drawer' ? 'compact' : 'roomy'"
+        [density]="mode() === 'inline' ? 'roomy' : 'compact'"
         [bordered]="mode() === 'inline'"
         (closed)="panelClose.emit()"
       >
@@ -84,7 +87,7 @@ export class MarkerDetailPanelComponent {
   readonly detail = input<CatalystDetail | null>(null);
   /** Optional space id, threaded through to the materials section. */
   readonly spaceId = input<string | null>(null);
-  readonly mode = input<'inline' | 'drawer'>('inline');
+  readonly mode = input<'inline' | 'drawer' | 'page-drawer'>('inline');
   readonly open = input<boolean>(true);
   /**
    * Per-space CT.gov field surface to render under the Trial section.
@@ -101,6 +104,15 @@ export class MarkerDetailPanelComponent {
     const d = this.detail();
     if (!d) return '';
     return `${d.catalyst.category_name} · ${d.catalyst.marker_type_name}`;
+  });
+
+  readonly drawerClasses = computed(() => {
+    const base = 'z-30 w-[340px] border-l border-slate-200 bg-white shadow-[-4px_0_16px_rgba(0,0,0,0.08)]';
+    const positioning =
+      this.mode() === 'page-drawer'
+        ? 'fixed top-[42px] right-0 bottom-0'
+        : 'absolute top-0 right-0 bottom-0';
+    return `${positioning} ${base}`;
   });
 
   readonly effectiveFillStyle = computed<FillStyle>(() => {
