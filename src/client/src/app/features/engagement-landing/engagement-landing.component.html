@@ -9,103 +9,142 @@
 <div
   class="mx-auto flex w-full max-w-[1480px] flex-col gap-[18px] px-6 pb-16 max-md:gap-[14px] max-md:px-4 max-md:pb-12"
 >
-  <!-- Pulse: title + integrated stats strip -->
-  <header
-    class="flex items-stretch border-b border-slate-200 py-3.5 max-[1100px]:flex-col max-[1100px]:gap-3.5"
+  <!-- Engagement pulse: identity, adaptive brief, motion strip -->
+  <section
+    class="flex flex-col border border-slate-200 bg-white"
     aria-label="Engagement summary"
   >
+    <!-- Row 1: identity -->
     <div
-      class="flex flex-1 min-w-0 flex-col justify-center gap-1 border-r border-slate-200 pr-6 max-[1100px]:border-b max-[1100px]:border-r-0 max-[1100px]:pb-3.5 max-[1100px]:pr-0"
+      class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-200 px-5 py-2.5 max-[800px]:flex-col max-[800px]:items-start max-[800px]:gap-1.5"
     >
-      @if (eyebrowParts().length > 0) {
-        <span class="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">{{
-          eyebrowParts().join(' · ')
-        }}</span>
-      }
-      <h1 class="m-0 text-[22px] font-semibold leading-[1.15] tracking-[-0.015em] text-slate-900">
-        {{ spaceName() || 'Engagement' }}
-      </h1>
-      @if (activeSinceLabel()) {
-        <span class="text-xs tabular-nums text-slate-500">{{ activeSinceLabel() }}</span>
+      <div class="flex items-baseline gap-3">
+        <h1
+          class="m-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900"
+        >
+          {{ engagementName() || 'ENGAGEMENT' }}
+        </h1>
+        @if (activeSince()) {
+          <span class="font-mono text-[10px] tracking-[0.08em] text-slate-400">
+            {{ activeSince() }}
+          </span>
+        }
+      </div>
+      @if (inventoryTotals(); as inv) {
+        <div
+          class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
+          aria-label="Engagement inventory"
+        >
+          <span><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span>
+          <span><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span>
+          <span><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span>
+        </div>
       }
     </div>
+
+    <!-- Row 2: adaptive brief -->
+    @if (brief(); as b) {
+      <div
+        class="flex items-center gap-3 border-b border-brand-200 bg-brand-50 px-5 py-2.5"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="shrink-0 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900">
+          <span class="font-semibold text-slate-500">{{ dateAnchor().day }}</span>
+          {{ dateAnchor().date }}
+        </span>
+        <span
+          class="shrink-0 bg-brand-100 px-1.5 py-[3px] font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-brand-700"
+        >
+          {{ b.window }}
+        </span>
+        <span class="flex-1 truncate text-[13px] leading-[1.45] text-slate-900">
+          <b class="font-semibold">{{ b.lead.title }}</b>
+          @if (b.lead.company_name) {
+            <span class="text-slate-500"> · {{ b.lead.company_name }}</span>
+          }
+          @if (b.additional > 0) {
+            <span class="text-slate-500">
+              · {{ b.additional }} more catalyst{{ b.additional === 1 ? '' : 's' }} ahead
+            </span>
+          }
+        </span>
+        <a
+          class="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-[11px] text-brand-700 no-underline hover:text-brand-800 focus-visible:text-brand-800"
+          [routerLink]="catalystsRoute()"
+          [queryParams]="{ markerId: b.lead.marker_id }"
+          aria-label="View catalyst"
+        >
+          <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    }
+
+    <!-- Row 3: motion strip -->
     <ul
-      class="m-0 grid flex-[2] list-none grid-cols-5 p-0 max-[700px]:grid-cols-3 max-[700px]:gap-y-3"
+      class="m-0 grid list-none grid-cols-5 p-0 max-[700px]:grid-cols-3 max-[700px]:gap-y-3"
       role="list"
-      aria-label="Engagement statistics"
+      aria-label="Engagement motion signals"
     >
-      @for (stat of pulseStats(); track trackStat($index, stat)) {
+      @for (stat of motionStats(); track trackStat($index, stat)) {
         <li
-          class="flex min-w-0 flex-col justify-center border-r border-slate-100 px-[18px] last:border-r-0 max-[700px]:px-3"
+          class="flex min-w-0 flex-col justify-center border-r border-slate-100 px-[18px] py-3 last:border-r-0 max-[700px]:px-3"
           [attr.aria-busy]="stat.value === null ? true : null"
         >
           @if (stat.route && stat.value !== null) {
             <a
-              class="group flex flex-col gap-1 px-0 py-1 text-inherit no-underline outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              class="group flex flex-col gap-1 py-1 text-inherit no-underline outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               [routerLink]="stat.route"
+              [queryParams]="stat.queryParams"
               [attr.aria-label]="stat.label + ': ' + stat.value"
             >
               <span
-                class="font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums"
-                [ngClass]="
-                  stat.warn
+                [class]="
+                  'font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums ' +
+                  (stat.warn
                     ? 'text-amber-700 group-hover:text-amber-800 group-focus-visible:text-amber-800'
-                    : 'text-slate-900 group-hover:text-brand-700 group-focus-visible:text-brand-700'
+                    : (stat.key === 'newIntel' && stat.value > 0)
+                      ? 'text-cyan-700 group-hover:text-cyan-800 group-focus-visible:text-cyan-800'
+                      : 'text-slate-900 group-hover:text-brand-700 group-focus-visible:text-brand-700')
                 "
-                >{{ stat.value }}</span
-              >
-              <span
-                class="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-brand-700 group-focus-visible:text-brand-700"
-                >{{ stat.label }}</span
-              >
+              >{{ stat.display }}</span>
+              <span class="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-brand-700 group-focus-visible:text-brand-700">
+                {{ stat.label }}
+              </span>
+              <span class="font-mono text-[8px] uppercase tracking-[0.08em] text-slate-400">
+                {{ stat.windowLabel }}
+              </span>
             </a>
           } @else {
-            <div class="flex flex-col gap-1 px-0 py-1">
+            <div class="flex flex-col gap-1 py-1">
               @if (stat.value === null) {
-                <span
-                  class="font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums text-slate-900"
-                  ><app-skeleton w="36px" h="22px"
-                /></span>
+                <span class="font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums text-slate-900">
+                  <app-skeleton w="36px" h="22px" />
+                </span>
               } @else {
                 <span
-                  class="font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums"
-                  [ngClass]="stat.warn ? 'text-amber-700' : 'text-slate-900'"
-                  >{{ stat.value }}</span
-                >
+                  [class]="
+                    'font-mono text-2xl font-semibold leading-none tracking-[-0.01em] tabular-nums ' +
+                    (stat.warn
+                      ? 'text-amber-700'
+                      : (stat.key === 'newIntel' && stat.value > 0)
+                        ? 'text-cyan-700'
+                        : 'text-slate-900')
+                  "
+                >{{ stat.display }}</span>
               }
-              <span
-                class="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                >{{ stat.label }}</span
-              >
+              <span class="font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {{ stat.label }}
+              </span>
+              <span class="font-mono text-[8px] uppercase tracking-[0.08em] text-slate-400">
+                {{ stat.windowLabel }}
+              </span>
             </div>
           }
         </li>
       }
     </ul>
-  </header>
-
-  <!-- Today brief -->
-  @if (briefVisible()) {
-    <div
-      class="flex items-center gap-3.5 border border-brand-200 border-l-[3px] border-l-brand-600 bg-brand-50 px-3.5 py-2.5 text-xs text-brand-800"
-      role="status"
-    >
-      <span
-        class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-brand-700"
-        >Today · {{ todayLabel() }}</span
-      >
-      <span
-        class="flex-1 leading-[1.45] text-slate-700 [&_b]:font-semibold [&_b]:text-slate-900"
-        [innerHTML]="briefHtml()"
-      ></span>
-      <a
-        class="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-[11px] text-brand-700 no-underline hover:text-brand-800 focus-visible:text-brand-800"
-        [routerLink]="catalystsRoute()"
-        aria-label="View catalysts"
-        ><i class="fa-solid fa-arrow-right"></i
-      ></a>
-    </div>
-  }
+  </section>
 
   <!-- Two-column body: intelligence (2/3) + side rail (1/3) -->
   <div class="grid grid-cols-3 gap-[18px] max-[1100px]:grid-cols-1 max-[1100px]:gap-[14px]">

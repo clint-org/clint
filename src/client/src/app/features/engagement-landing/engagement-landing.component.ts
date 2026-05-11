@@ -38,14 +38,6 @@ import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
-interface Stat {
-  key: 'activeTrials' | 'companies' | 'assets' | 'catalysts' | 'intelligence';
-  label: string;
-  value: number | null;
-  route: string | null;
-  warn: boolean;
-}
-
 interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
   label: string;
@@ -152,48 +144,6 @@ export class EngagementLandingComponent implements OnInit {
     };
   });
 
-  readonly pulseStats = computed<Stat[]>(() => {
-    const s = this.stats();
-    const r = this.statsRoutes();
-    return [
-      {
-        key: 'activeTrials',
-        label: 'Active trials',
-        value: s?.active_trials ?? null,
-        route: r?.activeTrials ?? null,
-        warn: false,
-      },
-      {
-        key: 'companies',
-        label: 'Companies',
-        value: s?.companies ?? null,
-        route: r?.companies ?? null,
-        warn: false,
-      },
-      {
-        key: 'assets',
-        label: 'Assets',
-        value: s?.assets ?? null,
-        route: r?.assets ?? null,
-        warn: false,
-      },
-      {
-        key: 'catalysts',
-        label: 'Catalysts < 90d',
-        value: s?.catalysts_90d ?? null,
-        route: r?.catalysts ?? null,
-        warn: true,
-      },
-      {
-        key: 'intelligence',
-        label: 'Intelligence',
-        value: s?.intelligence_total ?? null,
-        route: r?.intelligence ?? null,
-        warn: false,
-      },
-    ];
-  });
-
   readonly motionStats = computed<MotionCell[]>(() => {
     const s = this.stats();
     const tid = this.tenantId();
@@ -279,49 +229,7 @@ export class EngagementLandingComponent implements OnInit {
     return { trials: s.active_trials, companies: s.companies, assets: s.assets };
   });
 
-  readonly eyebrowParts = computed(() => {
-    const t = this.tenantName();
-    const s = this.spaceName();
-    return [t, s, 'ENGAGEMENT'].filter((p): p is string => !!p).map((p) => p.toUpperCase());
-  });
-
-  readonly activeSinceLabel = computed(() => {
-    const s = this.space();
-    if (!s?.created_at) return '';
-    const d = new Date(s.created_at);
-    const year = d.getUTCFullYear();
-    const quarter = Math.floor(d.getUTCMonth() / 3) + 1;
-    return `Active since ${year}-Q${quarter}`;
-  });
-
-  /** Catalysts within the next 7 days (subset of upcoming()). */
-  readonly catalystsThisWeek = computed(() => {
-    const horizon = addDaysIso(7);
-    const today = todayIso();
-    return this.upcoming().filter((c) => c.event_date >= today && c.event_date <= horizon);
-  });
-
-  readonly briefVisible = computed(
-    () => !this.statsLoading() && this.catalystsThisWeek().length > 0
-  );
-
-  readonly briefHtml = computed(() => {
-    const week = this.catalystsThisWeek();
-    if (week.length === 0) return '';
-    const lead = week[0];
-    const detail = lead
-      ? ` (${escapeHtml(lead.title)}${lead.company_name ? ' · ' + escapeHtml(lead.company_name.toUpperCase()) : ''})`
-      : '';
-    return `<b>${week.length} catalyst${week.length === 1 ? '' : 's'} this week</b>${detail}`;
-  });
-
-  readonly todayLabel = computed(() => {
-    return new Date().toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  });
+  readonly briefVisible = computed(() => this.brief() !== null);
 
   readonly brief = computed<BriefResult | null>(() => {
     if (this.statsLoading() || this.upcomingLoading()) return null;
@@ -466,7 +374,7 @@ export class EngagementLandingComponent implements OnInit {
   }
 
   trackPost = (_: number, row: IntelligenceFeedRow): string => row.id;
-  trackStat = (_: number, s: Stat): string => s.key;
+  trackStat = (_: number, s: MotionCell): string => s.key;
   trackFilter = (_: number, f: FeedFilter): string => f.key;
   trackDay = (_: number, d: CatalystDay): string => d.marker_id;
   trackMonth = (_: number, g: MonthGroup): string => g.monthLabel;
@@ -622,15 +530,6 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
 function recentCount(rows: IntelligenceFeedRow[], days: number): number {
   const cutoff = Date.now() - days * 86_400_000;
   return rows.filter((r) => new Date(r.updated_at).getTime() >= cutoff).length;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function formatError(err: unknown, fallback: string): string {
