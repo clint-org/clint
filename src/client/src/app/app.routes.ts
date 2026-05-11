@@ -5,6 +5,7 @@ import { superAdminGuard } from './core/guards/super-admin.guard';
 import { tenantGuard } from './core/guards/tenant.guard';
 import { spaceGuard } from './core/guards/space.guard';
 import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
+import { auditTenantGuard } from './core/guards/audit-tenant.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 
 export const routes: Routes = [
@@ -116,6 +117,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/tenant-settings/tenant-settings.component').then(
             (m) => m.TenantSettingsComponent
+          ),
+      },
+      {
+        path: 'settings/audit-log',
+        canActivate: [auditTenantGuard],
+        loadComponent: () =>
+          import('./features/tenant-settings/tenant-audit-log.component').then(
+            (m) => m.TenantAuditLogComponent
           ),
       },
       {

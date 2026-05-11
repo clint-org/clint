@@ -334,6 +334,24 @@ import { extractErrorMessage } from '../../core/util/error-message';
         </div>
       }
 
+      <!-- Audit log link (owner-only) -->
+      @if (currentUserIsOwner()) {
+        <div class="mt-8 max-w-xl border-t border-slate-200 pt-6">
+          <h3
+            class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
+            Administration
+          </h3>
+          <a
+            [routerLink]="['/t', tenantId, 'settings', 'audit-log']"
+            class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-brand-700 hover:underline"
+          >
+            <i class="fa-solid fa-list-check text-xs"></i>
+            Audit log
+          </a>
+        </div>
+      }
+
       <!-- Danger zone (owner-only, direct-customer tenants only) -->
       @if (currentUserIsOwner() && !tenant()?.agency_id) {
         <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
