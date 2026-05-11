@@ -52,6 +52,8 @@ Company
 
 **Notes** -- free-text annotations attached to trials, displayed inline.
 
+**Entity-page surfaces.** The timeline now mounts on trial, product, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
+
 ## Timeline Zoom
 
 Four zoom levels let users control the time granularity. The `TimelineService` defines pixel-per-year ratios for each:
@@ -441,6 +443,7 @@ Pages follow a consistent shape (header + summary + descriptor table + FAQ + bac
 Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts` whose path string does not appear anywhere in this file. Add a feature heading or sentence describing each flagged route, or mark it intentional if it is purely structural (a redirect, a guard sandbox, etc).
 
 <!-- AUTO-GEN:DRIFT -->
+- `audit-log`
 - `auth/callback`
 - `by-company`
 - `by-company/:entityId`
@@ -460,6 +463,7 @@ Auto-generated. Lists route paths declared in `src/client/src/app/app.routes.ts`
 - `manage/routes-of-administration`
 - `manage/therapeutic-areas`
 - `seed-demo`
+- `settings/audit-log`
 - `settings/fields`
 - `settings/general`
 - `settings/marker-types`
