@@ -30,12 +30,13 @@
         <li class="flex items-start gap-3 px-4 py-3">
           <app-skeleton w="20px" h="20px" />
           <div class="min-w-0 flex-1">
-            <div class="mb-1 flex items-center gap-2">
-              <app-skeleton w="44px" h="10px" />
-              <app-skeleton w="120px" h="10px" />
-              <app-skeleton w="80px" h="10px" />
+            <app-skeleton class="mb-2 block" [block]="true" w="85%" h="14px" />
+            <div class="flex items-center gap-2">
+              <app-skeleton w="16px" h="16px" />
+              <app-skeleton w="90px" h="11px" />
+              <app-skeleton w="48px" h="11px" />
+              <app-skeleton class="ml-auto" w="64px" h="14px" />
             </div>
-            <app-skeleton [block]="true" w="80%" h="13px" />
           </div>
         </li>
       }

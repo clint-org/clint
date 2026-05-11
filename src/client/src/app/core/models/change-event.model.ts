@@ -34,6 +34,7 @@ export interface ChangeEvent {
   trial_identifier: string | null;
   product_name: string | null;
   company_name: string | null;
+  company_logo_url: string | null;
   marker_title: string | null;
   marker_color: string | null;
   marker_type_name: string | null;

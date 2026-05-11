@@ -570,7 +570,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`
-- `delete_primary_intelligence`
 - `delete_space`
 - `finalize_material`
 - `get_bullseye_by_company`
@@ -582,14 +581,12 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
-- `get_intelligence_version_revisions`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
-- `get_primary_intelligence_history`
 - `get_product_detail_with_intelligence`
 - `get_space_intelligence`
 - `get_space_landing_stats`
@@ -608,14 +605,11 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_set_pinned`
 - `palette_touch_recent`
 - `palette_unpin`
-- `purge_primary_intelligence`
 - `referenced_in_entity`
 - `register_material`
 - `search_palette`
 - `update_material`
-- `upsert_primary_intelligence`
 - `validate_material_links_payload`
-- `withdraw_primary_intelligence`
 - `write_primary_intelligence_revision`
 
 **Edge functions in `supabase/functions/` not documented:**

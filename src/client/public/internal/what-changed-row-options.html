@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
-    <title>Clint, what-changed row options</title>
+    <title>Clint, what-changed row -- logo + small NCT</title>
     <style>
       :root {
+        /* Tailwind slate */
         --slate-50: #f8fafc;
         --slate-100: #f1f5f9;
         --slate-200: #e2e8f0;
@@ -17,12 +18,13 @@
         --slate-700: #334155;
         --slate-800: #1e293b;
         --slate-900: #0f172a;
+        /* Clint brand (teal) */
         --brand-50: #f0fdfa;
         --brand-100: #ccfbf1;
         --brand-300: #5eead4;
         --brand-600: #0d9488;
         --brand-700: #0f766e;
-        --brand-800: #115e59;
+        /* Data colors */
         --green-600: #16a34a;
         --red-600: #dc2626;
         --blue-600: #2563eb;
@@ -73,24 +75,55 @@
         margin-bottom: 12px;
       }
       .deck-head h1 {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 700;
         color: var(--slate-900);
-        line-height: 1.2;
+        line-height: 1.25;
         letter-spacing: -0.005em;
         margin-bottom: 14px;
-        max-width: 820px;
+        max-width: 760px;
       }
       .deck-head p {
-        font-size: 14.5px;
+        font-size: 14px;
         color: var(--slate-600);
-        max-width: 760px;
+        max-width: 720px;
       }
       .deck-head p + p {
         margin-top: 8px;
       }
 
-      /* Option card */
+      /* Constraint note */
+      .constraint {
+        margin-bottom: 36px;
+        padding: 14px 16px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-left: 2px solid var(--brand-600);
+      }
+      .constraint h3 {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--slate-700);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .constraint p {
+        font-size: 13px;
+        color: var(--slate-600);
+        max-width: 76ch;
+      }
+      .constraint code {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--slate-800);
+        background: var(--slate-100);
+        padding: 1px 5px;
+        border-radius: 2px;
+      }
+
+      /* Option block */
       .opt {
         margin-bottom: 56px;
       }
@@ -111,7 +144,7 @@
         border: 1px solid var(--brand-600);
       }
       .opt-head h2 {
-        font-size: 19px;
+        font-size: 18px;
         font-weight: 700;
         color: var(--slate-900);
         letter-spacing: -0.005em;
@@ -119,22 +152,11 @@
       .opt-desc {
         font-size: 13.5px;
         color: var(--slate-600);
-        margin-bottom: 14px;
+        margin-bottom: 18px;
         max-width: 76ch;
       }
-      .opt-meta {
-        font-family: var(--font-mono);
-        font-size: 10.5px;
-        color: var(--slate-500);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-bottom: 14px;
-      }
-      .opt-meta .needs-rpc {
-        color: var(--amber-600);
-      }
       .opt-tradeoff {
-        margin-top: 14px;
+        margin-top: 16px;
         padding: 12px 16px;
         background: white;
         border-left: 2px solid var(--brand-600);
@@ -152,30 +174,72 @@
         margin-right: 8px;
       }
 
-      /* Widget frame (matches engagement landing) */
+      /* Side-by-side preview at the two real column widths */
+      .preview-pair {
+        display: grid;
+        grid-template-columns: 460px 580px;
+        gap: 32px;
+        align-items: start;
+      }
+      @media (max-width: 1120px) {
+        .preview-pair {
+          grid-template-columns: 1fr;
+        }
+      }
+      .preview-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .preview-col .col-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      /* -------------------------------------------------------------- */
+      /* Widget: mirrors production what-changed-widget styling         */
+      /* -------------------------------------------------------------- */
       .widget {
         background: white;
         border: 1px solid var(--slate-200);
+        display: flex;
+        flex-direction: column;
       }
       .widget-head {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: space-between;
+        gap: 8px;
         border-bottom: 1px solid var(--slate-100);
-        padding: 12px 16px;
+        background: var(--slate-50);
+        padding: 10px 14px;
       }
       .widget-head h3 {
-        font-size: 10.5px;
-        font-weight: 700;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
         color: var(--slate-700);
-        letter-spacing: 0.18em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
+      }
+      .widget-head .count {
+        margin-left: auto;
+        margin-right: 8px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-400);
+        letter-spacing: 0.04em;
       }
       .widget-head a {
         font-family: var(--font-mono);
         font-size: 10px;
-        color: var(--brand-700);
-        letter-spacing: 0.12em;
+        font-weight: 700;
+        color: var(--brand-600);
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         text-decoration: none;
       }
@@ -183,9 +247,10 @@
         padding: 0 16px;
       }
 
-      /* Common row pieces */
+      /* Row -- production geometry */
       .row {
         display: flex;
+        align-items: flex-start;
         gap: 12px;
         padding: 12px 0;
         border-bottom: 1px solid var(--slate-200);
@@ -194,343 +259,186 @@
         border-bottom: 0;
       }
       .row-icon {
-        width: 18px;
-        flex-shrink: 0;
-        color: var(--slate-500);
-        font-size: 13px;
+        width: 20px;
         margin-top: 2px;
-        text-align: center;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: var(--green-600);
+      }
+      .row-icon.green {
+        color: var(--green-600);
+      }
+      .row-icon.slate {
+        color: var(--slate-500);
       }
       .row-body {
         flex: 1;
         min-width: 0;
       }
+
+      /* Meta line -- production exact */
       .meta {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
         display: flex;
-        gap: 8px;
+        flex-wrap: wrap;
         align-items: center;
-        margin-bottom: 3px;
+        column-gap: 8px;
+        row-gap: 2px;
+        font-size: 12px;
+        color: var(--slate-500);
+        margin-bottom: 4px;
+      }
+      .meta .company {
+        font-family: var(--font-mono);
+        font-weight: 600;
+        color: var(--slate-700);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .meta .product {
+        color: var(--slate-600);
+      }
+      .meta .nct {
+        font-family: var(--font-mono);
+        color: var(--slate-500);
+        font-variant-numeric: tabular-nums;
+      }
+      .meta .date {
+        font-family: var(--font-mono);
+        color: var(--slate-500);
+        font-variant-numeric: tabular-nums;
       }
       .meta .sep {
         color: var(--slate-300);
       }
-      .summary {
-        font-size: 13.5px;
-        color: var(--slate-900);
-        line-height: 1.45;
-      }
-      .summary .arrow {
-        color: var(--slate-400);
-        margin: 0 4px;
+      .meta .src {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
         font-family: var(--font-mono);
-      }
-      .summary .new {
-        color: var(--slate-900);
-        font-weight: 500;
-      }
-      .summary .old {
+        font-size: 10px;
         color: var(--slate-500);
-      }
-
-      /* Source chip */
-      .src {
-        font-family: var(--font-mono);
-        font-size: 9.5px;
-        font-weight: 600;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        padding: 1px 5px;
+        padding: 1px 6px;
         border: 1px solid var(--slate-200);
-        color: var(--slate-500);
         background: var(--slate-50);
-      }
-      .src.an {
-        color: var(--brand-700);
-        border-color: var(--brand-100);
-        background: var(--brand-50);
-      }
-      .src-dot {
-        width: 5px;
-        height: 5px;
-        background: var(--slate-400);
-        display: inline-block;
-        flex-shrink: 0;
-      }
-      .src-dot.an {
-        background: var(--brand-600);
-      }
-
-      /* Event-type tag */
-      .tag {
-        font-family: var(--font-mono);
-        font-size: 9.5px;
-        font-weight: 700;
-        color: var(--slate-700);
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        padding: 2px 7px;
-        background: var(--slate-100);
-        flex-shrink: 0;
-        align-self: flex-start;
-        margin-top: 1px;
-      }
-      .tag.phase {
-        background: #ddd6fe;
-        color: var(--violet-600);
-      }
-      .tag.date {
-        background: #dbeafe;
-        color: var(--blue-600);
-      }
-      .tag.status {
-        background: #fee2e2;
-        color: var(--red-600);
-      }
-      .tag.marker {
-        background: #d1fae5;
-        color: var(--green-600);
-      }
-      .tag.enroll {
-        background: #fef3c7;
-        color: var(--amber-600);
-      }
-
-      /* Program identifier */
-      .prog {
-        font-family: var(--font-mono);
-        font-size: 11.5px;
-        color: var(--slate-700);
-        letter-spacing: 0.04em;
-        font-weight: 600;
-      }
-      .prog-uppercase {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--slate-900);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .asset {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--slate-900);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-      .company {
-        font-family: var(--font-mono);
-        font-size: 10.5px;
-        color: var(--slate-500);
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-      .time {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
-        font-variant-numeric: tabular-nums;
-      }
-
-      /* Variation-specific row layouts */
-      .row.v1 .meta span:first-child {
-        color: var(--slate-700);
-        font-weight: 600;
-      }
-
-      .row.v2 .summary-lead {
-        font-size: 13.5px;
-        color: var(--slate-900);
-        font-weight: 500;
-        line-height: 1.4;
-        margin-bottom: 3px;
-      }
-      .row.v2 .meta-bottom {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-
-      .row.v3 {
-        display: grid;
-        grid-template-columns: 18px 200px 1fr auto;
-        gap: 14px;
-        align-items: center;
-        padding: 10px 0;
-      }
-      .row.v3 .summary {
-        font-size: 13px;
-      }
-
-      .row.v4 {
-        display: flex;
-        gap: 10px;
-        align-items: baseline;
-        padding: 10px 0;
-      }
-      .row.v4 .summary {
-        flex: 1;
-        font-size: 13px;
-      }
-      .row.v4 .right {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
+        border-radius: 2px;
         white-space: nowrap;
       }
 
-      .row.v5 {
-        display: grid;
-        grid-template-columns: 70px 200px 1fr 70px;
-        gap: 14px;
-        align-items: center;
-        padding: 9px 0;
-      }
-      .row.v5 .summary {
-        font-size: 12.5px;
-      }
-      .row.v5 .time {
-        text-align: right;
-      }
-
-      .row.v6 {
-        display: flex;
-        gap: 14px;
-        padding: 12px 0;
-      }
-      .row.v6 .row-body {
-        flex: 1;
-      }
-      .row.v6 .head {
-        display: flex;
-        gap: 10px;
-        align-items: baseline;
-        margin-bottom: 4px;
-      }
-      .row.v6 .head .summary {
-        flex: 1;
-        font-size: 13px;
+      /* Summary line -- production exact */
+      .summary {
+        font-size: 14px;
         color: var(--slate-900);
+        line-height: 1.45;
       }
-      .row.v6 .program-line {
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
-        letter-spacing: 0.04em;
-      }
-
-      .row.v7 {
-        display: flex;
-        gap: 12px;
-        padding: 12px 0;
-      }
-      .row.v7 .body {
-        flex: 1;
-      }
-      .row.v7 .delta {
-        font-family: var(--font-mono);
-        font-size: 13px;
-        color: var(--slate-900);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 3px;
-      }
-      .row.v7 .delta .from {
+      .summary .old {
         color: var(--slate-500);
         text-decoration: line-through;
         text-decoration-color: var(--slate-300);
       }
-      .row.v7 .delta .arrow {
-        color: var(--slate-400);
-        font-size: 11px;
-      }
-      .row.v7 .delta .to {
-        color: var(--slate-900);
+      .summary .new {
         font-weight: 600;
+        color: var(--green-600);
       }
-      .row.v7 .ctx-line {
+      .summary .new.neutral {
+        color: var(--slate-900);
+      }
+      .summary .arrow {
+        margin: 0 4px;
         font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--slate-500);
+        color: var(--slate-400);
       }
 
-      .row.v8 {
-        padding: 9px 0;
+      /* -------------------------------------------------------------- */
+      /* Logo tile (only used in V1-V3)                                 */
+      /* -------------------------------------------------------------- */
+      .logo {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         font-family: var(--font-mono);
-        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: var(--slate-100);
         color: var(--slate-700);
-        line-height: 1.5;
+        border: 1px solid var(--slate-200);
+        border-radius: 2px;
+        width: 20px;
+        height: 20px;
+        font-size: 8.5px;
       }
-      .row.v8 .lead {
-        color: var(--slate-900);
-        font-weight: 600;
+      /* Brand-tinted monogram (proxy for real logos) */
+      .logo.lilly {
+        background: #fef2f2;
+        color: #b91c1c;
+        border-color: #fecaca;
       }
-      .row.v8 .ghost {
-        color: var(--slate-400);
+      .logo.roche {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+      }
+      .logo.pfizer {
+        background: #eff6ff;
+        color: #1e3a8a;
+        border-color: #bfdbfe;
+      }
+      .logo.novartis {
+        background: #fff7ed;
+        color: #c2410c;
+        border-color: #fed7aa;
+      }
+      .logo.cyto {
+        background: #ecfeff;
+        color: #0e7490;
+        border-color: #a5f3fc;
       }
 
-      /* Toggle for showing/hiding NCT in hover */
-      .nct-tooltip {
+      /* Smaller NCT used in V1-V3 */
+      .nct-small {
         font-family: var(--font-mono);
         font-size: 10px;
         color: var(--slate-400);
-        margin-left: 4px;
+        letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
       }
 
-      /* Side-by-side comparison */
-      .pair {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-      }
-      @media (max-width: 920px) {
-        .pair {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .key {
-        margin-top: 28px;
-        padding: 14px 18px;
-        background: white;
-        border: 1px solid var(--slate-200);
-      }
-      .key h4 {
+      /* V2 uses relative time, right-aligned */
+      .meta .reltime {
+        margin-left: auto;
         font-family: var(--font-mono);
-        font-size: 10.5px;
-        font-weight: 700;
-        color: var(--slate-700);
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        margin-bottom: 10px;
+        font-size: 10px;
+        color: var(--slate-400);
+        white-space: nowrap;
       }
-      .key dl {
-        display: grid;
-        grid-template-columns: 110px 1fr;
-        gap: 8px 18px;
-        font-size: 12.5px;
-      }
-      .key dt {
+      .meta .src-inline {
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 10px;
         color: var(--slate-500);
-        letter-spacing: 0.06em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
+        padding: 1px 5px;
+        border: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        border-radius: 2px;
+        white-space: nowrap;
       }
-      .key dd {
-        color: var(--slate-700);
+
+      /* V3: NCT removed from meta entirely (hover-only) */
+      .nct-hover {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: transparent;
+        position: relative;
       }
 
       .footer {
-        margin-top: 64px;
+        margin-top: 56px;
         padding-top: 24px;
         border-top: 1px solid var(--slate-200);
         font-family: var(--font-mono);
@@ -539,1397 +447,1538 @@
         letter-spacing: 0.14em;
         text-transform: uppercase;
       }
+
+      /* ---------------------------------------------------------------- */
+      /* Orientations on V3 (O1-O4)                                       */
+      /* ---------------------------------------------------------------- */
+
+      /* O1: single-line ticker -- everything on one line, summary truncates */
+      .row.o1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--slate-200);
+        min-width: 0;
+      }
+      .row.o1:last-child {
+        border-bottom: 0;
+      }
+      .row.o1 .logo {
+        margin-top: 0;
+      }
+      .row.o1 .product {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate-700);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .row.o1 .sep {
+        color: var(--slate-300);
+        flex-shrink: 0;
+      }
+      .row.o1 .summary {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        color: var(--slate-900);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .row.o1 .summary .old {
+        color: var(--slate-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--slate-300);
+      }
+      .row.o1 .summary .new {
+        font-weight: 600;
+        color: var(--green-600);
+      }
+      .row.o1 .summary .new.neutral {
+        color: var(--slate-900);
+      }
+      .row.o1 .summary .arrow {
+        margin: 0 4px;
+        font-family: var(--font-mono);
+        color: var(--slate-400);
+      }
+      .row.o1 .time {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-400);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* O2: summary-led, identity below */
+      .row.o2 {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .row.o2:last-child {
+        border-bottom: 0;
+      }
+      .row.o2 .row-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .row.o2 .lead-summary {
+        font-size: 14px;
+        color: var(--slate-900);
+        line-height: 1.45;
+        margin-bottom: 5px;
+      }
+      .row.o2 .lead-summary .old {
+        color: var(--slate-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--slate-300);
+      }
+      .row.o2 .lead-summary .new {
+        font-weight: 600;
+        color: var(--green-600);
+      }
+      .row.o2 .lead-summary .new.neutral {
+        color: var(--slate-900);
+      }
+      .row.o2 .lead-summary .arrow {
+        margin: 0 4px;
+        font-family: var(--font-mono);
+        color: var(--slate-400);
+      }
+      .row.o2 .sub-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--slate-500);
+      }
+      .row.o2 .sub-meta .logo {
+        width: 16px;
+        height: 16px;
+        font-size: 7.5px;
+        border-radius: 2px;
+      }
+      .row.o2 .sub-meta .product {
+        font-family: var(--font-mono);
+        color: var(--slate-600);
+        letter-spacing: 0.02em;
+      }
+      .row.o2 .sub-meta .sep {
+        color: var(--slate-300);
+      }
+      .row.o2 .sub-meta .reltime {
+        font-family: var(--font-mono);
+        color: var(--slate-400);
+      }
+      .row.o2 .sub-meta .src-inline {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1px 4px;
+        border: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        border-radius: 2px;
+        margin-left: auto;
+      }
+
+      /* O3: grouped by sponsor -- shared header, rows drop their own logo */
+      .group-card {
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .group-card:last-child {
+        border-bottom: 0;
+      }
+      .group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 0 6px;
+      }
+      .group-header .logo {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+      }
+      .group-header .company {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--slate-700);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .group-header .group-count {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-400);
+        letter-spacing: 0.04em;
+      }
+      .row.g {
+        padding: 8px 0 8px 26px;
+        border-bottom: 1px dashed var(--slate-100);
+        border-top: 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .group-card .row.g:last-child {
+        border-bottom: 0;
+        padding-bottom: 12px;
+      }
+      .row.g .row-icon {
+        width: 16px;
+        margin-top: 1px;
+        font-size: 12px;
+      }
+      .row.g .row-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .row.g .meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+        font-size: 11.5px;
+        color: var(--slate-500);
+      }
+      .row.g .product {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--slate-700);
+        letter-spacing: 0.04em;
+      }
+      .row.g .reltime {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-400);
+      }
+      .row.g .src-inline {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1px 5px;
+        border: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        border-radius: 2px;
+      }
+      .row.g .summary {
+        font-size: 13px;
+        color: var(--slate-900);
+        line-height: 1.45;
+      }
+      .row.g .summary .old {
+        color: var(--slate-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--slate-300);
+      }
+      .row.g .summary .new {
+        font-weight: 600;
+        color: var(--green-600);
+      }
+      .row.g .summary .new.neutral {
+        color: var(--slate-900);
+      }
+      .row.g .summary .arrow {
+        margin: 0 4px;
+        font-family: var(--font-mono);
+        color: var(--slate-400);
+      }
+
+      /* O4: logo as row-icon -- drop the calendar/swap glyph */
+      .row.o4 {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .row.o4:last-child {
+        border-bottom: 0;
+      }
+      .row.o4 .logo {
+        width: 22px;
+        height: 22px;
+        font-size: 9px;
+        margin-top: 1px;
+      }
+      .row.o4 .row-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .row.o4 .meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        font-size: 12px;
+        color: var(--slate-500);
+      }
+      .row.o4 .product {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate-700);
+        letter-spacing: 0.04em;
+      }
+      .row.o4 .reltime {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--slate-400);
+      }
+      .row.o4 .src-inline {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        color: var(--slate-500);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1px 5px;
+        border: 1px solid var(--slate-200);
+        background: var(--slate-50);
+        border-radius: 2px;
+      }
+      .row.o4 .summary {
+        font-size: 14px;
+        color: var(--slate-900);
+        line-height: 1.45;
+      }
+      .row.o4 .summary .old {
+        color: var(--slate-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--slate-300);
+      }
+      .row.o4 .summary .new {
+        font-weight: 600;
+      }
+      .row.o4 .summary .new.date {
+        color: var(--green-600);
+      }
+      .row.o4 .summary .new.phase {
+        color: var(--violet-600);
+      }
+      .row.o4 .summary .new.status {
+        color: var(--red-600);
+      }
+      .row.o4 .summary .new.neutral {
+        color: var(--slate-900);
+      }
+      .row.o4 .summary .arrow {
+        margin: 0 4px;
+        font-family: var(--font-mono);
+        color: var(--slate-400);
+      }
+
+      /* Group divider for orientations */
+      .group-divider {
+        margin: 56px 0 32px;
+        padding-top: 32px;
+        border-top: 1px solid var(--slate-200);
+      }
+      .group-divider .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      .group-divider h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        margin-bottom: 8px;
+      }
+      .group-divider p {
+        font-size: 13.5px;
+        color: var(--slate-600);
+        max-width: 76ch;
+      }
+
+      /* Single-width preview for orientations */
+      .preview-single {
+        max-width: 460px;
+      }
     </style>
   </head>
   <body>
     <div class="accent-bar"></div>
     <main class="deck">
-      <div class="deck-head">
+      <header class="deck-head">
         <div class="label">Engagement landing / what changed</div>
-        <h1>Row composition options for the activity widget</h1>
+        <h1>Swap the company wordmark for a logo, shrink the NCT</h1>
         <p>
-          The current row leads with the data source ("STOUT STRATEGY" or "CT.GOV"), then date, then
-          NCT, then the actual change. Source has only two values and is the least useful axis.
-          These eight variations explore what should anchor the row instead -- the change itself,
-          the trial program, the asset/company, or a structured event tag.
+          The widget lives in the engagement landing's three-up grid alongside Next 14 days and
+          Drafts. The column is narrow: roughly 460px at a 1440px viewport, 580px at 1920px. At that
+          width the current row's metadata wraps onto a second line because the wordmark ("ELI
+          LILLY"), product, NCT, and full timestamp all share the same line as the source chip.
         </p>
         <p>
-          Same five events render in every variation. Some need only component changes; others need
-          the activity-feed RPC to join product / company. The orange flag below each variation says
-          which.
+          Below: V0 is what ships today. V1-V3 replace the wordmark with a brand-tinted monogram
+          tile and demote the NCT, in increasing levels of compression. Each option renders at both
+          column widths so you can see how the meta line behaves under real constraints.
+        </p>
+      </header>
+
+      <div class="constraint">
+        <h3>Constraint</h3>
+        <p>
+          Widget container is
+          <code>flex h-full flex-col border border-slate-200 bg-white</code> inside
+          <code>grid grid-cols-3 gap-3.5</code>. Inner padding is <code>px-4</code>. Row content has
+          roughly <strong>428px (1440 viewport)</strong> or
+          <strong>548px (1920 viewport)</strong> of horizontal space to work with after the icon
+          column and the right-aligned source chip.
         </p>
       </div>
 
       <!-- ============================================================ -->
-      <!-- V1: BASELINE (current) -->
+      <!-- V0: BASELINE (current production component)                  -->
+      <!-- ============================================================ -->
+      <section class="opt">
+        <div class="opt-head">
+          <span class="code">V0</span>
+          <h2>Baseline -- what ships today</h2>
+        </div>
+        <p class="opt-desc">
+          The current
+          <code style="font-family: var(--font-mono); font-size: 12px">change-event-row</code> as
+          rendered by
+          <code style="font-family: var(--font-mono); font-size: 12px">what-changed-widget</code>.
+          Meta order: company wordmark, product, NCT, absolute date, source chip (right-aligned).
+        </p>
+
+        <div class="preview-pair">
+          <div class="preview-col">
+            <div class="col-label">@ 1440px viewport (~460px column)</div>
+            <div class="widget" style="width: 460px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
+              </div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Eli Lilly</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35:40 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Roche</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35:40 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Eli Lilly</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:25:40 PM</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-col">
+            <div class="col-label">@ 1920px viewport (~580px column)</div>
+            <div class="widget" style="width: 580px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
+              </div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Eli Lilly</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35:40 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Roche</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35:40 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="company">Eli Lilly</span>
+                      <span class="sep">&middot;</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:25:40 PM</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt-tradeoff">
+          <strong>Issue</strong> The meta line wraps to two lines at 460px width because the
+          wordmark and full timestamp leave no room for the source chip. At 580px it still wraps
+          when the wordmark is longer (Novo Nordisk, AstraZeneca). The eye lands on "ELI LILLY"
+          first, but the sponsor is rarely the answer the user is looking for -- the summary is.
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- V1: LOGO + SMALL NCT, EVERYTHING ELSE THE SAME              -->
       <!-- ============================================================ -->
       <section class="opt">
         <div class="opt-head">
           <span class="code">V1</span>
-          <h2>Baseline -- what is shipped today</h2>
+          <h2>Logo tile + smaller NCT &middot; minimal change</h2>
         </div>
         <p class="opt-desc">
-          Reference point. Source is the lead, in mono uppercase ("STOUT STRATEGY"); date and NCT
-          follow on the same metadata line. Change summary lives below.
+          Drop the wordmark, add a 20px brand-tinted monogram tile in its place. Shrink the NCT to
+          10px slate-400. Everything else stays: absolute date, source chip on the right. This is
+          the smallest possible delta from V0 -- one element swap and one type rule.
         </p>
-        <div class="opt-meta">No code changes</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
+
+        <div class="preview-pair">
+          <div class="preview-col">
+            <div class="col-label">@ 1440px viewport (~460px column)</div>
+            <div class="widget" style="width: 460px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
+              </div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:25 PM</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="widget-body">
-            <div class="row v1">
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 5, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">Phase: 2 <span class="arrow">→</span> 3</div>
+
+          <div class="preview-col">
+            <div class="col-label">@ 1920px viewport (~580px column)</div>
+            <div class="widget" style="width: 580px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
               </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
                 </div>
-                <div class="summary">Primary completion delayed 92 days (Mar 2025 → Jun 2025)</div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:35 PM</span>
+                      <span class="src">Stout Strategy</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
                 </div>
-                <div class="summary">
-                  Status: Recruiting <span class="arrow">→</span> Terminated
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>Apr 30, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">Marker added: PFS topline readout</div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>Apr 29, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target: 450 <span class="arrow">→</span> 600 (+33%)
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="date">May 10, 2026, 5:25 PM</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         <div class="opt-tradeoff">
-          <strong>Issue</strong> Source dominates. Trial identity is reduced to an opaque NCT
-          number. The summary -- the actual answer -- reads last.
+          <strong>Tradeoff</strong> One line of meta fits at 460px now -- logo (20px) plus the
+          smaller NCT recovers ~70px. Sponsor is still recognizable but no longer dominates the row.
+          Date is shortened to drop seconds ("5:35 PM" not "5:35:40 PM"). Source chip stays on the
+          right where it has always been.
         </div>
       </section>
 
       <!-- ============================================================ -->
-      <!-- V2: SUMMARY-LED -->
+      <!-- V2: LOGO + RELATIVE TIME + INLINE SOURCE                    -->
       <!-- ============================================================ -->
       <section class="opt">
         <div class="opt-head">
           <span class="code">V2</span>
-          <h2>Summary-led -- the change is the headline</h2>
+          <h2>Logo + relative time &middot; source pulled inline</h2>
         </div>
         <p class="opt-desc">
-          Flip the hierarchy. Change reads first in slate-900. Sub line is program name + relative
-          time + a tiny CT/AN chip. NCT moves to the link target / hover; agency name disappears.
+          Same logo + small-NCT change, but absolute timestamp becomes a relative one ("2h", "1d",
+          "6d") and the source chip moves out of its right-anchored position and reads inline as a
+          tiny "STOUT" / "CT.GOV" tag. The full timestamp moves to a tooltip on the row.
         </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
+
+        <div class="preview-pair">
+          <div class="preview-col">
+            <div class="col-label">@ 1440px viewport (~460px column)</div>
+            <div class="widget" style="width: 460px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
+              </div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">Stout</span>
+                      <span class="reltime">2h ago</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">Stout</span>
+                      <span class="reltime">2h ago</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">CT.gov</span>
+                      <span class="reltime">3h ago</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="widget-body">
-            <div class="row v2">
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="summary-lead">Phase: 2 <span class="arrow">→</span> 3</div>
-                <div class="meta-bottom">
-                  <span class="prog-uppercase">KEYTRUDA-407</span>
-                  <span class="sep">&bull;</span><span>2h</span> <span class="sep">&bull;</span
-                  ><span class="src">CT</span>
-                </div>
+
+          <div class="preview-col">
+            <div class="col-label">@ 1920px viewport (~580px column)</div>
+            <div class="widget" style="width: 580px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
               </div>
-            </div>
-            <div class="row v2">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="summary-lead">
-                  Primary completion delayed 92 days (Mar 2025 → Jun 2025)
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05929066</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">Stout</span>
+                      <span class="reltime">2h ago</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
                 </div>
-                <div class="meta-bottom">
-                  <span class="prog-uppercase">DESTINY-Breast09</span>
-                  <span class="sep">&bull;</span><span>1d</span> <span class="sep">&bull;</span
-                  ><span class="src">CT</span>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT06525935</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">Stout</span>
+                      <span class="reltime">2h ago</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div class="row v2">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="summary-lead">
-                  Status: Recruiting <span class="arrow">→</span> Terminated
-                </div>
-                <div class="meta-bottom">
-                  <span class="prog-uppercase">TROPiCS-04</span>
-                  <span class="sep">&bull;</span><span>3d</span> <span class="sep">&bull;</span
-                  ><span class="src">CT</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v2">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="summary-lead">Marker added: PFS topline readout</div>
-                <div class="meta-bottom">
-                  <span class="prog-uppercase">IMfinzi-CombiCheck</span>
-                  <span class="sep">&bull;</span><span>5d</span> <span class="sep">&bull;</span
-                  ><span class="src an">AN</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v2">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="summary-lead">
-                  Enrollment target: 450 <span class="arrow">→</span> 600 (+33%)
-                </div>
-                <div class="meta-bottom">
-                  <span class="prog-uppercase">CodeBreaK-200</span>
-                  <span class="sep">&bull;</span><span>6d</span> <span class="sep">&bull;</span
-                  ><span class="src">CT</span>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="nct-small">NCT05869903</span>
+                      <span class="sep">&middot;</span>
+                      <span class="src-inline">CT.gov</span>
+                      <span class="reltime">3h ago</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Cleanest minimum-change win. Reads top-down: what changed,
-          where, when. Loses NCT visibility (deep-link key only) and loses agency provenance
-          entirely (CT vs AN chip carries the binary).
+          <strong>Tradeoff</strong> Most balanced. Relative time is faster to read than an absolute
+          timestamp at this density ("2h ago" tells the user the row is new without parsing digits).
+          Cost: the full timestamp is no longer visible at a glance -- power users who care about
+          the exact second now need a hover. The right edge of the row is quieter because the source
+          chip is no longer the visual anchor it was.
         </div>
       </section>
 
       <!-- ============================================================ -->
-      <!-- V3: PROGRAM TICKER -->
+      <!-- V3: MOST COMPRESSED -- NCT TO HOVER, ONE META LINE          -->
       <!-- ============================================================ -->
       <section class="opt">
         <div class="opt-head">
           <span class="code">V3</span>
-          <h2>Program ticker -- single line, Bloomberg-row feel</h2>
+          <h2>NCT removed from row &middot; logo + product only</h2>
         </div>
         <p class="opt-desc">
-          Strict columns. Program is the left anchor in mono uppercase, change fills the middle,
-          time and source push to a right-aligned column. One line per row -- highest density.
+          Strongest compression. The NCT is removed from the meta line entirely -- the
+          <code style="font-family: var(--font-mono); font-size: 12px">trial.identifier</code> stays
+          available as the link target and as a tooltip on the row, but does not consume horizontal
+          space. Meta reduces to: logo + product + relative time + source chip. Summary becomes the
+          dominant visual element.
         </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v3">
-              <div class="row-icon">↔</div>
-              <div class="prog-uppercase">KEYTRUDA-407</div>
-              <div class="summary">Phase: 2 <span class="arrow">→</span> 3</div>
-              <div class="time">2h <span class="src">CT</span></div>
-            </div>
-            <div class="row v3">
-              <div class="row-icon">⌚</div>
-              <div class="prog-uppercase">DESTINY-Breast09</div>
-              <div class="summary">Primary completion delayed 92d (Mar→Jun 2025)</div>
-              <div class="time">1d <span class="src">CT</span></div>
-            </div>
-            <div class="row v3">
-              <div class="row-icon">▣</div>
-              <div class="prog-uppercase">TROPiCS-04</div>
-              <div class="summary">Status: Recruiting <span class="arrow">→</span> Terminated</div>
-              <div class="time">3d <span class="src">CT</span></div>
-            </div>
-            <div class="row v3">
-              <div class="row-icon">+</div>
-              <div class="prog-uppercase">IMfinzi-CombiCheck</div>
-              <div class="summary">Marker added: PFS topline readout</div>
-              <div class="time">5d <span class="src an">AN</span></div>
-            </div>
-            <div class="row v3">
-              <div class="row-icon">▲</div>
-              <div class="prog-uppercase">CodeBreaK-200</div>
-              <div class="summary">
-                Enrollment target: 450 <span class="arrow">→</span> 600 (+33%)
+
+        <div class="preview-pair">
+          <div class="preview-col">
+            <div class="col-label">@ 1440px viewport (~460px column)</div>
+            <div class="widget" style="width: 460px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
               </div>
-              <div class="time">6d <span class="src">CT</span></div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">2h ago</span>
+                      <span class="src">Stout</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">2h ago</span>
+                      <span class="src">Stout</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">3h ago</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-col">
+            <div class="col-label">@ 1920px viewport (~580px column)</div>
+            <div class="widget" style="width: 580px">
+              <div class="widget-head">
+                <h3>What changed</h3>
+                <span class="count">last 7d &middot; 5 events</span>
+                <a href="#">View all &rarr;</a>
+              </div>
+              <div class="widget-body">
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">retatrutide</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">2h ago</span>
+                      <span class="src">Stout</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                        >Aug 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo roche">RO</span>
+                      <span class="product">CT-388</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">2h ago</span>
+                      <span class="src">Stout</span>
+                    </div>
+                    <div class="summary">
+                      CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                        class="old"
+                        >Mar 15, 2026</span
+                      >
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="logo lilly">EL</span>
+                      <span class="product">orforglipron</span>
+                      <span class="sep">&middot;</span>
+                      <span class="reltime" style="margin-left: 0">3h ago</span>
+                      <span class="src">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
         <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Densest, scans like a market-data feed. Long program names
-          truncate. Long summaries clip. Reads best when the user knows the programs already (which
-          a CI analyst does).
+          <strong>Tradeoff</strong> Tightest possible row. Meta line is short enough that it never
+          wraps, even at 460px with the longest product name. Cost: the NCT identifier is gone from
+          visible glance -- analysts who copy NCT IDs frequently or who cross-reference against
+          CT.gov in another tab will now click into the row or hover for it.
         </div>
       </section>
 
       <!-- ============================================================ -->
-      <!-- V4: EVENT-TYPE TAG -->
+      <!-- ORIENTATIONS ON V3                                          -->
       <!-- ============================================================ -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">V4</span>
-          <h2>Tagged -- a colored event-type chip replaces the icon</h2>
-        </div>
-        <p class="opt-desc">
-          A small uppercase event-type tag carries the categorization that the icon was carrying
-          ambiguously. Tag color encodes type at a glance. Single line where possible; trial pushes
-          to the right.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v4">
-              <span class="tag phase">Phase</span>
-              <div class="summary">Phase 2 <span class="arrow">→</span> Phase 3</div>
-              <div class="right">KEYTRUDA-407 &bull; 2h</div>
-            </div>
-            <div class="row v4">
-              <span class="tag date">Date</span>
-              <div class="summary">Primary completion delayed 92d (Mar→Jun 2025)</div>
-              <div class="right">DESTINY-Breast09 &bull; 1d</div>
-            </div>
-            <div class="row v4">
-              <span class="tag status">Status</span>
-              <div class="summary">Recruiting <span class="arrow">→</span> Terminated</div>
-              <div class="right">TROPiCS-04 &bull; 3d</div>
-            </div>
-            <div class="row v4">
-              <span class="tag marker">Marker+</span>
-              <div class="summary">PFS topline readout</div>
-              <div class="right">IMfinzi-CombiCheck &bull; 5d</div>
-            </div>
-            <div class="row v4">
-              <span class="tag enroll">Enroll</span>
-              <div class="summary">Target: 450 <span class="arrow">→</span> 600 (+33%)</div>
-              <div class="right">CodeBreaK-200 &bull; 6d</div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> The tag does double duty (icon + scannable category). Color adds
-          energy; risk is it competes with marker colors in the rest of the app. Source is dropped
-          from the row -- accept, or encode as a 1-letter suffix on the tag.
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- V5: TABULAR COLUMNS -->
-      <!-- ============================================================ -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">V5</span>
-          <h2>Tabular -- strict 4-column grid</h2>
-        </div>
-        <p class="opt-desc">
-          A real table. Type | program | change | time. Column boundaries make scanning predictable.
-          Source folds into the time column as a chip. Closest to Bloomberg / a regulatory
-          disclosure feed.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v5">
-              <span class="tag phase">Phase</span>
-              <div class="prog-uppercase">KEYTRUDA-407</div>
-              <div class="summary">Phase 2 <span class="arrow">→</span> 3</div>
-              <div class="time">2h CT</div>
-            </div>
-            <div class="row v5">
-              <span class="tag date">Date</span>
-              <div class="prog-uppercase">DESTINY-Breast09</div>
-              <div class="summary">Primary compl. delayed 92d</div>
-              <div class="time">1d CT</div>
-            </div>
-            <div class="row v5">
-              <span class="tag status">Status</span>
-              <div class="prog-uppercase">TROPiCS-04</div>
-              <div class="summary">Recruiting <span class="arrow">→</span> Terminated</div>
-              <div class="time">3d CT</div>
-            </div>
-            <div class="row v5">
-              <span class="tag marker">Marker+</span>
-              <div class="prog-uppercase">IMfinzi-CombiCheck</div>
-              <div class="summary">PFS topline readout</div>
-              <div class="time">5d AN</div>
-            </div>
-            <div class="row v5">
-              <span class="tag enroll">Enroll</span>
-              <div class="prog-uppercase">CodeBreaK-200</div>
-              <div class="summary">450 <span class="arrow">→</span> 600 (+33%)</div>
-              <div class="time">6d CT</div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> The most data-instrument feel. Aggressive truncation of long
-          summaries -- some events lose nuance ("Mar→Jun 2025", "(+33%)"). Could pair well with a
-          click-through to expanded detail.
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- V6: ASSET + COMPANY ANCHOR -->
-      <!-- ============================================================ -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">V6</span>
-          <h2>Asset + company anchor -- the row is "about" a drug program</h2>
-        </div>
-        <p class="opt-desc">
-          The identity of the row is the asset (generic name) and the sponsor. Trial program becomes
-          secondary context, summary fills the right. Aligns with the engagement-landing "what you
-          cover" framing.
-        </p>
-        <div class="opt-meta needs-rpc">
-          Requires RPC join: products + companies on get_activity_feed
-        </div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v6">
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="head">
-                  <span class="asset">Pembrolizumab</span>
-                  <span class="company">&bull; Merck</span>
-                  <span class="summary" style="text-align: right"
-                    >Phase 2 <span class="arrow">→</span> 3</span
-                  >
-                  <span class="time">2h</span>
-                </div>
-                <div class="program-line">KEYTRUDA-407 &bull; pivotal in 1L NSCLC</div>
-              </div>
-            </div>
-            <div class="row v6">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="head">
-                  <span class="asset">Trastuzumab Deruxtecan</span>
-                  <span class="company">&bull; Daiichi/AZ</span>
-                  <span class="summary" style="text-align: right">Primary completion +92d</span>
-                  <span class="time">1d</span>
-                </div>
-                <div class="program-line">DESTINY-Breast09 &bull; Mar 2025 → Jun 2025</div>
-              </div>
-            </div>
-            <div class="row v6">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="head">
-                  <span class="asset">Sacituzumab Govitecan</span>
-                  <span class="company">&bull; Gilead</span>
-                  <span class="summary" style="text-align: right"
-                    >Recruiting <span class="arrow">→</span> Terminated</span
-                  >
-                  <span class="time">3d</span>
-                </div>
-                <div class="program-line">TROPiCS-04 &bull; mUC 2L+</div>
-              </div>
-            </div>
-            <div class="row v6">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="head">
-                  <span class="asset">Durvalumab</span>
-                  <span class="company">&bull; AstraZeneca</span>
-                  <span class="summary" style="text-align: right">Marker: PFS topline readout</span>
-                  <span class="time">5d</span>
-                </div>
-                <div class="program-line">IMfinzi-CombiCheck &bull; analyst-added</div>
-              </div>
-            </div>
-            <div class="row v6">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="head">
-                  <span class="asset">Sotorasib</span>
-                  <span class="company">&bull; Amgen</span>
-                  <span class="summary" style="text-align: right"
-                    >Enrollment 450 <span class="arrow">→</span> 600</span
-                  >
-                  <span class="time">6d</span>
-                </div>
-                <div class="program-line">CodeBreaK-200 &bull; KRAS G12C NSCLC</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> The richest row. Carries asset, sponsor, program, indication
-          context, change, time. Costs an RPC migration and a model update. Two visual lines; less
-          dense than V3/V5 but reads more "about a program" than "about an event".
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- V7: DIFF EMPHASIS -->
-      <!-- ============================================================ -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">V7</span>
-          <h2>Diff emphasis -- old vs new is the visual</h2>
-        </div>
-        <p class="opt-desc">
-          For value-change events, render the old value with a strikethrough and the new value bold.
-          Treats this like a git diff. Non-value events (marker added, etc.) fall back to a single
-          bold lead.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v7">
-              <span class="tag phase">Phase</span>
-              <div class="body">
-                <div class="delta">
-                  <span class="from">Phase 2</span>
-                  <span class="arrow">→</span>
-                  <span class="to">Phase 3</span>
-                </div>
-                <div class="ctx-line">
-                  KEYTRUDA-407 &bull; 2h &bull; <span class="src">CT</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v7">
-              <span class="tag date">Date</span>
-              <div class="body">
-                <div class="delta">
-                  <span class="from">Mar 2025</span>
-                  <span class="arrow">→</span>
-                  <span class="to">Jun 2025</span>
-                  <span style="color: var(--slate-500); font-size: 11px"
-                    >primary completion, +92d</span
-                  >
-                </div>
-                <div class="ctx-line">
-                  DESTINY-Breast09 &bull; 1d &bull; <span class="src">CT</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v7">
-              <span class="tag status">Status</span>
-              <div class="body">
-                <div class="delta">
-                  <span class="from">Recruiting</span>
-                  <span class="arrow">→</span>
-                  <span class="to">Terminated</span>
-                </div>
-                <div class="ctx-line">TROPiCS-04 &bull; 3d &bull; <span class="src">CT</span></div>
-              </div>
-            </div>
-            <div class="row v7">
-              <span class="tag marker">Marker+</span>
-              <div class="body">
-                <div class="delta">
-                  <span class="to">PFS topline readout</span>
-                </div>
-                <div class="ctx-line">
-                  IMfinzi-CombiCheck &bull; 5d &bull; <span class="src an">AN</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v7">
-              <span class="tag enroll">Enroll</span>
-              <div class="body">
-                <div class="delta">
-                  <span class="from">450</span>
-                  <span class="arrow">→</span>
-                  <span class="to">600</span>
-                  <span style="color: var(--amber-600); font-size: 11px">+33%</span>
-                </div>
-                <div class="ctx-line">
-                  CodeBreaK-200 &bull; 6d &bull; <span class="src">CT</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Strongest visual signal for "what was the change". Two visual
-          treatments (diff vs. plain) means the row pattern isn't perfectly uniform; users have to
-          learn it. Best when the value delta is the entire point.
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- V8: MINIMAL TYPOGRAPHIC -->
-      <!-- ============================================================ -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">V8</span>
-          <h2>Minimal -- typography only, no chrome</h2>
-        </div>
-        <p class="opt-desc">
-          No icons, no chips, no borders inside rows. One mono line per event; lead in slate-900,
-          context in slate-500. Closest to a regulatory disclosure feed or a Linear changelog.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v8">
-              <span class="lead">Phase 2 → 3</span>
-              <span class="ghost">&nbsp; KEYTRUDA-407 &nbsp; 2h &nbsp; CT</span>
-            </div>
-            <div class="row v8">
-              <span class="lead">Primary completion +92d, Mar → Jun 2025</span>
-              <span class="ghost">&nbsp; DESTINY-Breast09 &nbsp; 1d &nbsp; CT</span>
-            </div>
-            <div class="row v8">
-              <span class="lead">Recruiting → Terminated</span>
-              <span class="ghost">&nbsp; TROPiCS-04 &nbsp; 3d &nbsp; CT</span>
-            </div>
-            <div class="row v8">
-              <span class="lead">+ Marker: PFS topline readout</span>
-              <span class="ghost">&nbsp; IMfinzi-CombiCheck &nbsp; 5d &nbsp; AN</span>
-            </div>
-            <div class="row v8">
-              <span class="lead">Enrollment 450 → 600 (+33%)</span>
-              <span class="ghost">&nbsp; CodeBreaK-200 &nbsp; 6d &nbsp; CT</span>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Most restrained. Fastest to scan if user already knows the
-          programs. Loses event-type at-a-glance; everything is mono and similar weight. Best as a
-          "long" feed, weaker as a 5-row summary widget.
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
-      <!-- COLOR TREATMENTS ON V1 -->
-      <!-- ============================================================ -->
-      <div style="margin: 72px 0 24px; padding-top: 24px; border-top: 1px solid var(--slate-200)">
-        <div
-          class="label"
-          style="
-            font-family: var(--font-mono);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--brand-700);
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-          "
-        >
-          Color treatments
-        </div>
-        <h2
-          style="
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--slate-900);
-            letter-spacing: -0.005em;
-            margin-bottom: 10px;
-          "
-        >
-          V1 structure, with color added semantically
-        </h2>
-        <p style="font-size: 14px; color: var(--slate-600); max-width: 76ch">
-          Keep the row layout unchanged from baseline. Add color keyed to event meaning -- using the
-          marker palette already established in the rest of the app. Each treatment increases color
-          load by a step so you can pick the right intensity.
+      <div class="group-divider">
+        <div class="label">Orientations on V3</div>
+        <h2>What else can we hide, flip, or replace</h2>
+        <p>
+          V3 already drops the NCT and the seconds off the timestamp. These four push further in
+          different directions: collapse the two lines into one, flip identity below the summary,
+          replace the drug name with the trial program name, or fold the event-type icon into the
+          logo entirely. All shown at the narrow 460px column where decisions matter most.
         </p>
       </div>
 
-      <!-- C1: COLORED ICONS ONLY -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">C1</span>
-          <h2>Color the icon only -- minimal</h2>
-        </div>
-        <p class="opt-desc">
-          Icon glyph picks up an event-type color; meta and summary stay slate. Lowest color load.
-          Reads as a small accent that helps you scan event types without changing the row's
-          typographic rhythm.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--violet-600)">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 7, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">Phase: 2 <span class="arrow">→</span> 3</div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--amber-600)">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 6, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
-                </div>
-                <div class="summary">Primary completion delayed 92 days (Mar 2025 → Jun 2025)</div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--red-600)">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
-                </div>
-                <div class="summary">
-                  Status: Recruiting <span class="arrow">→</span> Terminated
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--green-600)">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">Marker added: PFS topline readout</div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--blue-600)">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 1, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target: 450 <span class="arrow">→</span> 600 (+33%)
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Cleanest. Color does scanning work without competing with the
-          summary. Risk: 13px icon glyphs are small targets for color and may not read at a glance.
-        </div>
-      </section>
-
-      <!-- C2: COLORED LEFT STRIPE -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">C2</span>
-          <h2>Colored left edge stripe -- accent without weight</h2>
-        </div>
-        <p class="opt-desc">
-          A 3px colored band on the left of each row, keyed to event type. Acts like a Bloomberg row
-          indicator. Doesn't compete with text, and reads as a column of color when rows stack.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div
-              class="row v1"
-              style="border-left: 3px solid var(--violet-600); padding-left: 10px"
-            >
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 7, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">Phase: 2 <span class="arrow">→</span> 3</div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--amber-600); padding-left: 10px">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 6, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
-                </div>
-                <div class="summary">Primary completion delayed 92 days (Mar 2025 → Jun 2025)</div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--red-600); padding-left: 10px">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
-                </div>
-                <div class="summary">
-                  Status: Recruiting <span class="arrow">→</span> Terminated
-                </div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--green-600); padding-left: 10px">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">Marker added: PFS topline readout</div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--blue-600); padding-left: 10px">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 1, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target: 450 <span class="arrow">→</span> 600 (+33%)
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Stripe reads as a colored column when rows stack -- gives the
-          widget a perceptible rhythm without touching typography. Visually similar to how marker
-          types are coded elsewhere.
-        </div>
-      </section>
-
-      <!-- C3: COLORED VALUES IN THE SUMMARY -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">C3</span>
-          <h2>Color the values, not the row -- delta in color</h2>
-        </div>
-        <p class="opt-desc">
-          Within the summary, "from" stays slate-500, the new value picks up an event-type color and
-          weight. Magnitude callouts ("+33%", "delayed 92 days") get color too. Row chrome stays
-          neutral.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div class="row v1">
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 7, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">
-                  Phase: <span style="color: var(--slate-500)">2</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--violet-600); font-weight: 600">3</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 6, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
-                </div>
-                <div class="summary">
-                  Primary completion
-                  <span style="color: var(--amber-600); font-weight: 600">delayed 92 days</span>
-                  <span style="color: var(--slate-500)"> (Mar 2025</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-700)">Jun 2025</span
-                  ><span style="color: var(--slate-500)">)</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
-                </div>
-                <div class="summary">
-                  Status: <span style="color: var(--slate-500)">Recruiting</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--red-600); font-weight: 600">Terminated</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">
-                  Marker added:
-                  <span style="color: var(--green-600); font-weight: 600">PFS topline readout</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 1, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target: <span style="color: var(--slate-500)">450</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-700); font-weight: 600">600</span>
-                  <span style="color: var(--blue-600); font-weight: 600"> (+33%)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Color where the data is. Eye lands on new value or magnitude.
-          Risk: the summary string templates need per-event-type rendering logic to know which span
-          gets color (more component work than C1 / C2).
-        </div>
-      </section>
-
-      <!-- C4: COMBINED -->
-      <section class="opt">
-        <div class="opt-head">
-          <span class="code">C4</span>
-          <h2>Stripe + colored value -- maximum tasteful color</h2>
-        </div>
-        <p class="opt-desc">
-          C2 + C3 stacked. The row has a colored stripe on the left edge AND colored emphasis in the
-          value. Icon stays slate (otherwise three things compete). This is the most colorful that
-          still reads as a serious analytical instrument.
-        </p>
-        <div class="opt-meta">Component-only change</div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <div
-              class="row v1"
-              style="border-left: 3px solid var(--violet-600); padding-left: 10px"
-            >
-              <div class="row-icon">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 7, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">
-                  Phase: <span style="color: var(--slate-500)">2</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--violet-600); font-weight: 600">3</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--amber-600); padding-left: 10px">
-              <div class="row-icon">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 6, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
-                </div>
-                <div class="summary">
-                  Primary completion
-                  <span style="color: var(--amber-600); font-weight: 600">delayed 92 days</span>
-                  <span style="color: var(--slate-500)"> (Mar 2025</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-700)">Jun 2025</span
-                  ><span style="color: var(--slate-500)">)</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--red-600); padding-left: 10px">
-              <div class="row-icon">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
-                </div>
-                <div class="summary">
-                  Status: <span style="color: var(--slate-500)">Recruiting</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--red-600); font-weight: 600">Terminated</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--green-600); padding-left: 10px">
-              <div class="row-icon">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">
-                  Marker added:
-                  <span style="color: var(--green-600); font-weight: 600">PFS topline readout</span>
-                </div>
-              </div>
-            </div>
-            <div class="row v1" style="border-left: 3px solid var(--blue-600); padding-left: 10px">
-              <div class="row-icon">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 1, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target: <span style="color: var(--slate-500)">450</span>
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-700); font-weight: 600">600</span>
-                  <span style="color: var(--blue-600); font-weight: 600"> (+33%)</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="opt-tradeoff">
-          <strong>Tradeoff</strong> Strongest visual energy. Reads at a glance. Risk: the stripe +
-          colored value can feel busy if the same event type dominates the feed. Pulls back when
-          most events are the same type.
-        </div>
-      </section>
-
       <!-- ============================================================ -->
-      <!-- C5: INHERIT TAXONOMY + STRIKETHROUGH (RECOMMENDED) -->
+      <!-- O1: SINGLE-LINE TICKER                                      -->
       <!-- ============================================================ -->
-      <section
-        class="opt"
-        style="
-          margin-top: 64px;
-          padding: 28px;
-          background: white;
-          border: 1px solid var(--brand-300);
-        "
-      >
+      <section class="opt">
         <div class="opt-head">
-          <span
-            class="code"
-            style="background: var(--brand-700); color: white; border-color: var(--brand-700)"
-            >C5</span
-          >
-          <h2>Inherit existing color taxonomy + strikethrough on the delta</h2>
-          <span
-            style="
-              font-family: var(--font-mono);
-              font-size: 9.5px;
-              font-weight: 700;
-              color: var(--brand-700);
-              letter-spacing: 0.16em;
-              text-transform: uppercase;
-              padding: 2px 8px;
-              background: var(--brand-50);
-              border: 1px solid var(--brand-300);
-              margin-left: auto;
-            "
-            >Recommended</span
-          >
+          <span class="code">O1</span>
+          <h2>Single-line ticker &middot; one row per event, no wrap</h2>
         </div>
         <p class="opt-desc">
-          Color appears only where the event maps to an established taxonomy in the app. Phase
-          transitions pick up the destination phase color; marker events pick up the marker's
-          category color. Everything else stays slate -- so color always reinforces meaning the user
-          already knows. The "from" value is struck through; the "to" value is bold and colored
-          where the taxonomy applies.
+          Collapse the two-line row into one. Logo, product, summary, and reltime sit on one line;
+          the summary truncates with an ellipsis when it overflows. Full text appears on hover.
+          Hides: the two-line structure, the source chip (binary noise), and the event-type icon
+          (color on the delta carries it).
         </p>
-        <div class="opt-meta">
-          Component-only change (marker events need category color from joined data; available
-          today)
-        </div>
-        <div class="widget">
-          <div class="widget-head">
-            <h3>What changed</h3>
-            <a href="#">View all</a>
-          </div>
-          <div class="widget-body">
-            <!-- Phase transition: destination phase color (P3 = teal hero) -->
-            <div class="row v1">
-              <div class="row-icon" style="color: #2dd4bf">↔</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 7, 2026, 9:14:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05123456</span>
-                </div>
-                <div class="summary">
+        <div class="preview-single">
+          <div class="widget">
+            <div class="widget-head">
+              <h3>What changed</h3>
+              <span class="count">last 7d &middot; 5 events</span>
+              <a href="#">View all &rarr;</a>
+            </div>
+            <div class="widget-body">
+              <div class="row o1">
+                <span class="logo lilly">EL</span>
+                <span class="product">retatrutide</span>
+                <span class="sep">&middot;</span>
+                <span class="summary">
+                  TRIUMPH-1 topline delayed 100d (<span class="old">Aug 15</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="new">Nov 23</span>)
+                </span>
+                <span class="time">2h</span>
+              </div>
+              <div class="row o1">
+                <span class="logo roche">RO</span>
+                <span class="product">CT-388</span>
+                <span class="sep">&middot;</span>
+                <span class="summary">
+                  P2 final analysis delayed 120d (<span class="old">Mar 15</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="new">Jul 13</span>)
+                </span>
+                <span class="time">2h</span>
+              </div>
+              <div class="row o1">
+                <span class="logo lilly">EL</span>
+                <span class="product">Zepbound</span>
+                <span class="sep">&middot;</span>
+                <span class="summary">
+                  SURMOUNT-MMO topline delayed 180d (<span class="old">Oct 1</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="new">Mar 29</span>)
+                </span>
+                <span class="time">2h</span>
+              </div>
+              <div class="row o1">
+                <span class="logo lilly">EL</span>
+                <span class="product">orforglipron</span>
+                <span class="sep">&middot;</span>
+                <span class="summary">
+                  Primary completion delayed 100d (<span class="old">Aug 15</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="new neutral">Nov 23</span>)
+                </span>
+                <span class="time">3h</span>
+              </div>
+              <div class="row o1">
+                <span class="logo lilly">EL</span>
+                <span class="product">orforglipron</span>
+                <span class="sep">&middot;</span>
+                <span class="summary">
                   Phase:
-                  <span
-                    style="
-                      color: var(--slate-500);
-                      text-decoration: line-through;
-                      text-decoration-color: var(--slate-300);
-                    "
-                    >2</span
-                  >
-                  <span class="arrow">→</span>
-                  <span style="color: #0d9488; font-weight: 600">3</span>
-                </div>
+                  <span class="old">P2</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="new neutral">P3</span>
+                </span>
+                <span class="time">3h</span>
               </div>
             </div>
+          </div>
+        </div>
+        <div class="opt-tradeoff">
+          <strong>Tradeoff</strong> Doubles density -- 10 events fit where V3 fit 5. Truncation is
+          the price: summary detail past ~32 characters is only visible on hover. Works because the
+          ellipsis lands after the "what" but before the date diff, so the user still sees the kind
+          of change before deciding to drill in.
+        </div>
+      </section>
 
-            <!-- Date moved: slate (trial milestones are slate) -->
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--slate-700)">⌚</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 6, 2026, 6:02:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT04987654</span>
-                </div>
-                <div class="summary">
-                  Primary completion delayed 92 days (<span
-                    style="
-                      color: var(--slate-500);
-                      text-decoration: line-through;
-                      text-decoration-color: var(--slate-300);
-                    "
-                    >Mar 2025</span
-                  >
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-900); font-weight: 600">Jun 2025</span>)
+      <!-- ============================================================ -->
+      <!-- O2: SUMMARY-LED                                             -->
+      <!-- ============================================================ -->
+      <section class="opt">
+        <div class="opt-head">
+          <span class="code">O2</span>
+          <h2>Summary-led &middot; identity moves below as a quiet sub-line</h2>
+        </div>
+        <p class="opt-desc">
+          Flip the hierarchy. Summary reads first in slate-900; the meta line underneath shrinks to
+          a 16px logo + product + reltime + a tiny source chip. The eye lands on the change first,
+          identity is a footnote. The event-type icon stays but becomes secondary visually.
+        </p>
+        <div class="preview-single">
+          <div class="widget">
+            <div class="widget-head">
+              <h3>What changed</h3>
+              <span class="count">last 7d &middot; 5 events</span>
+              <a href="#">View all &rarr;</a>
+            </div>
+            <div class="widget-body">
+              <div class="row o2">
+                <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                <div class="row-body">
+                  <div class="lead-summary">
+                    TRIUMPH-1 topline projected: event date delayed 100 days (<span class="old"
+                      >Aug 15, 2026</span
+                    >
+                    <span class="arrow">&rarr;</span>
+                    <span class="new">Nov 23, 2026</span>)
+                  </div>
+                  <div class="sub-meta">
+                    <span class="logo lilly">EL</span>
+                    <span class="product">retatrutide</span>
+                    <span class="sep">&middot;</span>
+                    <span class="reltime">2h ago</span>
+                    <span class="src-inline">Stout</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Status: slate, severity from strikethrough alone -->
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--slate-700)">▣</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 4, 2026, 8:00:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05557788</span>
-                </div>
-                <div class="summary">
-                  Status:
-                  <span
-                    style="
-                      color: var(--slate-500);
-                      text-decoration: line-through;
-                      text-decoration-color: var(--slate-300);
-                    "
-                    >Recruiting</span
-                  >
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-900); font-weight: 600">Terminated</span>
+              <div class="row o2">
+                <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                <div class="row-body">
+                  <div class="lead-summary">
+                    CT-388 P2 final analysis projected: event date delayed 120 days (<span
+                      class="old"
+                      >Mar 15, 2026</span
+                    >
+                    <span class="arrow">&rarr;</span>
+                    <span class="new">Jul 13, 2026</span>)
+                  </div>
+                  <div class="sub-meta">
+                    <span class="logo roche">RO</span>
+                    <span class="product">CT-388</span>
+                    <span class="sep">&middot;</span>
+                    <span class="reltime">2h ago</span>
+                    <span class="src-inline">Stout</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Marker added (Data category) -->
-            <div class="row v1">
-              <div class="row-icon" style="color: #16a34a">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>May 2, 2026, 4:21:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT06112233</span>
-                </div>
-                <div class="summary">
-                  Marker added:
-                  <span style="color: #16a34a; font-weight: 600">PFS topline readout</span>
-                  <span class="nct-tooltip" style="color: var(--slate-400)"
-                    >&nbsp;&middot; Data</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Enrollment target: slate (no taxonomy match) -->
-            <div class="row v1">
-              <div class="row-icon" style="color: var(--slate-700)">▲</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>May 1, 2026, 11:30:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05334455</span>
-                </div>
-                <div class="summary">
-                  Enrollment target:
-                  <span
-                    style="
-                      color: var(--slate-500);
-                      text-decoration: line-through;
-                      text-decoration-color: var(--slate-300);
-                    "
-                    >450</span
-                  >
-                  <span class="arrow">→</span>
-                  <span style="color: var(--slate-900); font-weight: 600">600</span>
-                  <span style="color: var(--slate-500)">&nbsp;(+33%)</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Marker added (Regulatory category) -- shows that marker color varies -->
-            <div class="row v1">
-              <div class="row-icon" style="color: #f97316">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>CT.GOV</span><span class="sep">&bull;</span>
-                  <span>Apr 30, 2026, 9:08:00 AM</span><span class="sep">&bull;</span>
-                  <span>NCT05889911</span>
-                </div>
-                <div class="summary">
-                  Marker added: <span style="color: #f97316; font-weight: 600">sNDA filing</span>
-                  <span class="nct-tooltip" style="color: var(--slate-400)"
-                    >&nbsp;&middot; Regulatory</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Marker added (Approval category) -->
-            <div class="row v1">
-              <div class="row-icon" style="color: #3b82f6">+</div>
-              <div class="row-body">
-                <div class="meta">
-                  <span>STOUT STRATEGY</span><span class="sep">&bull;</span>
-                  <span>Apr 29, 2026, 2:14:00 PM</span><span class="sep">&bull;</span>
-                  <span>NCT05223344</span>
-                </div>
-                <div class="summary">
-                  Marker added:
-                  <span style="color: #3b82f6; font-weight: 600">FDA approval expected</span>
-                  <span class="nct-tooltip" style="color: var(--slate-400)"
-                    >&nbsp;&middot; Approval</span
-                  >
+              <div class="row o2">
+                <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                <div class="row-body">
+                  <div class="lead-summary">
+                    Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new neutral">Nov 23, 2026</span>)
+                  </div>
+                  <div class="sub-meta">
+                    <span class="logo lilly">EL</span>
+                    <span class="product">orforglipron</span>
+                    <span class="sep">&middot;</span>
+                    <span class="reltime">3h ago</span>
+                    <span class="src-inline">CT.gov</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div class="opt-tradeoff">
-          <strong>Why this works</strong> The colored values pull from the same palette the analyst
-          sees on the timeline below the widget -- a teal "3" in the row is the same teal as the P3
-          phase bar; a green data marker in the row is the same green as the data marker on the
-          chart. Color does double-duty: it points the eye at the change AND tells the analyst what
-          kind of object changed using vocabulary they already read.
-        </div>
-        <div class="opt-tradeoff" style="border-color: var(--slate-300); margin-top: 8px">
-          <strong>Color rules</strong>
-          phase_transitioned → destination phase color &nbsp;&middot;&nbsp;
-          marker_added/updated/removed → marker's category color &nbsp;&middot;&nbsp; everything
-          else → slate-700
+          <strong>Tradeoff</strong> Strongest "what changed, where it changed" reading order.
+          Sponsor identity stays present but stops competing with the change for attention. Cost:
+          when summaries don't lead with the trial program name (rows 3-5 in this set), the user has
+          to glance down to know which trial. Pairs best with summary phrasing that always starts
+          with the trial identifier.
         </div>
       </section>
 
       <!-- ============================================================ -->
-      <!-- COLOR MAP -->
+      <!-- O3: GROUPED BY SPONSOR                                      -->
       <!-- ============================================================ -->
-      <div class="key" style="margin-bottom: 48px">
-        <h4>Event-type color assignments (used in C1-C4)</h4>
-        <dl>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--violet-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Violet
-          </dt>
-          <dd>phase_transitioned, marker_reclassified, sponsor_changed -- structural pivots</dd>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--amber-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Amber
-          </dt>
-          <dd>date_moved (delays), trial_withdrawn -- timeline / regulatory issues</dd>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--red-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Red
-          </dt>
-          <dd>status terminated/withdrawn/suspended, arm_removed, marker_removed</dd>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--green-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Green
-          </dt>
-          <dd>marker_added, projection_finalized, status completed -- data positives</dd>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--blue-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Blue
-          </dt>
-          <dd>
-            enrollment_target_changed, intervention_changed, outcome_measure_changed, marker_updated
-            -- design changes
-          </dd>
-          <dt>
-            <span
-              style="
-                display: inline-block;
-                width: 10px;
-                height: 10px;
-                background: var(--cyan-600);
-                margin-right: 6px;
-                vertical-align: middle;
-              "
-            ></span>
-            Cyan
-          </dt>
-          <dd>arm_added, eligibility_changed -- protocol additions (reserved)</dd>
-        </dl>
-      </div>
+      <section class="opt">
+        <div class="opt-head">
+          <span class="code">O3</span>
+          <h2>Grouped by sponsor &middot; shared header, rows drop the logo</h2>
+        </div>
+        <p class="opt-desc">
+          When one sponsor dominates the feed (Eli Lilly is 4 of 5 events in your screenshot),
+          repeating the logo on every row is redundant. Group consecutive events by company under a
+          single tiny header strip (logo + company name + count). Rows beneath the header drop their
+          own logo and indent slightly so the visual hierarchy reads. Singletons (Roche alone) still
+          get a one-row group.
+        </p>
+        <div class="preview-single">
+          <div class="widget">
+            <div class="widget-head">
+              <h3>What changed</h3>
+              <span class="count">last 7d &middot; 5 events</span>
+              <a href="#">View all &rarr;</a>
+            </div>
+            <div class="widget-body">
+              <div class="group-card">
+                <div class="group-header">
+                  <span class="logo lilly">EL</span>
+                  <span class="company">Eli Lilly</span>
+                  <span class="group-count">3 events</span>
+                </div>
+                <div class="row g">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="product">retatrutide</span>
+                      <span class="reltime">2h ago</span>
+                      <span class="src-inline">Stout</span>
+                    </div>
+                    <div class="summary">
+                      TRIUMPH-1 topline delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row g">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="product">Zepbound</span>
+                      <span class="reltime">2h ago</span>
+                      <span class="src-inline">Stout</span>
+                    </div>
+                    <div class="summary">
+                      SURMOUNT-MMO topline delayed 180 days (<span class="old">Oct 1, 2027</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Mar 29, 2028</span>)
+                    </div>
+                  </div>
+                </div>
+                <div class="row g">
+                  <div class="row-icon slate"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="product">orforglipron</span>
+                      <span class="reltime">3h ago</span>
+                      <span class="src-inline">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">Nov 23, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="group-card">
+                <div class="group-header">
+                  <span class="logo roche">RO</span>
+                  <span class="company">Roche</span>
+                  <span class="group-count">1 event</span>
+                </div>
+                <div class="row g">
+                  <div class="row-icon green"><i>&#x1F4C5;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="product">CT-388</span>
+                      <span class="reltime">2h ago</span>
+                      <span class="src-inline">Stout</span>
+                    </div>
+                    <div class="summary">
+                      P2 final analysis delayed 120 days (<span class="old">Mar 15, 2026</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new">Jul 13, 2026</span>)
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="group-card">
+                <div class="group-header">
+                  <span class="logo lilly">EL</span>
+                  <span class="company">Eli Lilly</span>
+                  <span class="group-count">1 event</span>
+                </div>
+                <div class="row g">
+                  <div class="row-icon slate"><i>&#x21C4;</i></div>
+                  <div class="row-body">
+                    <div class="meta">
+                      <span class="product">orforglipron</span>
+                      <span class="reltime">3h ago</span>
+                      <span class="src-inline">CT.gov</span>
+                    </div>
+                    <div class="summary">
+                      Phase:
+                      <span class="old">PHASE2</span>
+                      <span class="arrow">&rarr;</span>
+                      <span class="new neutral">PHASE3</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="opt-tradeoff">
+          <strong>Tradeoff</strong> Real structural win when the feed concentrates on a few sponsors
+          -- which it usually does, since a CI engagement is scoped to a competitive set. Cost: when
+          sponsors are interleaved (Lilly, Roche, Lilly, Pfizer, Lilly), the grouping fragments and
+          you end up with five one-row groups, which costs vertical space rather than saving it.
+          Worth a quick check against real activity data: if 60%+ of feed rows are consecutive
+          same-sponsor, this wins; if not, the row-level logo (V3) is better.
+        </div>
+      </section>
 
       <!-- ============================================================ -->
-      <!-- KEY -->
+      <!-- O4: LOGO AS ROW-ICON                                        -->
       <!-- ============================================================ -->
-      <div class="key">
-        <h4>Data shown / hidden across variations</h4>
-        <dl>
-          <dt>Source</dt>
-          <dd>
-            Two values only: <code>ctgov</code> (CT.gov) or <code>analyst</code> (the agency, e.g.
-            Stout Strategy). Encoded as a 2-letter chip (CT / AN) in V2-V8 instead of the full
-            agency name.
-          </dd>
-          <dt>NCT</dt>
-          <dd>
-            Hidden from row in V2-V8. Available on hover and used as the link target. Power users
-            can still copy from the trial-detail page.
-          </dd>
-          <dt>Program</dt>
-          <dd>
-            Trial.name (e.g. KEYTRUDA-407, DESTINY-Breast09). Already joined in the RPC. The
-            strongest identity anchor for a CI analyst.
-          </dd>
-          <dt>Asset</dt>
-          <dd>
-            Generic drug name. <strong>Not joined today</strong> -- requires extending
-            get_activity_feed to join through to products. Used only in V6.
-          </dd>
-          <dt>Company</dt>
-          <dd>
-            Sponsor / lead developer. <strong>Not joined today</strong> -- same RPC change as Asset.
-            Used only in V6.
-          </dd>
-          <dt>Time</dt>
-          <dd>
-            Switched from absolute ("May 5, 2026, 9:14:00 AM") to relative ("2h", "1d", "6d") in
-            V2-V8. Absolute time stays available on hover.
-          </dd>
-        </dl>
-      </div>
+      <section class="opt">
+        <div class="opt-head">
+          <span class="code">O4</span>
+          <h2>Logo IS the row-icon &middot; event-type lives in the delta color</h2>
+        </div>
+        <p class="opt-desc">
+          Drop the event-type glyph (calendar, swap, plus) and let the logo occupy that column. The
+          event-type is encoded by the color of the new value in the summary: green for date
+          changes, violet for phase, red for status. Saves a column. Identity and event-type stop
+          competing for the user's attention because they share one slot in the row.
+        </p>
+        <div class="preview-single">
+          <div class="widget">
+            <div class="widget-head">
+              <h3>What changed</h3>
+              <span class="count">last 7d &middot; 5 events</span>
+              <a href="#">View all &rarr;</a>
+            </div>
+            <div class="widget-body">
+              <div class="row o4">
+                <span class="logo lilly">EL</span>
+                <div class="row-body">
+                  <div class="meta">
+                    <span class="product">retatrutide</span>
+                    <span class="reltime">2h ago</span>
+                    <span class="src-inline">Stout</span>
+                  </div>
+                  <div class="summary">
+                    TRIUMPH-1 topline delayed 100 days (<span class="old">Aug 15, 2026</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new date">Nov 23, 2026</span>)
+                  </div>
+                </div>
+              </div>
+              <div class="row o4">
+                <span class="logo roche">RO</span>
+                <div class="row-body">
+                  <div class="meta">
+                    <span class="product">CT-388</span>
+                    <span class="reltime">2h ago</span>
+                    <span class="src-inline">Stout</span>
+                  </div>
+                  <div class="summary">
+                    P2 final analysis delayed 120 days (<span class="old">Mar 15, 2026</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new date">Jul 13, 2026</span>)
+                  </div>
+                </div>
+              </div>
+              <div class="row o4">
+                <span class="logo lilly">EL</span>
+                <div class="row-body">
+                  <div class="meta">
+                    <span class="product">Zepbound</span>
+                    <span class="reltime">2h ago</span>
+                    <span class="src-inline">Stout</span>
+                  </div>
+                  <div class="summary">
+                    SURMOUNT-MMO topline delayed 180 days (<span class="old">Oct 1, 2027</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new date">Mar 29, 2028</span>)
+                  </div>
+                </div>
+              </div>
+              <div class="row o4">
+                <span class="logo lilly">EL</span>
+                <div class="row-body">
+                  <div class="meta">
+                    <span class="product">orforglipron</span>
+                    <span class="reltime">3h ago</span>
+                    <span class="src-inline">CT.gov</span>
+                  </div>
+                  <div class="summary">
+                    Primary completion delayed 100 days (<span class="old">Aug 15, 2026</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new neutral">Nov 23, 2026</span>)
+                  </div>
+                </div>
+              </div>
+              <div class="row o4">
+                <span class="logo lilly">EL</span>
+                <div class="row-body">
+                  <div class="meta">
+                    <span class="product">orforglipron</span>
+                    <span class="reltime">3h ago</span>
+                    <span class="src-inline">CT.gov</span>
+                  </div>
+                  <div class="summary">
+                    Phase:
+                    <span class="old">PHASE2</span>
+                    <span class="arrow">&rarr;</span>
+                    <span class="new phase">PHASE3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="opt-tradeoff">
+          <strong>Tradeoff</strong> Three signals -- identity, event-type, change -- compressed into
+          the cleanest geometry shown here. Cost: the universal event-type glyph (&#x1F4C5; date,
+          &#x21C4; swap, &#x002B; add) is gone. Users who relied on that icon for instant
+          categorical recognition now read color instead, which needs a small legend somewhere in
+          the dashboard to be discoverable.
+        </div>
+      </section>
 
-      <div class="footer">Internal -- engagement landing -- what changed widget design</div>
+      <div class="footer">Internal -- engagement landing -- what changed widget</div>
     </main>
   </body>
 </html>

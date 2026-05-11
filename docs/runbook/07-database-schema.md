@@ -606,7 +606,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `mechanisms_of_action`
 - `palette_pinned`
 - `palette_recents`
-- `primary_intelligence`
 - `primary_intelligence_links`
 - `primary_intelligence_revisions`
 - `product_mechanisms_of_action`
@@ -720,4 +719,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260509131000_intelligence_history_restore_changed_fields.sql`
 - `20260510120100_change_feed_product_company_marker_type.sql`
 - `20260510120200_seed_demo_activity_variety.sql`
+- `20260510120300_change_feed_company_logo_url.sql`
 <!-- /AUTO-GEN:DRIFT -->

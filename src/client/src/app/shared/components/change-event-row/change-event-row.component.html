@@ -4,36 +4,9 @@
     [queryParams]="queryParams()"
     class="group flex items-start gap-3 border-b border-slate-200 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
   >
-    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()"></i>
+    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()" aria-hidden="true"></i>
     <div class="min-w-0 flex-1">
-      <div class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
-        @if (event().company_name; as company) {
-          <span class="font-mono font-semibold uppercase tracking-[0.08em] text-slate-700">{{
-            company
-          }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        @if (event().product_name; as product) {
-          <span class="text-slate-600">{{ product }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        @if (event().trial_identifier; as nct) {
-          <span class="font-mono tabular-nums text-slate-500">{{ nct }}</span>
-          <span class="text-slate-300">&middot;</span>
-        } @else {
-          <span class="text-slate-600">{{ event().trial_name }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        <span class="font-mono tabular-nums text-slate-500">{{
-          event().observed_at | date: 'medium'
-        }}</span>
-        <span
-          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500"
-        >
-          {{ sourceLabel() }}
-        </span>
-      </div>
-      <div class="text-sm text-slate-900">
+      <div class="mb-1.5 text-sm leading-snug text-slate-900">
         @for (seg of rich().segments; track $index) {
           @switch (seg.kind) {
             @case ('plain') {
@@ -53,41 +26,51 @@
             }
           }
         }
+      </div>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+        @if (event().company_logo_url; as logo) {
+          <img
+            [ngSrc]="logo"
+            [alt]="event().company_name ?? ''"
+            width="16"
+            height="16"
+            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+          />
+        } @else {
+          <span
+            class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
+            [style.background]="monogramTint().bg"
+            [style.color]="monogramTint().fg"
+            [style.border-color]="monogramTint().border"
+            aria-hidden="true"
+            >{{ monogram() }}</span
+          >
+        }
+        @if (event().product_name; as product) {
+          <span class="font-mono text-slate-600">{{ product }}</span>
+        } @else if (event().trial_name; as trial) {
+          <span class="font-mono text-slate-600">{{ trial }}</span>
+        }
+        <span class="text-slate-300" aria-hidden="true">&middot;</span>
+        <span
+          class="font-mono tabular-nums text-slate-400"
+          [pTooltip]="(event().observed_at | date: 'medium') ?? ''"
+          tooltipPosition="top"
+          >{{ relativeTime() }}</span
+        >
+        <span
+          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-slate-500"
+        >
+          {{ sourceLabel() }}
+        </span>
       </div>
     </div>
   </a>
 } @else {
   <div class="flex items-start gap-3 border-b border-slate-200 py-3">
-    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()"></i>
+    <i [class]="iconClass() + ' mt-1 w-5'" [style.color]="accentColor()" aria-hidden="true"></i>
     <div class="min-w-0 flex-1">
-      <div class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
-        @if (event().company_name; as company) {
-          <span class="font-mono font-semibold uppercase tracking-[0.08em] text-slate-700">{{
-            company
-          }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        @if (event().product_name; as product) {
-          <span class="text-slate-600">{{ product }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        @if (event().trial_identifier; as nct) {
-          <span class="font-mono tabular-nums text-slate-500">{{ nct }}</span>
-          <span class="text-slate-300">&middot;</span>
-        } @else {
-          <span class="text-slate-600">{{ event().trial_name }}</span>
-          <span class="text-slate-300">&middot;</span>
-        }
-        <span class="font-mono tabular-nums text-slate-500">{{
-          event().observed_at | date: 'medium'
-        }}</span>
-        <span
-          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500"
-        >
-          {{ sourceLabel() }}
-        </span>
-      </div>
-      <div class="text-sm text-slate-900">
+      <div class="mb-1.5 text-sm leading-snug text-slate-900">
         @for (seg of rich().segments; track $index) {
           @switch (seg.kind) {
             @case ('plain') {
@@ -107,6 +90,43 @@
             }
           }
         }
+      </div>
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+        @if (event().company_logo_url; as logo) {
+          <img
+            [ngSrc]="logo"
+            [alt]="event().company_name ?? ''"
+            width="16"
+            height="16"
+            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+          />
+        } @else {
+          <span
+            class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
+            [style.background]="monogramTint().bg"
+            [style.color]="monogramTint().fg"
+            [style.border-color]="monogramTint().border"
+            aria-hidden="true"
+            >{{ monogram() }}</span
+          >
+        }
+        @if (event().product_name; as product) {
+          <span class="font-mono text-slate-600">{{ product }}</span>
+        } @else if (event().trial_name; as trial) {
+          <span class="font-mono text-slate-600">{{ trial }}</span>
+        }
+        <span class="text-slate-300" aria-hidden="true">&middot;</span>
+        <span
+          class="font-mono tabular-nums text-slate-400"
+          [pTooltip]="(event().observed_at | date: 'medium') ?? ''"
+          tooltipPosition="top"
+          >{{ relativeTime() }}</span
+        >
+        <span
+          class="ml-auto inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-slate-500"
+        >
+          {{ sourceLabel() }}
+        </span>
       </div>
     </div>
   </div>
