@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseDayOffset } from '../../utils/parse-day-offset';
+import { parseDayOffset } from './parse-day-offset';
 
 describe('parseDayOffset', () => {
   it('parses "7d" as 7', () => {
