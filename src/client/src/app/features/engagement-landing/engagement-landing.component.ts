@@ -63,11 +63,14 @@ interface InventoryTotals {
 
 /**
  * Engagement landing page. Sits at the space root (`/t/:tenantId/s/:spaceId`).
- * Spec: docs/superpowers/specs/2026-05-10-home-redesign-design.md.
+ * Spec: docs/superpowers/specs/2026-05-11-engagement-header-redesign-design.md.
  *
  * Layout:
- *   - Pulse header: tracked eyebrow, h1, since-line, integrated 5-stat strip.
- *   - Today brief: optional one-line teal-accented catalysts-this-week rollup.
+ *   - Pulse panel: one bordered section with three rows. Row 1 is the mono
+ *     identity line carrying inventory totals. Row 2 is the adaptive brief
+ *     (tiers across week/month/quarter, hides on quiet days). Row 3 is the
+ *     five-cell motion strip (P3 readouts, catalysts, new intel, trial moves,
+ *     loss of exclusivity).
  *   - Two-column body: intelligence feed (2/3) + side rail (1/3) with the
  *     Next 90 days card stacked on the What changed widget.
  *   - Recent materials: legacy widget kept below the fold.

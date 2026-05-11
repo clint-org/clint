@@ -73,7 +73,7 @@
           class="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-[11px] text-brand-700 no-underline hover:text-brand-800 focus-visible:text-brand-800"
           [routerLink]="catalystsRoute()"
           [queryParams]="{ markerId: b.lead.marker_id }"
-          aria-label="View catalyst"
+          [attr.aria-label]="'View catalyst: ' + b.lead.title"
         >
           <i class="fa-solid fa-arrow-right"></i>
         </a>
