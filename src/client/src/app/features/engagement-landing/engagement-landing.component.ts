@@ -21,7 +21,7 @@ import { Tenant } from '../../core/models/tenant.model';
 import { Company } from '../../core/models/company.model';
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
-import { Product } from '../../core/models/product.model';
+import { Asset } from '../../core/models/asset.model';
 import {
   ENTITY_TYPE_LABEL,
   IntelligenceEntityType,
@@ -34,12 +34,11 @@ import {
   SpaceLandingStats,
   UpcomingCatalyst,
 } from './engagement-landing.service';
-import { DraftsWidgetComponent } from './drafts-widget/drafts-widget.component';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
 interface Stat {
-  key: 'activeTrials' | 'companies' | 'programs' | 'catalysts' | 'intelligence';
+  key: 'activeTrials' | 'companies' | 'assets' | 'catalysts' | 'intelligence';
   label: string;
   value: number | null;
   route: string | null;
@@ -53,19 +52,15 @@ interface FeedFilter {
 }
 
 /**
- * Engagement landing page (docs/specs/engagement-landing/spec.md). Sits at
- * the space root (`/t/:tenantId/s/:spaceId`).
+ * Engagement landing page. Sits at the space root (`/t/:tenantId/s/:spaceId`).
+ * Spec: docs/superpowers/specs/2026-05-10-home-redesign-design.md.
  *
- * Layout (per `docs/superpowers/specs/2026-05-08-home-redesign` source):
- *   - Pulse header: tracked eyebrow, h1, since-line, integrated 5-stat strip
- *     (each stat is a router link).
- *   - Today brief: optional one-line teal-accented rollup of catalysts and
- *     drafts. Hidden when both are empty.
- *   - Three-up: What changed | Next 14 days | Your drafts (agency only).
- *     Drafts panel keeps its amber agency accent border.
- *   - Latest from Stout: featured post + 2-col grid with entity-type filter
- *     chips.
- *   - Recent materials: legacy widget kept below the feed.
+ * Layout:
+ *   - Pulse header: tracked eyebrow, h1, since-line, integrated 5-stat strip.
+ *   - Today brief: optional one-line teal-accented catalysts-this-week rollup.
+ *   - Two-column body: intelligence feed (2/3) + side rail (1/3) with the
+ *     Next 90 days card stacked on the What changed widget.
+ *   - Recent materials: legacy widget kept below the fold.
  */
 @Component({
   selector: 'app-engagement-landing',
@@ -77,7 +72,6 @@ interface FeedFilter {
     MessageModule,
     MarkerIconComponent,
     SkeletonComponent,
-    DraftsWidgetComponent,
     RecentMaterialsWidgetComponent,
     WhatChangedWidgetComponent,
   ],
@@ -102,13 +96,11 @@ export class EngagementLandingComponent implements OnInit {
   readonly statsLoading = signal(true);
   readonly upcoming = signal<UpcomingCatalyst[]>([]);
   readonly upcomingLoading = signal(true);
-  readonly isAgency = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
-  readonly drafts = signal<IntelligenceFeedRow[]>([]);
   readonly feedFilter = signal<'all' | IntelligenceEntityType>('all');
-  protected readonly skeletonRows = [0, 1, 2];
+  protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
   readonly spaceName = computed(() => this.space()?.name ?? '');
@@ -136,7 +128,7 @@ export class EngagementLandingComponent implements OnInit {
     return {
       activeTrials: `${base}/manage/trials`,
       companies: `${base}/manage/companies`,
-      programs: `${base}/manage/products`,
+      assets: `${base}/manage/assets`,
       catalysts: `${base}/catalysts`,
       intelligence: `${base}/intelligence`,
     };
@@ -161,10 +153,10 @@ export class EngagementLandingComponent implements OnInit {
         warn: false,
       },
       {
-        key: 'programs',
-        label: 'Programs',
-        value: s?.programs ?? null,
-        route: r?.programs ?? null,
+        key: 'assets',
+        label: 'Assets',
+        value: s?.assets ?? null,
+        route: r?.assets ?? null,
         warn: false,
       },
       {
@@ -206,38 +198,18 @@ export class EngagementLandingComponent implements OnInit {
     return this.upcoming().filter((c) => c.event_date >= today && c.event_date <= horizon);
   });
 
-  readonly briefVisible = computed(() => {
-    const week = this.catalystsThisWeek().length;
-    const drafts = this.drafts().length;
-    return !this.statsLoading() && (week > 0 || drafts > 0);
-  });
+  readonly briefVisible = computed(
+    () => !this.statsLoading() && this.catalystsThisWeek().length > 0
+  );
 
-  /**
-   * Today brief rollup. Compact bullets with at most three clauses:
-   *   - X catalysts this week (if any)
-   *   - Y drafts in progress (if any and viewer is agency)
-   * The trial-date-moved clause from the design source needs change-event
-   * counts that the page doesn't load directly; the existing
-   * what-changed-widget loads them on its own. We keep the brief lean and
-   * derive only from data the parent already has.
-   */
   readonly briefHtml = computed(() => {
     const week = this.catalystsThisWeek();
-    const drafts = this.drafts();
-    const parts: string[] = [];
-    if (week.length > 0) {
-      const lead = week[0];
-      const detail = lead
-        ? ` (${escapeHtml(lead.title)}${lead.company_name ? ' · ' + escapeHtml(lead.company_name.toUpperCase()) : ''})`
-        : '';
-      parts.push(
-        `<b>${week.length} catalyst${week.length === 1 ? '' : 's'} this week</b>${detail}`
-      );
-    }
-    if (this.isAgency() && drafts.length > 0) {
-      parts.push(`<b>${drafts.length} draft${drafts.length === 1 ? '' : 's'}</b> in progress`);
-    }
-    return parts.join(' · ');
+    if (week.length === 0) return '';
+    const lead = week[0];
+    const detail = lead
+      ? ` (${escapeHtml(lead.title)}${lead.company_name ? ' · ' + escapeHtml(lead.company_name.toUpperCase()) : ''})`
+      : '';
+    return `<b>${week.length} catalyst${week.length === 1 ? '' : 's'} this week</b>${detail}`;
   });
 
   readonly todayLabel = computed(() => {
@@ -248,27 +220,41 @@ export class EngagementLandingComponent implements OnInit {
     });
   });
 
-  readonly nextFortnightDays = computed(() => {
-    return this.upcoming()
-      .slice(0, 7)
-      .map((c) => {
-        const d = new Date(c.event_date + 'T00:00:00');
-        return {
-          marker_id: c.marker_id,
-          day: String(d.getDate()).padStart(2, '0'),
-          weekday: SHORT_DAYS[d.getDay()].toUpperCase(),
-          isToday: c.event_date === todayIso(),
-          title: c.title || c.category_name || 'Catalyst',
-          who: [c.company_name?.toUpperCase(), c.product_name, c.is_projected ? 'PROJECTED' : null]
-            .filter((p): p is string => !!p)
-            .join(' · '),
-          color: c.marker_type_color || '#16a34a',
-          shape: c.marker_type_shape,
-          fillStyle: c.is_projected ? ('outline' as const) : c.marker_type_fill_style,
-          innerMark: c.marker_type_inner_mark,
-          isNle: c.no_longer_expected,
-        };
-      });
+  readonly nextNinetyDayItems = computed<CatalystDay[]>(() => {
+    return this.upcoming().map((c) => {
+      const d = new Date(c.event_date + 'T00:00:00');
+      return {
+        marker_id: c.marker_id,
+        event_date: c.event_date,
+        day: String(d.getDate()).padStart(2, '0'),
+        weekday: SHORT_DAYS[d.getDay()].toUpperCase(),
+        monthLabel: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
+        isToday: c.event_date === todayIso(),
+        title: c.title || c.category_name || 'Catalyst',
+        who: [c.company_name?.toUpperCase(), c.product_name, c.is_projected ? 'PROJECTED' : null]
+          .filter((p): p is string => !!p)
+          .join(' · '),
+        color: c.marker_type_color || '#16a34a',
+        shape: c.marker_type_shape,
+        fillStyle: c.is_projected ? ('outline' as const) : c.marker_type_fill_style,
+        innerMark: c.marker_type_inner_mark,
+        isNle: c.no_longer_expected,
+      };
+    });
+  });
+
+  readonly monthGroupedCatalysts = computed<MonthGroup[]>(() => {
+    const items = this.nextNinetyDayItems();
+    const groups: MonthGroup[] = [];
+    for (const item of items) {
+      const last = groups[groups.length - 1];
+      if (last && last.monthLabel === item.monthLabel) {
+        last.items.push(item);
+      } else {
+        groups.push({ monthLabel: item.monthLabel, items: [item] });
+      }
+    }
+    return groups;
   });
 
   readonly feedFilters = computed<FeedFilter[]>(() => {
@@ -359,7 +345,8 @@ export class EngagementLandingComponent implements OnInit {
   trackPost = (_: number, row: IntelligenceFeedRow): string => row.id;
   trackStat = (_: number, s: Stat): string => s.key;
   trackFilter = (_: number, f: FeedFilter): string => f.key;
-  trackDay = (_: number, d: { marker_id: string }): string => d.marker_id;
+  trackDay = (_: number, d: CatalystDay): string => d.marker_id;
+  trackMonth = (_: number, g: MonthGroup): string => g.monthLabel;
 
   private extractRouteParams(): void {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
@@ -380,16 +367,13 @@ export class EngagementLandingComponent implements OnInit {
     this.latestLoading.set(true);
     this.loadError.set(null);
 
-    const [spaceRes, tenantRes, statsRes, dashRes, agencyRes, latestRes, draftsRes] =
-      await Promise.allSettled([
-        this.spaceService.getSpace(sid),
-        this.tenantService.getTenant(tid),
-        this.engagementService.getStats(sid),
-        this.dashboardService.getDashboardData(sid, emptyFilters()),
-        this.engagementService.isAgencyMemberOfTenant(tid),
-        this.intelligenceService.list({ spaceId: sid, limit: 8 }),
-        this.intelligenceService.listDraftsForSpace(sid, 5),
-      ]);
+    const [spaceRes, tenantRes, statsRes, dashRes, latestRes] = await Promise.allSettled([
+      this.spaceService.getSpace(sid),
+      this.tenantService.getTenant(tid),
+      this.engagementService.getStats(sid),
+      this.dashboardService.getDashboardData(sid, emptyFilters()),
+      this.intelligenceService.list({ spaceId: sid, limit: 8 }),
+    ]);
 
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
     if (tenantRes.status === 'fulfilled') this.tenant.set(tenantRes.value);
@@ -399,11 +383,9 @@ export class EngagementLandingComponent implements OnInit {
       this.loadError.set(formatError(statsRes.reason, 'Failed to load engagement stats.'));
     }
     if (dashRes.status === 'fulfilled') {
-      this.upcoming.set(extractUpcoming(dashRes.value.companies, 14));
+      this.upcoming.set(extractUpcoming(dashRes.value.companies, 90));
     }
-    if (agencyRes.status === 'fulfilled') this.isAgency.set(agencyRes.value);
     if (latestRes.status === 'fulfilled') this.latestIntelligence.set(latestRes.value.rows);
-    if (draftsRes.status === 'fulfilled') this.drafts.set(draftsRes.value);
 
     this.statsLoading.set(false);
     this.upcomingLoading.set(false);
@@ -411,12 +393,47 @@ export class EngagementLandingComponent implements OnInit {
   }
 }
 
+interface CatalystDay {
+  marker_id: string;
+  event_date: string;
+  day: string;
+  weekday: string;
+  monthLabel: string;
+  isToday: boolean;
+  title: string;
+  who: string;
+  color: string;
+  shape: import('../../core/models/marker.model').MarkerShape;
+  fillStyle: import('../../core/models/marker.model').FillStyle;
+  innerMark: import('../../core/models/marker.model').InnerMark;
+  isNle: boolean;
+}
+
+interface MonthGroup {
+  monthLabel: string;
+  items: CatalystDay[];
+}
+
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_LABELS = [
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
+];
 
 function emptyFilters() {
   return {
     companyIds: null,
-    productIds: null,
+    assetIds: null,
     therapeuticAreaIds: null,
     startYear: null,
     endYear: null,
@@ -449,8 +466,8 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
   const out: UpcomingCatalyst[] = [];
 
   for (const company of companies) {
-    for (const product of company.products ?? ([] as Product[])) {
-      for (const trial of product.trials ?? ([] as Trial[])) {
+    for (const asset of company.products ?? ([] as Asset[])) {
+      for (const trial of asset.trials ?? ([] as Trial[])) {
         for (const marker of trial.markers ?? ([] as Marker[])) {
           if (!marker.event_date) continue;
           if (marker.event_date < today || marker.event_date > horizon) continue;
@@ -467,7 +484,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
             marker_type_fill_style: mt?.fill_style ?? 'filled',
             marker_type_inner_mark: mt?.inner_mark ?? 'none',
             company_name: company.name,
-            product_name: product.name,
+            product_name: asset.name,
             trial_name: trial.name ?? null,
           });
         }
