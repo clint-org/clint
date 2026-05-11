@@ -2,10 +2,10 @@
  * Primary intelligence -- Stout's authored read on an entity in the
  * engagement (trial, marker, company, product, or the space itself).
  *
- * Mirrors the Postgres tables `primary_intelligence`,
- * `primary_intelligence_links`, `primary_intelligence_revisions`. The
- * `*Detail` types match the jsonb shape returned by
- * `get_*_detail_with_intelligence()` and `get_space_intelligence()`.
+ * Mirrors the Postgres tables `primary_intelligence` and
+ * `primary_intelligence_links`. The `*Detail` types match the jsonb
+ * shape returned by `get_*_detail_with_intelligence()` and
+ * `get_space_intelligence()`.
  */
 
 export type IntelligenceEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space';
@@ -44,35 +44,11 @@ export interface PrimaryIntelligenceLink {
   display_order: number;
 }
 
-/**
- * Sections of a primary_intelligence read that can change between revisions.
- * Mirrors the keys produced by upsert_primary_intelligence's diff logic.
- */
-export type IntelligenceRevisionField =
-  | 'headline'
-  | 'thesis'
-  | 'watch'
-  | 'implications'
-  | 'links'
-  | 'state';
-
-export interface PrimaryIntelligenceRevision {
-  id: string;
-  state: IntelligenceState;
-  headline: string;
-  change_note: string | null;
-  /** Empty for the initial creation revision; truthy keys = sections that changed. */
-  changed_fields: Partial<Record<IntelligenceRevisionField, true>>;
-  edited_by: string;
-  edited_at: string;
-}
-
 /** Full payload returned by `build_intelligence_payload` (jsonb) */
 export interface IntelligencePayload {
   record: PrimaryIntelligence;
   links: PrimaryIntelligenceLink[];
   contributors: string[];
-  recent_revisions: PrimaryIntelligenceRevision[];
 }
 
 /** Compact row used by the Referenced-in section. */
@@ -206,21 +182,4 @@ export interface IntelligenceHistoryPayload {
   draft: PrimaryIntelligence | null;
   versions: IntelligenceVersionRow[];
   events: IntelligenceHistoryEvent[];
-}
-
-/**
- * One revision snapshot returned by
- * `get_intelligence_version_revisions`. Used to render adjacent-save
- * word diffs in the agency view.
- */
-export interface IntelligenceVersionRevision {
-  id: string;
-  state: IntelligenceState;
-  headline: string;
-  thesis_md: string;
-  watch_md: string;
-  implications_md: string;
-  change_note: string | null;
-  edited_by: string;
-  edited_at: string;
 }
