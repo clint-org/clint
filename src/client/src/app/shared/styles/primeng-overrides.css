@@ -231,10 +231,12 @@
   color: rgb(148 163 184); /* slate-400 */
 }
 
-/* Active: teal accents when the field has a value. */
+/* Active: brand border + icon signal the active state; background stays
+   a near-neutral slate-50 so tenants with mid-tone primary colors do not
+   produce a heavily saturated fill via the generated --brand-50 stop. */
 .search-tinted.has-value .p-inputtext {
   border-color: var(--brand-600); /* teal-600 */
-  background: var(--brand-50); /* teal-50 */
+  background: rgb(248 250 252); /* slate-50 */
 }
 .search-tinted.has-value .p-inputicon i {
   color: var(--brand-600); /* teal-600 */
