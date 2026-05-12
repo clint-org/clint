@@ -107,18 +107,26 @@
         @if (markersHelpLink(); as link) {
           <a
             [routerLink]="link"
-            class="text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
-            aria-label="What do these markers mean?"
-            >Markers guide</a
+            class="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
+            pTooltip="Open markers guide"
+            tooltipPosition="top"
+            aria-label="Open markers guide"
           >
+            <span>Markers</span>
+            <i class="fa-solid fa-circle-question text-[10px]" aria-hidden="true"></i>
+          </a>
         }
         @if (phasesHelpLink(); as link) {
           <a
             [routerLink]="link"
-            class="text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
-            aria-label="What do the phase bar colors mean?"
-            >Phases guide</a
+            class="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest text-slate-500 hover:text-slate-300"
+            pTooltip="Open phases guide"
+            tooltipPosition="top"
+            aria-label="Open phases guide"
           >
+            <span>Phases</span>
+            <i class="fa-solid fa-circle-question text-[10px]" aria-hidden="true"></i>
+          </a>
         }
       </div>
     </div>

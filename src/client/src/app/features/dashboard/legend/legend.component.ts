@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Tooltip } from 'primeng/tooltip';
 
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
@@ -22,6 +23,7 @@ import { SquareIconComponent } from '../../../shared/components/svg-icons/square
   standalone: true,
   imports: [
     RouterLink,
+    Tooltip,
     CircleIconComponent,
     DiamondIconComponent,
     FlagIconComponent,
