@@ -6,9 +6,9 @@ import {
   effect,
   inject,
   OnDestroy,
-  OnInit,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -97,7 +97,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
   templateUrl: './trial-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TrialDetailComponent implements OnInit, OnDestroy {
+export class TrialDetailComponent implements OnDestroy {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
@@ -176,8 +176,16 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     })();
   });
 
+  // Route paramMap as a signal so trialId reacts to in-place navigation
+  // (clicking a LINKED trial chip on a trial detail page reuses this
+  // component; the snapshot wouldn't have updated). The effect below
+  // re-runs loadTrial / loadIntelligence whenever the id changes.
+  private readonly paramMapSig = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
+
   readonly trial = signal<Trial | null>(null);
-  readonly trialId = signal('');
+  readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   protected readonly legendVisible = signal(false);
@@ -249,20 +257,20 @@ export class TrialDetailComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.trialId.set(id);
-      this.loadTrial();
-      this.loadIntelligence();
-      void this.loadSnapshot();
-      void this.loadTrialActivity();
-      void this.loadFieldVisibility();
-    } else {
+  private readonly idChangeEffect = effect(() => {
+    const id = this.trialId();
+    if (!id) {
       this.error.set('No trial ID provided');
       this.loading.set(false);
+      return;
     }
-  }
+    this.error.set(null);
+    void this.loadTrial();
+    void this.loadIntelligence();
+    void this.loadSnapshot();
+    void this.loadTrialActivity();
+    void this.loadFieldVisibility();
+  });
 
   private async loadFieldVisibility(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId');

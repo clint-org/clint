@@ -2,10 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
-  OnInit,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -48,7 +49,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   templateUrl: './marker-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MarkerDetailComponent implements OnInit {
+export class MarkerDetailComponent {
   private route = inject(ActivatedRoute);
   private markerService = inject(MarkerService);
   private intelligenceService = inject(PrimaryIntelligenceService);
@@ -56,7 +57,14 @@ export class MarkerDetailComponent implements OnInit {
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
 
-  protected readonly markerId = signal<string>('');
+  // Route paramMap as a signal so markerId reacts to in-place navigation
+  // when clicking a LINKED marker chip on a marker detail page (same route
+  // config reuses this component instance).
+  private readonly paramMapSig = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
+
+  protected readonly markerId = computed(() => this.paramMapSig().get('id') ?? '');
   protected readonly marker = signal<Marker | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
@@ -78,16 +86,15 @@ export class MarkerDetailComponent implements OnInit {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+  private readonly idChangeEffect = effect(() => {
+    const id = this.markerId();
     if (!id) {
       this.loading.set(false);
       return;
     }
-    this.markerId.set(id);
     void this.loadMarker();
     void this.loadIntelligence();
-  }
+  });
 
   private findAncestorParam(key: string): string | null {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;

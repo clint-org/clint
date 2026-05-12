@@ -4,9 +4,9 @@ import {
   computed,
   effect,
   inject,
-  OnInit,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -57,7 +57,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetDetailComponent implements OnInit {
+export class AssetDetailComponent {
   private route = inject(ActivatedRoute);
   private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
@@ -65,7 +65,14 @@ export class AssetDetailComponent implements OnInit {
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
 
-  protected readonly assetId = signal<string>('');
+  // Route paramMap as a signal so assetId reacts to in-place navigation
+  // when clicking a LINKED product chip on an asset detail page (same route
+  // config reuses this component instance).
+  private readonly paramMapSig = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
+
+  protected readonly assetId = computed(() => this.paramMapSig().get('id') ?? '');
   protected readonly asset = signal<Asset | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
@@ -102,16 +109,15 @@ export class AssetDetailComponent implements OnInit {
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, assetIds: [assetId] });
   }
 
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+  private readonly idChangeEffect = effect(() => {
+    const id = this.assetId();
     if (!id) {
       this.loading.set(false);
       return;
     }
-    this.assetId.set(id);
     void this.loadAsset();
     void this.loadIntelligence();
-  }
+  });
 
   private findAncestorParam(key: string): string | null {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;

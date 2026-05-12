@@ -4,9 +4,9 @@ import {
   computed,
   effect,
   inject,
-  OnInit,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -56,7 +56,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   templateUrl: './company-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompanyDetailComponent implements OnInit {
+export class CompanyDetailComponent {
   private route = inject(ActivatedRoute);
   private companyService = inject(CompanyService);
   private intelligenceService = inject(PrimaryIntelligenceService);
@@ -64,7 +64,14 @@ export class CompanyDetailComponent implements OnInit {
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
 
-  protected readonly companyId = signal<string>('');
+  // Route paramMap as a signal so companyId reacts to in-place navigation
+  // when clicking a LINKED company chip on a company detail page (same route
+  // config reuses this component instance).
+  private readonly paramMapSig = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
+
+  protected readonly companyId = computed(() => this.paramMapSig().get('id') ?? '');
   protected readonly company = signal<Company | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
@@ -101,16 +108,15 @@ export class CompanyDetailComponent implements OnInit {
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, companyIds: [companyId] });
   }
 
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+  private readonly idChangeEffect = effect(() => {
+    const id = this.companyId();
     if (!id) {
       this.loading.set(false);
       return;
     }
-    this.companyId.set(id);
     void this.loadCompany();
     void this.loadIntelligence();
-  }
+  });
 
   private findAncestorParam(key: string): string | null {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
