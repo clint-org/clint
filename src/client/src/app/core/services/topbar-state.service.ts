@@ -28,6 +28,7 @@ export interface TopbarSubTab {
   label: string;
   value: string;
   active: boolean;
+  tooltip?: string;
 }
 
 @Injectable({ providedIn: 'root' })

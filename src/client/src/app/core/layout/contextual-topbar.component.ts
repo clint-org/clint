@@ -21,6 +21,7 @@ export interface TopbarTab {
   value: string;
   active: boolean;
   icon?: string;
+  tooltip?: string;
 }
 
 @Component({
@@ -253,6 +254,8 @@ export interface TopbarTab {
                     role="tab"
                     [attr.aria-selected]="sub.active"
                     [class]="sub.active ? 'topbar-subtab active' : 'topbar-subtab'"
+                    [pTooltip]="sub.tooltip ?? ''"
+                    tooltipPosition="bottom"
                     (click)="onSubTabClick(sub.value)"
                   >
                     {{ sub.label }}
@@ -395,7 +398,9 @@ export interface TopbarTab {
         border-radius: 3px;
         padding: 1px 5px;
         line-height: 1.4;
-        transition: color 120ms ease-out, background 120ms ease-out;
+        transition:
+          color 120ms ease-out,
+          background 120ms ease-out;
       }
       .palette-hint:hover kbd {
         color: #0f172a;

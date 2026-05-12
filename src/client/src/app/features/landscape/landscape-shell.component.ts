@@ -105,19 +105,64 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     if (mode === 'bullseye') {
       const seg = dimensionToSegment(this.dimension());
       this.topbarState.subTabs.set([
-        { label: 'Therapy Area', value: 'by-therapy-area', active: seg === 'by-therapy-area' },
-        { label: 'Company', value: 'by-company', active: seg === 'by-company' },
-        { label: 'MOA', value: 'by-moa', active: seg === 'by-moa' },
-        { label: 'ROA', value: 'by-roa', active: seg === 'by-roa' },
+        {
+          label: 'Therapy Area',
+          value: 'by-therapy-area',
+          active: seg === 'by-therapy-area',
+          tooltip: 'Spokes grouped by therapy area',
+        },
+        {
+          label: 'Company',
+          value: 'by-company',
+          active: seg === 'by-company',
+          tooltip: 'Spokes grouped by company',
+        },
+        {
+          label: 'MOA',
+          value: 'by-moa',
+          active: seg === 'by-moa',
+          tooltip: 'Spokes grouped by mechanism of action',
+        },
+        {
+          label: 'ROA',
+          value: 'by-roa',
+          active: seg === 'by-roa',
+          tooltip: 'Spokes grouped by route of administration',
+        },
       ]);
     } else if (mode === 'positioning') {
       const seg = groupingToSegment(this.state.positioningGrouping());
       this.topbarState.subTabs.set([
-        { label: 'MOA', value: 'by-moa', active: seg === 'by-moa' },
-        { label: 'Therapy Area', value: 'by-therapy-area', active: seg === 'by-therapy-area' },
-        { label: 'MOA + TA', value: 'by-moa-therapy-area', active: seg === 'by-moa-therapy-area' },
-        { label: 'Company', value: 'by-company', active: seg === 'by-company' },
-        { label: 'ROA', value: 'by-roa', active: seg === 'by-roa' },
+        {
+          label: 'MOA',
+          value: 'by-moa',
+          active: seg === 'by-moa',
+          tooltip: 'Assets grouped by mechanism of action',
+        },
+        {
+          label: 'Therapy Area',
+          value: 'by-therapy-area',
+          active: seg === 'by-therapy-area',
+          tooltip: 'Assets grouped by therapy area',
+        },
+        {
+          label: 'MOA + TA',
+          value: 'by-moa-therapy-area',
+          active: seg === 'by-moa-therapy-area',
+          tooltip: 'Assets grouped by mechanism of action, broken out by therapy area',
+        },
+        {
+          label: 'Company',
+          value: 'by-company',
+          active: seg === 'by-company',
+          tooltip: 'Assets grouped by company',
+        },
+        {
+          label: 'ROA',
+          value: 'by-roa',
+          active: seg === 'by-roa',
+          tooltip: 'Assets grouped by route of administration',
+        },
       ]);
     } else {
       this.topbarState.subTabs.set([]);
@@ -285,7 +330,9 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // motion-strip deep-link: phase=P3 (or any RingPhase) scopes the
     // catalysts view to trials in that phase. Parsed from comma-separated
     // values so a single param suffices for the common single-phase case.
-    const phases = this.parseIdList(qp.get('phase')) as import('../../core/models/landscape.model').RingPhase[] | null;
+    const phases = this.parseIdList(qp.get('phase')) as
+      | import('../../core/models/landscape.model').RingPhase[]
+      | null;
     if (assetIds || therapeuticAreaIds || phases) {
       this.state.filters.update((f) => ({
         ...f,
