@@ -12,6 +12,7 @@ Rubric: `src/client/CLAUDE.md` section 13 (Empty-state audit). This audit is, in
 - **P2** polish — the surface is usable but feels generic.
 - Findings cite `file:line` so triage can open the file and act.
 - "Suggested affordance" is the concrete remedy, copy-ready. Severity decides order within each section.
+- Completed findings carry a `· done (commit hash)` suffix on the heading. Open findings carry no suffix. Partial fixes name what remains.
 
 The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome aboard!" copy, no emoji. Nudges are terse hints, tooltips on jargon, empty-state copy that names the next action, status confirmations after destructive actions, and contextual links to existing `/help/*` pages.
 
@@ -19,12 +20,12 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 
 ## P0 — first-touch, blocks task
 
-### 1. MOA / ROA filter chips have no glossary affordance
+### 1. MOA / ROA filter chips have no glossary affordance · done (97fe1ea)
 - `src/client/src/app/features/landscape/landscape-filter-bar.component.html:130, 149`
 - Placeholders are the literal abbreviations `MOA` and `ROA`. `ariaLabel` carries the full name for screen readers, but sighted day-1 users see only the acronyms.
 - Affordance: add `pTooltip="Mechanism of action"` and `pTooltip="Route of administration"` (position `top`) on each multiselect. Optional: keep the placeholder abbreviated for density and let the tooltip carry the gloss.
 
-### 2. Bullseye view has no inline explanation of rings vs spokes
+### 2. Bullseye view has no inline explanation of rings vs spokes · done (97fe1ea)
 - `src/client/src/app/features/landscape/bullseye-chart.component.html` (chart sits under `landscape-shell` `/bullseye/*` routes)
 - Rings encode phase, spokes encode the active dimension. The mapping lives only in the SVG `<desc>` (screen-reader only). Sighted users — including the first-time analyst — get a circular blob with no legend.
 - Affordance: small inline legend in the bullseye toolbar (`Rings = phase  ·  Spokes = {dimension label}`) with the dimension label derived from `spokeMode()`. Link the word "Rings" to `/help/phases` (already exists).
@@ -34,7 +35,7 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Five tabs (`by-moa`, `by-therapy-area`, `by-moa-therapy-area`, `by-company`, `by-roa`) with terse labels. New users have no signal for which grouping answers which question.
 - Affordance: `pTooltip` on each tab. `MOA + TA` → `"Assets grouped by mechanism of action, broken out by therapy area"`. Others similarly precise.
 
-### 4. Catalysts page has zero framing — no definition, no scope
+### 4. Catalysts page has zero framing, no definition, no scope · done (97fe1ea)
 - `src/client/src/app/features/catalysts/catalysts-page.component.html:1-13`
 - The template is a toolbar + table. No subtitle, no "what is a catalyst," no link to a definition. A day-1 analyst lands on a table of unfamiliar terms (PDUFA, AdCom, P2 readout).
 - Affordance: page-shell subtitle line: `"Upcoming regulatory, trial, and commercial events that may move the competitive landscape."` (~12 words). Keep it inline; do not add a banner card.
@@ -53,12 +54,12 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 
 ## P0 — expert friction, blocks task
 
-### 7. No keyboard path between tenants or spaces
+### 7. No keyboard path between tenants or spaces · done quick (65037ed) · palette tenant/space items still open
 - `src/client/src/app/core/layout/contextual-topbar.component.ts:40-86` (tenant + space dropdowns)
 - Power users with N tenants / M spaces switch by mouse only. There is no command palette, no `cmd+k`, no shortcut hint.
 - Affordance: bind `cmd+k` to open the tenant dropdown (or space dropdown when scoped to a tenant), and add the hint `⌘K` after the dropdown trigger label. Roadmap-grade: replace both dropdowns with a single command palette over tenants + spaces + recent entities.
 
-### 8. Sidebar logo navigates home but has no tooltip
+### 8. Sidebar logo navigates home but has no tooltip · done (65037ed)
 - `src/client/src/app/core/layout/app-shell.component.ts:608-613`
 - Click navigates to spaces list. There's no `pTooltip` and no visual hover affordance distinct from the rest of the nav rail.
 - Affordance: add `pTooltip="Spaces"` (position `right`, matching nav-rail convention) on the logo button.
@@ -72,7 +73,7 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - The empty state defines a space well: `"Each space is a firewalled engagement scoped to a domain..."`. The create-space dialog re-defines it generically: `"A space is a workspace for organizing and visualizing a set of clinical trials..."`. Same user, same component, two definitions in one session.
 - Affordance: reuse the empty-state copy in the dialog. Pick one canonical definition for the space concept and use it everywhere.
 
-### 10. Zoom select-button uses single-letter labels with no gloss
+### 10. Zoom select-button uses single-letter labels with no gloss · done (786b105)
 - `src/client/src/app/features/landscape/landscape-filter-bar.component.html:19-27`
 - `Y / Q / M / D` is dense but opaque to day-1 users.
 - Affordance: `pTooltip` per option ("Yearly", "Quarterly", "Monthly", "Daily"). Keep the single-letter labels — they fit the data-instrument feel.
@@ -196,7 +197,7 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - "Seeding demo data" with a spinner. Can run for several seconds. User wonders if it hung.
 - Affordance: add a secondary line: `"Creating companies, assets, trials, and markers — this takes a few seconds."`
 
-### 32. Phase legend doesn't link to `/help/phases` from where users see phases
+### 32. Phase legend doesn't link to `/help/phases` from where users see phases · done (fc25781)
 - `src/client/src/app/features/landscape/timeline-view.component.html` (phase bars) and `bullseye-chart.component.html` (rings)
 - `/help/phases` exists. No surface that shows phase color links to it.
 - Affordance: one small `?` icon in the legend; click → route to `/help/phases`.
