@@ -119,6 +119,8 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
           type="button"
           class="logo-btn"
           [attr.aria-label]="logoLabel()"
+          [pTooltip]="isExpanded() ? '' : logoTooltip()"
+          tooltipPosition="right"
           (click)="logoClick.emit()"
         >
           @if (agencyBrand(); as ag) {
@@ -626,6 +628,7 @@ export class SidebarComponent {
     const ag = this.agencyBrand();
     return ag ? `${ag.name} -- go to home` : 'Go to home';
   });
+  readonly logoTooltip = computed(() => (this.hasSpace() ? 'Engagement home' : 'Spaces'));
 
   readonly pinToggle = output<void>();
   readonly navItemClick = output<string>();

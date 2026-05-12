@@ -11,7 +11,9 @@ import {
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 import { TopbarAction } from '../services/topbar-state.service';
+import { PaletteHotkeyService } from '../services/palette-hotkey.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
 export interface TopbarTab {
@@ -24,7 +26,7 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule, NgOptimizedImage],
+  imports: [ButtonModule, NgOptimizedImage, Tooltip],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -187,6 +189,17 @@ export interface TopbarTab {
             </div>
           }
         </div>
+
+        <button
+          type="button"
+          class="palette-hint"
+          pTooltip="Open command palette"
+          tooltipPosition="bottom"
+          aria-label="Open command palette"
+          (click)="onPaletteHintClick()"
+        >
+          <kbd>{{ paletteShortcut() }}</kbd>
+        </button>
       </div>
 
       <!-- Page-specific content (horizontal scroll on overflow, kept in its
@@ -359,6 +372,44 @@ export interface TopbarTab {
         font-size: 11px;
         color: #cbd5e1;
         user-select: none;
+      }
+
+      /* Subtle ⌘K hint advertising the command palette. Click opens it.
+         Hidden on small viewports where the keyboard isn't the primary
+         input. */
+      .palette-hint {
+        margin-left: 8px;
+        padding: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+      }
+      .palette-hint kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        color: #64748b;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 3px;
+        padding: 1px 5px;
+        line-height: 1.4;
+        transition: color 120ms ease-out, background 120ms ease-out;
+      }
+      .palette-hint:hover kbd {
+        color: #0f172a;
+        background: #e2e8f0;
+      }
+      .palette-hint:focus-visible {
+        outline: 2px solid var(--brand-600);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      @media (max-width: 767px) {
+        .palette-hint {
+          display: none;
+        }
       }
 
       /* Tenant */
@@ -840,6 +891,16 @@ export class ContextualTopbarComponent {
   readonly timelineHintDismiss = output<void>();
 
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly paletteHotkey = inject(PaletteHotkeyService);
+
+  readonly paletteShortcut = computed(() => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    return /Mac|iPhone|iPad/i.test(ua) ? '⌘K' : 'Ctrl K';
+  });
+
+  onPaletteHintClick(): void {
+    this.paletteHotkey.open();
+  }
 
   // ---- Internal state ----
   readonly tenantDropdownOpen = signal(false);
