@@ -83,10 +83,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Day-1 users see the marker dots before they reach the legend. A `/help/markers` page exists but isn't surfaced near the data.
 - Affordance: small `?` icon in the timeline header that links to `/help/markers`. Repeat the pattern wherever markers render (engagement-landing if it shows markers, future-catalysts table).
 
-### 12. Activity page header gives no concept of "activity"
+### 12. Activity page header gives no concept of "activity" · done (88df673)
 - `src/client/src/app/features/engagement-activity/engagement-activity-page.component.html:4-9`
 - Header is `Activity` + space name. A new user has no idea what populates this feed or how often.
-- Affordance: subtitle line: `"Trial changes detected from CT.gov polling and analyst edits. New entries appear at the top."` (`<p class="text-sm text-slate-500">`)
+- Affordance: subtitle line: `"Trial changes detected from CT.gov polling and analyst edits. New entries appear at the top."` (`<p class="text-sm text-slate-500">`) Space name demoted to mono eyebrow so the two context lines occupy different visual registers.
 
 ### 13. Source filter (`CT.gov` vs `Analyst`) is unlabeled in the data · done (3221fa9)
 - `src/client/src/app/features/engagement-activity/engagement-activity-page.component.html:33-44`
