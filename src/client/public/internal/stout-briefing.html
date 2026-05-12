@@ -264,7 +264,7 @@
       <img src="img/timeline.png" alt="Pfizer-branded Clint timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar">
     </div>
     <div class="footer-line">
-      <span>Prepared 2026-04-29</span>
+      <span>Prepared 2026-05-11</span>
       <span class="dot"></span>
       <span>For discussion</span>
     </div>
@@ -286,33 +286,33 @@
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
     </div>
     <div class="label">01</div>
-    <h2 class="slide-title">Clint is the working surface and deliverable layer for pharma CI.</h2>
-    <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, and where clients see it in real time, all the time.</p>
+    <h2 class="slide-title">Clint is the working surface, the deliverable layer, and the system of record for an engagement.</h2>
+    <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, where deliverables get filed, and where the client sees it all in real time.</p>
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Always current screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter"></button>
-          <div class="card-label">Live dashboard</div>
-          <h3>Always current</h3>
-          <p>Trial data refreshes from ClinicalTrials.gov directly. New analyst-curated events show up in the dashboard the moment they're saved, and the client sees them at the same time. The competitive picture reflects the latest event, not the last quarterly briefing.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Engagement landing screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse header with active-trials, companies, programs, catalysts in next 90 days, and intelligence total tiles; three-up below with what changed (last 7 days), next 14 days calendar, and an agency-only drafts panel; full-width Latest from Stout feed with featured first post"></button>
+          <div class="card-label">Home base</div>
+          <h3>Every engagement opens to a live pulse</h3>
+          <p>The engagement landing is what clients see first: what changed in the past week, catalysts in the next fourteen days, the latest analysis Stout has published, and (for analysts) drafts in progress. Five stat tiles link straight to trials, companies, programs, catalysts, and intelligence.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; an analyst-curated leadership thread visible in the detail panel"></button>
+          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence on a trial detail page -- published read with byline (contributors plus updated-by-agency line), linked entities chips, and a history panel below showing a linear timeline of draft, published, archived, withdrawn events with word-level inline ins/del diffs between adjacent published versions"></button>
           <div class="card-label">Stout's analysis</div>
-          <h3>Primary intelligence, published live</h3>
-          <p>Stout's analysts publish primary analysis and intelligence directly into the platform. As notes are written, the client sees them in real time. With assembly already handled by Clint, analysts spend their time on interpretation and strategic reads, not formatting.</p>
+          <h3>Primary intelligence, with versioned history</h3>
+          <p>Stout's analysts publish primary intelligence directly onto trials, companies, products, and markers via a ProseMirror editor with autosave. Every publish stamps a version. The history panel shows draft, publish, archive, and withdraw events with word-level diffs between versions. Clients see the current read; the audit trail is built in.</p>
+        </div>
+        <div class="card">
+          <button type="button" class="card-thumb" aria-label="Expand: Trial change feed screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows: structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; events include phase transitions in destination phase color and marker edits in marker category color"></button>
+          <div class="card-label">Always current</div>
+          <h3>One change feed, six surfaces</h3>
+          <p>A daily Cloudflare Worker pulls fresh ClinicalTrials.gov payloads and writes typed field diffs. Analyst marker edits flow into the same stream. The output lands on the engagement landing, the activity page, trial row badges, marker history, the intelligence feed, and trial detail. One pipeline, no manual restatement.</p>
         </div>
         <div class="card">
           <button type="button" class="card-thumb" aria-label="Expand: Whitelabel screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
-          <div class="card-label">Whitelabel</div>
-          <h3>A Stout-branded site per client</h3>
-          <p>Each client gets a Stout-branded site, with engagement spaces themed inside it. Agency, client, and engagement-level branding are all supported.</p>
-        </div>
-        <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Data model screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/taxonomies-moa.png" alt="Mechanism-of-action taxonomy -- normalized list of MOAs (SGLT2 inhibitor, GLP-1 receptor agonist, GIP/GLP-1 dual agonist, sGC stimulator, TTR stabilizer, etc.) with descriptions, the structured vocabulary every other view reads from"></button>
-          <div class="card-label">Data model</div>
-          <h3>Built around pharma</h3>
-          <p>Companies, products, trials, catalysts, and events are core entities, with a source on every record. Dashboard, briefings, exports, and AI all read from the same data. Nothing gets retyped, nothing falls out of sync.</p>
+          <div class="card-label">Stout-owned surface</div>
+          <h3>A Stout-branded site per client, plus a portal you run</h3>
+          <p>Each pharma client lives on a Stout-themed tenant. Stout owners manage every tenant from a self-serve portal at /admin: provision new tenants with a live subdomain check, edit branding, invite the first user, audit member activity. Agency, tenant, and engagement-level branding are all supported.</p>
         </div>
       </div>
     </div>
@@ -338,9 +338,10 @@
     <div class="body">
       <ul class="points">
         <li><strong>Faster kickoff.</strong> The competitive baseline for the target therapeutic area is already in the platform when the engagement starts. Analysts begin from a working picture and add Stout's curation and framing on top, instead of assembling from scratch.</li>
-        <li><strong>Continuous presence.</strong> New events show up in the Stout-branded site as they happen, with Stout's primary analysis published alongside them. The client sees a live, annotated view all quarter, not just on delivery day.</li>
+        <li><strong>Continuous presence.</strong> The engagement landing shows clients what changed in the last week, what's coming in the next two weeks, and the most recent analysis from Stout, every time they sign in. They get a live, annotated view all quarter, not just on delivery day.</li>
         <li><strong>The briefing focuses on strategy.</strong> Data review happens in the platform throughout the quarter, so the meeting opens at recommendations and decisions instead of slide narration.</li>
-        <li><strong>Stickier renewals.</strong> A site that holds the client's annotations, watchlists, and past analysis has real switching cost. That's the difference between renewing the relationship and re-pitching it every year.</li>
+        <li><strong>Every deliverable is filed where the client looks for it.</strong> PPTX, PDF, and DOCX deliverables register against the trials, companies, products, and markers they cover, so files surface from any related detail page and from a single cross-cutting browse view. No more lost briefings, no more "which folder is that in" emails.</li>
+        <li><strong>Stickier renewals.</strong> A site that holds the client's annotations, the engagement's filed materials, and Stout's published reads with full version history has real switching cost. That's the difference between renewing the relationship and re-pitching it every year.</li>
         <li><strong>No engineering investment.</strong> Clint's team runs the ingest pipelines, source updates, infrastructure, and security. Stout uses the platform; Clint runs it.</li>
       </ul>
     </div>
@@ -449,6 +450,13 @@
     <div class="body">
       <div class="shot-grid">
         <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse header with engagement title and five linked stat tiles, three-up below with what changed, next 14 days calendar, and an agency-only drafts panel, full-width Latest from Stout feed beneath"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Engagement landing</div>
+            <h4>Live home for every engagement</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></button>
           <figcaption class="caption">
             <div class="caption-label">Timeline</div>
@@ -472,22 +480,50 @@
         <figure class="shot">
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></button>
           <figcaption class="caption">
-            <div class="caption-label">Catalysts</div>
+            <div class="caption-label">Future catalysts</div>
             <h4>Upcoming readouts, regulatory dates, milestones</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows showing structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; phase transitions render in destination phase color"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Activity</div>
+            <h4>CT.gov plus analyst edits, one typed feed</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence drawer on a trial detail page -- ProseMirror editor with bold, italic, bullet, and numbered list controls, byline and linked-entities chips, with the history panel below showing draft, published, archived events and word-level inline ins/del diffs between published versions"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Primary intelligence</div>
+            <h4>Versioned analysis with history and diffs</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Materials registry on a trial detail page -- chip filter strip (All, Briefing, Priority Notice, Ad Hoc), recency-ordered rows with PPTX amber, PDF red, and DOCX blue file-type badges, title, type pill, upload date, link count, file size, and a drag-drop upload zone beneath"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Materials</div>
+            <h4>PPTX, PDF, DOCX registered against the entities they cover</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/command-palette.png" alt="Command palette -- Cmd+K overlay with prefix tokens for commands, companies, trials, and catalysts, showing pinned entities, recents, and trigram-matched results across companies, products, trials, markers, and events"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Command palette</div>
+            <h4>Cmd+K finder across the engagement</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Trial detail</div>
+            <h4>Intelligence, markers, materials on every trial</h4>
           </figcaption>
         </figure>
         <figure class="shot">
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></button>
           <figcaption class="caption">
             <div class="caption-label">Event feed</div>
-            <h4>Dated events across the competitive set</h4>
-          </figcaption>
-        </figure>
-        <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></button>
-          <figcaption class="caption">
-            <div class="caption-label">Trial markers</div>
-            <h4>Stout's commentary lives on the trial</h4>
+            <h4>Threaded events across the competitive set</h4>
           </figcaption>
         </figure>
         <figure class="shot">
@@ -505,7 +541,7 @@
 </div> <!-- /deck -->
 
 <div class="chrome">
-  <span class="counter" id="counter">01 / 11</span>
+  <span class="counter" id="counter">01 / 06</span>
   <span class="hint">&larr; &rarr; &middot; SPACE to advance &middot; P to print</span>
   <div class="nav-btns">
     <button class="nav-btn" id="prev">&larr;</button>
