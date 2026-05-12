@@ -1,4 +1,4 @@
-import type { MarkerShape } from './marker.model';
+import type { InnerMark, MarkerShape } from './marker.model';
 
 export interface Catalyst {
   marker_id: string;
@@ -11,7 +11,9 @@ export interface Catalyst {
   marker_type_icon: string | null;
   marker_type_color: string;
   marker_type_shape: MarkerShape;
+  marker_type_inner_mark: InnerMark;
   is_projected: boolean;
+  no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
   product_name: string | null;
@@ -47,9 +49,7 @@ export interface CatalystDetail {
   catalyst: Catalyst & {
     recruitment_status: string | null;
     projection: string;
-    no_longer_expected: boolean;
     company_logo_url: string | null;
-    marker_type_inner_mark: string;
     /**
      * Markers metadata jsonb passthrough; see CtgovMarkerMetadata for the
      * auto-derived shape. Other shapes possible for manual markers.

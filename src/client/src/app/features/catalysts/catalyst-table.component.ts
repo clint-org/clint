@@ -133,6 +133,8 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                 [color]="catalyst.marker_type_color"
                 [size]="14"
                 [fillStyle]="catalyst.is_projected ? 'outline' : 'filled'"
+                [innerMark]="catalyst.marker_type_inner_mark"
+                [isNle]="catalyst.no_longer_expected"
               />
               <span
                 class="text-xs text-slate-500"

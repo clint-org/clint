@@ -123,7 +123,6 @@ export class MarkerDetailPanelComponent {
   });
 
   readonly innerMark = computed<InnerMark>(() => {
-    const d = this.detail();
-    return (d?.catalyst.marker_type_inner_mark as InnerMark) ?? 'none';
+    return this.detail()?.catalyst.marker_type_inner_mark ?? 'none';
   });
 }
