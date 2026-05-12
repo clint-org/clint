@@ -161,6 +161,17 @@ begin
   if not exists (select 1 from public.tenants where id = v_demo_tenant) then
     return new;
   end if;
+  -- Skip integration-test personas and other fixture accounts. The
+  -- role-access.spec asserts that a fresh persona sees zero tenants and
+  -- zero spaces; auto-joining them to the demo tenant breaks that
+  -- invariant. Real Google-OAuth dev users always pass through.
+  if new.email is null
+     or new.email like '%@personas.test'
+     or new.email like '%@clint.local'
+     or new.email like 'e2e-%'
+  then
+    return new;
+  end if;
   insert into public.tenant_members (tenant_id, user_id, role)
   values (v_demo_tenant, new.id, 'owner')
   on conflict (tenant_id, user_id) do nothing;
