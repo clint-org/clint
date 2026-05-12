@@ -10,20 +10,24 @@ import {
 import { diffWords } from 'diff';
 
 import {
+  ENTITY_TYPE_LABEL,
   IntelligenceHistoryEvent,
   IntelligenceHistoryPayload,
   IntelligenceVersionRow,
   PrimaryIntelligence,
+  PrimaryIntelligenceLink,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
+import { diffLinks, LinksDiff } from './links-diff';
 import { foldArchivedEvents, TimelineRow } from './history-timeline';
 
-type VersionSection = 'headline' | 'thesis' | 'watch' | 'implications';
+type VersionSection = 'headline' | 'thesis' | 'watch' | 'implications' | 'links';
 
 interface DiffSection {
   section: VersionSection;
   label: string;
-  html: string;
+  html?: string;
+  links?: LinksDiff;
 }
 
 @Component({
@@ -55,17 +59,13 @@ export class IntelligenceHistoryPanelComponent {
   }
 
   protected readonly events = computed<IntelligenceHistoryEvent[]>(
-    () => this.payload().events ?? [],
+    () => this.payload().events ?? []
   );
   protected readonly versions = computed<IntelligenceVersionRow[]>(
-    () => this.payload().versions ?? [],
+    () => this.payload().versions ?? []
   );
-  protected readonly draft = computed<PrimaryIntelligence | null>(
-    () => this.payload().draft,
-  );
-  protected readonly current = computed<PrimaryIntelligence | null>(
-    () => this.payload().current,
-  );
+  protected readonly draft = computed<PrimaryIntelligence | null>(() => this.payload().draft);
+  protected readonly current = computed<PrimaryIntelligence | null>(() => this.payload().current);
 
   protected readonly eventCount = computed(() => this.events().length);
   protected readonly versionCount = computed(() => this.versions().length);
@@ -114,33 +114,56 @@ export class IntelligenceHistoryPanelComponent {
   }
 
   /**
-   * Renders the four content sections of `version` with word-level
-   * inline diff marks against `base` (or plain content if base is null).
+   * Renders the content sections of `version` with word-level inline diff
+   * marks against `base` (or plain content if base is null). The Linked
+   * entities section is structural, not textual: it shows added / removed
+   * entries and per-field changes (relationship, gloss) since `base`.
    */
   protected renderDiff(
     version: IntelligenceVersionRow,
-    base: IntelligenceVersionRow | null,
+    base: IntelligenceVersionRow | null
   ): DiffSection[] {
     const cacheKey = `${version.id}::${base?.id ?? 'none'}`;
     const cached = this.diffCache.get(cacheKey);
     if (cached) return cached;
 
-    const sections: { key: VersionSection; label: string; field: keyof IntelligenceVersionRow }[] = [
+    const textSections: {
+      key: Exclude<VersionSection, 'links'>;
+      label: string;
+      field: keyof IntelligenceVersionRow;
+    }[] = [
       { key: 'headline', label: 'Headline', field: 'headline' },
       { key: 'thesis', label: 'Thesis', field: 'thesis_md' },
       { key: 'watch', label: 'What to watch', field: 'watch_md' },
       { key: 'implications', label: 'Implications', field: 'implications_md' },
     ];
     const out: DiffSection[] = [];
-    for (const s of sections) {
+    for (const s of textSections) {
       const after = (version[s.field] as string) ?? '';
       if (!after.trim()) continue;
       const before = base ? ((base[s.field] as string) ?? '') : '';
       const html = base ? renderWordDiff(before, after) : renderMarkdownInline(after);
       out.push({ section: s.key, label: s.label, html });
     }
+    const links = diffLinks(base?.links ?? null, version.links ?? []);
+    if (
+      links.added.length ||
+      links.removed.length ||
+      links.changed.length ||
+      links.unchanged.length
+    ) {
+      out.push({ section: 'links', label: 'Linked entities', links });
+    }
     this.diffCache.set(cacheKey, out);
     return out;
+  }
+
+  protected entityTypeLabel(type: PrimaryIntelligenceLink['entity_type']): string {
+    return ENTITY_TYPE_LABEL[type];
+  }
+
+  protected linkLabel(link: PrimaryIntelligenceLink): string {
+    return link.entity_name ?? `(deleted ${ENTITY_TYPE_LABEL[link.entity_type].toLowerCase()})`;
   }
 
   protected eventVersionChip(event: IntelligenceHistoryEvent): string | null {

@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DrawerModule } from 'primeng/drawer';
+import { Dialog } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
 
 import {
@@ -41,6 +42,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
     ButtonModule,
     InputTextModule,
     DrawerModule,
+    Dialog,
     ProseMirrorEditorComponent,
     LinkedEntitiesPickerComponent,
   ],
@@ -181,6 +183,53 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
         </div>
       }
     </p-drawer>
+
+    <p-dialog
+      [visible]="changeNotePromptOpen()"
+      (visibleChange)="onChangeNotePromptVisibleChange($event)"
+      header="Describe the change"
+      [modal]="true"
+      styleClass="!w-[32rem]"
+      [closable]="true"
+    >
+      <div class="space-y-3">
+        <p class="text-sm text-slate-700">
+          Republishing creates a new version. The change note is attached to the published version
+          so reviewers can see what changed.
+        </p>
+        <label
+          for="pi-change-note-prompt"
+          class="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+        >
+          Change note
+        </label>
+        <input
+          id="pi-change-note-prompt"
+          pInputText
+          type="text"
+          [ngModel]="changeNote()"
+          (ngModelChange)="changeNote.set($event)"
+          placeholder="What changed and why"
+          class="!w-full"
+          aria-required="true"
+        />
+      </div>
+      <ng-template #footer>
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [text]="true"
+          (onClick)="cancelChangeNotePrompt()"
+        />
+        <p-button
+          label="Publish"
+          icon="fa-solid fa-paper-plane"
+          size="small"
+          [disabled]="changeNote().trim().length === 0"
+          (onClick)="confirmChangeNotePrompt()"
+        />
+      </ng-template>
+    </p-dialog>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -199,6 +248,8 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   protected readonly open = signal<boolean>(false);
   protected readonly loading = signal<boolean>(false);
   protected readonly currentId = signal<string | null>(null);
+  protected readonly hasPublishedVersion = signal<boolean>(false);
+  protected readonly changeNotePromptOpen = signal<boolean>(false);
 
   protected readonly headline = signal<string>('');
   protected readonly thesis = signal<string>('');
@@ -263,6 +314,32 @@ export class IntelligenceDrawerComponent implements OnDestroy {
 
   protected async publish(): Promise<void> {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+    if (this.requiresChangeNote()) {
+      this.changeNotePromptOpen.set(true);
+      return;
+    }
+    await this.runPublish();
+  }
+
+  protected async confirmChangeNotePrompt(): Promise<void> {
+    if (this.changeNote().trim().length === 0) return;
+    this.changeNotePromptOpen.set(false);
+    await this.runPublish();
+  }
+
+  protected cancelChangeNotePrompt(): void {
+    this.changeNotePromptOpen.set(false);
+  }
+
+  protected onChangeNotePromptVisibleChange(open: boolean): void {
+    if (!open) this.changeNotePromptOpen.set(false);
+  }
+
+  private requiresChangeNote(): boolean {
+    return this.hasPublishedVersion() && this.changeNote().trim().length === 0;
+  }
+
+  private async runPublish(): Promise<void> {
     await this.persist('published', true);
     if (this.saveState() !== 'error') {
       this.published.emit();
@@ -323,6 +400,8 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     const pub = bundle?.published ?? null;
     const source = draft ?? pub;
 
+    this.hasPublishedVersion.set(pub !== null);
+
     if (source) {
       // Only adopt a draft id as the upsert target; a published id stays
       // null so Save Draft / Publish fork into a new versioned row instead
@@ -351,8 +430,20 @@ export class IntelligenceDrawerComponent implements OnDestroy {
    */
   private async persist(state: 'draft' | 'published', notify: boolean): Promise<void> {
     if (this.loading()) return;
-    if (state === 'draft' && !this.dirty() && !!this.currentId()) return;
     if (!this.headline().trim()) return;
+
+    // Explicit Save Draft on an unchanged form: nothing to persist, but
+    // surface that to the user so the click isn't silent.
+    if (state === 'draft' && !this.dirty() && !!this.currentId()) {
+      if (notify) {
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Draft is up to date',
+          life: 2000,
+        });
+      }
+      return;
+    }
 
     this.saveState.set('saving');
     const input: UpsertIntelligenceInput = {
@@ -374,10 +465,13 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       this.currentId.set(id);
       this.saveState.set('saved');
       this.dirty.set(false);
-      if (notify) {
+      // Publish toast is owned by the parent's onIntelligencePublished
+      // handler so each surface can phrase it in context (e.g. "Read
+      // published"). Only fire the drawer-level toast for explicit drafts.
+      if (notify && state === 'draft') {
         this.messageService.add({
           severity: 'success',
-          summary: state === 'published' ? 'Published' : 'Draft saved',
+          summary: 'Draft saved',
           life: 2500,
         });
       }

@@ -744,4 +744,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260510120300_change_feed_company_logo_url.sql`
 - `20260510130000_intelligence_history_simplify.sql`
 - `20260511120000_landing_stats_motion_signals.sql`
+- `20260511232400_intelligence_history_links.sql`
 <!-- /AUTO-GEN:DRIFT -->

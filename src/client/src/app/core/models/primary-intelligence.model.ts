@@ -152,13 +152,10 @@ export interface IntelligenceVersionRow {
   withdrawn_by: string | null;
   withdraw_note: string | null;
   diff_base_id: string | null;
+  links: PrimaryIntelligenceLink[];
 }
 
-export type IntelligenceHistoryEventKind =
-  | 'draft_started'
-  | 'published'
-  | 'archived'
-  | 'withdrawn';
+export type IntelligenceHistoryEventKind = 'draft_started' | 'published' | 'archived' | 'withdrawn';
 
 export interface IntelligenceHistoryEvent {
   at: string;

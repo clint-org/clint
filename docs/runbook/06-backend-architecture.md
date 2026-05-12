@@ -55,6 +55,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
+| `auto_join_demo_tenant_local` | space_members, tenant_members | tenants |
 | `backfill_marker_history` | marker_changes | markers |
 | `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
 | `bulk_update_last_polled` | trials | - |
@@ -93,7 +94,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_primary_intelligence_history` | - | events, primary_intelligence |
+| `get_primary_intelligence_history` | - | companies, events, markers, primary_intelligence, primary_intelligence_links, products, trials |
 | `get_product_detail_with_intelligence` | - | products |
 | `get_space_landing_stats` | - | companies, marker_assignments, marker_types, markers, primary_intelligence, products, trial_change_events, trials |
 | `get_space_tags` | - | events |
@@ -580,6 +581,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
 - `assign_primary_intelligence_version`
+- `auto_join_demo_tenant_local`
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`

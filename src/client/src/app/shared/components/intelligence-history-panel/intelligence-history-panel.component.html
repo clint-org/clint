@@ -7,7 +7,10 @@
     [disabled]="!canExpand()"
     (click)="toggle()"
   >
-    <span id="history-heading" class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+    <span
+      id="history-heading"
+      class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+    >
       History
     </span>
     <span class="flex items-center gap-3 text-xs text-slate-500">
@@ -38,7 +41,9 @@
           (click)="draftClicked.emit()"
         >
           <div class="flex items-baseline gap-2">
-            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-600">Working draft</span>
+            <span class="text-xs font-medium uppercase tracking-[0.16em] text-slate-600"
+              >Working draft</span
+            >
             <span class="text-xs text-slate-500">
               Edited {{ formatDate(d.updated_at) }} by {{ authorInitials(d.last_edited_by) }}
             </span>
@@ -118,7 +123,9 @@
               @if (kind === 'published') {
                 @let base = diffBaseFor(version);
                 @if (!base) {
-                  <p class="text-[10px] uppercase tracking-[0.18em] text-slate-400">Initial publication</p>
+                  <p class="text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                    Initial publication
+                  </p>
                 } @else {
                   <p class="text-[10px] uppercase tracking-[0.18em] text-slate-400">
                     Changes vs v{{ base.version_number }}
@@ -126,16 +133,143 @@
                 }
                 @for (s of renderDiff(version, base); track s.section) {
                   <section>
-                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ s.label }}</h4>
-                    <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="s.html"></div>
+                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                      {{ s.label }}
+                    </h4>
+                    @if (s.section === 'links' && s.links) {
+                      <ul class="mt-1 space-y-1 text-sm text-slate-800">
+                        @for (l of s.links.added; track l.entity_type + ':' + l.entity_id) {
+                          <li class="flex items-baseline gap-2">
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-brand-700"
+                              >Added</span
+                            >
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                            >
+                              {{ entityTypeLabel(l.entity_type) }}
+                            </span>
+                            <span>{{ linkLabel(l) }}</span>
+                            <span class="text-slate-500">-- {{ l.relationship_type }}</span>
+                            @if (l.gloss) {
+                              <span class="italic text-slate-500">"{{ l.gloss }}"</span>
+                            }
+                          </li>
+                        }
+                        @for (l of s.links.removed; track l.entity_type + ':' + l.entity_id) {
+                          <li class="flex items-baseline gap-2">
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-amber-700"
+                              >Removed</span
+                            >
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                            >
+                              {{ entityTypeLabel(l.entity_type) }}
+                            </span>
+                            <span class="line-through text-slate-500">{{ linkLabel(l) }}</span>
+                            <span class="text-slate-500">-- {{ l.relationship_type }}</span>
+                            @if (l.gloss) {
+                              <span class="italic text-slate-500">"{{ l.gloss }}"</span>
+                            }
+                          </li>
+                        }
+                        @for (
+                          c of s.links.changed;
+                          track c.after.entity_type + ':' + c.after.entity_id
+                        ) {
+                          <li class="flex flex-wrap items-baseline gap-2">
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-slate-600"
+                              >Changed</span
+                            >
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                            >
+                              {{ entityTypeLabel(c.after.entity_type) }}
+                            </span>
+                            <span>{{ linkLabel(c.after) }}</span>
+                            @if (c.relationshipChanged) {
+                              <span class="text-slate-500">
+                                <span class="line-through">{{ c.before.relationship_type }}</span>
+                                -> {{ c.after.relationship_type }}
+                              </span>
+                            } @else {
+                              <span class="text-slate-500">-- {{ c.after.relationship_type }}</span>
+                            }
+                            @if (c.glossChanged) {
+                              <span class="italic text-slate-500">
+                                @if (c.before.gloss) {
+                                  <span class="line-through">"{{ c.before.gloss }}"</span>
+                                }
+                                @if (c.before.gloss && c.after.gloss) {
+                                  <span>-> </span>
+                                }
+                                @if (c.after.gloss) {
+                                  <span>"{{ c.after.gloss }}"</span>
+                                }
+                              </span>
+                            }
+                          </li>
+                        }
+                        @if (
+                          s.links.added.length === 0 &&
+                          s.links.removed.length === 0 &&
+                          s.links.changed.length === 0
+                        ) {
+                          @for (l of s.links.unchanged; track l.entity_type + ':' + l.entity_id) {
+                            <li class="flex items-baseline gap-2 text-slate-500">
+                              <span
+                                class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                              >
+                                {{ entityTypeLabel(l.entity_type) }}
+                              </span>
+                              <span>{{ linkLabel(l) }}</span>
+                              <span>-- {{ l.relationship_type }}</span>
+                            </li>
+                          }
+                        }
+                      </ul>
+                    } @else {
+                      <div
+                        class="prose prose-sm max-w-none text-slate-800"
+                        [innerHTML]="s.html"
+                      ></div>
+                    }
                   </section>
                 }
               } @else if (kind === 'withdrawn') {
-                <p class="text-[10px] uppercase tracking-[0.18em] text-amber-700">Withdrawn snapshot</p>
+                <p class="text-[10px] uppercase tracking-[0.18em] text-amber-700">
+                  Withdrawn snapshot
+                </p>
                 @for (s of renderDiff(version, null); track s.section) {
                   <section>
-                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">{{ s.label }}</h4>
-                    <div class="prose prose-sm max-w-none text-slate-800" [innerHTML]="s.html"></div>
+                    <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                      {{ s.label }}
+                    </h4>
+                    @if (s.section === 'links' && s.links) {
+                      <ul class="mt-1 space-y-1 text-sm text-slate-800">
+                        @for (l of s.links.added; track l.entity_type + ':' + l.entity_id) {
+                          <li class="flex items-baseline gap-2">
+                            <span
+                              class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                            >
+                              {{ entityTypeLabel(l.entity_type) }}
+                            </span>
+                            <span>{{ linkLabel(l) }}</span>
+                            <span class="text-slate-500">-- {{ l.relationship_type }}</span>
+                            @if (l.gloss) {
+                              <span class="italic text-slate-500">"{{ l.gloss }}"</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <div
+                        class="prose prose-sm max-w-none text-slate-800"
+                        [innerHTML]="s.html"
+                      ></div>
+                    }
                   </section>
                 }
               }
