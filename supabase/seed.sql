@@ -86,11 +86,32 @@ insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-00000000000d', 'demo-bootstrap@clint.local')
 on conflict (id) do nothing;
 
+-- Demo agency that owns the demo tenant. Required so a real Google sign-in
+-- (auto-joined to the demo tenant via the trigger below) can also be added
+-- as an agency owner, which is what is_agency_member_of_space() gates on for
+-- intelligence write RPCs (upsert/withdraw/delete_primary_intelligence).
+-- Without this, the demo space publishes through seed_demo_data() (SECURITY
+-- DEFINER) but no user can edit intelligence through the UI.
+insert into public.agencies (
+  id, name, slug, subdomain, app_display_name, contact_email, primary_color
+)
+values (
+  '00000000-0000-0000-0000-0000000d0001',
+  'Stout',
+  'demo-stout',
+  'stout',
+  'Stout',
+  'stout@clint.local',
+  '#0d9488'
+)
+on conflict (id) do nothing;
+
 insert into public.tenants (
-  id, name, slug, subdomain, app_display_name, primary_color, email_self_join_enabled
+  id, agency_id, name, slug, subdomain, app_display_name, primary_color, email_self_join_enabled
 )
 values (
   '00000000-0000-0000-0000-0000000d0010',
+  '00000000-0000-0000-0000-0000000d0001',
   'Demo Pharma CI',
   'demo-pharma-ci',
   'demo',
@@ -146,8 +167,11 @@ end
 $$;
 
 -- Auto-join: every new auth.users row is added to the demo tenant + space as
--- owner. The trigger is a no-op in environments where the demo tenant does
--- not exist (production), so this is safe to ship in seed.sql.
+-- owner, and to the demo agency as owner. The trigger is a no-op in
+-- environments where the demo tenant does not exist (production), so this is
+-- safe to ship in seed.sql. Agency membership is what is_agency_member_of_space()
+-- checks before allowing intelligence write RPCs, so a real Google sign-in
+-- needs this row to publish through the UI.
 create or replace function public.auto_join_demo_tenant_local()
 returns trigger
 language plpgsql
@@ -155,6 +179,7 @@ security definer
 set search_path = public
 as $$
 declare
+  v_demo_agency uuid := '00000000-0000-0000-0000-0000000d0001';
   v_demo_tenant uuid := '00000000-0000-0000-0000-0000000d0010';
   v_demo_space  uuid := '00000000-0000-0000-0000-0000000d0100';
 begin
@@ -178,6 +203,14 @@ begin
   insert into public.space_members (space_id, user_id, role)
   values (v_demo_space, new.id, 'owner')
   on conflict (space_id, user_id) do nothing;
+  -- FK-guard the agency insert so a missing demo agency row never blocks
+  -- sign-in. The matching insert at the top of seed.sql normally guarantees
+  -- this row exists.
+  if exists (select 1 from public.agencies where id = v_demo_agency) then
+    insert into public.agency_members (agency_id, user_id, role)
+    values (v_demo_agency, new.id, 'owner')
+    on conflict (agency_id, user_id) do nothing;
+  end if;
   return new;
 end;
 $$;
