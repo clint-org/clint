@@ -3,8 +3,14 @@
     <!-- Header -->
     <header class="flex flex-col gap-1">
       <h1 class="text-xl font-semibold text-slate-900">Activity</h1>
+      <p class="text-sm text-slate-500">
+        Trial changes detected from CT.gov polling and analyst edits. New entries appear at the
+        top.
+      </p>
       @if (spaceName()) {
-        <p class="text-sm text-slate-500">{{ spaceName() }}</p>
+        <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400">
+          {{ spaceName() }}
+        </p>
       }
     </header>
 
