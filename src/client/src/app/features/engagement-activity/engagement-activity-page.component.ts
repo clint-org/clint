@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
 import { SelectButton } from 'primeng/selectbutton';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { TrialService } from '../../core/services/trial.service';
@@ -77,6 +78,7 @@ interface TrialOption {
     ButtonModule,
     MultiSelect,
     SelectButton,
+    Tooltip,
     ChangeEventRowComponent,
     SkeletonComponent,
   ],

@@ -31,7 +31,20 @@
         <div class="h-4 w-px bg-slate-200"></div>
 
         <div class="flex items-center gap-2">
-          <span class="text-xs font-mono uppercase tracking-wide text-slate-500">Source</span>
+          <span
+            class="inline-flex items-center gap-1 text-xs font-mono uppercase tracking-wide text-slate-500"
+          >
+            Source
+            <button
+              type="button"
+              class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-slate-300 text-[9px] text-slate-400 hover:border-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+              pTooltip="CT.gov: automated polling of ClinicalTrials.gov. Analyst: manual entries by team members."
+              tooltipPosition="top"
+              aria-label="About activity source"
+            >
+              ?
+            </button>
+          </span>
           <p-selectbutton
             [options]="sourceOptions"
             [ngModel]="source()"

@@ -42,6 +42,11 @@ export class ChangeEventRowComponent {
     if (this.event().source === 'ctgov') return 'CT.gov';
     return this.brand.agency()?.name ?? this.brand.appDisplayName();
   });
+  readonly sourceTooltip = computed(() =>
+    this.event().source === 'ctgov'
+      ? 'Automated polling of ClinicalTrials.gov'
+      : 'Manual entry by a team member'
+  );
 
   readonly monogram = computed(() => monogramFor(this.event().company_name));
   /** Stable per-company tint for the monogram fallback (when no logo URL). */
