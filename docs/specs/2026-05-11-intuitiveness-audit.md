@@ -88,10 +88,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Header is `Activity` + space name. A new user has no idea what populates this feed or how often.
 - Affordance: subtitle line: `"Trial changes detected from CT.gov polling and analyst edits. New entries appear at the top."` (`<p class="text-sm text-slate-500">`)
 
-### 13. Source filter (`CT.gov` vs `Analyst`) is unlabeled in the data
+### 13. Source filter (`CT.gov` vs `Analyst`) is unlabeled in the data · done (3221fa9)
 - `src/client/src/app/features/engagement-activity/engagement-activity-page.component.html:33-44`
 - The filter exists but each row doesn't carry a source badge explaining which entries came from where.
-- Affordance: row badge or column for source, with `pTooltip` on the header: `"CT.gov: automated polling detects trial metadata changes. Analyst: manual entries by team members."`
+- Affordance: row badge or column for source, with `pTooltip` on the header: `"CT.gov: automated polling detects trial metadata changes. Analyst: manual entries by team members."` Per-row pill (`CT.gov` / agency-name) already rendered; it now carries a per-row tooltip ("Automated polling of ClinicalTrials.gov" or "Manual entry by a team member"), and the filter-side `Source` label gains a `?` affordance with the full two-sentence gloss.
 
 ### 14. Materials filter chips use the literal database enum values
 - `src/client/src/app/features/materials-browse/materials-browse-page.component.ts` (template chip filters)
