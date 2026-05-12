@@ -30,10 +30,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Rings encode phase, spokes encode the active dimension. The mapping lives only in the SVG `<desc>` (screen-reader only). Sighted users — including the first-time analyst — get a circular blob with no legend.
 - Affordance: small inline legend in the bullseye toolbar (`Rings = phase  ·  Spokes = {dimension label}`) with the dimension label derived from `spokeMode()`. Link the word "Rings" to `/help/phases` (already exists).
 
-### 3. Positioning sub-tabs are unexplained, and `MOA + TA` is cryptic
+### 3. Positioning sub-tabs are unexplained, and `MOA + TA` is cryptic · done (ec1e1db)
 - `src/client/src/app/features/landscape/landscape-shell.component.ts:113-121`
 - Five tabs (`by-moa`, `by-therapy-area`, `by-moa-therapy-area`, `by-company`, `by-roa`) with terse labels. New users have no signal for which grouping answers which question.
-- Affordance: `pTooltip` on each tab. `MOA + TA` → `"Assets grouped by mechanism of action, broken out by therapy area"`. Others similarly precise.
+- Affordance: `pTooltip` on each tab. `MOA + TA` → `"Assets grouped by mechanism of action, broken out by therapy area"`. Others similarly precise. Bullseye dimension tabs received matching `"Spokes grouped by ..."` tooltips since they share the surface and the jargon.
 
 ### 4. Catalysts page has zero framing, no definition, no scope · done (97fe1ea)
 - `src/client/src/app/features/catalysts/catalysts-page.component.html:1-13`
