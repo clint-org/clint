@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { PositioningBubble, RING_ORDER, RingPhase } from '../../core/models/landscape.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 
 const Y_PHASES: readonly RingPhase[] = RING_ORDER;
 
@@ -175,7 +176,7 @@ interface PlottedBubble {
           fill="#94a3b8"
           class="axis-tick-label"
         >
-          {{ phase }}
+          {{ phaseLabel(phase) }}
         </text>
       }
 
@@ -316,6 +317,10 @@ export class PositioningChartComponent {
   readonly bubbleClick = output<PositioningBubble>();
 
   readonly yPhases = Y_PHASES;
+
+  protected phaseLabel(phase: RingPhase): string {
+    return phaseShortLabel(phase);
+  }
 
   readonly margin = { top: 40, right: 50, bottom: 55, left: 120 };
 

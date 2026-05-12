@@ -40,8 +40,11 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
                     aria-hidden="true"
                   ></span>
                   <span class="text-sm font-semibold text-slate-900">{{ phase.label }}</span>
+                  <span
+                    class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
+                    >{{ phase.shortLabel }}</span
+                  >
                 </div>
-                <code class="text-xs font-mono text-slate-500">{{ phase.key }}</code>
                 <div class="text-sm text-slate-600">{{ phase.description }}</div>
               </div>
             }
@@ -56,7 +59,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             <ul class="space-y-2 list-disc pl-5">
               <li>Bars span the start and end dates of each phase.</li>
               <li>
-                Color intensity rises through P1 → P2 → P3 so the pivotal phase is the most
+                Color intensity rises through PH 1 → PH 2 → PH 3 so the pivotal phase is the most
                 prominent.
               </li>
               <li>P4 and APPROVED shift to the violet family to mark the regulatory transition.</li>

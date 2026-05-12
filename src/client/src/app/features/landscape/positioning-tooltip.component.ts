@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { PositioningBubble } from '../../core/models/landscape.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 @Component({
@@ -21,7 +22,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
         <div class="font-semibold mb-0.5">{{ fullLabel() }}</div>
         <div class="text-slate-300">
           {{ b.competitor_count }} {{ b.competitor_count === 1 ? 'competitor' : 'competitors' }},
-          highest phase: {{ b.highest_phase }}
+          highest phase: {{ phaseLabel(b.highest_phase) }}
         </div>
         <div class="text-slate-300">{{ b.unit_count }} {{ countUnit() }}</div>
         @if (topCompanies().length > 0) {
@@ -60,4 +61,8 @@ export class PositioningTooltipComponent {
     const unique = [...new Set(b.products.map((p) => p.company_name))];
     return unique.slice(0, 3);
   });
+
+  protected phaseLabel(p: string): string {
+    return phaseShortLabel(p);
+  }
 }

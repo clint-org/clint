@@ -20,6 +20,7 @@ import {
   RingPhase,
 } from '../../core/models/landscape.model';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
@@ -64,6 +65,10 @@ export class BullseyeDetailPanelComponent {
   readonly openCompany = output<string>();
   readonly openInTimeline = output<{ assetId: string; therapeuticAreaId: string }>();
   readonly openMarker = output<string>();
+
+  protected phaseLabel(p: string | null | undefined): string {
+    return p ? phaseShortLabel(p) : '';
+  }
   readonly ringHighlightToggle = output<RingPhase | null>();
   readonly clearSelection = output<void>();
 

@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
+import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
@@ -97,6 +98,10 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialDetailComponent implements OnInit, OnDestroy {
+  protected phaseLabel(p: string | null | undefined): string {
+    return p ? phaseShortLabel(p) : '';
+  }
+
   private location = inject(Location);
   private route = inject(ActivatedRoute);
   private trialService = inject(TrialService);

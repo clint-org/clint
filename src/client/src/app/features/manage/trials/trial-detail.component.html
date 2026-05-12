@@ -87,7 +87,7 @@
           @if (t.phase_type || t.phase) {
             <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
               <span class="text-slate-400">Phase</span>
-              <span class="ml-1 text-slate-700">{{ t.phase_type || t.phase }}</span>
+              <span class="ml-1 text-slate-700">{{ phaseLabel(t.phase_type || t.phase) }}</span>
             </span>
           }
           @if (t.status) {
@@ -324,7 +324,7 @@
 
           <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
             <dt class="text-slate-500">Phase</dt>
-            <dd class="text-slate-900">{{ t.phase ?? '(not set)' }}</dd>
+            <dd class="text-slate-900">{{ t.phase ? phaseLabel(t.phase) : '(not set)' }}</dd>
             <dt class="text-slate-500">Recruitment status</dt>
             <dd class="text-slate-900">{{ t.recruitment_status ?? '(not set)' }}</dd>
             <dt class="text-slate-500">Study type</dt>
@@ -404,7 +404,7 @@
               <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                 Phase type
               </dt>
-              <dd class="mt-1 font-mono text-sm text-slate-900">{{ t.phase_type }}</dd>
+              <dd class="mt-1 font-mono text-sm text-slate-900">{{ phaseLabel(t.phase_type) }}</dd>
             </div>
             <div>
               <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">

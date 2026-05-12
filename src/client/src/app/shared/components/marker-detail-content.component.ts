@@ -13,6 +13,7 @@ import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/rou
 
 import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
   CTGOV_TIMELINE_DEFAULT_PATHS,
@@ -190,7 +191,7 @@ interface CtgovProvenanceBlock {
                 ></i>
               </span>
               <span class="text-[11px] text-slate-500">
-                {{ d.catalyst.trial_phase }}
+                {{ phaseLabel(d.catalyst.trial_phase) }}
                 @if (d.catalyst.recruitment_status) {
                   &middot; {{ d.catalyst.recruitment_status }}
                 }
@@ -199,7 +200,7 @@ interface CtgovProvenanceBlock {
           } @else {
             <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
             <p class="text-[11px] text-slate-500">
-              {{ d.catalyst.trial_phase }}
+              {{ phaseLabel(d.catalyst.trial_phase) }}
               @if (d.catalyst.recruitment_status) {
                 &middot; {{ d.catalyst.recruitment_status }}
               }
@@ -361,6 +362,10 @@ export class MarkerDetailContentComponent {
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
+
+  protected phaseLabel(p: string | null | undefined): string {
+    return p ? phaseShortLabel(p) : '';
+  }
 
   // Per-space CT.gov field overlay state. Snapshot is lazy-loaded by
   // trial_id whenever the selected marker (and therefore detail) changes;

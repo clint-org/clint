@@ -97,7 +97,7 @@
                       <span>{{ trial.identifier }}</span>
                     }
                     @if (trial.phase) {
-                      <span>{{ trial.phase }}</span>
+                      <span>{{ phaseLabel(trial.phase) }}</span>
                     }
                     @if (trial.recruitment_status) {
                       <span
@@ -196,7 +196,7 @@
                 <span
                   class="flex-1 font-mono text-[12px] font-semibold tracking-wider"
                   [style.color]="entry.count > 0 ? phaseColor(entry.phase) : '#94a3b8'"
-                  >{{ entry.phase }}</span
+                  >{{ phaseLabel(entry.phase) }}</span
                 >
                 <span
                   class="font-mono text-[12px] tabular-nums"

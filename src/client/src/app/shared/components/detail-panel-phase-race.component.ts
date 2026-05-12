@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { PHASE_COLOR, RING_DEV_RANK, RingPhase } from '../../core/models/landscape.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import { DetailPanelMiniPhaseBarComponent } from './detail-panel-mini-phase-bar.component';
 
 export interface PhaseRaceEntry {
@@ -11,6 +12,10 @@ export interface PhaseRaceEntry {
   phase: RingPhase;
 }
 
+// Compact race-row labels. The full short-label form ("PRECLIN", "APPROVED",
+// "LAUNCHED") does not fit the 7-segment mini-bar's narrow trailing column;
+// these overrides keep the row legible. Trial phases use the canonical
+// shortLabel ("PH 1", "PH 2", etc.) via phaseShortLabel.
 const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
   PRECLIN: 'Pre',
   APPROVED: 'App',
@@ -37,7 +42,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
         {{ label() }}
       </p>
       <p class="whitespace-nowrap font-mono text-[9px] uppercase tracking-wider text-slate-300">
-        Pre &middot; P1 &middot; P2 &middot; P3 &middot; P4 &middot; App &middot; L
+        Pre &middot; PH 1 &middot; PH 2 &middot; PH 3 &middot; PH 4 &middot; App &middot; L
       </p>
     </div>
     <div class="space-y-2">
@@ -73,6 +78,6 @@ export class DetailPanelPhaseRaceComponent {
   }
 
   protected phaseDisplay(phase: RingPhase): string {
-    return PHASE_DISPLAY[phase] ?? phase;
+    return PHASE_DISPLAY[phase] ?? phaseShortLabel(phase);
   }
 }

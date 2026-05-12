@@ -6,6 +6,7 @@ import {
   PHASE_COLOR,
   RingPhase,
 } from '../../core/models/landscape.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
   SpokeLabelTransform,
   CX,
@@ -227,6 +228,10 @@ export class BullseyeChartComponent {
 
   protected ringLabelFill(phase: RingPhase): string {
     return PHASE_COLOR[phase] ?? '#64748b';
+  }
+
+  protected ringLabel(phase: RingPhase): string {
+    return phaseShortLabel(phase);
   }
 
   protected isAssetMatched(assetId: string): boolean {

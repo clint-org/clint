@@ -24,7 +24,11 @@
           optionValue="value"
           [allowEmpty]="false"
           size="small"
-        />
+        >
+          <ng-template #item let-item>
+            <span [pTooltip]="item.tooltip" tooltipPosition="top">{{ item.label }}</span>
+          </ng-template>
+        </p-selectbutton>
         <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
       }
 

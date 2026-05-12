@@ -78,11 +78,11 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly roaOptions = signal<SelectOption[]>([]);
   readonly markerCategoryOptions = signal<SelectOption[]>([]);
 
-  readonly zoomOptions: { label: string; value: ZoomLevel }[] = [
-    { label: 'Y', value: 'yearly' },
-    { label: 'Q', value: 'quarterly' },
-    { label: 'M', value: 'monthly' },
-    { label: 'D', value: 'daily' },
+  readonly zoomOptions: { label: string; value: ZoomLevel; tooltip: string }[] = [
+    { label: 'Y', value: 'yearly', tooltip: 'Yearly view' },
+    { label: 'Q', value: 'quarterly', tooltip: 'Quarterly view' },
+    { label: 'M', value: 'monthly', tooltip: 'Monthly view' },
+    { label: 'D', value: 'daily', tooltip: 'Daily view' },
   ];
 
   readonly spokeModeOptions: { label: string; value: string }[] = [
@@ -92,10 +92,10 @@ export class LandscapeFilterBarComponent implements OnInit {
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
     { label: 'Pre-clinical', value: 'PRECLIN' },
-    { label: 'Phase I', value: 'P1' },
-    { label: 'Phase II', value: 'P2' },
-    { label: 'Phase III', value: 'P3' },
-    { label: 'Phase IV', value: 'P4' },
+    { label: 'PH 1', value: 'P1' },
+    { label: 'PH 2', value: 'P2' },
+    { label: 'PH 3', value: 'P3' },
+    { label: 'PH 4', value: 'P4' },
     { label: 'Approved', value: 'APPROVED' },
     { label: 'Launched', value: 'LAUNCHED' },
   ];

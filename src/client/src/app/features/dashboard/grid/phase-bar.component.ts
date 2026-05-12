@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
-import { PHASE_COLORS, PHASE_FALLBACK_COLOR } from '../../../core/models/phase-colors';
+import {
+  PHASE_COLORS,
+  PHASE_FALLBACK_COLOR,
+  phaseShortLabel,
+} from '../../../core/models/phase-colors';
 import { TimelineService } from '../../../core/services/timeline.service';
 
 const BAR_HEIGHT = 14;
@@ -55,7 +59,7 @@ export class PhaseBarComponent {
     () => PHASE_COLORS[this.phaseType()] ?? PHASE_FALLBACK_COLOR
   );
 
-  protected readonly labelText = computed(() => this.phaseType());
+  protected readonly labelText = computed(() => phaseShortLabel(this.phaseType()));
 
   protected readonly showLabelInside = computed(() => this.barWidth() >= MIN_LABEL_WIDTH);
 

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { BullseyeAsset } from '../../core/models/landscape.model';
+import { phaseShortLabel } from '../../core/models/phase-colors';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 @Component({
@@ -22,7 +23,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
         @if (p.generic_name) {
           <div class="text-slate-300">{{ p.generic_name }}</div>
         }
-        <div class="text-slate-300">{{ p.company_name }}, highest phase: {{ p.highest_phase }}</div>
+        <div class="text-slate-300">{{ p.company_name }}, highest phase: {{ phaseLabel(p.highest_phase) }}</div>
         <div class="text-slate-300">
           {{ p.trials.length }} {{ p.trials.length === 1 ? 'trial' : 'trials' }}
         </div>
@@ -47,4 +48,8 @@ export class BullseyeTooltipComponent {
     if (!p) return [];
     return p.moas.map((m) => m.name);
   });
+
+  protected phaseLabel(p: string): string {
+    return phaseShortLabel(p);
+  }
 }
