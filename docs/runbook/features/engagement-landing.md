@@ -9,14 +9,18 @@ When a user opens an engagement (a space), the default page is the **Engagement 
 
 **Composition:**
 
-- **Pulse panel** (one bordered section in `EngagementLandingComponent`, three rows):
-  - **Row 1 — slim identity strip.** Slate-50 status band with the engagement name (mono, uppercase, tracked), an `Active since YYYY-Q#` subline, and inline inventory totals (`N trials · N companies · N assets`). Counts come from `get_space_landing_stats(p_space_id)`. No today's date — the hero carries the only date anchor the page needs.
-  - **Row 2 — hero catalyst (primary focal point).** Brand-50 panel with three regions in a `1fr_auto_320px` grid: a left date column (`WEEKDAY / 34px DAY / MONTH` in mono) showing the lead's event date, a center content column (window badge in brand-600 + relative `whenPhrase` eyebrow, 20px headline, company name in mono, inline `View catalyst →` link), and a right companion mini-list with the next two upcoming catalysts in the same window under an `Also <window>` header. Companion rows route to the catalysts page with the marker pre-selected. Auto-hides on quiet days (no upcoming catalysts within 90 days).
+- **Pulse panel** (full-bleed band in `EngagementLandingComponent` with three rows; only the hero is contained, everything below the pulse uses hairline-header sections on the page background to break the previous frame-on-frame flatness):
+  - **Row 1 — slim identity strip.** Slate-50 status band with the engagement name (mono, uppercase, tracked), an `Active since YYYY-Q#` subline, and inline inventory totals (`N trials · N companies · N assets`). Counts come from `get_space_landing_stats(p_space_id)`. Full-bleed background; content constrained to the 1480 grid. No today's date — the hero carries the only date anchor the page needs.
+  - **Row 2 — hero catalyst (primary focal point).** Brand-50 panel bleeding edge to edge, with content constrained to the 1480 grid. Three regions in a `1fr_auto_320px` layout: a left date column (`WEEKDAY / 56px DAY / MONTH` in mono) showing the lead's event date, a center content column (window badge in brand-600 + relative `whenPhrase` eyebrow, 26px headline, company name in mono, inline `View catalyst →` link), and a right companion mini-list with the next two upcoming catalysts in the same window under an `Also <window>` header. Companion rows route to the catalysts page with the marker pre-selected. Auto-hides on quiet days (no upcoming catalysts within 90 days).
   - **Row 3 — signal strip.** Single horizontal status line of five metrics (`P3 readouts next 90d`, `Catalysts next 90d`, `New intel last 7d`, `Trial moves last 30d`, `Loss of excl. next 365d`). Each item is `<value> <label> <window-label>` in mono with tabular-nums; `warn` items (counts > 0 that demand attention) keep an amber tint. Each item routes to the corresponding filtered browse view. Replaces the prior five-tile grid; carries the same signal at a fraction of the visual weight so the hero anchors attention.
-- **Two-column body (below the pulse):**
-  - **Latest from Stout** (left, 2/3 width): the most recently published primary intelligence rows. First row renders as a featured post (larger headline, three-line excerpt); the rest render as a stacked list with the per-row kind chip coloured by `entity_type` (`trial`, `company`, `product`, `marker`, `space`). Header includes a count tag (`X intelligence posts · Y this week`) and entity-type filter chips that filter client-side. Footer surfaces a `View all intelligence` link to `/t/:tenantId/s/:spaceId/intelligence`. Falls back to a dashed empty state when there are no rows.
-  - **Side rail** (right, 1/3 width): a `Next 90 days` card listing every upcoming marker grouped by month (sticky month headers, date chip + title + marker glyph per row), stacked over the `<app-what-changed-widget>`.
-- **Recent materials** (below feed): renders `<app-recent-materials-widget>` against `list_recent_materials_for_space`. Hidden automatically when there are no materials and no error.
+- **Two-row body (below the pulse):** every section caps its visible rows so the home page reads as scannable summary rather than a wall of feeds. The story is "what's coming" (row 1) above "what's been" (row 2). Each section's header link routes to the full surface (`View all intelligence`, `Calendar →`, `All materials`, `View all →`).
+  - **Row 1 — Forward look** (3-column grid, 2/3 + 1/3):
+    - **Latest from Stout** (2/3 width): up to four most-recently-published primary intelligence rows. First row renders as a featured post (19px headline, 2-line excerpt); the rest render as one-line scan rows (`KIND` label in entity-type colour, truncated headline, right-aligned short date), with no per-row description. Header includes a count tag (`X intelligence posts · Y this week`) and entity-type filter chips that filter client-side. Footer surfaces a `View all intelligence` link to `/t/:tenantId/s/:spaceId/intelligence`. Falls back to a dashed empty state when there are no rows.
+    - **Next 90 days** (1/3 width): listing the first five upcoming markers grouped by month (sticky month headers, date chip + title + marker glyph per row).
+  - **Row 2 — Archive** (2-column grid, equal halves):
+    - **Recent materials** (left): `<app-recent-materials-widget>` against `list_recent_materials_for_space`, capped at three rows. Hidden automatically when there are no materials and no error.
+    - **What changed** (right): `<app-what-changed-widget>` showing the top three high-signal change events from the past 7 days.
+  - All sections render as unframed surfaces with hairline-bordered headers on the page background — only the hero pulse band carries a visual frame.
 
 **Onboarding tooltip.** First post-deploy load shows a one-time tooltip pinned to the Timeline tab in the topbar: "Your timeline is now under the Timeline tab." Dismissed by clicking the inline button or by clicking the Timeline tab itself. Persists in localStorage at `clint.engagement-landing.onboarding-tooltip-seen`.
 
@@ -76,7 +80,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-latest-from-stout
-  summary: Two-thirds-width feed of most-recently-published primary intelligence rows, with featured first item, kind chips coloured by entity type, and entity-type filter chips.
+  summary: Two-thirds-width feed of most-recently-published primary intelligence rows. Featured first item carries a 2-line excerpt; the rest render as one-line scan rows (kind label coloured by entity type, truncated headline, short date). Entity-type filter chips filter client-side.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:
@@ -89,7 +93,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-next-90-days
-  summary: Side-rail card listing every upcoming marker in the next 90 days, grouped by month with sticky headers; rows open the marker on the catalysts page.
+  summary: Side-rail section listing the first five upcoming markers in the next 90 days, grouped by month with sticky headers; rows open the marker on the catalysts page. Header `Calendar →` link opens the full catalyst calendar.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:
@@ -103,7 +107,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-what-changed
-  summary: Side-rail widget showing recent change events for the engagement.
+  summary: Side-rail widget showing the top three high-signal change events from the past 7 days. Header `View all →` link opens the full activity feed.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:
@@ -116,7 +120,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-recent-materials
-  summary: Below-feed widget listing recent materials registered for the space, hidden when empty.
+  summary: Below-feed widget listing up to three recent materials registered for the space; hidden when empty. Header `All materials` link opens the full materials browse view.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:

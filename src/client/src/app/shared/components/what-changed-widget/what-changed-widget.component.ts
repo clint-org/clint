@@ -18,7 +18,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
 /**
  * "What changed" widget for the engagement landing. Calls
  * get_activity_feed with a high-signal whitelist over the last 7 days
- * and renders the top 5 events. Surface 2 of the trial change feed
+ * and renders the top 3 events. Surface 2 of the trial change feed
  * design (docs/superpowers/specs/2026-05-02-trial-change-feed-design.md).
  */
 @Component({
@@ -60,7 +60,7 @@ export class WhatChangedWidgetComponent {
         spaceId,
         { date_range: '7d', whitelist: 'high_signal' },
         null,
-        5
+        3
       );
       this.events.set(page.events);
     } catch (e) {

@@ -28,13 +28,11 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
   imports: [MaterialRowComponent, SkeletonComponent],
   template: `
     @if (visible() && (loading() || error() || rows().length > 0)) {
-      <section
-        class="border border-slate-200 bg-white"
-        aria-label="Recent materials"
-        [attr.aria-busy]="loading() || null"
-      >
-        <header class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <h2 class="text-[10.5px] font-bold uppercase tracking-[0.18em] text-slate-700">
+      <section aria-label="Recent materials" [attr.aria-busy]="loading() || null">
+        <header class="mb-2 flex items-center justify-between border-b border-slate-200 pb-2.5">
+          <h2
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
             Recent materials
           </h2>
           <a [href]="allMaterialsLink()" class="section-action-link"> All materials </a>
@@ -92,7 +90,7 @@ export class RecentMaterialsWidgetComponent {
    * before the registry shipped).
    */
   readonly visible = input<boolean>(true);
-  readonly limit = input<number>(5);
+  readonly limit = input<number>(3);
 
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);

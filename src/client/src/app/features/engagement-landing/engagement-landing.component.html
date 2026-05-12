@@ -6,145 +6,147 @@
   </div>
 }
 
-<div
-  class="mx-auto flex w-full max-w-[1480px] flex-col gap-[18px] px-6 pb-16 max-md:gap-[14px] max-md:px-4 max-md:pb-12"
->
-  <!-- Engagement pulse: slim identity, hero catalyst, thin signal strip -->
-  <section class="flex flex-col border border-slate-200 bg-white" aria-label="Engagement summary">
+<div class="flex flex-col pb-16 max-md:pb-12">
+  <!-- Engagement pulse: full-bleed band, content constrained to 1480 -->
+  <section class="flex flex-col border-b border-slate-200 bg-white" aria-label="Engagement summary">
     <!-- Row 1: slim identity strip -->
-    <div
-      class="flex flex-wrap items-baseline justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-2 max-[800px]:flex-col max-[800px]:items-start max-[800px]:gap-1.5"
-    >
-      <div class="flex items-baseline gap-3">
-        <h1 class="m-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">
-          {{ engagementName() || 'ENGAGEMENT' }}
-        </h1>
-        @if (activeSince()) {
-          <span class="font-mono text-[10px] tracking-[0.08em] text-slate-400">
-            {{ activeSince() }}
-          </span>
+    <div class="border-b border-slate-100 bg-slate-50">
+      <div
+        class="mx-auto flex w-full max-w-[1480px] flex-wrap items-baseline justify-between gap-3 px-6 py-2 max-md:px-4 max-[800px]:flex-col max-[800px]:items-start max-[800px]:gap-1.5"
+      >
+        <div class="flex items-baseline gap-3">
+          <h1
+            class="m-0 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900"
+          >
+            {{ engagementName() || 'ENGAGEMENT' }}
+          </h1>
+          @if (activeSince()) {
+            <span class="font-mono text-[10px] tracking-[0.08em] text-slate-400">
+              {{ activeSince() }}
+            </span>
+          }
+        </div>
+        @if (inventoryTotals(); as inv) {
+          <div
+            class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
+            aria-label="Engagement inventory"
+          >
+            <span
+              ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+            >
+            <span
+              ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
+            >
+            <span
+              ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
+            >
+          </div>
         }
       </div>
-      @if (inventoryTotals(); as inv) {
-        <div
-          class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
-          aria-label="Engagement inventory"
-        >
-          <span
-            ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
-          >
-          <span
-            ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
-          >
-          <span
-            ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
-          >
-        </div>
-      }
     </div>
 
     <!-- Row 2: HERO catalyst with companion list -->
     @if (brief(); as b) {
-      <div
-        class="grid items-stretch border-b border-brand-100 bg-brand-50 [grid-template-columns:1fr_auto_320px] max-[900px]:grid-cols-1"
-        role="status"
-        aria-live="polite"
-      >
+      <div class="border-b border-brand-100 bg-brand-50" role="status" aria-live="polite">
         <div
-          class="flex items-stretch gap-5 px-6 py-5 max-[700px]:flex-wrap max-[700px]:gap-4 max-[700px]:px-5 max-[700px]:py-4"
+          class="mx-auto grid w-full max-w-[1480px] items-stretch [grid-template-columns:1fr_auto_320px] max-[900px]:grid-cols-1"
         >
-          @if (briefDateParts(); as dp) {
-            <div
-              class="flex shrink-0 flex-col items-center justify-center border-r border-brand-200 pr-5 max-[700px]:w-full max-[700px]:flex-row max-[700px]:gap-2 max-[700px]:border-r-0 max-[700px]:border-b max-[700px]:border-brand-200 max-[700px]:pr-0 max-[700px]:pb-3"
-            >
-              <span
-                class="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-brand-700"
+          <div
+            class="flex items-stretch gap-6 px-6 py-8 max-md:px-4 max-[700px]:flex-wrap max-[700px]:gap-4 max-[700px]:px-5 max-[700px]:py-5"
+          >
+            @if (briefDateParts(); as dp) {
+              <div
+                class="flex shrink-0 flex-col items-center justify-center border-r border-brand-200 pr-6 max-[700px]:w-full max-[700px]:flex-row max-[700px]:gap-2 max-[700px]:border-r-0 max-[700px]:border-b max-[700px]:border-brand-200 max-[700px]:pr-0 max-[700px]:pb-3"
               >
-                {{ dp.weekday }}
-              </span>
-              <span
-                class="mt-0.5 font-mono text-[34px] font-semibold leading-none tabular-nums text-slate-900 max-[700px]:mt-0 max-[700px]:text-2xl"
-              >
-                {{ dp.day }}
-              </span>
-              <span
-                class="mt-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500"
-              >
-                {{ dp.month }}
-              </span>
-            </div>
-          }
-          <div class="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-            <div class="flex flex-wrap items-center gap-2">
-              <span
-                class="bg-brand-600 px-1.5 py-[3px] font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-white"
-              >
-                {{ b.window }}
-              </span>
-              <span
-                class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700"
-              >
-                {{ b.whenPhrase }}
-              </span>
-            </div>
-            <h2
-              class="m-0 text-[20px] font-semibold leading-[1.2] tracking-[-0.015em] text-slate-900"
-            >
-              {{ b.lead.title }}
-            </h2>
-            @if (b.lead.company_name) {
-              <div class="font-mono text-[10px] tracking-[0.08em]">
-                <span class="font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  {{ b.lead.company_name }}
+                <span
+                  class="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-brand-700"
+                >
+                  {{ dp.weekday }}
+                </span>
+                <span
+                  class="mt-1 font-mono text-[56px] font-semibold leading-none tabular-nums text-slate-900 max-[700px]:mt-0 max-[700px]:text-3xl"
+                >
+                  {{ dp.day }}
+                </span>
+                <span
+                  class="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500"
+                >
+                  {{ dp.month }}
                 </span>
               </div>
             }
-            <a
-              class="mt-1 inline-flex w-fit items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 no-underline hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-              [routerLink]="catalystsRoute()"
-              [queryParams]="{ markerId: b.lead.marker_id }"
-              [attr.aria-label]="'View catalyst: ' + b.lead.title"
-            >
-              View catalyst <i class="fa-solid fa-arrow-right"></i>
-            </a>
-          </div>
-        </div>
-        <div class="w-px self-stretch bg-brand-200 max-[900px]:hidden"></div>
-        <div
-          class="flex flex-col justify-center gap-2 px-5 py-5 max-[900px]:border-t max-[900px]:border-brand-200"
-          aria-label="Other catalysts in the same window"
-        >
-          <span class="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-brand-700">
-            Also {{ b.window | lowercase }}
-          </span>
-          @for (c of briefCompanions(); track c.marker_id) {
-            <a
-              class="group flex items-baseline gap-3 text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-              [routerLink]="catalystsRoute()"
-              [queryParams]="{ markerId: c.marker_id }"
-              [attr.aria-label]="c.title + ' on ' + c.weekday + ' ' + c.day"
-            >
-              <span
-                class="w-12 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] tabular-nums text-slate-700"
+            <div class="flex min-w-0 flex-1 flex-col justify-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="bg-brand-600 px-1.5 py-[3px] font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-white"
+                >
+                  {{ b.window }}
+                </span>
+                <span
+                  class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700"
+                >
+                  {{ b.whenPhrase }}
+                </span>
+              </div>
+              <h2
+                class="m-0 text-[26px] font-semibold leading-[1.15] tracking-[-0.02em] text-slate-900 max-[700px]:text-[22px]"
               >
-                {{ c.weekday }} {{ c.day }}
-              </span>
-              <span class="text-[13px] leading-[1.3] text-slate-900 group-hover:text-brand-700">
-                {{ c.title }}
-              </span>
-            </a>
-          } @empty {
-            <span class="text-[12px] leading-[1.3] text-slate-500">
-              No other catalysts {{ b.window | lowercase }}.
+                {{ b.lead.title }}
+              </h2>
+              @if (b.lead.company_name) {
+                <div class="font-mono text-[10px] tracking-[0.08em]">
+                  <span class="font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    {{ b.lead.company_name }}
+                  </span>
+                </div>
+              }
+              <a
+                class="mt-1 inline-flex w-fit items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-700 no-underline hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                [routerLink]="catalystsRoute()"
+                [queryParams]="{ markerId: b.lead.marker_id }"
+                [attr.aria-label]="'View catalyst: ' + b.lead.title"
+              >
+                View catalyst <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <div class="w-px self-stretch bg-brand-200 max-[900px]:hidden"></div>
+          <div
+            class="flex flex-col justify-center gap-2 px-5 py-5 max-[900px]:border-t max-[900px]:border-brand-200"
+            aria-label="Other catalysts in the same window"
+          >
+            <span class="font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-brand-700">
+              Also {{ b.window | lowercase }}
             </span>
-          }
+            @for (c of briefCompanions(); track c.marker_id) {
+              <a
+                class="group flex items-baseline gap-3 text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                [routerLink]="catalystsRoute()"
+                [queryParams]="{ markerId: c.marker_id }"
+                [attr.aria-label]="c.title + ' on ' + c.weekday + ' ' + c.day"
+              >
+                <span
+                  class="w-12 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] tabular-nums text-slate-700"
+                >
+                  {{ c.weekday }} {{ c.day }}
+                </span>
+                <span class="text-[13px] leading-[1.3] text-slate-900 group-hover:text-brand-700">
+                  {{ c.title }}
+                </span>
+              </a>
+            } @empty {
+              <span class="text-[12px] leading-[1.3] text-slate-500">
+                No other catalysts {{ b.window | lowercase }}.
+              </span>
+            }
+          </div>
         </div>
       </div>
     }
 
     <!-- Row 3: thin signal strip (demoted from tile grid to status line) -->
     <ul
-      class="m-0 flex list-none flex-wrap items-center gap-x-5 gap-y-1.5 p-0 px-5 py-2.5"
+      class="m-0 mx-auto flex w-full max-w-[1480px] list-none flex-wrap items-center gap-x-5 gap-y-1.5 p-0 px-6 py-2.5 max-md:px-4"
       role="list"
       aria-label="Engagement motion signals"
     >
@@ -202,308 +204,292 @@
     </ul>
   </section>
 
-  <!-- Two-column body: intelligence (2/3) + side rail (1/3) -->
-  <div class="grid grid-cols-3 gap-[18px] max-[1100px]:grid-cols-1 max-[1100px]:gap-[14px]">
-    <!-- Left: Latest from Stout -->
-    <section class="col-span-2 flex min-w-0 flex-col" aria-labelledby="latest-heading">
-      <div
-        class="mb-3.5 flex flex-wrap items-center justify-between gap-3.5 border-b border-slate-200 pb-2.5"
-      >
-        <div class="flex min-w-0 items-baseline gap-3.5">
-          <h2
-            class="m-0 text-base font-semibold tracking-[-0.01em] text-slate-900"
-            id="latest-heading"
-          >
-            Latest from Stout
-          </h2>
-          @if (hasFeedItems()) {
-            <span
-              class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400 [&_b]:font-semibold [&_b]:text-slate-900"
-              ><b>{{ feedHeaderTag().total }}</b> intelligence post{{
-                feedHeaderTag().total === 1 ? '' : 's'
-              }}
-              @if (feedHeaderTag().week > 0) {
-                · <b>{{ feedHeaderTag().week }}</b> this week
-              }
-            </span>
-          } @else {
-            <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400"
-              >Notices, post-readouts, and thesis updates</span
+  <!-- Body: max-width centered -->
+  <div
+    class="mx-auto flex w-full max-w-[1480px] flex-col gap-20 px-6 pt-14 max-md:gap-12 max-md:px-4 max-md:pt-10"
+  >
+    <!-- Two-column body: intelligence (2/3) + side rail (1/3) -->
+    <div class="grid grid-cols-3 gap-14 max-[1100px]:grid-cols-1 max-[1100px]:gap-7">
+      <!-- Left: Latest from Stout -->
+      <section class="col-span-2 flex min-w-0 flex-col" aria-labelledby="latest-heading">
+        <div
+          class="mb-3.5 flex flex-wrap items-center justify-between gap-3.5 border-b border-slate-200 pb-2.5"
+        >
+          <div class="flex min-w-0 items-baseline gap-3.5">
+            <h2
+              class="m-0 text-base font-semibold tracking-[-0.01em] text-slate-900"
+              id="latest-heading"
             >
-          }
-        </div>
-        @if (hasFeedItems() && feedFilters().length > 1) {
-          <div class="flex flex-wrap gap-1.5">
-            @for (f of feedFilters(); track trackFilter($index, f)) {
-              <button
-                type="button"
-                class="cursor-pointer border px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-                [ngClass]="
-                  feedFilter() === f.key
-                    ? 'border-brand-600 bg-brand-50 font-semibold text-brand-700'
-                    : 'border-slate-200 bg-white font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700'
-                "
-                (click)="setFeedFilter(f.key)"
+              Latest from Stout
+            </h2>
+            @if (hasFeedItems()) {
+              <span
+                class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400 [&_b]:font-semibold [&_b]:text-slate-900"
+                ><b>{{ feedHeaderTag().total }}</b> intelligence post{{
+                  feedHeaderTag().total === 1 ? '' : 's'
+                }}
+                @if (feedHeaderTag().week > 0) {
+                  · <b>{{ feedHeaderTag().week }}</b> this week
+                }
+              </span>
+            } @else {
+              <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400"
+                >Notices, post-readouts, and thesis updates</span
               >
-                {{ f.label }}
-              </button>
             }
           </div>
-        }
-      </div>
-
-      @if (latestLoading()) {
-        <ul
-          class="m-0 flex list-none flex-col gap-4 p-0"
-          aria-busy="true"
-          aria-label="Loading latest intelligence"
-        >
-          @for (i of skeletonRows; track i) {
-            <li class="flex flex-col gap-1.5">
-              <div class="flex gap-2">
-                <app-skeleton w="64px" h="14px" />
-                <app-skeleton w="80px" h="10px" />
-              </div>
-              <app-skeleton [block]="true" w="100%" h="14px" />
-              <app-skeleton [block]="true" w="62%" h="11px" />
-            </li>
-          }
-        </ul>
-      } @else if (!hasFeedItems()) {
-        <div
-          class="flex flex-col gap-1.5 border border-dashed border-slate-300 bg-white px-6 py-7 text-center"
-        >
-          <p class="m-0 text-sm font-semibold text-slate-900">No published intelligence yet.</p>
-          <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
-            Once your agency publishes a primary intelligence read against this engagement, it will
-            appear here in recency order.
-          </p>
-        </div>
-      } @else if (visibleFeed().length === 0) {
-        <div
-          class="flex flex-col gap-1.5 border border-dashed border-slate-300 bg-white px-6 py-7 text-center"
-        >
-          <p class="m-0 text-sm font-semibold text-slate-900">No posts in this category.</p>
-          <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
-            Try a different filter to see other reads.
-          </p>
-        </div>
-      } @else {
-        <div class="flex flex-col">
-          @if (featuredPost(); as fp) {
-            <article
-              class="grid grid-cols-[160px_1fr] gap-[18px] border-b-2 border-slate-200 py-[22px] transition-colors max-[600px]:grid-cols-[100px_1fr] max-[600px]:gap-3"
-            >
-              <div class="flex flex-col gap-1">
-                <span
-                  class="inline-flex self-start px-2 py-[3px] font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white"
-                  [ngClass]="kindBgClass(fp)"
-                  >{{ postKindLabel(fp) }}</span
+          @if (hasFeedItems() && feedFilters().length > 1) {
+            <div class="flex flex-wrap gap-1.5">
+              @for (f of feedFilters(); track trackFilter($index, f)) {
+                <button
+                  type="button"
+                  class="cursor-pointer border px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                  [ngClass]="
+                    feedFilter() === f.key
+                      ? 'border-brand-600 bg-brand-50 font-semibold text-brand-700'
+                      : 'border-slate-200 bg-white font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                  "
+                  (click)="setFeedFilter(f.key)"
                 >
-                <span
-                  class="mt-1.5 font-mono text-[10px] tracking-[0.04em] tabular-nums text-slate-400"
-                  >{{ fp.updated_at | date: 'mediumDate' }}</span
-                >
-              </div>
-              <div class="min-w-0">
-                <a [routerLink]="postRouterLink(fp)" class="group block text-inherit no-underline">
-                  <h3
-                    class="m-0 mb-1.5 text-xl font-semibold leading-[1.2] tracking-[-0.015em] text-slate-900 group-hover:text-brand-700 group-focus-visible:text-brand-700"
-                  >
-                    {{ fp.headline }}
-                  </h3>
-                </a>
-                @if (postExcerpt(fp); as e) {
-                  <p
-                    class="m-0 line-clamp-3 text-[13px] leading-[1.5] text-slate-600"
-                    [innerHTML]="e"
-                  ></p>
-                }
-                <a
-                  [routerLink]="postRouterLink(fp)"
-                  class="mt-2.5 inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:text-brand-700 focus-visible:text-brand-700"
-                  >Read brief <i class="fa-solid fa-arrow-right"></i
-                ></a>
-              </div>
-            </article>
-          }
-
-          @if (restPosts().length > 0) {
-            <div class="flex flex-col">
-              @for (p of restPosts(); track trackPost($index, p)) {
-                <article
-                  class="grid grid-cols-[140px_1fr] gap-[18px] border-b border-slate-100 py-[18px] last:border-b-0 max-[600px]:grid-cols-[100px_1fr] max-[600px]:gap-3"
-                >
-                  <div class="flex flex-col gap-1">
-                    <span
-                      class="inline-flex self-start px-2 py-[3px] font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-white"
-                      [ngClass]="kindBgClass(p)"
-                      >{{ postKindLabel(p) }}</span
-                    >
-                    <span
-                      class="mt-1.5 font-mono text-[10px] tracking-[0.04em] tabular-nums text-slate-400"
-                      >{{ p.updated_at | date: 'mediumDate' }}</span
-                    >
-                  </div>
-                  <div class="min-w-0">
-                    <a
-                      [routerLink]="postRouterLink(p)"
-                      class="group block text-inherit no-underline"
-                    >
-                      <h3
-                        class="m-0 mb-1.5 text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] text-slate-900 group-hover:text-brand-700 group-focus-visible:text-brand-700"
-                      >
-                        {{ p.headline }}
-                      </h3>
-                    </a>
-                    @if (postExcerpt(p); as e) {
-                      <p
-                        class="m-0 line-clamp-2 text-[13px] leading-[1.5] text-slate-600"
-                        [innerHTML]="e"
-                      ></p>
-                    }
-                    <a
-                      [routerLink]="postRouterLink(p)"
-                      class="mt-2.5 inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:text-brand-700 focus-visible:text-brand-700"
-                      >Read brief <i class="fa-solid fa-arrow-right"></i
-                    ></a>
-                  </div>
-                </article>
+                  {{ f.label }}
+                </button>
               }
             </div>
           }
         </div>
 
-        @if (intelligenceBrowseRoute()) {
-          <div class="flex justify-center pt-[18px]">
-            <a
-              class="border border-brand-200 bg-brand-50 px-[18px] py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:bg-brand-100"
-              [routerLink]="intelligenceBrowseRoute()"
-              >View all intelligence</a
-            >
-          </div>
-        }
-      }
-    </section>
-
-    <!-- Right: Next 90 days, then What changed -->
-    <aside class="col-span-1 flex min-w-0 flex-col gap-[18px] max-[1100px]:gap-[14px]">
-      <div
-        class="flex min-w-0 flex-col border border-slate-200 bg-white"
-        aria-labelledby="next90-heading"
-      >
-        <div
-          class="flex items-baseline justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3.5 py-2.5"
-        >
-          <span
-            class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700"
-            id="next90-heading"
-            >Next 90 days</span
+        @if (latestLoading()) {
+          <ul
+            class="m-0 flex list-none flex-col gap-4 p-0"
+            aria-busy="true"
+            aria-label="Loading latest intelligence"
           >
-          <span class="ml-auto mr-2 font-mono text-[10px] tracking-[0.04em] text-slate-400"
-            >{{ upcoming().length }} catalyst{{ upcoming().length === 1 ? '' : 's' }}</span
+            @for (i of skeletonRows; track i) {
+              <li class="flex flex-col gap-1.5">
+                <div class="flex gap-2">
+                  <app-skeleton w="64px" h="14px" />
+                  <app-skeleton w="80px" h="10px" />
+                </div>
+                <app-skeleton [block]="true" w="100%" h="14px" />
+                <app-skeleton [block]="true" w="62%" h="11px" />
+              </li>
+            }
+          </ul>
+        } @else if (!hasFeedItems()) {
+          <div
+            class="flex flex-col gap-1.5 border border-dashed border-slate-300 bg-white px-6 py-7 text-center"
           >
-          @if (catalystsRoute()) {
-            <a
-              class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:text-brand-700 focus-visible:text-brand-700"
-              [routerLink]="catalystsRoute()"
-              >Calendar →</a
-            >
-          }
-        </div>
-        <div class="max-h-[520px] overflow-y-auto">
-          @if (upcomingLoading()) {
-            <ul class="m-0 flex list-none flex-col p-0" aria-hidden="true">
-              @for (i of skeletonRows; track i) {
-                <li class="border-b border-slate-100 last:border-b-0">
-                  <div
-                    class="grid w-full grid-cols-[48px_1fr_auto] items-center gap-2.5 px-3.5 py-2.5"
-                  >
-                    <div class="flex flex-col items-center gap-px border-r border-slate-100 pr-2.5">
-                      <app-skeleton w="22px" h="14px" /><app-skeleton w="22px" h="9px" />
-                    </div>
-                    <div class="min-w-0">
-                      <app-skeleton [block]="true" w="80%" h="13px" />
-                      <app-skeleton w="55%" h="10px" />
-                    </div>
-                  </div>
-                </li>
-              }
-            </ul>
-          } @else if (monthGroupedCatalysts().length === 0) {
-            <p class="m-0 px-3.5 py-3.5 text-xs text-slate-500">
-              No catalysts in the next 90 days.
+            <p class="m-0 text-sm font-semibold text-slate-900">No published intelligence yet.</p>
+            <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
+              Once your agency publishes a primary intelligence read against this engagement, it
+              will appear here in recency order.
             </p>
-          } @else {
-            @for (g of monthGroupedCatalysts(); track trackMonth($index, g)) {
-              <div
-                class="sticky top-0 z-10 border-b border-slate-100 bg-white px-3.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                aria-hidden="true"
+          </div>
+        } @else if (visibleFeed().length === 0) {
+          <div
+            class="flex flex-col gap-1.5 border border-dashed border-slate-300 bg-white px-6 py-7 text-center"
+          >
+            <p class="m-0 text-sm font-semibold text-slate-900">No posts in this category.</p>
+            <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
+              Try a different filter to see other reads.
+            </p>
+          </div>
+        } @else {
+          <div class="flex flex-col">
+            @if (featuredPost(); as fp) {
+              <a
+                [routerLink]="postRouterLink(fp)"
+                class="group grid grid-cols-[120px_1fr] gap-5 border-b border-slate-200 py-5 text-inherit no-underline transition-colors hover:bg-slate-50/60 focus-visible:bg-slate-50/60 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-brand-600 max-[600px]:grid-cols-[88px_1fr] max-[600px]:gap-3"
               >
-                {{ g.monthLabel }}
+                <div class="flex flex-col gap-0.5">
+                  <span
+                    class="font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
+                    [ngClass]="kindTextClass(fp)"
+                    >{{ postKindLabel(fp) }}</span
+                  >
+                  <span
+                    class="font-mono text-[10px] tracking-[0.04em] tabular-nums text-slate-400"
+                    >{{ fp.updated_at | date: 'mediumDate' }}</span
+                  >
+                </div>
+                <div class="min-w-0">
+                  <h3
+                    class="m-0 mb-1.5 text-[19px] font-semibold leading-[1.2] tracking-[-0.015em] text-slate-900 group-hover:text-brand-700 group-focus-visible:text-brand-700"
+                  >
+                    {{ fp.headline }}
+                  </h3>
+                  @if (postExcerpt(fp); as e) {
+                    <p
+                      class="m-0 line-clamp-2 text-[13px] leading-[1.5] text-slate-600"
+                      [innerHTML]="e"
+                    ></p>
+                  }
+                </div>
+              </a>
+            }
+
+            @if (restPosts().length > 0) {
+              <div class="flex flex-col">
+                @for (p of restPosts(); track trackPost($index, p)) {
+                  <a
+                    [routerLink]="postRouterLink(p)"
+                    class="group grid grid-cols-[120px_1fr_auto] items-baseline gap-5 border-b border-slate-100 py-2.5 text-inherit no-underline transition-colors last:border-b-0 hover:bg-slate-50/60 focus-visible:bg-slate-50/60 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-brand-600 max-[600px]:grid-cols-[88px_1fr] max-[600px]:gap-3"
+                  >
+                    <span
+                      class="font-mono text-[10px] font-bold uppercase tracking-[0.14em]"
+                      [ngClass]="kindTextClass(p)"
+                      >{{ postKindLabel(p) }}</span
+                    >
+                    <h3
+                      class="m-0 truncate text-[14px] font-medium leading-[1.35] tracking-[-0.005em] text-slate-800 group-hover:text-brand-700 group-focus-visible:text-brand-700"
+                    >
+                      {{ p.headline }}
+                    </h3>
+                    <span
+                      class="shrink-0 font-mono text-[10px] tracking-[0.04em] tabular-nums text-slate-400 max-[600px]:hidden"
+                      >{{ p.updated_at | date: 'MMM d' }}</span
+                    >
+                  </a>
+                }
               </div>
-              <ul class="m-0 flex list-none flex-col p-0" role="list">
-                @for (d of g.items; track trackDay($index, d)) {
+            }
+          </div>
+
+          @if (intelligenceBrowseRoute()) {
+            <div class="flex justify-center pt-[18px]">
+              <a
+                class="border border-brand-200 bg-brand-50 px-[18px] py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:bg-brand-100"
+                [routerLink]="intelligenceBrowseRoute()"
+                >View all intelligence</a
+              >
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Right: Next 90 days, then What changed -->
+      <aside class="col-span-1 flex min-w-0 flex-col gap-7 max-[1100px]:gap-5">
+        <div class="flex min-w-0 flex-col" aria-labelledby="next90-heading">
+          <div
+            class="mb-2 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2.5"
+          >
+            <span
+              class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700"
+              id="next90-heading"
+              >Next 90 days</span
+            >
+            <span class="ml-auto mr-2 font-mono text-[10px] tracking-[0.04em] text-slate-400"
+              >{{ upcoming().length }} catalyst{{ upcoming().length === 1 ? '' : 's' }}</span
+            >
+            @if (catalystsRoute()) {
+              <a
+                class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600 no-underline hover:text-brand-700 focus-visible:text-brand-700"
+                [routerLink]="catalystsRoute()"
+                >Calendar →</a
+              >
+            }
+          </div>
+          <div class="max-h-[520px] overflow-y-auto">
+            @if (upcomingLoading()) {
+              <ul class="m-0 flex list-none flex-col p-0" aria-hidden="true">
+                @for (i of skeletonRows; track i) {
                   <li class="border-b border-slate-100 last:border-b-0">
-                    <button
-                      type="button"
-                      class="grid w-full cursor-pointer grid-cols-[48px_1fr_auto] items-center gap-2.5 border-none bg-transparent px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand-600"
-                      (click)="onCalendarClick(d.marker_id)"
-                      [attr.aria-label]="d.title + ' on ' + d.monthLabel + ' ' + d.day"
+                    <div
+                      class="grid w-full grid-cols-[48px_1fr_auto] items-center gap-2.5 px-3.5 py-2.5"
                     >
                       <div
                         class="flex flex-col items-center gap-px border-r border-slate-100 pr-2.5"
                       >
-                        <span
-                          class="font-mono text-sm font-semibold leading-none tabular-nums"
-                          [ngClass]="d.isToday ? 'text-brand-700' : 'text-slate-900'"
-                          >{{ d.day }}</span
-                        >
-                        <span
-                          class="font-mono text-[8px] font-bold uppercase leading-none tracking-[0.16em]"
-                          [ngClass]="d.isToday ? 'text-brand-600' : 'text-slate-400'"
-                          >{{ d.weekday }}</span
-                        >
+                        <app-skeleton w="22px" h="14px" /><app-skeleton w="22px" h="9px" />
                       </div>
                       <div class="min-w-0">
-                        <div class="text-xs font-medium leading-[1.25] text-slate-900">
-                          {{ d.title }}
-                        </div>
-                        @if (d.who) {
-                          <div
-                            class="mt-0.5 font-mono text-[10px] tracking-[0.06em] text-slate-500"
-                          >
-                            {{ d.who }}
-                          </div>
-                        }
+                        <app-skeleton [block]="true" w="80%" h="13px" />
+                        <app-skeleton w="55%" h="10px" />
                       </div>
-                      <div class="flex w-3.5 justify-center" aria-hidden="true">
-                        <app-marker-icon
-                          [shape]="d.shape"
-                          [color]="d.color"
-                          [size]="12"
-                          [fillStyle]="d.fillStyle"
-                          [innerMark]="d.innerMark"
-                          [isNle]="d.isNle"
-                        />
-                      </div>
-                    </button>
+                    </div>
                   </li>
                 }
               </ul>
+            } @else if (monthGroupedCatalysts().length === 0) {
+              <p class="m-0 px-3.5 py-3.5 text-xs text-slate-500">
+                No catalysts in the next 90 days.
+              </p>
+            } @else {
+              @for (g of monthGroupedCatalysts(); track trackMonth($index, g)) {
+                <div
+                  class="sticky top-0 z-10 border-b border-slate-100 bg-white px-3.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                  aria-hidden="true"
+                >
+                  {{ g.monthLabel }}
+                </div>
+                <ul class="m-0 flex list-none flex-col p-0" role="list">
+                  @for (d of g.items; track trackDay($index, d)) {
+                    <li class="border-b border-slate-100 last:border-b-0">
+                      <button
+                        type="button"
+                        class="grid w-full cursor-pointer grid-cols-[48px_1fr_auto] items-center gap-2.5 border-none bg-transparent px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50 focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-brand-600"
+                        (click)="onCalendarClick(d.marker_id)"
+                        [attr.aria-label]="d.title + ' on ' + d.monthLabel + ' ' + d.day"
+                      >
+                        <div
+                          class="flex flex-col items-center gap-px border-r border-slate-100 pr-2.5"
+                        >
+                          <span
+                            class="font-mono text-sm font-semibold leading-none tabular-nums"
+                            [ngClass]="d.isToday ? 'text-brand-700' : 'text-slate-900'"
+                            >{{ d.day }}</span
+                          >
+                          <span
+                            class="font-mono text-[8px] font-bold uppercase leading-none tracking-[0.16em]"
+                            [ngClass]="d.isToday ? 'text-brand-600' : 'text-slate-400'"
+                            >{{ d.weekday }}</span
+                          >
+                        </div>
+                        <div class="min-w-0">
+                          <div class="text-xs font-medium leading-[1.25] text-slate-900">
+                            {{ d.title }}
+                          </div>
+                          @if (d.who) {
+                            <div
+                              class="mt-0.5 font-mono text-[10px] tracking-[0.06em] text-slate-500"
+                            >
+                              {{ d.who }}
+                            </div>
+                          }
+                        </div>
+                        <div class="flex w-3.5 justify-center" aria-hidden="true">
+                          <app-marker-icon
+                            [shape]="d.shape"
+                            [color]="d.color"
+                            [size]="12"
+                            [fillStyle]="d.fillStyle"
+                            [innerMark]="d.innerMark"
+                            [isNle]="d.isNle"
+                          />
+                        </div>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
             }
-          }
+          </div>
         </div>
-      </div>
+      </aside>
+    </div>
 
+    <!-- Archive row: recent materials + recent activity, side by side -->
+    <div class="grid grid-cols-2 gap-10 max-[1100px]:grid-cols-1 max-[1100px]:gap-7">
+      <app-recent-materials-widget
+        [spaceId]="spaceId()"
+        [tenantId]="tenantId()"
+        class="flex min-w-0 flex-col"
+      />
       <app-what-changed-widget
         [spaceId]="spaceId()"
         [tenantId]="tenantId()"
         class="flex min-w-0 flex-col"
       />
-    </aside>
+    </div>
   </div>
-
-  <!-- Recent materials (kept below the fold) -->
-  <app-recent-materials-widget [spaceId]="spaceId()" [tenantId]="tenantId()" />
 </div>

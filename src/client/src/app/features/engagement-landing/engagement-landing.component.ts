@@ -299,7 +299,7 @@ export class EngagementLandingComponent implements OnInit {
   });
 
   readonly monthGroupedCatalysts = computed<MonthGroup[]>(() => {
-    const items = this.nextNinetyDayItems();
+    const items = this.nextNinetyDayItems().slice(0, 5);
     const groups: MonthGroup[] = [];
     for (const item of items) {
       const last = groups[groups.length - 1];
@@ -336,7 +336,7 @@ export class EngagementLandingComponent implements OnInit {
   });
 
   readonly featuredPost = computed(() => this.visibleFeed()[0] ?? null);
-  readonly restPosts = computed(() => this.visibleFeed().slice(1));
+  readonly restPosts = computed(() => this.visibleFeed().slice(1, 4));
 
   readonly feedHeaderTag = computed(() => {
     const total = this.latestIntelligence().length;
@@ -376,20 +376,20 @@ export class EngagementLandingComponent implements OnInit {
     return ENTITY_TYPE_LABEL[row.entity_type] ?? row.entity_type;
   }
 
-  kindBgClass(row: IntelligenceFeedRow): string {
+  kindTextClass(row: IntelligenceFeedRow): string {
     switch (row.entity_type) {
       case 'trial':
-        return 'bg-sky-900';
+        return 'text-sky-800';
       case 'company':
-        return 'bg-slate-700';
+        return 'text-slate-600';
       case 'product':
-        return 'bg-brand-700';
+        return 'text-brand-700';
       case 'marker':
-        return 'bg-orange-900';
+        return 'text-orange-800';
       case 'space':
-        return 'bg-slate-600';
+        return 'text-slate-600';
       default:
-        return 'bg-slate-900';
+        return 'text-slate-700';
     }
   }
 
