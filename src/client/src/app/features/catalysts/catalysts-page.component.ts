@@ -66,6 +66,29 @@ export class CatalystsPageComponent {
 
   readonly flatCatalysts = this.grid.filteredRows(computed(() => this.state.filteredCatalysts()));
 
+  readonly categoryOptions = computed(() =>
+    this.uniqueOptions(this.state.filteredCatalysts(), (c) => c.category_name)
+  );
+
+  readonly companyOptions = computed(() =>
+    this.uniqueOptions(this.state.filteredCatalysts(), (c) => c.company_name)
+  );
+
+  private uniqueOptions(
+    rows: FlatCatalyst[],
+    pick: (c: FlatCatalyst) => string | null | undefined
+  ): { label: string; value: string }[] {
+    const seen = new Set<string>();
+    const out: { label: string; value: string }[] = [];
+    for (const row of rows) {
+      const v = pick(row);
+      if (!v || seen.has(v)) continue;
+      seen.add(v);
+      out.push({ label: v, value: v });
+    }
+    return out.sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   private readonly countEffect = effect(() => {
     this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
   });

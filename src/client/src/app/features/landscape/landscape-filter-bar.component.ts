@@ -14,6 +14,7 @@ import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
   BullseyeDimension,
@@ -47,7 +48,7 @@ interface FilterChip {
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
-  imports: [FormsModule, MultiSelect, Select, ButtonModule, SelectButton, ProgressSpinner],
+  imports: [FormsModule, MultiSelect, Select, ButtonModule, SelectButton, ProgressSpinner, Tooltip],
   templateUrl: './landscape-filter-bar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

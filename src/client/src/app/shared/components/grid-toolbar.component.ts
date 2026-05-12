@@ -19,10 +19,15 @@ import type { GridState } from '../grids/filter-types';
   imports: [FormsModule, ButtonModule, IconFieldModule, InputIconModule, InputTextModule],
   template: `
     <div class="grid-toolbar mb-3">
-      <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <ng-content select="[gridToolbarStart]" />
         <p-iconfield
           iconPosition="left"
-          [styleClass]="'search-tinted' + (state().globalSearch() ? ' has-value' : '')"
+          [styleClass]="
+            'search-tinted' +
+            (state().globalSearch() ? ' has-value' : '') +
+            (searchAlignment() === 'end' ? ' ml-auto' : '')
+          "
         >
           <p-inputicon><i class="fa-solid fa-magnifying-glass text-[11px]"></i></p-inputicon>
           <input
@@ -41,6 +46,7 @@ import type { GridState } from '../grids/filter-types';
           severity="secondary"
           [text]="true"
           size="small"
+          [styleClass]="searchAlignment() === 'end' ? '' : 'ml-auto'"
           [disabled]="!state().isFiltered()"
           (onClick)="state().clearAll()"
           [attr.aria-label]="'Clear all filters'"
@@ -75,6 +81,7 @@ export class GridToolbarComponent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly state = input.required<GridState<any>>();
   readonly searchPlaceholder = input<string>('Search...');
+  readonly searchAlignment = input<'start' | 'end'>('start');
 
   onSearchInput(value: string): void {
     this.state().onGlobalSearchInput(value);

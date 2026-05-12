@@ -1,10 +1,27 @@
 <app-manage-page-shell>
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search future catalysts..." />
+  <app-grid-toolbar
+    [state]="grid"
+    searchPlaceholder="Search future catalysts..."
+    searchAlignment="end"
+  >
+    <div gridToolbarStart class="flex items-baseline gap-3">
+      <span
+        class="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
+      >
+        Future catalysts
+      </span>
+      <p class="m-0 max-w-xl text-[12px] leading-relaxed text-slate-500">
+        Upcoming regulatory, trial, and commercial events that may move the competitive landscape.
+      </p>
+    </div>
+  </app-grid-toolbar>
 
   <app-catalyst-table
     [catalysts]="flatCatalysts()"
     [loading]="state.dataLoading()"
     [selectedId]="state.selectedMarkerId()"
+    [categoryOptions]="categoryOptions()"
+    [companyOptions]="companyOptions()"
     [gridFilters]="grid.primengFilters()"
     [query]="grid.debouncedGlobalSearch()"
     (rowSelect)="onRowClick($event)"

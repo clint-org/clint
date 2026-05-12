@@ -254,6 +254,15 @@ export function buildBrandPreset(scale: BrandScale = TEAL_SCALE) {
           },
         },
       },
+      tooltip: {
+        root: {
+          background: '{slate.900}',
+          color: '#ffffff',
+          borderRadius: '0',
+          padding: '0.375rem 0.625rem',
+          shadow: '0 10px 24px -12px rgba(15, 23, 42, 0.28)',
+        },
+      },
       message: {
         root: {
           borderRadius: '0',

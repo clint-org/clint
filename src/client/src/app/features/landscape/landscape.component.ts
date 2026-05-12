@@ -12,6 +12,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { Tooltip } from 'primeng/tooltip';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import {
@@ -40,6 +41,7 @@ import { LandscapeStateService } from './landscape-state.service';
     ButtonModule,
     MessageModule,
     SkeletonComponent,
+    Tooltip,
   ],
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],

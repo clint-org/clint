@@ -257,9 +257,9 @@
 /* -- Filter bar control height ------------------------------------------- */
 
 /* Normalize all filter bar controls to 28px at size="small". */
-.p-selectbutton[data-p-size="small"],
-.p-select[data-p-size="small"],
-.p-multiselect[data-p-size="small"] {
+.p-selectbutton[data-p-size='small'],
+.p-select[data-p-size='small'],
+.p-multiselect[data-p-size='small'] {
   height: 28px;
 }
 
@@ -288,4 +288,16 @@
 }
 .p-menu .row-actions-danger .p-menu-item-link:hover {
   background: rgb(254 242 242);
+}
+
+/* Tooltips: tightened typography matching the data-instrument feel.
+   Background, color, padding, radius, and shadow come from the preset
+   in primeng-theme.ts; this only handles type and max-width which the
+   tooltip token set does not expose. */
+.p-tooltip .p-tooltip-text {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  max-width: 280px;
 }

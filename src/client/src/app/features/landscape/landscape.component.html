@@ -36,6 +36,25 @@
           </div>
         } @else {
           <div class="landscape-layout">
+            <div
+              class="absolute top-3 left-4 z-[5] flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
+              aria-label="Bullseye chart legend"
+            >
+              <span>Rings</span>
+              <span class="text-slate-600 normal-case tracking-normal">Phase</span>
+              <a
+                [routerLink]="['/t', tenantId(), 'help', 'phases']"
+                class="text-slate-300 hover:text-brand-700"
+                pTooltip="Open phase guide"
+                tooltipPosition="top"
+                aria-label="Open phase guide"
+              >
+                <i class="fa-solid fa-circle-question text-[11px]"></i>
+              </a>
+              <span class="text-slate-300">·</span>
+              <span>Spokes</span>
+              <span class="text-slate-600 normal-case tracking-normal">{{ cd.spoke_label }}</span>
+            </div>
             <div class="landscape-chart-wrap">
               <div class="bullseye-chart-frame">
                 <app-bullseye-chart
