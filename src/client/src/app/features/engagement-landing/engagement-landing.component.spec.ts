@@ -67,7 +67,7 @@ function buildComputeds(
   initialStats: SpaceLandingStats | null = makeStats(),
   initialSpace: SpaceStub | null = { id: 's1', name: 'Test', created_at: '2026-04-01T00:00:00Z' },
   tenantId = 't1',
-  spaceId = 's1',
+  spaceId = 's1'
 ) {
   const stats = signal<SpaceLandingStats | null>(initialStats);
   const space = signal<SpaceStub | null>(initialSpace);
@@ -128,12 +128,7 @@ function buildComputeds(
         label: 'New intel',
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
-        display:
-          s?.new_intel_7d == null
-            ? ''
-            : s.new_intel_7d > 0
-              ? `+${s.new_intel_7d}`
-              : '0',
+        display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
         route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
         queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,
@@ -217,7 +212,7 @@ describe('EngagementLandingComponent header computeds', () => {
         loe_365d: 2,
         trial_moves_30d: 1,
         new_intel_7d: 2,
-      }),
+      })
     );
     const cells = motionStats();
     const byKey = Object.fromEntries(cells.map((cell) => [cell.key, cell]));
@@ -273,11 +268,185 @@ describe('computeBrief integration (from brief-window)', () => {
           company_name: 'Pfizer',
         },
       ],
-      now,
+      now
     );
     expect(result).not.toBeNull();
     expect(result?.window).toBe('THIS WEEK');
     expect(result?.lead.title).toBe('Phase 3 readout');
     expect(result?.additional).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hero panel computeds: briefDateParts, briefCompanions
+// ---------------------------------------------------------------------------
+
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_LABELS = [
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
+];
+
+interface Upcoming {
+  marker_id: string;
+  event_date: string;
+  title: string;
+  company_name: string | null;
+}
+
+interface BriefCompanion {
+  marker_id: string;
+  weekday: string;
+  day: string;
+  title: string;
+}
+
+function briefDateParts(brief: BriefResult | null) {
+  if (!brief) return null;
+  const d = new Date(brief.lead.event_date + 'T00:00:00Z');
+  return {
+    weekday: SHORT_DAYS[d.getUTCDay()].toUpperCase(),
+    day: String(d.getUTCDate()),
+    month: MONTH_LABELS[d.getUTCMonth()],
+  };
+}
+
+function briefCompanions(
+  brief: BriefResult | null,
+  upcoming: Upcoming[],
+  now: Date
+): BriefCompanion[] {
+  if (!brief || brief.additional <= 0) return [];
+  const cap = brief.window === 'THIS WEEK' ? 7 : brief.window === 'THIS MONTH' ? 30 : 90;
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return upcoming
+    .filter((c) => c.marker_id !== brief.lead.marker_id)
+    .filter((c) => {
+      const event = new Date(c.event_date + 'T00:00:00Z').getTime();
+      return Math.floor((event - today) / 86_400_000) <= cap;
+    })
+    .slice(0, 2)
+    .map((c) => {
+      const d = new Date(c.event_date + 'T00:00:00Z');
+      return {
+        marker_id: c.marker_id,
+        weekday: SHORT_DAYS[d.getUTCDay()].toUpperCase(),
+        day: String(d.getUTCDate()),
+        title: c.title,
+      };
+    });
+}
+
+describe('briefDateParts', () => {
+  it('returns null when brief is null', () => {
+    expect(briefDateParts(null)).toBeNull();
+  });
+
+  it('parses weekday/day/month from the lead event_date in UTC', () => {
+    const brief: BriefResult = {
+      window: 'THIS WEEK',
+      lead: {
+        marker_id: 'm1',
+        event_date: '2026-05-15',
+        title: 'Phase 3 readout',
+        company_name: 'Pfizer',
+      },
+      additional: 0,
+      whenPhrase: 'Fri',
+    };
+    expect(briefDateParts(brief)).toEqual({ weekday: 'FRI', day: '15', month: 'MAY' });
+  });
+});
+
+describe('briefCompanions', () => {
+  const now = new Date('2026-05-11T00:00:00Z');
+  const lead: BriefResult['lead'] = {
+    marker_id: 'lead',
+    event_date: '2026-05-12',
+    title: 'CATALYST-1 topline',
+    company_name: 'Catalyst Co',
+  };
+  const briefThisWeek: BriefResult = {
+    window: 'THIS WEEK',
+    lead,
+    additional: 2,
+    whenPhrase: 'tomorrow',
+  };
+
+  it('returns empty array when brief.additional is 0', () => {
+    const briefSolo: BriefResult = { ...briefThisWeek, additional: 0 };
+    const upcoming: Upcoming[] = [
+      {
+        marker_id: 'lead',
+        event_date: '2026-05-12',
+        title: lead.title,
+        company_name: 'Catalyst Co',
+      },
+    ];
+    expect(briefCompanions(briefSolo, upcoming, now)).toEqual([]);
+  });
+
+  it('excludes the lead and returns up to 2 companions in the same window', () => {
+    const upcoming: Upcoming[] = [
+      {
+        marker_id: 'lead',
+        event_date: '2026-05-12',
+        title: 'CATALYST-1',
+        company_name: 'Catalyst Co',
+      },
+      { marker_id: 'b', event_date: '2026-05-14', title: 'ATTAIN-1', company_name: 'Co B' },
+      { marker_id: 'c', event_date: '2026-05-15', title: 'PROFILE-3', company_name: 'Co C' },
+      { marker_id: 'd', event_date: '2026-05-16', title: 'ANCHOR-2', company_name: 'Co D' },
+    ];
+    const result = briefCompanions(briefThisWeek, upcoming, now);
+    expect(result.map((c) => c.marker_id)).toEqual(['b', 'c']);
+    expect(result[0]).toEqual({ marker_id: 'b', weekday: 'THU', day: '14', title: 'ATTAIN-1' });
+  });
+
+  it('filters out companions beyond the lead window cap', () => {
+    const upcoming: Upcoming[] = [
+      {
+        marker_id: 'lead',
+        event_date: '2026-05-12',
+        title: 'CATALYST-1',
+        company_name: 'Catalyst Co',
+      },
+      { marker_id: 'far', event_date: '2026-05-25', title: 'OUT-OF-WEEK', company_name: 'Co Far' },
+    ];
+    expect(briefCompanions(briefThisWeek, upcoming, now)).toEqual([]);
+  });
+
+  it('uses 30-day cap for THIS MONTH window', () => {
+    const briefMonth: BriefResult = {
+      ...briefThisWeek,
+      window: 'THIS MONTH',
+    };
+    const upcoming: Upcoming[] = [
+      {
+        marker_id: 'lead',
+        event_date: '2026-05-12',
+        title: 'CATALYST-1',
+        company_name: 'Catalyst Co',
+      },
+      { marker_id: 'inMonth', event_date: '2026-06-05', title: 'IN-MONTH', company_name: 'Co X' },
+      {
+        marker_id: 'pastMonth',
+        event_date: '2026-06-15',
+        title: 'PAST-MONTH',
+        company_name: 'Co Y',
+      },
+    ];
+    const result = briefCompanions(briefMonth, upcoming, now);
+    expect(result.map((c) => c.marker_id)).toEqual(['inMonth']);
   });
 });

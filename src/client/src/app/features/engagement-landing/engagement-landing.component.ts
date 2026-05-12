@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
 import { MessageModule } from 'primeng/message';
 
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -66,11 +66,15 @@ interface InventoryTotals {
  * Spec: docs/superpowers/specs/2026-05-11-engagement-header-redesign-design.md.
  *
  * Layout:
- *   - Pulse panel: one bordered section with three rows. Row 1 is the mono
- *     identity line carrying inventory totals. Row 2 is the adaptive brief
- *     (tiers across week/month/quarter, hides on quiet days). Row 3 is the
- *     five-cell motion strip (P3 readouts, catalysts, new intel, trial moves,
- *     loss of exclusivity).
+ *   - Pulse panel: one bordered section with three rows.
+ *     - Row 1 (slim identity): slate-50 status band carrying engagement name,
+ *       active-since subline, and inline inventory totals.
+ *     - Row 2 (hero catalyst): brand-tinted panel with a left date column for
+ *       the lead's event date, center title/eyebrow/View link, and a right-side
+ *       companion mini-list of the next two upcoming catalysts in the same
+ *       window. Auto-hides on quiet days.
+ *     - Row 3 (signal strip): single horizontal status line of five motion
+ *       metrics with inline window labels. Replaces the prior tile grid.
  *   - Two-column body: intelligence feed (2/3) + side rail (1/3) with the
  *     Next 90 days card stacked on the What changed widget.
  *   - Recent materials: legacy widget kept below the fold.
@@ -81,6 +85,7 @@ interface InventoryTotals {
   imports: [
     NgClass,
     DatePipe,
+    LowerCasePipe,
     RouterLink,
     MessageModule,
     MarkerIconComponent,
@@ -179,12 +184,7 @@ export class EngagementLandingComponent implements OnInit {
         label: 'New intel',
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
-        display:
-          s?.new_intel_7d == null
-            ? ''
-            : s.new_intel_7d > 0
-              ? `+${s.new_intel_7d}`
-              : '0',
+        display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
         route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
         queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,
@@ -245,13 +245,34 @@ export class EngagementLandingComponent implements OnInit {
     return computeBrief(list, new Date());
   });
 
-  readonly dateAnchor = computed(() => {
-    const now = new Date();
-    const day = now.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-    const date = now
-      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      .toUpperCase();
-    return { day, date };
+  readonly briefDateParts = computed(() => {
+    const b = this.brief();
+    if (!b) return null;
+    const d = new Date(b.lead.event_date + 'T00:00:00Z');
+    return {
+      weekday: SHORT_DAYS[d.getUTCDay()].toUpperCase(),
+      day: String(d.getUTCDate()),
+      month: MONTH_LABELS[d.getUTCMonth()],
+    };
+  });
+
+  readonly briefCompanions = computed<BriefCompanion[]>(() => {
+    const b = this.brief();
+    if (!b || b.additional <= 0) return [];
+    const cap = b.window === 'THIS WEEK' ? 7 : b.window === 'THIS MONTH' ? 30 : 90;
+    return this.upcoming()
+      .filter((c) => c.marker_id !== b.lead.marker_id)
+      .filter((c) => daysFromTodayUtc(c.event_date) <= cap)
+      .slice(0, 2)
+      .map((c) => {
+        const d = new Date(c.event_date + 'T00:00:00Z');
+        return {
+          marker_id: c.marker_id,
+          weekday: SHORT_DAYS[d.getUTCDay()].toUpperCase(),
+          day: String(d.getUTCDate()),
+          title: c.title,
+        };
+      });
   });
 
   readonly nextNinetyDayItems = computed<CatalystDay[]>(() => {
@@ -427,6 +448,13 @@ export class EngagementLandingComponent implements OnInit {
   }
 }
 
+interface BriefCompanion {
+  marker_id: string;
+  weekday: string;
+  day: string;
+  title: string;
+}
+
 interface CatalystDay {
   marker_id: string;
   event_date: string;
@@ -477,6 +505,13 @@ function emptyFilters() {
     mechanismOfActionIds: null,
     routeOfAdministrationIds: null,
   };
+}
+
+function daysFromTodayUtc(eventDateIso: string): number {
+  const event = new Date(eventDateIso + 'T00:00:00Z').getTime();
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.floor((event - today) / 86_400_000);
 }
 
 function todayIso(): string {
