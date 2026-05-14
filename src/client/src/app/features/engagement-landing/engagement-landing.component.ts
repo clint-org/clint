@@ -16,6 +16,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
 import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
 import { Company } from '../../core/models/company.model';
@@ -105,6 +106,7 @@ export class EngagementLandingComponent implements OnInit {
   private readonly spaceService = inject(SpaceService);
   private readonly tenantService = inject(TenantService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
+  private readonly brand = inject(BrandContextService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -129,6 +131,24 @@ export class EngagementLandingComponent implements OnInit {
     const sid = this.spaceId();
     if (!tid || !sid) return '';
     return `/t/${tid}/s/${sid}/intelligence`;
+  });
+
+  /**
+   * Route to the engagement activity feed. Used by the intelligence empty
+   * state so a client analyst can see in-progress drafts surfaced by the
+   * agency before any read has been published.
+   */
+  readonly activityRoute = computed<string[] | null>(() => {
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    if (!tid || !sid) return null;
+    return ['/t', tid, 's', sid, 'activity'];
+  });
+
+  /** "Stout lead" when the tenant has an agency, otherwise "agency lead". */
+  readonly agencyLeadLabel = computed(() => {
+    const name = this.brand.agency()?.name;
+    return name ? `${name} lead` : 'agency lead';
   });
 
   readonly catalystsRoute = computed(() => {

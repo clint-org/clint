@@ -287,6 +287,19 @@
               Once your agency publishes a primary intelligence read against this engagement, it
               will appear here in recency order.
             </p>
+            <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
+              Reach out to your {{ agencyLeadLabel() }} or check the
+              @if (activityRoute(); as link) {
+                <a
+                  [routerLink]="link"
+                  class="text-brand-600 underline-offset-2 hover:underline focus-visible:underline"
+                  >activity feed</a
+                >
+              } @else {
+                <span>activity feed</span>
+              }
+              for in-progress drafts.
+            </p>
           </div>
         } @else if (visibleFeed().length === 0) {
           <div
