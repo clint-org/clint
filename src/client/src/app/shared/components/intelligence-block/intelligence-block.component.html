@@ -93,21 +93,12 @@
         </div>
       }
 
-      @if (c.record.thesis_md.length) {
+      @if (c.record.summary_md.length) {
         <div class="mb-4">
           <h4 class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Thesis
+            Summary
           </h4>
-          <div class="prose-render text-sm text-slate-800" [innerHTML]="thesisHtml()"></div>
-        </div>
-      }
-
-      @if (c.record.watch_md.length) {
-        <div class="mb-4">
-          <h4 class="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            What to watch
-          </h4>
-          <div class="prose-render text-sm text-slate-800" [innerHTML]="watchHtml()"></div>
+          <div class="prose-render text-sm text-slate-800" [innerHTML]="summaryHtml()"></div>
         </div>
       }
 

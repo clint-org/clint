@@ -24,8 +24,7 @@ export interface PrimaryIntelligence {
   entity_id: string;
   state: IntelligenceState;
   headline: string;
-  thesis_md: string;
-  watch_md: string;
+  summary_md: string;
   implications_md: string;
   publish_note: string | null;
   last_edited_by: string;
@@ -82,7 +81,7 @@ export interface IntelligenceFeedRow {
   entity_id: string;
   state: IntelligenceState;
   headline: string;
-  thesis_md: string;
+  summary_md: string;
   last_edited_by: string;
   updated_at: string;
   links: Pick<
@@ -105,8 +104,7 @@ export interface UpsertIntelligenceInput {
   entity_type: IntelligenceEntityType;
   entity_id: string;
   headline: string;
-  thesis_md: string;
-  watch_md: string;
+  summary_md: string;
   implications_md: string;
   state: IntelligenceState;
   change_note: string | null;
@@ -141,8 +139,7 @@ export interface IntelligenceVersionRow {
   version_number: number;
   state: VersionState;
   headline: string;
-  thesis_md: string;
-  watch_md: string;
+  summary_md: string;
   implications_md: string;
   publish_note: string | null;
   published_at: string;

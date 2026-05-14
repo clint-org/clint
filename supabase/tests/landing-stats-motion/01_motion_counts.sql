@@ -119,7 +119,7 @@ begin
   -- version_number is supplied explicitly to prevent the assign_version trigger
   -- from overwriting published_at with now().
   insert into public.primary_intelligence
-    (id, space_id, entity_type, entity_id, state, headline, thesis_md, published_at, last_edited_by, version_number)
+    (id, space_id, entity_type, entity_id, state, headline, summary_md, published_at, last_edited_by, version_number)
   values
     (gen_random_uuid(), v_space_id, 'trial', v_trial_p3_a, 'published',
      'Recent brief A', 'thesis', now() - interval '1 day', v_user_id, 1),
@@ -129,14 +129,14 @@ begin
   -- One published older than 7 days: must NOT count.
   -- Uses v_trial_other to avoid the one-published-per-anchor unique constraint.
   insert into public.primary_intelligence
-    (id, space_id, entity_type, entity_id, state, headline, thesis_md, published_at, last_edited_by, version_number)
+    (id, space_id, entity_type, entity_id, state, headline, summary_md, published_at, last_edited_by, version_number)
   values
     (gen_random_uuid(), v_space_id, 'trial', v_trial_other, 'published',
      'Older brief', 'thesis', now() - interval '14 days', v_user_id, 1);
 
   -- One draft within 7 days: must NOT count.
   insert into public.primary_intelligence
-    (id, space_id, entity_type, entity_id, state, headline, thesis_md, last_edited_by)
+    (id, space_id, entity_type, entity_id, state, headline, summary_md, last_edited_by)
   values
     (gen_random_uuid(), v_space_id, 'company', v_company_id, 'draft',
      'Draft brief', 'thesis', v_user_id);

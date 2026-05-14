@@ -86,7 +86,7 @@ export class IntelligenceFeedComponent {
   }
 
   protected excerpt(row: IntelligenceFeedRow): string {
-    const html = renderMarkdownInline(row.thesis_md ?? '');
+    const html = renderMarkdownInline(row.summary_md ?? '');
     return highlightHtml(html, this.query());
   }
 }

@@ -83,29 +83,15 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
           <div>
             <span
-              id="pi-thesis-label"
+              id="pi-summary-label"
               class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
             >
-              Thesis
+              Summary
             </span>
             <app-prose-mirror-editor
-              [value]="thesis()"
-              ariaLabel="Thesis"
-              (valueChange)="thesis.set($event); scheduleAutoSave()"
-            />
-          </div>
-
-          <div>
-            <span
-              id="pi-watch-label"
-              class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-            >
-              What to watch
-            </span>
-            <app-prose-mirror-editor
-              [value]="watch()"
-              ariaLabel="What to watch"
-              (valueChange)="watch.set($event); scheduleAutoSave()"
+              [value]="summary()"
+              ariaLabel="Summary"
+              (valueChange)="summary.set($event); scheduleAutoSave()"
             />
           </div>
 
@@ -252,8 +238,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   protected readonly changeNotePromptOpen = signal<boolean>(false);
 
   protected readonly headline = signal<string>('');
-  protected readonly thesis = signal<string>('');
-  protected readonly watch = signal<string>('');
+  protected readonly summary = signal<string>('');
   protected readonly implications = signal<string>('');
   protected readonly links = signal<PrimaryIntelligenceLink[]>([]);
   protected readonly changeNote = signal<string>('');
@@ -408,15 +393,13 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       // of overwriting the live read in place.
       this.currentId.set(draft?.record.id ?? null);
       this.headline.set(source.record.headline ?? '');
-      this.thesis.set(source.record.thesis_md ?? '');
-      this.watch.set(source.record.watch_md ?? '');
+      this.summary.set(source.record.summary_md ?? '');
       this.implications.set(source.record.implications_md ?? '');
       this.links.set([...(source.links ?? [])]);
     } else {
       this.currentId.set(null);
       this.headline.set('');
-      this.thesis.set('');
-      this.watch.set('');
+      this.summary.set('');
       this.implications.set('');
       this.links.set([]);
     }
@@ -452,8 +435,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       entity_type: this.entityType(),
       entity_id: this.entityId(),
       headline: this.headline().trim(),
-      thesis_md: this.thesis(),
-      watch_md: this.watch(),
+      summary_md: this.summary(),
       implications_md: this.implications(),
       state,
       change_note: this.changeNote().trim() ? this.changeNote().trim() : null,

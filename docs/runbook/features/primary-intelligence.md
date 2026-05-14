@@ -12,7 +12,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 **RLS.** Published reads are visible to anyone with `has_space_access(space_id)`. Drafts are visible only to agency members of the tenant's agency, gated by the `is_agency_member_of_space(space_id)` helper added in this branch (joins space → tenant → agency, calls existing `is_agency_member`).
 
 **RPCs.**
-- `upsert_primary_intelligence(p_id, p_space_id, p_entity_type, p_entity_id, headline, thesis_md, watch_md, implications_md, p_state, p_change_note, p_links jsonb)` — agency-only writes. Replaces links wholesale. On publish, writes `publish_note` + `published_by` directly to the new row and stamps `archived_at` on the prior published row in the same call.
+- `upsert_primary_intelligence(p_id, p_space_id, p_entity_type, p_entity_id, headline, summary_md, implications_md, p_state, p_change_note, p_links jsonb)` — agency-only writes. Replaces links wholesale. On publish, writes `publish_note` + `published_by` directly to the new row and stamps `archived_at` on the prior published row in the same call. `summary_md` was renamed from `thesis_md` and `watch_md` was dropped in migration 20260512000000.
 - `get_trial_detail_with_intelligence`, `get_marker_detail_with_intelligence`, `get_company_detail_with_intelligence`, `get_product_detail_with_intelligence`, `get_space_intelligence` — single round-trip detail bundles (published + draft + referenced_in).
 - `list_primary_intelligence(space, types, author, since, query, referencing_entity_type, referencing_entity_id, limit, offset)` — feed and browse view; same RPC backs the "Referenced in" sections.
 - `delete_primary_intelligence(id)` — agency-only; cascades to links.
@@ -22,9 +22,9 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 - `app-intelligence-empty` is the agency-only "+ Add primary intelligence" placeholder.
 - `app-intelligence-drawer` is the single authoring surface (PrimeNG `p-drawer`). Loads the existing draft if any; falls back to seeding from published. Auto-saves on blur and on linked-entity edits, with a 1.5s debounce while typing in the editors. Optional publish note attaches to the published row via `publish_note`.
 - `app-prose-mirror-editor` wraps a ProseMirror EditorView in a thin Angular component, plus a small inline toolbar (Bold, Italic, Bullet list, Numbered list) that highlights its active state from the current selection. The editor schema, key bindings, markdown input rules (`- ` / `* ` / `+ ` -> bullet list, `1. ` -> ordered list), markdown serialisation, and the toolbar command builders live in `ProseMirrorService`; components consume `createEditor` / `destroyEditor` plus the `toggle*` / `is*Active` helpers. The read path in `shared/utils/markdown-render.ts` strips CommonMark backslash-escapes from punctuation so legacy rows authored before the input rules existed (stored as `\- foo`) render as bullets without a destructive data migration.
-- `app-intelligence-history-panel` mounts below `app-intelligence-block` on every detail page. Renders a single linear event timeline for the anchor (`draft_started | published | archived | withdrawn`). Published and withdrawn events expand to show their version's content; published events also render word-level inline ins/del marks (via `diffWords` from the `diff` npm package) against the most recent prior non-withdrawn published version. Archive events render as nested sub-lines under their causing publish.
+- `app-intelligence-history-panel` mounts below `app-intelligence-block` on every detail page. Renders a single linear event timeline for the anchor (`draft_started | published | archived | withdrawn`). Published and withdrawn events expand to show their version's content; published events also render word-level inline ins/del marks (via `diffWords` from the `diff` npm package) against the most recent prior non-withdrawn published version. Markdown fields (`summary_md`, `implications_md`) are first parsed into blocks (paragraphs and list items) so bullets render as `<ul>`/`<ol>` instead of leaking `-` / `1.` markers into the diff; word-level diff then runs inside each matched block. The `links` array per version is returned by `get_primary_intelligence_history` and rendered as added/removed/changed buckets under a Linked entities sub-section. Archive events render as nested sub-lines under their causing publish.
 - `app-intelligence-feed` is the recency-ordered list used by the engagement landing's "Latest from Stout" surface and the browse view.
-- `app-intelligence-browse` is the filterable expanded view at `/t/:tenant/s/:space/intelligence`. Filters by entity type, since-date, and free-text search across headline and thesis.
+- `app-intelligence-browse` is the filterable expanded view at `/t/:tenant/s/:space/intelligence`. Filters by entity type, since-date, and free-text search across headline and summary.
 
 **Trial detail page sections (top to bottom).** Section nav strip → primary intelligence block (or empty placeholder) → History → Referenced in → Materials placeholder (replaced by the materials-registry branch) → Basic info → Phase → Markers → Notes. Authoring drawer mounts at the bottom of the page and is shown via the empty-state add button or the block's Edit affordance.
 
@@ -124,7 +124,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: agency
   status: active
 - id: primary-intelligence-history
-  summary: Linear event timeline (draft_started, published, archived, withdrawn) with word-level diff between adjacent published versions.
+  summary: Linear event timeline (draft_started, published, archived, withdrawn) with block-aware word-level diff between adjacent published versions, plus added/removed/changed linked-entity buckets.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials/:id
     - /t/:tenantId/s/:spaceId/manage/companies/:id

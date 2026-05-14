@@ -394,7 +394,7 @@ export class EngagementLandingComponent implements OnInit {
   }
 
   postExcerpt(row: IntelligenceFeedRow): string {
-    return renderMarkdownInline(row.thesis_md ?? '');
+    return renderMarkdownInline(row.summary_md ?? '');
   }
 
   trackPost = (_: number, row: IntelligenceFeedRow): string => row.id;

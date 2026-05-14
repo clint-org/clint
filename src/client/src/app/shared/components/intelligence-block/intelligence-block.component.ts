@@ -65,12 +65,8 @@ export class IntelligenceBlockComponent {
     return !!this.published() && !!this.draft();
   });
 
-  protected readonly thesisHtml = computed(() =>
-    renderMarkdownInline(this.current()?.record.thesis_md ?? '')
-  );
-
-  protected readonly watchHtml = computed(() =>
-    renderMarkdownInline(this.current()?.record.watch_md ?? '')
+  protected readonly summaryHtml = computed(() =>
+    renderMarkdownInline(this.current()?.record.summary_md ?? '')
   );
 
   protected readonly implicationsHtml = computed(() =>

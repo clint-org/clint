@@ -22,8 +22,8 @@ begin
 
   -- first publish gets v1
   insert into public.primary_intelligence (
-    space_id, entity_type, entity_id, state, headline, thesis_md, watch_md, implications_md, last_edited_by
-  ) values (v_space, 'product', v_entity, 'published', 'V1', '', '', '', v_user)
+    space_id, entity_type, entity_id, state, headline, summary_md, implications_md, last_edited_by
+  ) values (v_space, 'product', v_entity, 'published', 'V1', '', '', v_user)
   returning id, version_number, published_at into v_id1, v_n1, v_pa1;
 
   if v_n1 <> 1 then raise exception 'expected v1, got %', v_n1; end if;
@@ -34,8 +34,8 @@ begin
 
   -- new publish gets v2
   insert into public.primary_intelligence (
-    space_id, entity_type, entity_id, state, headline, thesis_md, watch_md, implications_md, last_edited_by
-  ) values (v_space, 'product', v_entity, 'published', 'V2', '', '', '', v_user)
+    space_id, entity_type, entity_id, state, headline, summary_md, implications_md, last_edited_by
+  ) values (v_space, 'product', v_entity, 'published', 'V2', '', '', v_user)
   returning id, version_number into v_id2, v_n2;
 
   if v_n2 <> 2 then raise exception 'expected v2, got %', v_n2; end if;

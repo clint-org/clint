@@ -13,12 +13,7 @@ import {
   MarkdownParser,
   MarkdownSerializer,
 } from 'prosemirror-markdown';
-import {
-  splitListItem,
-  liftListItem,
-  sinkListItem,
-  wrapInList,
-} from 'prosemirror-schema-list';
+import { splitListItem, liftListItem, sinkListItem, wrapInList } from 'prosemirror-schema-list';
 import { inputRules, wrappingInputRule } from 'prosemirror-inputrules';
 
 /**
@@ -33,7 +28,7 @@ export class ProseMirrorService {
   private readonly serializer: MarkdownSerializer;
 
   constructor() {
-    // basic schema + lists is sufficient for thesis / watch / implications.
+    // basic schema + lists is sufficient for summary / implications.
     const nodes = addListNodes(basicSchema.spec.nodes, 'paragraph block*', 'block');
     this.editorSchema = new Schema({
       nodes,
@@ -59,7 +54,8 @@ export class ProseMirrorService {
     initialMarkdown: string,
     onChange: (md: string) => void
   ): EditorView {
-    const doc = this.parser.parse(initialMarkdown ?? '') ?? this.editorSchema.topNodeType.createAndFill();
+    const doc =
+      this.parser.parse(initialMarkdown ?? '') ?? this.editorSchema.topNodeType.createAndFill();
 
     const listItem = this.editorSchema.nodes['list_item'];
     const bulletList = this.editorSchema.nodes['bullet_list'];

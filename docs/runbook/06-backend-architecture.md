@@ -44,7 +44,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
 | `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
-| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products, trials |
+| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products |
 | `_seed_demo_products` | products | - |
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
@@ -55,7 +55,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
-| `auto_join_demo_tenant_local` | space_members, tenant_members | tenants |
+| `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
 | `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
 | `bulk_update_last_polled` | trials | - |

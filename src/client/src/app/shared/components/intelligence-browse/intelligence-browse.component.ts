@@ -106,8 +106,8 @@ const DRAFTS_LIMIT = 200;
           type="search"
           [ngModel]="query()"
           (ngModelChange)="query.set($event); resetAndLoad()"
-          placeholder="Headline / thesis"
-          aria-label="Search headline or thesis"
+          placeholder="Headline / summary"
+          aria-label="Search headline or summary"
           class="!h-7 w-56 !text-xs"
         />
         <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
@@ -350,11 +350,10 @@ export class IntelligenceBrowseComponent implements OnInit {
       if (sinceDate && new Date(row.updated_at) < sinceDate) return false;
       if (q.length > 0) {
         const headline = row.headline?.toLowerCase() ?? '';
-        const thesis = row.thesis_md?.toLowerCase() ?? '';
-        if (!headline.includes(q) && !thesis.includes(q)) return false;
+        const summary = row.summary_md?.toLowerCase() ?? '';
+        if (!headline.includes(q) && !summary.includes(q)) return false;
       }
       return true;
     });
   }
 }
-

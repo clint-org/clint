@@ -20,10 +20,10 @@ begin
   -- create a published row directly (skip RLS by inserting as superuser via psql)
   insert into public.primary_intelligence (
     space_id, entity_type, entity_id, state, headline,
-    thesis_md, watch_md, implications_md, last_edited_by
+    summary_md, implications_md, last_edited_by
   ) values (
     v_space, 'company', v_entity, 'published', 'Guard test',
-    '', '', '', v_user
+    '', '', v_user
   )
   returning id into v_id;
 

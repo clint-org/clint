@@ -101,8 +101,7 @@ export class PrimaryIntelligenceService {
       p_entity_type: input.entity_type,
       p_entity_id: input.entity_id,
       p_headline: input.headline,
-      p_thesis_md: input.thesis_md,
-      p_watch_md: input.watch_md,
+      p_summary_md: input.summary_md,
       p_implications_md: input.implications_md,
       p_state: input.state,
       p_change_note: input.change_note,
@@ -145,7 +144,6 @@ export class PrimaryIntelligenceService {
       }
     );
   }
-
 
   async withdraw(id: string, changeNote: string): Promise<void> {
     const { error } = await this.supabase.client.rpc('withdraw_primary_intelligence', {

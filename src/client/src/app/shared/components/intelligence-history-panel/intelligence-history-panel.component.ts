@@ -21,7 +21,7 @@ import { renderMarkdownInline } from '../../utils/markdown-render';
 import { diffLinks, LinksDiff } from './links-diff';
 import { foldArchivedEvents, TimelineRow } from './history-timeline';
 
-type VersionSection = 'headline' | 'thesis' | 'watch' | 'implications' | 'links';
+type VersionSection = 'headline' | 'summary' | 'implications' | 'links';
 
 interface DiffSection {
   section: VersionSection;
@@ -133,8 +133,7 @@ export class IntelligenceHistoryPanelComponent {
       field: keyof IntelligenceVersionRow;
     }[] = [
       { key: 'headline', label: 'Headline', field: 'headline' },
-      { key: 'thesis', label: 'Thesis', field: 'thesis_md' },
-      { key: 'watch', label: 'What to watch', field: 'watch_md' },
+      { key: 'summary', label: 'Summary', field: 'summary_md' },
       { key: 'implications', label: 'Implications', field: 'implications_md' },
     ];
     const out: DiffSection[] = [];
@@ -142,7 +141,18 @@ export class IntelligenceHistoryPanelComponent {
       const after = (version[s.field] as string) ?? '';
       if (!after.trim()) continue;
       const before = base ? ((base[s.field] as string) ?? '') : '';
-      const html = base ? renderWordDiff(before, after) : renderMarkdownInline(after);
+      let html: string;
+      if (!base) {
+        html = renderMarkdownInline(after);
+      } else if (s.key === 'headline') {
+        // Headline is plain text, not markdown -- single-line word diff.
+        html = renderWordDiff(before, after);
+      } else {
+        // Markdown fields: parse into blocks (paragraphs, list items) so
+        // bullets and numbered lists render as <ul>/<ol> instead of leaking
+        // their leading "- " / "1." into the diff output as raw text.
+        html = renderBlockDiff(before, after);
+      }
       out.push({ section: s.key, label: s.label, html });
     }
     const links = diffLinks(base?.links ?? null, version.links ?? []);
@@ -229,4 +239,108 @@ function renderWordDiff(before: string, after: string): string {
       return `<span>${text}</span>`;
     })
     .join('');
+}
+
+type MdBlock =
+  | { kind: 'p'; text: string }
+  | { kind: 'ul'; text: string }
+  | { kind: 'ol'; text: string };
+
+function parseMdBlocks(md: string): MdBlock[] {
+  const blocks: MdBlock[] = [];
+  let para: string[] = [];
+  const flushPara = () => {
+    if (para.length) {
+      blocks.push({ kind: 'p', text: para.join(' ') });
+      para = [];
+    }
+  };
+  // Mirror renderMarkdownInline's unescape so backslash-escaped list markers
+  // (legacy editor output) parse as list items here too.
+  const normalized = md.replace(/\\([\\`*_{}[\]()#+\-.!>~|])/g, '$1');
+  for (const raw of normalized.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      flushPara();
+      continue;
+    }
+    const bullet = line.match(/^[-*]\s+(.*)$/);
+    const numbered = line.match(/^\d+\.\s+(.*)$/);
+    if (bullet) {
+      flushPara();
+      blocks.push({ kind: 'ul', text: bullet[1] });
+    } else if (numbered) {
+      flushPara();
+      blocks.push({ kind: 'ol', text: numbered[1] });
+    } else {
+      para.push(line);
+    }
+  }
+  flushPara();
+  return blocks;
+}
+
+/**
+ * Diff two markdown strings as a sequence of block-level units (paragraphs
+ * and list items). Within matching blocks, fall back to word-level diff so
+ * inline edits still highlight. Consecutive list items group into <ul>/<ol>
+ * so leading "- " / "1." markers don't leak into the rendered output.
+ *
+ * Limitations:
+ *   - Block alignment is positional, not Myers-style. Inserting a block in
+ *     the middle re-aligns trailing blocks; rarely-shifted lists still read
+ *     fine since each list item still shows its own added/removed state.
+ *   - Inline bold/italic markers stay as raw text in changed blocks. Pre-
+ *     processing them into <strong>/<em> would require diffing across HTML
+ *     tag boundaries, which produces worse output in practice.
+ */
+function renderBlockDiff(before: string, after: string): string {
+  const a = parseMdBlocks(before);
+  const b = parseMdBlocks(after);
+
+  const segments: { kind: MdBlock['kind']; html: string }[] = [];
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i++) {
+    const bi = a[i];
+    const ai = b[i];
+    if (bi && ai && bi.kind === ai.kind) {
+      segments.push({ kind: ai.kind, html: renderWordDiff(bi.text, ai.text) });
+    } else {
+      if (bi) {
+        segments.push({
+          kind: bi.kind,
+          html: `<del class="text-slate-500 line-through">${escapeHtml(bi.text)}</del>`,
+        });
+      }
+      if (ai) {
+        segments.push({
+          kind: ai.kind,
+          html: `<ins class="bg-brand-100 text-slate-900 no-underline">${escapeHtml(ai.text)}</ins>`,
+        });
+      }
+    }
+  }
+
+  const out: string[] = [];
+  let listTag: 'ul' | 'ol' | null = null;
+  let listItems: string[] = [];
+  const flushList = () => {
+    if (listTag && listItems.length) {
+      out.push(`<${listTag}>${listItems.map((it) => `<li>${it}</li>`).join('')}</${listTag}>`);
+    }
+    listTag = null;
+    listItems = [];
+  };
+  for (const seg of segments) {
+    if (seg.kind === 'ul' || seg.kind === 'ol') {
+      if (listTag !== seg.kind) flushList();
+      listTag = seg.kind;
+      listItems.push(seg.html);
+    } else {
+      flushList();
+      out.push(`<p>${seg.html}</p>`);
+    }
+  }
+  flushList();
+  return out.join('');
 }
