@@ -122,23 +122,23 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Clear button silently resets every filter — including unrelated chips like phase + therapy area + company. A user mid-drill-down loses context with no undo.
 - Affordance: change the Clear button to "Clear filters (N)" showing the active-filter count, and toast on click: `"Filters cleared. Undo"` with a 5s undo affordance that restores the previous filter state.
 
-### 19. Member role change confirms but doesn't name the diff
+### 19. Member role change confirms but doesn't name the diff · done (a14aedb)
 - `src/client/src/app/features/space-settings/space-members.component.ts:364-377` (changeRole)
 - Toast says `"Role updated."` Doesn't tell an owner managing 50 members which permissions they just granted or revoked.
-- Affordance: toast: `"Role updated to {role}. {Name} can now {capability summary}."` Or pre-flight modal showing the diff (gained / lost capabilities).
+- Affordance: toast: `"Role updated to {role}. {Name} can now {capability summary}."` Or pre-flight modal showing the diff (gained / lost capabilities). Took the toast path; capability strings live in a new `ROLE_CAPABILITY_SUMMARY` map next to `ROLE_LABEL`.
 
-### 20. Member removal confirmation doesn't name blast radius
+### 20. Member removal confirmation doesn't name blast radius · done (a14aedb)
 - `src/client/src/app/features/space-settings/space-members.component.ts:379-398` (removeMember)
 - Modal asks "Remove {name} from this space?" Doesn't say what they lose access to or whether their drafts / comments stay.
-- Affordance: enrich confirm copy: `"Remove {name}? They will lose access to all data in this space. Any drafts they own remain attached to their account but become invisible to other members."`
+- Affordance: enrich confirm copy: `"Remove {name}? They will lose access to all data in this space. Any drafts they own remain attached to their account but become invisible to other members."` Implemented via the new `details` slot on `confirmDelete()` (see finding 21).
 
-### 21. Generic delete-confirmation copy doesn't name cascades
-- `src/client/src/app/shared/components/confirm-delete.ts` (used by `company-list`, `asset-list`, `trial-list`)
+### 21. Generic delete-confirmation copy doesn't name cascades · done (2453707)
+- `src/client/src/app/shared/components/confirm-delete.ts` (actual location: `src/client/src/app/shared/utils/confirm-delete.ts`), used by `company-list`, `asset-list`, `trial-list`.
 - Modal says "Delete company. This cannot be undone." Doesn't distinguish whether the cascade unlinks vs deletes child rows.
 - Affordance: add a `details` slot to `confirmDelete()` and pass entity-specific copy:
   - Company: `"Associated assets are unlinked, not deleted. Markers and intelligence remain."`
   - Asset: `"Associated trials are unlinked, not deleted."`
-  - Trial: `"Markers and trial notes are deleted. Intelligence and materials remain but lose their trial link."`
+  - Trial: `"Markers and trial notes are deleted. Intelligence and materials remain but lose their trial link."` Details append to the dialog message as a second sentence; PrimeNG `escape:true` preserved so user-supplied entity names in `message` stay safe.
 
 ### 22. Validation errors are framework-generic
 - forms across `manage/*`, especially trial-create-dialog and marker-form
