@@ -6,7 +6,8 @@ import {
   effect,
   inject,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Tooltip } from 'primeng/tooltip';
 import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
@@ -18,7 +19,13 @@ import { LandscapeStateService } from '../landscape/landscape-state.service';
 @Component({
   selector: 'app-catalysts-page',
   standalone: true,
-  imports: [ManagePageShellComponent, GridToolbarComponent, CatalystTableComponent],
+  imports: [
+    ManagePageShellComponent,
+    GridToolbarComponent,
+    CatalystTableComponent,
+    RouterLink,
+    Tooltip,
+  ],
   templateUrl: './catalysts-page.component.html',
   styles: [
     `
@@ -65,6 +72,13 @@ export class CatalystsPageComponent {
   });
 
   readonly flatCatalysts = this.grid.filteredRows(computed(() => this.state.filteredCatalysts()));
+
+  readonly markersHelpLink = computed<string[] | null>(() => {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId');
+    const spaceId = this.route.snapshot.paramMap.get('spaceId');
+    if (!tenantId || !spaceId) return null;
+    return ['/t', tenantId, 's', spaceId, 'help', 'markers'];
+  });
 
   readonly categoryOptions = computed(() =>
     this.uniqueOptions(this.state.filteredCatalysts(), (c) => c.category_name)
