@@ -68,7 +68,7 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 
 ## P1 — first-touch, causes confusion
 
-### 9. Two divergent definitions of "space" in the same component
+### 9. Two divergent definitions of "space" in the same component · done (1a8fb3e)
 - `src/client/src/app/features/spaces/space-list.component.ts:48-50` vs `:99-102`
 - The empty state defines a space well: `"Each space is a firewalled engagement scoped to a domain..."`. The create-space dialog re-defines it generically: `"A space is a workspace for organizing and visualizing a set of clinical trials..."`. Same user, same component, two definitions in one session.
 - Affordance: reuse the empty-state copy in the dialog. Pick one canonical definition for the space concept and use it everywhere.
@@ -78,10 +78,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - `Y / Q / M / D` is dense but opaque to day-1 users.
 - Affordance: `pTooltip` per option ("Yearly", "Quarterly", "Monthly", "Daily"). Keep the single-letter labels — they fit the data-instrument feel.
 
-### 11. Marker legend exists but only at the bottom of the timeline
+### 11. Marker legend exists but only at the bottom of the timeline · done (ee51137) · engagement-landing markers link open
 - `src/client/src/app/features/landscape/timeline-view.component.html` (legend lives in `legend.component.html:106-123`)
 - Day-1 users see the marker dots before they reach the legend. A `/help/markers` page exists but isn't surfaced near the data.
-- Affordance: small `?` icon in the timeline header that links to `/help/markers`. Repeat the pattern wherever markers render (engagement-landing if it shows markers, future-catalysts table).
+- Affordance: small `?` icon in the timeline header that links to `/help/markers`. Repeat the pattern wherever markers render (engagement-landing if it shows markers, future-catalysts table). Catalysts page now carries the "Markers ?" affordance next to the subtitle. The legend on the timeline already carries the same link (commit fc25781 / earlier). Engagement-landing "Next 90 days" widget still renders markers without a help affordance; treat that as a follow-up.
 
 ### 12. Activity page header gives no concept of "activity" · done (88df673)
 - `src/client/src/app/features/engagement-activity/engagement-activity-page.component.html:4-9`
@@ -108,10 +108,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - The button maps `moa+ta` to `by-therapy-area` (not `by-moa`). User clicks expecting MOA, sees TA, backs out.
 - Affordance: `pTooltip` on the button that names the target dimension explicitly: `"Open in Bullseye — grouped by Therapy area"` (dynamic per current grouping).
 
-### 17. Field visibility settings page lacks framing
+### 17. Field visibility settings page lacks framing · done (e44ea0c)
 - `src/client/src/app/features/space-settings/space-field-visibility-settings.component.html:4-5`
 - Title `Field visibility` + subtitle `Choose which CT.gov fields appear on each surface.` doesn't explain what a "surface" is or which fields are scoped to this control.
-- Affordance: expand to `"Choose which CT.gov trial fields appear on each page in this space — trial list, trial detail, timeline. Changes save on confirm and apply for every member."` Add a preview affordance (next item).
+- Affordance: expand to `"Choose which CT.gov trial fields appear on each page in this space — trial list, trial detail, timeline. Changes save on confirm and apply for every member."` Add a preview affordance (next item). Implemented with a colon instead of an em-dash per the project's writing convention.
 
 ---
 
