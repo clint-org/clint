@@ -97,8 +97,9 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     >
       <form (ngSubmit)="createSpace()" class="space-y-4">
         <p class="text-xs text-slate-500">
-          A space is a workspace for organizing and visualizing a set of clinical trials -- for
-          example, by therapeutic area or competitive landscape.
+          A space is a firewalled engagement scoped to a domain: a therapy area, an asset class, a
+          client team. Pipelines, catalysts, and portfolio reads all live inside, with their own
+          members and data.
         </p>
         <div>
           <label for="space-name" class="mb-1 block text-sm font-medium text-slate-700">
