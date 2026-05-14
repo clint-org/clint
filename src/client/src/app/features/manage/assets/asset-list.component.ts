@@ -224,6 +224,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete asset',
       message: `Delete "${asset.name}"? This cannot be undone.`,
+      details: 'Associated trials are unlinked, not deleted.',
     });
     if (!ok) return;
 

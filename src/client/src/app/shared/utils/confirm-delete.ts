@@ -15,6 +15,14 @@ import { ConfirmationService } from 'primeng/api';
 export interface ConfirmDeleteOptions {
   readonly header: string;
   readonly message: string;
+  /**
+   * Optional second sentence describing cascade behavior, blast radius, or
+   * any data the user might assume is lost but isn't (and vice versa).
+   * Appended to `message` so the dialog renders both as a single
+   * paragraph. Keep escape:true so user-controlled values in `message`
+   * are not interpreted as HTML.
+   */
+  readonly details?: string;
   readonly acceptLabel?: string;
   readonly rejectLabel?: string;
 }
@@ -26,7 +34,7 @@ export function confirmDelete(
   return new Promise((resolve) => {
     confirmation.confirm({
       header: options.header,
-      message: options.message,
+      message: options.details ? `${options.message} ${options.details}` : options.message,
       icon: 'fa-solid fa-triangle-exclamation',
       acceptLabel: options.acceptLabel ?? 'Delete',
       rejectLabel: options.rejectLabel ?? 'Cancel',

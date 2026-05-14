@@ -294,6 +294,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete trial',
       message: `Delete "${trial.name}"? This cannot be undone.`,
+      details:
+        'Markers and trial notes are deleted. Intelligence and materials remain but lose their trial link.',
     });
     if (!ok) return;
     this.error.set(null);

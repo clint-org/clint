@@ -209,6 +209,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete company',
       message: `Delete "${company.name}"? This cannot be undone.`,
+      details: 'Associated assets are unlinked, not deleted. Markers and intelligence remain.',
     });
     if (!ok) return;
 
