@@ -45,10 +45,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - Same field accepts both an 8-char tenant code and a 32-char hex space code. Error on mismatch is generic ("Invalid or expired invite code"). First-time user doesn't know which they have.
 - Affordance: under the input, a one-line hint: `"Paste the code from your invite email. Tenant codes are 8 characters; space codes are longer."` Make the error message route-aware: distinguish "not found" from "expired" from "wrong scope (tenant code on a space invite or vice versa)."
 
-### 6. Engagement-landing intelligence empty state names no actor
+### 6. Engagement-landing intelligence empty state names no actor · done (ec29d69) · named-individual contact still open
 - `src/client/src/app/features/engagement-landing/engagement-landing.component.html:230-239`
 - Copy says reads "will appear here" once the agency publishes. It does not tell a pharma-client analyst who to ask or how their agency is wired in.
-- Affordance: add a second sentence: `"Reach out to your agency lead or check the activity feed for in-progress drafts."` If the agency contact is queryable (`tenant_members` with `role='owner'`), surface their name inline.
+- Affordance: add a second sentence: `"Reach out to your agency lead or check the activity feed for in-progress drafts."` If the agency contact is queryable (`tenant_members` with `role='owner'`), surface their name inline. Implemented the second sentence with the agency name pulled from `BrandContextService.agency()` (e.g. "Reach out to your Stout lead or check the activity feed..."), and linked "activity feed" to the activity route. Named-individual contact via `tenant_members.role='owner'` deferred -- requires an RPC.
 
 ---
 
@@ -93,20 +93,20 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - The filter exists but each row doesn't carry a source badge explaining which entries came from where.
 - Affordance: row badge or column for source, with `pTooltip` on the header: `"CT.gov: automated polling detects trial metadata changes. Analyst: manual entries by team members."` Per-row pill (`CT.gov` / agency-name) already rendered; it now carries a per-row tooltip ("Automated polling of ClinicalTrials.gov" or "Manual entry by a team member"), and the filter-side `Source` label gains a `?` affordance with the full two-sentence gloss.
 
-### 14. Materials filter chips use the literal database enum values
+### 14. Materials filter chips use the literal database enum values · stale at audit time
 - `src/client/src/app/features/materials-browse/materials-browse-page.component.ts` (template chip filters)
 - Chips show `briefing`, `conference_report`, `ad_hoc`, `priority_notice` and entity types `trial`, `marker`, `company`, `asset`, `engagement` — raw enum casing.
-- Affordance: humanize the labels in the filter options (`Briefing`, `Conference report`, `Priority notice`, `Ad hoc`). The database column can stay snake_case; the display label should not be it.
+- Affordance: humanize the labels in the filter options (`Briefing`, `Conference report`, `Priority notice`, `Ad hoc`). The database column can stay snake_case; the display label should not be it. Already implemented before this audit: type chips read from `MATERIAL_TYPE_LABEL` ("Briefing", "Conference report", "Priority notice", "Ad hoc"), entity chips hard-code "Trial", "Marker", "Company", "Asset", "Engagement". Snake values appear only as filter `value` payloads, never as visible labels.
 
-### 15. Onboarding page header reads as create-flow, not join-flow
+### 15. Onboarding page header reads as create-flow, not join-flow · done (e079292)
 - `src/client/src/app/features/onboarding/onboarding.component.ts:42-46`
 - Label is `Welcome`. Header is `headerTitle()`. A first-touch user, especially on the apex domain, can read it as "set up your workspace" rather than "redeem an invite."
 - Affordance: change the uppercase label from `Welcome` to `Accept invite`. Keep the header dynamic.
 
-### 16. "Open in bullseye" mapping is non-obvious
+### 16. "Open in bullseye" mapping is non-obvious · done (f5b02e0)
 - `src/client/src/app/features/landscape/positioning-view.component.ts:210-219`
 - The button maps `moa+ta` to `by-therapy-area` (not `by-moa`). User clicks expecting MOA, sees TA, backs out.
-- Affordance: `pTooltip` on the button that names the target dimension explicitly: `"Open in Bullseye — grouped by Therapy area"` (dynamic per current grouping).
+- Affordance: `pTooltip` on the button that names the target dimension explicitly: `"Open in Bullseye — grouped by Therapy area"` (dynamic per current grouping). Implemented with a comma instead of an em-dash per project writing convention; tooltip lives on the button in `positioning-detail-panel.component.ts` (where the button actually renders) and reads dimension names from a `BULLSEYE_TARGET_LABEL` map that mirrors `positioning-view.bullseyeSegment()`.
 
 ### 17. Field visibility settings page lacks framing · done (e44ea0c)
 - `src/client/src/app/features/space-settings/space-field-visibility-settings.component.html:4-5`
