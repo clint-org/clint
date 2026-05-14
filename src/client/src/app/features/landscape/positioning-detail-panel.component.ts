@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
   PositioningBubble,
@@ -23,6 +24,20 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
   roa: 'ROA group',
 };
 
+/**
+ * Bullseye destination per positioning grouping. Mirrors
+ * `positioning-view.bullseyeSegment()`. The `moa+therapeutic-area` row
+ * intentionally drops MOA and lands on Therapy area; the tooltip names
+ * the resolved dimension so the user can predict the navigation.
+ */
+const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
+  moa: 'mechanism of action',
+  'therapeutic-area': 'therapy area',
+  'moa+therapeutic-area': 'therapy area',
+  company: 'company',
+  roa: 'route of administration',
+};
+
 @Component({
   selector: 'app-positioning-detail-panel',
   standalone: true,
@@ -33,6 +48,7 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
     DetailPanelPhaseRaceComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
+    Tooltip,
   ],
   template: `
     <app-detail-panel-shell
@@ -110,6 +126,8 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
           <button
             type="button"
             class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            [pTooltip]="openInBullseyeTooltip()"
+            tooltipPosition="top"
             (click)="openInBullseye.emit()"
           >
             Open in bullseye
@@ -133,6 +151,10 @@ export class PositioningDetailPanelComponent {
 
   readonly headerLabel = computed(() =>
     this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Positioning · overview'
+  );
+
+  readonly openInBullseyeTooltip = computed(
+    () => `Open in Bullseye, grouped by ${BULLSEYE_TARGET_LABEL[this.grouping()]}`
   );
 
   readonly fullLabel = computed(() => {
