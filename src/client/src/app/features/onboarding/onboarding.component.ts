@@ -40,7 +40,7 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
             <app-clint-logo [size]="48" />
           }
           <p class="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-            Welcome
+            Accept invite
           </p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
             {{ headerTitle() }}
