@@ -197,10 +197,13 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.extractRouteParams();
-    this.syncStateFromUrl();
 
-    // Restore persisted landscape state from sessionStorage.
+    // Restore persisted landscape state before reading the URL. restorePersistedState()
+    // writes positioningGrouping, so syncStateFromUrl() must run after it to ensure
+    // the URL wins — otherwise a fresh load of /positioning/by-X shows whichever
+    // grouping was in sessionStorage as active, and clicking the URL's tab no-ops.
     this.state.init(this.spaceId());
+    this.syncStateFromUrl();
 
     // Deep-link query params override restored session state
     // (e.g. bullseye "Open in Timeline" links).
