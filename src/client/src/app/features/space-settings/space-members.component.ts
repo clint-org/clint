@@ -38,6 +38,17 @@ const ROLE_LABEL: Record<SpaceRole, string> = {
   viewer: 'Reader',
 };
 
+/**
+ * One-line capability summary per role, used in the role-change success
+ * toast so an owner managing many members can verify what they just
+ * granted or revoked without consulting /help/roles.
+ */
+const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
+  owner: 'manage members, settings, and delete the space',
+  editor: 'edit trials, markers, intelligence, and materials',
+  viewer: 'read trials, markers, intelligence, and materials',
+};
+
 @Component({
   selector: 'app-space-members',
   standalone: true,
@@ -365,7 +376,13 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     try {
       await this.spaceService.updateMemberRole(this.spaceId, member.user_id, newRole);
       await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Role updated.', life: 3000 });
+      const who = member.display_name ?? member.email;
+      this.messageService.add({
+        severity: 'success',
+        summary: `Role updated to ${ROLE_LABEL[newRole]}.`,
+        detail: `${who} can now ${ROLE_CAPABILITY_SUMMARY[newRole]}.`,
+        life: 5000,
+      });
     } catch (e) {
       this.messageService.add({
         severity: 'error',
@@ -380,6 +397,8 @@ export class SpaceMembersComponent implements OnInit, OnDestroy {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Remove member',
       message: `Remove ${member.display_name ?? member.email} from this space?`,
+      details:
+        'They will lose access to all data in this space. Any drafts they own remain attached to their account but become invisible to other members.',
       acceptLabel: 'Remove',
     });
     if (!ok) return;
