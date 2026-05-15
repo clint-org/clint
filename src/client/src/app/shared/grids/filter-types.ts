@@ -52,6 +52,14 @@ export interface GridConfig<T> {
   defaultPageSize?: number;
   /** Default [10, 25, 50, 100]. */
   pageSizeOptions?: number[];
+  /**
+   * When set, grid state (filters + sort + page + global search) persists to
+   * `localStorage`, scoped by tenant + space. Storage key format:
+   * `grid:{tenantId}:{spaceId}:{persistenceKey}`. URL params always win on
+   * page load; localStorage is only consulted when the URL has no grid
+   * params, so deep links remain authoritative.
+   */
+  persistenceKey?: string;
 }
 
 /**
@@ -82,6 +90,14 @@ export interface GridState<T> {
   readonly activeFilters: Signal<ActiveFilterChip[]>;
   readonly isFiltered: Signal<boolean>;
   readonly totalRecords: Signal<number>;
+  /** Length of the raw input rows (pre-filter, pre-page). 0 until filteredRows() is wired. */
+  readonly rawTotal: Signal<number>;
+  /**
+   * True if any state diverges from defaults: search text, filters, sort, or
+   * a non-first page. Templates can use this to show a `Reset to defaults`
+   * affordance.
+   */
+  readonly isDirty: Signal<boolean>;
 
   filteredRows: (raw: Signal<T[]>) => Signal<T[]>;
 
@@ -93,4 +109,6 @@ export interface GridState<T> {
 
   clearAll: () => void;
   clearFilter: (field: string) => void;
+  /** Clears filters, sort, page, and search back to defaults; also wipes persisted state. */
+  resetToDefaults: () => void;
 }

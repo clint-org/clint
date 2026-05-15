@@ -174,6 +174,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     globalSearchFields: ['title', 'category_name', 'entity_name', 'company_name'],
     defaultSort: { field: 'event_date', order: -1 },
     defaultPageSize: 25,
+    persistenceKey: 'events',
   });
 
   readonly visibleRows = this.grid.filteredRows(this.feedItems);

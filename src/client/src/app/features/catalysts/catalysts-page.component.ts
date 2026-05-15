@@ -69,6 +69,7 @@ export class CatalystsPageComponent {
     globalSearchFields: ['title', 'company_name', 'product_name', 'category_name'],
     defaultSort: { field: 'event_date', order: 1 },
     defaultPageSize: 10000,
+    persistenceKey: 'catalysts',
   });
 
   readonly flatCatalysts = this.grid.filteredRows(computed(() => this.state.filteredCatalysts()));

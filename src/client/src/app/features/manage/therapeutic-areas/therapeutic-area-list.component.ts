@@ -85,6 +85,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
     ],
     globalSearchFields: ['name', 'abbreviation'],
     defaultSort: { field: 'name', order: 1 },
+    persistenceKey: 'manage-therapeutic-areas',
   });
 
   readonly visibleAreas = this.grid.filteredRows(this.areas);

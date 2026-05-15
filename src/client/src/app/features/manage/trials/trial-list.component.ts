@@ -222,6 +222,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       'trial.status',
     ],
     defaultSort: { field: 'trial.name', order: 1 },
+    persistenceKey: 'manage-trials',
   });
 
   readonly visibleRows = this.grid.filteredRows(this.rows);

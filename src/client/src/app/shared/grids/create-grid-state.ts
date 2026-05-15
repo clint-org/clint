@@ -32,9 +32,24 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
   const defaultPage = { first: 0, rows: defaultPageSize };
   const initialSort = config.defaultSort ?? null;
 
+  // --- persistence (localStorage scoped by tenant + space) ------------------
+  const storageKey = computeStorageKey(route, config.persistenceKey);
+
   // --- decode initial state from URL ----------------------------------------
   const initialParams = paramsMapFromSnapshot(route.snapshot.queryParamMap);
   let initial: FilterState = decodeFilterState(initialParams, config.columns, { defaultPage });
+
+  // If the URL didn't carry any grid state, fall back to persisted state.
+  // Deep-link cases (URL has grid params) always win.
+  const urlIsCleanForGrid =
+    initial.globalSearch === '' &&
+    Object.keys(initial.filters).length === 0 &&
+    initial.sort === null &&
+    initial.page.first === 0;
+  if (urlIsCleanForGrid && storageKey) {
+    const persisted = readPersisted(storageKey);
+    if (persisted) initial = persisted;
+  }
 
   // Apply default sort if URL didn't specify one.
   if (!initial.sort && initialSort) {
@@ -77,6 +92,21 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
       queryParams: encoded,
       replaceUrl: true,
     });
+  });
+
+  // --- localStorage persistence effect --------------------------------------
+  // Mirrors the current state to localStorage on every change so power users
+  // who navigate away and come back land on the same filter / sort / page
+  // they left, even when the URL has been replaced.
+  effect(() => {
+    if (!storageKey) return;
+    const state: FilterState = {
+      globalSearch: debouncedGlobalSearch(),
+      filters: filters(),
+      sort: sort(),
+      page: page(),
+    };
+    writePersisted(storageKey, state);
   });
 
   // --- derived state --------------------------------------------------------
@@ -156,6 +186,17 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
   };
 
   const totalRecords: Signal<number> = computed(() => applyAllResult().total);
+  const rawTotal: Signal<number> = computed(() => rawRowsSignal?.()?.length ?? 0);
+
+  const isDirty: Signal<boolean> = computed(() => {
+    if (debouncedGlobalSearch() !== '') return true;
+    if (Object.keys(filters()).length > 0) return true;
+    if (!sortsEqual(sort(), initialSort)) return true;
+    const p = page();
+    if (p.first !== 0) return true;
+    if (p.rows !== defaultPageSize) return true;
+    return false;
+  });
 
   // Clamp page.first if it's out of range for the current filtered total.
   // E.g., user deletes a row or loads a URL with page=9 on a small dataset.
@@ -229,6 +270,26 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     page.update((p) => ({ first: 0, rows: p.rows }));
   }
 
+  /**
+   * Strong reset: filters, sort, page, search all go back to component
+   * defaults; persisted state is wiped. Used by the toolbar's "Reset to
+   * defaults" affordance. clearAll() only touches filters + search.
+   */
+  function resetToDefaults(): void {
+    globalSearch.set('');
+    debouncedGlobalSearch.set('');
+    filters.set({});
+    sort.set(initialSort);
+    page.set({ first: 0, rows: defaultPageSize });
+    if (storageKey) {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // localStorage may be unavailable (private browsing, quota); ignore.
+      }
+    }
+  }
+
   function clearFilter(field: string): void {
     if (field === GLOBAL_SEARCH_CHIP_FIELD) {
       globalSearch.set('');
@@ -252,12 +313,15 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     activeFilters,
     isFiltered,
     totalRecords,
+    rawTotal,
+    isDirty,
     filteredRows,
     onLazyLoad,
     onGlobalSearchInput,
     primengFilters,
     clearAll,
     clearFilter,
+    resetToDefaults,
   };
 }
 
@@ -300,6 +364,61 @@ function formatFilterLabel<T>(col: ColumnDef<T>, value: FilterValue): string {
       return value.op === 'eq' ? String(value.value) : `${value.op} ${value.value}`;
     case 'date':
       return `${value.from ?? ''} \u2013 ${value.to ?? ''}`;
+  }
+}
+
+function sortsEqual(
+  a: { field: string; order: 1 | -1 } | null,
+  b: { field: string; order: 1 | -1 } | null
+): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return a.field === b.field && a.order === b.order;
+}
+
+/** Walks up the route chain looking for a route param (e.g. tenantId/spaceId). */
+function findRouteParam(route: ActivatedRoute, name: string): string | null {
+  let cur: ActivatedRoute | null = route;
+  while (cur) {
+    const v = cur.snapshot.paramMap.get(name);
+    if (v) return v;
+    cur = cur.parent;
+  }
+  return null;
+}
+
+function computeStorageKey(
+  route: ActivatedRoute,
+  persistenceKey: string | undefined
+): string | null {
+  if (!persistenceKey) return null;
+  const tenantId = findRouteParam(route, 'tenantId');
+  const spaceId = findRouteParam(route, 'spaceId');
+  if (!tenantId || !spaceId) return null;
+  return `grid:${tenantId}:${spaceId}:${persistenceKey}`;
+}
+
+function readPersisted(storageKey: string): FilterState | null {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const p = parsed as Partial<FilterState>;
+    if (typeof p.globalSearch !== 'string') return null;
+    if (!p.filters || typeof p.filters !== 'object') return null;
+    if (!p.page || typeof p.page !== 'object') return null;
+    return parsed as FilterState;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(storageKey: string, state: FilterState): void {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  } catch {
+    // localStorage may be unavailable (private browsing, quota); ignore.
   }
 }
 

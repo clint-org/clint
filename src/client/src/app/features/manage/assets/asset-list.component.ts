@@ -126,6 +126,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     ],
     globalSearchFields: ['asset.name', 'asset.generic_name', 'companyName'],
     defaultSort: { field: 'asset.display_order', order: 1 },
+    persistenceKey: 'manage-assets',
   });
 
   readonly visibleRows = this.grid.filteredRows(this.rows);

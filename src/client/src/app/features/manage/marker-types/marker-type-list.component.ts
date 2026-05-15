@@ -97,6 +97,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     ],
     globalSearchFields: ['name', 'shape', 'fill_style'],
     defaultSort: { field: 'name', order: 1 },
+    persistenceKey: 'manage-marker-types',
   });
 
   readonly visibleTypes = this.grid.filteredRows(this.markerTypes);

@@ -91,6 +91,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     ],
     globalSearchFields: ['name'],
     defaultSort: { field: 'display_order', order: 1 },
+    persistenceKey: 'manage-companies',
   });
 
   readonly visibleCompanies = this.grid.filteredRows(this.companies);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -16,7 +17,14 @@ import type { GridState } from '../grids/filter-types';
   selector: 'app-grid-toolbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonModule, IconFieldModule, InputIconModule, InputTextModule],
+  imports: [
+    DecimalPipe,
+    FormsModule,
+    ButtonModule,
+    IconFieldModule,
+    InputIconModule,
+    InputTextModule,
+  ],
   template: `
     <div class="grid-toolbar mb-3">
       <div class="flex items-center gap-3">
@@ -41,16 +49,41 @@ import type { GridState } from '../grids/filter-types';
           />
         </p-iconfield>
 
-        <p-button
-          label="Clear all"
-          severity="secondary"
-          [text]="true"
-          size="small"
-          [styleClass]="searchAlignment() === 'end' ? '' : 'ml-auto'"
-          [disabled]="!state().isFiltered()"
-          (onClick)="state().clearAll()"
-          [attr.aria-label]="'Clear all filters'"
-        />
+        <div
+          class="flex items-center gap-3"
+          [class.ml-auto]="searchAlignment() !== 'end'"
+        >
+          @if (state().isFiltered() && state().rawTotal() > 0) {
+            <span
+              class="font-mono text-[11px] tabular-nums text-slate-500"
+              aria-live="polite"
+            >
+              Showing {{ state().totalRecords() | number }} of
+              {{ state().rawTotal() | number }}
+            </span>
+          }
+
+          @if (state().isDirty()) {
+            <button
+              type="button"
+              class="font-mono text-[11px] uppercase tracking-[0.08em] text-slate-400 hover:text-slate-700 focus:outline-none focus:underline focus:underline-offset-2"
+              (click)="state().resetToDefaults()"
+              aria-label="Reset filters, sort, and page to defaults"
+            >
+              Reset to defaults
+            </button>
+          }
+
+          <p-button
+            [label]="clearLabel()"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            [disabled]="!state().isFiltered()"
+            (onClick)="state().clearAll()"
+            [attr.aria-label]="clearLabel() + ' (filters only)'"
+          />
+        </div>
       </div>
 
       @if (state().activeFilters().length > 0) {
@@ -82,6 +115,11 @@ export class GridToolbarComponent {
   readonly state = input.required<GridState<any>>();
   readonly searchPlaceholder = input<string>('Search...');
   readonly searchAlignment = input<'start' | 'end'>('start');
+
+  protected readonly clearLabel = computed(() => {
+    const n = this.state().activeFilters().length;
+    return n > 0 ? `Clear filters (${n})` : 'Clear filters';
+  });
 
   onSearchInput(value: string): void {
     this.state().onGlobalSearchInput(value);
