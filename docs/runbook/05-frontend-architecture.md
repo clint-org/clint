@@ -571,13 +571,13 @@ All five manage-section list pages (companies, assets, trials, therapeutic-areas
 
 - `src/client/src/app/shared/grids/create-grid-state.ts` — a factory called from inside a component that owns filter/sort/page signals, encodes and decodes URL query params, and exposes `filteredRows(raw)` as a projection. Must be called in an Angular injection context (component field initializer or constructor). Uses `inject(ActivatedRoute, Router)` internally.
 - `src/client/src/app/shared/grids/url-codec.ts` and `filter-algebra.ts` — pure modules (no Angular imports) that the factory composes. Fully tested in `e2e/tests/grid-url-codec.spec.ts` and `e2e/tests/grid-filter-algebra.spec.ts` as Playwright pure-function specs that run via `npm run test:unit` with no browser or Supabase needed.
-- `src/client/src/app/shared/components/grid-toolbar.component.ts` — presenter that renders the slim toolbar (global search + active-filter chips + clear-all). Takes the grid state as its only required input.
+- `src/client/src/app/shared/components/grid-toolbar.component.ts` — presenter that renders the slim toolbar: global search, active-filter chips, `Clear filters (N)` (count appended when filters are active), a `Showing X of Y` indicator when filtered, and a `Reset to defaults` link when `grid.isDirty()`. Takes the grid state as its only required input.
 
 **Wiring a new grid:**
 
 1. Declare a view-model interface for the row (decorated with any join data the grid displays).
 2. Build a `rows` computed signal that produces the decorated view-models — no filtering, sorting, or paging in here.
-3. Call `createGridState<RowType>({ columns, globalSearchFields, defaultSort? })` as a component field. Declare filterable columns via `ColumnDef`, specifying filter kind (`text`, `select`, `numeric`, `date`) per column.
+3. Call `createGridState<RowType>({ columns, globalSearchFields, defaultSort?, persistenceKey? })` as a component field. Declare filterable columns via `ColumnDef`, specifying filter kind (`text`, `select`, `numeric`, `date`) per column. Pass a stable `persistenceKey` (kebab-case slug, e.g. `'manage-trials'`) to opt into localStorage persistence — see "Grid state persistence" below.
 4. Create `visibleRows = this.grid.filteredRows(this.rows)` and bind it to `<p-table [value]="visibleRows()">`.
 5. On `<p-table>`, set `[lazy]="true"`, `(onLazyLoad)="grid.onLazyLoad($any($event))"`, `[paginator]="true"`, `[rows]="grid.page().rows"`, `[first]="grid.page().first"`, `[totalRecords]="grid.totalRecords()"`, `[rowsPerPageOptions]="[10, 25, 50, 100]"`, `[filters]="grid.primengFilters()"`.
 6. Add `<app-grid-toolbar [state]="grid" searchPlaceholder="..." />` above the table inside `<app-manage-page-shell>`.
@@ -586,6 +586,13 @@ All five manage-section list pages (companies, assets, trials, therapeutic-areas
 9. Inject `TopbarStateService` and use an `effect()` to sync `topbarState.recordCount.set(String(grid.totalRecords() || ''))`. Set page-specific action buttons in `ngOnInit` and call `topbarState.clear()` in `ngOnDestroy`.
 
 **URL schema:** `?q=<text>&filter.<field>=<value>&sort=[-]<field>&page=<n>&pageSize=<n>`. See the design spec at `docs/superpowers/specs/2026-04-11-grid-filtering-design.md` for the full encoding rules, numeric operator syntax, and date range syntax.
+
+**Grid state persistence:** when a grid passes `persistenceKey` to `createGridState`, the full grid state (filters + sort + page + global search) mirrors to `localStorage` on every change. Storage key format: `grid:{tenantId}:{spaceId}:{persistenceKey}`. URL params always win on page load — localStorage is only consulted when the URL has no grid params, so deep links remain authoritative. The toolbar's `Reset to defaults` link clears the in-memory state and removes the localStorage entry. `tenantId` and `spaceId` are read from the route's parent chain via `paramMap`; if either is missing, persistence is silently disabled (no localStorage writes). All seven existing grids pass `persistenceKey`; new grids should follow suit.
+
+`GridState` exposes three signals that drive the toolbar:
+- `totalRecords()` — post-filter row count (excludes pagination).
+- `rawTotal()` — pre-filter row count (length of the raw signal wired via `filteredRows(raw)`).
+- `isDirty()` — true when any state diverges from defaults (search, filters, sort other than `defaultSort`, page > 0, or non-default page size). Gates the `Reset to defaults` link.
 
 **Deep-linking into a filtered grid:** consumers that navigate *into* a grid with specific filters pre-applied (e.g., `company-list::openAssets(id)` landing on a pre-filtered assets grid) use `buildFilterQueryParams` from `shared/grids`. Do not hand-roll query params. The helper accepts a `Record<string, FilterValue>` and returns the query-param object to pass to `router.navigate(..., { queryParams })`. Consumers must know the target grid's filterable field names (e.g., `asset.company_id`, `trial.product_id`) — see the per-grid column list in the spec for the public deep-link fields.
 
