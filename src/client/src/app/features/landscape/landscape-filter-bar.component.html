@@ -241,15 +241,49 @@
 
       @if (hasAnyActive()) {
         <p-button
-          label="Clear"
+          [label]="'Clear filters (' + activeFilterCount() + ')'"
           severity="secondary"
           [text]="true"
           size="small"
           (onClick)="clearAll()"
+          [attr.aria-label]="
+            'Clear ' + activeFilterCount() + ' active filter' + (activeFilterCount() === 1 ? '' : 's')
+          "
         />
       }
     }
   </div>
+
+  <!--
+    Keyed toast for the "Filters cleared. Undo" affordance (audit #18).
+    Lives next to the filter bar (not in app.component) so the custom
+    template + Undo handler stay scoped to this component. Auto-dismisses
+    after the 5s undo window expires (life is set in clearAll()).
+  -->
+  <p-toast
+    [key]="undoToastKey"
+    position="bottom-center"
+    [showTransformOptions]="'translateY(100%)'"
+    [hideTransformOptions]="'translateY(100%)'"
+    [showTransitionOptions]="'250ms cubic-bezier(0.25, 1, 0.5, 1)'"
+    [hideTransitionOptions]="'180ms ease-in'"
+  >
+    <ng-template let-message pTemplate="message">
+      <div class="flex w-full items-center gap-3">
+        <div class="flex flex-col">
+          <span class="text-sm font-medium text-slate-900">{{ message.summary }}</span>
+          <span class="text-xs text-slate-500">{{ message.detail }}</span>
+        </div>
+        <button
+          type="button"
+          class="ml-auto inline-flex items-center rounded-sm border border-brand-600 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          (click)="undoClear()"
+        >
+          Undo
+        </button>
+      </div>
+    </ng-template>
+  </p-toast>
 
   @if (activeChips().length > 0) {
     <div

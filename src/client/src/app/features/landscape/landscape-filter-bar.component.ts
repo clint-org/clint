@@ -9,11 +9,13 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Toast } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
 
 import {
@@ -48,7 +50,16 @@ interface FilterChip {
 @Component({
   selector: 'app-landscape-filter-bar',
   standalone: true,
-  imports: [FormsModule, MultiSelect, Select, ButtonModule, SelectButton, ProgressSpinner, Tooltip],
+  imports: [
+    FormsModule,
+    MultiSelect,
+    Select,
+    ButtonModule,
+    SelectButton,
+    ProgressSpinner,
+    Toast,
+    Tooltip,
+  ],
   templateUrl: './landscape-filter-bar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -59,7 +70,13 @@ export class LandscapeFilterBarComponent implements OnInit {
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
   private readonly markerCategoryService = inject(MarkerCategoryService);
+  private readonly messageService = inject(MessageService);
   readonly state = inject(LandscapeStateService);
+
+  private static readonly UNDO_TOAST_KEY = 'landscape-filter-undo';
+  private static readonly UNDO_WINDOW_MS = 5000;
+  private undoTimer: ReturnType<typeof setTimeout> | null = null;
+  private undoSnapshot: LandscapeFilters | null = null;
 
   readonly spaceId = input.required<string>();
   readonly viewMode = input<ViewMode>('timeline');
@@ -168,6 +185,11 @@ export class LandscapeFilterBarComponent implements OnInit {
     );
   });
 
+  /** Active-filter count for the "Clear filters (N)" button. Sum of all chip-bearing fields. */
+  readonly activeFilterCount = computed(() => this.activeChips().length);
+
+  protected readonly undoToastKey = LandscapeFilterBarComponent.UNDO_TOAST_KEY;
+
   async ngOnInit(): Promise<void> {
     const sid = this.spaceId();
     if (!sid) {
@@ -209,6 +231,47 @@ export class LandscapeFilterBarComponent implements OnInit {
   }
 
   clearAll(): void {
+    const before = this.state.filters();
+    // Deep-ish clone: spread arrays so the undo snapshot is isolated.
+    this.undoSnapshot = {
+      companyIds: [...before.companyIds],
+      assetIds: [...before.assetIds],
+      trialIds: [...before.trialIds],
+      therapeuticAreaIds: [...before.therapeuticAreaIds],
+      mechanismOfActionIds: [...before.mechanismOfActionIds],
+      routeOfAdministrationIds: [...before.routeOfAdministrationIds],
+      phases: [...before.phases],
+      recruitmentStatuses: [...before.recruitmentStatuses],
+      studyTypes: [...before.studyTypes],
+      markerCategoryIds: [...before.markerCategoryIds],
+    };
     this.state.filters.set({ ...EMPTY_LANDSCAPE_FILTERS });
+
+    this.messageService.clear(LandscapeFilterBarComponent.UNDO_TOAST_KEY);
+    this.messageService.add({
+      key: LandscapeFilterBarComponent.UNDO_TOAST_KEY,
+      severity: 'success',
+      summary: 'Filters cleared',
+      detail: 'Click Undo to restore.',
+      life: LandscapeFilterBarComponent.UNDO_WINDOW_MS,
+    });
+
+    if (this.undoTimer !== null) clearTimeout(this.undoTimer);
+    this.undoTimer = setTimeout(() => {
+      this.undoSnapshot = null;
+      this.undoTimer = null;
+    }, LandscapeFilterBarComponent.UNDO_WINDOW_MS);
+  }
+
+  /** Restore the snapshot taken at clear time, if still within the undo window. */
+  undoClear(): void {
+    if (!this.undoSnapshot) return;
+    this.state.filters.set(this.undoSnapshot);
+    this.undoSnapshot = null;
+    if (this.undoTimer !== null) {
+      clearTimeout(this.undoTimer);
+      this.undoTimer = null;
+    }
+    this.messageService.clear(LandscapeFilterBarComponent.UNDO_TOAST_KEY);
   }
 }
