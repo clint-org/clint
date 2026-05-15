@@ -73,7 +73,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               <div class="flex items-start justify-between gap-3">
                 <h3 class="text-sm font-semibold text-slate-900">{{ space.name }}</h3>
                 <i
-                  class="fa-solid fa-arrow-right text-[11px] text-slate-300 transition-colors group-hover:text-brand-600"
+                  class="fa-solid fa-arrow-right text-[11px] text-slate-400 transition-colors group-hover:text-brand-600"
                 ></i>
               </div>
               @if (space.description) {
