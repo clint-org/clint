@@ -142,8 +142,9 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
           </div>
 
           @if (hasSelfJoin()) {
-            <p class="mt-4 text-center text-xs text-slate-500">
-              Use your work email to join automatically.
+            <p class="mt-4 text-center text-xs leading-relaxed text-slate-500">
+              Sign in with your work email. If you don't have an account yet, one is created
+              automatically.
             </p>
           }
         </div>
