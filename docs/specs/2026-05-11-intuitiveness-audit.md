@@ -117,10 +117,10 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 
 ## P1 — expert friction, causes re-work
 
-### 18. Filter chips have no "clear all" affordance
+### 18. Filter chips have no "clear all" affordance · done (7c6d17d)
 - `src/client/src/app/features/landscape/landscape-filter-bar.component.html:234-241` (current "Clear" button)
 - Clear button silently resets every filter — including unrelated chips like phase + therapy area + company. A user mid-drill-down loses context with no undo.
-- Affordance: change the Clear button to "Clear filters (N)" showing the active-filter count, and toast on click: `"Filters cleared. Undo"` with a 5s undo affordance that restores the previous filter state.
+- Affordance: change the Clear button to "Clear filters (N)" showing the active-filter count, and toast on click: `"Filters cleared. Undo"` with a 5s undo affordance that restores the previous filter state. Toast is keyed (`landscape-filter-undo`) so the global container ignores it; the keyed `<p-toast>` lives in the filter bar with a custom template carrying the Undo handler.
 
 ### 19. Member role change confirms but doesn't name the diff · done (a14aedb)
 - `src/client/src/app/features/space-settings/space-members.component.ts:364-377` (changeRole)
@@ -145,20 +145,20 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 - "Name is required" is fine. But uniqueness errors surface the raw constraint name from Postgres (e.g. `duplicate key value violates unique constraint "trials_name_space_unique"`).
 - Affordance: map known constraints to human messages in a single helper. `trials_name_space_unique` → `"A trial with this name already exists in this space. Add a suffix to distinguish (e.g. NCT0000…)."`
 
-### 23. Marker form blocks submit when no trials are selected — without explanation
-- `src/client/src/app/features/manage/markers/marker-form.component.ts:220-234, 307-308`
+### 23. Marker form blocks submit when no trials are selected — without explanation · done (247ca83)
+- Actual path: `src/client/src/app/features/manage/trials/marker-form.component.ts:220-235`
 - Save button is disabled (`canSubmit` requires `selectedTrialIds.length > 0`). No inline hint explains the requirement; user thinks the form is broken.
 - Affordance: when `selectedTrialIds` is empty, show validation message under the trials selector: `"At least one trial. Markers always belong to a trial timeline."`
 
-### 24. List pages have no "clear filters" or "showing N of M" affordance
+### 24. List pages have no "clear filters" or "showing N of M" affordance · done (86dedcd) · materials-browse + engagement-activity open
 - `manage/companies`, `manage/assets`, `manage/trials`, `engagement-activity`, `events`, `materials-browse`
 - Per-column filters on `p-table` are individually clearable; there is no global reset. Power users have to walk each column.
-- Affordance: add `Clear filters` button to the shared `grid-toolbar` component, gated on `grid.isFiltered()`. Also surface `"Showing {visible} of {total}"` next to it.
+- Affordance: add `Clear filters` button to the shared `grid-toolbar` component, gated on `grid.isFiltered()`. Also surface `"Showing {visible} of {total}"` next to it. Shipped in `grid-toolbar.component.ts`: `Clear all` is now `Clear filters (N)` with the active-filter count appended, and `Showing X of Y` (post-filter / pre-filter) renders next to it when filtered. Covers all 7 `createGridState` callers. `materials-browse` and `engagement-activity` use their own filter signals (not `createGridState`) and still need a parallel pass.
 
-### 25. Filter and grid state don't persist between visits
+### 25. Filter and grid state don't persist between visits · done (86dedcd) · materials-browse + engagement-activity open
 - `events-page.component.ts:128-177`, `engagement-activity-page.component.html:48-82`, `materials-browse-page.component.ts`
 - Sort, column visibility, active filters all reset on navigation. Power users re-apply their config on every page entry.
-- Affordance: serialize grid state to `localStorage` keyed by `tenant + space + page`. Add a small `Reset to defaults` link in the toolbar when state is non-default.
+- Affordance: serialize grid state to `localStorage` keyed by `tenant + space + page`. Add a small `Reset to defaults` link in the toolbar when state is non-default. Implemented via an opt-in `persistenceKey` on `GridConfig`; localStorage key format is `grid:{tenantId}:{spaceId}:{persistenceKey}`. URL params always win on page load. `Reset to defaults` link in `grid-toolbar` is gated on a new `isDirty` signal and also wipes the localStorage entry. Column-visibility persistence not addressed (column visibility lives elsewhere); same materials-browse + engagement-activity follow-up as #24.
 
 ### 26. "Referenced in" empty branch is silent about source of truth
 - `src/client/src/app/features/manage/trials/trial-detail.component.html:240-265`
@@ -174,15 +174,15 @@ The brand floor (`docs/brand.md`): no tour modals, no coachmarks, no "Welcome ab
 
 ## P2 — first-touch, polish
 
-### 28. Login provider buttons don't say "an account will be created"
+### 28. Login provider buttons don't say "an account will be created" · done (17fa101)
 - `src/client/src/app/features/auth/login.component.ts:93-148`
 - Two SSO buttons with no copy clarifying that a new user can sign in and be onboarded.
-- Affordance: small line under the buttons (only when `hasSelfJoin()` is true): `"Sign in with your work email. If you don't have an account yet, one is created automatically."`
+- Affordance: small line under the buttons (only when `hasSelfJoin()` is true): `"Sign in with your work email. If you don't have an account yet, one is created automatically."` Replaced the existing terse "Use your work email to join automatically." with the audit's copy verbatim.
 
-### 29. Space cards lack a "this is clickable" visual anchor at rest
+### 29. Space cards lack a "this is clickable" visual anchor at rest · done (70b55f9)
 - `src/client/src/app/features/spaces/space-list.component.ts:68-86`
 - Hover changes background; the arrow icon is `text-slate-300` until hover. First-timers in a list of 1-2 spaces may not realize the card is interactive.
-- Affordance: arrow color from `text-slate-300` to `text-slate-400`, with `group-hover:text-brand-600`. Or convert the card to an explicit `Open →` link in the bottom-right corner.
+- Affordance: arrow color from `text-slate-300` to `text-slate-400`, with `group-hover:text-brand-600`. Or convert the card to an explicit `Open →` link in the bottom-right corner. Took the minimal path: bumped to `text-slate-400`; existing `group-hover:text-brand-600` already on the icon.
 
 ### 30. Empty states across `manage/*` don't name entity relationships
 - `manage/companies/company-list.component.html:78`, `manage/assets/asset-list.component.html:141`, `manage/trials/trial-list.component.html:194`
