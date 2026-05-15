@@ -232,6 +232,11 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             [maxSelectedLabels]="0"
             [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
           />
+          @if (selectedTrialIds().length === 0) {
+            <p class="mt-1 text-xs text-slate-500">
+              At least one trial. Markers always belong to a trial timeline.
+            </p>
+          }
         </div>
       </div>
 
