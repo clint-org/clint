@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   OnInit,
@@ -55,7 +56,6 @@ interface EntityOption {
               [options]="relationshipOptions"
               [ngModel]="link.relationship_type"
               (ngModelChange)="updateRelationship($index, $event)"
-              [editable]="true"
               placeholder="Relationship"
               styleClass="w-44 text-xs"
               appendTo="body"
@@ -106,18 +106,9 @@ interface EntityOption {
           [options]="relationshipOptions"
           [ngModel]="addRelationship()"
           (ngModelChange)="addRelationship.set($event)"
-          [editable]="true"
           placeholder="Relationship"
           styleClass="w-44"
           appendTo="body"
-        />
-        <p-button
-          label="Add link"
-          icon="fa-solid fa-plus"
-          size="small"
-          [text]="true"
-          [disabled]="!canAdd()"
-          (onClick)="addLink()"
         />
       </div>
     </div>
@@ -166,6 +157,15 @@ export class LinkedEntitiesPickerComponent implements OnInit {
   protected readonly canAdd = computed(
     () => !!this.addEntityType() && !!this.addEntityId() && !!this.addRelationship().trim()
   );
+
+  // Auto-commit pending entity when all three fields are filled. An explicit
+  // "Add link" click was easy to skip: users would pick type/entity/relationship,
+  // hit Publish, and lose the pending row because it was never committed to links.
+  private readonly autoCommit = effect(() => {
+    if (this.canAdd()) {
+      this.addLink();
+    }
+  });
 
   ngOnInit(): void {
     this.links.set([...(this.value() ?? [])]);
