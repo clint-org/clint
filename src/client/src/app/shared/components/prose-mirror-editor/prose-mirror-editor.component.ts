@@ -143,6 +143,14 @@ import { ProseMirrorService } from '../../../core/services/prose-mirror.service'
       :host ::ng-deep .pm-editor ul,
       :host ::ng-deep .pm-editor ol {
         margin: 0 0 0.6em 1.25em;
+        padding: 0;
+      }
+      /* Tailwind Preflight resets list-style; restore inside the editor. */
+      :host ::ng-deep .pm-editor ul {
+        list-style: disc outside;
+      }
+      :host ::ng-deep .pm-editor ol {
+        list-style: decimal outside;
       }
       :host ::ng-deep .pm-editor li {
         margin: 0.15em 0;

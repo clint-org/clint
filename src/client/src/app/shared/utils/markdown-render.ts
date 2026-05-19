@@ -81,11 +81,14 @@ export function renderMarkdownInline(md: string): string {
     listItems = [];
   };
 
+  // ProseMirror's defaultMarkdownSerializer emits loose lists (blank lines
+  // between items). A blank line ends the current paragraph but must not
+  // terminate an in-progress list -- the next list marker of the same type
+  // continues it. Only a non-list, non-blank line ends a list.
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) {
       flushPara();
-      flushList();
       continue;
     }
     const bullet = line.match(/^[-*]\s+(.*)$/);

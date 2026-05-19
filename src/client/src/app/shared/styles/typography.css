@@ -23,3 +23,38 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/**
+ * Rendered markdown surface for primary-intelligence summary/implications and
+ * any other innerHTML output from `renderMarkdownInline`. Tailwind Preflight
+ * resets list-style/margins, so we restore the minimum typography needed for
+ * paragraphs and bullet/ordered lists to read correctly. Component-scoped
+ * styles can't reach innerHTML descendants, so these live globally.
+ */
+.prose-render p {
+  margin: 0 0 0.6em;
+}
+.prose-render p:last-child {
+  margin-bottom: 0;
+}
+.prose-render ul,
+.prose-render ol {
+  margin: 0 0 0.6em 1.25em;
+  padding: 0;
+}
+.prose-render ul {
+  list-style: disc outside;
+}
+.prose-render ol {
+  list-style: decimal outside;
+}
+.prose-render li {
+  margin: 0.15em 0;
+}
+.prose-render strong {
+  font-weight: 600;
+}
+.prose-render a {
+  color: var(--brand-700);
+  text-decoration: underline;
+}
