@@ -94,11 +94,13 @@ Each RPC is assigned to one of three tiers. Tier defines the default TTL profile
 
 | Tier | RPCs / table reads | Fresh TTL | Stale TTL |
 |---|---|---|---|
-| **Reference (per-space)** | `list_companies` (with products LATERAL), `list_products` (with MoA/RoA LATERAL), `list_therapeutic_areas`, `list_mechanisms_of_action`, `list_routes_of_administration`, marker types / categories / event categories (global) | 5 min | Until invalidate |
+| **Reference (per-space)** | `list_companies` (with products LATERAL), `list_products` (with MoA/RoA LATERAL), `list_therapeutic_areas`, `list_mechanisms_of_action`, `list_routes_of_administration`, marker types / categories / event categories (global) | 30 min | Until invalidate |
 | **Heavy aggregations** | `get_dashboard_data`, `get_activity_feed`, `list_primary_intelligence`, `get_space_landing_stats`, `get_trial_detail_with_intelligence`, `list_recent_materials_for_space`, `list_draft_intelligence_for_space`, `list_materials_for_entity` | 30 s | 5 min |
 | **No cache** | All write RPCs, `getSession`, audit writes, CT.gov ingest endpoints | n/a | n/a |
 
-Reference data uses `staleUntil = Infinity` because changes only happen via known mutations that invalidate the relevant tags. Heavy aggregations are bounded by a 5-min stale window so that even without an invalidation signal, data cannot get arbitrarily out of date.
+Reference data uses `staleUntil = Infinity` because changes only happen via known mutations that invalidate the relevant tags. The 30-min fresh window is a safety net for cross-user changes (which the TTL alone bounds, since no realtime is in scope). Heavy aggregations are bounded by a 5-min stale window so that even without an invalidation signal, data cannot get arbitrarily out of date.
+
+TTLs are starting defaults, not commitments. Phase 5 (verification) re-pulls real numbers from telemetry and tunes per-RPC. See "Dev telemetry" below.
 
 ---
 
@@ -129,6 +131,7 @@ export class RpcCache {
       ttl: { fresh: number; stale: number };
       tags: string[];
       fetch: () => Promise<T>;
+      swr?: boolean;  // default true. Set false to disable background-refresh emit.
     }
   ): Promise<T>;
 
@@ -182,6 +185,64 @@ channel.onmessage = (event) => {
 ```
 
 Same-browser, same-user, multi-tab coordination. ~15 lines.
+
+### Visible re-render contract (flicker avoidance)
+
+SWR replaces the cached value when a background fetch returns. If a component is bound to that value via a signal, it re-renders. The contract below ensures that re-render is invisible in the common case and intentional in the rare case.
+
+**What SWR does NOT do:**
+
+- Does not blank the screen.
+- Does not show a loading spinner during background refresh.
+- Does not unmount or remount components.
+- The stale data stays on screen the entire time the fetch is in flight.
+
+**What SWR does do when the background fetch returns:**
+
+- The cache entry is replaced with the new data.
+- Any signal bound to that entry emits the new value.
+- Components re-render with the new data.
+
+**Contract for keeping the re-render invisible:**
+
+1. **Skip emit when unchanged.** Before publishing a new value to subscribers, `RpcCache` runs a stable-stringify equality check against the previous value. If equal, the signal does not emit. No re-render at all. This is the most common case: most background refreshes confirm that nothing changed.
+
+2. **`@for` track keys are mandatory** in any template binding cache-backed lists. Without a stable track key, Angular re-creates DOM nodes on every emit even when content is unchanged. With one, only changed rows update.
+
+3. **Per-RPC opt-out** for surfaces sensitive to mid-view updates (heavy charts, large editors, virtualized tables with custom scroll state). Service methods pass `swr: false` to `cache.get(...)`. Behavior becomes: cache hit returns immediately if within `freshUntil`; cache miss or past `freshUntil` awaits a fresh fetch. The component shows its own loading state on miss but never sees mid-render data swaps.
+
+| Case | Visible? | Why |
+|---|---|---|
+| Background fetch returns identical data | No | Equality check short-circuits the emit |
+| One row changes in a 200-row list | Just that row's DOM updates | `@for` track key keeps unchanged rows stable |
+| Filter values shifted before the prior fetch returned | The new render is correct; the late fetch is discarded | The cache key changed mid-flight; the old fetch's result writes to a key nobody is reading |
+| All data shifted (e.g. user just clicked something that changes filters) | Visible re-render, expected | This is what the user just asked for |
+
+**What this means in practice:** an analyst staring at a dashboard for 90 seconds, where the cache fresh window is 60 s, will see a background refresh fire at the 60 s mark. If nothing changed (the typical case), they see no UI change. If a teammate placed a marker in those 60 s, the affected row(s) update silently in place. They never see a spinner. They never see the dashboard blank.
+
+### Dev telemetry
+
+In dev builds only (`environment.production === false`), `RpcCache` keeps per-RPC counters and exposes them on `window.__rpcCacheStats`:
+
+```ts
+type RpcCacheStats = {
+  byRpc: Record<string, {
+    hits: number;
+    misses: number;
+    backgroundRefreshes: number;
+    invalidations: number;
+    avgFreshAgeOnHit: number;  // average age of cache entry on hit, in ms
+  }>;
+};
+```
+
+Each call increments the relevant counter. The intent is not production-grade observability (that lives in the observability spec); it is enough signal for Phase 5 TTL tuning. After a week of internal use we can read off:
+
+- RPCs with `hits / (hits + misses) < 50%`: TTLs too short.
+- RPCs with high `backgroundRefreshes` but identical-data emit skips: TTL could be longer with no UX cost.
+- RPCs with frequent `invalidations` clustering near accesses: cache is doing nothing for that RPC; consider `swr: false` or removing from L2.
+
+In production builds, the counter object is not allocated. Zero runtime cost.
 
 ### Composition with `resource()`
 
@@ -271,7 +332,7 @@ A read carries one or more tags. A write invalidates one or more tags. Tags are 
 // In CompanyService:
 async list(spaceId: string): Promise<Company[]> {
   return this.cache.get('list_companies', { spaceId }, {
-    ttl: { fresh: 300_000, stale: Infinity },
+    ttl: { fresh: 1_800_000, stale: Infinity },
     tags: [`space:${spaceId}:companies`],
     fetch: async () => {
       const { data, error } = await this.supabase.client
@@ -416,6 +477,9 @@ Per-task tests, paired with each component of the implementation:
 | `RpcCache` refresh-on-focus | `visibilitychange` to visible flags expired entries for refresh on next access |
 | `RpcCache` LRU | At 200 entries, least-recently-accessed evicted on next set |
 | `RpcCache` key normalization | Object key order does not change the cache key |
+| `RpcCache` equality-skip emit | Background fetch returning byte-identical data does not emit to signal subscribers |
+| `RpcCache` `swr: false` opt-out | Past `freshUntil`, `get` awaits a fresh fetch instead of serving stale + background refresh |
+| `RpcCache` dev telemetry counters | Each path (hit, miss, background refresh, invalidation) increments the right counter only in dev builds |
 | `main.ts` brand cache | Fresh fetch on miss; cached return within 5 min; cache cleared on mutation event |
 | One representative service refactor (`CompanyService`) | Read goes through cache; mutation invalidates the documented tag set |
 
@@ -486,13 +550,21 @@ Each comes with its tag-write map applied to the corresponding mutation methods.
 
 ### Phase 5: Verification and tuning
 
-Re-pull `pg_stat_statements`. Confirm:
+Two data sources:
+
+**1. Server side, `pg_stat_statements`.** Re-pull after one week of usage. Confirm:
 
 - `list_companies`, `list_products`, `list_*` reference reads dropped at least 70% in call count.
 - `get_dashboard_data`, `get_activity_feed`, `list_primary_intelligence`, `get_space_landing_stats` dropped at least 40%.
 - `get_brand_by_host` dropped at least 60%.
 
-Tune TTLs from the registry if any RPC is too aggressive or too loose.
+**2. Client side, `window.__rpcCacheStats` in dev builds.** Use to tune TTLs from real numbers:
+
+- Any RPC with hit ratio under 50%: TTL too short or invalidation too aggressive.
+- Any RPC with many `backgroundRefreshes` and a high equality-skip rate: TTL can grow without UX cost.
+- Any RPC where invalidations cluster near accesses: cache providing no value; set `swr: false` or remove from L2.
+
+Tune TTLs at the call site. No registry to update.
 
 ---
 
