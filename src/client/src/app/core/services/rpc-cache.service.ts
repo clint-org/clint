@@ -26,6 +26,10 @@ export class RpcCache {
     const now = Date.now();
     const entry = this.entries.get(key) as CacheEntry<T> | undefined;
 
+    if (entry?.inflight) {
+      return entry.inflight;
+    }
+
     if (entry && now < entry.freshUntil) {
       return entry.data;
     }
@@ -38,16 +42,31 @@ export class RpcCache {
   }
 
   private async fetchAndStore<T>(key: string, opts: RpcCacheOptions<T>): Promise<T> {
-    const now = Date.now();
-    const data = await opts.fetch();
-    const entry: CacheEntry<T> = {
-      data,
-      fetchedAt: now,
-      freshUntil: now + opts.ttl.fresh,
-      staleUntil: opts.ttl.stale === Infinity ? Infinity : now + opts.ttl.stale,
+    const inflight = opts.fetch();
+    const placeholder: CacheEntry<T> = {
+      data: undefined as unknown as T,
+      fetchedAt: 0,
+      freshUntil: 0,
+      staleUntil: 0,
       tags: opts.tags,
+      inflight,
     };
-    this.entries.set(key, entry as CacheEntry<unknown>);
-    return data;
+    this.entries.set(key, placeholder as CacheEntry<unknown>);
+
+    try {
+      const data = await inflight;
+      const now = Date.now();
+      this.entries.set(key, {
+        data,
+        fetchedAt: now,
+        freshUntil: now + opts.ttl.fresh,
+        staleUntil: opts.ttl.stale === Infinity ? Infinity : now + opts.ttl.stale,
+        tags: opts.tags,
+      } as CacheEntry<unknown>);
+      return data;
+    } catch (err) {
+      this.entries.delete(key);
+      throw err;
+    }
   }
 }

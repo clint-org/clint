@@ -42,3 +42,21 @@ describe('RpcCache.get happy path', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('RpcCache inflight dedup', () => {
+  it('shares a single fetch across concurrent identical calls', async () => {
+    const cache = new RpcCache();
+    let resolve!: (v: number[]) => void;
+    const promise = new Promise<number[]>((r) => { resolve = r; });
+    const fetch = vi.fn().mockReturnValue(promise);
+    const opts = { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch };
+
+    const a = cache.get('list_x', {}, opts);
+    const b = cache.get('list_x', {}, opts);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    resolve([1, 2, 3]);
+    expect(await a).toEqual([1, 2, 3]);
+    expect(await b).toEqual([1, 2, 3]);
+  });
+});
