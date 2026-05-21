@@ -66,13 +66,22 @@ test.describe('Marker Type Management CRUD', () => {
     await expect(page.getByText('Safety Signal')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete marker type', async () => {
+  test('delete marker type via typed-name confirm', async () => {
     const row = page.locator('tr', { hasText: 'Safety Signal' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
-    // Handle PrimeNG ConfirmDialog
-    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
-    await page.waitForTimeout(1000);
+
+    // Cascade-safety T12: marker type delete uses the type-the-name gate.
+    const dialog = page.locator('.p-dialog', {
+      has: page.locator('input#confirm-delete-typed'),
+    });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    const confirmBtn = dialog.getByRole('button', { name: 'Delete', exact: true });
+    await expect(confirmBtn).toBeDisabled();
+    await dialog.locator('input#confirm-delete-typed').fill('Safety Signal');
+    await expect(confirmBtn).toBeEnabled();
+    await confirmBtn.click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(mtUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Safety Signal')).not.toBeVisible({ timeout: 5000 });

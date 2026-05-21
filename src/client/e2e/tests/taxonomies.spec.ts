@@ -59,12 +59,21 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await expect(page.getByText('Neurology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete therapeutic area', async () => {
+  test('delete therapeutic area via typed-name confirm', async () => {
     const row = page.locator('tr', { hasText: 'Neurology' });
     await clickRowAction(page, row, 'Delete');
-    // Handle PrimeNG ConfirmDialog
-    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
-    await page.waitForTimeout(2000);
+
+    // Cascade-safety T12: every named delete uses the type-the-name gate.
+    const dialog = page.locator('.p-dialog', {
+      has: page.locator('input#confirm-delete-typed'),
+    });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    const confirmBtn = dialog.getByRole('button', { name: 'Delete', exact: true });
+    await expect(confirmBtn).toBeDisabled();
+    await dialog.locator('input#confirm-delete-typed').fill('Neurology');
+    await expect(confirmBtn).toBeEnabled();
+    await confirmBtn.click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Neurology')).not.toBeVisible({ timeout: 5000 });
@@ -119,12 +128,17 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
     await expect(page.getByText('VEGF Inhibitor')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete MOA', async () => {
+  test('delete MOA via typed-name confirm', async () => {
     const row = page.locator('tr', { hasText: 'VEGF Inhibitor' });
     await clickRowAction(page, row, 'Delete');
-    // Handle PrimeNG ConfirmDialog
-    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
-    await page.waitForTimeout(2000);
+
+    const dialog = page.locator('.p-dialog', {
+      has: page.locator('input#confirm-delete-typed'),
+    });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await dialog.locator('input#confirm-delete-typed').fill('VEGF Inhibitor');
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('VEGF Inhibitor')).not.toBeVisible({ timeout: 5000 });
@@ -182,12 +196,17 @@ test.describe('Taxonomies - Routes of Administration', () => {
     await expect(page.getByText('Subcutaneous')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete ROA', async () => {
+  test('delete ROA via typed-name confirm', async () => {
     const row = page.locator('tr', { hasText: 'Subcutaneous' });
     await clickRowAction(page, row, 'Delete');
-    // Handle PrimeNG ConfirmDialog
-    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
-    await page.waitForTimeout(2000);
+
+    const dialog = page.locator('.p-dialog', {
+      has: page.locator('input#confirm-delete-typed'),
+    });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await dialog.locator('input#confirm-delete-typed').fill('Subcutaneous');
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(taxUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Subcutaneous')).not.toBeVisible({ timeout: 5000 });

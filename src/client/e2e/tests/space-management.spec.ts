@@ -1,6 +1,10 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
-import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
+import {
+  createTestTenant,
+  createTestSpace,
+  getAdminClient,
+} from '../helpers/test-data.helper';
 import { fillInput } from '../helpers/form.helper';
 
 test.describe.configure({ mode: 'serial' });
@@ -57,5 +61,31 @@ test.describe('Space Management', () => {
     await createTestSpace(tenantId, 'DB Seeded Space');
     await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('DB Seeded Space')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('default spaces list excludes archived spaces', async () => {
+    // Cascade-safety T5/T11: archived spaces are hidden from the default list
+    // and only visible on /spaces/archived. Seed a space, then archive it via
+    // admin, then verify the default list omits it.
+    const archivedName = 'HiddenArchivedSpace ' + Date.now();
+    const archivedSpaceId = await createTestSpace(tenantId, archivedName);
+
+    const admin = getAdminClient();
+    const { error } = await admin
+      .from('spaces')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', archivedSpaceId);
+    if (error) throw new Error(`Could not archive space: ${error.message}`);
+
+    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { name: archivedName, level: 3 })).toHaveCount(0, {
+      timeout: 10000,
+    });
+
+    // The archived list should still surface it.
+    await page.goto(`/t/${tenantId}/spaces/archived`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('heading', { name: archivedName })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });

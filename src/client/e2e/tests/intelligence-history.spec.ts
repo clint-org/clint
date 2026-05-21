@@ -339,4 +339,71 @@ test.describe('intelligence version history', () => {
     });
     await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
   });
+
+  test('deleting the parent company clears all primary_intelligence history rows', async () => {
+    // Cascade-safety T3: when a parent entity is deleted, every PI row that
+    // references it via (entity_type, entity_id) -- regardless of state
+    // (published/withdrawn/archived) -- is removed by the polymorphic
+    // cleanup trigger. Seed a multi-state history, delete the company, and
+    // verify zero rows survive for that entity.
+    await ensureClean(spaceId, 'company', companyId);
+
+    await seedArchivedVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'history v1',
+      versionNumber: 1,
+      publishedAt: '2026-04-01T00:00:00Z',
+      archivedAt: '2026-04-02T00:00:00Z',
+      publishNote: null,
+      userId,
+    });
+    await seedWithdrawnVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'history v2 withdrawn',
+      versionNumber: 2,
+      publishedAt: '2026-04-02T00:00:00Z',
+      withdrawnAt: '2026-04-03T00:00:00Z',
+      publishNote: null,
+      withdrawNote: 'bad data',
+      userId,
+    });
+    await seedPublishedVersion({
+      spaceId,
+      entityType: 'company',
+      entityId: companyId,
+      headline: 'history v3 live',
+      versionNumber: 3,
+      publishedAt: '2026-04-03T00:00:00Z',
+      userId,
+    });
+
+    const admin = getAdminClient();
+    const { count: before } = await admin
+      .from('primary_intelligence')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', spaceId)
+      .eq('entity_type', 'company')
+      .eq('entity_id', companyId);
+    expect(before).toBe(3);
+
+    // Delete the parent company. The polymorphic cleanup trigger removes
+    // every primary_intelligence row keyed to this (entity_type, entity_id).
+    const { error: delErr } = await admin
+      .from('companies')
+      .delete()
+      .eq('id', companyId);
+    if (delErr) throw new Error(`Could not delete company: ${delErr.message}`);
+
+    const { count: after } = await admin
+      .from('primary_intelligence')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', spaceId)
+      .eq('entity_type', 'company')
+      .eq('entity_id', companyId);
+    expect(after).toBe(0);
+  });
 });

@@ -1,6 +1,14 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
-import { createTestTenant, createTestSpace } from '../helpers/test-data.helper';
+import {
+  createTestTenant,
+  createTestSpace,
+  createTestCompany,
+  createTestProduct,
+  createTestTherapeuticArea,
+  createTestTrial,
+  getAdminClient,
+} from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
 import { clickRowAction } from '../helpers/menu.helper';
 
@@ -58,14 +66,47 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await expect(page.getByText('Immunology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete therapeutic area succeeds', async () => {
+  test('delete therapeutic area via typed confirm leaves trials with null TA (set null cascade)', async () => {
+    // Cascade-safety T6 flipped trials.therapeutic_area_id from BLOCK to
+    // ON DELETE SET NULL. Trials in the deleted area survive with a null TA
+    // reference. Seed a trial bound to the TA, delete the TA, then assert:
+    //   (a) the TA is gone from the list
+    //   (b) the trial row still exists with therapeutic_area_id = null
+    const companyId = await createTestCompany(spaceId, 'TA Cascade Co ' + Date.now());
+    const productId = await createTestProduct(spaceId, companyId, 'TA Cascade Product');
+    // Read back the TA we are about to delete so we can target by id below.
+    const admin = getAdminClient();
+    const { data: ta } = await admin
+      .from('therapeutic_areas')
+      .select('id')
+      .eq('space_id', spaceId)
+      .eq('name', 'Immunology')
+      .single();
+    const trialId = await createTestTrial(spaceId, productId, ta!.id, 'TA Cascade Trial');
+
     const row = page.locator('tr', { hasText: 'Immunology' });
     await clickRowAction(page, row, 'Delete');
-    // Handle PrimeNG ConfirmDialog
-    await page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept').click();
-    await page.waitForTimeout(2000);
+
+    const dialog = page.locator('.p-dialog', {
+      has: page.locator('input#confirm-delete-typed'),
+    });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await dialog.locator('input#confirm-delete-typed').fill('Immunology');
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(taUrl(), { waitUntil: 'networkidle' });
     await expect(page.getByText('Immunology')).not.toBeVisible({ timeout: 5000 });
+
+    // Trial survives with null therapeutic_area_id. Query directly so this is
+    // robust to whether the trial list / detail surfaces the (uncategorized)
+    // label or simply hides the now-orphaned TA chip.
+    const { data: trialAfter } = await admin
+      .from('trials')
+      .select('id, therapeutic_area_id')
+      .eq('id', trialId)
+      .single();
+    expect(trialAfter).not.toBeNull();
+    expect(trialAfter!.therapeutic_area_id).toBeNull();
   });
 });
