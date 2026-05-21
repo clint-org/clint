@@ -237,7 +237,7 @@ describe('create_space emits space.created', () => {
 });
 
 // ---------------------------------------------------------------------------
-// delete_space: emits space.deleted
+// delete_space (backwards-compat shim): emits space.deleted
 // ---------------------------------------------------------------------------
 
 describe('delete_space emits space.deleted', () => {
@@ -267,6 +267,178 @@ describe('delete_space emits space.deleted', () => {
     const row = data?.[0] as Record<string, unknown> | undefined;
     expect(row, 'expected a space.deleted audit row').not.toBeNull();
     expect(row!['source']).toBe('rpc');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// archive_space: emits space.archived (T5)
+// ---------------------------------------------------------------------------
+
+describe('archive_space emits space.archived', () => {
+  let scratch: Awaited<ReturnType<typeof createScratchSpace>>;
+
+  afterAll(async () => {
+    if (scratch) await scratch.cleanup();
+  });
+
+  it('emits space.archived with space_id scope and name in metadata', async () => {
+    scratch = await createScratchSpace(p);
+    const { spaceId } = scratch;
+
+    const r = await as(p, 'tenant_owner').rpc('archive_space', { p_space_id: spaceId });
+    expectOk(r);
+
+    const row = await findAuditEvent('space.archived', { space_id: spaceId });
+    expect(row, 'expected a space.archived audit row').not.toBeNull();
+    expect(row!['source']).toBe('rpc');
+    expect(row!['space_id']).toBe(spaceId);
+    expect(row!['resource_id']).toBe(spaceId);
+
+    const meta = row!['metadata'] as Record<string, unknown>;
+    expect(typeof meta['name']).toBe('string');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// restore_space: emits space.restored (T5)
+// ---------------------------------------------------------------------------
+
+describe('restore_space emits space.restored', () => {
+  let scratch: Awaited<ReturnType<typeof createScratchSpace>>;
+
+  afterAll(async () => {
+    if (scratch) await scratch.cleanup();
+  });
+
+  it('emits space.restored after archive+restore round trip', async () => {
+    scratch = await createScratchSpace(p);
+    const { spaceId } = scratch;
+
+    expectOk(await as(p, 'tenant_owner').rpc('archive_space', { p_space_id: spaceId }));
+    expectOk(await as(p, 'tenant_owner').rpc('restore_space', { p_space_id: spaceId }));
+
+    const row = await findAuditEvent('space.restored', { space_id: spaceId });
+    expect(row, 'expected a space.restored audit row').not.toBeNull();
+    expect(row!['source']).toBe('rpc');
+    expect(row!['space_id']).toBe(spaceId);
+
+    const meta = row!['metadata'] as Record<string, unknown>;
+    expect(typeof meta['name']).toBe('string');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// permanently_delete_space: emits space.deleted with count breakdown (T5)
+// ---------------------------------------------------------------------------
+
+describe('permanently_delete_space emits space.deleted', () => {
+  it('emits space.deleted with count breakdown in metadata after archive', async () => {
+    // Scratch space; archive first (gate requires it for non-admins), then
+    // permanently delete. The cascade tears the space row down so cleanup
+    // through the helper is a no-op (idempotent delete-where-id).
+    const scratch = await createScratchSpace(p);
+    const { spaceId } = scratch;
+
+    try {
+      expectOk(await as(p, 'tenant_owner').rpc('archive_space', { p_space_id: spaceId }));
+      const r = await as(p, 'tenant_owner').rpc('permanently_delete_space', {
+        p_space_id: spaceId,
+      });
+      expectOk(r);
+
+      // Query by resource_id -- space_id FK on audit_events is set-null on
+      // delete, so the spaces_id column may be null by the time we read.
+      const { data, error } = await svc
+        .from('audit_events')
+        .select('*')
+        .eq('action', 'space.deleted')
+        .eq('resource_id', spaceId)
+        .order('occurred_at', { ascending: false })
+        .limit(1);
+      if (error) throw new Error(`query space.deleted (permanently_delete_space): ${error.message}`);
+      const row = data?.[0] as Record<string, unknown> | undefined;
+      expect(row, 'expected a space.deleted audit row from permanently_delete_space').not.toBeNull();
+      expect(row!['source']).toBe('rpc');
+
+      const meta = row!['metadata'] as Record<string, unknown>;
+      // The new RPC writes a count breakdown plus the space name and the
+      // was_archived / platform_admin_override flags. Spot-check the shape.
+      expect(typeof meta['name']).toBe('string');
+      expect(typeof meta['markers']).toBe('number');
+      expect(typeof meta['materials']).toBe('number');
+      expect(typeof meta['trials']).toBe('number');
+      expect(meta['was_archived']).toBe(true);
+      expect(meta['platform_admin_override']).toBe(false);
+    } finally {
+      await scratch.cleanup();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// redact_user: emits compliance.user_pii_redacted (T2)
+//
+// The new redact_user RPC (T2) wipes membership rows, mangles the auth.users
+// row, sweeps audit_events.metadata, and emits a compliance.user_pii_redacted
+// audit event with per-table removal counts in metadata.
+// ---------------------------------------------------------------------------
+
+describe('redact_user emits compliance.user_pii_redacted', () => {
+  let subjectUserId: string;
+
+  afterAll(async () => {
+    if (!subjectUserId) return;
+    // The audit row's resource_id references the (mangled but still present)
+    // auth.users row. Delete the audit rows first, then the user.
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    try {
+      await pg.connect();
+      await pg.query(
+        `delete from public.audit_events
+         where (action = 'compliance.user_pii_redacted' and resource_id = $1)
+            or actor_user_id = $1`,
+        [subjectUserId],
+      );
+      await pg.query(`delete from public.user_redactions where user_id = $1`, [subjectUserId]);
+    } finally {
+      await pg.end();
+    }
+    await svc.auth.admin.deleteUser(subjectUserId);
+  });
+
+  it('emits compliance.user_pii_redacted with per-table removed counts', async () => {
+    // Build a fresh subject so we are not redacting a persona used elsewhere.
+    const { data, error } = await svc.auth.admin.createUser({
+      email: `redact-emit-${Date.now()}@emission.invalid`,
+      email_confirm: true,
+    });
+    if (error) throw new Error(`createUser for redact_user subject: ${error.message}`);
+    subjectUserId = data.user!.id;
+
+    const r = await as(p, 'platform_admin').rpc('redact_user', { p_user_id: subjectUserId });
+    expectOk(r);
+
+    const { data: rows, error: queryErr } = await svc
+      .from('audit_events')
+      .select('*')
+      .eq('action', 'compliance.user_pii_redacted')
+      .eq('resource_id', subjectUserId)
+      .order('occurred_at', { ascending: false })
+      .limit(1);
+    if (queryErr) throw new Error(`query compliance.user_pii_redacted: ${queryErr.message}`);
+    const row = rows?.[0] as Record<string, unknown> | undefined;
+    expect(row, 'expected a compliance.user_pii_redacted audit row').not.toBeNull();
+    expect(row!['source']).toBe('rpc');
+    expect(row!['resource_type']).toBe('user_pii');
+    expect(row!['resource_id']).toBe(subjectUserId);
+
+    const meta = row!['metadata'] as Record<string, unknown>;
+    // The new RPC writes per-table counts (not row_count -- that key belongs
+    // to the older redact_user_pii audit-only path).
+    expect(typeof meta['tenant_members_removed']).toBe('number');
+    expect(typeof meta['space_members_removed']).toBe('number');
+    expect(typeof meta['agency_members_removed']).toBe('number');
+    expect(typeof meta['platform_admins_removed']).toBe('number');
   });
 });
 
