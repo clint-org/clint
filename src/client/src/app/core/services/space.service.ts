@@ -105,11 +105,6 @@ export class SpaceService {
     return data;
   }
 
-  async deleteSpace(id: string): Promise<void> {
-    const { error } = await this.supabase.client.rpc('delete_space', { p_space_id: id });
-    if (error) throw error;
-  }
-
   async listMembers(spaceId: string): Promise<SpaceMember[]> {
     const { data, error } = await this.supabase.client
       .from('space_members_view')

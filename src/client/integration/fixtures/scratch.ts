@@ -4,10 +4,10 @@
  * drops it via direct SQL. Cleanup is idempotent -- safe to call after the
  * RPC under test already destroyed the entity.
  *
- * Cascade order matches public.delete_space (migration 20260503090000):
- * markers must be deleted before their parent space to satisfy the
- * marker_changes_space_id_fkey audit constraint that fires from the
- * _log_marker_change trigger during cascade.
+ * Cascade order matches public.permanently_delete_space (migration
+ * 20260521120400): markers must be deleted before their parent space to
+ * satisfy the marker_changes_space_id_fkey audit constraint that fires from
+ * the _log_marker_change trigger during cascade.
  *
  * Naming: scratch entities use a recognizable prefix so any leak across runs
  * is bounded by the persona-graph wipe in buildPersonas(), which sweeps by
@@ -125,10 +125,10 @@ async function deleteSpaceCascade(spaceId: string): Promise<void> {
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   try {
     await pg.connect();
-    // Mirror public.delete_space: markers first (so the trigger inserts
-    // marker_changes audit rows while the space still exists for FK), then
-    // the space (cascade handles space_members, companies, assets, trials,
-    // trial_change_events, marker_changes, marker_types).
+    // Mirror public.permanently_delete_space: markers first (so the trigger
+    // inserts marker_changes audit rows while the space still exists for FK),
+    // then the space (cascade handles space_members, companies, assets,
+    // trials, trial_change_events, marker_changes, marker_types).
     await pg.query(`delete from public.markers where space_id = $1`, [spaceId]);
     await pg.query(`delete from public.spaces where id = $1`, [spaceId]);
   } finally {

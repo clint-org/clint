@@ -210,6 +210,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 /onboarding   authGuard | OnboardingComponent
 /t/:tenantId   authGuard + tenantGuard | AppShellComponent
   /spaces   SpaceListComponent
+  /spaces/archived   SpaceArchivedListComponent
   /settings   tenantSettingsGuard | TenantSettingsComponent
   /settings/audit-log   auditTenantGuard | TenantAuditLogComponent
   /help/roles   RolesHelpComponent
@@ -623,6 +624,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `PrimaryIntelligenceService`
 - `ProseMirrorService`
 - `RouteOfAdministrationService`
+- `RpcCacheService`
 - `SpaceFieldVisibilityService`
 
 **Models:**

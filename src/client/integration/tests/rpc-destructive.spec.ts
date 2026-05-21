@@ -5,8 +5,7 @@
  *
  * After cascade-safety (T5), the canonical space lifecycle is
  *   archive_space -> restore_space -> permanently_delete_space.
- * The legacy delete_space() RPC is kept as a backwards-compat shim and is
- * still covered below. Deeper role-matrix coverage of the new RPCs lives in
+ * Deeper role-matrix coverage of the new RPCs lives in
  * rpc-cascade-safety.spec.ts (T13); the smoke describes here exist to catch
  * regressions in the gate wiring without duplicating that file.
  *
@@ -33,44 +32,6 @@ beforeAll(async () => {
   p = await buildPersonas();
   svc = adminClient();
 }, 60_000);
-
-describe('rpc delete_space (backwards-compat shim)', () => {
-  it('tenant_owner: ok (their own scratch space)', async () => {
-    const scratch = await createScratchSpace(p);
-    try {
-      const r = await as(p, 'tenant_owner').rpc('delete_space', {
-        p_space_id: scratch.spaceId,
-      });
-      expectOk(r);
-    } finally {
-      await scratch.cleanup();
-    }
-  });
-
-  it('contributor: 42501 (not a space owner)', async () => {
-    const scratch = await createScratchSpace(p);
-    try {
-      const r = await as(p, 'contributor').rpc('delete_space', {
-        p_space_id: scratch.spaceId,
-      });
-      expectCode(r, '42501');
-    } finally {
-      await scratch.cleanup();
-    }
-  });
-
-  it('reader: 42501', async () => {
-    const scratch = await createScratchSpace(p);
-    try {
-      const r = await as(p, 'reader').rpc('delete_space', {
-        p_space_id: scratch.spaceId,
-      });
-      expectCode(r, '42501');
-    } finally {
-      await scratch.cleanup();
-    }
-  });
-});
 
 // ============================================================================
 // archive_space / restore_space / permanently_delete_space (T5)

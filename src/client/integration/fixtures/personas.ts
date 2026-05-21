@@ -157,7 +157,8 @@ async function wipe(admin: SupabaseClient): Promise<void> {
       // deleting spaces fires the _log_marker_change trigger which inserts
       // marker_changes audit rows referencing the parent space_id; if the
       // space row is already gone (mid-cascade), the FK rejects. Same fix
-      // public.delete_space (migration 20260503090000) applies in its RPC.
+      // public.permanently_delete_space (migration 20260521120400) applies in
+      // its RPC.
       await pg.query(
         `delete from public.markers where space_id in (
            select id from public.spaces

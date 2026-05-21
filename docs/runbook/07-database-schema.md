@@ -746,4 +746,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260511120000_landing_stats_motion_signals.sql`
 - `20260511232400_intelligence_history_links.sql`
 - `20260512000000_intelligence_thesis_to_summary.sql`
+- `20260521120000_r2_pending_deletes_queue.sql`
+- `20260521120100_user_redaction_rpc.sql`
+- `20260521120200_polymorphic_cleanup_triggers.sql`
+- `20260521120300_orphan_marker_cleanup.sql`
+- `20260521120400_space_archive_lifecycle.sql`
+- `20260521120500_cascade_fk_flips.sql`
+- `20260521120600_preview_delete_rpcs.sql`
+- `20260521121000_drop_legacy_delete_space.sql`
 <!-- /AUTO-GEN:DRIFT -->

@@ -237,40 +237,6 @@ describe('create_space emits space.created', () => {
 });
 
 // ---------------------------------------------------------------------------
-// delete_space (backwards-compat shim): emits space.deleted
-// ---------------------------------------------------------------------------
-
-describe('delete_space emits space.deleted', () => {
-  it('emits space.deleted after calling delete_space as space_owner', async () => {
-    // Create a scratch space, call delete_space, then verify the audit row.
-    // The scratch helper would fail to clean up because the space is already
-    // deleted; we handle cleanup manually.
-    const scratch = await createScratchSpace(p);
-    const { spaceId } = scratch;
-
-    // delete_space requires has_space_access(space_id, ['owner']). createScratchSpace
-    // creates the space as tenant_owner (the create_space RPC adds the caller as owner),
-    // so tenant_owner holds the space owner role here.
-    const r = await as(p, 'tenant_owner').rpc('delete_space', { p_space_id: spaceId });
-    expectOk(r);
-
-    // Query audit_events for space.deleted. space_id FK was set null on delete,
-    // so we filter by resource_id instead.
-    const { data, error } = await svc
-      .from('audit_events')
-      .select('*')
-      .eq('action', 'space.deleted')
-      .eq('resource_id', spaceId)
-      .order('occurred_at', { ascending: false })
-      .limit(1);
-    if (error) throw new Error(`query space.deleted: ${error.message}`);
-    const row = data?.[0] as Record<string, unknown> | undefined;
-    expect(row, 'expected a space.deleted audit row').not.toBeNull();
-    expect(row!['source']).toBe('rpc');
-  });
-});
-
-// ---------------------------------------------------------------------------
 // archive_space: emits space.archived (T5)
 // ---------------------------------------------------------------------------
 
