@@ -1,8 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 
 import { FillStyle, InnerMark, MarkerShape } from '../../core/models/marker.model';
+import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
+
+const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 
 /**
  * Stats returned by `get_space_landing_stats` (see migration
@@ -59,25 +62,32 @@ export interface UpcomingCatalyst {
 export class EngagementLandingService {
   private readonly supabase = inject(SupabaseService);
   private readonly tenantService = inject(TenantService);
+  private readonly cache = inject(RpcCache);
 
   async getStats(spaceId: string): Promise<SpaceLandingStats | null> {
-    const { data, error } = await this.supabase.client.rpc('get_space_landing_stats', {
-      p_space_id: spaceId,
+    return this.cache.get('get_space_landing_stats', { spaceId }, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${spaceId}:landing-stats`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('get_space_landing_stats', {
+          p_space_id: spaceId,
+        });
+        if (error) throw error;
+        const raw = data as RawSpaceLandingStats | null;
+        if (!raw) return null;
+        return {
+          active_trials: raw.active_trials,
+          companies: raw.companies,
+          assets: raw.programs,
+          catalysts_90d: raw.catalysts_90d,
+          intelligence_total: raw.intelligence_total,
+          p3_readouts_90d: raw.p3_readouts_90d,
+          new_intel_7d: raw.new_intel_7d,
+          trial_moves_30d: raw.trial_moves_30d,
+          loe_365d: raw.loe_365d,
+        };
+      },
     });
-    if (error) throw error;
-    const raw = data as RawSpaceLandingStats | null;
-    if (!raw) return null;
-    return {
-      active_trials: raw.active_trials,
-      companies: raw.companies,
-      assets: raw.programs,
-      catalysts_90d: raw.catalysts_90d,
-      intelligence_total: raw.intelligence_total,
-      p3_readouts_90d: raw.p3_readouts_90d,
-      new_intel_7d: raw.new_intel_7d,
-      trial_moves_30d: raw.trial_moves_30d,
-      loe_365d: raw.loe_365d,
-    };
   }
 
   /**

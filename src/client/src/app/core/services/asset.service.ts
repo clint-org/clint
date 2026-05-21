@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { Asset } from '../models/asset.model';
+import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
 /**
@@ -28,6 +29,8 @@ const ASSET_WITH_MOA_ROA_SELECT = `
   )
 `;
 
+const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
+
 function flattenAsset(row: RawAssetRow): Asset {
   const mechanisms_of_action = (row.product_mechanisms_of_action ?? [])
     .map((j) => j.moa)
@@ -54,15 +57,22 @@ function flattenAsset(row: RawAssetRow): Asset {
 @Injectable({ providedIn: 'root' })
 export class AssetService {
   private supabase = inject(SupabaseService);
+  private cache = inject(RpcCache);
 
   async list(spaceId: string): Promise<Asset[]> {
-    const { data, error } = await this.supabase.client
-      .from('products')
-      .select(ASSET_WITH_MOA_ROA_SELECT)
-      .eq('space_id', spaceId)
-      .order('display_order');
-    if (error) throw error;
-    return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
+    return this.cache.get('list_products', { spaceId }, {
+      ttl: REFERENCE_TTL,
+      tags: [`space:${spaceId}:products`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client
+          .from('products')
+          .select(ASSET_WITH_MOA_ROA_SELECT)
+          .eq('space_id', spaceId)
+          .order('display_order');
+        if (error) throw error;
+        return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
+      },
+    });
   }
 
   async getById(id: string): Promise<Asset> {
@@ -87,6 +97,12 @@ export class AssetService {
       .select()
       .single();
     if (error) throw error;
+    this.cache.invalidateTags([
+      `space:${spaceId}:products`,
+      `space:${spaceId}:companies`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:landing-stats`,
+    ]);
     return data as Asset;
   }
 
@@ -101,12 +117,32 @@ export class AssetService {
       .select()
       .single();
     if (error) throw error;
+    const spaceId = (data as Asset).space_id;
+    this.cache.invalidateTags([
+      `space:${spaceId}:products`,
+      `space:${spaceId}:companies`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:landing-stats`,
+    ]);
     return data as Asset;
   }
 
   async delete(id: string): Promise<void> {
+    const { data: existing } = await this.supabase.client
+      .from('products')
+      .select('space_id')
+      .eq('id', id)
+      .single();
     const { error } = await this.supabase.client.from('products').delete().eq('id', id);
     if (error) throw error;
+    if (existing?.space_id) {
+      this.cache.invalidateTags([
+        `space:${existing.space_id}:products`,
+        `space:${existing.space_id}:companies`,
+        `space:${existing.space_id}:dashboard`,
+        `space:${existing.space_id}:landing-stats`,
+      ]);
+    }
   }
 
   /**
@@ -114,19 +150,32 @@ export class AssetService {
    * Two-call pattern: delete all existing join rows, then insert the new set.
    */
   async setMechanisms(assetId: string, moaIds: string[]): Promise<void> {
+    const { data: assetRow } = await this.supabase.client
+      .from('products')
+      .select('space_id')
+      .eq('id', assetId)
+      .single();
+
     const { error: deleteError } = await this.supabase.client
       .from('product_mechanisms_of_action')
       .delete()
       .eq('product_id', assetId);
     if (deleteError) throw deleteError;
 
-    if (moaIds.length === 0) return;
+    if (moaIds.length > 0) {
+      const rows = moaIds.map((moa_id) => ({ product_id: assetId, moa_id }));
+      const { error: insertError } = await this.supabase.client
+        .from('product_mechanisms_of_action')
+        .insert(rows);
+      if (insertError) throw insertError;
+    }
 
-    const rows = moaIds.map((moa_id) => ({ product_id: assetId, moa_id }));
-    const { error: insertError } = await this.supabase.client
-      .from('product_mechanisms_of_action')
-      .insert(rows);
-    if (insertError) throw insertError;
+    if (assetRow?.space_id) {
+      this.cache.invalidateTags([
+        `space:${assetRow.space_id}:products`,
+        `space:${assetRow.space_id}:dashboard`,
+      ]);
+    }
   }
 
   /**
@@ -134,18 +183,31 @@ export class AssetService {
    * Two-call pattern: delete all existing join rows, then insert the new set.
    */
   async setRoutes(assetId: string, roaIds: string[]): Promise<void> {
+    const { data: assetRow } = await this.supabase.client
+      .from('products')
+      .select('space_id')
+      .eq('id', assetId)
+      .single();
+
     const { error: deleteError } = await this.supabase.client
       .from('product_routes_of_administration')
       .delete()
       .eq('product_id', assetId);
     if (deleteError) throw deleteError;
 
-    if (roaIds.length === 0) return;
+    if (roaIds.length > 0) {
+      const rows = roaIds.map((roa_id) => ({ product_id: assetId, roa_id }));
+      const { error: insertError } = await this.supabase.client
+        .from('product_routes_of_administration')
+        .insert(rows);
+      if (insertError) throw insertError;
+    }
 
-    const rows = roaIds.map((roa_id) => ({ product_id: assetId, roa_id }));
-    const { error: insertError } = await this.supabase.client
-      .from('product_routes_of_administration')
-      .insert(rows);
-    if (insertError) throw insertError;
+    if (assetRow?.space_id) {
+      this.cache.invalidateTags([
+        `space:${assetRow.space_id}:products`,
+        `space:${assetRow.space_id}:dashboard`,
+      ]);
+    }
   }
 }

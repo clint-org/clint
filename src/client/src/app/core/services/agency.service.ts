@@ -9,6 +9,7 @@ import {
   TenantBrandingUpdate,
 } from '../models/agency.model';
 import { SupabaseService } from './supabase.service';
+import { clearBrandCache, broadcastBrandInvalidation } from '../util/brand-bootstrap';
 
 @Injectable({ providedIn: 'root' })
 export class AgencyService {
@@ -46,6 +47,10 @@ export class AgencyService {
       p_branding: branding,
     });
     if (error) throw error;
+    if (typeof window !== 'undefined') {
+      clearBrandCache(window.location.host);
+      broadcastBrandInvalidation(window.location.host);
+    }
     return data as { id: string; updated: boolean };
   }
 
@@ -230,6 +235,10 @@ export class AgencyService {
       p_branding: branding,
     });
     if (error) throw error;
+    if (typeof window !== 'undefined') {
+      clearBrandCache(window.location.host);
+      broadcastBrandInvalidation(window.location.host);
+    }
     return data as { id: string; updated: boolean };
   }
 
