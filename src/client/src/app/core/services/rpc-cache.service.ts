@@ -44,6 +44,20 @@ export class RpcCache {
     return this.fetchAndStore(key, opts);
   }
 
+  invalidateTags(tags: string[]): void {
+    if (tags.length === 0) return;
+    const tagSet = new Set(tags);
+    for (const [key, entry] of this.entries) {
+      if (entry.tags.some((t) => tagSet.has(t))) {
+        this.entries.delete(key);
+      }
+    }
+  }
+
+  invalidateAll(): void {
+    this.entries.clear();
+  }
+
   private makeKey(rpcName: string, params: object): string {
     return rpcName + ':' + stableStringify(params);
   }

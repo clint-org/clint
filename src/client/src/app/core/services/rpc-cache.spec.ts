@@ -108,3 +108,47 @@ describe('RpcCache SWR', () => {
     vi.useRealTimers();
   });
 });
+
+describe('RpcCache invalidateTags', () => {
+  it('drops entries whose tags intersect the invalidation set', async () => {
+    const cache = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1]);
+
+    await cache.get('list_x', { spaceId: 'a' }, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['space:a:companies'],
+      fetch,
+    });
+    await cache.get('list_y', { spaceId: 'b' }, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['space:b:companies'],
+      fetch,
+    });
+
+    cache.invalidateTags(['space:a:companies']);
+
+    await cache.get('list_x', { spaceId: 'a' }, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['space:a:companies'],
+      fetch,
+    });
+    await cache.get('list_y', { spaceId: 'b' }, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['space:b:companies'],
+      fetch,
+    });
+
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('invalidateAll drops every entry', async () => {
+    const cache = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    const opts = { ttl: { fresh: 60_000, stale: 60_000 }, tags: ['x'], fetch };
+    await cache.get('a', {}, opts);
+    await cache.get('b', {}, opts);
+    cache.invalidateAll();
+    await cache.get('a', {}, opts);
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+});
