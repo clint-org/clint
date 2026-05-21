@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { SupabaseService } from './supabase.service';
+import { RpcCache } from './rpc-cache.service';
 import {
   Material,
   MaterialEntityType,
@@ -11,6 +12,7 @@ import {
 } from '../models/material.model';
 
 const WORKER_BASE = '/api/materials';
+const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 
 /**
  * Service wrapper around the materials registry RPCs and the R2 Worker.
@@ -31,6 +33,7 @@ const WORKER_BASE = '/api/materials';
 @Injectable({ providedIn: 'root' })
 export class MaterialService {
   private supabase = inject(SupabaseService);
+  private cache = inject(RpcCache);
 
   /**
    * Asks the worker for a presigned R2 PUT URL, then uploads the file
@@ -65,10 +68,24 @@ export class MaterialService {
 
   /** Mark the row as finalized so list/download RPCs surface it. */
   async finalize(materialId: string): Promise<void> {
+    const { data: existing } = await this.supabase.client
+      .from('materials')
+      .select('space_id, material_links(entity_type, entity_id)')
+      .eq('id', materialId)
+      .single();
     const { error } = await this.supabase.client.rpc('finalize_material', {
       p_material_id: materialId,
     });
     if (error) throw error;
+    if (existing?.space_id) {
+      const tags: string[] = [
+        `space:${existing.space_id}:materials`,
+        `space:${existing.space_id}:activity`,
+      ];
+      const links = (existing.material_links ?? []) as { entity_type: string; entity_id: string }[];
+      for (const l of links) tags.push(`entity:${l.entity_type}:${l.entity_id}:materials`);
+      this.cache.invalidateTags(tags);
+    }
   }
 
   /**
@@ -114,6 +131,14 @@ export class MaterialService {
       })),
     });
     if (error) throw error;
+    const tags: string[] = [
+      `space:${input.space_id}:materials`,
+      `space:${input.space_id}:activity`,
+    ];
+    for (const link of input.links) {
+      tags.push(`entity:${link.entity_type}:${link.entity_id}:materials`);
+    }
+    this.cache.invalidateTags(tags);
     return data as string;
   }
 
@@ -138,25 +163,37 @@ export class MaterialService {
     limit?: number;
     offset?: number;
   }): Promise<MaterialListResult> {
-    const { data, error } = await this.supabase.client.rpc('list_materials_for_entity', {
-      p_entity_type: opts.entityType,
-      p_entity_id: opts.entityId,
-      p_material_types: opts.materialTypes ?? null,
-      p_limit: opts.limit ?? 50,
-      p_offset: opts.offset ?? 0,
+    return this.cache.get('list_materials_for_entity', opts, {
+      ttl: HEAVY_TTL,
+      tags: [`entity:${opts.entityType}:${opts.entityId}:materials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('list_materials_for_entity', {
+          p_entity_type: opts.entityType,
+          p_entity_id: opts.entityId,
+          p_material_types: opts.materialTypes ?? null,
+          p_limit: opts.limit ?? 50,
+          p_offset: opts.offset ?? 0,
+        });
+        if (error) throw error;
+        return (data as MaterialListResult) ?? { rows: [] };
+      },
     });
-    if (error) throw error;
-    return (data as MaterialListResult) ?? { rows: [] };
   }
 
   async listRecentForSpace(spaceId: string, limit = 5): Promise<Material[]> {
-    const { data, error } = await this.supabase.client.rpc('list_recent_materials_for_space', {
-      p_space_id: spaceId,
-      p_limit: limit,
+    return this.cache.get('list_recent_materials_for_space', { spaceId, limit }, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${spaceId}:materials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('list_recent_materials_for_space', {
+          p_space_id: spaceId,
+          p_limit: limit,
+        });
+        if (error) throw error;
+        const result = (data as { rows: Material[] } | null) ?? { rows: [] };
+        return result.rows ?? [];
+      },
     });
-    if (error) throw error;
-    const result = (data as { rows: Material[] } | null) ?? { rows: [] };
-    return result.rows ?? [];
   }
 
   async listForSpace(opts: {
@@ -167,19 +204,30 @@ export class MaterialService {
     limit?: number;
     offset?: number;
   }): Promise<MaterialListResult> {
-    const { data, error } = await this.supabase.client.rpc('list_materials_for_space', {
-      p_space_id: opts.spaceId,
-      p_material_types: opts.materialTypes ?? null,
-      p_entity_type: opts.entityType ?? null,
-      p_entity_id: opts.entityId ?? null,
-      p_limit: opts.limit ?? 100,
-      p_offset: opts.offset ?? 0,
+    return this.cache.get('list_materials_for_space', opts, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${opts.spaceId}:materials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('list_materials_for_space', {
+          p_space_id: opts.spaceId,
+          p_material_types: opts.materialTypes ?? null,
+          p_entity_type: opts.entityType ?? null,
+          p_entity_id: opts.entityId ?? null,
+          p_limit: opts.limit ?? 100,
+          p_offset: opts.offset ?? 0,
+        });
+        if (error) throw error;
+        return (data as MaterialListResult) ?? { rows: [] };
+      },
     });
-    if (error) throw error;
-    return (data as MaterialListResult) ?? { rows: [] };
   }
 
   async update(input: UpdateMaterialInput): Promise<void> {
+    const { data: existing } = await this.supabase.client
+      .from('materials')
+      .select('space_id, material_links(entity_type, entity_id)')
+      .eq('id', input.id)
+      .single();
     const { error } = await this.supabase.client.rpc('update_material', {
       p_id: input.id,
       p_title: input.title ?? null,
@@ -194,13 +242,36 @@ export class MaterialService {
             })),
     });
     if (error) throw error;
+    if (existing?.space_id) {
+      const tags: string[] = [
+        `space:${existing.space_id}:materials`,
+        `space:${existing.space_id}:activity`,
+      ];
+      const links = (existing.material_links ?? []) as { entity_type: string; entity_id: string }[];
+      for (const l of links) tags.push(`entity:${l.entity_type}:${l.entity_id}:materials`);
+      this.cache.invalidateTags(tags);
+    }
   }
 
   async delete(id: string): Promise<void> {
+    const { data: existing } = await this.supabase.client
+      .from('materials')
+      .select('space_id, material_links(entity_type, entity_id)')
+      .eq('id', id)
+      .single();
     const { error } = await this.supabase.client.rpc('delete_material', {
       p_id: id,
     });
     if (error) throw error;
+    if (existing?.space_id) {
+      const tags: string[] = [
+        `space:${existing.space_id}:materials`,
+        `space:${existing.space_id}:activity`,
+      ];
+      const links = (existing.material_links ?? []) as { entity_type: string; entity_id: string }[];
+      for (const l of links) tags.push(`entity:${l.entity_type}:${l.entity_id}:materials`);
+      this.cache.invalidateTags(tags);
+    }
   }
 }
 
