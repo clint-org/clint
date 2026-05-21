@@ -42,6 +42,26 @@ export function clearBrandCache(host: string): void {
   }
 }
 
+export function broadcastBrandInvalidation(host: string): void {
+  if (typeof BroadcastChannel === 'undefined') return;
+  const channel = new BroadcastChannel('rpc-cache');
+  try {
+    channel.postMessage({ type: 'brand-invalidate', host });
+  } finally {
+    channel.close();
+  }
+}
+
+export function installBrandInvalidationListener(): void {
+  if (typeof BroadcastChannel === 'undefined') return;
+  const channel = new BroadcastChannel('rpc-cache');
+  channel.addEventListener('message', (e: MessageEvent) => {
+    if (e.data?.type === 'brand-invalidate' && typeof e.data.host === 'string') {
+      clearBrandCache(e.data.host);
+    }
+  });
+}
+
 export async function fetchBrandWithCache(
   host: string,
   fetchFromNetwork: () => Promise<Brand | null>

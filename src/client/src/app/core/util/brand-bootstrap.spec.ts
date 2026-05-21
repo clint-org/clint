@@ -5,6 +5,7 @@ import {
   writeBrandCache,
   clearBrandCache,
   fetchBrandWithCache,
+  broadcastBrandInvalidation,
   BRAND_CACHE_TTL_MS,
 } from './brand-bootstrap';
 import { DEFAULT_BRAND } from '../services/brand-context.service';
@@ -94,5 +95,19 @@ describe('fetchBrandWithCache', () => {
     const result = await fetchBrandWithCache('example.com', async () => fresh);
     expect(result.app_display_name).toBe('fresh');
     expect(readBrandCache('example.com')?.app_display_name).toBe('fresh');
+  });
+});
+
+describe('brand-bootstrap cross-tab clear', () => {
+  it('broadcastBrandInvalidation posts a message when BroadcastChannel is present', () => {
+    const posts: unknown[] = [];
+    (globalThis as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel = class {
+      constructor(public name: string) {}
+      postMessage(msg: unknown) { posts.push({ name: this.name, msg }); }
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      close() {}
+    } as unknown as typeof BroadcastChannel;
+    broadcastBrandInvalidation('example.com');
+    expect(posts).toEqual([{ name: 'rpc-cache', msg: { type: 'brand-invalidate', host: 'example.com' } }]);
   });
 });

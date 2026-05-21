@@ -10,7 +10,7 @@ import { buildBrandPreset } from './app/config/primeng-theme';
 import { generateBrandScale, pickStopForSurface } from './app/core/util/color-scale';
 import { BrandContextService, DEFAULT_BRAND } from './app/core/services/brand-context.service';
 import { Brand } from './app/core/models/brand.model';
-import { fetchBrandWithCache } from './app/core/util/brand-bootstrap';
+import { fetchBrandWithCache, installBrandInvalidationListener } from './app/core/util/brand-bootstrap';
 
 if (!environment.production) {
   (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE = 'http://localhost:8787';
@@ -97,6 +97,7 @@ function applyBrandSideEffects(brand: Brand): void {
 }
 
 (async () => {
+  installBrandInvalidationListener();
   const brand = await fetchBrand();
   applyBrandSideEffects(brand);
   const scale = generateBrandScale(brand.primary_color);
