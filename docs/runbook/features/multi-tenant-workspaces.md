@@ -68,17 +68,40 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
   role: viewer
   status: active
 - id: space-lifecycle
-  summary: Owner-driven create and delete of engagement spaces within a tenant.
+  summary: Owner-driven create, archive, restore, and permanent delete of engagement spaces. Archive is the reversible default action; permanent delete is gated to tenant-owner or platform-admin and emits space.deleted with a dependent-count breakdown.
   routes:
     - /t/:tenantId/spaces
+    - /t/:tenantId/spaces/archived
   rpcs:
     - create_space
-    - delete_space
+    - archive_space
+    - restore_space
+    - permanently_delete_space
   tables:
     - spaces
-  related: []
+  related:
+    - audit-log-emission
   user_facing: true
   role: owner
+  status: active
+- id: cascade-delete-preview
+  summary: Read-only preview RPCs that return a jsonb count breakdown of what cascade will hit before the destructive call. Powers the count-aware confirm dialog across company, asset (product), and trial delete surfaces.
+  routes:
+    - /t/:tenantId/s/:spaceId/manage/companies
+    - /t/:tenantId/s/:spaceId/manage/assets
+    - /t/:tenantId/s/:spaceId/manage/trials
+  rpcs:
+    - preview_company_delete
+    - preview_product_delete
+    - preview_trial_delete
+  tables:
+    - companies
+    - products
+    - trials
+  related:
+    - data-management
+  user_facing: true
+  role: viewer
   status: active
 - id: space-membership
   summary: Space members with owner, editor, or viewer role and invite codes scoped to a single space.

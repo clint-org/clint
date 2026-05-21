@@ -86,7 +86,9 @@ erDiagram
   AUDIT_EVENTS { }
   CTGOV_SYNC_RUNS { }
   PLATFORM_ADMINS { }
+  R2_PENDING_DELETES { }
   RETIRED_HOSTNAMES { }
+  USER_REDACTIONS { }
 ```
 <!-- /AUTO-GEN:ER -->
 
@@ -612,7 +614,9 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `primary_intelligence_links`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
+- `r2_pending_deletes`
 - `routes_of_administration`
+- `user_redactions`
 
 **Migration files not in history table:**
 - `20260411120000_extend_phase_types.sql`

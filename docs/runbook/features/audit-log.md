@@ -176,6 +176,24 @@ The pipeline is enforced by:
     - audit_events
   related:
     - audit-record-event
+    - gdpr-user-redaction
+  user_facing: false
+  role: super-admin
+  status: active
+- id: gdpr-user-redaction
+  summary: Platform-admin user redaction. Wipes membership rows across tenant/space/agency/platform_admins, mangles auth.users email, clears raw meta, inserts a user_redactions tombstone, and sweeps audit metadata. auth.users row is not deleted so authorship references throughout the schema preserve the audit trail.
+  routes: []
+  rpcs:
+    - redact_user
+  tables:
+    - audit_events
+    - user_redactions
+    - tenant_members
+    - space_members
+    - agency_members
+    - platform_admins
+  related:
+    - audit-pii-redaction
   user_facing: false
   role: super-admin
   status: active

@@ -34,7 +34,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 |---|---|---|
 | `_audit_trigger_space_invite_issued` | - | spaces |
 | `_audit_trigger_space_members` | - | spaces |
+| `_cleanup_orphan_marker` | markers | marker_assignments |
+| `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
+| `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
@@ -54,6 +57,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
+| `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
@@ -64,7 +68,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_material` | materials | - |
 | `delete_primary_intelligence` | primary_intelligence | - |
-| `delete_space` | markers, spaces | tenants |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
 | `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
@@ -124,18 +127,24 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
+| `permanently_delete_space` | markers, spaces | companies, events, marker_types, materials, primary_intelligence, products, tenants, trials |
 | `prepare_material_upload` | - | materials |
+| `preview_company_delete` | - | companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, products, trial_notes, trials |
+| `preview_product_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, products, trial_notes, trials |
+| `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
 | `purge_primary_intelligence` | primary_intelligence | - |
 | `recompute_trial_change_events` | trial_change_events, trial_field_changes | trial_ctgov_snapshots, trials |
 | `record_audit_event` | audit_events | - |
 | `record_sync_run` | ctgov_sync_runs | - |
+| `redact_user` | agency_members, audit_events, platform_admins, space_members, tenant_members, user_redactions | - |
 | `redact_user_pii` | audit_events | - |
 | `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
 | `register_custom_domain` | tenants | agencies, retired_hostnames |
 | `register_material` | material_links, materials | spaces, tenants |
 | `release_retired_hostname` | retired_hostnames | - |
+| `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
 | `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
 | `seed_demo_data` | - | companies, space_members |
@@ -575,17 +584,20 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_audit_trigger_tenant_invite_issued`
 - `_audit_trigger_tenant_members`
 - `_audit_trigger_tenant_suspension`
+- `_cleanup_orphan_marker`
+- `_cleanup_polymorphic_refs`
 - `_emit_events_from_marker_change`
+- `_enqueue_r2_delete`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
+- `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `delete_material`
-- `delete_space`
 - `export_audit_events_csv`
 - `finalize_material`
 - `get_bullseye_by_company`
@@ -624,10 +636,16 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_set_pinned`
 - `palette_touch_recent`
 - `palette_unpin`
+- `permanently_delete_space`
+- `preview_company_delete`
+- `preview_product_delete`
+- `preview_trial_delete`
 - `record_audit_event`
+- `redact_user`
 - `redact_user_pii`
 - `referenced_in_entity`
 - `register_material`
+- `restore_space`
 - `search_palette`
 - `update_material`
 - `validate_material_links_payload`

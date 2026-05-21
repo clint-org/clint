@@ -244,7 +244,7 @@ Visibility is **strict-scope owner-only**: agency owners see agency-scoped event
 
 UI surfaces: `/admin/audit-log` (agency portal), `/t/:tenantId/settings/audit-log` (tenant settings tab), `/t/:tenantId/s/:spaceId/settings/audit-log` (space settings tab), `/super-admin/audit-log` (platform-admin only). Each page supports actor/action/date-range filtering and CSV export.
 
-**GDPR right-to-erasure: always call `redact_user_pii(p_user_id)` BEFORE deleting the user from `auth.users`.** Deletion triggers `on delete set null` on `actor_user_id`, which makes scoped redaction impossible after the fact. The redact RPC scrubs `actor_email`, `actor_ip`, `actor_user_agent`, and PII keys in `metadata` while preserving the action record under legitimate-interest legal basis.
+**GDPR right-to-erasure: call `redact_user(p_user_id)`.** This platform-admin RPC wipes membership rows across `tenant_members`, `space_members`, `agency_members`, and `platform_admins`; mangles `auth.users.email` to `redacted-<uuid>@invalid`; clears `raw_user_meta_data` and `raw_app_meta_data`; inserts a `user_redactions` tombstone; and sweeps audit metadata via `jsonb_strip_pii_keys`. The `auth.users` row itself is **not deleted** — authorship references throughout the schema (`spaces.created_by`, `markers.created_by`, `materials.uploaded_by`, `primary_intelligence.last_edited_by`, etc., all `NOT NULL NO ACTION`) preserve the audit trail by pointing at the now-opaque user. The lower-level `redact_user_pii(p_user_id)` remains available for scenarios that only need audit-metadata scrubbing without the membership wipe. Spec: `docs/superpowers/specs/2026-05-20-cascade-safety-design.md`.
 
 **Function ownership deviation from spec:** `record_audit_event()` and `redact_user_pii()` are owned by the default `postgres` role rather than the `audit_writer` role described in the original spec. Transferring ownership to `audit_writer` breaks the SECURITY DEFINER call into the `auth` schema on Supabase Local (the `auth` schema grants are reset by `supabase_auth_admin`/GoTrue on container init). The locked write path is enforced by the table-level GRANT/REVOKE pattern from migration `20260510000100`, not by function ownership.
 
@@ -284,6 +284,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `product_mechanisms_of_action` | yes | 3 |
 | `product_routes_of_administration` | yes | 3 |
 | `products` | yes | 4 |
+| `r2_pending_deletes` | yes | 0 |
 | `retired_hostnames` | yes | 1 |
 | `routes_of_administration` | yes | 4 |
 | `space_invites` | yes | 1 |
@@ -298,6 +299,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `trial_field_changes` | yes | 1 |
 | `trial_notes` | yes | 4 |
 | `trials` | yes | 4 |
+| `user_redactions` | yes | 1 |
 <!-- /AUTO-GEN:RLS_COVERAGE -->
 
 ## Documentation Drift
