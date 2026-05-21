@@ -1,41 +1,57 @@
 import { inject, Injectable } from '@angular/core';
 
 import { MarkerType } from '../models/marker.model';
+import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
+
+const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
 
 @Injectable({ providedIn: 'root' })
 export class MarkerTypeService {
   private supabase = inject(SupabaseService);
+  private cache = inject(RpcCache);
 
   async list(spaceId?: string): Promise<MarkerType[]> {
-    let query = this.supabase.client
-      .from('marker_types')
-      .select('*, marker_categories(*)')
-      .order('display_order');
+    return this.cache.get('marker_types', { spaceId }, {
+      ttl: REFERENCE_TTL,
+      tags: ['markers:types'],
+      fetch: async () => {
+        let query = this.supabase.client
+          .from('marker_types')
+          .select('*, marker_categories(*)')
+          .order('display_order');
 
-    if (spaceId) {
-      query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
-    }
+        if (spaceId) {
+          query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
+        }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as MarkerType[];
+        const { data, error } = await query;
+        if (error) throw error;
+        return data as MarkerType[];
+      },
+    });
   }
 
   async listByCategory(categoryId: string, spaceId?: string): Promise<MarkerType[]> {
-    let query = this.supabase.client
-      .from('marker_types')
-      .select('*, marker_categories(*)')
-      .eq('category_id', categoryId)
-      .order('display_order');
+    return this.cache.get('marker_types_by_category', { categoryId, spaceId }, {
+      ttl: REFERENCE_TTL,
+      tags: ['markers:types'],
+      fetch: async () => {
+        let query = this.supabase.client
+          .from('marker_types')
+          .select('*, marker_categories(*)')
+          .eq('category_id', categoryId)
+          .order('display_order');
 
-    if (spaceId) {
-      query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
-    }
+        if (spaceId) {
+          query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
+        }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as MarkerType[];
+        const { data, error } = await query;
+        if (error) throw error;
+        return data as MarkerType[];
+      },
+    });
   }
 
   async create(spaceId: string, markerType: Partial<MarkerType>): Promise<MarkerType> {
@@ -46,6 +62,7 @@ export class MarkerTypeService {
       .select()
       .single();
     if (error) throw error;
+    this.cache.invalidateTags(['markers:types']);
     return data as MarkerType;
   }
 
@@ -57,11 +74,13 @@ export class MarkerTypeService {
       .select()
       .single();
     if (error) throw error;
+    this.cache.invalidateTags(['markers:types']);
     return data as MarkerType;
   }
 
   async delete(id: string): Promise<void> {
     const { error } = await this.supabase.client.from('marker_types').delete().eq('id', id);
     if (error) throw error;
+    this.cache.invalidateTags(['markers:types']);
   }
 }
