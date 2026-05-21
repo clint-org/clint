@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { Marker } from '../models/marker.model';
 import { Trial } from '../models/trial.model';
+import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
 const TRIAL_SELECT = `
@@ -21,6 +22,8 @@ const TRIAL_SELECT = `
   trial_notes(*)
 `;
 
+const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
+
 /** Flatten marker_assignments[].markers into trial.markers[] */
 function normalizeTrial(raw: Record<string, unknown>): Trial {
   const assignments = (raw['marker_assignments'] as { markers: Marker }[] | null) ?? [];
@@ -33,25 +36,38 @@ function normalizeTrial(raw: Record<string, unknown>): Trial {
 @Injectable({ providedIn: 'root' })
 export class TrialService {
   private supabase = inject(SupabaseService);
+  private cache = inject(RpcCache);
 
   async listByAsset(assetId: string): Promise<Trial[]> {
-    const { data, error } = await this.supabase.client
-      .from('trials')
-      .select(TRIAL_SELECT)
-      .eq('product_id', assetId)
-      .order('display_order');
-    if (error) throw error;
-    return (data as Record<string, unknown>[]).map(normalizeTrial);
+    return this.cache.get('trials_by_asset', { assetId }, {
+      ttl: HEAVY_TTL,
+      tags: [`asset:${assetId}:trials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client
+          .from('trials')
+          .select(TRIAL_SELECT)
+          .eq('product_id', assetId)
+          .order('display_order');
+        if (error) throw error;
+        return (data as Record<string, unknown>[]).map(normalizeTrial);
+      },
+    });
   }
 
   async listBySpace(spaceId: string): Promise<Trial[]> {
-    const { data, error } = await this.supabase.client
-      .from('trials')
-      .select(TRIAL_SELECT)
-      .eq('space_id', spaceId)
-      .order('display_order');
-    if (error) throw error;
-    return (data as Record<string, unknown>[]).map(normalizeTrial);
+    return this.cache.get('trials_by_space', { spaceId }, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${spaceId}:trials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client
+          .from('trials')
+          .select(TRIAL_SELECT)
+          .eq('space_id', spaceId)
+          .order('display_order');
+        if (error) throw error;
+        return (data as Record<string, unknown>[]).map(normalizeTrial);
+      },
+    });
   }
 
   async getById(id: string): Promise<Trial> {
@@ -72,6 +88,15 @@ export class TrialService {
       .select()
       .single();
     if (error) throw error;
+    const tags: string[] = [
+      `space:${spaceId}:trials`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+    ];
+    const assetId = (data as Trial).product_id;
+    if (assetId) tags.push(`asset:${assetId}:trials`);
+    this.cache.invalidateTags(tags);
     return data as Trial;
   }
 
@@ -96,15 +121,21 @@ export class TrialService {
    * trial at a time.
    */
   async getLatestSnapshotsForSpace(spaceId: string): Promise<Map<string, unknown>> {
-    const { data, error } = await this.supabase.client.rpc('list_latest_snapshots_for_space', {
-      p_space_id: spaceId,
+    return this.cache.get('list_latest_snapshots_for_space', { spaceId }, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${spaceId}:trials`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('list_latest_snapshots_for_space', {
+          p_space_id: spaceId,
+        });
+        if (error) throw error;
+        const out = new Map<string, unknown>();
+        for (const row of (data ?? []) as { trial_id: string; payload: unknown }[]) {
+          out.set(row.trial_id, row.payload);
+        }
+        return out;
+      },
     });
-    if (error) throw error;
-    const out = new Map<string, unknown>();
-    for (const row of (data ?? []) as { trial_id: string; payload: unknown }[]) {
-      out.set(row.trial_id, row.payload);
-    }
-    return out;
   }
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
@@ -115,11 +146,39 @@ export class TrialService {
       .select()
       .single();
     if (error) throw error;
-    return data as Trial;
+    const trial = data as Trial;
+    const tags: string[] = [
+      `space:${trial.space_id}:trials`,
+      `space:${trial.space_id}:dashboard`,
+      `space:${trial.space_id}:activity`,
+      `space:${trial.space_id}:landing-stats`,
+      `trial:${id}:detail`,
+      `trial:${id}:activity`,
+    ];
+    if (trial.product_id) tags.push(`asset:${trial.product_id}:trials`);
+    this.cache.invalidateTags(tags);
+    return trial;
   }
 
   async delete(id: string): Promise<void> {
+    const { data: existing } = await this.supabase.client
+      .from('trials')
+      .select('space_id, product_id')
+      .eq('id', id)
+      .single();
     const { error } = await this.supabase.client.from('trials').delete().eq('id', id);
     if (error) throw error;
+    if (existing?.space_id) {
+      const tags: string[] = [
+        `space:${existing.space_id}:trials`,
+        `space:${existing.space_id}:dashboard`,
+        `space:${existing.space_id}:activity`,
+        `space:${existing.space_id}:landing-stats`,
+        `trial:${id}:detail`,
+        `trial:${id}:activity`,
+      ];
+      if (existing.product_id) tags.push(`asset:${existing.product_id}:trials`);
+      this.cache.invalidateTags(tags);
+    }
   }
 }
