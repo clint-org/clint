@@ -1,16 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Brand } from '../models/brand.model';
-import { readBrandCache, writeBrandCache, BRAND_CACHE_TTL_MS } from './brand-bootstrap';
+import {
+  readBrandCache,
+  writeBrandCache,
+  clearBrandCache,
+  fetchBrandWithCache,
+  BRAND_CACHE_TTL_MS,
+} from './brand-bootstrap';
+import { DEFAULT_BRAND } from '../services/brand-context.service';
+
+function makeSessionStorageMock(): Partial<Storage> {
+  const store = new Map<string, string>();
+  return {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => store.clear(),
+  };
+}
 
 describe('brand-bootstrap', () => {
   beforeEach(() => {
-    const store = new Map<string, string>();
-    (globalThis as { sessionStorage: Storage }).sessionStorage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => store.set(k, v),
-      removeItem: (k: string) => store.delete(k),
-      clear: () => store.clear(),
-    };
+    (globalThis as { sessionStorage: Partial<Storage> }).sessionStorage = makeSessionStorageMock();
   });
 
   it('returns null when nothing is cached', () => {
@@ -33,5 +44,55 @@ describe('brand-bootstrap', () => {
   it('returns null when the cached payload is malformed', () => {
     sessionStorage.setItem('brand:example.com', 'not-json');
     expect(readBrandCache('example.com')).toBeNull();
+  });
+});
+
+describe('writeBrandCache key format', () => {
+  beforeEach(() => {
+    (globalThis as { sessionStorage: Partial<Storage> }).sessionStorage = makeSessionStorageMock();
+  });
+
+  it('stores under sessionStorage key "brand:<host>"', () => {
+    writeBrandCache('example.com', { app_display_name: 'X', primary_color: '#000' } as Brand);
+    expect(sessionStorage.getItem('brand:example.com')).not.toBeNull();
+  });
+});
+
+describe('clearBrandCache', () => {
+  beforeEach(() => {
+    (globalThis as { sessionStorage: Partial<Storage> }).sessionStorage = makeSessionStorageMock();
+  });
+
+  it('removes the entry', () => {
+    writeBrandCache('example.com', { app_display_name: 'X', primary_color: '#000' } as Brand);
+    clearBrandCache('example.com');
+    expect(readBrandCache('example.com')).toBeNull();
+  });
+});
+
+describe('fetchBrandWithCache', () => {
+  beforeEach(() => {
+    (globalThis as { sessionStorage: Partial<Storage> }).sessionStorage = makeSessionStorageMock();
+  });
+
+  it('returns cached value without calling the network fn when cache is fresh', async () => {
+    const cached = { app_display_name: 'cached', primary_color: '#000' } as Brand;
+    writeBrandCache('example.com', cached);
+    const networkFn = vi.fn();
+    const result = await fetchBrandWithCache('example.com', networkFn);
+    expect(result.app_display_name).toBe('cached');
+    expect(networkFn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to DEFAULT_BRAND when the network fn returns null', async () => {
+    const result = await fetchBrandWithCache('example.com', async () => null);
+    expect(result).toBe(DEFAULT_BRAND);
+  });
+
+  it('writes cache and returns fresh brand when network returns a value', async () => {
+    const fresh = { app_display_name: 'fresh', primary_color: '#fff' } as Brand;
+    const result = await fetchBrandWithCache('example.com', async () => fresh);
+    expect(result.app_display_name).toBe('fresh');
+    expect(readBrandCache('example.com')?.app_display_name).toBe('fresh');
   });
 });
