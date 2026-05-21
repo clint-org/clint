@@ -34,6 +34,13 @@ export class RpcCache {
       return entry.data;
     }
 
+    if (entry && now < entry.staleUntil && opts.swr !== false) {
+      void this.fetchAndStore(key, opts).catch(() => {
+        // background refresh failure is silent
+      });
+      return entry.data;
+    }
+
     return this.fetchAndStore(key, opts);
   }
 

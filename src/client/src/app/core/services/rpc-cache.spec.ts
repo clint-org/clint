@@ -60,3 +60,51 @@ describe('RpcCache inflight dedup', () => {
     expect(await b).toEqual([1, 2, 3]);
   });
 });
+
+describe('RpcCache SWR', () => {
+  it('returns stale data immediately and refreshes in background', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    let call = 0;
+    const fetch = vi.fn().mockImplementation(async () => {
+      call += 1;
+      return [call];
+    });
+    const opts = { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch };
+
+    const first = await cache.get('list_x', {}, opts);
+    expect(first).toEqual([1]);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(2000);  // past freshUntil, within staleUntil
+
+    const second = await cache.get('list_x', {}, opts);
+    expect(second).toEqual([1]);  // stale data returned immediately
+    expect(fetch).toHaveBeenCalledTimes(2);  // background refresh kicked off
+
+    await vi.advanceTimersByTimeAsync(0);
+
+    const third = await cache.get('list_x', {}, opts);
+    expect(third).toEqual([2]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
+  it('past staleUntil, awaits a fresh fetch', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    let call = 0;
+    const fetch = vi.fn().mockImplementation(async () => {
+      call += 1;
+      return [call];
+    });
+    const opts = { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch };
+
+    await cache.get('list_x', {}, opts);
+    vi.advanceTimersByTime(10_000);
+    const result = await cache.get('list_x', {}, opts);
+    expect(result).toEqual([2]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+});
