@@ -20,6 +20,18 @@ interface CacheEntry<T> {
 @Injectable({ providedIn: 'root' })
 export class RpcCache {
   private entries = new Map<string, CacheEntry<unknown>>();
+  private channel: BroadcastChannel | null = null;
+
+  constructor() {
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.channel = new BroadcastChannel('rpc-cache');
+      this.channel.addEventListener('message', (e: MessageEvent) => {
+        if (e.data?.type === 'invalidate' && Array.isArray(e.data.tags)) {
+          this.invalidateTagsLocal(e.data.tags as string[]);
+        }
+      });
+    }
+  }
 
   async get<T>(rpcName: string, params: object, opts: RpcCacheOptions<T>): Promise<T> {
     const key = this.makeKey(rpcName, params);
@@ -46,6 +58,11 @@ export class RpcCache {
 
   invalidateTags(tags: string[]): void {
     if (tags.length === 0) return;
+    this.invalidateTagsLocal(tags);
+    this.channel?.postMessage({ type: 'invalidate', tags });
+  }
+
+  private invalidateTagsLocal(tags: string[]): void {
     const tagSet = new Set(tags);
     for (const [key, entry] of this.entries) {
       if (entry.tags.some((t) => tagSet.has(t))) {

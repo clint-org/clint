@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RpcCache } from './rpc-cache.service';
 
 function makeCache(): RpcCache {
@@ -149,6 +149,50 @@ describe('RpcCache invalidateTags', () => {
     await cache.get('b', {}, opts);
     cache.invalidateAll();
     await cache.get('a', {}, opts);
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('RpcCache BroadcastChannel', () => {
+  interface FakeChannel {
+    name: string;
+    listeners: Set<(e: { data: unknown }) => void>;
+    postMessage(msg: unknown): void;
+    close(): void;
+  }
+  let channels: FakeChannel[];
+  beforeEach(() => {
+    channels = [];
+    (globalThis as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel = class {
+      listeners = new Set<(e: { data: unknown }) => void>();
+      constructor(public name: string) { channels.push(this as FakeChannel); }
+      addEventListener(_type: string, fn: (e: { data: unknown }) => void) {
+        this.listeners.add(fn);
+      }
+      postMessage(msg: unknown) {
+        for (const other of channels) {
+          if (other === (this as unknown as FakeChannel)) continue;
+          for (const l of other.listeners) l({ data: msg });
+        }
+      }
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      close() {}
+    } as unknown as typeof BroadcastChannel;
+  });
+
+  it('posts invalidate messages to other tabs', async () => {
+    const cacheA = new RpcCache();
+    const cacheB = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    const opts = { ttl: { fresh: 60_000, stale: 60_000 }, tags: ['space:a:companies'], fetch };
+
+    await cacheA.get('list_x', { id: 'a' }, opts);
+    await cacheB.get('list_x', { id: 'a' }, opts);
+    expect(fetch).toHaveBeenCalledTimes(2);
+
+    cacheA.invalidateTags(['space:a:companies']);
+
+    await cacheB.get('list_x', { id: 'a' }, opts);
     expect(fetch).toHaveBeenCalledTimes(3);
   });
 });
