@@ -61,7 +61,7 @@ flowchart LR
 | Google OAuth client | existing | same client, dev redirect URI added |
 | `apexDomain` (Angular env) | `clintapp.com` | `dev.clintapp.com` |
 | DB data | prod | `seed.sql`-derived only |
-| Edge function `send-invite-email` | deployed | deployed (one-time bootstrap) |
+| Edge function `send-invite-email` | not in use (scaffolded only) | not deployed (defer until invites go live) |
 
 ### Deploy flow
 
@@ -204,7 +204,6 @@ One-time bootstrap from local:
 supabase link --project-ref <dev-ref>
 supabase db push                 # apply all migrations to dev
 psql "$DEV_DB_URL" -f supabase/seed.sql
-supabase functions deploy send-invite-email --project-ref <dev-ref>
 ```
 
 `seed.sql` is auto-applied only on `supabase db reset` against the local
@@ -232,31 +231,22 @@ redirect URIs":
 If `[auth.external.azure]` is exercised on dev, mirror the same step for
 the Microsoft app registration. Skip otherwise.
 
-### Supabase: edge function and webhook
+### Supabase: edge function and webhook (deferred)
 
-`send-invite-email` is treated as live in prod, so dev mirrors it. One-time
-bootstrap on dev:
+`send-invite-email` is scaffolded but **not** currently active in prod (no
+webhook configured, no Resend integration in use). Dev does not deploy it
+either. When invite emails are turned on in prod, the dev mirror becomes a
+follow-up effort whose own design will need to cover, at minimum:
 
-1. `supabase functions deploy send-invite-email --project-ref <dev-ref>`
-2. In dev project dashboard -> Edge Functions -> Secrets, set:
-   - `EMAIL_WEBHOOK_SECRET` (generate fresh, not the prod value)
-   - `RESEND_API_KEY` (use a Resend test/sandbox key, **not** the prod key)
-   - Any other env vars the function reads (`EMAIL_BASE_URL` etc.) pointed at
-     `https://dev.clintapp.com`
-3. In dev project dashboard -> Database -> Webhooks, recreate the prod
-   webhook against `public.tenant_invites` INSERT, pointing at the dev
-   function URL, with the matching `webhook-signature` header value.
+- Deploying the function to the dev Supabase project.
+- Setting `EMAIL_WEBHOOK_SECRET`, `RESEND_API_KEY`, and `EMAIL_BASE_URL`
+  on the dev project (distinct from prod values).
+- Recreating the `tenant_invites` INSERT webhook on the dev project,
+  pointing at the dev function URL.
+- A dev-email safety rail (Resend test key or `EMAIL_REDIRECT_TO`
+  override) so dev cannot send real mail to real strangers.
 
-**Dev email safety rail:** dev must not send real invite mail to real
-strangers. Two acceptable patterns:
-- Use a Resend test API key so all sends route to Resend's test inbox, or
-- Set a dev-only env var on the function (e.g. `EMAIL_REDIRECT_TO`) that
-  overrides the recipient and routes every send to a controlled catchall
-  inbox.
-
-Implementing the safety rail (which pattern, code change to the function
-or pure config) is captured as a TODO in the plan; either is acceptable
-provided it is verified before the first dev invite is created.
+Tracked in "Out of scope (future work)" below.
 
 ### Angular: env files and build configurations
 
@@ -400,8 +390,6 @@ This ritual is documented in the runbook (see Documentation below).
 9. If the change included a migration, run from local:
    `supabase link --project-ref <prod-ref> && supabase db push`. Review the
    diff. Confirm.
-10. If `send-invite-email` changed, run from local:
-    `supabase functions deploy send-invite-email --project-ref <prod-ref>`.
 
 ## One-time bootstrap checklist
 
@@ -413,20 +401,11 @@ In recommended order:
    2. `supabase link --project-ref <dev-ref>`
    3. `supabase db push`
    4. `psql "$DEV_DB_URL" -f supabase/seed.sql`
-   5. `supabase functions deploy send-invite-email --project-ref <dev-ref>`
-   6. Set function secrets: `EMAIL_WEBHOOK_SECRET` (fresh),
-      `RESEND_API_KEY` (test key), `EMAIL_BASE_URL=https://dev.clintapp.com`,
-      others as needed.
-   7. Implement email safety rail (Resend test key, or
-      `EMAIL_REDIRECT_TO` env var on the function) and verify with one
-      end-to-end invite.
-   8. Set Auth -> Providers -> Google: same client_id / secret as prod.
-   9. Set Auth -> URL Configuration: Site URL
+   5. Set Auth -> Providers -> Google: same client_id / secret as prod.
+   6. Set Auth -> URL Configuration: Site URL
       `https://dev.clintapp.com`; redirect URLs
       `https://dev.clintapp.com/auth/callback`,
       `https://*.dev.clintapp.com/auth/callback`.
-   10. Recreate prod's `tenant_invites` INSERT webhook against the dev
-       function URL, matching `webhook-signature` secret.
 
 2. **Google Cloud Console**
    1. Add `https://<dev-ref>.supabase.co/auth/v1/callback` to the existing
@@ -478,8 +457,6 @@ In recommended order:
    3. Sign in on dev via Google OAuth. Confirm session works on
       `dev.clintapp.com` and on a wildcard subdomain test
       (`acme.dev.clintapp.com` once an Acme tenant is created on dev).
-   4. Create one tenant invite on dev. Confirm the email arrives at the
-      catchall (or Resend test inbox) and the function does not error.
 
 ## Documentation
 
@@ -493,9 +470,6 @@ In recommended order:
 
 - **Cookie bleed.** Prod cookies are visible to dev (subdomain), rejected
   by dev Supabase. Documented as user-visible annoyance. Acceptable.
-- **Email safety on dev.** If the safety rail (Resend test key or
-  `EMAIL_REDIRECT_TO`) is not in place before the first dev invite,
-  real email could go to a real address. Bootstrap step 1.7 is the gate.
 - **R2 CORS drift.** Mirroring CORS / lifecycle from prod is a manual
   step. If prod's rules change later, dev does not auto-update. Acceptable;
   flag in the runbook.
@@ -506,9 +480,6 @@ In recommended order:
 - **Supabase plan limits.** A second Supabase project counts against the
   account's project quota. Confirm plan supports two active projects
   before starting bootstrap.
-- **Edge function secrets drift.** Dev needs its own `RESEND_API_KEY` and
-  `EMAIL_WEBHOOK_SECRET`; these can drift from prod over time. Not
-  automated.
 
 ## Out of scope (future work)
 
@@ -517,3 +488,10 @@ In recommended order:
 - Automated prod migration deploys.
 - Dev observability parity with prod (Sentry, alerting, dashboards).
 - Wildcard `*.<tenant-custom-domain>` testing on dev.
+- **`send-invite-email` on dev.** Function is scaffolded in the repo but
+  not active in prod. When invite emails go live, a follow-up will deploy
+  the function to dev, set its secrets (`EMAIL_WEBHOOK_SECRET`,
+  `RESEND_API_KEY`, `EMAIL_BASE_URL`), recreate the `tenant_invites`
+  INSERT webhook on dev, and add a dev-email safety rail (Resend test key
+  or `EMAIL_REDIRECT_TO` override) so dev cannot send real mail to real
+  strangers.
