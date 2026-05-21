@@ -8,6 +8,10 @@ export default defineConfig({
       miniflare: {
         compatibilityDate: '2026-04-28',
         compatibilityFlags: ['nodejs_compat'],
+        // R2 binding mirrors wrangler.jsonc r2_buckets.MATERIALS_BUCKET.
+        // Miniflare emulates the bucket in-memory; tests can read, write,
+        // and delete objects as if hitting a real R2 instance.
+        r2Buckets: ['MATERIALS_BUCKET'],
       },
     }),
   ],

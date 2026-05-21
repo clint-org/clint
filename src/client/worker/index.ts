@@ -1,4 +1,3 @@
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { jwtSubject } from './auth';
 import { isAllowedOrigin, corsHeaders, preflight } from './cors';
 import { mapSupabaseError, errorResponse, type SupabaseRpcError } from './errors';
@@ -21,6 +20,10 @@ export interface Env {
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   R2_BUCKET: string;
+  // Native R2 binding for in-worker object access. Used by the r2-drain
+  // scheduled handler. Uploads / downloads still go via presigned S3 URLs
+  // (see r2.ts) because the browser cannot use the binding directly.
+  MATERIALS_BUCKET: R2Bucket;
   ALLOWED_APEXES: string; // comma-separated list, e.g. "clintapp.com"
   UPLOAD_LIMITER: RateLimit;
   DOWNLOAD_LIMITER: RateLimit;
@@ -98,25 +101,16 @@ export default {
 const CTGOV_DAILY_CRON = '0 7 * * *';
 
 /**
- * Drains the r2_pending_deletes queue using the AWS S3 SDK as the R2
- * client. Wired here (rather than inside r2-drain/queue.ts) so the
- * module stays trivially testable with an in-memory fake while
- * production still talks to R2 over S3-compatible HTTP.
+ * Drains the r2_pending_deletes queue via the native R2 binding. The
+ * binding is faster than the S3 API path, needs no credentials, and
+ * lets Miniflare emulate the bucket end-to-end in worker tests. The
+ * S3 SDK is still used by r2.ts for presigned upload / download URLs
+ * because the binding does not produce URLs the browser can use.
  */
 async function runR2Drain(env: Env): Promise<void> {
-  const s3 = new S3Client({
-    region: 'auto',
-    endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: env.R2_ACCESS_KEY_ID,
-      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    },
-    requestChecksumCalculation: 'WHEN_REQUIRED',
-    responseChecksumValidation: 'WHEN_REQUIRED',
-  });
   const r2Client: R2DeleteClient = {
     async delete(key: string): Promise<void> {
-      await s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET, Key: key }));
+      await env.MATERIALS_BUCKET.delete(key);
     },
   };
   const summary = await drainR2DeleteQueue(
@@ -399,10 +393,10 @@ async function handleSingleTrialSync(
       duration_ms: Date.now() - start,
       nct_id: triggerResult.nct_id,
     });
-    return new Response(
-      JSON.stringify({ ok: true, nct_id: triggerResult.nct_id, summary }),
-      { status: 200, headers: { 'Content-Type': 'application/json', ...cors } }
-    );
+    return new Response(JSON.stringify({ ok: true, nct_id: triggerResult.nct_id, summary }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...cors },
+    });
   } catch (e) {
     log({
       route: 'api-ctgov-sync-trial',

@@ -29,6 +29,15 @@
 	"triggers": {
 		"crons": ["0 7 * * *", "* * * * *"]
 	},
+	// Native R2 binding used by the r2-drain scheduled handler. Uploads
+	// and downloads keep using presigned S3 URLs in r2.ts because the
+	// browser cannot consume the binding directly.
+	"r2_buckets": [
+		{
+			"binding": "MATERIALS_BUCKET",
+			"bucket_name": "clint-materials"
+		}
+	],
 	"ratelimits": [
 		{
 			"name": "UPLOAD_LIMITER",
