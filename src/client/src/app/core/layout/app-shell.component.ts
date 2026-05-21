@@ -103,6 +103,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           (spaceSettingsClick)="onSpaceSettingsClick()"
           (newSpaceClick)="onNewSpaceClick()"
           (joinTenantClick)="onJoinTenantClick()"
+          (allSpacesClick)="onAllSpacesClick()"
           (timelineHintDismiss)="onboardingTooltip.dismiss()"
         />
 
@@ -723,6 +724,10 @@ export class AppShellComponent implements OnInit {
 
   onJoinTenantClick(): void {
     this.router.navigate(['/onboarding'], { queryParams: { tab: 'join' } });
+  }
+
+  onAllSpacesClick(): void {
+    this.router.navigate(['/t', this.tenantId(), 'spaces']);
   }
 
   // --- Create space dialog ---

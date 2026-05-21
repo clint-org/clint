@@ -73,6 +73,13 @@ export interface TopbarTab {
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
+                    (click)="onAllSpacesClick()"
+                  >
+                    <i class="fa-solid fa-grip text-[10px]"></i> All spaces
+                  </button>
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
                     (click)="onTenantSettingsClick()"
                   >
                     <i class="fa-solid fa-gear text-[10px]"></i> Tenant settings
@@ -111,6 +118,13 @@ export interface TopbarTab {
               </button>
               @if (tenantDropdownOpen()) {
                 <div class="dropdown" role="listbox">
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onAllSpacesClick()"
+                  >
+                    <i class="fa-solid fa-grip text-[10px]"></i> All spaces
+                  </button>
                   <button
                     type="button"
                     class="dropdown-item dropdown-item--footer"
@@ -893,6 +907,7 @@ export class ContextualTopbarComponent {
   readonly spaceSettingsClick = output<void>();
   readonly newSpaceClick = output<void>();
   readonly joinTenantClick = output<void>();
+  readonly allSpacesClick = output<void>();
   readonly timelineHintDismiss = output<void>();
 
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -998,5 +1013,10 @@ export class ContextualTopbarComponent {
   onJoinTenantClick(): void {
     this.tenantDropdownOpen.set(false);
     this.joinTenantClick.emit();
+  }
+
+  onAllSpacesClick(): void {
+    this.tenantDropdownOpen.set(false);
+    this.allSpacesClick.emit();
   }
 }
