@@ -2,16 +2,18 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Toast } from 'primeng/toast';
+import { ConfirmDeleteDialogComponent } from './shared/components/confirm-delete-dialog/confirm-delete-dialog.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ConfirmDialog, Toast],
+  imports: [RouterOutlet, ConfirmDialog, Toast, ConfirmDeleteDialogComponent],
   template: `
     <div class="app-root-shell bg-slate-50">
       <router-outlet />
     </div>
     <p-confirmdialog />
+    <app-confirm-delete-dialog />
     <p-toast
       position="top-right"
       [showTransformOptions]="'translateX(100%)'"

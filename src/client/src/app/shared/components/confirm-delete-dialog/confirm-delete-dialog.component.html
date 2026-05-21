@@ -1,0 +1,90 @@
+<p-dialog
+  [header]="opts()?.header ?? ''"
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="true"
+  [closeOnEscape]="true"
+  [dismissableMask]="false"
+  styleClass="!w-[34rem]"
+  (onHide)="onHide()"
+>
+  @if (opts(); as o) {
+    <div class="flex flex-col gap-4 text-sm text-slate-700">
+      @if (o.entityLabel) {
+        <p class="text-xs uppercase tracking-wide text-slate-500">
+          {{ o.entityLabel }}
+        </p>
+      }
+
+      @if (o.message) {
+        <p class="text-slate-800">{{ o.message }}</p>
+      }
+
+      @if (countRows().length > 0) {
+        <table
+          class="w-full border border-slate-200 text-left text-sm"
+          aria-label="Count breakdown of items this action will remove"
+        >
+          <tbody>
+            @for (row of countRows(); track row.key) {
+              <tr class="border-t border-slate-100 first:border-t-0">
+                <th
+                  scope="row"
+                  class="px-3 py-1.5 font-normal text-slate-600"
+                >
+                  {{ row.label }}
+                </th>
+                <td class="px-3 py-1.5 text-right font-mono tabular-nums text-slate-900">
+                  {{ row.value }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      @if (o.details) {
+        <p class="text-xs text-slate-500">{{ o.details }}</p>
+      }
+
+      @if (requiredTyped(); as required) {
+        <div class="flex flex-col gap-1.5">
+          <label for="confirm-delete-typed" class="text-xs font-medium text-slate-700">
+            Type <span class="font-mono text-slate-900">{{ required }}</span> to confirm
+          </label>
+          <input
+            id="confirm-delete-typed"
+            pInputText
+            autocomplete="off"
+            spellcheck="false"
+            [value]="typed()"
+            (input)="onTypedInput($event)"
+            aria-describedby="confirm-delete-typed-hint"
+          />
+          <p id="confirm-delete-typed-hint" class="text-xs text-slate-500">
+            Confirm enables once the text matches exactly.
+          </p>
+        </div>
+      }
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-end gap-2">
+        <p-button
+          [label]="rejectLabel()"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="onReject()"
+        />
+        <p-button
+          [label]="acceptLabel()"
+          severity="danger"
+          size="small"
+          [disabled]="!typedMatches()"
+          (onClick)="onAccept()"
+        />
+      </div>
+    </ng-template>
+  }
+</p-dialog>
