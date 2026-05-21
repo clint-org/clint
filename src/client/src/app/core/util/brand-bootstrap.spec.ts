@@ -6,6 +6,7 @@ import {
   clearBrandCache,
   fetchBrandWithCache,
   broadcastBrandInvalidation,
+  installBrandInvalidationListener,
   BRAND_CACHE_TTL_MS,
 } from './brand-bootstrap';
 import { DEFAULT_BRAND } from '../services/brand-context.service';
@@ -109,5 +110,47 @@ describe('brand-bootstrap cross-tab clear', () => {
     } as unknown as typeof BroadcastChannel;
     broadcastBrandInvalidation('example.com');
     expect(posts).toEqual([{ name: 'rpc-cache', msg: { type: 'brand-invalidate', host: 'example.com' } }]);
+  });
+});
+
+describe('installBrandInvalidationListener', () => {
+  let installed: ((e: { data: unknown }) => void)[];
+  let store: Map<string, string>;
+
+  beforeEach(() => {
+    installed = [];
+    store = new Map<string, string>();
+    (globalThis as { sessionStorage: Storage }).sessionStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v); },
+      removeItem: (k: string) => { store.delete(k); },
+      clear: () => store.clear(),
+      length: 0,
+      key: () => null,
+    };
+    (globalThis as { BroadcastChannel: typeof BroadcastChannel }).BroadcastChannel = class {
+      constructor(public name: string) {}
+      addEventListener(_type: string, fn: (e: { data: unknown }) => void) {
+        installed.push(fn);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      postMessage() {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      close() {}
+    } as unknown as typeof BroadcastChannel;
+  });
+
+  it('clears the brand cache when a brand-invalidate message arrives', () => {
+    writeBrandCache('example.com', { app_display_name: 'X', primary_color: '#000' } as Brand);
+    installBrandInvalidationListener();
+    installed[0]({ data: { type: 'brand-invalidate', host: 'example.com' } });
+    expect(readBrandCache('example.com')).toBeNull();
+  });
+
+  it('ignores messages with the wrong type', () => {
+    writeBrandCache('example.com', { app_display_name: 'X', primary_color: '#000' } as Brand);
+    installBrandInvalidationListener();
+    installed[0]({ data: { type: 'something-else', host: 'example.com' } });
+    expect(readBrandCache('example.com')?.app_display_name).toBe('X');
   });
 });
