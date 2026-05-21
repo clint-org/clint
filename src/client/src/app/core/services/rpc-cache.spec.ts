@@ -287,3 +287,35 @@ describe('RpcCache BroadcastChannel', () => {
     expect(fetch).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('RpcCache swr: false opt-out', () => {
+  it('awaits a fresh fetch past freshUntil when swr is false', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    let call = 0;
+    const fetch = vi.fn().mockImplementation(async () => {
+      call += 1;
+      return [call];
+    });
+
+    await cache.get('list_x', {}, {
+      ttl: { fresh: 1000, stale: 60_000 },
+      tags: [],
+      fetch,
+      swr: false,
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    const result = await cache.get('list_x', {}, {
+      ttl: { fresh: 1000, stale: 60_000 },
+      tags: [],
+      fetch,
+      swr: false,
+    });
+
+    expect(result).toEqual([2]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+});
