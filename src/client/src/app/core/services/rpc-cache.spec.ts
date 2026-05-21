@@ -321,6 +321,37 @@ describe('RpcCache dev telemetry', () => {
   });
 });
 
+describe('RpcCache invalidation during inflight', () => {
+  it('does not repopulate the cache when invalidation fires before the inflight fetch resolves', async () => {
+    const cache = new RpcCache();
+    let resolve!: (v: number[]) => void;
+    const promise = new Promise<number[]>((r) => { resolve = r; });
+    const fetch = vi.fn().mockReturnValueOnce(promise).mockResolvedValueOnce([2]);
+
+    const firstCall = cache.get('list_x', {}, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['t'],
+      fetch,
+    });
+
+    // Invalidate while the first fetch is still inflight.
+    cache.invalidateTags(['t']);
+
+    resolve([1]);
+    await firstCall;
+
+    // The next get must NOT see the stale result; it must trigger a fresh fetch.
+    const second = await cache.get('list_x', {}, {
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: ['t'],
+      fetch,
+    });
+
+    expect(second).toEqual([2]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('RpcCache swr: false opt-out', () => {
   it('awaits a fresh fetch past freshUntil when swr is false', async () => {
     vi.useFakeTimers();

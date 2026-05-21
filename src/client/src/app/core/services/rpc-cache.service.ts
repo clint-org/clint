@@ -26,6 +26,7 @@ interface CacheEntry<T> {
   inflight?: Promise<T>;
   signal: WritableSignal<T | undefined>;
   serializedData: string;
+  generation: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +34,7 @@ export class RpcCache {
   private entries = new Map<string, CacheEntry<unknown>>();
   private accessOrder = new Map<string, number>();
   private accessCounter = 0;
+  private generationCounter = 0;
   private readonly MAX_ENTRIES = 200;
   private channel: BroadcastChannel | null = null;
   private stats: RpcCacheStats | null = null;
@@ -111,6 +113,7 @@ export class RpcCache {
         tags: [],
         signal: sig as WritableSignal<unknown>,
         serializedData: '',
+        generation: 0,
       } as unknown as CacheEntry<T>;
       this.entries.set(key, entry as CacheEntry<unknown>);
     }
@@ -145,6 +148,8 @@ export class RpcCache {
     const existing = this.entries.get(key) as CacheEntry<T> | undefined;
     const sig: WritableSignal<T | undefined> =
       existing?.signal ?? (signal<T | undefined>(undefined) as WritableSignal<T | undefined>);
+    this.generationCounter += 1;
+    const gen = this.generationCounter;
 
     this.entries.set(key, {
       data: existing?.data as T,
@@ -155,13 +160,19 @@ export class RpcCache {
       inflight,
       signal: sig as WritableSignal<unknown>,
       serializedData: existing?.serializedData ?? '',
+      generation: gen,
     } as CacheEntry<unknown>);
 
     try {
       const data = await inflight;
       const now = Date.now();
       const serialized = stableStringify(data as unknown);
-      const prev = this.entries.get(key) as CacheEntry<T> | undefined;
+      const current = this.entries.get(key) as CacheEntry<T> | undefined;
+
+      // If our placeholder was invalidated or replaced while inflight, do not write back.
+      if (!current || current.generation !== gen) {
+        return data;
+      }
 
       this.entries.set(key, {
         data,
@@ -171,16 +182,21 @@ export class RpcCache {
         tags: opts.tags,
         signal: sig as WritableSignal<unknown>,
         serializedData: serialized,
+        generation: gen,
       } as CacheEntry<unknown>);
 
-      if (serialized !== prev?.serializedData) {
+      if (serialized !== current.serializedData) {
         sig.set(data);
       }
       this.evictIfOverCapacity();
       return data;
     } catch (err) {
-      this.entries.delete(key);
-      this.accessOrder.delete(key);
+      // Only delete if our placeholder is still there.
+      const current = this.entries.get(key) as CacheEntry<T> | undefined;
+      if (current && current.generation === gen) {
+        this.entries.delete(key);
+        this.accessOrder.delete(key);
+      }
       throw err;
     }
   }
