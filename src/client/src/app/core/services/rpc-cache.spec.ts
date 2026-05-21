@@ -153,6 +153,54 @@ describe('RpcCache invalidateTags', () => {
   });
 });
 
+describe('RpcCache LRU', () => {
+  it('evicts least-recently-accessed when size exceeds 200', async () => {
+    const cache = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    const opts = (i: number) => ({
+      ttl: { fresh: 60_000, stale: 60_000 },
+      tags: [`tag:${i}`],
+      fetch,
+    });
+
+    for (let i = 0; i < 200; i++) {
+      await cache.get(`rpc_${i}`, {}, opts(i));
+    }
+    expect(fetch).toHaveBeenCalledTimes(200);
+
+    await cache.get('rpc_0', {}, opts(0));
+
+    await cache.get('rpc_200', {}, opts(200));
+    expect(fetch).toHaveBeenCalledTimes(201);
+
+    await cache.get('rpc_0', {}, opts(0));
+    expect(fetch).toHaveBeenCalledTimes(201);
+
+    await cache.get('rpc_1', {}, opts(1));
+    expect(fetch).toHaveBeenCalledTimes(202);
+  });
+
+  it('does not evict inflight entries', async () => {
+    const cache = new RpcCache();
+    const slow = new Promise(() => { /* never resolves */ });
+    const slowFetch = vi.fn().mockReturnValue(slow);
+    const fastFetch = vi.fn().mockResolvedValue([1]);
+
+    void cache.get('slow', {}, { ttl: { fresh: 60_000, stale: 60_000 }, tags: [], fetch: slowFetch });
+
+    for (let i = 0; i < 200; i++) {
+      await cache.get(`rpc_${i}`, {}, {
+        ttl: { fresh: 60_000, stale: 60_000 },
+        tags: [],
+        fetch: fastFetch,
+      });
+    }
+
+    void cache.get('slow', {}, { ttl: { fresh: 60_000, stale: 60_000 }, tags: [], fetch: slowFetch });
+    expect(slowFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('RpcCache BroadcastChannel', () => {
   interface FakeChannel {
     name: string;
