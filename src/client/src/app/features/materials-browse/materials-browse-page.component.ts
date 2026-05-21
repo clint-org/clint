@@ -216,11 +216,15 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   }
 
   protected async onDeleteClick(material: Material): Promise<void> {
+    // Material has a name (title) we can use as the typed value. No preview
+    // RPC: the R2 delete-queue + material_links cascade handle cleanup.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete material',
+      entityLabel: material.title,
       message:
         `Delete "${material.title}"? The file and all of its links will be ` +
-        `permanently removed. This cannot be undone.`,
+        `permanently removed.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

@@ -402,9 +402,13 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   async onDeleteEvent(eventId: string): Promise<void> {
+    // Unnamed-item path: require the literal word 'delete' to gate the
+    // destructive action per cascade-safety T12 friction parity.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete event',
-      message: 'Delete this event? This cannot be undone.',
+      message: 'Delete this event?',
+      requireTypedConfirmation: true,
+      typedConfirmationValue: 'delete',
     });
     if (!ok) return;
     this.error.set(null);

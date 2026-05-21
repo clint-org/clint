@@ -548,9 +548,13 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   // --- Delete handlers ---
 
   async confirmDeleteArea(area: TherapeuticArea): Promise<void> {
+    // Cascade-safety T6 makes trials.therapeutic_area_id ON DELETE SET NULL;
+    // trials survive and render (uncategorized). Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete therapeutic area',
-      message: `Delete "${area.name}"? This cannot be undone.`,
+      entityLabel: area.name,
+      message: `Delete "${area.name}"? Trials in this area survive with no therapeutic area; they will render as (uncategorized).`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 
@@ -573,9 +577,13 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   }
 
   async confirmDeleteMoa(item: MechanismOfAction): Promise<void> {
+    // MoA delete has no preview RPC; product joins are unlinked rather
+    // than cascaded. Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete mechanism of action',
-      message: `Delete "${item.name}"? This cannot be undone.`,
+      entityLabel: item.name,
+      message: `Delete "${item.name}"? Assets that reference this MoA will lose the association.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 
@@ -598,9 +606,13 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   }
 
   async confirmDeleteRoa(item: RouteOfAdministration): Promise<void> {
+    // RoA delete has no preview RPC; product joins are unlinked rather
+    // than cascaded. Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete route of administration',
-      message: `Delete "${item.name}"? This cannot be undone.`,
+      entityLabel: item.name,
+      message: `Delete "${item.name}"? Assets that reference this RoA will lose the association.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

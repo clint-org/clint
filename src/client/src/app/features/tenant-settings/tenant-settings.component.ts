@@ -670,12 +670,16 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
   async confirmDeleteTenant(): Promise<void> {
     const t = this.tenant();
     if (!t) return;
+    // Tenant has no preview RPC. The blast radius is the entire tenant
+    // (all spaces, all data); friction is the type-the-name gate.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete tenant',
+      entityLabel: t.name,
       message:
         `Delete "${t.name}"? Every space, owner, invite, and data record in this ` +
-        `tenant will be permanently removed. This cannot be undone.`,
+        `tenant will be permanently removed.`,
       acceptLabel: 'Delete tenant',
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

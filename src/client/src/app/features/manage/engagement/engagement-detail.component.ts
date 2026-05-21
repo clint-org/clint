@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
+import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
@@ -178,33 +179,33 @@ export class EngagementDetailComponent implements OnInit {
     this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
   }
 
-  protected onIntelligenceDelete(): void {
+  protected async onIntelligenceDelete(): Promise<void> {
     const i = this.intelligence();
     const id = i?.published?.record.id ?? i?.draft?.record.id;
     if (!id) return;
-    this.confirmation.confirm({
-      header: 'Delete primary intelligence?',
-      message: 'This cannot be undone.',
-      acceptLabel: 'Delete',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectLabel: 'Cancel',
-      accept: async () => {
-        try {
-          await this.intelligenceService.delete(id);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Deleted',
-            detail: 'Primary intelligence removed.',
-          });
-          await this.loadIntelligence();
-        } catch (err) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Delete failed',
-            detail: (err as Error).message,
-          });
-        }
-      },
+    // Unnamed-item path: the engagement intelligence is a single read,
+    // require the literal word 'delete' to gate the destructive action.
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete primary intelligence',
+      message: 'Delete the primary intelligence read for this engagement?',
+      requireTypedConfirmation: true,
+      typedConfirmationValue: 'delete',
     });
+    if (!ok) return;
+    try {
+      await this.intelligenceService.delete(id);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Deleted',
+        detail: 'Primary intelligence removed.',
+      });
+      await this.loadIntelligence();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Delete failed',
+        detail: (err as Error).message,
+      });
+    }
   }
 }

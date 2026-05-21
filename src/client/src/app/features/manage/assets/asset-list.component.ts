@@ -222,10 +222,26 @@ export class AssetListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(asset: Asset): Promise<void> {
+    // Preview the cascade so the dialog renders honest counts. The preview
+    // RPC is read-only; if it fails (RLS or network), surface and bail.
+    let counts;
+    try {
+      counts = await this.assetService.previewDelete(asset.id);
+    } catch (err) {
+      this.deleteError.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not load delete preview. Check your connection and try again.'
+      );
+      return;
+    }
+
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete asset',
-      message: `Delete "${asset.name}"? This cannot be undone.`,
-      details: 'Associated trials are unlinked, not deleted.',
+      entityLabel: asset.name,
+      message: `Delete "${asset.name}"? This will permanently remove:`,
+      counts,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

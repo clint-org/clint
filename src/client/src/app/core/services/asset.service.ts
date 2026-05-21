@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { Asset } from '../models/asset.model';
+import { DeleteCountBreakdown } from '../../shared/utils/confirm-delete';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -125,6 +126,20 @@ export class AssetService {
       `space:${spaceId}:landing-stats`,
     ]);
     return data as Asset;
+  }
+
+  /**
+   * Read-only preview of the cascade footprint of deleting this product
+   * (asset in UI vocabulary). Returns a jsonb count breakdown matching
+   * what the FK cascade + T3 / T4 triggers will remove. Backed by
+   * public.preview_product_delete (cascade-safety T7).
+   */
+  async previewDelete(id: string): Promise<DeleteCountBreakdown> {
+    const { data, error } = await this.supabase.client.rpc('preview_product_delete', {
+      p_product_id: id,
+    });
+    if (error) throw error;
+    return (data ?? {}) as DeleteCountBreakdown;
   }
 
   async delete(id: string): Promise<void> {

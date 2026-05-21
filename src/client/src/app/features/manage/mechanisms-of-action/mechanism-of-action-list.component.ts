@@ -137,9 +137,13 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(item: MechanismOfAction): Promise<void> {
+    // No preview RPC for MoA: it has no cascade footprint (product joins
+    // are unlinked, not cascaded). Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete mechanism of action',
-      message: `Delete "${item.name}"? This cannot be undone.`,
+      entityLabel: item.name,
+      message: `Delete "${item.name}"? Assets that reference this MoA will lose the association.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

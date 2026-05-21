@@ -154,9 +154,14 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(area: TherapeuticArea): Promise<void> {
+    // No preview RPC for TA: there is no cascading count to show (cascade-safety
+    // T6 makes trials.therapeutic_area_id ON DELETE SET NULL). Surface that
+    // explicitly in the message and require type-the-name confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete therapeutic area',
-      message: `Delete "${area.name}"? This cannot be undone.`,
+      entityLabel: area.name,
+      message: `Delete "${area.name}"? Trials in this area survive with no therapeutic area; they will render as (uncategorized).`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

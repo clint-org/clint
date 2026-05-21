@@ -136,7 +136,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
           label: 'Delete',
           icon: 'fa-solid fa-trash',
           styleClass: 'row-actions-danger',
-          command: () => this.deleteType(mt.id),
+          command: () => this.deleteType(mt),
         }
       );
     }
@@ -185,14 +185,18 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     });
   }
 
-  async deleteType(id: string): Promise<void> {
+  async deleteType(mt: MarkerType): Promise<void> {
+    // Marker types have no preview RPC: marker_assignments (and parent
+    // markers) survive but lose their type linkage. Friction-only.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete marker type',
-      message: 'Any existing markers using this type will lose their type. This cannot be undone.',
+      entityLabel: mt.name,
+      message: `Delete "${mt.name}"? Existing markers using this type will lose their type assignment.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
     try {
-      await this.markerTypeService.delete(id);
+      await this.markerTypeService.delete(mt.id);
       await this.loadMarkerTypes();
       this.messageService.add({
         severity: 'success',

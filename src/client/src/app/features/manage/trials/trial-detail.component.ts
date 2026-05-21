@@ -504,7 +504,11 @@ export class TrialDetailComponent implements OnDestroy {
       header: 'Delete marker',
       message: isCtgovSourced
         ? 'This marker was auto-derived from clinicaltrials.gov. Deleting it removes it from the timeline now, but the next CT.gov sync may re-create it. To suppress permanently, replace it with a manual marker of the same type.'
-        : 'Delete this marker? This cannot be undone.',
+        : 'Delete this marker?',
+      // Unnamed-item path: require the literal word 'delete' to enable
+      // submit. Friction parity with named-entity deletes per cascade-safety T12.
+      requireTypedConfirmation: true,
+      typedConfirmationValue: 'delete',
     });
     if (!ok) return;
     try {
@@ -531,7 +535,10 @@ export class TrialDetailComponent implements OnDestroy {
   async deleteNote(id: string): Promise<void> {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete note',
-      message: 'Delete this note? This cannot be undone.',
+      message: 'Delete this note?',
+      // Unnamed-item path: require the literal word 'delete'.
+      requireTypedConfirmation: true,
+      typedConfirmationValue: 'delete',
     });
     if (!ok) return;
     try {

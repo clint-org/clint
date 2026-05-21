@@ -292,11 +292,26 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(trial: Trial): Promise<void> {
+    // Preview the cascade so the dialog renders honest counts (trial_notes,
+    // events, marker_assignments, marker orphan-split, PI / PIL, etc).
+    let counts;
+    try {
+      counts = await this.trialService.previewDelete(trial.id);
+    } catch (err) {
+      this.error.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not load delete preview. Check your connection and try again.'
+      );
+      return;
+    }
+
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete trial',
-      message: `Delete "${trial.name}"? This cannot be undone.`,
-      details:
-        'Markers and trial notes are deleted. Intelligence and materials remain but lose their trial link.',
+      entityLabel: trial.name,
+      message: `Delete "${trial.name}"? This will permanently remove:`,
+      counts,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
     this.error.set(null);

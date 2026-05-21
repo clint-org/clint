@@ -134,9 +134,13 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(item: RouteOfAdministration): Promise<void> {
+    // No preview RPC for RoA: no cascading rows to show (product joins are
+    // unlinked, not cascaded). Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete route of administration',
-      message: `Delete "${item.name}"? This cannot be undone.`,
+      entityLabel: item.name,
+      message: `Delete "${item.name}"? Assets that reference this RoA will lose the association.`,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

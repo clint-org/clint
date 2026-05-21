@@ -207,10 +207,27 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(company: Company): Promise<void> {
+    // Fetch the count breakdown so the dialog can show an honest pre-flight
+    // read of what the cascade will remove. If preview fails (RLS, network),
+    // surface the error and bail rather than opening a count-less dialog.
+    let counts;
+    try {
+      counts = await this.companyService.previewDelete(company.id);
+    } catch (err) {
+      this.deleteError.set(
+        err instanceof Error
+          ? err.message
+          : 'Could not load delete preview. Check your connection and try again.'
+      );
+      return;
+    }
+
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete company',
-      message: `Delete "${company.name}"? This cannot be undone.`,
-      details: 'Associated assets are unlinked, not deleted. Markers and intelligence remain.',
+      entityLabel: company.name,
+      message: `Delete "${company.name}"? This will permanently remove:`,
+      counts,
+      requireTypedConfirmation: true,
     });
     if (!ok) return;
 

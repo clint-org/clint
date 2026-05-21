@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { Marker } from '../models/marker.model';
 import { Trial } from '../models/trial.model';
+import { DeleteCountBreakdown } from '../../shared/utils/confirm-delete';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -158,6 +159,21 @@ export class TrialService {
     if (trial.product_id) tags.push(`asset:${trial.product_id}:trials`);
     this.cache.invalidateTags(tags);
     return trial;
+  }
+
+  /**
+   * Read-only preview of the cascade footprint of deleting this trial.
+   * Returns a jsonb count breakdown matching what the FK cascade + T3 / T4
+   * triggers will remove (trial_notes, events, material_links, PI, PIL,
+   * marker_assignments, markers_removed_entirely, markers_unlinked_only).
+   * Backed by public.preview_trial_delete (cascade-safety T7).
+   */
+  async previewDelete(id: string): Promise<DeleteCountBreakdown> {
+    const { data, error } = await this.supabase.client.rpc('preview_trial_delete', {
+      p_trial_id: id,
+    });
+    if (error) throw error;
+    return (data ?? {}) as DeleteCountBreakdown;
   }
 
   async delete(id: string): Promise<void> {
