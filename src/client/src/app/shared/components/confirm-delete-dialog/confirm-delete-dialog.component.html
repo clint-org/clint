@@ -27,7 +27,7 @@
         >
           <tbody>
             @for (row of countRows(); track row.key) {
-              <tr class="border-t border-slate-100 first:border-t-0">
+              <tr class="border-t border-slate-100 first:border-t-0" [attr.data-count-key]="row.key">
                 <th
                   scope="row"
                   class="px-3 py-1.5 font-normal text-slate-600"
@@ -68,7 +68,7 @@
       }
     </div>
 
-    <ng-template pTemplate="footer">
+    <ng-template #footer>
       <div class="flex justify-end gap-2">
         <p-button
           [label]="rejectLabel()"
