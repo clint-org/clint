@@ -319,3 +319,51 @@ describe('RpcCache swr: false opt-out', () => {
     vi.useRealTimers();
   });
 });
+
+describe('RpcCache equality-skip emit', () => {
+  it('signal does not emit when background refresh returns identical data', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1, 2, 3]);
+    const opts = { ttl: { fresh: 1000, stale: 60_000 }, tags: [], fetch };
+
+    await cache.get('list_x', { spaceId: 'a' }, opts);
+    const sig = cache.signal<number[]>('list_x', { spaceId: 'a' });
+    const emits: (number[] | undefined)[] = [];
+
+    emits.push(sig());
+
+    vi.advanceTimersByTime(2000);
+    await cache.get('list_x', { spaceId: 'a' }, opts);
+    await vi.advanceTimersByTimeAsync(0);
+
+    emits.push(sig());
+
+    expect(emits[0]).toBe(emits[1]);
+    vi.useRealTimers();
+  });
+
+  it('signal updates when background refresh returns different data', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    let call = 0;
+    const fetch = vi.fn().mockImplementation(async () => {
+      call += 1;
+      return [call];
+    });
+    const opts = { ttl: { fresh: 1000, stale: 60_000 }, tags: [], fetch };
+
+    await cache.get('list_x', {}, opts);
+    const sig = cache.signal<number[]>('list_x', {});
+    const before = sig();
+
+    vi.advanceTimersByTime(2000);
+    await cache.get('list_x', {}, opts);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const after = sig();
+    expect(after).not.toBe(before);
+    expect(after).toEqual([2]);
+    vi.useRealTimers();
+  });
+});

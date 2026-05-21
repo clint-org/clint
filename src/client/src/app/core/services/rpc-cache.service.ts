@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { stableStringify } from '../util/stable-stringify';
 
 export interface RpcCacheOptions<T> {
@@ -15,6 +15,8 @@ interface CacheEntry<T> {
   staleUntil: number;
   tags: string[];
   inflight?: Promise<T>;
+  signal: WritableSignal<T | undefined>;
+  serializedData: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +61,25 @@ export class RpcCache {
     return this.fetchAndStore(key, opts);
   }
 
+  signal<T>(rpcName: string, params: object): Signal<T | undefined> {
+    const key = this.makeKey(rpcName, params);
+    let entry = this.entries.get(key) as CacheEntry<T> | undefined;
+    if (!entry) {
+      const sig = signal<T | undefined>(undefined) as WritableSignal<T | undefined>;
+      entry = {
+        data: undefined as unknown as T,
+        fetchedAt: 0,
+        freshUntil: 0,
+        staleUntil: 0,
+        tags: [],
+        signal: sig as WritableSignal<unknown>,
+        serializedData: '',
+      } as unknown as CacheEntry<T>;
+      this.entries.set(key, entry as CacheEntry<unknown>);
+    }
+    return entry.signal as Signal<T | undefined>;
+  }
+
   private touch(key: string): void {
     this.accessCounter += 1;
     this.accessOrder.set(key, this.accessCounter);
@@ -84,26 +105,45 @@ export class RpcCache {
 
   private async fetchAndStore<T>(key: string, opts: RpcCacheOptions<T>): Promise<T> {
     const inflight = opts.fetch();
+    const existing = this.entries.get(key) as CacheEntry<T> | undefined;
+    const sig: WritableSignal<T | undefined> =
+      existing?.signal ?? (signal<T | undefined>(undefined) as WritableSignal<T | undefined>);
+
     this.entries.set(key, {
-      data: undefined as unknown as T,
-      fetchedAt: 0, freshUntil: 0, staleUntil: 0,
-      tags: opts.tags, inflight,
+      data: existing?.data as T,
+      fetchedAt: 0,
+      freshUntil: 0,
+      staleUntil: 0,
+      tags: opts.tags,
+      inflight,
+      signal: sig as WritableSignal<unknown>,
+      serializedData: existing?.serializedData ?? '',
     } as CacheEntry<unknown>);
 
     try {
       const data = await inflight;
       const now = Date.now();
+      const serialized = stableStringify(data as unknown);
+      const prev = this.entries.get(key) as CacheEntry<T> | undefined;
+
       this.entries.set(key, {
         data,
         fetchedAt: now,
         freshUntil: now + opts.ttl.fresh,
         staleUntil: opts.ttl.stale === Infinity ? Infinity : now + opts.ttl.stale,
         tags: opts.tags,
+        signal: sig as WritableSignal<unknown>,
+        serializedData: serialized,
       } as CacheEntry<unknown>);
+
+      if (serialized !== prev?.serializedData) {
+        sig.set(data);
+      }
       this.evictIfOverCapacity();
       return data;
     } catch (err) {
       this.entries.delete(key);
+      this.accessOrder.delete(key);
       throw err;
     }
   }
