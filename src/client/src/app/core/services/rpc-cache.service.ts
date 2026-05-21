@@ -34,6 +34,14 @@ export class RpcCache {
         }
       });
     }
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          // No-op for now; the next get() call hits the SWR path naturally.
+          // Hook placed here for a future "refresh in background without consumer" feature.
+        }
+      });
+    }
   }
 
   async get<T>(rpcName: string, params: object, opts: RpcCacheOptions<T>): Promise<T> {

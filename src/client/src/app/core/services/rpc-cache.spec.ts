@@ -201,6 +201,49 @@ describe('RpcCache LRU', () => {
   });
 });
 
+describe('RpcCache refresh-on-focus', () => {
+  let visibility: 'visible' | 'hidden' = 'visible';
+  let listeners: (() => void)[] = [];
+
+  beforeEach(() => {
+    visibility = 'visible';
+    listeners = [];
+    (globalThis as { document: Document }).document = {
+      addEventListener: (type: string, fn: () => void) => {
+        if (type === 'visibilitychange') listeners.push(fn);
+      },
+      removeEventListener: () => undefined,
+      get visibilityState() { return visibility; },
+    } as unknown as Document;
+  });
+
+  it('triggers background refresh on next access after focus regained past freshUntil', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    let call = 0;
+    const fetch = vi.fn().mockImplementation(async () => {
+      call += 1;
+      return [call];
+    });
+    const opts = { ttl: { fresh: 1000, stale: 60_000 }, tags: [], fetch };
+
+    await cache.get('list_x', {}, opts);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(2000); // past freshUntil
+
+    visibility = 'hidden';
+    listeners.forEach((l) => l());
+    visibility = 'visible';
+    listeners.forEach((l) => l());
+
+    const second = await cache.get('list_x', {}, opts);
+    expect(second).toEqual([1]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+});
+
 describe('RpcCache BroadcastChannel', () => {
   interface FakeChannel {
     name: string;
