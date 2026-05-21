@@ -288,6 +288,39 @@ describe('RpcCache BroadcastChannel', () => {
   });
 });
 
+describe('RpcCache dev telemetry', () => {
+  it('increments hit / miss / backgroundRefresh / invalidation counters', async () => {
+    vi.useFakeTimers();
+    const cache = new RpcCache();
+    cache.enableDevStats();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    const opts = { ttl: { fresh: 1000, stale: 60_000 }, tags: ['t'], fetch };
+
+    await cache.get('list_x', {}, opts);     // miss
+    await cache.get('list_x', {}, opts);     // hit (fresh)
+    vi.advanceTimersByTime(2000);
+    await cache.get('list_x', {}, opts);     // hit (stale) + bg refresh
+    await vi.advanceTimersByTimeAsync(0);
+    cache.invalidateTags(['t']);
+
+    const stats = cache.getDevStats();
+    expect(stats.byRpc['list_x']).toEqual({
+      hits: 2,
+      misses: 1,
+      backgroundRefreshes: 1,
+      invalidations: 1,
+    });
+    vi.useRealTimers();
+  });
+
+  it('does nothing when devStats is not enabled', async () => {
+    const cache = new RpcCache();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    await cache.get('list_x', {}, { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch });
+    expect(cache.getDevStats()).toEqual({ byRpc: {} });
+  });
+});
+
 describe('RpcCache swr: false opt-out', () => {
   it('awaits a fresh fetch past freshUntil when swr is false', async () => {
     vi.useFakeTimers();

@@ -8,6 +8,15 @@ export interface RpcCacheOptions<T> {
   swr?: boolean;
 }
 
+export interface RpcCacheStats {
+  byRpc: Record<string, {
+    hits: number;
+    misses: number;
+    backgroundRefreshes: number;
+    invalidations: number;
+  }>;
+}
+
 interface CacheEntry<T> {
   data: T;
   fetchedAt: number;
@@ -26,6 +35,7 @@ export class RpcCache {
   private accessCounter = 0;
   private readonly MAX_ENTRIES = 200;
   private channel: BroadcastChannel | null = null;
+  private stats: RpcCacheStats | null = null;
 
   constructor() {
     if (typeof BroadcastChannel !== 'undefined') {
@@ -46,18 +56,45 @@ export class RpcCache {
     }
   }
 
+  enableDevStats(): void {
+    this.stats = { byRpc: {} };
+  }
+
+  getDevStats(): RpcCacheStats {
+    return this.stats ?? { byRpc: {} };
+  }
+
+  private recordStat(rpcName: string, kind: 'hits' | 'misses' | 'backgroundRefreshes' | 'invalidations'): void {
+    if (!this.stats) return;
+    const row = this.stats.byRpc[rpcName] ?? { hits: 0, misses: 0, backgroundRefreshes: 0, invalidations: 0 };
+    row[kind] += 1;
+    this.stats.byRpc[rpcName] = row;
+  }
+
   async get<T>(rpcName: string, params: object, opts: RpcCacheOptions<T>): Promise<T> {
     const key = this.makeKey(rpcName, params);
     this.touch(key);
     const now = Date.now();
     const entry = this.entries.get(key) as CacheEntry<T> | undefined;
 
-    if (entry?.inflight) return entry.inflight;
-    if (entry && now < entry.freshUntil) return entry.data;
+    if (entry?.inflight) {
+      this.recordStat(rpcName, 'hits');
+      return entry.inflight;
+    }
+
+    if (entry && now < entry.freshUntil) {
+      this.recordStat(rpcName, 'hits');
+      return entry.data;
+    }
+
     if (entry && now < entry.staleUntil && opts.swr !== false) {
+      this.recordStat(rpcName, 'hits');
+      this.recordStat(rpcName, 'backgroundRefreshes');
       void this.fetchAndStore(key, opts).catch(() => undefined);
       return entry.data;
     }
+
+    this.recordStat(rpcName, 'misses');
     return this.fetchAndStore(key, opts);
   }
 
@@ -154,18 +191,25 @@ export class RpcCache {
 
   invalidateTags(tags: string[]): void {
     if (tags.length === 0) return;
-    this.invalidateTagsLocal(tags);
+    const evictedRpcs = this.invalidateTagsLocal(tags);
     this.channel?.postMessage({ type: 'invalidate', tags });
+    if (this.stats) {
+      for (const rpc of evictedRpcs) this.recordStat(rpc, 'invalidations');
+    }
   }
 
-  private invalidateTagsLocal(tags: string[]): void {
+  private invalidateTagsLocal(tags: string[]): string[] {
     const tagSet = new Set(tags);
+    const evictedRpcs: string[] = [];
     for (const [key, entry] of this.entries) {
       if (entry.tags.some((t) => tagSet.has(t))) {
+        const rpcName = key.split(':')[0];
+        evictedRpcs.push(rpcName);
         this.entries.delete(key);
         this.accessOrder.delete(key);
       }
     }
+    return evictedRpcs;
   }
 
   invalidateAll(): void {
