@@ -174,6 +174,12 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.topbarState.actions.set([
       {
+        label: 'Archived',
+        icon: 'fa-solid fa-box-archive',
+        text: true,
+        callback: () => this.router.navigate(['/t', this.tenantId, 'spaces', 'archived']),
+      },
+      {
         label: 'Settings',
         icon: 'fa-solid fa-gear',
         text: true,

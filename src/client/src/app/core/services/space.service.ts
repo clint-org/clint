@@ -18,13 +18,70 @@ export class SpaceService {
   }
 
   async listSpaces(tenantId: string): Promise<Space[]> {
+    // Default list excludes archived spaces (cascade-safety #1: archived
+    // spaces are still in the table but should not surface in the picker).
+    // Use SpaceService.listArchivedSpaces to fetch the inverse.
     const { data, error } = await this.supabase.client
       .from('spaces')
       .select('*')
       .eq('tenant_id', tenantId)
+      .is('archived_at', null)
       .order('created_at');
     if (error) throw error;
     return data ?? [];
+  }
+
+  /**
+   * Lists archived spaces for the tenant. Archived spaces are still
+   * subject to RLS, so the caller must have at least space access (or be
+   * a tenant owner / platform admin) to see them.
+   */
+  async listArchivedSpaces(tenantId: string): Promise<Space[]> {
+    const { data, error } = await this.supabase.client
+      .from('spaces')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  /**
+   * Archive a space. Reversible via restoreSpace. Gated server-side on
+   * has_space_access(p_space_id, array['owner']).
+   */
+  async archiveSpace(id: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('archive_space', {
+      p_space_id: id,
+    });
+    if (error) throw error;
+  }
+
+  /**
+   * Restore an archived space (clears archived_at). Gated server-side on
+   * has_space_access(p_space_id, array['owner']).
+   */
+  async restoreSpace(id: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('restore_space', {
+      p_space_id: id,
+    });
+    if (error) throw error;
+  }
+
+  /**
+   * Permanently delete a space. Gated server-side on is_tenant_member(
+   * spaces.tenant_id, array['owner']) OR is_platform_admin(). Non-admins
+   * must archive the space first; platform admins may override. Returns
+   * the jsonb count breakdown of what was purged.
+   */
+  async permanentlyDeleteSpace(id: string): Promise<Record<string, unknown>> {
+    const { data, error } = await this.supabase.client.rpc(
+      'permanently_delete_space',
+      { p_space_id: id }
+    );
+    if (error) throw error;
+    return (data ?? {}) as Record<string, unknown>;
   }
 
   async getSpace(id: string): Promise<Space> {

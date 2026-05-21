@@ -129,6 +129,13 @@ export const routes: Routes = [
           import('./features/spaces/space-list.component').then((m) => m.SpaceListComponent),
       },
       {
+        path: 'spaces/archived',
+        loadComponent: () =>
+          import('./features/spaces/space-archived-list.component').then(
+            (m) => m.SpaceArchivedListComponent
+          ),
+      },
+      {
         path: 'settings',
         canActivate: [tenantSettingsGuard],
         loadComponent: () =>

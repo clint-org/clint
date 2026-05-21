@@ -1,0 +1,195 @@
+<app-manage-page-shell [narrow]="true">
+  @if (loading()) {
+    <div class="max-w-xl" aria-busy="true" aria-label="Loading space settings">
+      <div class="mb-6">
+        <app-skeleton w="80px" h="10px" />
+        <div class="mt-1.5">
+          <app-skeleton [block]="true" w="100%" h="36px" />
+        </div>
+      </div>
+      <div class="mb-6">
+        <app-skeleton w="80px" h="10px" />
+        <div class="mt-1.5">
+          <app-skeleton [block]="true" w="100%" h="78px" />
+        </div>
+      </div>
+      <div class="mt-6">
+        <app-skeleton w="120px" h="32px" />
+      </div>
+    </div>
+  } @else if (space(); as s) {
+    <div class="max-w-xl">
+      @if (archivedBadge(); as badge) {
+        <p
+          class="mb-4 inline-flex items-center gap-2 border border-slate-300 bg-slate-50 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-600"
+          [attr.aria-label]="'Space is archived'"
+        >
+          <i class="fa-solid fa-box-archive text-[10px] text-slate-500"></i>
+          {{ badge.label }}
+        </p>
+      }
+
+      <div class="mb-6">
+        <label
+          for="space-name"
+          class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+        >
+          Space name
+        </label>
+        <input
+          pInputText
+          id="space-name"
+          class="w-full"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          [readonly]="!canEditFields()"
+        />
+      </div>
+
+      <div class="mb-6">
+        <label
+          for="space-desc"
+          class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+        >
+          Description
+        </label>
+        <textarea
+          pTextarea
+          id="space-desc"
+          class="w-full"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+          rows="3"
+          [readonly]="!canEditFields()"
+        ></textarea>
+      </div>
+
+      @if (spaceRole.isOwner()) {
+        @if (canEditFields()) {
+          <div class="mt-6 flex items-center gap-3">
+            <p-button
+              label="Save changes"
+              [loading]="saving()"
+              [disabled]="!hasChanges()"
+              (onClick)="saveIfChanged()"
+            />
+          </div>
+        } @else {
+          <p class="mt-6 text-[11px] text-slate-500">
+            This space is archived. Restore it to edit name or description.
+          </p>
+        }
+
+        <div class="mt-12 border-t border-slate-200 pt-6">
+          <h3 class="text-xs font-semibold text-slate-700">Lifecycle</h3>
+
+          @if (!isArchived()) {
+            <p class="mt-1 text-xs text-slate-500">
+              Archiving hides the space from the picker and read-only-locks its data. Reversible at
+              any time by a space owner. Tenant owners can permanently delete an archived space.
+            </p>
+            <p-button
+              label="Archive space"
+              icon="fa-solid fa-box-archive"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              styleClass="mt-3"
+              [loading]="archiving()"
+              (onClick)="confirmArchive()"
+            />
+          } @else {
+            <p class="mt-1 text-xs text-slate-500">
+              Restoring the space returns it to the active picker and re-enables edits.
+            </p>
+            <p-button
+              label="Restore space"
+              icon="fa-solid fa-rotate-left"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              styleClass="mt-3"
+              [loading]="restoring()"
+              (onClick)="confirmRestore()"
+            />
+          }
+        </div>
+
+        @if (canPermanentlyDelete()) {
+          <div class="mt-8 border-t border-red-200 pt-6">
+            <h3 class="text-xs font-semibold text-red-600">Danger zone</h3>
+            <p class="mt-1 text-xs text-slate-500">
+              Permanent deletion removes every company, asset, trial, marker, material, and
+              intelligence row owned by this space. This cannot be undone.
+            </p>
+            <p-button
+              label="Permanently delete"
+              icon="fa-solid fa-trash-can"
+              severity="danger"
+              [outlined]="true"
+              size="small"
+              styleClass="mt-3"
+              (onClick)="openPermanentDeleteDialog()"
+            />
+          </div>
+        }
+      } @else {
+        <p class="mt-6 text-[11px] text-slate-500">
+          Read-only view. Space owners can edit these settings.
+        </p>
+      }
+    </div>
+  }
+</app-manage-page-shell>
+
+<p-dialog
+  header="Permanently delete space"
+  [(visible)]="permanentDeleteOpen"
+  [modal]="true"
+  [closable]="!deleting()"
+  [closeOnEscape]="!deleting()"
+  [dismissableMask]="!deleting()"
+  styleClass="!w-[32rem]"
+  (onHide)="resetPermanentDeleteForm()"
+>
+  @if (space(); as s) {
+    <div class="space-y-3">
+      <p class="text-sm text-slate-700">
+        This will permanently delete <strong>{{ s.name }}</strong> and every company, asset, trial,
+        marker, material, and intelligence row owned by it. This cannot be undone.
+      </p>
+      <p class="text-xs text-slate-500">
+        Type the space name <code class="font-mono text-slate-700">{{ s.name }}</code> below to
+        confirm.
+      </p>
+      <input
+        pInputText
+        class="w-full"
+        [formControl]="typedNameControl"
+        placeholder="Type the space name"
+        autocomplete="off"
+        aria-label="Type the space name to confirm"
+      />
+      @if (deleteError()) {
+        <p-message severity="error" [closable]="false">{{ deleteError() }}</p-message>
+      }
+    </div>
+  }
+  <ng-template #footer>
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="deleting()"
+      (onClick)="permanentDeleteOpen.set(false)"
+    />
+    <p-button
+      label="Permanently delete"
+      severity="danger"
+      icon="fa-solid fa-trash-can"
+      [disabled]="!typedNameMatches() || deleting()"
+      [loading]="deleting()"
+      (onClick)="permanentlyDelete()"
+    />
+  </ng-template>
+</p-dialog>

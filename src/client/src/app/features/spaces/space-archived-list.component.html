@@ -1,0 +1,132 @@
+<app-manage-page-shell>
+  <p class="mb-4 max-w-2xl text-[11px] text-slate-500">
+    Archived spaces are hidden from the picker and read-only-locked. A space owner can restore at
+    any time. Tenant owners and platform admins can permanently delete an archived space.
+    <a
+      [routerLink]="['/t', tenantId, 'spaces']"
+      class="ml-1 text-brand-700 hover:underline"
+      >Back to spaces</a
+    >.
+  </p>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading archived spaces...</p>
+  } @else if (spaces().length === 0) {
+    <div class="border border-slate-200 bg-white px-8 py-16 text-center">
+      <p class="text-base font-medium text-slate-700">No archived spaces</p>
+      <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
+        Archived spaces appear here once a space owner archives a live space from its Settings >
+        General page.
+      </p>
+      <div class="mt-6 inline-block">
+        <p-button
+          label="Back to spaces"
+          icon="fa-solid fa-arrow-left"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          (onClick)="goBack()"
+        />
+      </div>
+    </div>
+  } @else {
+    <ul class="divide-y divide-slate-200 border border-slate-200 bg-white">
+      @for (space of spaces(); track space.id) {
+        <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <h3 class="truncate text-sm font-semibold text-slate-900">{{ space.name }}</h3>
+              @if (badge(space); as b) {
+                <span
+                  class="inline-flex items-center gap-1 border border-slate-300 bg-slate-50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-600"
+                >
+                  <i class="fa-solid fa-box-archive text-[9px] text-slate-500"></i>
+                  {{ b.label }}
+                </span>
+              }
+            </div>
+            @if (space.description) {
+              <p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ space.description }}</p>
+            }
+            <p class="mt-2 font-mono text-[10px] uppercase tracking-wider text-slate-400">
+              Archived {{ space.archived_at | date: 'MMM d, y' }}
+            </p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <p-button
+              label="Restore"
+              icon="fa-solid fa-rotate-left"
+              severity="secondary"
+              [outlined]="true"
+              size="small"
+              [loading]="restoring() === space.id"
+              (onClick)="restore(space)"
+            />
+            @if (canPermanentlyDelete()) {
+              <p-button
+                label="Permanently delete"
+                icon="fa-solid fa-trash-can"
+                severity="danger"
+                [outlined]="true"
+                size="small"
+                (onClick)="openPermanentDelete(space)"
+              />
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</app-manage-page-shell>
+
+<p-dialog
+  header="Permanently delete space"
+  [(visible)]="permanentDeleteOpen"
+  [modal]="true"
+  [closable]="!deleting()"
+  [closeOnEscape]="!deleting()"
+  [dismissableMask]="!deleting()"
+  styleClass="!w-[32rem]"
+  (onHide)="resetPermanentDeleteForm()"
+>
+  @if (deleteTarget(); as target) {
+    <div class="space-y-3">
+      <p class="text-sm text-slate-700">
+        This will permanently delete <strong>{{ target.name }}</strong> and every company, asset,
+        trial, marker, material, and intelligence row owned by it. This cannot be undone.
+      </p>
+      <p class="text-xs text-slate-500">
+        Type the space name <code class="font-mono text-slate-700">{{ target.name }}</code> below to
+        confirm.
+      </p>
+      <input
+        pInputText
+        class="w-full"
+        [formControl]="typedNameControl"
+        placeholder="Type the space name"
+        autocomplete="off"
+        aria-label="Type the space name to confirm"
+      />
+      @if (deleteError()) {
+        <p-message severity="error" [closable]="false">{{ deleteError() }}</p-message>
+      }
+    </div>
+  }
+  <ng-template #footer>
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="deleting()"
+      (onClick)="permanentDeleteOpen.set(false)"
+    />
+    <p-button
+      label="Permanently delete"
+      severity="danger"
+      icon="fa-solid fa-trash-can"
+      [disabled]="!typedNameMatches() || deleting()"
+      [loading]="deleting()"
+      (onClick)="permanentlyDelete()"
+    />
+  </ng-template>
+</p-dialog>

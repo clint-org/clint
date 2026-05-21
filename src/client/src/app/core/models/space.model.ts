@@ -6,6 +6,13 @@ export interface Space {
   created_by: string;
   created_at: string;
   updated_at: string;
+  /**
+   * Cascade-safety #1: when non-null, the space is archived. Default
+   * queries (SpaceService.listSpaces) filter archived_at is null; the
+   * archived list is fetched via SpaceService.listArchivedSpaces.
+   * Cleared by restore_space; set by archive_space.
+   */
+  archived_at?: string | null;
 }
 
 export interface SpaceMember {
