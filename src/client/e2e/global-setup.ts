@@ -16,17 +16,13 @@ async function globalSetup() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const email = 'e2e-test@clint.local';
+  // Unique email per run. Previously a hardcoded address paired with an
+  // optimistic deleteUser() that fails silently when the prior run left
+  // FK-bound rows behind (markers.created_by, materials.uploaded_by,
+  // primary_intelligence.last_edited_by all NOT NULL NO ACTION). The
+  // cascade-safety redact_user RPC is the proper long-term fix.
+  const email = `e2e-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@clint.local`;
   const password = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  // Clean up any existing test user first
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const existing = users?.users.find((u) => u.email === email);
-  if (existing) {
-    await supabase.from('tenant_members').delete().eq('user_id', existing.id);
-    await supabase.from('space_members').delete().eq('user_id', existing.id);
-    await supabase.auth.admin.deleteUser(existing.id);
-  }
 
   const { data: createData, error: createError } = await supabase.auth.admin.createUser({
     email,
