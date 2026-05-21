@@ -11,11 +11,13 @@ type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }
 export interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
-  // Service-role key for direct-table access to public.r2_pending_deletes.
-  // Provisioned via `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` and
-  // NOT listed in wrangler.jsonc vars. Used only by the r2-drain
-  // scheduled handler.
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  // Worker secret for the r2-drain RPCs (claim_pending_r2_deletes,
+  // mark_r2_delete_succeeded, mark_r2_delete_failed). Stored in Supabase
+  // Vault under `r2_drain_worker_secret`; the worker passes this value
+  // as the first arg to each call. Provisioned via
+  // `wrangler secret put R2_WORKER_SECRET`; NOT listed in wrangler.jsonc
+  // vars. Used only by the r2-drain scheduled handler.
+  R2_WORKER_SECRET: string;
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
@@ -116,8 +118,8 @@ async function runR2Drain(env: Env): Promise<void> {
   const summary = await drainR2DeleteQueue(
     {
       SUPABASE_URL: env.SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-      R2_BUCKET: env.R2_BUCKET,
+      SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY,
+      R2_WORKER_SECRET: env.R2_WORKER_SECRET,
     },
     r2Client
   );

@@ -10,39 +10,41 @@
  *
  * This module drains that queue. The drain loop is intentionally simple:
  *
- *   1. SELECT a bounded batch of pending rows (succeeded_at is null AND
- *      attempt_count < MAX_ATTEMPTS), ordered by queued_at ASC so the
- *      oldest queued objects clear first.
+ *   1. Call claim_pending_r2_deletes(secret, batch_size, max_attempts).
+ *      The RPC atomically selects up to batch_size rows with FOR UPDATE
+ *      SKIP LOCKED, stamps attempted_at, and returns id/file_path/
+ *      attempt_count for each row.
  *   2. For each row: call R2 DELETE on the file_path.
- *      - Success: UPDATE succeeded_at = now(), attempted_at = now().
- *      - Failure: UPDATE attempted_at = now(), attempt_count += 1,
- *        last_error = message. The row stays eligible until
- *        attempt_count hits MAX_ATTEMPTS, at which point it stops being
- *        selected and surfaces for ops review.
- *   3. Return a summary {drained, succeeded, failed, max_attempts_hit}.
+ *      - Success: call mark_r2_delete_succeeded(secret, id).
+ *      - Failure: call mark_r2_delete_failed(secret, id, next_attempt,
+ *        message). Once attempt_count hits MAX_ATTEMPTS the row stops
+ *        being claimed and surfaces for ops review.
+ *   3. Return {drained, succeeded, failed, max_attempts_hit}.
  *
- * Idempotency: succeeded rows are filtered out by the WHERE clause, so
- * re-running the drain on the same queue does not re-delete anything.
+ * Authorization: all three RPCs are SECURITY DEFINER and gated by a
+ * worker-secret stored in Supabase Vault under `r2_drain_worker_secret`.
+ * The worker carries the corresponding R2_WORKER_SECRET env var and
+ * passes it as the first argument to each call. The worker does NOT
+ * hold a service_role key -- writes to r2_pending_deletes are revoked
+ * from service_role; the RPCs are the only write path.
+ *
+ * Idempotency: succeeded rows are filtered out by claim_pending_r2_deletes
+ * so re-running the drain on the same queue does not re-delete anything.
  * R2 DELETE of a key that no longer exists is also a no-op at the R2
  * side, so a duplicate retry that races to completion is safe.
  *
- * Postgres access uses PostgREST direct-table access with the service-
- * role apikey. The queue table has `revoke all ... from authenticated`
- * for write paths; only the service role can update / delete rows. The
- * existing `callRpc` helper assumes RPC endpoints; the direct-table
- * helpers below mirror the same fetch shape (apikey + Authorization
- * forwarded as a service-role bearer) so the request looks consistent
- * with the rest of the worker.
- *
  * R2 access uses an injected client object so the production path can
- * wire to the AWS S3 SDK (DeleteObjectCommand) while tests pass an
- * in-memory fake. See `index.ts` for the production wiring.
+ * wire to the native R2 binding while tests use a Miniflare-emulated
+ * binding or an in-memory fake. See `index.ts` for the production wiring.
  */
+
+import { callRpc } from '../supabase';
+import type { SupabaseRpcError } from '../errors';
 
 export interface R2DrainEnv {
   SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
-  R2_BUCKET: string;
+  SUPABASE_ANON_KEY: string;
+  R2_WORKER_SECRET: string;
   MAX_ATTEMPTS?: number;
   BATCH_SIZE?: number;
 }
@@ -77,7 +79,7 @@ export async function drainR2DeleteQueue(
   const maxAttempts = env.MAX_ATTEMPTS ?? DEFAULT_MAX_ATTEMPTS;
   const batchSize = env.BATCH_SIZE ?? DEFAULT_BATCH_SIZE;
 
-  const pending = await fetchPending(env, batchSize, maxAttempts);
+  const pending = await claimPending(env, batchSize, maxAttempts);
 
   let succeeded = 0;
   let failed = 0;
@@ -94,8 +96,8 @@ export async function drainR2DeleteQueue(
       await markFailed(env, row.id, nextAttempt, message);
       failed += 1;
       // Once attempt_count reaches MAX_ATTEMPTS the row stops being
-      // selected by fetchPending. Surface a count so the scheduler log
-      // can flag a stuck queue without a second SELECT.
+      // claimed by claim_pending_r2_deletes. Surface a count so the
+      // scheduler log can flag a stuck queue without a second SELECT.
       if (nextAttempt >= maxAttempts) {
         maxAttemptsHit += 1;
       }
@@ -111,55 +113,44 @@ export async function drainR2DeleteQueue(
 }
 
 /**
- * Selects up to `limit` rows from r2_pending_deletes that are not yet
- * succeeded and have not exhausted their attempts. Oldest queued first
- * so a backlog clears in arrival order. PostgREST direct-table query;
- * the queue table's grants only allow this with the service-role key.
+ * claim_pending_r2_deletes: atomically claims up to `limit` rows with
+ * FOR UPDATE SKIP LOCKED, stamps attempted_at, returns id/file_path/
+ * attempt_count for each.
  */
-async function fetchPending(
+async function claimPending(
   env: R2DrainEnv,
   limit: number,
   maxAttempts: number
 ): Promise<PendingDeleteRow[]> {
-  const url = new URL(`${env.SUPABASE_URL}/rest/v1/r2_pending_deletes`);
-  url.searchParams.set('select', 'id,file_path,attempt_count');
-  url.searchParams.set('succeeded_at', 'is.null');
-  url.searchParams.set('attempt_count', `lt.${maxAttempts}`);
-  url.searchParams.set('order', 'queued_at.asc');
-  url.searchParams.set('limit', String(limit));
-
-  const res = await fetch(url.toString(), {
-    method: 'GET',
-    headers: serviceRoleHeaders(env),
-  });
-  if (!res.ok) {
-    const body = await safeReadText(res);
-    throw new Error(`r2_pending_deletes select failed: ${res.status} ${body}`);
+  try {
+    return await callRpc<PendingDeleteRow[]>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      null,
+      'claim_pending_r2_deletes',
+      {
+        p_secret: env.R2_WORKER_SECRET,
+        p_batch_size: limit,
+        p_max_attempts: maxAttempts,
+      }
+    );
+  } catch (e) {
+    throw new Error(`claim_pending_r2_deletes failed: ${describeRpcError(e)}`);
   }
-  return (await res.json()) as PendingDeleteRow[];
 }
 
 async function markSucceeded(env: R2DrainEnv, id: string): Promise<void> {
-  const url = new URL(`${env.SUPABASE_URL}/rest/v1/r2_pending_deletes`);
-  url.searchParams.set('id', `eq.${id}`);
-
-  const now = new Date().toISOString();
-  const res = await fetch(url.toString(), {
-    method: 'PATCH',
-    headers: {
-      ...serviceRoleHeaders(env),
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify({
-      succeeded_at: now,
-      attempted_at: now,
-      last_error: null,
-    }),
-  });
-  if (!res.ok) {
-    const body = await safeReadText(res);
-    throw new Error(`r2_pending_deletes mark-succeeded failed: ${res.status} ${body}`);
+  try {
+    await callRpc<null>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      null,
+      'mark_r2_delete_succeeded',
+      {
+        p_secret: env.R2_WORKER_SECRET,
+        p_id: id,
+      }
+    );
+  } catch (e) {
+    throw new Error(`mark_r2_delete_succeeded failed: ${describeRpcError(e)}`);
   }
 }
 
@@ -169,33 +160,21 @@ async function markFailed(
   attemptCount: number,
   lastError: string
 ): Promise<void> {
-  const url = new URL(`${env.SUPABASE_URL}/rest/v1/r2_pending_deletes`);
-  url.searchParams.set('id', `eq.${id}`);
-
-  const res = await fetch(url.toString(), {
-    method: 'PATCH',
-    headers: {
-      ...serviceRoleHeaders(env),
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
-    },
-    body: JSON.stringify({
-      attempted_at: new Date().toISOString(),
-      attempt_count: attemptCount,
-      last_error: truncateError(lastError),
-    }),
-  });
-  if (!res.ok) {
-    const body = await safeReadText(res);
-    throw new Error(`r2_pending_deletes mark-failed failed: ${res.status} ${body}`);
+  try {
+    await callRpc<null>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      null,
+      'mark_r2_delete_failed',
+      {
+        p_secret: env.R2_WORKER_SECRET,
+        p_id: id,
+        p_attempt_count: attemptCount,
+        p_error: truncateError(lastError),
+      }
+    );
+  } catch (e) {
+    throw new Error(`mark_r2_delete_failed failed: ${describeRpcError(e)}`);
   }
-}
-
-function serviceRoleHeaders(env: R2DrainEnv): Record<string, string> {
-  return {
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-  };
 }
 
 // Postgres `text` columns are unbounded, but a runaway provider message
@@ -207,10 +186,10 @@ function truncateError(message: string): string {
   return message.length > MAX ? message.slice(0, MAX) : message;
 }
 
-async function safeReadText(res: Response): Promise<string> {
-  try {
-    return await res.text();
-  } catch {
-    return '';
+function describeRpcError(e: unknown): string {
+  const err = e as Partial<SupabaseRpcError>;
+  if (err && typeof err === 'object' && (err.code || err.message)) {
+    return `${err.code ?? 'unknown'}: ${err.message ?? ''} (http ${err.httpStatus ?? '?'})`;
   }
+  return e instanceof Error ? e.message : String(e);
 }

@@ -758,4 +758,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521120500_cascade_fk_flips.sql`
 - `20260521120600_preview_delete_rpcs.sql`
 - `20260521121000_drop_legacy_delete_space.sql`
+- `20260521121500_r2_drain_rpcs.sql`
 <!-- /AUTO-GEN:DRIFT -->

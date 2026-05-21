@@ -8,7 +8,12 @@ import {
 } from '../../r2-drain/queue';
 
 const SUPABASE_URL = 'https://stub.supabase.co';
-const TABLE_URL = `${SUPABASE_URL}/rest/v1/r2_pending_deletes`;
+const RPC_BASE = `${SUPABASE_URL}/rest/v1/rpc`;
+const RPC_CLAIM = `${RPC_BASE}/claim_pending_r2_deletes`;
+const RPC_SUCCEEDED = `${RPC_BASE}/mark_r2_delete_succeeded`;
+const RPC_FAILED = `${RPC_BASE}/mark_r2_delete_failed`;
+const ANON_KEY = 'anon-key';
+const WORKER_SECRET = 'r2-worker-secret';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -17,127 +22,117 @@ beforeEach(() => {
 function makeEnv(over: Partial<R2DrainEnv> = {}): R2DrainEnv {
   return {
     SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
-    R2_BUCKET: 'clint-materials',
+    SUPABASE_ANON_KEY: ANON_KEY,
+    R2_WORKER_SECRET: WORKER_SECRET,
     ...over,
   };
 }
 
 interface FetchTap {
-  method: string;
+  rpc: 'claim' | 'succeeded' | 'failed' | 'other';
   url: string;
-  search: URLSearchParams;
-  body: Record<string, unknown> | null;
+  body: Record<string, unknown>;
   headers: Headers;
 }
 
+interface QueueRow {
+  id: string;
+  file_path: string;
+  attempt_count: number;
+  succeeded_at: string | null;
+  last_error: string | null;
+}
+
 interface QueueFixture {
-  rows: PendingDeleteRow[];
-  patches: Record<string, Record<string, unknown>>;
+  rows: QueueRow[];
 }
 
 /**
- * Installs a fetch mock that emulates PostgREST direct-table access
- * against public.r2_pending_deletes. The fixture is treated as the
- * authoritative state of the queue. GET filters by succeeded_at +
- * attempt_count; PATCH updates the fixture in place. Every request is
- * recorded into `taps` so tests can assert on the wire-level shape.
+ * Mocks the three drain RPCs against an in-memory fixture. The fixture
+ * is treated as the authoritative state of the queue. Each RPC mutates
+ * the fixture and returns the same shape PostgREST would return. Every
+ * request is recorded into `taps` so tests can pin the wire shape.
  */
-function installQueueFetch(fixture: QueueFixture): { taps: FetchTap[]; r2: MockR2 } {
+function installRpcMock(fixture: QueueFixture): { taps: FetchTap[]; r2: MockR2 } {
   const taps: FetchTap[] = [];
   const r2 = new MockR2();
 
   vi.spyOn(globalThis, 'fetch').mockImplementation(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const req = new Request(input as RequestInfo, init);
-      const url = new URL(req.url);
-      const tap: FetchTap = {
-        method: req.method,
-        url: req.url,
-        search: url.searchParams,
-        body: null,
-        headers: req.headers,
-      };
-      if (req.method !== 'GET') {
-        const text = await req.clone().text();
-        tap.body = text ? (JSON.parse(text) as Record<string, unknown>) : null;
-      }
-      taps.push(tap);
+      const url = req.url;
+      const bodyText = await req.clone().text();
+      const body = bodyText ? (JSON.parse(bodyText) as Record<string, unknown>) : {};
 
-      if (!req.url.startsWith(TABLE_URL)) {
-        throw new Error(`unexpected fetch: ${req.url}`);
+      const rpc: FetchTap['rpc'] =
+        url === RPC_CLAIM
+          ? 'claim'
+          : url === RPC_SUCCEEDED
+            ? 'succeeded'
+            : url === RPC_FAILED
+              ? 'failed'
+              : 'other';
+      taps.push({ rpc, url, body, headers: req.headers });
+
+      if (rpc === 'other') {
+        throw new Error(`unexpected fetch: ${url}`);
       }
 
+      // Every drain RPC requires the worker secret as its first arg.
       // Surface a clear failure if a test ever ships a request without
-      // the service-role key: the table grants make the request fail at
-      // PostgREST today, so mirror that here.
-      const apikey = req.headers.get('apikey');
-      if (!apikey) {
-        return new Response('missing apikey', { status: 401 });
+      // it (which would 42501 against the real RPC).
+      if (body['p_secret'] !== WORKER_SECRET) {
+        return new Response(JSON.stringify({ code: '42501', message: 'unauthorized' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
 
-      if (req.method === 'GET') {
-        return handleSelect(url.searchParams, fixture);
-      }
-      if (req.method === 'PATCH') {
-        return handlePatch(url.searchParams, tap.body ?? {}, fixture);
-      }
-      throw new Error(`unexpected method: ${req.method}`);
+      if (rpc === 'claim') return handleClaim(body, fixture);
+      if (rpc === 'succeeded') return handleMarkSucceeded(body, fixture);
+      return handleMarkFailed(body, fixture);
     }
   );
 
   return { taps, r2 };
 }
 
-function handleSelect(params: URLSearchParams, fixture: QueueFixture): Response {
-  // The drain only ever filters by `succeeded_at=is.null` and
-  // `attempt_count=lt.<n>`. Honor both here so the IDEMPOTENCY test can
-  // assert that succeeded rows fall off, and the MAX-ATTEMPTS test can
-  // assert that exhausted rows fall off.
-  const limit = Number.parseInt(params.get('limit') ?? '50', 10);
-  const lt = params.get('attempt_count') ?? '';
-  const maxAttempts = lt.startsWith('lt.') ? Number.parseInt(lt.slice(3), 10) : Number.POSITIVE_INFINITY;
+function handleClaim(body: Record<string, unknown>, fixture: QueueFixture): Response {
+  const limit = (body['p_batch_size'] as number | undefined) ?? 50;
+  const maxAttempts = (body['p_max_attempts'] as number | undefined) ?? Number.POSITIVE_INFINITY;
 
-  const rows = fixture.rows
-    .filter((r) => {
-      const state = fixture.patches[r.id] ?? {};
-      const succeededAt = state['succeeded_at'];
-      const attemptCount = (state['attempt_count'] as number | undefined) ?? r.attempt_count;
-      return !succeededAt && attemptCount < maxAttempts;
-    })
+  const claimed = fixture.rows
+    .filter((r) => r.succeeded_at === null && r.attempt_count < maxAttempts)
     .slice(0, limit)
-    .map((r) => {
-      const state = fixture.patches[r.id] ?? {};
-      return {
-        id: r.id,
-        file_path: r.file_path,
-        attempt_count: (state['attempt_count'] as number | undefined) ?? r.attempt_count,
-      };
-    });
+    .map((r) => ({ id: r.id, file_path: r.file_path, attempt_count: r.attempt_count }));
 
-  return new Response(JSON.stringify(rows), {
+  return new Response(JSON.stringify(claimed), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
 }
 
-function handlePatch(
-  params: URLSearchParams,
-  body: Record<string, unknown>,
-  fixture: QueueFixture
-): Response {
-  const idFilter = params.get('id') ?? '';
-  const id = idFilter.startsWith('eq.') ? idFilter.slice(3) : '';
-  if (!id) {
-    return new Response('missing id filter', { status: 400 });
+function handleMarkSucceeded(body: Record<string, unknown>, fixture: QueueFixture): Response {
+  const id = body['p_id'] as string;
+  const row = fixture.rows.find((r) => r.id === id);
+  if (row) {
+    row.succeeded_at = new Date().toISOString();
   }
-  fixture.patches[id] = { ...(fixture.patches[id] ?? {}), ...body };
-  return new Response(null, { status: 204 });
+  return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
+
+function handleMarkFailed(body: Record<string, unknown>, fixture: QueueFixture): Response {
+  const id = body['p_id'] as string;
+  const row = fixture.rows.find((r) => r.id === id);
+  if (row) {
+    row.attempt_count = body['p_attempt_count'] as number;
+    row.last_error = body['p_error'] as string;
+  }
+  return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 
 class MockR2 implements R2DeleteClient {
   public readonly deleted: string[] = [];
-  // Map of file_path -> error to throw. Absent paths resolve.
   private readonly failures = new Map<string, string>();
 
   failOn(path: string, message: string): void {
@@ -153,15 +148,21 @@ class MockR2 implements R2DeleteClient {
   }
 }
 
-function makeRow(id: string, filePath: string, attemptCount = 0): PendingDeleteRow {
-  return { id, file_path: filePath, attempt_count: attemptCount };
+function makeRow(id: string, filePath: string, attemptCount = 0): QueueRow {
+  return {
+    id,
+    file_path: filePath,
+    attempt_count: attemptCount,
+    succeeded_at: null,
+    last_error: null,
+  };
 }
 
 function assertSummary(actual: DrainSummary, expected: DrainSummary): void {
   expect(actual).toEqual(expected);
 }
 
-describe('drainR2DeleteQueue', () => {
+describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
   it('HAPPY PATH: drains every pending row when R2 deletes succeed', async () => {
     const fixture: QueueFixture = {
       rows: [
@@ -169,9 +170,8 @@ describe('drainR2DeleteQueue', () => {
         makeRow('row-2', 'materials/space-a/mat-2/b.pdf'),
         makeRow('row-3', 'materials/space-b/mat-3/c.pdf'),
       ],
-      patches: {},
     };
-    const { taps, r2 } = installQueueFetch(fixture);
+    const { taps, r2 } = installRpcMock(fixture);
 
     const summary = await drainR2DeleteQueue(makeEnv(), r2);
 
@@ -182,37 +182,41 @@ describe('drainR2DeleteQueue', () => {
       max_attempts_hit: 0,
     });
 
-    // R2 receives one DELETE per file_path.
     expect(r2.deleted.sort()).toEqual([
       'materials/space-a/mat-1/a.pdf',
       'materials/space-a/mat-2/b.pdf',
       'materials/space-b/mat-3/c.pdf',
     ]);
 
-    // Every row stamped with succeeded_at + attempted_at, no last_error.
-    for (const id of ['row-1', 'row-2', 'row-3']) {
-      expect(fixture.patches[id]['succeeded_at']).toBeTruthy();
-      expect(fixture.patches[id]['attempted_at']).toBeTruthy();
-      expect(fixture.patches[id]['last_error']).toBeNull();
-    }
+    // One claim, three mark_succeeded, zero mark_failed.
+    expect(taps.filter((t) => t.rpc === 'claim')).toHaveLength(1);
+    expect(taps.filter((t) => t.rpc === 'succeeded')).toHaveLength(3);
+    expect(taps.filter((t) => t.rpc === 'failed')).toHaveLength(0);
 
-    // The drain selects with succeeded_at=is.null AND attempt_count=lt.5
-    // (default MAX_ATTEMPTS), ordered by queued_at ASC. Pin the filter
-    // wire shape so a future refactor that breaks the partial index
-    // selectivity surfaces here.
-    const selectTap = taps.find((t) => t.method === 'GET');
-    expect(selectTap).toBeTruthy();
-    expect(selectTap!.search.get('succeeded_at')).toBe('is.null');
-    expect(selectTap!.search.get('attempt_count')).toBe('lt.5');
-    expect(selectTap!.search.get('order')).toBe('queued_at.asc');
+    // All three rows carry succeeded_at on the fixture.
+    for (const id of ['row-1', 'row-2', 'row-3']) {
+      const row = fixture.rows.find((r) => r.id === id)!;
+      expect(row.succeeded_at).not.toBeNull();
+    }
+  });
+
+  it('CLAIM ARGS: passes batch_size + max_attempts as RPC args', async () => {
+    const fixture: QueueFixture = { rows: [] };
+    const { taps } = installRpcMock(fixture);
+
+    await drainR2DeleteQueue(makeEnv(), new MockR2());
+
+    const claim = taps.find((t) => t.rpc === 'claim')!;
+    expect(claim.body['p_secret']).toBe(WORKER_SECRET);
+    expect(claim.body['p_batch_size']).toBe(50);
+    expect(claim.body['p_max_attempts']).toBe(5);
   });
 
   it('TRANSIENT FAILURE: increments attempt_count, captures last_error, leaves row pending', async () => {
     const fixture: QueueFixture = {
       rows: [makeRow('row-1', 'materials/space-a/mat-1/a.pdf', 0)],
-      patches: {},
     };
-    const { r2 } = installQueueFetch(fixture);
+    const { taps, r2 } = installRpcMock(fixture);
     r2.failOn('materials/space-a/mat-1/a.pdf', 'r2: transient 503');
 
     const summary = await drainR2DeleteQueue(makeEnv(), r2);
@@ -224,25 +228,21 @@ describe('drainR2DeleteQueue', () => {
       max_attempts_hit: 0,
     });
 
-    // No succeeded_at on the row.
-    expect(fixture.patches['row-1']['succeeded_at']).toBeUndefined();
-    // attempt_count bumped to 1.
-    expect(fixture.patches['row-1']['attempt_count']).toBe(1);
-    // last_error captured verbatim from the thrown Error.
-    expect(fixture.patches['row-1']['last_error']).toBe('r2: transient 503');
-    // attempted_at stamped.
-    expect(fixture.patches['row-1']['attempted_at']).toBeTruthy();
+    const row = fixture.rows[0];
+    expect(row.succeeded_at).toBeNull();
+    expect(row.attempt_count).toBe(1);
+    expect(row.last_error).toBe('r2: transient 503');
+
+    const failedCall = taps.find((t) => t.rpc === 'failed')!;
+    expect(failedCall.body['p_attempt_count']).toBe(1);
+    expect(failedCall.body['p_error']).toBe('r2: transient 503');
   });
 
   it('MAX ATTEMPTS HIT: row at attempt_count=4 fails -> 5 -> excluded from next drain', async () => {
-    // Row arrives one attempt below the default MAX_ATTEMPTS=5. The
-    // delete fails again, attempt_count bumps to 5, the row is no longer
-    // eligible for selection on a subsequent drain pass.
     const fixture: QueueFixture = {
       rows: [makeRow('row-1', 'materials/space-a/mat-stuck/a.pdf', 4)],
-      patches: {},
     };
-    const { r2 } = installQueueFetch(fixture);
+    const { r2 } = installRpcMock(fixture);
     r2.failOn('materials/space-a/mat-stuck/a.pdf', 'r2: permanent failure');
 
     const first = await drainR2DeleteQueue(makeEnv(), r2);
@@ -252,13 +252,12 @@ describe('drainR2DeleteQueue', () => {
       failed: 1,
       max_attempts_hit: 1,
     });
-    expect(fixture.patches['row-1']['attempt_count']).toBe(5);
-    expect(fixture.patches['row-1']['last_error']).toBe('r2: permanent failure');
-    expect(fixture.patches['row-1']['succeeded_at']).toBeUndefined();
+    expect(fixture.rows[0].attempt_count).toBe(5);
+    expect(fixture.rows[0].last_error).toBe('r2: permanent failure');
+    expect(fixture.rows[0].succeeded_at).toBeNull();
 
-    // Subsequent drain: the row's attempt_count (5) is no longer less
-    // than MAX_ATTEMPTS (5), so the fetchPending WHERE clause excludes
-    // it. The drain should report zero work.
+    // Subsequent drain: claim filters by attempt_count < max_attempts (5),
+    // so this row is no longer returned.
     const second = await drainR2DeleteQueue(makeEnv(), r2);
     assertSummary(second, {
       drained: 0,
@@ -274,9 +273,8 @@ describe('drainR2DeleteQueue', () => {
         makeRow('row-1', 'materials/space-a/mat-1/a.pdf'),
         makeRow('row-2', 'materials/space-a/mat-2/b.pdf'),
       ],
-      patches: {},
     };
-    const { r2 } = installQueueFetch(fixture);
+    const { r2 } = installRpcMock(fixture);
 
     const first = await drainR2DeleteQueue(makeEnv(), r2);
     assertSummary(first, {
@@ -287,7 +285,7 @@ describe('drainR2DeleteQueue', () => {
     });
     expect(r2.deleted).toHaveLength(2);
 
-    // Both rows now carry succeeded_at; the next drain selects nothing.
+    // claim filters succeeded rows out; second drain returns empty.
     const second = await drainR2DeleteQueue(makeEnv(), r2);
     assertSummary(second, {
       drained: 0,
@@ -295,13 +293,12 @@ describe('drainR2DeleteQueue', () => {
       failed: 0,
       max_attempts_hit: 0,
     });
-    // No additional R2 deletes were issued.
     expect(r2.deleted).toHaveLength(2);
   });
 
   it('EMPTY QUEUE: nothing pending -> summary of zeros, no R2 calls', async () => {
-    const fixture: QueueFixture = { rows: [], patches: {} };
-    const { taps, r2 } = installQueueFetch(fixture);
+    const fixture: QueueFixture = { rows: [] };
+    const { taps, r2 } = installRpcMock(fixture);
 
     const summary = await drainR2DeleteQueue(makeEnv(), r2);
     assertSummary(summary, {
@@ -310,51 +307,61 @@ describe('drainR2DeleteQueue', () => {
       failed: 0,
       max_attempts_hit: 0,
     });
-    // No PATCHes issued. The lone tap is the SELECT.
-    expect(taps.filter((t) => t.method === 'PATCH')).toHaveLength(0);
+    // No mark_* calls; the lone request is the empty claim.
+    expect(taps.filter((t) => t.rpc === 'succeeded')).toHaveLength(0);
+    expect(taps.filter((t) => t.rpc === 'failed')).toHaveLength(0);
     expect(r2.deleted).toHaveLength(0);
   });
 
-  it('honors MAX_ATTEMPTS override from env', async () => {
-    // With MAX_ATTEMPTS=2, a row at attempt_count=1 that fails bumps to
-    // 2 and is excluded next time. This locks in that the env override
-    // wires through to both the SELECT filter and the max_attempts_hit
-    // accounting.
+  it('honors MAX_ATTEMPTS + BATCH_SIZE override from env', async () => {
     const fixture: QueueFixture = {
       rows: [makeRow('row-1', 'materials/space-a/mat-x/x.pdf', 1)],
-      patches: {},
     };
-    const { r2 } = installQueueFetch(fixture);
+    const { taps, r2 } = installRpcMock(fixture);
     r2.failOn('materials/space-a/mat-x/x.pdf', 'r2: still failing');
 
-    const summary = await drainR2DeleteQueue(makeEnv({ MAX_ATTEMPTS: 2 }), r2);
+    const summary = await drainR2DeleteQueue(makeEnv({ MAX_ATTEMPTS: 2, BATCH_SIZE: 10 }), r2);
     assertSummary(summary, {
       drained: 1,
       succeeded: 0,
       failed: 1,
       max_attempts_hit: 1,
     });
-    expect(fixture.patches['row-1']['attempt_count']).toBe(2);
+    expect(fixture.rows[0].attempt_count).toBe(2);
+
+    // The override flows through to the RPC args (not just to the
+    // accounting), so the DB-side query also respects the cap.
+    const claim = taps.find((t) => t.rpc === 'claim')!;
+    expect(claim.body['p_max_attempts']).toBe(2);
+    expect(claim.body['p_batch_size']).toBe(10);
   });
 
-  it('forwards the service-role key on both SELECT and PATCH', async () => {
-    // The queue table grants writes only to service_role. Pin that the
-    // drain attaches the service-role apikey (and bearer) on every
-    // request, not just on the read. A regression here would surface as
-    // PostgREST 401s on PATCH and the row would never clear.
+  it('forwards the anon key (not service_role) on every RPC', async () => {
+    // The new design uses the anon key as the PostgREST apikey + the
+    // worker secret as the function arg. service_role must not appear.
     const fixture: QueueFixture = {
       rows: [makeRow('row-1', 'materials/space-a/mat-1/a.pdf')],
-      patches: {},
     };
-    const { taps, r2 } = installQueueFetch(fixture);
+    const { taps, r2 } = installRpcMock(fixture);
 
     await drainR2DeleteQueue(makeEnv(), r2);
 
-    const select = taps.find((t) => t.method === 'GET');
-    const patch = taps.find((t) => t.method === 'PATCH');
-    expect(select?.headers.get('apikey')).toBe('service-role-key');
-    expect(select?.headers.get('Authorization')).toBe('Bearer service-role-key');
-    expect(patch?.headers.get('apikey')).toBe('service-role-key');
-    expect(patch?.headers.get('Authorization')).toBe('Bearer service-role-key');
+    for (const tap of taps) {
+      expect(tap.headers.get('apikey')).toBe(ANON_KEY);
+      // The Authorization header is only attached when the worker
+      // forwards a user JWT. The drain calls callRpc with authHeader=null,
+      // so Authorization should be absent.
+      expect(tap.headers.get('Authorization')).toBeNull();
+      expect(tap.body['p_secret']).toBe(WORKER_SECRET);
+    }
+  });
+
+  it('propagates unauthorized (42501) when the worker secret is wrong', async () => {
+    const fixture: QueueFixture = { rows: [] };
+    installRpcMock(fixture);
+
+    await expect(
+      drainR2DeleteQueue(makeEnv({ R2_WORKER_SECRET: 'wrong' }), new MockR2())
+    ).rejects.toThrow(/claim_pending_r2_deletes failed/);
   });
 });

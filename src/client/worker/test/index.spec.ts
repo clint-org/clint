@@ -6,7 +6,7 @@ const SUPABASE_URL = 'https://stub.supabase.co';
 type Env = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  R2_WORKER_SECRET: string;
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
@@ -24,7 +24,7 @@ function makeEnv(over: Partial<Env> = {}): Env {
   return {
     SUPABASE_URL,
     SUPABASE_ANON_KEY: 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    R2_WORKER_SECRET: 'r2-worker-secret',
     R2_ACCOUNT_ID: 'acct',
     R2_ACCESS_KEY_ID: 'AKID',
     R2_SECRET_ACCESS_KEY: 'SECRET',

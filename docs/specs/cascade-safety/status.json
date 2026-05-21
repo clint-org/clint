@@ -11,7 +11,7 @@
     "T5": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "eb57bfc" },
     "T6": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "7c207d3" },
     "T7": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "f039e0f", "note": "marker_notifications key omitted; table was dropped in 20260503080000." },
-    "T8": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "3137a01", "note": "Ops follow-up: provision SUPABASE_SERVICE_ROLE_KEY via wrangler secret put before deploy." },
+    "T8": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "3137a01", "note": "Initial design used SUPABASE_SERVICE_ROLE_KEY; superseded by T22 worker-secret pattern. Ops provisions R2_WORKER_SECRET now." },
     "T9": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "0c58230" },
     "T10": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "0df7fe4", "note": "ConfirmDeleteDialogComponent approach (b) standalone wrapper around PrimeNG Dialog." },
     "T11": { "status": "completed", "agent": "subagent", "attempts": 1, "error": null, "commit": "72a73d8" },
@@ -29,7 +29,7 @@
     "UI gap: trial-detail.component.ts renders raw therapeutic_areas.name instead of using resolveTherapeuticAreaLabel from display-fallbacks. Touch-up needed for (uncategorized) badge.",
     "Pre-existing flake: grid-filtering-assets.spec.ts clear-all-resets-toolbar test times out. Unchanged on this branch.",
     "Stale doc: CLAUDE.md mentions tenant_members.role owner|member but 20260429010000 pinned it to owner only.",
-    "Ops: provision SUPABASE_SERVICE_ROLE_KEY in Cloudflare via wrangler secret put before T8 drain works in prod.",
+    "Ops: provision R2_WORKER_SECRET in Cloudflare via wrangler secret put. The matching vault entry r2_drain_worker_secret defaults to a local-dev placeholder; production must rotate via vault.create_secret('<random>', 'r2_drain_worker_secret').",
     "EventsPageComponent.onDeleteEvent defined but no template entry point. Pre-existing wiring gap surfaced during T17."
   ],
   "updatedAt": "2026-05-21T00:00:00Z"
