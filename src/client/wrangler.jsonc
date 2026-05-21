@@ -20,8 +20,14 @@
 		"CTGOV_BATCH_SIZE": "100",
 		"CTGOV_PARALLEL_FETCHES": "10"
 	},
+	// Crons:
+	//   "0 7 * * *" -> daily CT.gov pipeline poll (see ctgov-sync/poller.ts)
+	//   "* * * * *" -> minute-cadence drain of r2_pending_deletes
+	//                  (cascade-safety T8; see worker/r2-drain/queue.ts).
+	// The scheduled handler in worker/index.ts dispatches by event.cron so
+	// the CT.gov sync only fires on the daily trigger.
 	"triggers": {
-		"crons": ["0 7 * * *"]
+		"crons": ["0 7 * * *", "* * * * *"]
 	},
 	"ratelimits": [
 		{

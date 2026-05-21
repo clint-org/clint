@@ -1,15 +1,22 @@
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { jwtSubject } from './auth';
 import { isAllowedOrigin, corsHeaders, preflight } from './cors';
 import { mapSupabaseError, errorResponse, type SupabaseRpcError } from './errors';
 import { callRpc } from './supabase';
 import { presignPut, presignGet } from './r2';
 import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
+import { drainR2DeleteQueue, type R2DeleteClient } from './r2-drain/queue';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
 export interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  // Service-role key for direct-table access to public.r2_pending_deletes.
+  // Provisioned via `wrangler secret put SUPABASE_SERVICE_ROLE_KEY` and
+  // NOT listed in wrangler.jsonc vars. Used only by the r2-drain
+  // scheduled handler.
+  SUPABASE_SERVICE_ROLE_KEY: string;
   R2_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
@@ -63,14 +70,71 @@ export default {
     return errorResponse(404, 'not_found', cors);
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    // wrangler.jsonc declares two crons:
+    //   "0 7 * * *"  -> daily CT.gov pull
+    //   "* * * * *"  -> minute-cadence R2 delete-queue drain
+    // event.cron disambiguates which one fired so we don't run the
+    // heavyweight CT.gov sync on every minute tick. The R2 drain runs
+    // on every fire (including the daily one) -- cheap when the queue
+    // is empty, useful when the daily CT.gov work has just enqueued
+    // anything indirectly through trial cascades.
+    const cron = event.cron ?? '';
+    if (cron === CTGOV_DAILY_CRON) {
+      ctx.waitUntil(
+        runScheduledSync(env).catch((err: unknown) => {
+          log({ route: 'scheduled.ctgov', error: String(err) });
+        })
+      );
+    }
     ctx.waitUntil(
-      runScheduledSync(env).catch((err: unknown) => {
-        log({ route: 'scheduled', error: String(err) });
+      runR2Drain(env).catch((err: unknown) => {
+        log({ route: 'scheduled.r2_drain', error: String(err) });
       })
     );
   },
 };
+
+const CTGOV_DAILY_CRON = '0 7 * * *';
+
+/**
+ * Drains the r2_pending_deletes queue using the AWS S3 SDK as the R2
+ * client. Wired here (rather than inside r2-drain/queue.ts) so the
+ * module stays trivially testable with an in-memory fake while
+ * production still talks to R2 over S3-compatible HTTP.
+ */
+async function runR2Drain(env: Env): Promise<void> {
+  const s3 = new S3Client({
+    region: 'auto',
+    endpoint: `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: env.R2_ACCESS_KEY_ID,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    },
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
+  });
+  const r2Client: R2DeleteClient = {
+    async delete(key: string): Promise<void> {
+      await s3.send(new DeleteObjectCommand({ Bucket: env.R2_BUCKET, Key: key }));
+    },
+  };
+  const summary = await drainR2DeleteQueue(
+    {
+      SUPABASE_URL: env.SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
+      R2_BUCKET: env.R2_BUCKET,
+    },
+    r2Client
+  );
+  log({
+    route: 'scheduled.r2_drain',
+    drained: summary.drained,
+    succeeded: summary.succeeded,
+    failed: summary.failed,
+    max_attempts_hit: summary.max_attempts_hit,
+  });
+}
 
 async function handleSignUpload(request: Request, env: Env, cors: Record<string, string>) {
   const start = Date.now();
