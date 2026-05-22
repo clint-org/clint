@@ -12,6 +12,7 @@ import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 
@@ -40,7 +41,7 @@ interface SelectOption {
 @Component({
   selector: 'app-trial-edit-dialog',
   standalone: true,
-  imports: [Dialog, ButtonModule, InputTextModule, Select, FormsModule],
+  imports: [Dialog, ButtonModule, InputTextModule, Select, Tooltip, FormsModule],
   templateUrl: './trial-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -59,10 +60,28 @@ export class TrialEditDialogComponent {
   readonly identifier = signal<string | null>(null);
   readonly assetId = signal<string | null>(null);
   readonly therapeuticAreaId = signal<string | null>(null);
+  readonly phaseType = signal<string | null>(null);
+  readonly phaseStart = signal<string | null>(null);
+  readonly phaseEnd = signal<string | null>(null);
 
   readonly products = signal<SelectOption[]>([]);
   readonly therapeuticAreas = signal<SelectOption[]>([]);
   readonly saving = signal(false);
+
+  readonly phaseTypeLocked = computed(() => this.trial().phase_type_source === 'ctgov');
+  readonly phaseStartLocked = computed(() => this.trial().phase_start_date_source === 'ctgov');
+  readonly phaseEndLocked = computed(() => this.trial().phase_end_date_source === 'ctgov');
+
+  protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
+    { id: 'PRECLIN', name: 'Preclinical' },
+    { id: 'P1', name: 'Phase 1' },
+    { id: 'P2', name: 'Phase 2' },
+    { id: 'P3', name: 'Phase 3' },
+    { id: 'P4', name: 'Phase 4' },
+    { id: 'APPROVED', name: 'Approved' },
+    { id: 'LAUNCHED', name: 'Launched' },
+    { id: 'OBS', name: 'Observational' },
+  ];
 
   readonly isValid = computed(() => {
     const id = this.identifier();
@@ -82,6 +101,9 @@ export class TrialEditDialogComponent {
         this.identifier.set(t.identifier ?? null);
         this.assetId.set(t.product_id ?? null);
         this.therapeuticAreaId.set(t.therapeutic_area_id ?? null);
+        this.phaseType.set(t.phase_type ?? null);
+        this.phaseStart.set(t.phase_start_date ?? null);
+        this.phaseEnd.set(t.phase_end_date ?? null);
         void this.loadOptions(t.space_id);
       }
     });
@@ -100,16 +122,38 @@ export class TrialEditDialogComponent {
     this.visibleChange.emit(false);
   }
 
+  protected setPhaseStart(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.phaseStart.set(value || null);
+  }
+
+  protected setPhaseEnd(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.phaseEnd.set(value || null);
+  }
+
   async save(): Promise<void> {
     if (!this.isValid()) return;
     this.saving.set(true);
     try {
-      const updated = await this.trialService.update(this.trial().id, {
+      const updates: Partial<Trial> = {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,
         product_id: this.assetId()!,
         therapeutic_area_id: this.therapeuticAreaId()!,
-      });
+      };
+      // Only send phase fields the user is allowed to edit. The server-side
+      // trigger also enforces this; the UI lock is the user-facing constraint.
+      if (!this.phaseTypeLocked()) {
+        updates.phase_type = this.phaseType();
+      }
+      if (!this.phaseStartLocked()) {
+        updates.phase_start_date = this.phaseStart();
+      }
+      if (!this.phaseEndLocked()) {
+        updates.phase_end_date = this.phaseEnd();
+      }
+      const updated = await this.trialService.update(this.trial().id, updates);
       this.saved.emit(updated);
       this.close();
       this.messageService.add({ severity: 'success', summary: 'Trial updated.', life: 3000 });
