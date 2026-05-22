@@ -343,3 +343,109 @@ test.describe('Trial List CRUD', () => {
     await expect(page.getByText('KEYNOTE-002')).not.toBeVisible({ timeout: 5000 });
   });
 });
+
+test.describe('Trial Edit Dialog Phase Lock State', () => {
+  let page: Page;
+  let tenantId: string;
+  let spaceId: string;
+  let ctgovTrialId: string;
+  let analystTrialId: string;
+
+  const trialDetailUrl = (id: string) => `/t/${tenantId}/s/${spaceId}/manage/trials/${id}`;
+
+  test.beforeAll(async ({ browser }) => {
+    test.setTimeout(60000);
+
+    tenantId = await createTestTenant('Phase Lock Org');
+    spaceId = await createTestSpace(tenantId, 'Phase Lock Space');
+    const companyId = await createTestCompany(spaceId, 'Phase Lock Co');
+    const assetId = await createTestProduct(spaceId, companyId, 'Phase Lock Asset');
+    const taId = await createTestTherapeuticArea(spaceId, 'Phase Lock TA');
+
+    // Two trials: one tagged as ct.gov-managed, one as analyst-managed. The
+    // guard trigger only blocks UPDATEs when OLD.phase_type_source = 'ctgov';
+    // here we go null -> 'ctgov' in a single UPDATE off a fresh row, which
+    // passes the trigger and leaves the row in the locked state.
+    ctgovTrialId = await createTestTrial(spaceId, assetId, taId, 'CTGOV-LOCK Trial');
+    analystTrialId = await createTestTrial(spaceId, assetId, taId, 'ANALYST-EDIT Trial');
+
+    const admin = getAdminClient();
+    const { error: ctgovErr } = await admin
+      .from('trials')
+      .update({
+        phase_type: 'P3',
+        phase_type_source: 'ctgov',
+        phase_start_date: '2024-01-01',
+        phase_start_date_source: 'ctgov',
+        phase_end_date: '2025-12-31',
+        phase_end_date_source: 'ctgov',
+      })
+      .eq('id', ctgovTrialId);
+    if (ctgovErr) throw new Error(`Failed to stamp ctgov trial: ${ctgovErr.message}`);
+
+    const { error: analystErr } = await admin
+      .from('trials')
+      .update({
+        phase_type: 'P1',
+        phase_type_source: 'analyst',
+        phase_start_date: '2024-06-01',
+        phase_start_date_source: 'analyst',
+      })
+      .eq('id', analystTrialId);
+    if (analystErr) throw new Error(`Failed to stamp analyst trial: ${analystErr.message}`);
+
+    page = await authenticatedPage(browser);
+  });
+
+  test.afterAll(async () => {
+    await page.close();
+  });
+
+  test('ct.gov-managed trial locks phase fields in edit dialog', async () => {
+    await page.goto(trialDetailUrl(ctgovTrialId), { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Edit details' }).click();
+
+    const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.locator('#edit-trial-name')).toHaveValue('CTGOV-LOCK Trial');
+
+    // PrimeNG p-select renders a host element with class `p-disabled` when
+    // [disabled] is true; the combobox child carries inputId="phase-type"
+    // and gets aria-disabled="true" in the same state.
+    await expect(dialog.locator('#phase-type')).toHaveAttribute('aria-disabled', 'true');
+
+    // Date inputs are native <input type="date"> with the [disabled] attribute.
+    await expect(dialog.locator('#phase-start')).toBeDisabled();
+    await expect(dialog.locator('#phase-end')).toBeDisabled();
+
+    // Lock badge text appears next to each phase label. The badge is a span
+    // whose text is exactly "ct.gov"; the NCT hint copy mentions "CT.gov" in
+    // a sentence, so we scope with an exact regex.
+    await expect(dialog.getByText(/^\s*ct\.gov\s*$/).first()).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden({ timeout: 5000 });
+  });
+
+  test('analyst-managed trial leaves phase fields editable', async () => {
+    await page.goto(trialDetailUrl(analystTrialId), { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Edit details' }).click();
+
+    const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.locator('#edit-trial-name')).toHaveValue('ANALYST-EDIT Trial');
+
+    await expect(dialog.locator('#phase-type')).toHaveAttribute('aria-disabled', 'false');
+    await expect(dialog.locator('#phase-start')).toBeEnabled();
+    await expect(dialog.locator('#phase-end')).toBeEnabled();
+
+    // No ct.gov lock badge inside the dialog for an analyst-managed trial.
+    // The badge text only renders when the matching *_source column is
+    // 'ctgov'. (The NCT hint copy mentions "CT.gov" in a sentence, so we
+    // match the badge by exact-text regex to avoid false positives.)
+    await expect(dialog.getByText(/^\s*ct\.gov\s*$/)).toHaveCount(0);
+
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden({ timeout: 5000 });
+  });
+});

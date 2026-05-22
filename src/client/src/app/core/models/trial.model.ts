@@ -18,6 +18,9 @@ export interface Trial {
   phase_type: string | null;
   phase_start_date: string | null;
   phase_end_date: string | null;
+  phase_type_source?: 'ctgov' | 'analyst' | null;
+  phase_start_date_source?: 'ctgov' | 'analyst' | null;
+  phase_end_date_source?: 'ctgov' | 'analyst' | null;
 
   therapeutic_areas?: TherapeuticArea;
   products?: {

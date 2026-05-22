@@ -12,6 +12,7 @@ import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 
@@ -19,6 +20,7 @@ import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
+import { Trial } from '../../../core/models/trial.model';
 
 interface SelectOption {
   id: string;
@@ -28,7 +30,7 @@ interface SelectOption {
 @Component({
   selector: 'app-trial-create-dialog',
   standalone: true,
-  imports: [Dialog, ButtonModule, InputTextModule, Select, FormsModule],
+  imports: [Dialog, ButtonModule, InputTextModule, Select, Tooltip, FormsModule],
   templateUrl: './trial-create-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -52,10 +54,57 @@ export class TrialCreateDialogComponent {
   readonly assetId = signal<string | null>(null);
   readonly therapeuticAreaId = signal<string | null>(null);
 
+  // form fields for the three new phase columns
+  readonly phaseType = signal<string | null>(null);
+  readonly phaseStart = signal<string | null>(null);
+  readonly phaseEnd = signal<string | null>(null);
+
+  // tracks whether each value was pre-filled by the ct.gov lookup. when true,
+  // the field renders disabled and saves with source='ctgov'. when false, the
+  // analyst typed it and the save uses source='analyst'.
+  protected readonly phaseTypeFromCtgov = signal(false);
+  protected readonly phaseStartFromCtgov = signal(false);
+  protected readonly phaseEndFromCtgov = signal(false);
+
+  protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
+    { id: 'PRECLIN', name: 'Preclinical' },
+    { id: 'P1', name: 'Phase 1' },
+    { id: 'P2', name: 'Phase 2' },
+    { id: 'P3', name: 'Phase 3' },
+    { id: 'P4', name: 'Phase 4' },
+    { id: 'APPROVED', name: 'Approved' },
+    { id: 'LAUNCHED', name: 'Launched' },
+    { id: 'OBS', name: 'Observational' },
+  ];
+
   readonly products = signal<SelectOption[]>([]);
   readonly therapeuticAreas = signal<SelectOption[]>([]);
 
   readonly saving = signal(false);
+
+  // map of ct.gov phase enum value to our analyst-facing enum. matches
+  // _derive_phase_type() in supabase/migrations/20260503050000_derive_phase_type_from_ctgov.sql.
+  private mapCtgovPhase(phases: string[] | undefined, studyType: string | undefined): string | null {
+    if (!phases || phases.length === 0) return studyType === 'OBSERVATIONAL' ? 'OBS' : null;
+    if (phases.length > 1) {
+      // multi-phase trials collapse to max (e.g. PHASE2/PHASE3 -> P3) per the
+      // sql function's documented behavior.
+      const ranked = ['EARLY_PHASE1', 'PHASE1', 'PHASE2', 'PHASE3', 'PHASE4'];
+      const max = phases
+        .map((p) => ranked.indexOf(p))
+        .filter((i) => i >= 0)
+        .sort((a, b) => b - a)[0];
+      if (max === undefined) return null;
+      return { 0: 'P1', 1: 'P1', 2: 'P2', 3: 'P3', 4: 'P4' }[max] ?? null;
+    }
+    const single = phases[0];
+    if (single === 'EARLY_PHASE1' || single === 'PHASE1') return 'P1';
+    if (single === 'PHASE2') return 'P2';
+    if (single === 'PHASE3') return 'P3';
+    if (single === 'PHASE4') return 'P4';
+    if (single === 'NA' && studyType === 'OBSERVATIONAL') return 'OBS';
+    return null;
+  }
 
   // Autopopulate state for the NCT-first flow. The dialog opens with focus on
   // the NCT input; on a valid NCT format (NCT + 8 digits) we hit
@@ -106,6 +155,12 @@ export class TrialCreateDialogComponent {
         this.nctLookupState.set('idle');
         this.nctLookupAcronym.set(null);
         this.nameWasManuallyEdited.set(false);
+        this.phaseType.set(null);
+        this.phaseStart.set(null);
+        this.phaseEnd.set(null);
+        this.phaseTypeFromCtgov.set(false);
+        this.phaseStartFromCtgov.set(false);
+        this.phaseEndFromCtgov.set(false);
       }
     });
   }
@@ -124,9 +179,19 @@ export class TrialCreateDialogComponent {
       this.lookupController.abort();
       this.lookupController = null;
     }
-    if (!value) return;
+    if (!value) {
+      this.phaseTypeFromCtgov.set(false);
+      this.phaseStartFromCtgov.set(false);
+      this.phaseEndFromCtgov.set(false);
+      return;
+    }
     const trimmed = value.trim();
-    if (!/^NCT\d{8}$/i.test(trimmed)) return;
+    if (!/^NCT\d{8}$/i.test(trimmed)) {
+      this.phaseTypeFromCtgov.set(false);
+      this.phaseStartFromCtgov.set(false);
+      this.phaseEndFromCtgov.set(false);
+      return;
+    }
 
     this.nctLookupState.set('looking_up');
     const controller = new AbortController();
@@ -150,6 +215,12 @@ export class TrialCreateDialogComponent {
         const study = (await res.json()) as {
           protocolSection?: {
             identificationModule?: { acronym?: string; briefTitle?: string };
+            designModule?: { phases?: string[]; studyType?: string };
+            statusModule?: {
+              startDateStruct?: { date?: string };
+              primaryCompletionDateStruct?: { date?: string };
+              completionDateStruct?: { date?: string };
+            };
           };
         };
         const acronym = study.protocolSection?.identificationModule?.acronym?.trim() ?? null;
@@ -159,6 +230,31 @@ export class TrialCreateDialogComponent {
         this.nctLookupState.set('ok');
         if (display && !this.nameWasManuallyEdited()) {
           this.name.set(display);
+        }
+
+        // pre-fill phase + dates
+        const derivedPhase = this.mapCtgovPhase(
+          study.protocolSection?.designModule?.phases,
+          study.protocolSection?.designModule?.studyType,
+        );
+        if (derivedPhase) {
+          this.phaseType.set(derivedPhase);
+          this.phaseTypeFromCtgov.set(true);
+        }
+        const startDate = study.protocolSection?.statusModule?.startDateStruct?.date;
+        if (startDate) {
+          // ct.gov returns YYYY-MM or YYYY-MM-DD; normalize to YYYY-MM-DD
+          const normalized = /^\d{4}-\d{2}$/.test(startDate) ? `${startDate}-01` : startDate;
+          this.phaseStart.set(normalized);
+          this.phaseStartFromCtgov.set(true);
+        }
+        const endDate =
+          study.protocolSection?.statusModule?.primaryCompletionDateStruct?.date ??
+          study.protocolSection?.statusModule?.completionDateStruct?.date;
+        if (endDate) {
+          const normalized = /^\d{4}-\d{2}$/.test(endDate) ? `${endDate}-01` : endDate;
+          this.phaseEnd.set(normalized);
+          this.phaseEndFromCtgov.set(true);
         }
       } catch (e) {
         if ((e as { name?: string })?.name === 'AbortError') return;
@@ -185,16 +281,39 @@ export class TrialCreateDialogComponent {
     this.visibleChange.emit(false);
   }
 
+  protected setPhaseStart(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.phaseStart.set(value || null);
+  }
+
+  protected setPhaseEnd(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.phaseEnd.set(value || null);
+  }
+
   async save(): Promise<void> {
     if (!this.isValid()) return;
     this.saving.set(true);
     try {
-      const trial = await this.trialService.create(this.spaceId(), {
+      const payload: Partial<Trial> = {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,
         product_id: this.assetId()!,
         therapeutic_area_id: this.therapeuticAreaId()!,
-      });
+      };
+      if (this.phaseType()) {
+        payload.phase_type = this.phaseType();
+        payload.phase_type_source = this.phaseTypeFromCtgov() ? 'ctgov' : 'analyst';
+      }
+      if (this.phaseStart()) {
+        payload.phase_start_date = this.phaseStart();
+        payload.phase_start_date_source = this.phaseStartFromCtgov() ? 'ctgov' : 'analyst';
+      }
+      if (this.phaseEnd()) {
+        payload.phase_end_date = this.phaseEnd();
+        payload.phase_end_date_source = this.phaseEndFromCtgov() ? 'ctgov' : 'analyst';
+      }
+      const trial = await this.trialService.create(this.spaceId(), payload);
       // Best-effort: kick off CT.gov sync if NCT was provided. Don't block the
       // save path on the sync result.
       if (trial.identifier) {

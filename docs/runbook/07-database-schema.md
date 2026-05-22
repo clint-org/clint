@@ -761,4 +761,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521121500_r2_drain_rpcs.sql`
 - `20260521122000_r2_drain_rpcs_anon_grants.sql`
 - `20260521123000_mark_r2_delete_succeeded_clears_error.sql`
+- `20260521195224_trial_phase_source_columns.sql`
+- `20260521200200_trial_phase_ctgov_truth.sql`
+- `20260521200900_seed_demo_data_phase_sources.sql`
 <!-- /AUTO-GEN:DRIFT -->

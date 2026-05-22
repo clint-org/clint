@@ -39,7 +39,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trials | - |
+| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_companies` | companies | - |
@@ -64,7 +64,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
-| `claim_pending_r2_deletes` | r2_pending_deletes | - |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_material` | materials | - |
@@ -124,8 +123,6 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
 | `list_recent_materials_for_space` | - | material_links, materials |
 | `lookup_user_by_email` | - | agency_members |
-| `mark_r2_delete_failed` | r2_pending_deletes | - |
-| `mark_r2_delete_succeeded` | r2_pending_deletes | - |
 | `palette_empty_state` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
@@ -150,7 +147,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
 | `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
-| `seed_demo_data` | - | companies, space_members |
+| `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `trigger_single_trial_sync` | - | trials |
 | `update_agency_branding` | agencies | - |
@@ -591,17 +588,16 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_cleanup_polymorphic_refs`
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
+- `_guard_ctgov_locked_phase_fields`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
-- `_verify_r2_drain_worker_secret`
 - `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
 - `backfill_marker_history`
 - `build_intelligence_payload`
-- `claim_pending_r2_deletes`
 - `delete_material`
 - `export_audit_events_csv`
 - `finalize_material`
@@ -635,8 +631,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `list_materials_for_space`
 - `list_primary_intelligence`
 - `list_recent_materials_for_space`
-- `mark_r2_delete_failed`
-- `mark_r2_delete_succeeded`
 - `member_guard_mark_cascade_end`
 - `member_guard_mark_cascade_start`
 - `palette_empty_state`

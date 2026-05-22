@@ -74,6 +74,20 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Where the phase value comes from
+          </h2>
+          <div class="border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">
+            <p>
+              Phase values for trials with a registered NCT are managed by ct.gov: the product
+              mirrors what ct.gov reports on every sync. For trials without an NCT, or for fields
+              ct.gov leaves blank, analysts can set them on the trial edit dialog. On sync, ct.gov
+              values overwrite previous analyst values and the change appears in the activity feed.
+            </p>
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             Common questions
           </h2>
           <div class="space-y-5">

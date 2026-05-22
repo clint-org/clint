@@ -72,6 +72,89 @@
         appendTo="body"
       />
     </div>
+    <div class="mb-3">
+      <label
+        for="phase-type"
+        class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+      >
+        Phase
+        @if (phaseTypeLocked()) {
+          <span
+            class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+          >
+            ct.gov
+          </span>
+        }
+      </label>
+      <p-select
+        inputId="phase-type"
+        [options]="PHASE_OPTIONS"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="phaseType()"
+        (ngModelChange)="phaseType.set($event)"
+        [disabled]="phaseTypeLocked()"
+        placeholder="Select a phase"
+        [showClear]="true"
+        appendTo="body"
+        [pTooltip]="
+          phaseTypeLocked()
+            ? 'Managed by ct.gov. Edit at clinicaltrials.gov or remove the NCT to override.'
+            : ''
+        "
+        tooltipPosition="top"
+      />
+    </div>
+    <div class="mb-3 grid grid-cols-2 gap-3">
+      <div>
+        <label
+          for="phase-start"
+          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+        >
+          Phase start
+          @if (phaseStartLocked()) {
+            <span
+              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+              >ct.gov</span
+            >
+          }
+        </label>
+        <input
+          id="phase-start"
+          type="date"
+          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
+          [value]="phaseStart() ?? ''"
+          (input)="setPhaseStart($event)"
+          [disabled]="phaseStartLocked()"
+          [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
+          tooltipPosition="top"
+        />
+      </div>
+      <div>
+        <label
+          for="phase-end"
+          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+        >
+          Phase end
+          @if (phaseEndLocked()) {
+            <span
+              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+              >ct.gov</span
+            >
+          }
+        </label>
+        <input
+          id="phase-end"
+          type="date"
+          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
+          [value]="phaseEnd() ?? ''"
+          (input)="setPhaseEnd($event)"
+          [disabled]="phaseEndLocked()"
+          [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
+          tooltipPosition="top"
+        />
+      </div>
+    </div>
     <div class="flex justify-end gap-2 pt-2">
       <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
       <p-button
