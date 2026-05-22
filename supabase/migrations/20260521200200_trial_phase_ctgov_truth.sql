@@ -143,6 +143,7 @@ comment on function public._materialize_trial_from_snapshot(uuid, jsonb) is
 create or replace function public._guard_ctgov_locked_phase_fields()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
 as $$
 begin
