@@ -176,6 +176,57 @@ describe('TrialService.listByAsset', () => {
   });
 });
 
+describe('TrialService.update with phase fields', () => {
+  function setup(updateReturn: Record<string, unknown> = { id: 't1', space_id: 'space-1' }) {
+    const captured: Record<string, unknown> = {};
+    const updateQb = makeQueryBuilder(updateReturn);
+    const originalUpdate = updateQb.update;
+    updateQb.update = vi.fn((payload: Record<string, unknown>) => {
+      Object.assign(captured, payload);
+      return originalUpdate(payload);
+    });
+    const from = vi.fn().mockReturnValue(updateQb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+    return { service, captured };
+  }
+
+  it('writes phase_type_source=analyst when caller supplies phase_type without a source', async () => {
+    const { service, captured } = setup();
+    await service.update('t1', { phase_type: 'P2' });
+    expect(captured['phase_type']).toBe('P2');
+    expect(captured['phase_type_source']).toBe('analyst');
+  });
+
+  it('writes all three sources when caller supplies all three fields', async () => {
+    const { service, captured } = setup();
+    await service.update('t1', {
+      phase_type: 'P3',
+      phase_start_date: '2024-01-01',
+      phase_end_date: '2025-06-30',
+    });
+    expect(captured['phase_type_source']).toBe('analyst');
+    expect(captured['phase_start_date_source']).toBe('analyst');
+    expect(captured['phase_end_date_source']).toBe('analyst');
+  });
+
+  it('does not touch source columns when caller omits phase fields', async () => {
+    const { service, captured } = setup();
+    await service.update('t1', { name: 'renamed' });
+    expect(captured).not.toHaveProperty('phase_type_source');
+    expect(captured).not.toHaveProperty('phase_start_date_source');
+    expect(captured).not.toHaveProperty('phase_end_date_source');
+  });
+
+  it('respects caller-provided source over default analyst', async () => {
+    const { service, captured } = setup();
+    await service.update('t1', { phase_type: 'P2', phase_type_source: 'ctgov' });
+    expect(captured['phase_type_source']).toBe('ctgov');
+  });
+});
+
 describe('TrialService.getLatestSnapshotsForSpace', () => {
   it('calls list_latest_snapshots_for_space RPC and returns a Map keyed by trial_id', async () => {
     const rpc = vi.fn().mockResolvedValue({

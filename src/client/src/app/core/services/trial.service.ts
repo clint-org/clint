@@ -140,9 +140,22 @@ export class TrialService {
   }
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
+    const payload: Partial<Trial> = { ...changes };
+    // When the caller supplies a phase field without an explicit source,
+    // tag it as analyst-written. The migration's BEFORE UPDATE trigger
+    // also enforces this server-side.
+    if ('phase_type' in changes && !('phase_type_source' in changes)) {
+      payload.phase_type_source = 'analyst';
+    }
+    if ('phase_start_date' in changes && !('phase_start_date_source' in changes)) {
+      payload.phase_start_date_source = 'analyst';
+    }
+    if ('phase_end_date' in changes && !('phase_end_date_source' in changes)) {
+      payload.phase_end_date_source = 'analyst';
+    }
     const { data, error } = await this.supabase.client
       .from('trials')
-      .update(changes)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
