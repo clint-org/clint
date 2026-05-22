@@ -31,7 +31,7 @@ comment on column public.trials.phase_end_date_source is
 with latest_snapshot as (
   select distinct on (trial_id) trial_id, payload
     from public.trial_ctgov_snapshots
-   order by trial_id, fetched_at desc
+   order by trial_id, ctgov_version desc
 ),
 derived as (
   select
@@ -156,7 +156,7 @@ begin
   with latest_snapshot as (
     select distinct on (trial_id) trial_id, payload
       from public.trial_ctgov_snapshots
-     order by trial_id, fetched_at desc
+     order by trial_id, ctgov_version desc
   ),
   derived as (
     select ls.trial_id,
@@ -213,7 +213,7 @@ begin
   with latest_snapshot as (
     select distinct on (trial_id) trial_id, payload
       from public.trial_ctgov_snapshots
-     order by trial_id, fetched_at desc
+     order by trial_id, ctgov_version desc
   ),
   derived as (
     select ls.trial_id,
