@@ -281,6 +281,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | Service | Responsibility |
 |---|---|
 | `BrandContextService` | Signal-based holder for the brand record from `get_brand_by_host`. Exposes `kind()`, `id()`, `appDisplayName()`, `logoUrl()`, `faviconUrl()`, `primaryColor()`, `authProviders()`, `hasSelfJoin()`, `suspended()`, `agency()` (`{name, logo_url} \| null` — only populated for tenant brands whose `tenants.agency_id` is set). Set once at bootstrap; `setBrand()` re-applies after a brand edit. |
+| `RpcCache` | In-memory client cache that wraps Supabase `.rpc()` and table reads with stale-while-revalidate, inflight dedup, tag-based invalidation, BroadcastChannel cross-tab signaling, refresh-on-focus, and an LRU bound of 200 entries. Services call `cache.get(rpcName, params, { ttl, tags, fetch })` for reads and `cache.invalidateTags([...])` after mutations. See "Client-side caching" section below for tier mapping, tag taxonomy, and the `?debug=cache` prod debug flag. |
 | `SupabaseService` | Supabase client init, auth state (`currentUser`/`session` signals), `waitForSession()`, Google + Microsoft sign-in (`signInWithGoogle`, `signInWithMicrosoft`), sign-out. Conditionally uses cookie-based session storage (`createCookieStorage`) when `environment.apexDomain` is set and the current host is on the apex; otherwise localStorage. |
 | `DashboardService` | Calls `get_dashboard_data()` RPC, maps nested response to typed models |
 | `TenantService` | Tenant CRUD, member management, invite creation, `joinByCode()` flow, plus access settings (`getTenantAccessSettings`, `updateTenantAccess`), `selfJoinTenant`, `checkIsTenantMember` |
@@ -301,6 +302,93 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 | `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
 | `SpaceRoleService` | Resolves the current user's `space_members.role` for the current `:spaceId` URL segment. Watches `NavigationEnd`, refetches on space change, exposes `currentUserRole()`, `isOwner()`, `canEdit()` (owner or editor), `canRead()` signals. Drives role-aware UI gating: write controls render only when `canEdit()` or `isOwner()` is true (Save/Delete on space-general, Invite + role dropdown + remove on space-members, Add buttons on manage lists, row Edit/Delete menus, etc.). Server-side RLS remains the authoritative gate; this service prevents the UI from offering actions the caller cannot execute. |
+
+## Client-side caching
+
+Three layers reduce redundant network and Postgres traffic. Design lives in `docs/superpowers/specs/2026-05-14-caching-strategy-design.md`; runtime contract is summarized here.
+
+| Layer | Scope | Mechanism | Location |
+|---|---|---|---|
+| L0 | Bundle and static assets | `Cache-Control` rules: `no-cache` on `index.html`, `public, max-age=31536000, immutable` on hashed JS/CSS/woff2 | `src/client/public/_headers` |
+| L1 | Pre-bootstrap brand resolver (`get_brand_by_host`) | `sessionStorage` keyed by host with 5-min TTL, cross-tab clear via `BroadcastChannel('rpc-cache')` | `src/client/src/app/core/util/brand-bootstrap.ts`, invoked from `main.ts`; cleared by `tenant.service.ts` / `agency.service.ts` after branding updates |
+| L2 | All authenticated reads | `RpcCache` singleton with SWR, inflight dedup, tag invalidation, refresh-on-focus, LRU(200), Angular signal accessor for templates | `src/client/src/app/core/services/rpc-cache.service.ts` |
+
+### TTL tiers
+
+Two starting profiles; per-RPC overrides are allowed and live next to the call site.
+
+| Tier | RPCs / table reads | Fresh | Stale |
+|---|---|---|---|
+| Reference (per-space) | `list_companies` (with products LATERAL), `list_products` (with MoA/RoA LATERAL), `list_therapeutic_areas`, `list_mechanisms_of_action`, `list_routes_of_administration`, marker types / categories / event categories (global) | 30 min | Infinity (only mutation-driven invalidation) |
+| Heavy aggregations | `get_dashboard_data`, `get_activity_feed`, `list_primary_intelligence`, `get_space_landing_stats`, `get_trial_detail_with_intelligence`, `list_recent_materials_for_space`, `list_draft_intelligence_for_space`, `list_materials_for_entity`, the marker/company/asset/space `*_detail_with_intelligence` siblings | 30 s | 5 min |
+| No cache | All write RPCs, `getSession`, audit writes, CT.gov ingest endpoints, single-row PK lookups (`getById`) | n/a | n/a |
+
+### Tag taxonomy
+
+Tags are plain strings. Two namespaces by convention:
+
+- **Entity-collection tags** (granular): `space:<id>:companies`, `space:<id>:products`, `space:<id>:moa`, `space:<id>:roa`, `space:<id>:therapeutic-areas`, `space:<id>:trials`, `asset:<id>:trials`, `trial:<id>:detail`, `trial:<id>:activity`, `entity:<type>:<id>:materials`, `<entityType>:<entityId>:history-intelligence`, `markers:types` (global).
+- **View tags** (coarse, derived): `space:<id>:dashboard`, `space:<id>:landing-stats`, `space:<id>:activity`, `space:<id>:primary-intelligence`, `space:<id>:drafts`, `space:<id>:materials`.
+
+A read carries one or more tags; a write invalidates one or more tags. Mutation methods invalidate inline, immediately after the RPC's `if (error) throw error;`. View tags get invalidated broadly (any space-level write touches `:dashboard`), which is fine because SWR keeps the UX smooth even when cache lifetime is short.
+
+### Usage pattern in a service
+
+```ts
+private cache = inject(RpcCache);
+const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
+
+async list(spaceId: string): Promise<Company[]> {
+  return this.cache.get('list_companies', { spaceId }, {
+    ttl: REFERENCE_TTL,
+    tags: [`space:${spaceId}:companies`],
+    fetch: async () => {
+      const { data, error } = await this.supabase.client
+        .from('companies').select('*, products(*)').eq('space_id', spaceId);
+      if (error) throw error;
+      return (data ?? []) as Company[];
+    },
+  });
+}
+
+async create(spaceId: string, c: Partial<Company>): Promise<Company> {
+  const { data, error } = await this.supabase.client.from('companies').insert({ ...c, space_id: spaceId }).select().single();
+  if (error) throw error;
+  this.cache.invalidateTags([
+    `space:${spaceId}:companies`,
+    `space:${spaceId}:dashboard`,
+    `space:${spaceId}:landing-stats`,
+  ]);
+  return data as Company;
+}
+```
+
+Mutations that do not receive `spaceId` directly (e.g. `update(id, changes)`, `delete(id)`) pre-fetch `space_id` from the row before the mutation, then invalidate after.
+
+### Reactive consumers via `resource()`
+
+`RpcCache.signal(rpcName, params)` returns a `Signal<T | undefined>` that updates when a background SWR refresh produces NEW data. The cache uses `stableStringify` to skip the emit when serialized data is byte-equal to the prior entry, so components that bind to the signal do not re-render for no-op refreshes. The existing `resource()` call sites (`landscape*.component.ts`) compose cleanly: their `loader` calls into a service that routes through `RpcCache`, and the component gets the standard `resource()` signal interface with the cache's dedup and SWR underneath.
+
+### Inflight + invalidation correctness
+
+`fetchAndStore` stamps each placeholder with a monotonically increasing `generation`. If `invalidateTags` runs while a fetch is inflight and removes the entry, the awaited result does NOT repopulate the cache (the generation check at writeback time short-circuits). This guards against the "mutation invalidates, inflight fetch overwrites with pre-mutation data" race that would otherwise allow stale-but-fresh-tagged data to appear in the cache.
+
+### Cross-tab signaling
+
+A single `BroadcastChannel('rpc-cache')` carries:
+- `{ type: 'invalidate', tags: string[] }`, emitted by `cache.invalidateTags` in any tab; receivers run `invalidateTagsLocal` only (no re-broadcast, so no loops).
+- `{ type: 'brand-invalidate', host: string }`, emitted by tenant/agency branding mutations; `installBrandInvalidationListener()` in `main.ts` listens and clears the L1 `sessionStorage` entry.
+
+### Dev telemetry and prod debugging
+
+In dev builds, `window.__rpcCacheStats()` returns `{ byRpc: Record<string, { hits, misses, backgroundRefreshes, invalidations }> }`. In prod builds the same surface is gated off by default for zero overhead. Visit any URL with `?debug=cache` once and the flag persists in `sessionStorage` (`clint:debug:cache=1`) for the rest of the session; `__rpcCacheStats()` becomes available in the DevTools console. Remove the key (or close the tab) to disable. Wiring lives in `src/client/src/app/app.config.ts`.
+
+### What this caching is NOT
+
+- Not persistent. Tab reload starts cold. L1 covers cold-load for the brand resolver only.
+- Not RxJS-shaped. Returns Promises; composes with `await`, `resource()`, and `effect()`.
+- Not a query library. No "queries vs mutations" abstraction. Service methods read or write the cache directly.
+- Not real-time across users. Cross-user staleness is bounded by `freshUntil`; Realtime → tag invalidation is a future feature, not in V1.
 
 ## Dashboard Component Hierarchy
 
