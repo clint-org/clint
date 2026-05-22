@@ -32,7 +32,18 @@ const helpRules = [
     helpPage: "src/client/src/app/features/help/markers-help.component.ts",
   },
   {
-    patterns: [/phase-colors/, /phase-bar/, /PHASE_COLORS/, /PHASE_DESCRIPTORS/],
+    patterns: [
+      /phase-colors/,
+      /phase-bar/,
+      /PHASE_COLORS/,
+      /PHASE_DESCRIPTORS/,
+      // Migrations that touch ct.gov phase derivation / source-of-truth logic
+      // may shift how the phase fields behave; review the help page prose.
+      /_materialize_trial_from_snapshot/,
+      /_derive_phase_type/,
+      /trial_phase_ctgov_truth/,
+      /trial_phase_source_columns/,
+    ],
     helpPage: "src/client/src/app/features/help/phases-help.component.ts",
   },
   {
