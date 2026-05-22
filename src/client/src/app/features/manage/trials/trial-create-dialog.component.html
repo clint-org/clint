@@ -107,6 +107,87 @@
         appendTo="body"
       />
     </div>
+    <div class="mb-3">
+      <label
+        for="create-phase-type"
+        class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+      >
+        Phase
+        @if (phaseTypeFromCtgov()) {
+          <span
+            class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+          >
+            ct.gov
+          </span>
+        }
+      </label>
+      <p-select
+        inputId="create-phase-type"
+        [options]="PHASE_OPTIONS"
+        optionLabel="name"
+        optionValue="id"
+        [ngModel]="phaseType()"
+        (ngModelChange)="phaseType.set($event)"
+        [disabled]="phaseTypeFromCtgov()"
+        placeholder="Select a phase"
+        [showClear]="true"
+        appendTo="body"
+        [pTooltip]="
+          phaseTypeFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
+        "
+        tooltipPosition="top"
+      />
+    </div>
+    <div class="mb-3 grid grid-cols-2 gap-3">
+      <div>
+        <label
+          for="create-phase-start"
+          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+        >
+          Phase start
+          @if (phaseStartFromCtgov()) {
+            <span
+              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+              >ct.gov</span
+            >
+          }
+        </label>
+        <input
+          id="create-phase-start"
+          type="date"
+          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
+          [value]="phaseStart() ?? ''"
+          (input)="setPhaseStart($event)"
+          [disabled]="phaseStartFromCtgov()"
+          [pTooltip]="phaseStartFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''"
+          tooltipPosition="top"
+        />
+      </div>
+      <div>
+        <label
+          for="create-phase-end"
+          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
+        >
+          Phase end
+          @if (phaseEndFromCtgov()) {
+            <span
+              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+              >ct.gov</span
+            >
+          }
+        </label>
+        <input
+          id="create-phase-end"
+          type="date"
+          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
+          [value]="phaseEnd() ?? ''"
+          (input)="setPhaseEnd($event)"
+          [disabled]="phaseEndFromCtgov()"
+          [pTooltip]="phaseEndFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''"
+          tooltipPosition="top"
+        />
+      </div>
+    </div>
     <div class="flex justify-end gap-2 pt-2">
       <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
       <p-button
