@@ -54,9 +54,11 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   });
 
   test('clear all resets the toolbar and URL', async () => {
-    // The p-button host element has aria-label="Clear all filters" but the
-    // inner button rendered by PrimeNG has text "Clear all". Use the text label.
-    await page.getByRole('button', { name: 'Clear all' }).click();
+    // Toolbar button label is "Clear filters" or "Clear filters (N)" when any
+    // filter (including the global-search chip) is active. After the previous
+    // test types "Pfizer" the count is 1, so the rendered label is
+    // "Clear filters (1)". Match either form via regex.
+    await page.getByRole('button', { name: /^Clear filters( \(\d+\))?$/ }).click();
     await expect(page).not.toHaveURL(/q=/);
     await expect(page.getByPlaceholder('Search assets...')).toHaveValue('');
   });
