@@ -39,7 +39,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trials | - |
+| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_companies` | companies | - |
@@ -147,7 +147,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
 | `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
-| `seed_demo_data` | - | companies, space_members |
+| `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `trigger_single_trial_sync` | - | trials |
 | `update_agency_branding` | agencies | - |
@@ -588,6 +588,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_cleanup_polymorphic_refs`
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
+- `_guard_ctgov_locked_phase_fields`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
