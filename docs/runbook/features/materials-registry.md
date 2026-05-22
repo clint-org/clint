@@ -30,7 +30,7 @@ The institutional memory layer. Every PPTX, PDF, and DOCX produced for an engage
 - `list_materials_for_space(p_space_id, p_material_types, p_entity_type, p_entity_id, p_limit, p_offset)` -- backs the cross-cutting "All materials" page; filters by type and entity. Filters on `finalized_at is not null`.
 - `download_material(p_material_id)` -- validates `has_space_access` and `finalized_at is not null`, returns `{ file_path, file_name, mime_type }`. The Worker mints a 60-second R2 GET URL with `ResponseContentDisposition: attachment`. Backs `/api/materials/sign-download`.
 - `update_material(p_id, p_title, p_material_type, p_links jsonb)` -- uploader-only edits. Wholesale link replacement when an array is supplied.
-- `delete_material(p_id)` -- uploader-only. Removes the row and cascades the link rows. Returns the file path. The R2 object is left orphaned; cleanup is intentionally out of scope until a janitor lands.
+- `delete_material(p_id)` -- uploader-only. Removes the row and cascades the link rows. Returns `{ material_id }`. R2 object cleanup is enqueued by the `AFTER DELETE` trigger on `public.materials` into `public.r2_pending_deletes` and drained by the minute-cadence cloudflare worker via `claim_pending_r2_deletes` / `mark_r2_delete_succeeded` / `mark_r2_delete_failed`. Cascade deletes from space, tenant, company, product, or trial paths enqueue the same way.
 
 **Frontend surfaces.**
 - `app-materials-section` is the entity-level list. Sits on trial detail and inside the marker detail panel (and is ready for company and product detail pages). Includes a chip filter strip (All / Briefing / Priority Notice / Ad Hoc), a recency-ordered list of `app-material-row` rows, and a drag-drop / browse upload zone at the bottom for owners and editors.
@@ -180,16 +180,32 @@ If the browser dies between steps 3 and 7 the row stays invisible; a future jani
   role: editor
   status: active
 - id: materials-delete
-  summary: Uploader-only delete that removes the row and cascades link rows; R2 object is left orphaned for a future janitor.
+  summary: Uploader-only delete that removes the row and cascades link rows. R2 object cleanup is enqueued by the AFTER DELETE trigger on materials and drained by the minute-cadence cloudflare worker.
   routes: []
   rpcs:
     - delete_material
   tables:
     - materials
     - material_links
-  related: []
+  related:
+    - materials-r2-cleanup-queue
   user_facing: true
   role: editor
+  status: active
+- id: materials-r2-cleanup-queue
+  summary: Append-only queue that fires on every materials row deletion (direct delete, space cascade, tenant cascade, company / product / trial cascade). A cloudflare worker drains the queue every 60 seconds via worker-secret-gated SECURITY DEFINER RPCs and removes the matching R2 object. Stuck rows surface for ops review once attempt_count hits 5.
+  routes: []
+  rpcs:
+    - claim_pending_r2_deletes
+    - mark_r2_delete_succeeded
+    - mark_r2_delete_failed
+  tables:
+    - r2_pending_deletes
+    - materials
+  related:
+    - materials-delete
+  user_facing: false
+  role: super-admin
   status: active
 - id: materials-download
   summary: Worker-signed 60-second R2 GET URL with attachment Content-Disposition gated by has_space_access and finalized_at.
