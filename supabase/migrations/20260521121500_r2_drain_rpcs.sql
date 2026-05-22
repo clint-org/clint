@@ -168,7 +168,7 @@ comment on table public.r2_pending_deletes is
 
 do $$
 declare
-  v_secret      text := 'local-dev-r2-drain-secret';
+  v_secret      text;
   v_threw       boolean;
   v_claimed     int;
   v_succeeded   timestamptz;
@@ -179,6 +179,18 @@ declare
   v_target_id   uuid;
   v_target_id2  uuid;
 begin
+  -- read the live vault entry so this smoke works against whichever value
+  -- the operator provisioned: the local-dev placeholder when running
+  -- supabase db reset, or a production-rotated random string when pushing
+  -- to a linked remote project. hardcoding 'local-dev-r2-drain-secret' here
+  -- would force the smoke to fail on any remote whose vault has been rotated.
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'r2_drain_worker_secret';
+  if v_secret is null then
+    raise exception 'r2_drain_rpcs smoke FAIL: vault entry r2_drain_worker_secret is missing; expected the prior do-block to create it';
+  end if;
+
   -- start from a clean queue. earlier-migration smoke tests insert into this
   -- table as part of their own assertions; we cannot assume the table is empty
   -- when we run, so empty it here and rely on our own seeded ids for the
