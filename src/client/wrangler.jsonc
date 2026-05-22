@@ -20,14 +20,20 @@
 		"CTGOV_BATCH_SIZE": "100",
 		"CTGOV_PARALLEL_FETCHES": "10"
 	},
-	// Crons:
-	//   "0 7 * * *" -> daily CT.gov pipeline poll (see ctgov-sync/poller.ts)
-	//   "* * * * *" -> minute-cadence drain of r2_pending_deletes
-	//                  (cascade-safety T8; see worker/r2-drain/queue.ts).
-	// The scheduled handler in worker/index.ts dispatches by event.cron so
-	// the CT.gov sync only fires on the daily trigger.
+	// Cron: a single daily fire at 07:00 UTC. The scheduled handler in
+	// worker/index.ts runs both subtasks on every fire:
+	//   - CT.gov pipeline poll (see ctgov-sync/poller.ts), gated on the
+	//     daily cron expression so it does not run on any future
+	//     additional trigger
+	//   - drain of r2_pending_deletes (cascade-safety T8; see
+	//     worker/r2-drain/queue.ts), unconditional on every fire
+	// We previously ran the drain on a minute cron, which produced ~43k
+	// invocations a month for a queue that is almost always empty.
+	// Daily is the right cadence for the pharma CI workload: deletes are
+	// rare; orphaned R2 objects clear within 24 hours; log volume drops
+	// from 1440/day to 1/day.
 	"triggers": {
-		"crons": ["0 7 * * *", "* * * * *"]
+		"crons": ["0 7 * * *"]
 	},
 	// Native R2 binding used by the r2-drain scheduled handler. Uploads
 	// and downloads keep using presigned S3 URLs in r2.ts because the
