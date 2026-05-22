@@ -75,7 +75,7 @@ function installRpcMock(rows: FixtureRow[]): {
       const row = rows.find((r) => r.id === id);
       if (row) row.succeeded_at = new Date().toISOString();
       marked[id] = 'succeeded';
-      return new Response('null', { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response('', { status: 200 });
     }
     if (url === RPC_FAILED) {
       const id = body['p_id'] as string;
@@ -85,7 +85,7 @@ function installRpcMock(rows: FixtureRow[]): {
         row.last_error = body['p_error'] as string;
       }
       marked[id] = 'failed';
-      return new Response('null', { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response('', { status: 200 });
     }
     throw new Error(`unexpected fetch in test: ${method} ${url}`);
   });

@@ -28,7 +28,12 @@ export async function callRpc<T = unknown>(
   });
 
   if (res.ok) {
-    return (await res.json()) as T;
+    // PostgREST returns an empty body for RPCs declared `returns void`
+    // (the two r2-drain mark_* helpers are the in-tree example). Avoid
+    // calling res.json() on empty input, which throws "Unexpected end of
+    // JSON input" and surfaces to callers as a confusing RPC error.
+    const text = await res.text();
+    return (text ? (JSON.parse(text) as T) : (null as T));
   }
 
   // PostgREST returns { code, message, details, hint } for SQL errors.

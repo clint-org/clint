@@ -118,7 +118,7 @@ function handleMarkSucceeded(body: Record<string, unknown>, fixture: QueueFixtur
   if (row) {
     row.succeeded_at = new Date().toISOString();
   }
-  return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  return new Response('', { status: 200 });
 }
 
 function handleMarkFailed(body: Record<string, unknown>, fixture: QueueFixture): Response {
@@ -128,7 +128,7 @@ function handleMarkFailed(body: Record<string, unknown>, fixture: QueueFixture):
     row.attempt_count = body['p_attempt_count'] as number;
     row.last_error = body['p_error'] as string;
   }
-  return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+  return new Response('', { status: 200 });
 }
 
 class MockR2 implements R2DeleteClient {
