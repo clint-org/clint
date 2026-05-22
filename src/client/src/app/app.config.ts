@@ -19,7 +19,13 @@ export const appConfig: ApplicationConfig = {
       useFactory: () => {
         const cache = inject(RpcCache);
         return () => {
-          if (!environment.production) {
+          if (typeof window === 'undefined') return;
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('debug') === 'cache') {
+            window.sessionStorage?.setItem('clint:debug:cache', '1');
+          }
+          const debugFlag = window.sessionStorage?.getItem('clint:debug:cache') === '1';
+          if (!environment.production || debugFlag) {
             cache.enableDevStats();
             (window as Window & { __rpcCacheStats?: () => RpcCacheStats }).__rpcCacheStats = () => cache.getDevStats();
           }
