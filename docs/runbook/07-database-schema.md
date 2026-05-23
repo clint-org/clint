@@ -615,14 +615,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
 - `audit_events`
-- `mechanisms_of_action`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `r2_pending_deletes`
-- `routes_of_administration`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -771,5 +769,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521195224_trial_phase_source_columns.sql`
 - `20260521200200_trial_phase_ctgov_truth.sql`
 - `20260521200900_seed_demo_data_phase_sources.sql`
-- `20260523130000_audit_columns_server_side.sql`
+- `20260523140000_add_updated_by_columns.sql`
+- `20260523150000_audit_columns_server_side.sql`
 <!-- /AUTO-GEN:DRIFT -->
