@@ -99,7 +99,7 @@ src/client/
         constants/
           nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
-          env-banner/env-banner.component.ts  # 24px top banner for non-prod environments (amber=dev, violet=local) showing envName + APP_VERSION
+          env-banner/env-banner.component.ts  # Non-prod env indicator: 3px color strip at top + fixed corner badge (amber=dev, violet=local) showing envName + APP_VERSION
           clint-logo.component.ts # Triple C logo mark: size-adaptive SVG with auto stroke thickening
           svg-icons/            # Per-shape SVG icons + the shared <app-marker-icon> wrapper that owns shape selection / fill / NLE rules
           manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
