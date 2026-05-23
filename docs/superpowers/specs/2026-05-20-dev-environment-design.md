@@ -68,14 +68,14 @@ flowchart LR
 | Concern | Prod | Dev |
 |---|---|---|
 | Cloudflare Worker | `clint` (existing) | `clint-dev` (new) |
-| Hostname | `clintapp.com` + `*.clintapp.com` | `dev.clintapp.com` + `*.dev.clintapp.com` |
+| Hostname | `clintapp.com` + `*.clintapp.com` | `dev.clintapp.com` (wildcard `*.dev.clintapp.com` deferred; needs Advanced Certificate Manager) |
 | Supabase project | `gmgprkymyjzkzirbzqzd` (existing) | new project `clint-dev` |
 | R2 bucket | `clint-materials` | `clint-materials-dev` (new) |
 | Rate-limiter namespace ids | 1001 / 1002 | 1003 / 1004 |
 | Cron `0 7 * * *` (CT.gov ingest) | enabled | **disabled** (manual trigger only) |
 | Google OAuth client | existing | same client, dev redirect URI added |
 | `apexDomain` (Angular env) | `clintapp.com` | `dev.clintapp.com` |
-| DB data | prod | `seed.sql`-derived only |
+| DB data | prod | bare migrations only (no seed.sql) |
 | Edge function `send-invite-email` | not in use (scaffolded only) | not deployed (defer until invites go live) |
 
 ### Deploy flow
@@ -179,17 +179,34 @@ state.
 
 ### Cloudflare: DNS and routes
 
+**Routing approach: Routes (not Custom Domains).** Prod uses a Route
+`*.clintapp.com/*` on the `clint` Worker for tenant subdomain routing.
+Custom Domains on `clint-dev` for `dev.clintapp.com` do not reliably
+override prod's wildcard Route in practice (despite Cloudflare docs
+claiming Custom Domain > Route precedence). Route-on-Route specificity
+DOES work: a Route `dev.clintapp.com/*` on `clint-dev` beats
+`*.clintapp.com/*` on `clint` because the exact hostname is more
+specific than the wildcard.
+
 In Cloudflare DNS for `clintapp.com`:
 
-| Type | Name | Target | Proxy |
+| Type | Name | Content | Proxy |
 |---|---|---|---|
-| (auto) | `dev` | (Workers-managed) | proxied |
-| (auto) | `*.dev` | (Workers-managed) | proxied |
+| A | `dev` | `192.0.2.1` | proxied |
 
-Pragmatic path: in the Cloudflare dashboard under `clint-dev` Worker
--> Settings -> Domains & Routes, add both `dev.clintapp.com` and
-`*.dev.clintapp.com` as Custom Domains. Cloudflare creates the records and
-issues TLS certs (including the wildcard).
+In `clint-dev` Worker -> Settings -> Domains & Routes, add a Route:
+
+| Pattern | Zone |
+|---|---|
+| `dev.clintapp.com/*` | `clintapp.com` |
+
+**Wildcard `*.dev.clintapp.com` is deferred.** Cloudflare's free
+Universal SSL covers `*.clintapp.com` (one level) but NOT
+`*.dev.clintapp.com` (two levels). Covering two-level wildcards
+requires Advanced Certificate Manager ($10/mo). Until enabled,
+tenant brand testing on dev uses the `?wl_kind=tenant&wl_id=<uuid>`
+query-string override (already supported by `fetchBrand()` in
+`main.ts`) instead of real subdomain routing.
 
 ### Cloudflare: R2 and secrets
 
@@ -231,15 +248,19 @@ One-time bootstrap from local:
 ```
 supabase link --project-ref <dev-ref>
 supabase db push                 # apply all migrations to dev
-psql "$DEV_DB_URL" -f supabase/seed.sql
 ```
 
-`seed.sql` is auto-applied only on `supabase db reset` against the local
-stack, not on remote `db push`. Running it once via `psql` after the initial
-`db push` is the one-time bootstrap; after that the dev DB lives its own
-life. Re-running `seed.sql` later is not safe in general (it assumes empty
-tables); if a clean reset of dev is ever needed, drop and recreate the
-project rather than re-seeding.
+`seed.sql` is intentionally NOT loaded on dev. System constants
+(marker_categories, marker_types, event_categories with `is_system=true`,
+`space_id=null`) are seeded by migrations themselves, so they exist on
+dev after `db push`. `seed.sql` additionally creates a "Demo Pharma CI"
+tenant + space + populates it via `seed_demo_data()`, and installs an
+`auto_join_demo_on_signup` trigger that auto-grants any Google sign-in
+owner access to the demo workspace. None of that runs on dev. The
+first Google sign-in on dev lands the user with zero tenants and zero
+spaces, exactly like prod for a new user; the user provisions a real
+tenant manually (via SQL editor or a `provision_tenant` RPC call) to
+exercise the app.
 
 ### Supabase: Auth (dev project dashboard)
 

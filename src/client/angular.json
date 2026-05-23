@@ -42,14 +42,23 @@
               ],
               "outputHashing": "all"
             },
-            "development": {
+            "local": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.development.ts"
+                  "with": "src/environments/environment.local.ts"
+                }
+              ]
+            },
+            "dev": {
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.dev.ts"
                 }
               ]
             }
@@ -62,11 +71,14 @@
             "production": {
               "buildTarget": "clinical-trial-dashboard:build:production"
             },
-            "development": {
-              "buildTarget": "clinical-trial-dashboard:build:development"
+            "dev": {
+              "buildTarget": "clinical-trial-dashboard:build:dev"
+            },
+            "local": {
+              "buildTarget": "clinical-trial-dashboard:build:local"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "local"
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

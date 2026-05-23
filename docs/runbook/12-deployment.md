@@ -13,23 +13,15 @@
 
 ## Cloudflare Setup
 
-The frontend is configured by a small set of files in `src/client/`:
+The frontend is configured by `src/client/wrangler.jsonc`, which declares two environments in one file:
 
-```jsonc
-// src/client/wrangler.jsonc
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "clint",
-  "compatibility_date": "2026-04-28",
-  "assets": {
-    "directory": "./dist/clinical-trial-dashboard/browser",
-    "not_found_handling": "single-page-application"
-  }
-}
-```
+- **top-level** -- prod (`clint` Worker, Custom Domains `clintapp.com` + `*.clintapp.com`)
+- **`[env.dev]`** -- dev (`clint-dev` Worker, Custom Domains `dev.clintapp.com` + `*.dev.clintapp.com`)
+
+The dev block overrides `name`, `vars` (`ALLOWED_APEXES`, `R2_BUCKET`), `r2_buckets` (`MATERIALS_BUCKET` -> `clint-materials-dev`), rate-limiter `namespace_id`s (1003/1004 vs. prod 1001/1002), and disables the daily CT.gov cron (`triggers.crons: []`). Everything else (compatibility date, `assets`, `compatibility_flags`, the prod cron schedule) inherits from the top-level config.
 
 ```
-# src/client/public/_headers (security headers, honored by static-assets)
+# src/client/public/_headers (security headers, honored by static-assets on both Workers)
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
@@ -39,15 +31,38 @@ The frontend is configured by a small set of files in `src/client/`:
 
 `not_found_handling: "single-page-application"` is the Worker-level catch-all that hands every unknown route back to `/index.html`. There is no `_redirects` file -- Cloudflare's docs explicitly reject the Netlify-style `/* /index.html 200` rewrite as recursive.
 
-The Cloudflare Workers Builds dashboard wires the build:
+## Deploy flow (GHA-driven, atomic per env)
 
-| Setting | Value |
-|---|---|
-| Root directory | `src/client` |
-| Build command | `node scripts/set-env.js && npm ci && npx ng build --configuration production` |
-| Deploy command | `npx wrangler deploy` |
-| Non-production branch deploy command | `npx wrangler versions upload` |
-| Env var: `NODE_VERSION` | `20` |
+Cloudflare Workers Builds auto-deploys are **disabled**. Both environments deploy via GitHub Actions workflows that call `wrangler deploy` themselves using `CLOUDFLARE_API_TOKEN`. Each workflow is a single atomic job: `supabase db push` runs first; if it fails, `wrangler deploy` is skipped and the Worker stays on the previous build.
+
+### Dev: push to `develop`
+
+Triggers `.github/workflows/deploy-dev.yml`. No approval gate. Workflow steps:
+
+1. `supabase link --project-ref $SUPABASE_DEV_PROJECT_REF`
+2. `supabase db push` against the dev project
+3. `cd src/client && npm ci`
+4. `cd src/client && npm run build -- --configuration dev`
+5. `wrangler deploy --env dev` via `cloudflare/wrangler-action@v3`
+
+### Prod: merge `develop -> main`
+
+Triggers `.github/workflows/deploy-prod.yml`. Gated by the `production` GitHub Environment, which requires reviewer approval before any step runs. The reviewer opens the run in Actions, reviews the migration diff and SHA, clicks "Approve and deploy". The workflow then runs the same shape as dev but against the prod project + prod Worker + `--configuration production` (the angular default).
+
+### Destructive migrations (two-deploy pattern)
+
+The atomic flow assumes additive migrations: SPA sees old-or-newer schema, never older. For destructive changes (dropping a column the current prod SPA still reads, renaming an RPC, etc.) there is still a window between the migration step and the wrangler deploy step where the new schema is live and the old SPA is still serving.
+
+Pattern for destructive migrations:
+
+1. **PR 1:** SPA change only. Remove all references to the soon-to-be-dropped column / renamed RPC. Merge, deploy. Prod SPA no longer touches the doomed surface.
+2. **PR 2:** Migration only. Drop the column / rename. Merge, deploy.
+
+Convention, not enforcement. When in doubt, split the PR.
+
+### Emergency fallback
+
+The Cloudflare Workers Build connection for the `clint` Worker is left in place, just with "Automatic deploys" turned off. If GHA is unavailable, re-enable auto-deploy on the dashboard as a one-click workaround. Don't forget to re-disable when GHA comes back.
 
 The CSP is conservative -- loosen if a specific integration breaks (see [08-authentication-security.md](08-authentication-security.md) for the full policy and rationale).
 

@@ -1,7 +1,7 @@
 # Clint -- Competitive Intelligence for Pharma
 
 ## Tech Stack
-- **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Cloudflare (Workers + static assets via `src/client/wrangler.jsonc`; SPA fallback handled by `not_found_handling: "single-page-application"`; security headers in `src/client/public/_headers`)
+- **Frontend:** Angular 19 (standalone components, no SSR) with PrimeNG + Tailwind CSS v4, deployed to Cloudflare (Workers + static assets via `src/client/wrangler.jsonc`; SPA fallback handled by `not_found_handling: "single-page-application"`; security headers in `src/client/public/_headers`). Two Workers: `clint` (prod, `clintapp.com` + `*.clintapp.com`) and `clint-dev` (dev, `dev.clintapp.com` + `*.dev.clintapp.com`). Three Angular build configurations: `local` (laptop, local Supabase), `dev` (cloud dev), `production` (prod, default). Deploys via GHA workflows (`deploy-dev.yml`, `deploy-prod.yml`); Cloudflare Workers Builds auto-deploy is disabled. Prod deploys are gated by a `production` GitHub Environment requiring reviewer approval; each workflow runs `supabase db push` then `wrangler deploy` atomically (migration failure skips SPA deploy).
 - **Backend:** Supabase (Auth, Database)
 - **Database:** PostgreSQL via Supabase
 - **Auth:** Google OAuth via Supabase Auth
@@ -138,3 +138,4 @@ The app is a multi-tenant whitelabel platform. Hierarchy: **agency** (consultanc
 ## Spec Location
 - Active spec: `docs/specs/clinical-trial-dashboard/spec.md`
 - Whitelabel design: `docs/superpowers/specs/2026-04-27-whitelabel-design.md`
+- Dev environment design: `docs/superpowers/specs/2026-05-20-dev-environment-design.md`
