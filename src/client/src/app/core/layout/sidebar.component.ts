@@ -132,6 +132,14 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 height="48"
                 class="agency-wordmark"
               />
+            } @else if (ag.logo_url) {
+              <img
+                [ngSrc]="ag.logo_url"
+                [alt]="ag.name"
+                width="48"
+                height="48"
+                class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
+              />
             } @else {
               <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
             }
