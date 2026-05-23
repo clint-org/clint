@@ -132,6 +132,14 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 height="48"
                 class="agency-wordmark"
               />
+            } @else if (ag.logo_url) {
+              <img
+                [ngSrc]="ag.logo_url"
+                [alt]="ag.name"
+                width="48"
+                height="48"
+                class="agency-icon"
+              />
             } @else {
               <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
             }
@@ -344,6 +352,19 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         background: #f8fafc;
         border-radius: 4px;
         padding: 2px 6px;
+        box-sizing: content-box;
+      }
+
+      /* Collapsed-state logo: small square tile showing the agency logo
+         when the sidebar is collapsed. Same near-white background as the
+         expanded wordmark so dark-on-light logos stay legible. */
+      .agency-icon {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+        background: #f8fafc;
+        border-radius: 5px;
+        padding: 2px;
         box-sizing: content-box;
       }
 
