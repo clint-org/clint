@@ -48,8 +48,11 @@ test.describe('Marker Type Management CRUD', () => {
   });
 
   test('edit marker type pre-populates all fields', async () => {
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('Biomarker Readout')).toBeVisible({ timeout: 10000 });
     const row = page.locator('tr', { hasText: 'Biomarker Readout' });
     await row.locator('app-row-actions button').click();
+    await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeVisible({ timeout: 5000 });
     await page.getByRole('menuitem', { name: 'Edit' }).click();
     await expect(page.locator('#mt-name')).toBeVisible({ timeout: 5000 });
 
@@ -67,8 +70,11 @@ test.describe('Marker Type Management CRUD', () => {
   });
 
   test('delete marker type via typed-name confirm', async () => {
+    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await expect(page.getByText('Safety Signal')).toBeVisible({ timeout: 10000 });
     const row = page.locator('tr', { hasText: 'Safety Signal' });
     await row.locator('app-row-actions button').click();
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeVisible({ timeout: 5000 });
     await page.getByRole('menuitem', { name: 'Delete' }).click();
 
     // Cascade-safety T12: marker type delete uses the type-the-name gate.
