@@ -1,6 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 
+import { RpcCache } from '../../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+
+const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 
 export interface EntityEventRow {
   id: string;
@@ -29,17 +32,24 @@ export interface FetchEntityEventsParams {
 @Injectable({ providedIn: 'root' })
 export class EntityEventsPanelService {
   private readonly supabase = inject(SupabaseService);
+  private readonly cache = inject(RpcCache);
 
   async fetch(params: FetchEntityEventsParams): Promise<EntityEventRow[]> {
-    const { data, error } = await this.supabase.client.rpc('get_events_page_data', {
-      p_space_id: params.spaceId,
-      p_entity_level: params.entityLevel,
-      p_entity_id: params.entityId,
-      p_source_type: 'event',
-      p_limit: params.limit ?? 20,
-      p_offset: 0,
+    return this.cache.get('get_events_page_data', params, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${params.spaceId}:events`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('get_events_page_data', {
+          p_space_id: params.spaceId,
+          p_entity_level: params.entityLevel,
+          p_entity_id: params.entityId,
+          p_source_type: 'event',
+          p_limit: params.limit ?? 20,
+          p_offset: 0,
+        });
+        if (error) throw new Error(error.message);
+        return (data as EntityEventRow[]) ?? [];
+      },
     });
-    if (error) throw new Error(error.message);
-    return (data as EntityEventRow[]) ?? [];
   }
 }
