@@ -10,7 +10,7 @@
 src/client/
   src/
     app/
-      app.component.ts          # Root component: router-outlet + global overlays (p-confirmdialog, p-toast)
+      app.component.ts          # Root component: env banner (non-prod) + router-outlet + global overlays (p-confirmdialog, p-toast)
       app.routes.ts             # Route definitions (lazy-loaded)
       app.config.ts             # App-level providers (router, animations, PrimeNG)
       core/
@@ -99,6 +99,7 @@ src/client/
         constants/
           nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
+          env-banner/env-banner.component.ts  # 24px top banner for non-prod environments (amber=dev, violet=local) showing envName + APP_VERSION
           clint-logo.component.ts # Triple C logo mark: size-adaptive SVG with auto stroke thickening
           svg-icons/            # Per-shape SVG icons + the shared <app-marker-icon> wrapper that owns shape selection / fill / NLE rules
           manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
@@ -128,7 +129,11 @@ src/client/
       config/
         primeng-theme.ts        # Aura preset, slate surface; exports buildBrandPreset(scale?: BrandScale)
     environments/
-      environment.ts            # Supabase URL + anon key + apexDomain (empty = disable cookie session storage)
+      environment.type.ts       # Shared Environment interface + EnvName union ('production' | 'dev' | 'local')
+      environment.ts            # Prod config: Supabase URL + anon key + apexDomain + envName
+      environment.dev.ts        # Dev config (dev.clintapp.com)
+      environment.local.ts      # Local config (localhost Supabase)
+      version.ts                # APP_VERSION constant (bump alongside package.json)
     assets/                     # Static resources
     main.ts                     # Bootstrap file
     styles.css                  # Global Tailwind CSS + theme tokens + feature stylesheet imports (manage-table, catalyst-table, landscape)

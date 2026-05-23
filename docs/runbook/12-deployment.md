@@ -132,13 +132,16 @@ In **Supabase Dashboard > Authentication > URL Configuration:**
 In `src/client/src/environments/environment.ts` (production), set:
 
 ```typescript
-export const environment = {
+export const environment: Environment = {
   production: true,
+  envName: 'production',           // <-- 'production' | 'dev' | 'local'; controls env banner visibility
   supabaseUrl: 'https://<project-ref>.supabase.co',
   supabaseAnonKey: '<anon-key>',
   apexDomain: 'yourproduct.com',  // <-- enables cookie session storage on *.yourproduct.com
 };
 ```
+
+Bump `APP_VERSION` in `src/client/src/environments/version.ts` alongside `package.json` when cutting a release. The version is shown in the account menu (all environments) and in the env banner (non-prod).
 
 `apexDomain: ''` in dev keeps the localStorage path. With `apexDomain` set, Supabase JS uses `Domain=.yourproduct.com` cookies on apex hosts and falls back to localStorage on custom domains (which are a separate trust boundary).
 
