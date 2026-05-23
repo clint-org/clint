@@ -46,6 +46,7 @@ alter table public.marker_types
 create unique index idx_marker_types_system_name_unique
   on public.marker_types (name) where space_id is null and is_system = true;
 
+
 -- event_categories: space_id is nullable (NULL for system categories).
 -- PostgreSQL treats NULLs as distinct in unique constraints, so
 -- unique(space_id, name) only enforces uniqueness within a given space.
