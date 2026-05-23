@@ -45,6 +45,8 @@ These tasks are dashboard work and CLI commands that must complete before the co
 **Where:** Supabase dashboard (https://supabase.com/dashboard)
 
 - [ ] **Step 1:** Create new project named `clint-dev`. Same region as prod. Choose a strong DB password and store it in your password manager.
+
+   **Important — Security settings during creation:** Leave **"Automatically expose new tables" CHECKED** (the default). The clint migrations do NOT issue explicit `GRANT` statements for new tables; they rely on Supabase's auto-grant event trigger to give `anon` / `authenticated` table-level access. Disabling this setting causes the `20260502121200_get_latest_sync_run.sql` smoke test (and others) to fail with `permission denied for table ctgov_sync_runs`. Leave **"Enable Data API" CHECKED** as well. **"Enable automatic RLS"** can stay unchecked — migrations explicitly enable RLS where needed.
 - [ ] **Step 2:** Capture three values for later use:
   - Project ref (the `xxxxxxxxxxxx` part of `https://xxxxxxxxxxxx.supabase.co`)
   - `anon` public API key (Settings -> API)
