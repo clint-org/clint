@@ -75,7 +75,6 @@ export class LandscapeService {
     countUnit: CountUnit,
     filters: LandscapeFilters
   ): Promise<PositioningData> {
-    // Map frontend 'assets' value to the wire-format 'products' the RPC expects.
     const wireCountUnit = countUnit === 'assets' ? 'products' : countUnit;
     return this.cache.get('get_positioning_data', { spaceId, grouping, countUnit, filters }, {
       ttl: HEAVY_TTL,

@@ -71,16 +71,12 @@ describe('LandscapeService.getBullseyeData', () => {
 });
 
 describe('LandscapeService.getPositioningData', () => {
-  it('uses tag space:{id}:positioning and passes filters through the cache key', async () => {
-    const mockResult: Record<string, unknown> = {
-      rows: [],
-      count_unit: 'assets',
-    };
-    const get = vi.fn().mockResolvedValue(mockResult);
-    const service = makeService(
-      { rpc: vi.fn().mockResolvedValue({ data: mockResult, error: null }) },
-      { get, invalidateTags: vi.fn() }
-    );
+  it('uses tag space:{id}:positioning, passes all key params, and remaps products->assets', async () => {
+    const rawWireResult = { rows: [], count_unit: 'products' };
+    const rpc = vi.fn().mockResolvedValue({ data: rawWireResult, error: null });
+    // cache.get invokes opts.fetch() directly so the products->assets remap is exercised.
+    const get = vi.fn().mockImplementation((_rpcName, _params, opts) => opts.fetch());
+    const service = makeService({ rpc }, { get, invalidateTags: vi.fn() });
 
     const filters = {
       companyIds: ['c-1'],
@@ -93,11 +89,13 @@ describe('LandscapeService.getPositioningData', () => {
       studyTypes: [],
     };
 
-    await service.getPositioningData('space-1', 'company', 'assets', filters);
+    const result = await service.getPositioningData('space-1', 'company', 'assets', filters);
 
     const [rpcName, params, opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_positioning_data');
     expect(opts.tags).toEqual(['space:space-1:positioning']);
-    expect(params).toMatchObject({ spaceId: 'space-1', filters });
+    expect(params).toMatchObject({ spaceId: 'space-1', grouping: 'company', countUnit: 'assets', filters });
+    // Inverse remap: wire value 'products' must come back as 'assets'.
+    expect(result.count_unit).toBe('assets');
   });
 });
