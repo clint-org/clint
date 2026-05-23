@@ -8,12 +8,23 @@
 
 Stand up a persistent dev environment at `dev.clintapp.com` that mirrors prod's
 shape: separate Cloudflare Worker, separate Supabase project, separate R2
-bucket, wildcard subdomain support, real Google OAuth. Developers push the
-`develop` branch from local; Cloudflare Workers Builds auto-deploys the SPA to
-`clint-dev`; a GitHub Action auto-applies pending Supabase migrations to the
-dev project. Promotion to prod is a PR `develop` to `main`; merging deploys
-the SPA automatically. Applying migrations to prod stays a manual
-`supabase db push` ritual.
+bucket, wildcard subdomain support, real Google OAuth.
+
+Both environments deploy via the same shape of GitHub Actions workflow: a
+single job that (1) applies pending Supabase migrations, then (2) builds
+and deploys the SPA via `wrangler deploy`. If migrations fail, the SPA
+deploy is skipped — atomic and ordered.
+
+Dev deploys are ungated: push to `develop` triggers `deploy-dev.yml`
+which runs end-to-end against the `clint-dev` Worker and the dev
+Supabase project. Prod deploys are gated by a `production` GitHub
+Environment requiring reviewer approval: merging a PR `develop -> main`
+queues `deploy-prod.yml`, which pauses on the gate until a human clicks
+Approve, then runs against the `clint` Worker and the prod Supabase
+project.
+
+Cloudflare Workers Builds is not used. The existing `clint` Build
+auto-deploy is disabled; the GHA workflows take over both deploys.
 
 ## Goals
 
@@ -23,15 +34,19 @@ the SPA automatically. Applying migrations to prod stays a manual
   resolves to the Acme tenant via `get_brand_by_host`, same code path as prod).
 - No prod data on dev. Dev runs the same migrations and a clean
   `seed.sql`-derived baseline.
-- Auto-deploy on push for low-friction iteration; explicit human gate before
-  destructive schema changes hit prod.
+- Auto-deploy on push for low-friction iteration on dev; explicit human
+  gate before anything hits prod.
+- Atomic prod deploys: migrations and SPA succeed or fail as a unit. SPA
+  never deploys against a schema it does not understand.
 
 ## Non-goals
 
 - Per-PR ephemeral previews. (Single shared dev only. Revisit if multiple
   contributors start stepping on each other.)
 - Sanitized prod-data snapshots in dev. (Bare migrations + seed only.)
-- Promotion automation for prod DB migrations. (Manual `supabase db push`.)
+- Zero-touch prod deploys. Prod requires a manual approval click in the
+  `production` GitHub Environment; the workflow then runs migrations and
+  the SPA deploy as a single atomic job.
 - Production-grade observability on dev. Dev logs are best-effort.
 
 ## Architecture
@@ -69,22 +84,31 @@ flowchart LR
 sequenceDiagram
   participant L as Local
   participant GH as GitHub
-  participant CF_dev as CF Workers Builds (dev)
-  participant CF_prod as CF Workers Builds (prod)
   participant SB_dev as Supabase dev
+  participant CF_dev as clint-dev Worker
   participant SB_prod as Supabase prod
+  participant CF_prod as clint Worker
 
   L->>GH: git push develop
-  GH->>CF_dev: webhook (branch=develop)
-  CF_dev->>CF_dev: ng build --configuration dev<br/>wrangler deploy --env dev
-  GH->>GH: CI runs lint/build/tests (ci.yml)
-  GH->>SB_dev: db-push-dev.yml runs supabase db push --linked
-  Note over L,SB_dev: Smoke test at dev.clintapp.com
+  GH->>GH: ci.yml (lint/build/tests)
+  GH->>GH: deploy-dev.yml triggered (no gate)
+  GH->>SB_dev: supabase db push --linked
+  alt migrations fail
+    GH-->>L: workflow stops; SPA not deployed
+  else migrations succeed
+    GH->>CF_dev: wrangler deploy --env dev
+  end
+  Note over L,CF_dev: Smoke test at dev.clintapp.com
 
   L->>GH: open PR develop to main, merge
-  GH->>CF_prod: webhook (branch=main)
-  CF_prod->>CF_prod: ng build<br/>wrangler deploy
-  L->>SB_prod: supabase db push --linked (MANUAL)
+  GH->>GH: deploy-prod.yml triggered (gated by 'production' env)
+  Note over GH: Reviewer clicks Approve in GitHub UI
+  GH->>SB_prod: supabase db push --linked
+  alt migrations fail
+    GH-->>L: workflow stops; SPA not deployed
+  else migrations succeed
+    GH->>CF_prod: wrangler deploy
+  end
 ```
 
 ## Component design
@@ -180,18 +204,22 @@ wrangler secret put CTGOV_WORKER_SECRET --env dev
 
 Generate a fresh `CTGOV_WORKER_SECRET` for dev rather than reusing prod's.
 
-### Cloudflare: Workers Builds
+### Cloudflare: Workers Builds (disabled)
 
-Two Builds configurations in the Cloudflare dashboard, both pointed at the
-same GitHub repo:
+Cloudflare Workers Builds is not used by either environment. Both
+deploys are driven by GHA workflows that call `wrangler deploy`
+themselves using a `CLOUDFLARE_API_TOKEN`.
 
-| Builds config | Worker | Branch filter | Build command |
-|---|---|---|---|
-| existing | `clint` | `main` | `cd src/client && npm ci && npm run build && cd .. && wrangler deploy` |
-| new | `clint-dev` | `develop` | `cd src/client && npm ci && npm run build -- --configuration dev && cd .. && wrangler deploy --env dev` |
+The existing `clint` Build (currently auto-deploying prod on push to
+`main`) must be disabled: Cloudflare dashboard -> `clint` Worker ->
+Settings -> Builds -> turn off "Automatic deploys" (or change the
+branch filter to a non-existent branch). Leave the connection in place
+so the Build can be re-enabled in one click as an emergency fallback if
+GHA is unavailable.
 
-For the `clint-dev` Build, set "non-production branches: none" so feature
-branches do not rack up unwanted preview deployments.
+No dev Workers Build is created. The `clint-dev` Worker itself exists
+(created on first `wrangler deploy --env dev`), but no Cloudflare-side
+auto-deploy is configured for it.
 
 ### Supabase: dev project
 
@@ -303,7 +331,7 @@ Supabase JS clears the bad session. Net effect: visiting dev while signed
 into prod bounces you to login on dev. No prod data is exposed; no dev
 data is exposed; the two session stores remain isolated.
 
-### Branching, CI, and migration flow
+### Branching and CI
 
 `develop` is a long-lived branch. Local push deploys dev; PR `develop` to
 `main` and merge deploys prod.
@@ -321,51 +349,170 @@ on:
 No other changes to `ci.yml`. The lint/build/test jobs run against local
 Supabase and remain env-agnostic.
 
-New workflow `.github/workflows/db-push-dev.yml` auto-applies pending
-migrations to the dev Supabase project on push to `develop` (when migration
-files change):
+Edge function deploys are **not** in the automated workflows. They run
+rarely and re-deploying on every push wastes CI minutes. Run
+`supabase functions deploy <name> --project-ref <ref>` from local when a
+function changes.
+
+### Dev deploy workflow
+
+New `.github/workflows/deploy-dev.yml`. Triggered by `push` to `develop`,
+no approval gate (dev is freely pushable). Atomic: migrations first, SPA
+second; if migrations fail, SPA is not deployed.
 
 ```yaml
-name: Push DB migrations to dev
+name: Deploy to dev
 on:
   push:
     branches: [develop]
-    paths:
-      - 'supabase/migrations/**'
+  workflow_dispatch:
 jobs:
-  push:
+  deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/client/package-lock.json
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
         with: { version: latest }
-      - run: supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+
+      - name: Link dev Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      - run: supabase db push
+
+      - name: Apply migrations to dev
+        run: supabase db push
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+
+      - name: Install client deps
+        run: cd src/client && npm ci
+
+      - name: Build SPA (dev)
+        run: cd src/client && npm run build -- --configuration dev
+
+      - name: Deploy Worker (dev)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: src/client
+          command: deploy --env dev
 ```
+
+### Prod deploy workflow
+
+New `.github/workflows/deploy-prod.yml`. Same shape as dev, with two
+differences: it watches `main` and is gated by the `production` GitHub
+Environment which requires reviewer approval before any step runs.
+
+```yaml
+name: Deploy to production
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production    # required-reviewer gate; pauses here
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/client/package-lock.json
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with: { version: latest }
+
+      - name: Link prod Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Apply migrations to prod
+        run: supabase db push
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+
+      - name: Install client deps
+        run: cd src/client && npm ci
+
+      - name: Build SPA (prod)
+        run: cd src/client && npm run build
+
+      - name: Deploy Worker (prod)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: src/client
+          command: deploy
+```
+
+Key properties of both workflows:
+
+- **Single job, sequenced steps.** `supabase db push` runs first. If it
+  fails (e.g., a constraint violation, a migration needing manual
+  intervention), the workflow stops and `wrangler deploy` never runs.
+  The corresponding Worker stays on the previous build.
+- **Concurrency group.** Prevents two deploys to the same env from
+  racing if pushes land back-to-back. Second deploy queues.
+- **`workflow_dispatch`** lets you redeploy a specific SHA on demand
+  without a new commit.
+
+Prod-only property:
+
+- **`environment: production` gate.** The job does not start until a
+  reviewer (configured under repo Settings -> Environments -> production
+  -> Required reviewers) clicks "Approve and deploy" in the Actions UI.
+  Merging the PR queues the deploy; an explicit click runs it.
 
 New GitHub repository secrets:
-- `SUPABASE_ACCESS_TOKEN` (personal access token from the Supabase account)
+
+- `SUPABASE_ACCESS_TOKEN` (personal access token from the Supabase
+  account; used by both workflows)
 - `SUPABASE_DEV_PROJECT_REF`
 - `SUPABASE_DEV_DB_PASSWORD`
+- `SUPABASE_PROD_PROJECT_REF`
+- `SUPABASE_PROD_DB_PASSWORD`
+- `CLOUDFLARE_API_TOKEN` (Workers scope; one token covers both Workers
+  if the account-level token has access, or use a token scoped to both
+  `clint` and `clint-dev`)
+- `CLOUDFLARE_ACCOUNT_ID`
 
-Edge function deploys are **not** in the automated workflow. They run rarely
-and re-deploying on every push wastes CI minutes. Run
-`supabase functions deploy send-invite-email --project-ref <dev-ref>` from
-local when the function changes.
+### Destructive migrations (two-deploy pattern)
 
-For **prod**, no DB workflow. The ritual is explicit:
+The default flow assumes migrations are additive: SPA sees old-or-newer
+schema, never older. For destructive changes (dropping a column the
+current prod SPA still reads, renaming an RPC, etc.) this is unsafe even
+with atomic deploys, because between the migration step and the
+`wrangler deploy` step there is a window where the new schema is live
+and the old SPA is still serving.
 
-```
-supabase link --project-ref <prod-ref>
-supabase db push       # review the diff; confirm
-supabase functions deploy send-invite-email --project-ref <prod-ref>   # if changed
-```
+Pattern for destructive migrations:
 
-This ritual is documented in the runbook (see Documentation below).
+1. **PR 1:** SPA change only. Remove all references to the soon-to-be-
+   dropped column / renamed RPC. Merge, deploy. Prod SPA no longer
+   touches the doomed surface.
+2. **PR 2:** Migration only. Drop the column / rename. Merge, deploy.
+
+This stays a convention (no enforcement). Document in the runbook.
 
 ### Branch protection
 
@@ -379,17 +526,21 @@ This ritual is documented in the runbook (see Documentation below).
 3. (For schema changes) `supabase migration new <name>`, add SQL, verify
    locally with `supabase db reset`.
 4. Open a PR into `develop`. CI runs. Merge.
-5. Push of merged commit to `develop` triggers:
-   - Cloudflare Workers Builds -> `wrangler deploy --env dev`
-   - `db-push-dev.yml` -> `supabase db push` against dev project
+5. Push of merged commit to `develop` triggers `deploy-dev.yml`:
+   `supabase db push` against dev, then `wrangler deploy --env dev`.
+   If migrations fail, SPA is not deployed.
 6. Smoke-test at `dev.clintapp.com` (or `<tenant>.dev.clintapp.com`).
 7. When dev is green, open PR `develop -> main`. CI runs. Get approval.
    Merge.
-8. Merge to `main` triggers Cloudflare Workers Builds -> `wrangler deploy`
-   (prod SPA).
-9. If the change included a migration, run from local:
-   `supabase link --project-ref <prod-ref> && supabase db push`. Review the
-   diff. Confirm.
+8. Merge to `main` queues `deploy-prod.yml` and pauses on the
+   `production` environment gate. A designated reviewer opens the run in
+   GitHub Actions, reviews the SHA and the migration diff, and clicks
+   "Approve and deploy".
+9. Workflow runs `supabase db push` against prod, then `wrangler deploy`.
+   If migrations fail, the SPA deploy is skipped and the workflow ends
+   red; investigate and either fix-forward or revert before reapproving.
+10. For destructive migrations, use the two-deploy pattern (see
+    "Destructive migrations" above).
 
 ## One-time bootstrap checklist
 
@@ -420,18 +571,27 @@ In recommended order:
    4. Add Custom Domains `dev.clintapp.com` and `*.dev.clintapp.com` to
       `clint-dev` Worker.
    5. `wrangler secret put CTGOV_WORKER_SECRET --env dev` (and any other
-      prod secrets).
-   6. Cloudflare dashboard -> create second Workers Builds connection:
-      repo = same, branch filter = `develop`, target Worker = `clint-dev`,
-      build command =
-      `cd src/client && npm ci && npm run build -- --configuration dev && cd .. && wrangler deploy --env dev`,
-      non-production branches: none.
+      prod secrets the dev Worker needs).
+   6. Disable the existing `clint` Workers Build auto-deploy:
+      dashboard -> `clint` -> Settings -> Builds -> turn off
+      "Automatic deploys". Leave the connection in place as an
+      emergency fallback. **No Workers Build is created for
+      `clint-dev`** — the GHA workflows handle both deploys.
+   7. Create a `CLOUDFLARE_API_TOKEN` (Workers scope, access to both
+      `clint` and `clint-dev`) and capture the account ID. Both go into
+      GitHub secrets in the next step.
 
 4. **GitHub repo**
    1. Add secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DEV_PROJECT_REF`,
-      `SUPABASE_DEV_DB_PASSWORD`.
-   2. Create `develop` branch: `git checkout -b develop && git push -u origin develop`.
+      `SUPABASE_DEV_DB_PASSWORD`, `SUPABASE_PROD_PROJECT_REF`,
+      `SUPABASE_PROD_DB_PASSWORD`, `CLOUDFLARE_API_TOKEN`,
+      `CLOUDFLARE_ACCOUNT_ID`.
+   2. Create `develop` branch:
+      `git checkout -b develop && git push -u origin develop`.
    3. Enable branch protection on `main` (PR + green CI + 1 approval).
+   4. Create GitHub Environment `production`: Settings -> Environments ->
+      New environment. Add yourself (and ideally a backup) to "Required
+      reviewers". This is what gates `deploy-prod.yml`.
 
 5. **Code changes (single PR into `develop`)**
    1. Rename `src/client/src/environments/environment.development.ts` to
@@ -444,19 +604,27 @@ In recommended order:
    4. Grep + update any references to `--configuration development`,
       `configuration: 'development'`, `environment.development`.
    5. Add `[env.dev]` block to `src/client/wrangler.jsonc`.
-   6. Add `.github/workflows/db-push-dev.yml`.
-   7. Update `.github/workflows/ci.yml` triggers to include `develop`.
-   8. Update runbook (`docs/runbook/`) with the prod migration ritual.
-   9. Update `CLAUDE.md` with the new env file names and the dev URL.
+   6. Add `.github/workflows/deploy-dev.yml`.
+   7. Add `.github/workflows/deploy-prod.yml`.
+   8. Update `.github/workflows/ci.yml` triggers to include `develop`.
+   9. Update runbook (`docs/runbook/`) with the deploy flow for both
+      envs (approval gate on prod, atomic migration+SPA on both,
+      destructive-migration two-deploy pattern).
+   10. Update `CLAUDE.md` with the new env file names and the dev URL.
 
 6. **Smoke test the full pipeline**
-   1. Push the bootstrap PR to `develop`. Confirm Cloudflare deploys
-      `clint-dev`; confirm dev URL loads.
-   2. Add a no-op migration, push to `develop`. Confirm `db-push-dev.yml`
-      applies it.
+   1. Push the bootstrap PR to `develop`. Confirm `deploy-dev.yml` runs
+      (migration step is a no-op on first run), `wrangler deploy --env dev`
+      succeeds, and `dev.clintapp.com` loads.
+   2. Add a no-op migration, push to `develop`. Confirm
+      `deploy-dev.yml` applies it and redeploys the SPA atomically.
    3. Sign in on dev via Google OAuth. Confirm session works on
       `dev.clintapp.com` and on a wildcard subdomain test
       (`acme.dev.clintapp.com` once an Acme tenant is created on dev).
+   4. Merge `develop -> main`. Confirm `deploy-prod.yml` queues and
+      pauses on the `production` environment gate. Approve. Confirm the
+      no-op migration applies to prod and `wrangler deploy` runs.
+   5. Verify prod URL still loads with the new build.
 
 ## Documentation
 
@@ -473,13 +641,20 @@ In recommended order:
 - **R2 CORS drift.** Mirroring CORS / lifecycle from prod is a manual
   step. If prod's rules change later, dev does not auto-update. Acceptable;
   flag in the runbook.
-- **Workers Builds preview deploys.** Disabling non-production-branch
-  builds on `clint-dev` is a one-checkbox setting; if forgotten, every
-  feature branch racks up clint-dev previews. Bootstrap step 3.6 calls it
-  out.
 - **Supabase plan limits.** A second Supabase project counts against the
   account's project quota. Confirm plan supports two active projects
   before starting bootstrap.
+- **Destructive migration window.** Atomic `db push` then `wrangler
+  deploy` still has a window between the two steps where the new schema
+  is live and the old SPA is still serving. Mitigated by the two-deploy
+  pattern (SPA-first, then migration) for destructive changes.
+  Convention, not enforcement.
+- **Prod CF Build disabled = single point of failure for SPA deploys.**
+  If GHA is down, prod SPA can't deploy. Mitigation: leave the
+  Cloudflare Workers Build connection in place (just auto-deploy off);
+  re-enabling auto-deploy is one click for an emergency.
+- **GHA approval bottleneck.** Only-one-reviewer = bus factor of one.
+  Add at least one backup reviewer to the `production` environment.
 
 ## Out of scope (future work)
 
