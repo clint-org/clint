@@ -138,7 +138,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 [alt]="ag.name"
                 width="48"
                 height="48"
-                class="agency-icon"
+                class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
               />
             } @else {
               <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
@@ -352,19 +352,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         background: #f8fafc;
         border-radius: 4px;
         padding: 2px 6px;
-        box-sizing: content-box;
-      }
-
-      /* Collapsed-state logo: small square tile showing the agency logo
-         when the sidebar is collapsed. Same near-white background as the
-         expanded wordmark so dark-on-light logos stay legible. */
-      .agency-icon {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
-        background: #f8fafc;
-        border-radius: 5px;
-        padding: 2px;
         box-sizing: content-box;
       }
 
