@@ -38,9 +38,7 @@ function flattenAsset(row: RawAssetRow): Asset {
     .filter((m): m is { id: string; name: string } => m !== null);
   const routes_of_administration = (row.product_routes_of_administration ?? [])
     .map((j) => j.roa)
-    .filter(
-      (r): r is { id: string; name: string; abbreviation: string | null } => r !== null,
-    );
+    .filter((r): r is { id: string; name: string; abbreviation: string | null } => r !== null);
   const {
     product_mechanisms_of_action: _pmoa,
     product_routes_of_administration: _proa,
@@ -61,19 +59,23 @@ export class AssetService {
   private cache = inject(RpcCache);
 
   async list(spaceId: string): Promise<Asset[]> {
-    return this.cache.get('list_products', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: [`space:${spaceId}:products`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('products')
-          .select(ASSET_WITH_MOA_ROA_SELECT)
-          .eq('space_id', spaceId)
-          .order('display_order');
-        if (error) throw error;
-        return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
-      },
-    });
+    return this.cache.get(
+      'list_products',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: [`space:${spaceId}:products`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client
+            .from('products')
+            .select(ASSET_WITH_MOA_ROA_SELECT)
+            .eq('space_id', spaceId)
+            .order('display_order');
+          if (error) throw error;
+          return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
+        },
+      }
+    );
   }
 
   async getById(id: string): Promise<Asset> {
@@ -108,12 +110,13 @@ export class AssetService {
   }
 
   async update(id: string, changes: Partial<Asset>): Promise<Asset> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...updatable } = changes;
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
       .from('products')
-      .update(updatable)
+      .update({ ...updatable, updated_by: userId })
       .eq('id', id)
       .select()
       .single();

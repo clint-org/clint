@@ -9,5 +9,6 @@ export interface Company {
   display_order: number;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
   products?: Asset[];
 }

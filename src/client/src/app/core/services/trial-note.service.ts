@@ -19,9 +19,10 @@ export class TrialNoteService {
   }
 
   async update(id: string, changes: Partial<TrialNote>): Promise<TrialNote> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('trial_notes')
-      .update(changes)
+      .update({ ...changes, updated_by: userId })
       .eq('id', id)
       .select()
       .single();

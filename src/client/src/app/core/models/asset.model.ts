@@ -15,6 +15,7 @@ export interface Asset {
   display_order: number;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
   trials?: Trial[];
   mechanisms_of_action?: { id: string; name: string }[];
   routes_of_administration?: { id: string; name: string; abbreviation: string | null }[];

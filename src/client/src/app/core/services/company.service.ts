@@ -13,19 +13,23 @@ export class CompanyService {
   private cache = inject(RpcCache);
 
   async list(spaceId: string): Promise<Company[]> {
-    return this.cache.get('list_companies', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: [`space:${spaceId}:companies`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('companies')
-          .select('*, products(*)')
-          .eq('space_id', spaceId)
-          .order('display_order');
-        if (error) throw error;
-        return (data ?? []) as Company[];
-      },
-    });
+    return this.cache.get(
+      'list_companies',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: [`space:${spaceId}:companies`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client
+            .from('companies')
+            .select('*, products(*)')
+            .eq('space_id', spaceId)
+            .order('display_order');
+          if (error) throw error;
+          return (data ?? []) as Company[];
+        },
+      }
+    );
   }
 
   async getById(id: string): Promise<Company> {
@@ -55,9 +59,10 @@ export class CompanyService {
   }
 
   async update(id: string, changes: Partial<Company>): Promise<Company> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('companies')
-      .update(changes)
+      .update({ ...changes, updated_by: userId })
       .eq('id', id)
       .select()
       .single();

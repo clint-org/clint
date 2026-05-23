@@ -40,35 +40,43 @@ export class TrialService {
   private cache = inject(RpcCache);
 
   async listByAsset(assetId: string): Promise<Trial[]> {
-    return this.cache.get('trials_by_asset', { assetId }, {
-      ttl: HEAVY_TTL,
-      tags: [`asset:${assetId}:trials`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('trials')
-          .select(TRIAL_SELECT)
-          .eq('product_id', assetId)
-          .order('display_order');
-        if (error) throw error;
-        return (data as Record<string, unknown>[]).map(normalizeTrial);
-      },
-    });
+    return this.cache.get(
+      'trials_by_asset',
+      { assetId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`asset:${assetId}:trials`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client
+            .from('trials')
+            .select(TRIAL_SELECT)
+            .eq('product_id', assetId)
+            .order('display_order');
+          if (error) throw error;
+          return (data as Record<string, unknown>[]).map(normalizeTrial);
+        },
+      }
+    );
   }
 
   async listBySpace(spaceId: string): Promise<Trial[]> {
-    return this.cache.get('trials_by_space', { spaceId }, {
-      ttl: HEAVY_TTL,
-      tags: [`space:${spaceId}:trials`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('trials')
-          .select(TRIAL_SELECT)
-          .eq('space_id', spaceId)
-          .order('display_order');
-        if (error) throw error;
-        return (data as Record<string, unknown>[]).map(normalizeTrial);
-      },
-    });
+    return this.cache.get(
+      'trials_by_space',
+      { spaceId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:trials`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client
+            .from('trials')
+            .select(TRIAL_SELECT)
+            .eq('space_id', spaceId)
+            .order('display_order');
+          if (error) throw error;
+          return (data as Record<string, unknown>[]).map(normalizeTrial);
+        },
+      }
+    );
   }
 
   async getById(id: string): Promise<Trial> {
@@ -122,24 +130,32 @@ export class TrialService {
    * trial at a time.
    */
   async getLatestSnapshotsForSpace(spaceId: string): Promise<Map<string, unknown>> {
-    return this.cache.get('list_latest_snapshots_for_space', { spaceId }, {
-      ttl: HEAVY_TTL,
-      tags: [`space:${spaceId}:trials`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('list_latest_snapshots_for_space', {
-          p_space_id: spaceId,
-        });
-        if (error) throw error;
-        const out = new Map<string, unknown>();
-        for (const row of (data ?? []) as { trial_id: string; payload: unknown }[]) {
-          out.set(row.trial_id, row.payload);
-        }
-        return out;
-      },
-    });
+    return this.cache.get(
+      'list_latest_snapshots_for_space',
+      { spaceId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:trials`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client.rpc(
+            'list_latest_snapshots_for_space',
+            {
+              p_space_id: spaceId,
+            }
+          );
+          if (error) throw error;
+          const out = new Map<string, unknown>();
+          for (const row of (data ?? []) as { trial_id: string; payload: unknown }[]) {
+            out.set(row.trial_id, row.payload);
+          }
+          return out;
+        },
+      }
+    );
   }
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const payload: Partial<Trial> = { ...changes };
     // When the caller supplies a phase field without an explicit source,
     // tag it as analyst-written. The migration's BEFORE UPDATE trigger
@@ -155,7 +171,7 @@ export class TrialService {
     }
     const { data, error } = await this.supabase.client
       .from('trials')
-      .update(payload)
+      .update({ ...payload, updated_by: userId })
       .eq('id', id)
       .select()
       .single();

@@ -48,6 +48,7 @@ export class MarkerService {
   }
 
   async update(id: string, changes: Partial<Marker>): Promise<Marker> {
+    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     // Capture trial assignments before the mutation so we can invalidate
     // the right trial-detail caches even if the change does not return them.
     const { data: assignmentRows } = await this.supabase.client
@@ -58,7 +59,7 @@ export class MarkerService {
 
     const { data, error } = await this.supabase.client
       .from('markers')
-      .update(changes)
+      .update({ ...changes, updated_by: userId })
       .eq('id', id)
       .select()
       .single();
