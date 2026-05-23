@@ -15,6 +15,8 @@ export interface RpcCacheStats {
     backgroundRefreshes: number;
     invalidations: number;
   }>;
+  entries: number;
+  inflightDedups: number;
 }
 
 interface CacheEntry<T> {
@@ -59,11 +61,12 @@ export class RpcCache {
   }
 
   enableDevStats(): void {
-    this.stats = { byRpc: {} };
+    this.stats = { byRpc: {}, entries: 0, inflightDedups: 0 };
   }
 
   getDevStats(): RpcCacheStats {
-    return this.stats ?? { byRpc: {} };
+    if (!this.stats) return { byRpc: {}, entries: 0, inflightDedups: 0 };
+    return { ...this.stats, entries: this.entries.size };
   }
 
   private recordStat(rpcName: string, kind: 'hits' | 'misses' | 'backgroundRefreshes' | 'invalidations'): void {
@@ -81,6 +84,7 @@ export class RpcCache {
 
     if (entry?.inflight) {
       this.recordStat(rpcName, 'hits');
+      if (this.stats) this.stats.inflightDedups += 1;
       return entry.inflight;
     }
 

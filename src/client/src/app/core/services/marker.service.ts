@@ -68,6 +68,7 @@ export class MarkerService {
     this.cache.invalidateTags([
       ...spaceTagsFor(updated.space_id),
       ...trialDetailTags(trialIds),
+      `catalyst:${id}:detail`,
     ]);
 
     return updated;
@@ -107,6 +108,7 @@ export class MarkerService {
     const affectedTrialIds = Array.from(new Set([...previousTrialIds, ...trialIds]));
     const tags: string[] = trialDetailTags(affectedTrialIds);
     if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));
+    tags.push(`catalyst:${markerId}:detail`);
     if (tags.length > 0) this.cache.invalidateTags(tags);
   }
 
@@ -127,6 +129,7 @@ export class MarkerService {
 
     const tags: string[] = trialDetailTags(trialIds);
     if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));
+    tags.push(`catalyst:${id}:detail`);
     if (tags.length > 0) this.cache.invalidateTags(tags);
   }
 

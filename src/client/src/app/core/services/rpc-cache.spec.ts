@@ -317,7 +317,37 @@ describe('RpcCache dev telemetry', () => {
     const cache = new RpcCache();
     const fetch = vi.fn().mockResolvedValue([1]);
     await cache.get('list_x', {}, { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch });
-    expect(cache.getDevStats()).toEqual({ byRpc: {} });
+    expect(cache.getDevStats()).toEqual({ byRpc: {}, entries: 0, inflightDedups: 0 });
+  });
+
+  it('reports current entry count in getDevStats', async () => {
+    const cache = new RpcCache();
+    cache.enableDevStats();
+    const fetch = vi.fn().mockResolvedValue([1]);
+    const opts = { ttl: { fresh: 60_000, stale: 60_000 }, tags: [], fetch };
+    await cache.get('rpc_a', {}, opts);
+    await cache.get('rpc_b', {}, opts);
+    await cache.get('rpc_c', {}, opts);
+    expect(cache.getDevStats().entries).toBe(3);
+  });
+
+  it('increments inflightDedups when concurrent calls share an inflight promise', async () => {
+    const cache = new RpcCache();
+    cache.enableDevStats();
+    let resolve!: (v: number[]) => void;
+    const promise = new Promise<number[]>((r) => { resolve = r; });
+    const fetch = vi.fn().mockReturnValue(promise);
+    const opts = { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch };
+
+    const a = cache.get('list_x', {}, opts);
+    const b = cache.get('list_x', {}, opts);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    resolve([1, 2, 3]);
+    await a;
+    await b;
+
+    expect(cache.getDevStats().inflightDedups).toBe(1);
   });
 });
 
