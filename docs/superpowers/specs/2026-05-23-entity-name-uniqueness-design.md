@@ -27,7 +27,7 @@ Three space-scoped entity tables (`therapeutic_areas`, `marker_types`, `event_ca
 | `mechanisms_of_action` | Yes | Since `20260411130000` |
 | `routes_of_administration` | Yes | Since `20260411130000` |
 | `therapeutic_areas` | No | Has `space_id NOT NULL` since `20260315170100` |
-| `marker_types` | No | Has `space_id` since `20260412130100` |
+| `marker_types` | No | `space_id` nullable since `20260315170100` (NULL for system types, non-NULL for space-custom) |
 | `event_categories` | No | `space_id` nullable (NULL for system categories, non-NULL for space-custom) |
 
 ## Migration SQL
@@ -37,9 +37,15 @@ Three space-scoped entity tables (`therapeutic_areas`, `marker_types`, `event_ca
 alter table public.therapeutic_areas
   add constraint therapeutic_areas_space_name_unique unique (space_id, name);
 
--- marker_types: straightforward, space_id is NOT NULL after redesign migration
+-- marker_types: space_id is nullable (NULL for system types).
+-- Same treatment as event_categories: the table-level constraint covers
+-- space-scoped rows; a partial unique index covers system rows.
 alter table public.marker_types
   add constraint marker_types_space_name_unique unique (space_id, name);
+
+create unique index idx_marker_types_system_name_unique
+  on public.marker_types (name) where space_id is null and is_system = true;
+
 
 -- event_categories: space_id is nullable (NULL for system categories).
 -- PostgreSQL treats NULLs as distinct in unique constraints, so
@@ -137,7 +143,8 @@ Vitest integration tests (`test:integration`) against local Supabase:
 - Verify that duplicate `(space_id, name)` inserts are rejected on all three tables.
 - Verify that `ON CONFLICT (space_id, name) DO NOTHING` returns cleanly.
 - Verify that system event categories (space_id IS NULL, is_system = true) are protected by the partial unique index.
-- Verify that two space-custom event categories with the same name in different spaces are allowed.
+- Verify that system marker types (space_id IS NULL, is_system = true) are protected by the partial unique index.
+- Verify that two space-custom rows with the same name in different spaces are allowed.
 - Verify that the dedup migration runs cleanly on seed data (no duplicates expected, but the block should be idempotent).
 
 ## Non-goals
