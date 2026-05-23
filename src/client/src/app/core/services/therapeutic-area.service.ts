@@ -28,10 +28,9 @@ export class TherapeuticAreaService {
   }
 
   async create(spaceId: string, area: Partial<TherapeuticArea>): Promise<TherapeuticArea> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('therapeutic_areas')
-      .insert({ ...area, space_id: spaceId, created_by: userId })
+      .insert({ ...area, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;

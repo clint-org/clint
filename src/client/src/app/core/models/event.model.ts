@@ -54,6 +54,7 @@ export interface AppEvent {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
 }
 
 /** A row returned by get_events_page_data RPC (event or marker). */
@@ -90,6 +91,7 @@ export interface EventDetail {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
   category: { id: string; name: string };
   entity_level: EntityLevel;
   entity_name: string;

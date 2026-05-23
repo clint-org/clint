@@ -23,10 +23,9 @@ export class MarkerService {
   private cache = inject(RpcCache);
 
   async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('markers')
-      .insert({ ...marker, space_id: spaceId, created_by: userId })
+      .insert({ ...marker, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;

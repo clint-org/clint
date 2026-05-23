@@ -42,10 +42,9 @@ export class RouteOfAdministrationService {
     spaceId: string,
     roa: Partial<RouteOfAdministration>
   ): Promise<RouteOfAdministration> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('routes_of_administration')
-      .insert({ ...roa, space_id: spaceId, created_by: userId })
+      .insert({ ...roa, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;

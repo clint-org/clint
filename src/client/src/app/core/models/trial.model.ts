@@ -13,6 +13,7 @@ export interface Trial {
   display_order: number;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
 
   // Phase override (analyst-owned)
   phase_type: string | null;
@@ -55,6 +56,7 @@ export interface TrialNote {
   content: string;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
 }
 
 export interface TherapeuticArea {
