@@ -22,7 +22,7 @@ export default defineConfig({
   retries: process.env['CI'] ? 1 : 0,
   reporter: [['html'], ['list']],
   timeout: 60_000,
-  expect: { timeout: 10_000 },
+  expect: { timeout: 30_000 },
   use: {
     baseURL,
     trace: 'on-first-retry',

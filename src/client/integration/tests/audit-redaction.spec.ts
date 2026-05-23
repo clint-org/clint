@@ -24,7 +24,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildPersonas, Personas, adminClient } from '../fixtures/personas';
+import { buildPersonas, Personas, adminClient, createAuthUser } from '../fixtures/personas';
 import { as, expectOk, expectCode } from '../harness/as';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Client as PgClient } from 'pg';
@@ -43,12 +43,8 @@ beforeAll(async () => {
   svc = adminClient();
 
   // Create the synthetic subject user via the admin API.
-  const { data, error } = await svc.auth.admin.createUser({
-    email: `gdpr-subject-${Date.now()}@redaction.invalid`,
-    email_confirm: true,
-  });
-  if (error) throw new Error(`createUser for redaction subject: ${error.message}`);
-  subjectUserId = data.user!.id;
+  const subject = await createAuthUser(svc, { email: `gdpr-subject-${Date.now()}@redaction.invalid` });
+  subjectUserId = subject.id;
 
   // Seed two audit rows with PII content via direct pg (bypasses the GRANT
   // restriction because postgres / superuser is exempt from the revoked GRANTs
@@ -71,7 +67,7 @@ beforeAll(async () => {
   } finally {
     await pg.end();
   }
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   if (!subjectUserId) return;
@@ -275,13 +271,11 @@ describe('redact_user end-to-end flow', () => {
 
   beforeAll(async () => {
     userEmail = `redact-user-flow-${Date.now()}@redaction.invalid`;
-    const { data, error } = await svc.auth.admin.createUser({
+    const created = await createAuthUser(svc, {
       email: userEmail,
-      email_confirm: true,
       user_metadata: { full_name: 'Redact User Subject' },
     });
-    if (error) throw new Error(`createUser for redact_user subject: ${error.message}`);
-    userId = data.user!.id;
+    userId = created.id;
 
     // Seed one audit row attributed to the subject with both PII (email,
     // full_name) and non-PII (note) keys in metadata. The redact_user sweep

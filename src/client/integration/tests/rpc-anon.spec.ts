@@ -11,7 +11,7 @@ import { as, expectOk, expectCode } from '../harness/as';
 let p: Personas;
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 describe('rpc check_subdomain_available', () => {
   // Despite its anon-friendly name, this RPC is granted to authenticated

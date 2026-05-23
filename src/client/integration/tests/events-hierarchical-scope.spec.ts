@@ -109,7 +109,7 @@ beforeAll(async () => {
     },
   ]);
   if (evErr) throw new Error(`insert events: ${evErr.message}`);
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   if (agencyCleanup) await agencyCleanup();

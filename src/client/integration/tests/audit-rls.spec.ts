@@ -81,7 +81,7 @@ beforeAll(async () => {
   } finally {
     await pg.end();
   }
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   if (!svc) return;

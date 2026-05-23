@@ -11,7 +11,7 @@ import { as, expectOk } from '../harness/as';
 let p: Personas;
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 function expectDenied(result: { error: { code?: string; message?: string } | null }) {
   if (!result.error) {

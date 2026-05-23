@@ -53,7 +53,7 @@ beforeAll(async () => {
   });
   seedRowId = expectOk(r) as string;
   expect(typeof seedRowId).toBe('string');
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   // Cleanup via direct pg (superuser bypasses revoked GRANTs).

@@ -50,7 +50,7 @@ export async function authenticatedPage(browser: Browser): Promise<Page> {
     [storageKey, JSON.stringify(sessionData)] as [string, string]
   );
 
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'load' });
 
   return page;
 }

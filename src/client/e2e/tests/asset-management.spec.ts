@@ -174,6 +174,7 @@ test.describe('Asset Management CRUD', () => {
   test('delete "Updated Asset" via typed confirm', async () => {
     await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     const rows = page.locator('tr', { hasText: 'Updated Asset' });
+    await rows.first().waitFor({ timeout: 30000 });
     const count = await rows.count();
 
     await rows.first().locator('app-row-actions button').click();
@@ -188,6 +189,7 @@ test.describe('Asset Management CRUD', () => {
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
     await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Add Asset' })).toBeVisible();
     const newCount = await page.locator('tr', { hasText: 'Updated Asset' }).count();
     expect(newCount).toBeLessThan(count);
   });

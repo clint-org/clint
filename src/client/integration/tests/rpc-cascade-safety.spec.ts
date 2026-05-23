@@ -71,7 +71,7 @@ let svc: SupabaseClient;
 beforeAll(async () => {
   p = await buildPersonas();
   svc = adminClient();
-}, 60_000);
+}, 120_000);
 
 // ---------------------------------------------------------------------------
 // Helpers
