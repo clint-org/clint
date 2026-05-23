@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKSPACE="${SUPERSET_WORKSPACE_NAME:?SUPERSET_WORKSPACE_NAME must be set}"
+WORKSPACE="${SUPERSET_WORKSPACE_NAME:-$(basename "$SUPERSET_WORKSPACE_PATH" 2>/dev/null || basename "$PWD")}"
 
 # 5 fixed slots (0-4), offset by 100 each. Hash workspace name to pick one.
 HASH=$(printf '%s' "$WORKSPACE" | cksum | awk '{print $1}')
