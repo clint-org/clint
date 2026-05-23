@@ -29,17 +29,11 @@ import { environment } from '../environments/environment';
   `,
   styles: [
     `
-      :host {
-        display: flex;
-        flex-direction: column;
+      .app-root-shell {
         height: 100vh;
       }
-      .app-root-shell {
-        flex: 1;
-        min-height: 0;
-      }
       @media (max-width: 767px) {
-        :host {
+        .app-root-shell {
           height: auto;
           min-height: 100vh;
         }
