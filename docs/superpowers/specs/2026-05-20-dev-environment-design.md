@@ -68,7 +68,7 @@ flowchart LR
 | Concern | Prod | Dev |
 |---|---|---|
 | Cloudflare Worker | `clint` (existing) | `clint-dev` (new) |
-| Hostname | `clintapp.com` + `*.clintapp.com` | `dev.clintapp.com` + `*.dev.clintapp.com` |
+| Hostname | `clintapp.com` + `*.clintapp.com` | `dev.clintapp.com` (wildcard `*.dev.clintapp.com` deferred; needs Advanced Certificate Manager) |
 | Supabase project | `gmgprkymyjzkzirbzqzd` (existing) | new project `clint-dev` |
 | R2 bucket | `clint-materials` | `clint-materials-dev` (new) |
 | Rate-limiter namespace ids | 1001 / 1002 | 1003 / 1004 |
@@ -179,17 +179,34 @@ state.
 
 ### Cloudflare: DNS and routes
 
+**Routing approach: Routes (not Custom Domains).** Prod uses a Route
+`*.clintapp.com/*` on the `clint` Worker for tenant subdomain routing.
+Custom Domains on `clint-dev` for `dev.clintapp.com` do not reliably
+override prod's wildcard Route in practice (despite Cloudflare docs
+claiming Custom Domain > Route precedence). Route-on-Route specificity
+DOES work: a Route `dev.clintapp.com/*` on `clint-dev` beats
+`*.clintapp.com/*` on `clint` because the exact hostname is more
+specific than the wildcard.
+
 In Cloudflare DNS for `clintapp.com`:
 
-| Type | Name | Target | Proxy |
+| Type | Name | Content | Proxy |
 |---|---|---|---|
-| (auto) | `dev` | (Workers-managed) | proxied |
-| (auto) | `*.dev` | (Workers-managed) | proxied |
+| A | `dev` | `192.0.2.1` | proxied |
 
-Pragmatic path: in the Cloudflare dashboard under `clint-dev` Worker
--> Settings -> Domains & Routes, add both `dev.clintapp.com` and
-`*.dev.clintapp.com` as Custom Domains. Cloudflare creates the records and
-issues TLS certs (including the wildcard).
+In `clint-dev` Worker -> Settings -> Domains & Routes, add a Route:
+
+| Pattern | Zone |
+|---|---|
+| `dev.clintapp.com/*` | `clintapp.com` |
+
+**Wildcard `*.dev.clintapp.com` is deferred.** Cloudflare's free
+Universal SSL covers `*.clintapp.com` (one level) but NOT
+`*.dev.clintapp.com` (two levels). Covering two-level wildcards
+requires Advanced Certificate Manager ($10/mo). Until enabled,
+tenant brand testing on dev uses the `?wl_kind=tenant&wl_id=<uuid>`
+query-string override (already supported by `fetchBrand()` in
+`main.ts`) instead of real subdomain routing.
 
 ### Cloudflare: R2 and secrets
 
