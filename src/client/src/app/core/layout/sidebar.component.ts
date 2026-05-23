@@ -239,8 +239,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       <div class="sidebar__footer">
         <button
           type="button"
-          class="avatar-btn"
-          [class.avatar-btn--has-image]="!!userAvatarUrl()"
+          [class]="userAvatarUrl() ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent' : 'avatar-btn'"
           [attr.aria-label]="'User account: ' + userInitials()"
           [pTooltip]="isExpanded() ? '' : 'Account'"
           tooltipPosition="right"
@@ -252,7 +251,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
               [alt]="userInitials()"
               width="28"
               height="28"
-              class="avatar-img"
+              class="size-full rounded-full object-cover"
               referrerpolicy="no-referrer"
             />
           } @else {
@@ -600,24 +599,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       .avatar-btn:focus-visible {
         outline: 2px solid var(--brand-on-dark);
         outline-offset: 2px;
-      }
-
-      .avatar-btn--has-image {
-        background: transparent;
-        border-color: transparent;
-        padding: 0;
-        overflow: hidden;
-      }
-      .avatar-btn--has-image:hover {
-        background: transparent;
-        border-color: rgb(from var(--brand-on-dark) r g b / 0.7);
-      }
-
-      .avatar-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
       }
 
       .avatar-email {
