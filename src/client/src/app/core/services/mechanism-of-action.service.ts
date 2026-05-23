@@ -39,10 +39,9 @@ export class MechanismOfActionService {
   }
 
   async create(spaceId: string, moa: Partial<MechanismOfAction>): Promise<MechanismOfAction> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('mechanisms_of_action')
-      .insert({ ...moa, space_id: spaceId, created_by: userId })
+      .insert({ ...moa, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
