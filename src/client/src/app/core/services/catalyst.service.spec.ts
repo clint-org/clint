@@ -59,4 +59,17 @@ describe('CatalystService.getCatalystDetail', () => {
     expect(rpc).toHaveBeenCalledWith('get_catalyst_detail', { p_marker_id: 'marker-2' });
     expect(result).toEqual({ id: 'marker-2' });
   });
+
+  it('re-throws when supabase rpc returns an error', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') });
+    const get = vi.fn().mockImplementation((_rpc, _params, opts: { fetch: () => Promise<unknown> }) =>
+      opts.fetch()
+    );
+    const service = makeService(
+      { rpc },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    await expect(service.getCatalystDetail('marker-1')).rejects.toThrow('rpc failed');
+  });
 });
