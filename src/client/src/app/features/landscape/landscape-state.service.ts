@@ -12,8 +12,8 @@ import {
   PositioningGrouping,
   SpokeMode,
 } from '../../core/models/landscape.model';
+import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
-import { SupabaseService } from '../../core/services/supabase.service';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
 
 interface PersistedLandscapeState {
@@ -42,7 +42,7 @@ const STORAGE_PREFIX = 'landscape-state:';
 @Injectable({ providedIn: 'any' })
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
-  private readonly supabase = inject(SupabaseService);
+  private readonly catalyst = inject(CatalystService);
   private storageKey = '';
   private spaceId = '';
   private disablePersistence = false;
@@ -160,12 +160,9 @@ export class LandscapeStateService {
     this.selectedDetail.set(null);
     this.detailLoading.set(true);
     try {
-      const { data, error } = await this.supabase.client.rpc('get_catalyst_detail', {
-        p_marker_id: markerId,
-      });
-      if (error) throw error;
+      const detail = await this.catalyst.getCatalystDetail(markerId);
       if (this.selectedMarkerId() === markerId) {
-        this.selectedDetail.set(data as CatalystDetail);
+        this.selectedDetail.set(detail);
       }
     } catch {
       this.clearSelection();

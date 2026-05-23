@@ -63,3 +63,4 @@ describe('LandscapeStateService.init', () => {
     expect(LandscapeStateService.prototype.init.length).toBe(2);
   });
 });
+
