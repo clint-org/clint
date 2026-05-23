@@ -72,7 +72,7 @@ describe('MarkerService.update', () => {
       .mockReturnValueOnce(updateQb);
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 

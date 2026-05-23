@@ -187,7 +187,7 @@ describe('TrialService.update with phase fields', () => {
     });
     const from = vi.fn().mockReturnValue(updateQb);
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }) } },
       { get: vi.fn(), invalidateTags: vi.fn() }
     );
     return { service, captured };
