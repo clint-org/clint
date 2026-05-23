@@ -771,4 +771,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521195224_trial_phase_source_columns.sql`
 - `20260521200200_trial_phase_ctgov_truth.sql`
 - `20260521200900_seed_demo_data_phase_sources.sql`
+- `20260523130000_audit_columns_server_side.sql`
 <!-- /AUTO-GEN:DRIFT -->
