@@ -89,14 +89,13 @@ export class AssetService {
   }
 
   async create(spaceId: string, asset: Partial<Asset>): Promise<Asset> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     // Strip virtual join fields before insert
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...insertable } = asset;
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
       .from('products')
-      .insert({ ...insertable, space_id: spaceId, created_by: userId })
+      .insert({ ...insertable, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
@@ -110,13 +109,12 @@ export class AssetService {
   }
 
   async update(id: string, changes: Partial<Asset>): Promise<Asset> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...updatable } = changes;
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
       .from('products')
-      .update({ ...updatable, updated_by: userId })
+      .update(updatable)
       .eq('id', id)
       .select()
       .single();

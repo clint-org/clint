@@ -43,10 +43,9 @@ export class CompanyService {
   }
 
   async create(spaceId: string, company: Partial<Company>): Promise<Company> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('companies')
-      .insert({ ...company, space_id: spaceId, created_by: userId })
+      .insert({ ...company, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
@@ -59,10 +58,9 @@ export class CompanyService {
   }
 
   async update(id: string, changes: Partial<Company>): Promise<Company> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('companies')
-      .update({ ...changes, updated_by: userId })
+      .update(changes)
       .eq('id', id)
       .select()
       .single();

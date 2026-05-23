@@ -1,6 +1,7 @@
 /**
- * Entity audit columns: verifies that created_by is set on INSERT and
- * updated_by is set on UPDATE for all entity tables that carry these columns.
+ * Entity audit columns: verifies that the server-side BEFORE triggers
+ * populate created_by from auth.uid() on INSERT and updated_by + updated_at
+ * on UPDATE. The client never sends these fields.
  *
  * Covers: companies, products, trials, markers, events, trial_notes.
  */
@@ -15,16 +16,16 @@ beforeAll(async () => {
   p = await buildPersonas();
 }, 90_000);
 
-describe('entity audit columns', () => {
+describe('entity audit columns (server-side triggers)', () => {
   const admin = adminClient();
 
-  it('companies: created_by on insert, updated_by on update', async () => {
+  it('companies: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
     const { data: inserted } = await client
       .from('companies')
-      .insert({ space_id: p.org.spaceId, name: 'Audit Co', created_by: userId })
+      .insert({ space_id: p.org.spaceId, name: 'Audit Co' })
       .select('id, created_by, updated_by')
       .single();
     expectOk({ data: inserted, error: null });
@@ -33,7 +34,7 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('companies')
-      .update({ name: 'Audit Co Renamed', updated_by: userId })
+      .update({ name: 'Audit Co Renamed' })
       .eq('id', inserted!.id)
       .select('updated_by')
       .single();
@@ -41,7 +42,7 @@ describe('entity audit columns', () => {
     expect(updated!.updated_by).toBe(userId);
   });
 
-  it('products: created_by on insert, updated_by on update', async () => {
+  it('products: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -53,12 +54,7 @@ describe('entity audit columns', () => {
 
     const { data: inserted } = await client
       .from('products')
-      .insert({
-        space_id: p.org.spaceId,
-        company_id: co!.id,
-        name: 'TestAsset',
-        created_by: userId,
-      })
+      .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'TestAsset' })
       .select('id, created_by, updated_by')
       .single();
     expectOk({ data: inserted, error: null });
@@ -67,7 +63,7 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('products')
-      .update({ name: 'TestAsset Renamed', updated_by: userId })
+      .update({ name: 'TestAsset Renamed' })
       .eq('id', inserted!.id)
       .select('updated_by')
       .single();
@@ -75,7 +71,7 @@ describe('entity audit columns', () => {
     expect(updated!.updated_by).toBe(userId);
   });
 
-  it('trials: created_by on insert, updated_by on update', async () => {
+  it('trials: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -86,12 +82,7 @@ describe('entity audit columns', () => {
       .single();
     const { data: prod } = await admin
       .from('products')
-      .insert({
-        space_id: p.org.spaceId,
-        company_id: co!.id,
-        name: 'TrialAsset',
-        created_by: userId,
-      })
+      .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'TrialAsset', created_by: userId })
       .select('id')
       .single();
     const { data: ta } = await admin
@@ -108,7 +99,6 @@ describe('entity audit columns', () => {
         therapeutic_area_id: ta!.id,
         name: 'Trial Audit',
         identifier: 'NCT99999999',
-        created_by: userId,
       })
       .select('id, created_by, updated_by')
       .single();
@@ -118,15 +108,16 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('trials')
-      .update({ name: 'Trial Audit Renamed', updated_by: userId })
+      .update({ name: 'Trial Audit Renamed' })
       .eq('id', inserted!.id)
-      .select('updated_by')
+      .select('updated_by, updated_at')
       .single();
     expectOk({ data: updated, error: null });
     expect(updated!.updated_by).toBe(userId);
+    expect(updated!.updated_at).toBeTruthy();
   });
 
-  it('markers: created_by on insert, updated_by on update', async () => {
+  it('markers: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -145,7 +136,6 @@ describe('entity audit columns', () => {
         title: 'Audit Marker',
         event_date: '2026-06-01',
         projection: 'actual',
-        created_by: userId,
       })
       .select('id, created_by, updated_by')
       .single();
@@ -155,7 +145,7 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('markers')
-      .update({ title: 'Audit Marker Renamed', updated_by: userId })
+      .update({ title: 'Audit Marker Renamed' })
       .eq('id', inserted!.id)
       .select('updated_by')
       .single();
@@ -163,7 +153,7 @@ describe('entity audit columns', () => {
     expect(updated!.updated_by).toBe(userId);
   });
 
-  it('events: created_by on insert, updated_by on update', async () => {
+  it('events: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -176,7 +166,6 @@ describe('entity audit columns', () => {
         category_id: catRow!.id,
         title: 'Audit Event',
         event_date: '2026-06-01',
-        created_by: userId,
       })
       .select('id, created_by, updated_by')
       .single();
@@ -186,7 +175,7 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('events')
-      .update({ title: 'Audit Event Renamed', updated_by: userId })
+      .update({ title: 'Audit Event Renamed' })
       .eq('id', inserted!.id)
       .select('updated_by')
       .single();
@@ -194,7 +183,7 @@ describe('entity audit columns', () => {
     expect(updated!.updated_by).toBe(userId);
   });
 
-  it('trial_notes: created_by on insert, updated_by on update', async () => {
+  it('trial_notes: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -205,12 +194,7 @@ describe('entity audit columns', () => {
       .single();
     const { data: prod } = await admin
       .from('products')
-      .insert({
-        space_id: p.org.spaceId,
-        company_id: co!.id,
-        name: 'NoteAsset',
-        created_by: userId,
-      })
+      .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'NoteAsset', created_by: userId })
       .select('id')
       .single();
     const { data: ta } = await admin
@@ -233,12 +217,7 @@ describe('entity audit columns', () => {
 
     const { data: inserted } = await client
       .from('trial_notes')
-      .insert({
-        space_id: p.org.spaceId,
-        trial_id: trial!.id,
-        content: 'Audit note',
-        created_by: userId,
-      })
+      .insert({ space_id: p.org.spaceId, trial_id: trial!.id, content: 'Audit note' })
       .select('id, created_by, updated_by')
       .single();
     expectOk({ data: inserted, error: null });
@@ -247,11 +226,25 @@ describe('entity audit columns', () => {
 
     const { data: updated } = await client
       .from('trial_notes')
-      .update({ content: 'Audit note updated', updated_by: userId })
+      .update({ content: 'Audit note updated' })
       .eq('id', inserted!.id)
       .select('updated_by')
       .single();
     expectOk({ data: updated, error: null });
     expect(updated!.updated_by).toBe(userId);
+  });
+
+  it('trigger ignores client-spoofed created_by for authenticated users', async () => {
+    const realUserId = p.ids.contributor;
+    const spoofedId = p.ids.reader;
+    const client = as(p, 'contributor');
+
+    const { data: inserted } = await client
+      .from('companies')
+      .insert({ space_id: p.org.spaceId, name: 'Spoof Test', created_by: spoofedId })
+      .select('id, created_by')
+      .single();
+    expectOk({ data: inserted, error: null });
+    expect(inserted!.created_by).toBe(realUserId);
   });
 });

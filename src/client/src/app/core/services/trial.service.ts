@@ -90,10 +90,9 @@ export class TrialService {
   }
 
   async create(spaceId: string, trial: Partial<Trial>): Promise<Trial> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('trials')
-      .insert({ ...trial, space_id: spaceId, created_by: userId })
+      .insert({ ...trial, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
@@ -155,7 +154,6 @@ export class TrialService {
   }
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const payload: Partial<Trial> = { ...changes };
     // When the caller supplies a phase field without an explicit source,
     // tag it as analyst-written. The migration's BEFORE UPDATE trigger
@@ -171,7 +169,7 @@ export class TrialService {
     }
     const { data, error } = await this.supabase.client
       .from('trials')
-      .update({ ...payload, updated_by: userId })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();

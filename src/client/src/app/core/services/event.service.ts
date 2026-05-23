@@ -86,10 +86,9 @@ export class EventService {
     sources: { url: string; label: string }[],
     linkedEventIds: string[]
   ): Promise<AppEvent> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('events')
-      .insert({ ...event, space_id: spaceId, created_by: userId })
+      .insert({ ...event, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
@@ -108,7 +107,6 @@ export class EventService {
       const linkRows = linkedEventIds.map((targetId) => ({
         source_event_id: data.id,
         target_event_id: targetId,
-        created_by: userId,
       }));
       const { error: linkErr } = await this.supabase.client.from('event_links').insert(linkRows);
       if (linkErr) throw linkErr;
@@ -120,10 +118,9 @@ export class EventService {
   }
 
   async update(id: string, changes: Partial<AppEvent>): Promise<AppEvent> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('events')
-      .update({ ...changes, updated_at: new Date().toISOString(), updated_by: userId })
+      .update(changes)
       .eq('id', id)
       .select()
       .single();
@@ -175,11 +172,9 @@ export class EventService {
     if (delErr2) throw delErr2;
 
     if (linkedEventIds.length > 0) {
-      const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
       const rows = linkedEventIds.map((targetId) => ({
         source_event_id: eventId,
         target_event_id: targetId,
-        created_by: userId,
       }));
       const { error: insErr } = await this.supabase.client.from('event_links').insert(rows);
       if (insErr) throw insErr;

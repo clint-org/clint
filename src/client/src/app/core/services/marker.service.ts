@@ -23,10 +23,9 @@ export class MarkerService {
   private cache = inject(RpcCache);
 
   async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('markers')
-      .insert({ ...marker, space_id: spaceId, created_by: userId })
+      .insert({ ...marker, space_id: spaceId })
       .select()
       .single();
     if (error) throw error;
@@ -48,7 +47,6 @@ export class MarkerService {
   }
 
   async update(id: string, changes: Partial<Marker>): Promise<Marker> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     // Capture trial assignments before the mutation so we can invalidate
     // the right trial-detail caches even if the change does not return them.
     const { data: assignmentRows } = await this.supabase.client
@@ -59,7 +57,7 @@ export class MarkerService {
 
     const { data, error } = await this.supabase.client
       .from('markers')
-      .update({ ...changes, updated_by: userId })
+      .update(changes)
       .eq('id', id)
       .select()
       .single();
