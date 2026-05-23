@@ -73,15 +73,9 @@ supabase db push
 
 Expected: List of pending migrations followed by "Finished supabase db push."
 
-- [ ] **Step 3:** Load seed data via psql. (Seed is only auto-applied on `db reset` against local; remote pushes don't run it.)
+- [ ] **Step 3 (skipped intentionally):** `seed.sql` is **not** loaded on dev. System constants (marker_categories, marker_types, event_categories with `is_system=true`) are seeded by migrations and already exist after `db push`. `seed.sql` would additionally create a "Demo Pharma CI" demo tenant + populate it + install an auto-join trigger — useful for local dev convenience but undesirable for cloud dev (we want first Google sign-in on dev to mirror the new-user experience: zero tenants, zero spaces, manual provisioning required).
 
-```bash
-psql "postgresql://postgres:<dev-db-password>@db.<dev-ref>.supabase.co:5432/postgres" -f supabase/seed.sql
-```
-
-Expected: A series of `INSERT 0 N` lines, no errors. (If your prod connection uses pgbouncer port 6543, the direct port 5432 above is correct for `psql`.)
-
-- [ ] **Step 4 (verify):** Open the dev project's Table Editor in the Supabase dashboard. Confirm `public.marker_types` has rows.
+- [ ] **Step 4 (verify):** Open the dev project's Table Editor in the Supabase dashboard. Confirm `public.marker_types` has rows (seeded by migrations, not seed.sql).
 
 - [ ] **Step 5:** Re-link the local CLI back to **prod** so you don't accidentally push to dev later from local.
 
