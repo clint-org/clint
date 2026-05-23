@@ -64,6 +64,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [hasSpace]="!!spaceId()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
+        [userAvatarUrl]="avatarUrl()"
         (pinToggle)="togglePin()"
         (navItemClick)="onNavItemClick($event)"
         (logoClick)="onLogoClick()"
@@ -363,6 +364,11 @@ export class AppShellComponent implements OnInit {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return (name[0] ?? '?').toUpperCase();
+  });
+
+  readonly avatarUrl = computed(() => {
+    const meta = this.user()?.user_metadata;
+    return (meta?.['avatar_url'] as string) ?? (meta?.['picture'] as string) ?? null;
   });
 
   readonly currentTenantName = computed(() => {
