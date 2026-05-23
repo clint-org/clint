@@ -199,10 +199,11 @@ export class EventService {
       .from('events')
       .select('space_id')
       .eq('id', id)
-      .single();
+      .single<{ space_id: string }>();
     if (lookupErr) throw lookupErr;
+    if (!row) throw new Error(`event ${id} not found`);
 
-    const spaceId = (row as { space_id: string }).space_id;
+    const spaceId = row.space_id;
 
     const { error } = await this.supabase.client
       .from('events')

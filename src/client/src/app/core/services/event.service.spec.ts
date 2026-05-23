@@ -210,12 +210,9 @@ describe('EventService.delete', () => {
   it('looks up space_id before delete and invalidates space + event tags', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-3' });
     const deleteQb = makeQueryBuilder(null);
-    const from = vi.fn().mockImplementation(() => {
-      // Both calls go through the same chain; differentiate by return order.
-      // First call: lookup (returns space_id). Second call: delete.
-      if (from.mock.calls.length <= 1) return lookupQb;
-      return deleteQb;
-    });
+    const from = vi.fn()
+      .mockReturnValueOnce(lookupQb as unknown as ReturnType<typeof from>)
+      .mockReturnValueOnce(deleteQb as unknown as ReturnType<typeof from>);
     const invalidateTags = vi.fn();
     const service = makeService(
       { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
@@ -241,5 +238,16 @@ describe('EventService.delete', () => {
     );
 
     await expect(service.delete('event-1')).rejects.toMatchObject({ message: 'not found' });
+  });
+
+  it('throws when row is not found', async () => {
+    const lookupQb = makeQueryBuilder(null);
+    const from = vi.fn().mockReturnValue(lookupQb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    await expect(service.delete('event-1')).rejects.toThrow('event event-1 not found');
   });
 });
