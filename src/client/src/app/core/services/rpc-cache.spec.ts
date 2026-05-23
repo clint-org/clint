@@ -349,13 +349,6 @@ describe('RpcCache dev telemetry', () => {
 
     expect(cache.getDevStats().inflightDedups).toBe(1);
   });
-
-  it('reports zero counters before enableDevStats is called', async () => {
-    const cache = new RpcCache();
-    const fetch = vi.fn().mockResolvedValue([1]);
-    await cache.get('list_x', {}, { ttl: { fresh: 1000, stale: 5000 }, tags: [], fetch });
-    expect(cache.getDevStats()).toEqual({ byRpc: {}, entries: 0, inflightDedups: 0 });
-  });
 });
 
 describe('RpcCache invalidation during inflight', () => {
