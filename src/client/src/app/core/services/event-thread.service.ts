@@ -18,10 +18,9 @@ export class EventThreadService {
   }
 
   async create(spaceId: string, title: string): Promise<EventThread> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('event_threads')
-      .insert({ space_id: spaceId, title, created_by: userId })
+      .insert({ space_id: spaceId, title })
       .select()
       .single();
     if (error) throw error;

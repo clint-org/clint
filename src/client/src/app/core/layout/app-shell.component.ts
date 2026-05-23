@@ -16,6 +16,7 @@ import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
 import { environment } from '../../../environments/environment';
+import { APP_VERSION } from '../../../environments/version';
 import { CommandPaletteComponent } from './command-palette/command-palette.component';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
@@ -63,6 +64,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [hasSpace]="!!spaceId()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
+        [userAvatarUrl]="avatarUrl()"
         (pinToggle)="togglePin()"
         (navItemClick)="onNavItemClick($event)"
         (logoClick)="onLogoClick()"
@@ -125,6 +127,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           <button type="button" class="account-menu__item" (click)="onSignOut()" role="menuitem">
             Sign out
           </button>
+          <div class="account-menu__footer">
+            <span>v{{ appVersion }}</span>
+          </div>
         </div>
       }
 
@@ -303,6 +308,15 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         color: #e2e8f0;
         background: #293548;
       }
+
+      .account-menu__footer {
+        padding: 6px 14px;
+        border-top: 1px solid #334155;
+        font-size: 10px;
+        font-family: monospace;
+        color: #475569;
+        letter-spacing: 0.5px;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -315,6 +329,7 @@ export class AppShellComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   readonly topbarState = inject(TopbarStateService);
   readonly onboardingTooltip = inject(OnboardingTooltipService);
+  protected readonly appVersion = APP_VERSION;
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -349,6 +364,11 @@ export class AppShellComponent implements OnInit {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return (name[0] ?? '?').toUpperCase();
+  });
+
+  readonly avatarUrl = computed(() => {
+    const meta = this.user()?.user_metadata;
+    return (meta?.['avatar_url'] as string) ?? (meta?.['picture'] as string) ?? null;
   });
 
   readonly currentTenantName = computed(() => {

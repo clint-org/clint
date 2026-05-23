@@ -48,6 +48,7 @@ export interface Marker {
   no_longer_expected: boolean;
   created_at: string;
   updated_at: string;
+  updated_by: string | null;
   marker_types?: MarkerType;
   marker_assignments?: MarkerAssignment[];
 }

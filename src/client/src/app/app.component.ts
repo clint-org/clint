@@ -3,12 +3,17 @@ import { RouterOutlet } from '@angular/router';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Toast } from 'primeng/toast';
 import { ConfirmDeleteDialogComponent } from './shared/components/confirm-delete-dialog/confirm-delete-dialog.component';
+import { EnvBannerComponent } from './shared/components/env-banner/env-banner.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, ConfirmDialog, Toast, ConfirmDeleteDialogComponent],
+  imports: [RouterOutlet, ConfirmDialog, Toast, ConfirmDeleteDialogComponent, EnvBannerComponent],
   template: `
+    @if (showEnvBanner) {
+      <app-env-banner />
+    }
     <div class="app-root-shell bg-slate-50">
       <router-outlet />
     </div>
@@ -37,4 +42,6 @@ import { ConfirmDeleteDialogComponent } from './shared/components/confirm-delete
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent {}
+export class AppComponent {
+  protected readonly showEnvBanner = environment.envName !== 'production';
+}

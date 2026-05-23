@@ -162,6 +162,9 @@ The unique partial index `primary_intelligence_one_published` (one published row
 | 84 | `20260501040000_has_tenant_access_function.sql` | New `has_tenant_access(p_tenant_id uuid) returns boolean` SECURITY DEFINER helper for route guards. Returns true if `is_tenant_member(p_tenant_id)` is true OR the caller holds a `space_members` row for any space whose `tenant_id = p_tenant_id`. The fourth disjunct (space-only membership) is what the old `is_tenant_member` lacked, which made `tenantGuard` block pure space-only members from reaching `/t/:tenantId/s/:spaceId/*` for spaces they belonged to. Surfaced 2026-05-01 when `madala.dodbele` (pure `space_members.viewer` of one space, no `tenant_members` row anywhere) was bounced from her own space to `/onboarding?tab=join`. Used only for route activation in `tenantGuard` and the tenant branch of `marketingLandingGuard`; not used in RLS, since broadening the tenant-membership predicate there would let space-only readers enumerate tenant owners, an info leak. `is_tenant_member` is unchanged. |
 | 85 | `20260501080000_block_remove_agency_owner_from_tenant_members.sql` | Blocks tenant clients from evicting agency owners from their own tenant. `tenant_members_view` recreated to add `is_agency_backed` boolean (true when the row's user is also an `agency_members` owner of the tenant's parent agency). `enforce_tenant_member_guards` gains a third DELETE clause: when the target row is agency-backed and the caller is not a platform admin, raise `42501`. Without this guard, the existing trigger only blocked self-removal and last-owner removal; deleting an agency-backed row succeeded but `is_tenant_member()` retained access via the agency-owner disjunct, so the tenant client believed they had fired the agency while access was still in place. Closes follow-up #10 from the access-model retest. The agency-tenant boundary is now enforced at the DB layer regardless of UI state; only platform admins can detach a tenant from its parent agency. |
 | 86 | `20260501160000_materials_r2_cutover.sql` | Cuts over engagement materials storage from Supabase Storage to Cloudflare R2. Deletes existing test materials rows and drops the `materials` Supabase Storage bucket and its RLS policies. Adds `finalized_at timestamptz` to `materials` (NULL until the file is confirmed in R2; all list/download RPCs filter on `finalized_at IS NOT NULL`) and `idx_materials_finalized` partial index. New RPCs: `prepare_material_upload(p_material_id)` (SECURITY DEFINER; verifies uploader ownership, editor space access, and non-finalized state; returns metadata for the Worker to sign a presigned PUT URL) and `finalize_material(p_material_id)` (SECURITY DEFINER; idempotent; sets `finalized_at = now()`). Recreates `list_materials_for_space`, `list_materials_for_entity`, `list_recent_materials_for_space`, and `download_material` with `finalized_at IS NOT NULL` filter. Updates `_seed_demo_materials` helper to set `finalized_at` so demo rows are visible in the landing feed. Includes an inline assertion test that verifies the register-prepare-finalize-list-download invariant. |
+| 87+ | `20260502*`--`20260521*` | Change feed tables, CT.gov polling/ingest RPCs, marker audit triggers, surface RPCs, intelligence history, audit log system, events hierarchical scope, cascade safety (FK flips, preview delete, orphan marker cleanup, space archive lifecycle), R2 drain RPCs, user redaction, trial phase CT.gov truth |
+| 112 | `20260523120000_entity_name_uniqueness.sql` | Adds `unique(space_id, name)` constraints to `therapeutic_areas`, `marker_types`, and `event_categories`. Includes dedup safety net (keeps oldest row per group, reassigns FK references) and partial unique indexes for system rows (`space_id IS NULL, is_system = true`) on `marker_types` and `event_categories`, since PostgreSQL treats NULLs as distinct in table-level unique constraints. `mechanisms_of_action` and `routes_of_administration` already had these constraints since migration 17. |
+| -- | `20260523120000_add_updated_by_columns.sql` | Adds `updated_by uuid references auth.users(id)` to companies, products, trials, markers, events, trial_notes. Server-side BEFORE triggers enforce all audit columns from JWT |
 
 ## Core Data Tables
 
@@ -175,7 +178,8 @@ companies (
   logo_url      text,
   display_order integer,
   created_at    timestamptz,
-  updated_at    timestamptz
+  updated_at    timestamptz,
+  updated_by    uuid                       -- set by Angular service on update
 )
 
 -- Drug/therapy products belonging to a company
@@ -189,7 +193,8 @@ products (
   logo_url      text,
   display_order integer,
   created_at    timestamptz,
-  updated_at    timestamptz
+  updated_at    timestamptz,
+  updated_by    uuid                       -- set by Angular service on update
 )
 
 -- Clinical trial entries
@@ -248,7 +253,8 @@ trials (
   ctgov_last_synced_at        timestamptz,
   ctgov_raw_json              jsonb,
   created_at                  timestamptz,
-  updated_at                  timestamptz
+  updated_at                  timestamptz,
+  updated_by                  uuid        -- set by Angular service on update
 )
 
 -- Individual phases within a trial
@@ -290,7 +296,8 @@ trial_notes (
   trial_id    uuid REFERENCES trials(id),
   content     text NOT NULL,
   created_at  timestamptz,
-  updated_at  timestamptz
+  updated_at  timestamptz,
+  updated_by  uuid           -- set by Angular service on update
 )
 
 -- Marker type definitions (12 active system types + custom user types)
@@ -299,7 +306,7 @@ marker_types (
   space_id      uuid,              -- null for system types
   created_by    uuid,              -- null for system types
   category_id   uuid REFERENCES marker_categories(id),
-  name          text NOT NULL,
+  name          text NOT NULL,     -- unique(space_id, name); partial index on (name) where space_id is null and is_system
   shape         text,              -- 'circle'|'diamond'|'flag'|'triangle'|'square'|'dashed-line'
   fill_style    text,              -- 'filled'|'outline'|'striped'|'gradient'
   color         text,              -- hex color
@@ -315,7 +322,7 @@ therapeutic_areas (
   id            uuid PRIMARY KEY,
   space_id      uuid NOT NULL,
   created_by    uuid NOT NULL,
-  name          text NOT NULL,
+  name          text NOT NULL,     -- unique(space_id, name)
   abbreviation  text,
   created_at    timestamptz,
   updated_at    timestamptz
@@ -608,14 +615,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
 - `audit_events`
-- `mechanisms_of_action`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
 - `product_mechanisms_of_action`
 - `product_routes_of_administration`
 - `r2_pending_deletes`
-- `routes_of_administration`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -764,4 +769,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521195224_trial_phase_source_columns.sql`
 - `20260521200200_trial_phase_ctgov_truth.sql`
 - `20260521200900_seed_demo_data_phase_sources.sql`
+- `20260523140000_add_updated_by_columns.sql`
+- `20260523150000_audit_columns_server_side.sql`
 <!-- /AUTO-GEN:DRIFT -->

@@ -10,7 +10,7 @@
 src/client/
   src/
     app/
-      app.component.ts          # Root component: router-outlet + global overlays (p-confirmdialog, p-toast)
+      app.component.ts          # Root component: env banner (non-prod) + router-outlet + global overlays (p-confirmdialog, p-toast)
       app.routes.ts             # Route definitions (lazy-loaded)
       app.config.ts             # App-level providers (router, animations, PrimeNG)
       core/
@@ -99,6 +99,7 @@ src/client/
         constants/
           nav-icons.ts          # Canonical FA icon class for each navigable entity (single source of truth for sidebar, topbar, etc.)
         components/
+          env-banner/env-banner.component.ts  # Non-prod env indicator: 3px color strip at top + fixed corner badge (amber=dev, violet=local) showing envName + APP_VERSION
           clint-logo.component.ts # Triple C logo mark: size-adaptive SVG with auto stroke thickening
           svg-icons/            # Per-shape SVG icons + the shared <app-marker-icon> wrapper that owns shape selection / fill / NLE rules
           manage-page-shell.component.ts  # Padding-only page wrapper (optional narrow mode for detail pages)
@@ -128,7 +129,11 @@ src/client/
       config/
         primeng-theme.ts        # Aura preset, slate surface; exports buildBrandPreset(scale?: BrandScale)
     environments/
-      environment.ts            # Supabase URL + anon key + apexDomain (empty = disable cookie session storage)
+      environment.type.ts       # Shared Environment interface + EnvName union ('production' | 'dev' | 'local')
+      environment.ts            # Prod config: Supabase URL + anon key + apexDomain + envName
+      environment.dev.ts        # Dev config (dev.clintapp.com)
+      environment.local.ts      # Local config (localhost Supabase)
+      version.ts                # APP_VERSION constant (bump alongside package.json)
     assets/                     # Static resources
     main.ts                     # Bootstrap file
     styles.css                  # Global Tailwind CSS + theme tokens + feature stylesheet imports (manage-table, catalyst-table, landscape)
@@ -618,7 +623,7 @@ Apply `.admin-brand-scope` only to new super-admin shells. Don't add it to agenc
 Tenant brands provisioned by an agency carry an `agency: { name, logo_url }` descriptor on the brand record (returned by `get_brand_by_host`). Two surfaces render it:
 
 - **Login footer** (`auth/login.component.ts`). When `kind === 'tenant' && agency`, the card grows a `border-t` footer beneath the sign-in buttons containing "Competitive intelligence by" plus the agency logo. The tenant logo + "Sign in to {tenant}" stays at the top — the workspace is the foreground, the provider is the provenance.
-- **App-shell sidebar** (`core/layout/sidebar.component.ts`). On a tenant host whose tenant has an agency, the agency occupies the platform-brand slot at the top of the sidebar — they whitelabeled Clint, so they sit where Clint would. **Expanded sidebar:** the agency's `logo_url` renders as a wordmark on a light `slate-50` tile (height 24px, max-width 156px, `object-fit: contain`) so dark-on-light agency wordmarks stay legible against the slate-900 sidebar. **Collapsed sidebar (48px):** an initial-letter badge on a brand-tinted square stands in for the wordmark, since wordmarks shrink illegibly at that width. **Fallback:** when the agency has no `logo_url`, the initial badge is used in both states. Sourced from `BrandContextService.agency` (host-derived), not from the URL's tenant id.
+- **App-shell sidebar** (`core/layout/sidebar.component.ts`). On a tenant host whose tenant has an agency, the agency occupies the platform-brand slot at the top of the sidebar — they whitelabeled Clint, so they sit where Clint would. **Expanded sidebar:** the agency's `logo_url` renders as a wordmark on a light `slate-50` tile (height 24px, max-width 156px, `object-fit: contain`) so dark-on-light agency wordmarks stay legible against the slate-900 sidebar. **Collapsed sidebar (48px):** when the agency has a `logo_url`, a 24x24 logo icon renders on a `slate-50` tile (`object-fit: contain`), preserving brand recognition at the narrow width. **Fallback:** when the agency has no `logo_url`, an initial-letter badge on a brand-tinted square is used in both expanded and collapsed states. Sourced from `BrandContextService.agency` (host-derived), not from the URL's tenant id.
 
 Both surfaces hide gracefully on agency, super-admin, and default brands (no agency descriptor → Clint mark in the sidebar, no agency footer on login). The agency portal at `/admin/*` uses its own shell (`AgencyShellComponent`), so the sidebar agency-mark logic never runs there.
 

@@ -55,10 +55,9 @@ export class MarkerTypeService {
   }
 
   async create(spaceId: string, markerType: Partial<MarkerType>): Promise<MarkerType> {
-    const userId = (await this.supabase.client.auth.getUser()).data.user!.id;
     const { data, error } = await this.supabase.client
       .from('marker_types')
-      .insert({ ...markerType, space_id: spaceId, created_by: userId, is_system: false })
+      .insert({ ...markerType, space_id: spaceId, is_system: false })
       .select()
       .single();
     if (error) throw error;

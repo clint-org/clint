@@ -596,6 +596,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_map_phase_array`
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
+- `_set_created_by`
+- `_set_updated_audit`
 - `_verify_r2_drain_worker_secret`
 - `archive_space`
 - `assign_primary_intelligence_version`
