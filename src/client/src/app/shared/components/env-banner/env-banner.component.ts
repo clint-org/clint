@@ -29,6 +29,6 @@ export class EnvBannerComponent {
 
   protected readonly badgeClass =
     environment.envName === 'local'
-      ? 'fixed bottom-3 right-3 z-[9999] rounded bg-violet-600 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-white opacity-70 hover:opacity-100 transition-opacity'
-      : 'fixed bottom-3 right-3 z-[9999] rounded bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-amber-950 opacity-70 hover:opacity-100 transition-opacity';
+      ? 'fixed bottom-3 right-3 z-50 rounded bg-violet-600 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-white opacity-70 hover:opacity-100 transition-opacity'
+      : 'fixed bottom-3 right-3 z-50 rounded bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-amber-950 opacity-70 hover:opacity-100 transition-opacity';
 }
