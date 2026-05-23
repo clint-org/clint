@@ -29,7 +29,7 @@ test.describe('Dashboard', () => {
     page = await authenticatedPage(browser);
     // Engagement landing is now the space root; the timeline lives one
     // level deeper after the engagement-landing-phase-1 routing change.
-    await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });
   });
 
@@ -77,7 +77,7 @@ test.describe('Dashboard', () => {
       await trialButton.click();
       await expect(page).toHaveURL(/\/manage\/trials\/[^/]+/, { timeout: 10000 });
 
-      await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'networkidle' });
+      await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });
     }
   });

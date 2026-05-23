@@ -39,8 +39,7 @@ import { clickRowAction } from '../helpers/menu.helper';
 const dialogLocator = (page: Page): Locator =>
   page.locator('.p-dialog', { has: page.locator('input#confirm-delete-typed') });
 
-const confirmInput = (dialog: Locator): Locator =>
-  dialog.locator('input#confirm-delete-typed');
+const confirmInput = (dialog: Locator): Locator => dialog.locator('input#confirm-delete-typed');
 
 const confirmButton = (dialog: Locator, label: string = 'Delete'): Locator =>
   dialog.getByRole('button', { name: label, exact: true });
@@ -57,10 +56,7 @@ const countBreakdown = (dialog: Locator): Locator =>
  * before the destructive happy path so we exercise the full disable/enable
  * matrix without double-deleting.
  */
-async function verifyTypedConfirmDisabledThenCancel(
-  page: Page,
-  name: string,
-): Promise<void> {
+async function verifyTypedConfirmDisabledThenCancel(page: Page, name: string): Promise<void> {
   const dialog = dialogLocator(page);
   await expect(dialog).toBeVisible({ timeout: 10000 });
 
@@ -142,14 +138,14 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
   });
 
   test('opens with count breakdown from preview_company_delete and gates submit', async () => {
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: companyName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/rpc/preview_company_delete') && r.ok(),
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       clickRowAction(page, row, 'Delete'),
     ]);
@@ -176,26 +172,25 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
     await verifyTypedConfirmDisabledThenCancel(page, companyName);
 
     // Company is still present after Cancel.
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(companyName)).toBeVisible({ timeout: 5000 });
   });
 
   test('typing the exact name and confirming deletes the company', async () => {
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: companyName });
     await expect(row).toBeVisible({ timeout: 10000 });
     await clickRowAction(page, row, 'Delete');
 
     await Promise.all([
       page.waitForResponse(
-        (r) =>
-          r.url().includes('/rest/v1/companies') && r.request().method() === 'DELETE',
-        { timeout: 10000 },
+        (r) => r.url().includes('/rest/v1/companies') && r.request().method() === 'DELETE',
+        { timeout: 10000 }
       ),
       completeTypedConfirm(page, companyName),
     ]);
 
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(companyName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -222,14 +217,14 @@ test.describe('Cascade confirm dialog: asset (product) delete', () => {
   });
 
   test('gates submit on typed name then deletes', async () => {
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: productName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/rpc/preview_product_delete') && r.ok(),
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       clickRowAction(page, row, 'Delete'),
     ]);
@@ -241,7 +236,7 @@ test.describe('Cascade confirm dialog: asset (product) delete', () => {
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, productName);
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(productName)).toBeHidden({ timeout: 5000 });
 
     // Ignore: productId is unused after delete but kept above for fixture symmetry.
@@ -271,15 +266,14 @@ test.describe('Cascade confirm dialog: trial delete', () => {
   });
 
   test('gates submit on typed name then deletes', async () => {
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: trialName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
     await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/preview_trial_delete') && r.ok(),
-        { timeout: 10000 },
-      ),
+      page.waitForResponse((r) => r.url().includes('/rest/v1/rpc/preview_trial_delete') && r.ok(), {
+        timeout: 10000,
+      }),
       clickRowAction(page, row, 'Delete'),
     ]);
 
@@ -289,7 +283,7 @@ test.describe('Cascade confirm dialog: trial delete', () => {
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, trialName);
 
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(trialName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -315,7 +309,7 @@ test.describe('Cascade confirm dialog: therapeutic area delete (no preview RPC)'
   });
 
   test('gates submit on typed name then deletes (no count table)', async () => {
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: taName });
     await expect(row).toBeVisible({ timeout: 10000 });
     await clickRowAction(page, row, 'Delete');
@@ -332,7 +326,7 @@ test.describe('Cascade confirm dialog: therapeutic area delete (no preview RPC)'
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, taName);
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(taName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -357,7 +351,7 @@ test.describe('Cascade confirm dialog: marker type delete', () => {
   });
 
   test('gates submit on typed name then deletes', async () => {
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: mtName });
     await expect(row).toBeVisible({ timeout: 10000 });
     await clickRowAction(page, row, 'Delete');
@@ -368,7 +362,7 @@ test.describe('Cascade confirm dialog: marker type delete', () => {
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, mtName);
 
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(mtName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -378,8 +372,7 @@ test.describe('Cascade confirm dialog: mechanism of action delete', () => {
   let tenantId: string;
   let spaceId: string;
   const moaName = 'CascadeMoA ' + Date.now();
-  const taxUrl = () =>
-    `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=moa`;
+  const taxUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=moa`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Cascade MoA Org');
@@ -393,7 +386,7 @@ test.describe('Cascade confirm dialog: mechanism of action delete', () => {
   });
 
   test('gates submit on typed name then deletes', async () => {
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: moaName });
     await expect(row).toBeVisible({ timeout: 10000 });
     await clickRowAction(page, row, 'Delete');
@@ -404,7 +397,7 @@ test.describe('Cascade confirm dialog: mechanism of action delete', () => {
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, moaName);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(moaName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -414,8 +407,7 @@ test.describe('Cascade confirm dialog: route of administration delete', () => {
   let tenantId: string;
   let spaceId: string;
   const roaName = 'CascadeRoA ' + Date.now();
-  const taxUrl = () =>
-    `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=roa`;
+  const taxUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=roa`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Cascade RoA Org');
@@ -429,7 +421,7 @@ test.describe('Cascade confirm dialog: route of administration delete', () => {
   });
 
   test('gates submit on typed name then deletes', async () => {
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: roaName });
     await expect(row).toBeVisible({ timeout: 10000 });
     await clickRowAction(page, row, 'Delete');
@@ -440,7 +432,7 @@ test.describe('Cascade confirm dialog: route of administration delete', () => {
     await clickRowAction(page, row, 'Delete');
     await completeTypedConfirm(page, roaName);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(roaName)).toBeHidden({ timeout: 5000 });
   });
 });
@@ -527,10 +519,9 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
   });
 
   test('marker delete on trial detail requires literal "delete" then succeeds', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     const markerRow = page.locator('tr', { hasText: markerTitle });
     await expect(markerRow).toBeVisible({ timeout: 10000 });
@@ -554,10 +545,9 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
     // Marker row is gone.
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.locator('tr', { hasText: markerTitle })).toHaveCount(0, {
       timeout: 5000,
     });
@@ -566,10 +556,9 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
   });
 
   test('note delete on trial detail requires literal "delete" then succeeds', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+      waitUntil: 'domcontentloaded',
+    });
 
     const noteRow = page.locator('li', { hasText: noteContent });
     await expect(noteRow).toBeVisible({ timeout: 10000 });
@@ -589,10 +578,9 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
     await confirm.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.locator('li', { hasText: noteContent })).toHaveCount(0, {
       timeout: 5000,
     });

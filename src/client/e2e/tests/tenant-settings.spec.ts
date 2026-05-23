@@ -1,9 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage, getAuthStorage } from '../helpers/auth.helper';
-import {
-  createTestTenant,
-  getAdminClient,
-} from '../helpers/test-data.helper';
+import { createTestTenant, getAdminClient } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
 
 test.describe.configure({ mode: 'serial' });
@@ -23,7 +20,7 @@ test.describe('Tenant Settings', () => {
   });
 
   test('settings page loads with tenant name input visible', async () => {
-    await page.goto(settingsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(settingsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#tenant-name')).toBeVisible();
   });
 
@@ -115,10 +112,7 @@ test.describe('Tenant delete cascade enqueues r2_pending_deletes for materials',
     // Delete the tenant directly via PostgREST (the path the UI uses via
     // TenantService.deleteTenant). The cascade flows tenant -> space ->
     // materials -> r2_pending_deletes trigger.
-    const { error: delErr } = await admin
-      .from('tenants')
-      .delete()
-      .eq('id', tenantId);
+    const { error: delErr } = await admin.from('tenants').delete().eq('id', tenantId);
     if (delErr) throw new Error(`Could not delete tenant: ${delErr.message}`);
 
     const { data: queued, error: qErr } = await admin

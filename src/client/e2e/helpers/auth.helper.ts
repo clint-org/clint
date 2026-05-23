@@ -47,10 +47,10 @@ export async function authenticatedPage(browser: Browser): Promise<Page> {
     ([key, value]: [string, string]) => {
       localStorage.setItem(key, value);
     },
-    [storageKey, JSON.stringify(sessionData)] as [string, string],
+    [storageKey, JSON.stringify(sessionData)] as [string, string]
   );
 
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   return page;
 }

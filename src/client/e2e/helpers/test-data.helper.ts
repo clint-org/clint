@@ -274,5 +274,5 @@ export async function navigateToSpace(
   tenantId: string,
   spaceId: string
 ): Promise<void> {
-  await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
+  await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'domcontentloaded' });
 }

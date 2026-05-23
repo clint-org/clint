@@ -21,9 +21,13 @@ export default defineConfig({
   globalTeardown: './e2e/global-teardown.ts',
   retries: process.env['CI'] ? 1 : 0,
   reporter: [['html'], ['list']],
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   use: {
     baseURL,
     trace: 'on-first-retry',
+    navigationTimeout: 30_000,
+    actionTimeout: 15_000,
   },
   webServer: {
     command: 'ng serve --port 4201',

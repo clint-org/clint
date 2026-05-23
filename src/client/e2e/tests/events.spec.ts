@@ -22,7 +22,7 @@ test.describe('Events CRUD', () => {
   });
 
   test('events page loads', async () => {
-    await page.goto(eventsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(eventsUrl(), { waitUntil: 'domcontentloaded' });
     // The "New Event" button is in the topbar actions
     await expect(page.getByRole('button', { name: /new event/i })).toBeVisible({ timeout: 10000 });
   });
@@ -38,14 +38,17 @@ test.describe('Events CRUD', () => {
     // the component's signal setters (Angular debug API) -- raw DOM events on
     // p-datepicker / p-select don't propagate to the signal state.
     // Wait until categories have loaded into the form before trying to pick one.
-    await page.waitForFunction(() => {
-      const ng = (window as { ng?: { getComponent?: (el: Element) => unknown } }).ng;
-      const form = document.querySelector('app-event-form');
-      if (!ng?.getComponent || !form) return false;
-      const component = ng.getComponent(form) as { categories?: () => unknown[] } | null;
-      const cats = component?.categories?.() ?? [];
-      return Array.isArray(cats) && cats.length > 0;
-    }, { timeout: 10000 });
+    await page.waitForFunction(
+      () => {
+        const ng = (window as { ng?: { getComponent?: (el: Element) => unknown } }).ng;
+        const form = document.querySelector('app-event-form');
+        if (!ng?.getComponent || !form) return false;
+        const component = ng.getComponent(form) as { categories?: () => unknown[] } | null;
+        const cats = component?.categories?.() ?? [];
+        return Array.isArray(cats) && cats.length > 0;
+      },
+      { timeout: 10000 }
+    );
 
     await page.evaluate(() => {
       type SignalLike<T> = ((value?: T) => T) & { set: (v: T) => void };
@@ -67,15 +70,18 @@ test.describe('Events CRUD', () => {
     await page.waitForTimeout(300);
 
     // Submit -- button label is "Create" for new events
-    await page.locator('.p-dialog').getByRole('button', { name: /^create$/i }).click();
+    await page
+      .locator('.p-dialog')
+      .getByRole('button', { name: /^create$/i })
+      .click();
     await page.waitForTimeout(3000);
 
-    await page.goto(eventsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(eventsUrl(), { waitUntil: 'domcontentloaded' });
     // The title renders in both the table row and the right-side overview pane,
     // so scope to the events table to avoid strict-mode locator violations.
-    await expect(
-      page.locator('p-table').getByText('Phase 3 Topline Results').first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('p-table').getByText('Phase 3 Topline Results').first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('delete event', async () => {
@@ -83,8 +89,8 @@ test.describe('Events CRUD', () => {
     // Events can be deleted by clicking the row to open detail, then editing
     // or through a different mechanism. Since the UI has evolved, this test
     // verifies that we can at least view the created event.
-    await expect(
-      page.locator('p-table').getByText('Phase 3 Topline Results').first(),
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('p-table').getByText('Phase 3 Topline Results').first()).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

@@ -30,10 +30,8 @@ test.describe('Company Management CRUD', () => {
     await page.close();
   });
 
-
-
   test('company list loads', async () => {
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add Company' })).toBeVisible();
   });
 
@@ -47,7 +45,7 @@ test.describe('Company Management CRUD', () => {
       page.getByRole('button', { name: 'Create Company' }).click(),
     ]);
 
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Test Company')).toBeVisible({ timeout: 10000 });
   });
 
@@ -63,7 +61,7 @@ test.describe('Company Management CRUD', () => {
       page.getByRole('button', { name: 'Update Company' }).click(),
     ]);
 
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Updated Company')).toBeVisible({ timeout: 10000 });
   });
 
@@ -101,7 +99,7 @@ test.describe('Company Management CRUD', () => {
     const taId = await createTestTherapeuticArea(spaceId, taName);
     const trialId = await createTestTrial(spaceId, productId, taId, trialName);
 
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: cascadeCompanyName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
@@ -110,7 +108,7 @@ test.describe('Company Management CRUD', () => {
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/rpc/preview_company_delete') && r.ok(),
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       (async () => {
         await row.locator('app-row-actions button').click();
@@ -128,7 +126,7 @@ test.describe('Company Management CRUD', () => {
     // Count breakdown is present with basic shape (products and trials rows
     // both non-zero for our seeded graph).
     const breakdown = dialog.locator(
-      'table[aria-label="Count breakdown of items this action will remove"]',
+      'table[aria-label="Count breakdown of items this action will remove"]'
     );
     await expect(breakdown).toBeVisible({ timeout: 5000 });
     await expect(breakdown.locator('tr[data-count-key="products"] td').last()).toHaveText('1');
@@ -146,14 +144,14 @@ test.describe('Company Management CRUD', () => {
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/companies') && r.request().method() === 'DELETE',
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       confirmBtn.click(),
     ]);
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
     // Company is gone from the list.
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(cascadeCompanyName)).toBeHidden({ timeout: 5000 });
 
     // Cascade reached product and trial too. Query directly via admin client
@@ -174,7 +172,7 @@ test.describe('Company Management CRUD', () => {
   });
 
   test('delete the original Updated Company succeeds via typed confirm', async () => {
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: 'Updated Company' });
     await row.locator('app-row-actions button').click();
     await page.getByRole('menuitem', { name: 'Delete' }).click();
@@ -188,7 +186,7 @@ test.describe('Company Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(companiesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Updated Company')).not.toBeVisible({ timeout: 5000 });
   });
 });
