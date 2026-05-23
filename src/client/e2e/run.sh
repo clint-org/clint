@@ -28,7 +28,8 @@ fi
 
 cd "$CLIENT_DIR"
 
-export SUPABASE_URL=http://127.0.0.1:54321
+API_URL=$(cd "$PROJECT_DIR" && supabase status -o env 2>/dev/null | grep API_URL | cut -d= -f2 | tr -d '"')
+export SUPABASE_URL="${API_URL:-http://127.0.0.1:54321}"
 export SUPABASE_ANON_KEY="$ANON_KEY"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_KEY"
 

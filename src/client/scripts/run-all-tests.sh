@@ -82,7 +82,8 @@ if [ -z "$ANON_KEY" ] || [ -z "$SERVICE_KEY" ] || [ -z "$JWT_SECRET" ]; then
   exit 1
 fi
 
-export SUPABASE_URL=http://127.0.0.1:54321
+API_URL=$(supabase status -o env 2>/dev/null | grep API_URL | cut -d= -f2 | tr -d '"')
+export SUPABASE_URL="${API_URL:-http://127.0.0.1:54321}"
 export SUPABASE_ANON_KEY="$ANON_KEY"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_KEY"
 export SUPABASE_JWT_SECRET="$JWT_SECRET"
