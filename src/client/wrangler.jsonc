@@ -61,5 +61,50 @@
 				"period": 60
 			}
 		}
-	]
+	],
+	// Dev environment overrides. Deploys via `wrangler deploy --env dev`
+	// to a distinct clint-dev Worker bound to dev.clintapp.com +
+	// *.dev.clintapp.com (Custom Domains set in the dashboard). Cron is
+	// intentionally disabled on dev so the daily CT.gov ingest does not
+	// run twice or fight test fixtures in the dev DB. Rate-limiter
+	// namespace ids must differ from prod so counters stay independent.
+	"env": {
+		"dev": {
+			"name": "clint-dev",
+			"vars": {
+				"ALLOWED_APEXES": "dev.clintapp.com",
+				"R2_BUCKET": "clint-materials-dev",
+				"CTGOV_BASE_URL": "https://clinicaltrials.gov",
+				"CTGOV_BATCH_SIZE": "100",
+				"CTGOV_PARALLEL_FETCHES": "10"
+			},
+			"triggers": {
+				"crons": []
+			},
+			"r2_buckets": [
+				{
+					"binding": "MATERIALS_BUCKET",
+					"bucket_name": "clint-materials-dev"
+				}
+			],
+			"ratelimits": [
+				{
+					"name": "UPLOAD_LIMITER",
+					"namespace_id": "1003",
+					"simple": {
+						"limit": 30,
+						"period": 60
+					}
+				},
+				{
+					"name": "DOWNLOAD_LIMITER",
+					"namespace_id": "1004",
+					"simple": {
+						"limit": 120,
+						"period": 60
+					}
+				}
+			]
+		}
+	}
 }
