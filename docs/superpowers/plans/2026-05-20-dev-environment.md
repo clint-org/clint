@@ -45,6 +45,8 @@ These tasks are dashboard work and CLI commands that must complete before the co
 **Where:** Supabase dashboard (https://supabase.com/dashboard)
 
 - [ ] **Step 1:** Create new project named `clint-dev`. Same region as prod. Choose a strong DB password and store it in your password manager.
+
+   **Important — Security settings during creation:** Leave **"Automatically expose new tables" CHECKED** (the default). The clint migrations do NOT issue explicit `GRANT` statements for new tables; they rely on Supabase's auto-grant event trigger to give `anon` / `authenticated` table-level access. Disabling this setting causes the `20260502121200_get_latest_sync_run.sql` smoke test (and others) to fail with `permission denied for table ctgov_sync_runs`. Leave **"Enable Data API" CHECKED** as well. **"Enable automatic RLS"** can stay unchecked — migrations explicitly enable RLS where needed.
 - [ ] **Step 2:** Capture three values for later use:
   - Project ref (the `xxxxxxxxxxxx` part of `https://xxxxxxxxxxxx.supabase.co`)
   - `anon` public API key (Settings -> API)
@@ -71,15 +73,9 @@ supabase db push
 
 Expected: List of pending migrations followed by "Finished supabase db push."
 
-- [ ] **Step 3:** Load seed data via psql. (Seed is only auto-applied on `db reset` against local; remote pushes don't run it.)
+- [ ] **Step 3 (skipped intentionally):** `seed.sql` is **not** loaded on dev. System constants (marker_categories, marker_types, event_categories with `is_system=true`) are seeded by migrations and already exist after `db push`. `seed.sql` would additionally create a "Demo Pharma CI" demo tenant + populate it + install an auto-join trigger — useful for local dev convenience but undesirable for cloud dev (we want first Google sign-in on dev to mirror the new-user experience: zero tenants, zero spaces, manual provisioning required).
 
-```bash
-psql "postgresql://postgres:<dev-db-password>@db.<dev-ref>.supabase.co:5432/postgres" -f supabase/seed.sql
-```
-
-Expected: A series of `INSERT 0 N` lines, no errors. (If your prod connection uses pgbouncer port 6543, the direct port 5432 above is correct for `psql`.)
-
-- [ ] **Step 4 (verify):** Open the dev project's Table Editor in the Supabase dashboard. Confirm `public.marker_types` has rows.
+- [ ] **Step 4 (verify):** Open the dev project's Table Editor in the Supabase dashboard. Confirm `public.marker_types` has rows (seeded by migrations, not seed.sql).
 
 - [ ] **Step 5:** Re-link the local CLI back to **prod** so you don't accidentally push to dev later from local.
 

@@ -75,7 +75,7 @@ flowchart LR
 | Cron `0 7 * * *` (CT.gov ingest) | enabled | **disabled** (manual trigger only) |
 | Google OAuth client | existing | same client, dev redirect URI added |
 | `apexDomain` (Angular env) | `clintapp.com` | `dev.clintapp.com` |
-| DB data | prod | `seed.sql`-derived only |
+| DB data | prod | bare migrations only (no seed.sql) |
 | Edge function `send-invite-email` | not in use (scaffolded only) | not deployed (defer until invites go live) |
 
 ### Deploy flow
@@ -231,15 +231,19 @@ One-time bootstrap from local:
 ```
 supabase link --project-ref <dev-ref>
 supabase db push                 # apply all migrations to dev
-psql "$DEV_DB_URL" -f supabase/seed.sql
 ```
 
-`seed.sql` is auto-applied only on `supabase db reset` against the local
-stack, not on remote `db push`. Running it once via `psql` after the initial
-`db push` is the one-time bootstrap; after that the dev DB lives its own
-life. Re-running `seed.sql` later is not safe in general (it assumes empty
-tables); if a clean reset of dev is ever needed, drop and recreate the
-project rather than re-seeding.
+`seed.sql` is intentionally NOT loaded on dev. System constants
+(marker_categories, marker_types, event_categories with `is_system=true`,
+`space_id=null`) are seeded by migrations themselves, so they exist on
+dev after `db push`. `seed.sql` additionally creates a "Demo Pharma CI"
+tenant + space + populates it via `seed_demo_data()`, and installs an
+`auto_join_demo_on_signup` trigger that auto-grants any Google sign-in
+owner access to the demo workspace. None of that runs on dev. The
+first Google sign-in on dev lands the user with zero tenants and zero
+spaces, exactly like prod for a new user; the user provisions a real
+tenant manually (via SQL editor or a `provision_tenant` RPC call) to
+exercise the app.
 
 ### Supabase: Auth (dev project dashboard)
 
