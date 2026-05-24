@@ -120,7 +120,7 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
     spaceId = await createTestSpace(tenantId, 'Cascade Company Space');
 
     // Build a hermetic graph so preview_company_delete returns a non-trivial
-    // count breakdown. company -> product -> trial gives products=1, trials=1.
+    // count breakdown. company -> asset -> trial gives assets=1, trials=1.
     companyId = await createTestCompany(spaceId, companyName);
     productId = await createTestProduct(spaceId, companyId, 'CascadeAsset');
     taId = await createTestTherapeuticArea(spaceId, 'CascadeTA');
@@ -133,7 +133,7 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
     // Best-effort cleanup; the actual delete test below removes the company,
     // which cascades through everything we created.
     const admin = getAdminClient();
-    await admin.from('therapeutic_areas').delete().eq('id', taId);
+    await admin.from('indications').delete().eq('id', taId);
     await page.close();
   });
 
@@ -154,14 +154,14 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
     await expect(dialog).toBeVisible({ timeout: 10000 });
 
     // Count breakdown renders with the cascade-safety keys we expect for
-    // company -> 1 product -> 1 trial. The "products" and "trials" rows
+    // company -> 1 asset -> 1 trial. The "assets" and "trials" rows
     // should be present with non-zero values; zero-valued keys are suppressed.
     const breakdown = countBreakdown(dialog);
     await expect(breakdown).toBeVisible({ timeout: 5000 });
 
-    const productsRow = breakdown.locator('tr[data-count-key="products"]');
-    await expect(productsRow).toBeVisible();
-    await expect(productsRow.locator('td').last()).toHaveText('1');
+    const assetsRow = breakdown.locator('tr[data-count-key="assets"]');
+    await expect(assetsRow).toBeVisible();
+    await expect(assetsRow.locator('td').last()).toHaveText('1');
 
     const trialsRow = breakdown.locator('tr[data-count-key="trials"]');
     await expect(trialsRow).toBeVisible();
@@ -223,7 +223,7 @@ test.describe('Cascade confirm dialog: asset (product) delete', () => {
 
     await Promise.all([
       page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/preview_product_delete') && r.ok(),
+        (r) => r.url().includes('/rest/v1/rpc/preview_asset_delete') && r.ok(),
         { timeout: 10000 }
       ),
       clickRowAction(page, row, 'Delete'),
@@ -288,12 +288,12 @@ test.describe('Cascade confirm dialog: trial delete', () => {
   });
 });
 
-test.describe('Cascade confirm dialog: therapeutic area delete (no preview RPC)', () => {
+test.describe('Cascade confirm dialog: indication delete (no preview RPC)', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
   const taName = 'CascadeTA ' + Date.now();
-  // TA list redirects to settings/taxonomies, which loads with
+  // Indication list redirects to settings/taxonomies, which loads with
   // ?tab=therapeutic-areas by default.
   const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies`;
 

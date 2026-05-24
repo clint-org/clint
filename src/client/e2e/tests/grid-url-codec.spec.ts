@@ -202,9 +202,9 @@ test.describe('url-codec', () => {
 test.describe('buildFilterQueryParams', () => {
   test('produces query params for a single select filter', () => {
     const params = buildFilterQueryParams({
-      'product.company_id': { kind: 'select', values: ['abc123'] },
+      'asset.company_id': { kind: 'select', values: ['abc123'] },
     });
-    expect(params).toEqual({ 'filter.product.company_id': 'abc123' });
+    expect(params).toEqual({ 'filter.asset.company_id': 'abc123' });
   });
 
   test('produces query params for a text filter', () => {

@@ -102,7 +102,7 @@ test.describe('Landscape bullseye', () => {
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
 
-    // Find the Farxiga dot by its aria-label (product name embedded)
+    // Find the Farxiga dot by its aria-label (asset name embedded)
     const farxigaDot = page.locator('[aria-label*="Farxiga"]').first();
     await expect(farxigaDot).toBeVisible();
     await farxigaDot.click();
@@ -110,7 +110,7 @@ test.describe('Landscape bullseye', () => {
     // URL should gain a ?product= query param
     await expect(page).toHaveURL(new RegExp(`product=${farxigaId}`));
 
-    // The detail panel should show the product and list its trials
+    // The detail panel should show the asset and list its trials
     const panel = page.locator('app-bullseye-detail-panel');
     await expect(panel).toContainText('Farxiga');
     await expect(panel).toContainText('AstraZeneca');
@@ -129,7 +129,7 @@ test.describe('Landscape bullseye', () => {
   });
 
   test('empty TA shows the empty state and manage assets link', async () => {
-    // Create a new product-less TA on the fly for this test
+    // Create a new asset-less indication on the fly for this test
     const emptyId = await createTestTherapeuticArea(
       spaceId,
       'Bulls-Eye Empty ' + Date.now(),

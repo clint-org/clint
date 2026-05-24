@@ -108,7 +108,7 @@ test.describe('Asset Management CRUD', () => {
 
   test('delete asset via typed-confirm cascades to trials', async () => {
     // Seed a hermetic asset with one trial so we can assert the cascade
-    // reached the trial after the asset delete. T6 flipped trials.product_id
+    // reached the trial after the asset delete. T6 flipped trials.asset_id
     // to ON DELETE CASCADE.
     const cascadeAssetName = 'CascadeAsset ' + Date.now();
     const companyId = await createTestCompany(spaceId, 'CascadeCo ' + Date.now());
@@ -127,7 +127,7 @@ test.describe('Asset Management CRUD', () => {
 
     await Promise.all([
       page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/preview_product_delete') && r.ok(),
+        (r) => r.url().includes('/rest/v1/rpc/preview_asset_delete') && r.ok(),
         { timeout: 10000 }
       ),
       (async () => {

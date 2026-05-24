@@ -88,7 +88,7 @@ test.describe('Company Management CRUD', () => {
   test('delete company opens count-aware typed-confirm dialog and cascades', async () => {
     // Seed a hermetic graph so preview_company_delete returns non-zero counts
     // and the cascade has children to remove. Created via admin client so we
-    // can also assert the cascade reached products and trials below.
+    // can also assert the cascade reached assets and trials below.
     const cascadeCompanyName = 'CascadeCompany ' + Date.now();
     const productName = 'CascadeProduct ' + Date.now();
     const taName = 'CascadeTA ' + Date.now();
@@ -123,13 +123,13 @@ test.describe('Company Management CRUD', () => {
     });
     await expect(dialog).toBeVisible({ timeout: 10000 });
 
-    // Count breakdown is present with basic shape (products and trials rows
+    // Count breakdown is present with basic shape (assets and trials rows
     // both non-zero for our seeded graph).
     const breakdown = dialog.locator(
       'table[aria-label="Count breakdown of items this action will remove"]'
     );
     await expect(breakdown).toBeVisible({ timeout: 5000 });
-    await expect(breakdown.locator('tr[data-count-key="products"] td').last()).toHaveText('1');
+    await expect(breakdown.locator('tr[data-count-key="assets"] td').last()).toHaveText('1');
     await expect(breakdown.locator('tr[data-count-key="trials"] td').last()).toHaveText('1');
 
     // Confirm is disabled until the typed value matches the company name.
@@ -154,11 +154,11 @@ test.describe('Company Management CRUD', () => {
     await page.goto(companiesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(cascadeCompanyName)).toBeHidden({ timeout: 5000 });
 
-    // Cascade reached product and trial too. Query directly via admin client
+    // Cascade reached asset and trial too. Query directly via admin client
     // so this assertion does not depend on which list surface renders them.
     const admin = getAdminClient();
     const { data: productAfter } = await admin
-      .from('products')
+      .from('assets')
       .select('id')
       .eq('id', productId)
       .maybeSingle();

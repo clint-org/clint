@@ -66,7 +66,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
   });
 
   test('deleting a company also clears its primary_intelligence rows (polymorphic cleanup)', async () => {
-    // Cascade-safety T3: AFTER DELETE trigger on companies/products/trials/
+    // Cascade-safety T3: AFTER DELETE trigger on companies/assets/trials/
     // markers removes the polymorphic primary_intelligence and
     // primary_intelligence_links rows that reference the deleted parent by
     // (entity_type, entity_id). Seed rows directly via the admin client so
@@ -98,7 +98,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
     if (piErr) throw new Error(`Could not seed PI: ${piErr.message}`);
 
     // Delete via PostgREST (the route the UI uses for company delete). The
-    // delete cascades products/trials AND fires the polymorphic-cleanup
+    // delete cascades assets/trials AND fires the polymorphic-cleanup
     // trigger that removes the PI row.
     const { error: delErr } = await admin.from('companies').delete().eq('id', polyCompanyId);
     if (delErr) throw new Error(`Could not delete company: ${delErr.message}`);

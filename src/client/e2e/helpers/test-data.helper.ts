@@ -118,7 +118,7 @@ export async function createTestCompany(spaceId: string, name: string): Promise<
   return data.id;
 }
 
-export async function createTestProduct(
+export async function createTestAsset(
   spaceId: string,
   companyId: string,
   name: string
@@ -126,16 +126,19 @@ export async function createTestProduct(
   const admin = getAdminClient();
 
   const { data, error } = await admin
-    .from('products')
+    .from('assets')
     .insert({ space_id: spaceId, created_by: getUserId(), company_id: companyId, name })
     .select('id')
     .single();
-  if (error) throw new Error(`Failed to create product: ${error.message}`);
+  if (error) throw new Error(`Failed to create asset: ${error.message}`);
 
   return data.id;
 }
 
-export async function createTestTherapeuticArea(
+/** @deprecated Use createTestAsset instead */
+export const createTestProduct = createTestAsset;
+
+export async function createTestIndication(
   spaceId: string,
   name: string,
   abbreviation?: string
@@ -143,19 +146,22 @@ export async function createTestTherapeuticArea(
   const admin = getAdminClient();
 
   const { data, error } = await admin
-    .from('therapeutic_areas')
+    .from('indications')
     .insert({ space_id: spaceId, created_by: getUserId(), name, abbreviation })
     .select('id')
     .single();
-  if (error) throw new Error(`Failed to create therapeutic area: ${error.message}`);
+  if (error) throw new Error(`Failed to create indication: ${error.message}`);
 
   return data.id;
 }
 
+/** @deprecated Use createTestIndication instead */
+export const createTestTherapeuticArea = createTestIndication;
+
 export async function createTestTrial(
   spaceId: string,
   assetId: string,
-  therapeuticAreaId: string,
+  _indicationId: string,
   name: string
 ): Promise<string> {
   const admin = getAdminClient();
@@ -165,8 +171,7 @@ export async function createTestTrial(
     .insert({
       space_id: spaceId,
       created_by: getUserId(),
-      product_id: assetId,
-      therapeutic_area_id: therapeuticAreaId,
+      asset_id: assetId,
       name,
     })
     .select('id')
