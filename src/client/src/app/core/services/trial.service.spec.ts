@@ -119,7 +119,7 @@ describe('TrialService.previewDelete', () => {
 
 describe('TrialService.delete', () => {
   it('queries the existing row, deletes from trials, and invalidates trial + asset cache tags', async () => {
-    const lookupQb = makeQueryBuilder({ space_id: 'space-1', product_id: 'asset-1' });
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1', asset_id: 'asset-1' });
     const deleteQb = makeQueryBuilder(null);
     const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(deleteQb);
     const invalidateTags = vi.fn();
@@ -146,7 +146,7 @@ describe('TrialService.delete', () => {
   });
 
   it('throws when the delete query yields an error', async () => {
-    const lookupQb = makeQueryBuilder({ space_id: 'space-1', product_id: 'asset-1' });
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1', asset_id: 'asset-1' });
     const deleteQb = makeQueryBuilder(null, { message: 'rls' });
     const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(deleteQb);
     const service = makeService(
