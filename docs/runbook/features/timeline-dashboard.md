@@ -43,6 +43,10 @@ Four zoom levels let users control the time granularity. The `TimelineService` d
 
 The `TimelineService` provides `dateToX()` and `xToDate()` methods for converting between pixel positions and ISO dates, plus `getColumns()` for generating hierarchical column headers with sub-columns.
 
+## Auto-scroll to Earliest Event
+
+When the grid mounts, `DashboardGridComponent` computes the X position of the earliest event (phase start date or marker date) across all visible trials and scrolls the container to 80 px before that position. This keeps the viewport anchored to real data instead of starting at the far-left padding year. The scroll re-fires when the dataset, zoom level, or year range changes.
+
 ## Filtering
 
 The `FilterPanelComponent` lets users narrow the dashboard to:
