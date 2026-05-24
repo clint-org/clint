@@ -132,6 +132,14 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 height="48"
                 class="agency-wordmark"
               />
+            } @else if (ag.logo_url) {
+              <img
+                [ngSrc]="ag.logo_url"
+                [alt]="ag.name"
+                width="48"
+                height="48"
+                class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
+              />
             } @else {
               <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
             }
@@ -239,13 +247,24 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       <div class="sidebar__footer">
         <button
           type="button"
-          class="avatar-btn"
+          [class]="userAvatarUrl() ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent' : 'avatar-btn'"
           [attr.aria-label]="'User account: ' + userInitials()"
           [pTooltip]="isExpanded() ? '' : 'Account'"
           tooltipPosition="right"
           (click)="avatarClick.emit()"
         >
-          {{ userInitials() }}
+          @if (userAvatarUrl(); as url) {
+            <img
+              [ngSrc]="url"
+              [alt]="userInitials()"
+              width="28"
+              height="28"
+              class="size-full rounded-full object-cover"
+              referrerpolicy="no-referrer"
+            />
+          } @else {
+            {{ userInitials() }}
+          }
         </button>
         @if (isExpanded()) {
           <span class="avatar-email">{{ userEmail() }}</span>
@@ -611,6 +630,7 @@ export class SidebarComponent {
   readonly hasSpace = input<boolean>(false);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
+  readonly userAvatarUrl = input<string | null>(null);
 
   /**
    * On a tenant host whose tenant was provisioned by an agency, the agency

@@ -64,10 +64,11 @@ export interface FlattenedTrial {
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private static readonly STORAGE_KEY = 'timeline-column-visibility';
 
-  private timeline = inject(TimelineService);
-  private elRef = inject(ElementRef);
+  private readonly timeline = inject(TimelineService);
+  private readonly elRef = inject(ElementRef);
   private scrollListener: (() => void) | null = null;
   private scrollRafId: number | null = null;
+  private readonly scrollContainerEl = signal<HTMLElement | null>(null);
 
   readonly companies = input.required<Company[]>();
   readonly zoomLevel = input.required<ZoomLevel>();
@@ -124,6 +125,16 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
         // ignore full storage
       }
     });
+
+    effect(() => {
+      const el = this.scrollContainerEl();
+      const x = this.earliestEventX();
+      if (!el || x === null) return;
+
+      requestAnimationFrame(() => {
+        el.scrollLeft = Math.max(0, x - 80);
+      });
+    });
   }
 
   readonly columns = computed<TimelineColumn[]>(() =>
@@ -133,6 +144,28 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly totalWidth = computed<number>(() =>
     this.timeline.getTimelineWidth(this.startYear(), this.endYear(), this.zoomLevel())
   );
+
+  private readonly earliestEventX = computed<number | null>(() => {
+    const trials = this.flattenedTrials();
+    if (trials.length === 0) return null;
+
+    let earliestMs = Infinity;
+    for (const row of trials) {
+      if (row.trial.phase_start_date) {
+        const t = new Date(row.trial.phase_start_date).getTime();
+        if (t < earliestMs) earliestMs = t;
+      }
+      for (const marker of row.trial.markers ?? []) {
+        const t = new Date(marker.event_date).getTime();
+        if (t < earliestMs) earliestMs = t;
+      }
+    }
+
+    if (earliestMs === Infinity) return null;
+
+    const dateStr = new Date(earliestMs).toISOString().split('T')[0];
+    return this.timeline.dateToX(dateStr, this.startYear(), this.endYear(), this.totalWidth());
+  });
 
   readonly flattenedTrials = computed<FlattenedTrial[]>(() => {
     const rows: FlattenedTrial[] = [];
@@ -169,8 +202,9 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   });
 
   ngAfterViewInit(): void {
-    const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
+    const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto') as HTMLElement | null;
     if (scrollEl) {
+      this.scrollContainerEl.set(scrollEl);
       this.scrollListener = () => {
         if (this.scrollRafId !== null) return;
         this.scrollRafId = requestAnimationFrame(() => {
