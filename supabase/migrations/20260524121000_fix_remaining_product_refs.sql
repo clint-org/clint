@@ -471,6 +471,7 @@ begin
                when 'marker'  then (select m.title from public.markers m where m.id = l.entity_id)
                when 'company' then (select c.name from public.companies c where c.id = l.entity_id)
                when 'asset'   then (select a.name from public.assets a where a.id = l.entity_id)
+               when 'product' then (select a.name from public.assets a where a.id = l.entity_id)
              end as entity_name
         from public.primary_intelligence_links l
        where l.primary_intelligence_id = (select id from row)
