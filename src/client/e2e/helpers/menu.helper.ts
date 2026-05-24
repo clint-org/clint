@@ -17,11 +17,7 @@ import { Locator, Page } from '@playwright/test';
  * within a short window, and retry from a fresh page reload if not (a
  * reload destroys the component instance and clears the menu cache).
  */
-export async function clickRowAction(
-  page: Page,
-  row: Locator,
-  actionLabel: string,
-): Promise<void> {
+export async function clickRowAction(page: Page, row: Locator, actionLabel: string): Promise<void> {
   const trigger = row.locator('app-row-actions button').first();
   await trigger.waitFor({ state: 'visible', timeout: 10000 });
 
@@ -40,7 +36,7 @@ export async function clickRowAction(
       // reload the page to reset the row's menu-item cache.
       await page.keyboard.press('Escape').catch(() => undefined);
       if (attempt === 1) {
-        await page.reload({ waitUntil: 'networkidle' });
+        await page.reload({ waitUntil: 'domcontentloaded' });
         await trigger.waitFor({ state: 'visible', timeout: 10000 });
       }
     }

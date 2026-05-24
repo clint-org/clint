@@ -23,7 +23,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
   });
 
   test('taxonomies page loads with TA tab active', async () => {
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
   });
 
@@ -38,7 +38,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Cardiology')).toBeVisible({ timeout: 10000 });
   });
 
@@ -55,7 +55,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await page.getByRole('button', { name: 'Update' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Neurology')).toBeVisible({ timeout: 10000 });
   });
 
@@ -75,7 +75,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await confirmBtn.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Neurology')).not.toBeVisible({ timeout: 5000 });
   });
 });
@@ -97,7 +97,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
   });
 
   test('MOA tab loads', async () => {
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add mechanism' })).toBeVisible();
   });
 
@@ -110,7 +110,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('PD-1 Inhibitor')).toBeVisible({ timeout: 10000 });
   });
 
@@ -124,7 +124,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
     await page.getByRole('button', { name: 'Update' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('VEGF Inhibitor')).toBeVisible({ timeout: 10000 });
   });
 
@@ -140,7 +140,7 @@ test.describe('Taxonomies - Mechanisms of Action', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('VEGF Inhibitor')).not.toBeVisible({ timeout: 5000 });
   });
 });
@@ -162,7 +162,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
   });
 
   test('ROA tab loads', async () => {
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add route' })).toBeVisible();
   });
 
@@ -177,7 +177,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Intravenous')).toBeVisible({ timeout: 10000 });
   });
 
@@ -192,7 +192,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
     await page.getByRole('button', { name: 'Update' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Subcutaneous')).toBeVisible({ timeout: 10000 });
   });
 
@@ -208,7 +208,7 @@ test.describe('Taxonomies - Routes of Administration', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(taxUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Subcutaneous')).not.toBeVisible({ timeout: 5000 });
   });
 });

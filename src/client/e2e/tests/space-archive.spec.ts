@@ -1,10 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage, getAuthStorage } from '../helpers/auth.helper';
-import {
-  createTestTenant,
-  createTestSpace,
-  getAdminClient,
-} from '../helpers/test-data.helper';
+import { createTestTenant, createTestSpace, getAdminClient } from '../helpers/test-data.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -43,7 +39,7 @@ test.describe('Space archive lifecycle', () => {
   });
 
   test('archive space from general settings hides it from default list', async () => {
-    await page.goto(generalUrl(), { waitUntil: 'networkidle' });
+    await page.goto(generalUrl(), { waitUntil: 'domcontentloaded' });
 
     const archiveTrigger = page.getByRole('button', { name: 'Archive space' });
     await expect(archiveTrigger).toBeVisible({ timeout: 10000 });
@@ -51,15 +47,12 @@ test.describe('Space archive lifecycle', () => {
 
     // PrimeNG ConfirmDialog accept button (legacy plain confirm path used
     // by confirmDelete when no counts / typedConfirmationValue are passed).
-    const confirmAccept = page.locator(
-      '.p-confirmdialog-accept-button, .p-confirm-dialog-accept'
-    );
+    const confirmAccept = page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept');
     await expect(confirmAccept).toBeVisible({ timeout: 5000 });
     await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/archive_space') && r.ok(),
-        { timeout: 10000 }
-      ),
+      page.waitForResponse((r) => r.url().includes('/rest/v1/rpc/archive_space') && r.ok(), {
+        timeout: 10000,
+      }),
       confirmAccept.click(),
     ]);
 
@@ -69,14 +62,14 @@ test.describe('Space archive lifecycle', () => {
     });
 
     // Default spaces list no longer shows the archived space.
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: spaceName, level: 3 })).toBeHidden({
       timeout: 10000,
     });
   });
 
   test('archived list shows the archived space', async () => {
-    await page.goto(archivedUrl(), { waitUntil: 'networkidle' });
+    await page.goto(archivedUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: spaceName })).toBeVisible({
       timeout: 10000,
     });
@@ -84,36 +77,31 @@ test.describe('Space archive lifecycle', () => {
     // Restore + Permanently delete affordances visible to the tenant owner.
     const archivedRow = page.locator('li', { hasText: spaceName });
     await expect(archivedRow.getByRole('button', { name: 'Restore' })).toBeVisible();
-    await expect(
-      archivedRow.getByRole('button', { name: 'Permanently delete' })
-    ).toBeVisible();
+    await expect(archivedRow.getByRole('button', { name: 'Permanently delete' })).toBeVisible();
   });
 
   test('restore from archived list returns space to default list', async () => {
-    await page.goto(archivedUrl(), { waitUntil: 'networkidle' });
+    await page.goto(archivedUrl(), { waitUntil: 'domcontentloaded' });
     const archivedRow = page.locator('li', { hasText: spaceName });
     await archivedRow.getByRole('button', { name: 'Restore' }).click();
 
-    const confirmAccept = page.locator(
-      '.p-confirmdialog-accept-button, .p-confirm-dialog-accept'
-    );
+    const confirmAccept = page.locator('.p-confirmdialog-accept-button, .p-confirm-dialog-accept');
     await expect(confirmAccept).toBeVisible({ timeout: 5000 });
     await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/restore_space') && r.ok(),
-        { timeout: 10000 }
-      ),
+      page.waitForResponse((r) => r.url().includes('/rest/v1/rpc/restore_space') && r.ok(), {
+        timeout: 10000,
+      }),
       confirmAccept.click(),
     ]);
 
     // Space is gone from the archived list.
-    await page.goto(archivedUrl(), { waitUntil: 'networkidle' });
+    await page.goto(archivedUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: spaceName })).toBeHidden({
       timeout: 10000,
     });
 
     // And back in the active list.
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: spaceName, level: 3 })).toBeVisible({
       timeout: 10000,
     });
@@ -148,7 +136,7 @@ test.describe('Space permanent delete (tenant owner)', () => {
   });
 
   test('Permanently delete enforces type-the-name then removes the space', async () => {
-    await page.goto(archivedUrl(), { waitUntil: 'networkidle' });
+    await page.goto(archivedUrl(), { waitUntil: 'domcontentloaded' });
     const archivedRow = page.locator('li', { hasText: spaceName });
     await expect(archivedRow).toBeVisible({ timeout: 10000 });
 
@@ -161,9 +149,7 @@ test.describe('Space permanent delete (tenant owner)', () => {
     await expect(dialog).toBeVisible({ timeout: 5000 });
 
     const typedInput = dialog.getByLabel('Type the space name to confirm');
-    const confirmBtn = dialog.locator(
-      'button.p-button:has-text("Permanently delete")'
-    );
+    const confirmBtn = dialog.locator('button.p-button:has-text("Permanently delete")');
 
     // Empty + wrong name keep Confirm disabled.
     await expect(confirmBtn).toBeDisabled();
@@ -176,8 +162,7 @@ test.describe('Space permanent delete (tenant owner)', () => {
 
     await Promise.all([
       page.waitForResponse(
-        (r) =>
-          r.url().includes('/rest/v1/rpc/permanently_delete_space') && r.ok(),
+        (r) => r.url().includes('/rest/v1/rpc/permanently_delete_space') && r.ok(),
         { timeout: 10000 }
       ),
       confirmBtn.click(),
@@ -190,7 +175,7 @@ test.describe('Space permanent delete (tenant owner)', () => {
     });
 
     // And the space does not reappear in the active list either.
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: spaceName, level: 3 })).toBeHidden({
       timeout: 5000,
     });
@@ -252,9 +237,7 @@ test.describe('Space owner who is not tenant owner', () => {
     if (sErr) throw new Error(`Could not create space: ${sErr.message}`);
     spaceId = space.id;
 
-    await admin
-      .from('space_members')
-      .insert({ space_id: spaceId, user_id: userId, role: 'owner' });
+    await admin.from('space_members').insert({ space_id: spaceId, user_id: userId, role: 'owner' });
 
     // Pre-archive so the space surfaces in the archived list.
     const { error: archErr } = await admin
@@ -271,7 +254,7 @@ test.describe('Space owner who is not tenant owner', () => {
   });
 
   test('Permanently delete affordance is hidden for non-tenant-owner', async () => {
-    await page.goto(archivedUrl(), { waitUntil: 'networkidle' });
+    await page.goto(archivedUrl(), { waitUntil: 'domcontentloaded' });
 
     const archivedRow = page.locator('li', { hasText: spaceName });
     await expect(archivedRow).toBeVisible({ timeout: 10000 });
@@ -283,8 +266,6 @@ test.describe('Space owner who is not tenant owner', () => {
     // or platform admin. Server-side RLS on permanently_delete_space would
     // reject the call regardless; the UI guard simply avoids surfacing an
     // affordance the role cannot use.
-    await expect(
-      archivedRow.getByRole('button', { name: 'Permanently delete' })
-    ).toBeHidden();
+    await expect(archivedRow.getByRole('button', { name: 'Permanently delete' })).toBeHidden();
   });
 });

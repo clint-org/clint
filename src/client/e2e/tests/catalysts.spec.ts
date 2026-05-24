@@ -33,7 +33,7 @@ test.describe('Catalysts View', () => {
   });
 
   test('catalysts page loads without error', async () => {
-    await page.goto(catalystsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(catalystsUrl(), { waitUntil: 'domcontentloaded' });
     // Page should load successfully - no error messages
     await expect(page.locator('.p-message-error')).not.toBeVisible({ timeout: 5000 });
   });

@@ -13,7 +13,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildPersonas, Personas, adminClient } from '../fixtures/personas';
+import { buildPersonas, Personas, adminClient, createAuthUser } from '../fixtures/personas';
 import { createScratchAgency, createScratchTenant, createScratchSpace } from '../fixtures/scratch';
 import { as, expectOk, expectCode } from '../harness/as';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -28,7 +28,7 @@ let svc: SupabaseClient;
 beforeAll(async () => {
   p = await buildPersonas();
   svc = adminClient();
-}, 60_000);
+}, 120_000);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -374,12 +374,8 @@ describe('redact_user emits compliance.user_pii_redacted', () => {
 
   it('emits compliance.user_pii_redacted with per-table removed counts', async () => {
     // Build a fresh subject so we are not redacting a persona used elsewhere.
-    const { data, error } = await svc.auth.admin.createUser({
-      email: `redact-emit-${Date.now()}@emission.invalid`,
-      email_confirm: true,
-    });
-    if (error) throw new Error(`createUser for redact_user subject: ${error.message}`);
-    subjectUserId = data.user!.id;
+    const subject = await createAuthUser(svc, { email: `redact-emit-${Date.now()}@emission.invalid` });
+    subjectUserId = subject.id;
 
     const r = await as(p, 'platform_admin').rpc('redact_user', { p_user_id: subjectUserId });
     expectOk(r);

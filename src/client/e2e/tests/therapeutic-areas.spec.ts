@@ -33,7 +33,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
   });
 
   test('therapeutic area list loads', async () => {
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
   });
 
@@ -48,7 +48,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.waitForTimeout(3000);
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Oncology')).toBeVisible({ timeout: 10000 });
   });
 
@@ -62,7 +62,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await page.getByRole('button', { name: 'Update' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Immunology')).toBeVisible({ timeout: 10000 });
   });
 
@@ -95,7 +95,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Immunology')).not.toBeVisible({ timeout: 5000 });
 
     // Trial survives with null therapeutic_area_id. Query directly so this is

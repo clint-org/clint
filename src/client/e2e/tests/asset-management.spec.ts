@@ -32,7 +32,7 @@ test.describe('Asset Management CRUD', () => {
   });
 
   test('asset list loads', async () => {
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add Asset' })).toBeVisible();
   });
 
@@ -47,7 +47,7 @@ test.describe('Asset Management CRUD', () => {
       page.getByRole('button', { name: 'Create Asset' }).click(),
     ]);
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Test Asset')).toBeVisible({ timeout: 10000 });
   });
 
@@ -63,7 +63,7 @@ test.describe('Asset Management CRUD', () => {
       page.getByRole('button', { name: 'Update Asset' }).click(),
     ]);
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Updated Asset')).toBeVisible({ timeout: 10000 });
   });
 
@@ -73,8 +73,8 @@ test.describe('Asset Management CRUD', () => {
     const taId = await createTestTherapeuticArea(spaceId, 'Expand TA');
     await createTestTrial(spaceId, assetId, taId, 'Seeded Trial');
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: 'Expandable Asset' });
     await row.waitFor({ timeout: 10000 });
     const expandButton = row.locator('button').first();
@@ -85,7 +85,7 @@ test.describe('Asset Management CRUD', () => {
 
   test('edit asset pre-populates form', async () => {
     // Ensure we're on the assets page (prior test may have left the page in an unexpected state)
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
 
     const row = page.locator('tr', { hasText: 'Updated Asset' });
     await row.locator('app-row-actions button').click();
@@ -118,17 +118,17 @@ test.describe('Asset Management CRUD', () => {
       spaceId,
       assetId,
       taId,
-      'CascadeAssetTrial ' + Date.now(),
+      'CascadeAssetTrial ' + Date.now()
     );
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: cascadeAssetName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/rpc/preview_product_delete') && r.ok(),
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       (async () => {
         await row.locator('app-row-actions button').click();
@@ -143,7 +143,7 @@ test.describe('Asset Management CRUD', () => {
 
     // Count breakdown shows the seeded trial.
     const breakdown = dialog.locator(
-      'table[aria-label="Count breakdown of items this action will remove"]',
+      'table[aria-label="Count breakdown of items this action will remove"]'
     );
     await expect(breakdown).toBeVisible({ timeout: 5000 });
     await expect(breakdown.locator('tr[data-count-key="trials"] td').last()).toHaveText('1');
@@ -155,7 +155,7 @@ test.describe('Asset Management CRUD', () => {
     await confirmBtn.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.locator('tr', { hasText: cascadeAssetName })).toHaveCount(0, {
       timeout: 5000,
     });
@@ -172,8 +172,9 @@ test.describe('Asset Management CRUD', () => {
   });
 
   test('delete "Updated Asset" via typed confirm', async () => {
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     const rows = page.locator('tr', { hasText: 'Updated Asset' });
+    await rows.first().waitFor({ timeout: 30000 });
     const count = await rows.count();
 
     await rows.first().locator('app-row-actions button').click();
@@ -187,7 +188,8 @@ test.describe('Asset Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Add Asset' })).toBeVisible();
     const newCount = await page.locator('tr', { hasText: 'Updated Asset' }).count();
     expect(newCount).toBeLessThan(count);
   });

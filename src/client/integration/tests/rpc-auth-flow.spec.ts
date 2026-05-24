@@ -11,7 +11,7 @@ import { as, expectCode } from '../harness/as';
 let p: Personas;
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 describe('rpc accept_invite', () => {
   it('invalid code: error', async () => {

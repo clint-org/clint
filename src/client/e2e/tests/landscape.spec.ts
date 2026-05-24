@@ -57,7 +57,7 @@ test.describe('Landscape bullseye', () => {
   });
 
   test('landscape index lists all therapeutic areas', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-landscape-index', { timeout: 30000 });
 
     // Both TAs should show up (including the empty one)
@@ -73,7 +73,7 @@ test.describe('Landscape bullseye', () => {
   });
 
   test('clicking a TA card opens the bullseye for that TA', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'domcontentloaded' });
     await page.locator('.landscape-index-card').filter({ hasText: 'Heart Failure HFpEF' }).click();
 
     await expect(page).toHaveURL(new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`));
@@ -86,7 +86,7 @@ test.describe('Landscape bullseye', () => {
 
   test('hovering a dot shows the product name in a tooltip', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
 
@@ -98,7 +98,7 @@ test.describe('Landscape bullseye', () => {
 
   test('clicking a dot populates the detail panel and updates the URL', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
 
@@ -121,7 +121,7 @@ test.describe('Landscape bullseye', () => {
 
   test('Escape key clears the selection', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}?product=${farxigaId}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
     await page.keyboard.press('Escape');
@@ -136,7 +136,7 @@ test.describe('Landscape bullseye', () => {
       'BE-EMPTY'
     );
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${emptyId}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await expect(page.getByText(/No assets tracked/)).toBeVisible();
   });

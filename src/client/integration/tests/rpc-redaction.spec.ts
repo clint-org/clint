@@ -21,7 +21,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Client as PgClient } from 'pg';
 import { randomUUID } from 'node:crypto';
-import { buildPersonas, Personas, adminClient } from '../fixtures/personas';
+import { buildPersonas, Personas, adminClient, createAuthUser } from '../fixtures/personas';
 import { as, expectOk, expectCode } from '../harness/as';
 
 const SUPABASE_URL = process.env['SUPABASE_URL'] ?? 'http://127.0.0.1:54321';
@@ -73,13 +73,8 @@ beforeAll(async () => {
   //         the target's pre-redact membership graph exactly the four rows we
   //         insert below (no auto-joined demo memberships).
   targetEmail = `redact-target-${Date.now()}-${randomUUID().slice(0, 8)}@clint.local`;
-  const { data: created, error: createErr } = await svc.auth.admin.createUser({
-    email: targetEmail,
-    password: TARGET_PASSWORD,
-    email_confirm: true,
-  });
-  if (createErr) throw new Error(`rpc-redaction beforeAll createUser: ${createErr.message}`);
-  targetUserId = created.user!.id;
+  const created = await createAuthUser(svc, { email: targetEmail, password: TARGET_PASSWORD });
+  targetUserId = created.id;
 
   // ---- 2. build the scratch graph and authorship rows via direct pg. Doing
   //         this through the supabase-js client would require switching
@@ -211,7 +206,7 @@ beforeAll(async () => {
   } finally {
     await pg.end();
   }
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   if (!targetUserId) return;

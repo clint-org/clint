@@ -22,7 +22,7 @@ test.describe('Marker Type Management CRUD', () => {
   });
 
   test('marker type list loads with system types', async () => {
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add marker type' })).toBeVisible();
     // System marker types should be visible from seed data
     await expect(page.getByText('Topline Data')).toBeVisible({ timeout: 10000 });
@@ -43,12 +43,12 @@ test.describe('Marker Type Management CRUD', () => {
       page.getByRole('button', { name: 'Create Marker Type' }).click(),
     ]);
 
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Biomarker Readout')).toBeVisible({ timeout: 10000 });
   });
 
   test('edit marker type pre-populates all fields', async () => {
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Biomarker Readout')).toBeVisible({ timeout: 10000 });
     const row = page.locator('tr', { hasText: 'Biomarker Readout' });
     await row.locator('app-row-actions button').click();
@@ -65,12 +65,12 @@ test.describe('Marker Type Management CRUD', () => {
       page.getByRole('button', { name: 'Update Marker Type' }).click(),
     ]);
 
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Safety Signal')).toBeVisible({ timeout: 10000 });
   });
 
   test('delete marker type via typed-name confirm', async () => {
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Safety Signal')).toBeVisible({ timeout: 10000 });
     const row = page.locator('tr', { hasText: 'Safety Signal' });
     await row.locator('app-row-actions button').click();
@@ -89,7 +89,7 @@ test.describe('Marker Type Management CRUD', () => {
     await confirmBtn.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(mtUrl(), { waitUntil: 'networkidle' });
+    await page.goto(mtUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Safety Signal')).not.toBeVisible({ timeout: 5000 });
   });
 

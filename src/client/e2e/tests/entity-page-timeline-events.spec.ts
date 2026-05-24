@@ -35,29 +35,26 @@ test.describe('Entity-page timeline + events panel', () => {
   });
 
   test('trial detail page renders Timeline + Events panel', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('app-entity-events-panel')).toBeVisible();
     await expect(page.locator('app-entity-events-panel')).toContainText('Events');
   });
 
   test('asset detail page renders Timeline + Events panel', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/assets/${productId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/assets/${productId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('app-entity-events-panel')).toBeVisible();
   });
 
   test('company detail page renders forward-windowed Timeline + Events panel', async () => {
-    await page.goto(
-      `/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`,
-      { waitUntil: 'networkidle' },
-    );
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('app-entity-events-panel')).toBeVisible();
   });

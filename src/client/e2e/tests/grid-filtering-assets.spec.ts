@@ -38,7 +38,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   });
 
   test('grid loads with toolbar and paginator', async () => {
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByPlaceholder('Search assets...')).toBeVisible();
     await expect(page.locator('.p-paginator')).toBeVisible();
   });
@@ -66,13 +66,15 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   test('sort by Name ascending updates URL and orders rows', async () => {
     await page.getByRole('columnheader', { name: /Name/ }).click();
     await expect(page).toHaveURL(/sort=asset\.name/, { timeout: 2000 });
-    const firstRowName = await page.locator('table tbody tr:first-child td:first-child').innerText();
+    const firstRowName = await page
+      .locator('table tbody tr:first-child td:first-child')
+      .innerText();
     expect(firstRowName).toMatch(/^Merck|^Pfizer/);
   });
 
   test('paginator click updates URL with page number', async () => {
     // Navigate fresh with pageSize=10 so 20 assets span 2 pages.
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     // Wait for rows to render — this ensures totalRecords is populated so the
     // paginator enables the Next Page button before we click it.
     await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 5000 });
@@ -84,10 +86,12 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   });
 
   test('deep-link to page 2 lands on page 2', async () => {
-    await page.goto(`${assetsUrl()}&page=2`, { waitUntil: 'networkidle' });
+    await page.goto(`${assetsUrl()}&page=2`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/page=2/, { timeout: 2000 });
     // Verify the paginator shows page 2 as active.
-    await expect(page.locator('.p-paginator .p-paginator-page.p-paginator-page-selected')).toContainText('2');
+    await expect(
+      page.locator('.p-paginator .p-paginator-page.p-paginator-page-selected')
+    ).toContainText('2');
   });
 
   test('browser back navigates away from assets page', async () => {
@@ -95,8 +99,8 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     // Since assets uses replaceUrl:true for state changes, going back should
     // return to companies (the last page that pushed a history entry).
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
-    await page.goto(companiesUrl, { waitUntil: 'networkidle' });
-    await page.goto(assetsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl, { waitUntil: 'domcontentloaded' });
+    await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await page.goBack();
     await expect(page).toHaveURL(/manage\/companies/);
   });
@@ -107,7 +111,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     // menu's "View assets" item, which still calls openAssets(pfizerId)
     // using buildFilterQueryParams.
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
-    await page.goto(companiesUrl, { waitUntil: 'networkidle' });
+    await page.goto(companiesUrl, { waitUntil: 'domcontentloaded' });
 
     const row = page.locator('tr', { hasText: 'Pfizer' }).first();
     await row.locator('app-row-actions button').click();
