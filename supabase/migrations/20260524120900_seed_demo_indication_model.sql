@@ -510,7 +510,7 @@ begin
     select 1 from public.space_members
      where space_id = p_space_id and user_id = uid and role = 'owner'
   ) and not public.is_platform_admin() then
-    raise exception 'Insufficient permissions' using errcode = '42501';
+    raise exception 'Insufficient permissions: must be space owner to seed demo data' using errcode = '42501';
   end if;
 
   select count(*) into existing_count from public.companies where space_id = p_space_id;

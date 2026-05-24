@@ -342,6 +342,7 @@ begin
               when 'marker'  then (select mk.title from public.markers   mk where mk.id = l.entity_id)
               when 'company' then (select co.name  from public.companies co where co.id = l.entity_id)
               when 'asset'   then (select a.name   from public.assets    a  where a.id  = l.entity_id)
+              when 'product' then (select a.name   from public.assets    a  where a.id  = l.entity_id)
               else null
             end,
             'relationship_type', l.relationship_type,

@@ -163,9 +163,11 @@ grant execute on function public.get_events_page_data(
   uuid, date, date, text, uuid, uuid[], text[], text, text, int, int
 ) to anon, authenticated;
 
--- Also fix preview_asset_delete permissions (was missing GRANT)
-grant execute on function public.preview_company_delete(uuid) to authenticated;
+-- Fix preview_asset_delete permissions: revoke from anon so tests get 42501
+revoke all on function public.preview_asset_delete(uuid) from public, anon;
 grant execute on function public.preview_asset_delete(uuid) to authenticated;
+revoke all on function public.preview_company_delete(uuid) from public, anon;
+grant execute on function public.preview_company_delete(uuid) to authenticated;
 
 -- Fix seed_demo_data to handle missing _seed_demo_therapeutic_areas gracefully
 create or replace function public._seed_demo_therapeutic_areas(p_space_id uuid, p_uid uuid)
