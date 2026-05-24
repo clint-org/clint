@@ -442,18 +442,19 @@ begin
   from public.indications ind
   cross join lateral (
     select jsonb_build_object(
-      'indication', jsonb_build_object('id', ind.id, 'name', ind.name, 'abbreviation', ind.abbreviation, 'parent_id', ind.parent_id),
+      'entity', jsonb_build_object('id', ind.id, 'name', ind.name, 'abbreviation', ind.abbreviation, 'parent_id', ind.parent_id),
       'product_count', (
         select count(distinct ai.asset_id)
         from public.asset_indications ai
         where ai.indication_id = ind.id and ai.space_id = p_space_id
       ),
-      'company_count', (
+      'secondary_count', (
         select count(distinct a.company_id)
         from public.asset_indications ai
         join public.assets a on a.id = ai.asset_id
         where ai.indication_id = ind.id and ai.space_id = p_space_id
       ),
+      'secondary_label', 'companies',
       'highest_phase_present', coalesce((
         select max(case ai.development_status
           when 'LAUNCHED' then 6 when 'APPROVED' then 5 when 'P4' then 4
@@ -463,7 +464,7 @@ begin
         from public.asset_indications ai
         where ai.indication_id = ind.id and ai.space_id = p_space_id
       ), -1),
-      'assets_missing_status', (
+      'products_missing_phase', (
         select count(*)
         from public.asset_indications ai
         where ai.indication_id = ind.id and ai.space_id = p_space_id
