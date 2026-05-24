@@ -1,5 +1,9 @@
 import type { ChangeEvent, ChangeEventType } from '../../core/models/change-event.model';
-import { PHASE_COLORS } from '../../core/models/phase-colors';
+import {
+  DEVELOPMENT_STATUS_COLORS,
+  type DevelopmentStatus,
+  PHASE_COLORS,
+} from '../../core/models/phase-colors';
 import { MARKER_FIELD_LABELS, formatDateRange, formatShortDate } from './marker-fields';
 
 /**
@@ -199,12 +203,19 @@ function appendMarkerContext(
  * Pick the destination phase color for a phase_transitioned event. payload.to
  * is an array of phase keys (single phase or "P2/P3" combo); we color by the
  * deepest / last phase in the array, matching how the phase bar reads.
+ *
+ * Falls back to DEVELOPMENT_STATUS_COLORS for APPROVED/LAUNCHED which may
+ * appear in historical change events recorded before the model redesign.
  */
 function phaseColorFor(toRaw: unknown): string | null {
   if (!Array.isArray(toRaw) || toRaw.length === 0) return null;
   const last = toRaw[toRaw.length - 1];
   if (typeof last !== 'string') return null;
-  return PHASE_COLORS[last] ?? null;
+  return (
+    PHASE_COLORS[last] ??
+    DEVELOPMENT_STATUS_COLORS[last as DevelopmentStatus] ??
+    null
+  );
 }
 
 function markerContextSegments(

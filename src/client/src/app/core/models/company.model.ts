@@ -10,5 +10,5 @@ export interface Company {
   created_at: string;
   updated_at: string;
   updated_by: string | null;
-  products?: Asset[];
+  assets?: Asset[];
 }
