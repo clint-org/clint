@@ -30,7 +30,7 @@ export class PaletteCommandRegistry {
         id: 'go-bullseye',
         label: 'Go to Bullseye',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/bullseye/by-therapy-area`),
+        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/bullseye/by-indication`),
       },
       {
         id: 'go-positioning',

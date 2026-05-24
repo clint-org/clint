@@ -111,13 +111,13 @@
         [selectedItemsLabel]="'Asset (' + state.filters().assetIds.length + ')'"
       />
 
-      @if (viewMode() !== 'bullseye' || dimension() !== 'therapeutic-area') {
+      @if (viewMode() !== 'bullseye' || dimension() !== 'indication') {
         <p-multiselect
           [options]="taOptions()"
           [ngModel]="state.filters().indicationIds"
           (ngModelChange)="update('indicationIds', $event ?? [])"
-          placeholder="Therapy Area"
-          ariaLabel="Filter by therapeutic area"
+          placeholder="Indication"
+          ariaLabel="Filter by indication"
           optionLabel="label"
           optionValue="value"
           [filter]="true"
@@ -126,7 +126,7 @@
           [styleClass]="'w-fit' + (state.filters().indicationIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'Therapy Area (' + state.filters().indicationIds.length + ')'"
+          [selectedItemsLabel]="'Indication (' + state.filters().indicationIds.length + ')'"
         />
       }
 

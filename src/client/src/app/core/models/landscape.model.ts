@@ -1,9 +1,9 @@
 /**
  * Shared types for the landscape bullseye feature.
  *
- * The bullseye shows a per-therapeutic-area competitive landscape. Each dot
+ * The bullseye shows a per-indication competitive landscape. Each dot
  * is a product, positioned at the development phase it has reached within
- * the selected TA. Companies sit on spokes around the perimeter.
+ * the selected indication. Companies sit on spokes around the perimeter.
  */
 
 import type { MarkerShape } from './marker.model';
@@ -56,7 +56,7 @@ export const PHASE_COLOR: Record<RingPhase, string> = {
   LAUNCHED: '#059669', // emerald-600 (distinct hue for "the goal")
 };
 
-export type BullseyeDimension = 'therapeutic-area' | 'company' | 'moa' | 'roa';
+export type BullseyeDimension = 'indication' | 'company' | 'moa' | 'roa';
 
 export type SpokeMode = 'grouped' | 'assets';
 
@@ -177,7 +177,7 @@ export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [
-  { label: 'Therapy Area', value: 'therapeutic-area' },
+  { label: 'Indication', value: 'indication' },
   { label: 'Company', value: 'company' },
   { label: 'Mechanism of Action', value: 'moa' },
   { label: 'Route of Administration', value: 'roa' },
@@ -185,7 +185,7 @@ export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = 
 
 export function dimensionToSegment(dim: BullseyeDimension): string {
   const map: Record<BullseyeDimension, string> = {
-    'therapeutic-area': 'by-therapy-area',
+    indication: 'by-indication',
     company: 'by-company',
     moa: 'by-moa',
     roa: 'by-roa',
@@ -195,20 +195,20 @@ export function dimensionToSegment(dim: BullseyeDimension): string {
 
 export function segmentToDimension(segment: string): BullseyeDimension {
   const map: Record<string, BullseyeDimension> = {
-    'by-therapy-area': 'therapeutic-area',
+    'by-indication': 'indication',
     'by-company': 'company',
     'by-moa': 'moa',
     'by-roa': 'roa',
   };
-  return map[segment] ?? 'therapeutic-area';
+  return map[segment] ?? 'indication';
 }
 
 // --- Competitive Positioning types ---
 
 export type PositioningGrouping =
   | 'moa'
-  | 'therapeutic-area'
-  | 'moa+therapeutic-area'
+  | 'indication'
+  | 'moa+indication'
   | 'company'
   | 'roa';
 
@@ -243,8 +243,8 @@ export interface PositioningData {
 
 export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGrouping }[] = [
   { label: 'Mechanism of Action', value: 'moa' },
-  { label: 'Therapy Area', value: 'therapeutic-area' },
-  { label: 'MOA + Therapy Area', value: 'moa+therapeutic-area' },
+  { label: 'Indication', value: 'indication' },
+  { label: 'MOA + Indication', value: 'moa+indication' },
   { label: 'Company', value: 'company' },
   { label: 'Route of Administration', value: 'roa' },
 ];
@@ -252,8 +252,8 @@ export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGr
 export function groupingToSegment(g: PositioningGrouping): string {
   const map: Record<PositioningGrouping, string> = {
     moa: 'by-moa',
-    'therapeutic-area': 'by-therapy-area',
-    'moa+therapeutic-area': 'by-moa-therapy-area',
+    indication: 'by-indication',
+    'moa+indication': 'by-moa-indication',
     company: 'by-company',
     roa: 'by-roa',
   };
@@ -263,8 +263,8 @@ export function groupingToSegment(g: PositioningGrouping): string {
 export function segmentToGrouping(segment: string): PositioningGrouping {
   const map: Record<string, PositioningGrouping> = {
     'by-moa': 'moa',
-    'by-therapy-area': 'therapeutic-area',
-    'by-moa-therapy-area': 'moa+therapeutic-area',
+    'by-indication': 'indication',
+    'by-moa-indication': 'moa+indication',
     'by-company': 'company',
     'by-roa': 'roa',
   };
@@ -273,8 +273,8 @@ export function segmentToGrouping(segment: string): PositioningGrouping {
 
 export const POSITIONING_SEGMENTS = [
   'by-moa',
-  'by-therapy-area',
-  'by-moa-therapy-area',
+  'by-indication',
+  'by-moa-indication',
   'by-company',
   'by-roa',
 ] as const;

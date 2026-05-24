@@ -14,7 +14,7 @@ test.describe('Indication Management CRUD', () => {
   let tenantId: string;
   let spaceId: string;
   // The old /manage/therapeutic-areas now redirects to /settings/taxonomies
-  const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=therapeutic-areas`;
+  const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=indications`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('TA Org');
@@ -27,13 +27,13 @@ test.describe('Indication Management CRUD', () => {
     await page.close();
   });
 
-  test('therapeutic area list loads', async () => {
+  test('indication list loads', async () => {
     await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add indication' })).toBeVisible();
   });
 
-  test('create therapeutic area via modal', async () => {
-    await page.getByRole('button', { name: 'Add therapeutic area' }).click();
+  test('create indication via modal', async () => {
+    await page.getByRole('button', { name: 'Add indication' }).click();
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#ta-name', 'Oncology');
@@ -47,7 +47,7 @@ test.describe('Indication Management CRUD', () => {
     await expect(page.getByText('Oncology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('edit therapeutic area via modal', async () => {
+  test('edit indication via modal', async () => {
     const row = page.locator('tr', { hasText: 'Oncology' });
     await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });

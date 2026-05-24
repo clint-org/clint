@@ -80,7 +80,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
   readonly spaceId = input.required<string>();
   readonly viewMode = input<ViewMode>('timeline');
-  readonly dimension = input<BullseyeDimension>('therapeutic-area');
+  readonly dimension = input<BullseyeDimension>('indication');
   readonly entityId = input<string | null>(null);
   readonly entityOptions = input<SelectOption[]>([]);
   readonly entityChange = output<string | null>();
@@ -151,7 +151,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
     addChips(f.companyIds, this.companyOptions(), 'companyIds', 'Company');
     addChips(f.assetIds, this.productOptions(), 'assetIds', 'Asset');
-    addChips(f.indicationIds, this.taOptions(), 'indicationIds', 'Therapy Area');
+    addChips(f.indicationIds, this.taOptions(), 'indicationIds', 'Indication');
     addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
     addChips(f.markerCategoryIds, this.markerCategoryOptions(), 'markerCategoryIds', 'Category');

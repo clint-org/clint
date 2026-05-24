@@ -106,10 +106,10 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       const seg = dimensionToSegment(this.dimension());
       this.topbarState.subTabs.set([
         {
-          label: 'Therapy Area',
-          value: 'by-therapy-area',
-          active: seg === 'by-therapy-area',
-          tooltip: 'Spokes grouped by therapy area',
+          label: 'Indication',
+          value: 'by-indication',
+          active: seg === 'by-indication',
+          tooltip: 'Spokes grouped by indication',
         },
         {
           label: 'Company',
@@ -140,16 +140,16 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
           tooltip: 'Assets grouped by mechanism of action',
         },
         {
-          label: 'Therapy Area',
-          value: 'by-therapy-area',
-          active: seg === 'by-therapy-area',
-          tooltip: 'Assets grouped by therapy area',
+          label: 'Indication',
+          value: 'by-indication',
+          active: seg === 'by-indication',
+          tooltip: 'Assets grouped by indication',
         },
         {
-          label: 'MOA + TA',
-          value: 'by-moa-therapy-area',
-          active: seg === 'by-moa-therapy-area',
-          tooltip: 'Assets grouped by mechanism of action, broken out by therapy area',
+          label: 'MOA + Ind.',
+          value: 'by-moa-indication',
+          active: seg === 'by-moa-indication',
+          tooltip: 'Assets grouped by mechanism of action, broken out by indication',
         },
         {
           label: 'Company',
@@ -170,7 +170,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   });
 
   readonly viewMode = signal<ViewMode>('timeline');
-  readonly dimension = signal<BullseyeDimension>('therapeutic-area');
+  readonly dimension = signal<BullseyeDimension>('indication');
   readonly entityId = signal<string | null>(null);
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -292,7 +292,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const allSegments = [...parentSegments, ...segments];
 
     const dimSegment = allSegments.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s)
+      ['by-indication', 'by-company', 'by-moa', 'by-roa'].includes(s)
     );
 
     const posSegment = allSegments.find((s) =>

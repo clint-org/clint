@@ -349,7 +349,7 @@ export class AppShellComponent implements OnInit {
   readonly sidebarPinned = signal(false);
   private hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-therapy-area')
+  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-indication')
   readonly activeSpaceRoute = signal('');
 
   // Current URL segments after spaceId for determining page context
@@ -649,7 +649,7 @@ export class AppShellComponent implements OnInit {
             this.navigateToSpaceRoute('timeline');
             break;
           case 'bullseye':
-            this.navigateToSpaceRoute('bullseye/by-therapy-area');
+            this.navigateToSpaceRoute('bullseye/by-indication');
             break;
           case 'positioning':
             this.navigateToSpaceRoute('positioning/by-moa');

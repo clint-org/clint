@@ -18,22 +18,22 @@ import { DetailPanelShellComponent } from '../../shared/components/detail-panel-
 
 const GROUPING_LABEL: Record<PositioningGrouping, string> = {
   moa: 'MOA group',
-  'therapeutic-area': 'Therapy area group',
-  'moa+therapeutic-area': 'MOA + TA group',
+  indication: 'Indication group',
+  'moa+indication': 'MOA + Indication group',
   company: 'Company group',
   roa: 'ROA group',
 };
 
 /**
  * Bullseye destination per positioning grouping. Mirrors
- * `positioning-view.bullseyeSegment()`. The `moa+therapeutic-area` row
- * intentionally drops MOA and lands on Therapy area; the tooltip names
+ * `positioning-view.bullseyeSegment()`. The `moa+indication` row
+ * intentionally drops MOA and lands on Indication; the tooltip names
  * the resolved dimension so the user can predict the navigation.
  */
 const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
   moa: 'mechanism of action',
-  'therapeutic-area': 'therapy area',
-  'moa+therapeutic-area': 'therapy area',
+  indication: 'indication',
+  'moa+indication': 'indication',
   company: 'company',
   roa: 'route of administration',
 };

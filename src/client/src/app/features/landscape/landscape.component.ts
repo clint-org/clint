@@ -56,7 +56,7 @@ export class LandscapeComponent implements OnInit {
   readonly tenantId = signal('');
   readonly spaceId = signal('');
   readonly entityId = signal('');
-  readonly dimension = signal<BullseyeDimension>('therapeutic-area');
+  readonly dimension = signal<BullseyeDimension>('indication');
 
   readonly selectedAssetId = signal<string | null>(null);
   readonly hoveredAssetId = signal<string | null>(null);
@@ -163,7 +163,7 @@ export class LandscapeComponent implements OnInit {
 
     const urlSegments = this.route.snapshot.url;
     const dimensionSegment = urlSegments.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
+      ['by-indication', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
     );
     if (dimensionSegment) {
       this.dimension.set(segmentToDimension(dimensionSegment.path));

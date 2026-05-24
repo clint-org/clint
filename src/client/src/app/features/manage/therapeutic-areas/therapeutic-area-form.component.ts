@@ -86,7 +86,7 @@ export class IndicationFormComponent implements OnInit {
       }
       this.saved.emit(result);
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'Failed to save therapeutic area');
+      this.error.set(err instanceof Error ? err.message : 'Failed to save indication');
     } finally {
       this.submitting.set(false);
     }

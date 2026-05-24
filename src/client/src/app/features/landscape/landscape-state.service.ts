@@ -61,7 +61,7 @@ export class LandscapeStateService {
   // ─── View-specific settings ──────────────────────────────────────────
   readonly zoomLevel = signal<ZoomLevel>('yearly');
   readonly spokeMode = signal<SpokeMode>('grouped');
-  readonly positioningGrouping = signal<PositioningGrouping>('moa+therapeutic-area');
+  readonly positioningGrouping = signal<PositioningGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
 
   // ─── Shared detail panel ─────────────────────────────────────────────

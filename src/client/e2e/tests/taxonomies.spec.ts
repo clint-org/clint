@@ -6,11 +6,11 @@ import { clickRowAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Taxonomies - Therapeutic Areas', () => {
+test.describe('Taxonomies - Indications', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  const taxUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=therapeutic-areas`;
+  const taxUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=indications`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Tax TA Org');
@@ -24,11 +24,11 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
 
   test('taxonomies page loads with TA tab active', async () => {
     await page.goto(taxUrl(), { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add indication' })).toBeVisible();
   });
 
-  test('create therapeutic area', async () => {
-    await page.getByRole('button', { name: 'Add therapeutic area' }).click();
+  test('create indication', async () => {
+    await page.getByRole('button', { name: 'Add indication' }).click();
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#ta-name', 'Cardiology');
@@ -42,7 +42,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await expect(page.getByText('Cardiology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('edit therapeutic area pre-populates form', async () => {
+  test('edit indication pre-populates form', async () => {
     const row = page.locator('tr', { hasText: 'Cardiology' });
     await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
@@ -59,7 +59,7 @@ test.describe('Taxonomies - Therapeutic Areas', () => {
     await expect(page.getByText('Neurology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete therapeutic area via typed-name confirm', async () => {
+  test('delete indication via typed-name confirm', async () => {
     const row = page.locator('tr', { hasText: 'Neurology' });
     await clickRowAction(page, row, 'Delete');
 

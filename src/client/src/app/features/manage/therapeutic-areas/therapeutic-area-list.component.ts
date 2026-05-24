@@ -64,7 +64,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
         {
-          label: 'Add therapeutic area',
+          label: 'Add indication',
           icon: 'fa-solid fa-plus',
           text: true,
           callback: () => this.openCreateModal(),
@@ -148,7 +148,7 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
     await this.loadAreas();
     this.messageService.add({
       severity: 'success',
-      summary: isEdit ? 'Therapeutic area updated.' : 'Therapeutic area created.',
+      summary: isEdit ? 'Indication updated.' : 'Indication created.',
       life: 3000,
     });
   }
@@ -158,9 +158,9 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
     // T6 makes trials.therapeutic_area_id ON DELETE SET NULL). Surface that
     // explicitly in the message and require type-the-name confirmation.
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete therapeutic area',
+      header: 'Delete indication',
       entityLabel: area.name,
-      message: `Delete "${area.name}"? Trials in this area survive with no therapeutic area; they will render as (uncategorized).`,
+      message: `Delete "${area.name}"? Trials in this indication survive with no indication; they will render as (uncategorized).`,
       requireTypedConfirmation: true,
     });
     if (!ok) return;
@@ -171,14 +171,14 @@ export class TherapeuticAreaListComponent implements OnInit, OnDestroy {
       await this.loadAreas();
       this.messageService.add({
         severity: 'success',
-        summary: 'Therapeutic area deleted.',
+        summary: 'Indication deleted.',
         life: 3000,
       });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete therapeutic area. It may have associated trials.'
+          : 'Could not delete indication. It may have associated trials.'
       );
     }
   }

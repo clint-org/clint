@@ -37,12 +37,12 @@ describe('LandscapeService.getLandscapeIndex', () => {
     service = makeService({ rpc }, { get, invalidateTags: vi.fn() });
   });
 
-  it('routes therapeutic-area dimension to get_landscape_index with correct tag', async () => {
-    await service.getLandscapeIndex('space-1', 'therapeutic-area');
+  it('routes indication dimension to get_landscape_index with correct tag', async () => {
+    await service.getLandscapeIndex('space-1', 'indication');
 
     const [rpcName, , opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_landscape_index');
-    expect(opts.tags).toEqual(['space:space-1:landscape:therapeutic-area']);
+    expect(opts.tags).toEqual(['space:space-1:landscape:indication']);
   });
 
   it('routes company dimension to get_landscape_index_by_company with correct tag', async () => {

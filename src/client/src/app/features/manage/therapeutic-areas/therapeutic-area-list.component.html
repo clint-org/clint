@@ -1,5 +1,5 @@
 <app-manage-page-shell>
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search therapeutic areas..." />
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search indications..." />
 
   <p-table
     styleClass="data-table"
@@ -52,9 +52,9 @@
       <tr>
         <td colspan="3">
           @if (grid.isFiltered()) {
-            No therapeutic areas match your filters.
+            No indications match your filters.
           } @else {
-            No therapeutic areas yet. Add one to get started.
+            No indications yet. Add one to get started.
           }
         </td>
       </tr>
@@ -69,7 +69,7 @@
 </app-manage-page-shell>
 
 <p-dialog
-  [header]="editingArea() ? 'Edit therapeutic area' : 'Add therapeutic area'"
+  [header]="editingArea() ? 'Edit indication' : 'Add indication'"
   [(visible)]="modalOpen"
   [modal]="true"
   styleClass="!w-[32rem]"

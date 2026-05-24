@@ -203,17 +203,17 @@ export const routes: Routes = [
                   {
                     path: '',
                     pathMatch: 'full',
-                    redirectTo: 'by-therapy-area',
+                    redirectTo: 'by-indication',
                   },
                   {
-                    path: 'by-therapy-area',
+                    path: 'by-indication',
                     loadComponent: () =>
                       import('./features/landscape/landscape-index.component').then(
                         (m) => m.LandscapeIndexComponent
                       ),
                   },
                   {
-                    path: 'by-therapy-area/:entityId',
+                    path: 'by-indication/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
                         (m) => m.LandscapeComponent
@@ -275,14 +275,14 @@ export const routes: Routes = [
                       ),
                   },
                   {
-                    path: 'by-therapy-area',
+                    path: 'by-indication',
                     loadComponent: () =>
                       import('./features/landscape/positioning-view.component').then(
                         (m) => m.PositioningViewComponent
                       ),
                   },
                   {
-                    path: 'by-moa-therapy-area',
+                    path: 'by-moa-indication',
                     loadComponent: () =>
                       import('./features/landscape/positioning-view.component').then(
                         (m) => m.PositioningViewComponent
@@ -338,15 +338,15 @@ export const routes: Routes = [
           {
             path: 'landscape',
             pathMatch: 'full',
-            redirectTo: 'bullseye/by-therapy-area',
+            redirectTo: 'bullseye/by-indication',
           },
           {
             path: 'landscape/by-therapy-area',
-            redirectTo: 'bullseye/by-therapy-area',
+            redirectTo: 'bullseye/by-indication',
           },
           {
             path: 'landscape/by-therapy-area/:entityId',
-            redirectTo: 'bullseye/by-therapy-area/:entityId',
+            redirectTo: 'bullseye/by-indication/:entityId',
           },
           {
             path: 'landscape/by-company',
@@ -374,7 +374,7 @@ export const routes: Routes = [
           },
           {
             path: 'landscape/:therapeuticAreaId',
-            redirectTo: 'bullseye/by-therapy-area/:therapeuticAreaId',
+            redirectTo: 'bullseye/by-indication/:therapeuticAreaId',
           },
           // Manage routes (unchanged)
           {

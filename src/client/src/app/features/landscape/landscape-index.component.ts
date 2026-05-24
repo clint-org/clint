@@ -27,17 +27,17 @@ export class LandscapeIndexComponent implements OnInit {
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
-  readonly dimension = signal<BullseyeDimension>('therapeutic-area');
+  readonly dimension = signal<BullseyeDimension>('indication');
   protected readonly skeletonCards = [0, 1, 2, 3, 4, 5, 6, 7];
 
   private static parseDimension(segment: string): BullseyeDimension {
     const map: Record<string, BullseyeDimension> = {
-      'by-therapy-area': 'therapeutic-area',
+      'by-indication': 'indication',
       'by-company': 'company',
       'by-moa': 'moa',
       'by-roa': 'roa',
     };
-    return map[segment] ?? 'therapeutic-area';
+    return map[segment] ?? 'indication';
   }
 
   readonly indexData = resource({
@@ -63,7 +63,7 @@ export class LandscapeIndexComponent implements OnInit {
     // Parse dimension from this component's own URL segment (e.g. "by-company")
     const url = this.route.snapshot.url;
     const dimSegment = url.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
+      ['by-indication', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
     );
     if (dimSegment) {
       this.dimension.set(LandscapeIndexComponent.parseDimension(dimSegment.path));
@@ -76,7 +76,7 @@ export class LandscapeIndexComponent implements OnInit {
 
   protected dimensionLabel(): string {
     const labels: Record<BullseyeDimension, string> = {
-      'therapeutic-area': 'All therapeutic areas',
+      indication: 'All indications',
       company: 'All companies',
       moa: 'All mechanisms of action',
       roa: 'All routes of administration',
@@ -86,8 +86,8 @@ export class LandscapeIndexComponent implements OnInit {
 
   protected emptyMessage(): string {
     const messages: Record<BullseyeDimension, string> = {
-      'therapeutic-area':
-        'No therapeutic areas tracked yet. Add one to start building a landscape view.',
+      indication:
+        'No indications tracked yet. Add one to start building a landscape view.',
       company: 'No companies tracked yet. Add companies and products to see them here.',
       moa: 'No mechanisms of action defined yet. Add them in Manage to start.',
       roa: 'No routes of administration defined yet. Add them in Manage to start.',
@@ -97,7 +97,7 @@ export class LandscapeIndexComponent implements OnInit {
 
   protected routeSegment(): string {
     const segments: Record<BullseyeDimension, string> = {
-      'therapeutic-area': 'by-therapy-area',
+      indication: 'by-indication',
       company: 'by-company',
       moa: 'by-moa',
       roa: 'by-roa',

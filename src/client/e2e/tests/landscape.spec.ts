@@ -56,7 +56,7 @@ test.describe('Landscape bullseye', () => {
     await page.close();
   });
 
-  test('landscape index lists all therapeutic areas', async () => {
+  test('landscape index lists all indications', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-landscape-index', { timeout: 30000 });
 
@@ -76,7 +76,7 @@ test.describe('Landscape bullseye', () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'domcontentloaded' });
     await page.locator('.landscape-index-card').filter({ hasText: 'Heart Failure HFpEF' }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`));
+    await expect(page).toHaveURL(new RegExp(`/bullseye/by-indication/${taHfpefId}(\\?.*)?$`));
     await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
 
     // The chart should render one dot per qualifying product (3 total)

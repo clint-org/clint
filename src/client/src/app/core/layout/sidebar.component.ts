@@ -38,7 +38,7 @@ const NAV_SECTIONS: NavSection[] = [
         route: 'bullseye',
         icon: NAV_ICONS['bullseye'],
         children: [
-          { label: 'Therapy Area', route: 'bullseye/by-therapy-area' },
+          { label: 'Indication', route: 'bullseye/by-indication' },
           { label: 'Company', route: 'bullseye/by-company' },
           { label: 'MOA', route: 'bullseye/by-moa' },
           { label: 'ROA', route: 'bullseye/by-roa' },
@@ -50,8 +50,8 @@ const NAV_SECTIONS: NavSection[] = [
         icon: NAV_ICONS['positioning'],
         children: [
           { label: 'MOA', route: 'positioning/by-moa' },
-          { label: 'Therapy Area', route: 'positioning/by-therapy-area' },
-          { label: 'MOA + TA', route: 'positioning/by-moa-therapy-area' },
+          { label: 'Indication', route: 'positioning/by-indication' },
+          { label: 'MOA + Ind.', route: 'positioning/by-moa-indication' },
           { label: 'Company', route: 'positioning/by-company' },
           { label: 'ROA', route: 'positioning/by-roa' },
         ],

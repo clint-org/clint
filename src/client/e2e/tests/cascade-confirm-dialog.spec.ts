@@ -294,7 +294,7 @@ test.describe('Cascade confirm dialog: indication delete (no preview RPC)', () =
   let spaceId: string;
   const taName = 'CascadeTA ' + Date.now();
   // Indication list redirects to settings/taxonomies, which loads with
-  // ?tab=therapeutic-areas by default.
+  // ?tab=indications by default.
   const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies`;
 
   test.beforeAll(async ({ browser }) => {

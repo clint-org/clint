@@ -222,11 +222,11 @@ export class PositioningViewComponent implements OnInit {
   private bullseyeSegment(): string {
     const map: Record<PositioningGrouping, string> = {
       moa: 'by-moa',
-      'therapeutic-area': 'by-therapy-area',
-      'moa+therapeutic-area': 'by-therapy-area',
+      indication: 'by-indication',
+      'moa+indication': 'by-indication',
       company: 'by-company',
       roa: 'by-roa',
     };
-    return map[this.state.positioningGrouping()] ?? 'by-therapy-area';
+    return map[this.state.positioningGrouping()] ?? 'by-indication';
   }
 }

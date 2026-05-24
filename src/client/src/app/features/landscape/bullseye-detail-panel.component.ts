@@ -59,7 +59,7 @@ export class BullseyeDetailPanelComponent {
   readonly selectedAsset = input<BullseyeAsset | null>(null);
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
-  readonly dimension = input<BullseyeDimension>('therapeutic-area');
+  readonly dimension = input<BullseyeDimension>('indication');
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();

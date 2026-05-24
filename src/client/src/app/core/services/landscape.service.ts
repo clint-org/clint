@@ -24,7 +24,7 @@ export class LandscapeService {
     dimension: BullseyeDimension
   ): Promise<LandscapeIndexEntry[]> {
     const rpcMap: Record<BullseyeDimension, string> = {
-      'therapeutic-area': 'get_landscape_index',
+      indication: 'get_landscape_index',
       company: 'get_landscape_index_by_company',
       moa: 'get_landscape_index_by_moa',
       roa: 'get_landscape_index_by_roa',
@@ -49,7 +49,7 @@ export class LandscapeService {
     entityId: string
   ): Promise<BullseyeData> {
     const rpcMap: Record<BullseyeDimension, { name: string; paramKey: string }> = {
-      'therapeutic-area': { name: 'get_bullseye_data', paramKey: 'p_therapeutic_area_id' },
+      indication: { name: 'get_bullseye_data', paramKey: 'p_therapeutic_area_id' },
       company: { name: 'get_bullseye_by_company', paramKey: 'p_company_id' },
       moa: { name: 'get_bullseye_by_moa', paramKey: 'p_moa_id' },
       roa: { name: 'get_bullseye_by_roa', paramKey: 'p_roa_id' },
