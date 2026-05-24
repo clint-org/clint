@@ -2,7 +2,7 @@
 id: spec-2026-indication-model
 title: Indication Model Redesign
 slug: indication-model-redesign
-status: draft
+status: approved
 created: 2026-05-24
 updated: 2026-05-24
 ---
