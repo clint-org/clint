@@ -98,7 +98,7 @@ export class RouteOfAdministrationService {
 
   async countAssignedAssets(id: string): Promise<number> {
     const { count, error } = await this.supabase.client
-      .from('product_routes_of_administration')
+      .from('asset_routes_of_administration')
       .select('*', { count: 'exact', head: true })
       .eq('roa_id', id);
     if (error) throw error;

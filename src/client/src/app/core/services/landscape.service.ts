@@ -49,7 +49,7 @@ export class LandscapeService {
     entityId: string
   ): Promise<BullseyeData> {
     const rpcMap: Record<BullseyeDimension, { name: string; paramKey: string }> = {
-      indication: { name: 'get_bullseye_data', paramKey: 'p_therapeutic_area_id' },
+      indication: { name: 'get_bullseye_data', paramKey: 'p_indication_id' },
       company: { name: 'get_bullseye_by_company', paramKey: 'p_company_id' },
       moa: { name: 'get_bullseye_by_moa', paramKey: 'p_moa_id' },
       roa: { name: 'get_bullseye_by_roa', paramKey: 'p_roa_id' },
@@ -85,7 +85,7 @@ export class LandscapeService {
           p_grouping: grouping,
           p_count_unit: wireCountUnit,
           p_company_ids: filters.companyIds.length ? filters.companyIds : null,
-          p_product_ids: filters.assetIds.length ? filters.assetIds : null,
+          p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
           p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
           p_mechanism_of_action_ids: filters.mechanismOfActionIds.length
             ? filters.mechanismOfActionIds

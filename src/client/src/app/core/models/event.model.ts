@@ -41,7 +41,7 @@ export interface AppEvent {
   id: string;
   space_id: string;
   company_id: string | null;
-  product_id: string | null;
+  asset_id: string | null;
   trial_id: string | null;
   category_id: string;
   thread_id: string | null;

@@ -236,7 +236,7 @@ export class LinkedEntitiesPickerComponent implements OnInit {
         .limit(500),
       client.from('companies').select('id, name').eq('space_id', sid).order('name'),
       client
-        .from('products')
+        .from('assets')
         .select('id, name, company_id, companies(name)')
         .eq('space_id', sid)
         .order('name'),

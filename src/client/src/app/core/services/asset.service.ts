@@ -7,14 +7,12 @@ import { SupabaseService } from './supabase.service';
 
 /**
  * Shape returned by the nested asset fetch. The Supabase join expands
- * `product_mechanisms_of_action.moa` and `product_routes_of_administration.roa`
+ * `asset_mechanisms_of_action.moa` and `asset_routes_of_administration.roa`
  * as nested arrays; we flatten them into the Asset interface shape.
- * Note: DB table names retain the `product_*` prefix. Only the frontend
- * vocabulary has moved to "asset".
  */
 interface RawAssetRow extends Asset {
-  product_mechanisms_of_action?: { moa: { id: string; name: string } | null }[];
-  product_routes_of_administration?: {
+  asset_mechanisms_of_action?: { moa: { id: string; name: string } | null }[];
+  asset_routes_of_administration?: {
     roa: { id: string; name: string; abbreviation: string | null } | null;
   }[];
 }
@@ -22,10 +20,10 @@ interface RawAssetRow extends Asset {
 const ASSET_WITH_MOA_ROA_SELECT = `
   *,
   companies ( id, name, logo_url ),
-  product_mechanisms_of_action (
+  asset_mechanisms_of_action (
     moa:mechanisms_of_action ( id, name )
   ),
-  product_routes_of_administration (
+  asset_routes_of_administration (
     roa:routes_of_administration ( id, name, abbreviation )
   )
 `;
@@ -33,19 +31,19 @@ const ASSET_WITH_MOA_ROA_SELECT = `
 const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
 
 function flattenAsset(row: RawAssetRow): Asset {
-  const mechanisms_of_action = (row.product_mechanisms_of_action ?? [])
+  const mechanisms_of_action = (row.asset_mechanisms_of_action ?? [])
     .map((j) => j.moa)
     .filter((m): m is { id: string; name: string } => m !== null);
-  const routes_of_administration = (row.product_routes_of_administration ?? [])
+  const routes_of_administration = (row.asset_routes_of_administration ?? [])
     .map((j) => j.roa)
     .filter((r): r is { id: string; name: string; abbreviation: string | null } => r !== null);
   const {
-    product_mechanisms_of_action: _pmoa,
-    product_routes_of_administration: _proa,
+    asset_mechanisms_of_action: _amoa,
+    asset_routes_of_administration: _aroa,
     ...rest
   } = row;
-  void _pmoa;
-  void _proa;
+  void _amoa;
+  void _aroa;
   return {
     ...rest,
     mechanisms_of_action,
@@ -67,7 +65,7 @@ export class AssetService {
         tags: [`space:${spaceId}:products`],
         fetch: async () => {
           const { data, error } = await this.supabase.client
-            .from('products')
+            .from('assets')
             .select(ASSET_WITH_MOA_ROA_SELECT)
             .eq('space_id', spaceId)
             .order('display_order');
@@ -80,7 +78,7 @@ export class AssetService {
 
   async getById(id: string): Promise<Asset> {
     const { data, error } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select(ASSET_WITH_MOA_ROA_SELECT)
       .eq('id', id)
       .single();
@@ -94,7 +92,7 @@ export class AssetService {
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .insert({ ...insertable, space_id: spaceId })
       .select()
       .single();
@@ -113,7 +111,7 @@ export class AssetService {
     void _m;
     void _r;
     const { data, error } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .update(updatable)
       .eq('id', id)
       .select()
@@ -139,11 +137,11 @@ export class AssetService {
 
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('products').delete().eq('id', id);
+    const { error } = await this.supabase.client.from('assets').delete().eq('id', id);
     if (error) throw error;
     if (existing?.space_id) {
       this.cache.invalidateTags([
@@ -161,21 +159,21 @@ export class AssetService {
    */
   async setMechanisms(assetId: string, moaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', assetId)
       .single();
 
     const { error: deleteError } = await this.supabase.client
-      .from('product_mechanisms_of_action')
+      .from('asset_mechanisms_of_action')
       .delete()
-      .eq('product_id', assetId);
+      .eq('asset_id', assetId);
     if (deleteError) throw deleteError;
 
     if (moaIds.length > 0) {
-      const rows = moaIds.map((moa_id) => ({ product_id: assetId, moa_id }));
+      const rows = moaIds.map((moa_id) => ({ asset_id: assetId, moa_id }));
       const { error: insertError } = await this.supabase.client
-        .from('product_mechanisms_of_action')
+        .from('asset_mechanisms_of_action')
         .insert(rows);
       if (insertError) throw insertError;
     }
@@ -194,21 +192,21 @@ export class AssetService {
    */
   async setRoutes(assetId: string, roaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', assetId)
       .single();
 
     const { error: deleteError } = await this.supabase.client
-      .from('product_routes_of_administration')
+      .from('asset_routes_of_administration')
       .delete()
-      .eq('product_id', assetId);
+      .eq('asset_id', assetId);
     if (deleteError) throw deleteError;
 
     if (roaIds.length > 0) {
-      const rows = roaIds.map((roa_id) => ({ product_id: assetId, roa_id }));
+      const rows = roaIds.map((roa_id) => ({ asset_id: assetId, roa_id }));
       const { error: insertError } = await this.supabase.client
-        .from('product_routes_of_administration')
+        .from('asset_routes_of_administration')
         .insert(rows);
       if (insertError) throw insertError;
     }

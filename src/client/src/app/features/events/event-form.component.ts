@@ -440,7 +440,7 @@ export class EventFormComponent implements OnInit {
       thread_id: resolvedThreadId,
       thread_order: threadOrder,
       company_id: level === 'company' ? entId : null,
-      product_id: level === 'product' ? entId : null,
+      asset_id: level === 'product' ? entId : null,
       trial_id: level === 'trial' ? entId : null,
     };
 

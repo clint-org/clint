@@ -8,6 +8,7 @@ import {
   createTestTherapeuticArea,
   createTestTrial,
   createTestTrialPhase,
+  createTestAssetIndication,
 } from '../helpers/test-data.helper';
 
 test.describe('Landscape bullseye', () => {
@@ -41,13 +42,19 @@ test.describe('Landscape bullseye', () => {
     const keynoteHf = await createTestTrial(spaceId, keytrudaId, taHfpefId, 'KEYNOTE-HFpEF');
     const eliquisHf = await createTestTrial(spaceId, eliquisId, taHfpefId, 'ELIQUIS-HF');
 
-    // Phase data: Farxiga reaches LAUNCHED, others stop at P3
+    // Phase data: trial phases are clinical phases only (PRECLIN-OBS).
+    // Development status (LAUNCHED, APPROVED) lives on asset_indications.
     await createTestTrialPhase(spaceId, dapaHf, 'P3', '2018-01-01');
     await createTestTrialPhase(spaceId, deliver, 'P3', '2019-01-01');
-    await createTestTrialPhase(spaceId, deliver, 'LAUNCHED', '2023-05-05');
     await createTestTrialPhase(spaceId, keynoteHf, 'P3', '2021-01-01');
     await createTestTrialPhase(spaceId, eliquisHf, 'P2', '2020-01-01');
     await createTestTrialPhase(spaceId, eliquisHf, 'P3', '2022-01-01');
+
+    // Asset-indication rows set the bullseye ring position.
+    // Farxiga is LAUNCHED, Keytruda is P3, Eliquis is P3.
+    await createTestAssetIndication(spaceId, farxigaId, taHfpefId, 'LAUNCHED');
+    await createTestAssetIndication(spaceId, keytrudaId, taHfpefId, 'P3');
+    await createTestAssetIndication(spaceId, eliquisId, taHfpefId, 'P3');
 
     page = await authenticatedPage(browser);
   });
@@ -114,7 +121,7 @@ test.describe('Landscape bullseye', () => {
     const panel = page.locator('app-bullseye-detail-panel');
     await expect(panel).toContainText('Farxiga');
     await expect(panel).toContainText('AstraZeneca');
-    await expect(panel).toContainText('LAUNCHED');
+    await expect(panel).toContainText('PH 3');
     await expect(panel).toContainText('DAPA-HF');
     await expect(panel).toContainText('DELIVER');
   });

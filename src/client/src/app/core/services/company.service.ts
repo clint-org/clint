@@ -22,7 +22,7 @@ export class CompanyService {
         fetch: async () => {
           const { data, error } = await this.supabase.client
             .from('companies')
-            .select('*, products(*)')
+            .select('*, assets(*)')
             .eq('space_id', spaceId)
             .order('display_order');
           if (error) throw error;
@@ -35,7 +35,7 @@ export class CompanyService {
   async getById(id: string): Promise<Company> {
     const { data, error } = await this.supabase.client
       .from('companies')
-      .select('*, products(*)')
+      .select('*, assets(*)')
       .eq('id', id)
       .single();
     if (error) throw error;

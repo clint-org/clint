@@ -89,7 +89,7 @@ export class MechanismOfActionService {
 
   async countAssignedAssets(id: string): Promise<number> {
     const { count, error } = await this.supabase.client
-      .from('product_mechanisms_of_action')
+      .from('asset_mechanisms_of_action')
       .select('*', { count: 'exact', head: true })
       .eq('moa_id', id);
     if (error) throw error;

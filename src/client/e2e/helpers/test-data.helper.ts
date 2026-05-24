@@ -161,7 +161,7 @@ export const createTestTherapeuticArea = createTestIndication;
 export async function createTestTrial(
   spaceId: string,
   assetId: string,
-  _indicationId: string,
+  indicationId: string,
   name: string
 ): Promise<string> {
   const admin = getAdminClient();
@@ -177,6 +177,15 @@ export async function createTestTrial(
     .select('id')
     .single();
   if (error) throw new Error(`Failed to create trial: ${error.message}`);
+
+  // Link the trial to the indication via the condition chain:
+  // condition -> condition_indication_map -> trial_conditions
+  // Also ensure an asset_indications row exists (required for the bullseye
+  // and dashboard RPCs to include this asset/indication pair).
+  if (indicationId) {
+    await linkTrialToIndication(spaceId, data.id, indicationId);
+    await ensureAssetIndication(spaceId, assetId, indicationId);
+  }
 
   return data.id;
 }
@@ -272,6 +281,131 @@ export async function createTestRoa(spaceId: string, name: string): Promise<stri
     .single();
   if (error) throw new Error(`Failed to create ROA: ${error.message}`);
   return data.id;
+}
+
+/**
+ * Create or update an asset_indications row, which sets the development_status
+ * (ring position) for an asset in a given indication. Uses upsert so it is
+ * safe to call even if ensureAssetIndication already created a default row.
+ */
+export async function createTestAssetIndication(
+  spaceId: string,
+  assetId: string,
+  indicationId: string,
+  status: string
+): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('asset_indications')
+    .upsert(
+      {
+        space_id: spaceId,
+        asset_id: assetId,
+        indication_id: indicationId,
+        development_status: status,
+        development_status_source: 'analyst',
+        created_by: getUserId(),
+      },
+      { onConflict: 'asset_id,indication_id' }
+    )
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create asset indication: ${error.message}`);
+  return data.id;
+}
+
+/**
+ * Link a trial to an indication via the condition chain:
+ * 1. Find or create a condition for the indication
+ * 2. Link condition to indication via condition_indication_map
+ * 3. Link trial to condition via trial_conditions
+ */
+async function linkTrialToIndication(
+  spaceId: string,
+  trialId: string,
+  indicationId: string
+): Promise<void> {
+  const admin = getAdminClient();
+
+  // Get the indication name to create/find a matching condition
+  const { data: indication, error: indError } = await admin
+    .from('indications')
+    .select('name')
+    .eq('id', indicationId)
+    .single();
+  if (indError) throw new Error(`Failed to get indication: ${indError.message}`);
+
+  // Find or create a condition with the same name
+  const conditionName = indication.name;
+  let conditionId: string;
+
+  const { data: existingCondition } = await admin
+    .from('conditions')
+    .select('id')
+    .eq('space_id', spaceId)
+    .eq('name', conditionName)
+    .maybeSingle();
+
+  if (existingCondition) {
+    conditionId = existingCondition.id;
+  } else {
+    const { data: newCondition, error: condError } = await admin
+      .from('conditions')
+      .insert({ space_id: spaceId, name: conditionName, source: 'analyst' })
+      .select('id')
+      .single();
+    if (condError) throw new Error(`Failed to create condition: ${condError.message}`);
+    conditionId = newCondition.id;
+  }
+
+  // Link condition to indication (upsert-style: ignore if exists)
+  await admin
+    .from('condition_indication_map')
+    .upsert({ condition_id: conditionId, indication_id: indicationId }, {
+      onConflict: 'condition_id,indication_id',
+    });
+
+  // Link trial to condition
+  const { error: tcError } = await admin
+    .from('trial_conditions')
+    .upsert({ trial_id: trialId, condition_id: conditionId }, {
+      onConflict: 'trial_id,condition_id',
+    });
+  if (tcError) throw new Error(`Failed to link trial to condition: ${tcError.message}`);
+}
+
+/**
+ * Ensure an asset_indications row exists for the given asset + indication.
+ * If one already exists, this is a no-op. Otherwise, creates one with
+ * development_status = 'P3' (a sensible default). Tests that need a
+ * different status should call createTestAssetIndication explicitly.
+ */
+async function ensureAssetIndication(
+  spaceId: string,
+  assetId: string,
+  indicationId: string
+): Promise<void> {
+  const admin = getAdminClient();
+  const { data: existing } = await admin
+    .from('asset_indications')
+    .select('id')
+    .eq('asset_id', assetId)
+    .eq('indication_id', indicationId)
+    .maybeSingle();
+
+  if (!existing) {
+    const { error } = await admin
+      .from('asset_indications')
+      .insert({
+        space_id: spaceId,
+        asset_id: assetId,
+        indication_id: indicationId,
+        development_status: 'P3',
+        development_status_source: 'analyst',
+        created_by: getUserId(),
+      });
+    if (error) throw new Error(`Failed to create asset indication: ${error.message}`);
+  }
 }
 
 export async function navigateToSpace(

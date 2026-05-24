@@ -1,7 +1,5 @@
 /**
- * Unit tests for AssetService (called "product.service.spec.ts" in the
- * cascade-safety spec but the service file is asset.service.ts -- the
- * database table is still `products` while the UI vocabulary is "asset").
+ * Unit tests for AssetService.
  *
  * Focus: the new previewDelete surface + regression coverage for the
  * existing CRUD methods.
@@ -110,7 +108,7 @@ describe('AssetService.previewDelete', () => {
 });
 
 describe('AssetService.delete', () => {
-  it('queries the existing row, deletes from products, and invalidates cache tags', async () => {
+  it('queries the existing row, deletes from assets, and invalidates cache tags', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-1' });
     const deleteQb = makeQueryBuilder(null);
     const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(deleteQb);
@@ -122,7 +120,7 @@ describe('AssetService.delete', () => {
 
     await service.delete('p-1');
 
-    expect(from).toHaveBeenCalledWith('products');
+    expect(from).toHaveBeenCalledWith('assets');
     expect(lookupQb.eq).toHaveBeenCalledWith('id', 'p-1');
     expect(deleteQb.delete).toHaveBeenCalled();
     expect(deleteQb.eq).toHaveBeenCalledWith('id', 'p-1');
@@ -180,14 +178,14 @@ describe('AssetService.setMechanisms', () => {
 
     await service.setMechanisms('asset-1', ['moa-1', 'moa-2']);
 
-    expect(from).toHaveBeenNthCalledWith(1, 'products');
-    expect(from).toHaveBeenNthCalledWith(2, 'product_mechanisms_of_action');
-    expect(from).toHaveBeenNthCalledWith(3, 'product_mechanisms_of_action');
+    expect(from).toHaveBeenNthCalledWith(1, 'assets');
+    expect(from).toHaveBeenNthCalledWith(2, 'asset_mechanisms_of_action');
+    expect(from).toHaveBeenNthCalledWith(3, 'asset_mechanisms_of_action');
     expect(delQb.delete).toHaveBeenCalled();
-    expect(delQb.eq).toHaveBeenCalledWith('product_id', 'asset-1');
+    expect(delQb.eq).toHaveBeenCalledWith('asset_id', 'asset-1');
     expect(insQb.insert).toHaveBeenCalledWith([
-      { product_id: 'asset-1', moa_id: 'moa-1' },
-      { product_id: 'asset-1', moa_id: 'moa-2' },
+      { asset_id: 'asset-1', moa_id: 'moa-1' },
+      { asset_id: 'asset-1', moa_id: 'moa-2' },
     ]);
     expect(invalidateTags).toHaveBeenCalled();
   });
