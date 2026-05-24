@@ -129,15 +129,9 @@ export class AssetService {
     return data as Asset;
   }
 
-  /**
-   * Read-only preview of the cascade footprint of deleting this product
-   * (asset in UI vocabulary). Returns a jsonb count breakdown matching
-   * what the FK cascade + T3 / T4 triggers will remove. Backed by
-   * public.preview_product_delete (cascade-safety T7).
-   */
   async previewDelete(id: string): Promise<DeleteCountBreakdown> {
-    const { data, error } = await this.supabase.client.rpc('preview_product_delete', {
-      p_product_id: id,
+    const { data, error } = await this.supabase.client.rpc('preview_asset_delete', {
+      p_asset_id: id,
     });
     if (error) throw error;
     return (data ?? {}) as DeleteCountBreakdown;

@@ -86,14 +86,14 @@ describe('AssetService.previewDelete', () => {
     );
   });
 
-  it('calls preview_product_delete RPC with p_product_id and returns the breakdown', async () => {
+  it('calls preview_asset_delete RPC with p_asset_id and returns the breakdown', async () => {
     const breakdown = { trials: 3, trial_notes: 4 };
     rpc.mockResolvedValueOnce({ data: breakdown, error: null });
 
     const result = await service.previewDelete('product-1');
 
     expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('preview_product_delete', { p_product_id: 'product-1' });
+    expect(rpc).toHaveBeenCalledWith('preview_asset_delete', { p_asset_id: 'product-1' });
     expect(result).toEqual(breakdown);
   });
 

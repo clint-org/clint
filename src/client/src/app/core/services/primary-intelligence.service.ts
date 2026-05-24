@@ -82,15 +82,15 @@ export class PrimaryIntelligenceService {
 
   async getAssetDetail(assetId: string): Promise<IntelligenceDetailBundle | null> {
     return this.cache.get(
-      'get_product_detail_with_intelligence',
+      'get_asset_detail_with_intelligence',
       { assetId },
       {
         ttl: HEAVY_TTL,
         tags: [`asset:${assetId}:detail`],
         fetch: async () => {
           const { data, error } = await this.supabase.client.rpc(
-            'get_product_detail_with_intelligence',
-            { p_product_id: assetId }
+            'get_asset_detail_with_intelligence',
+            { p_asset_id: assetId }
           );
           if (error) throw error;
           return (data as IntelligenceDetailBundle | null) ?? null;

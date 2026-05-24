@@ -120,11 +120,11 @@ update public.palette_recents set kind = 'asset' where kind = 'product';
 -- update CHECK constraints on palette tables
 alter table public.palette_pinned drop constraint if exists palette_pinned_kind_check;
 alter table public.palette_pinned add constraint palette_pinned_kind_check
-  check (kind in ('company','asset','trial','catalyst','event'));
+  check (kind in ('company','asset','product','trial','catalyst','event'));
 
 alter table public.palette_recents drop constraint if exists palette_recents_kind_check;
 alter table public.palette_recents add constraint palette_recents_kind_check
-  check (kind in ('company','asset','trial','catalyst','event'));
+  check (kind in ('company','asset','product','trial','catalyst','event'));
 
 -- =============================================================================
 -- 9. update events polymorphic constraint

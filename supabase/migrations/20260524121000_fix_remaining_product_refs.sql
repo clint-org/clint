@@ -33,13 +33,13 @@ alter table public.primary_intelligence
   drop constraint if exists primary_intelligence_entity_type_check;
 alter table public.primary_intelligence
   add constraint primary_intelligence_entity_type_check
-  check (entity_type in ('trial', 'marker', 'company', 'asset', 'space'));
+  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product', 'space'));
 
 alter table public.primary_intelligence_links
   drop constraint if exists primary_intelligence_links_entity_type_check;
 alter table public.primary_intelligence_links
   add constraint primary_intelligence_links_entity_type_check
-  check (entity_type in ('trial', 'marker', 'company', 'asset'));
+  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product'));
 
 -- =============================================================================
 -- 1. permanently_delete_space
@@ -185,7 +185,7 @@ begin
   if p_state not in ('draft','published') then
     raise exception 'invalid state %', p_state using errcode = '22023';
   end if;
-  if p_entity_type not in ('trial', 'marker', 'company', 'asset', 'space') then
+  if p_entity_type not in ('trial', 'marker', 'company', 'asset', 'product', 'space') then
     raise exception 'invalid entity_type %', p_entity_type using errcode = '22023';
   end if;
 

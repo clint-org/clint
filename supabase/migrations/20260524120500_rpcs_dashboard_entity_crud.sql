@@ -925,7 +925,7 @@ begin
       from public.assets a where a.company_id = p_entity_id and a.space_id = p_space_id;
     select coalesce(array_agg(t.id), '{}') into v_trial_ids
       from public.trials t where t.asset_id = any(v_asset_ids) and t.space_id = p_space_id;
-  elsif p_entity_level = 'asset' and p_entity_id is not null then
+  elsif p_entity_level in ('asset', 'product') and p_entity_id is not null then
     v_asset_ids := array[p_entity_id];
     select coalesce(array_agg(t.id), '{}') into v_trial_ids
       from public.trials t where t.asset_id = p_entity_id and t.space_id = p_space_id;
