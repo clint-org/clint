@@ -6,13 +6,8 @@ import { RpcCache } from './rpc-cache.service';
 
 const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
 
-/**
- * @deprecated Use IndicationService instead. This service is kept as a thin
- * wrapper so downstream files that still import TherapeuticAreaService compile
- * while they are migrated to IndicationService.
- */
 @Injectable({ providedIn: 'root' })
-export class TherapeuticAreaService {
+export class IndicationService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
 

@@ -16,13 +16,13 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 
-import { TherapeuticArea } from '../../../core/models/trial.model';
+import { Indication } from '../../../core/models/indication.model';
 import { MechanismOfAction } from '../../../core/models/mechanism-of-action.model';
 import { RouteOfAdministration } from '../../../core/models/route-of-administration.model';
-import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
+import { IndicationService } from '../../../core/services/indication.service';
 import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
-import { TherapeuticAreaFormComponent } from '../therapeutic-areas/therapeutic-area-form.component';
+import { IndicationFormComponent } from '../therapeutic-areas/therapeutic-area-form.component';
 import { MechanismOfActionFormComponent } from '../mechanisms-of-action/mechanism-of-action-form.component';
 import { RouteOfAdministrationFormComponent } from '../routes-of-administration/route-of-administration-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
@@ -44,7 +44,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
     SelectButton,
     Dialog,
     MessageModule,
-    TherapeuticAreaFormComponent,
+    IndicationFormComponent,
     MechanismOfActionFormComponent,
     RouteOfAdministrationFormComponent,
     ManagePageShellComponent,
@@ -269,9 +269,9 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   readonly deleteError = signal<string | null>(null);
 
   // Therapeutic area state
-  readonly areas = signal<TherapeuticArea[]>([]);
+  readonly areas = signal<Indication[]>([]);
   readonly taModalOpen = signal(false);
-  readonly editingArea = signal<TherapeuticArea | null>(null);
+  readonly editingArea = signal<Indication | null>(null);
   private readonly areaMenuCache = new Map<string, MenuItem[]>();
 
   // MOA state
@@ -287,7 +287,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   private readonly roaMenuCache = new Map<string, MenuItem[]>();
 
   // Services
-  private readonly areaService = inject(TherapeuticAreaService);
+  private readonly areaService = inject(IndicationService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
   private readonly route = inject(ActivatedRoute);
@@ -393,7 +393,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   // --- Row menus ---
 
-  areaRowMenu(area: TherapeuticArea): MenuItem[] {
+  areaRowMenu(area: Indication): MenuItem[] {
     const cached = this.areaMenuCache.get(area.id);
     if (cached && cached.length > 0) return cached;
     const items: MenuItem[] = [];
@@ -486,7 +486,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  openEditAreaModal(area: TherapeuticArea): void {
+  openEditAreaModal(area: Indication): void {
     this.editingArea.set(area);
     this.taModalOpen.set(true);
   }
@@ -547,7 +547,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   // --- Delete handlers ---
 
-  async confirmDeleteArea(area: TherapeuticArea): Promise<void> {
+  async confirmDeleteArea(area: Indication): Promise<void> {
     // Cascade-safety T6 makes trials.therapeutic_area_id ON DELETE SET NULL;
     // trials survive and render (uncategorized). Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {

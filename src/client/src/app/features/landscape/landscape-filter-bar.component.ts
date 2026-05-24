@@ -151,7 +151,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
     addChips(f.companyIds, this.companyOptions(), 'companyIds', 'Company');
     addChips(f.assetIds, this.productOptions(), 'assetIds', 'Asset');
-    addChips(f.therapeuticAreaIds, this.taOptions(), 'therapeuticAreaIds', 'Therapy Area');
+    addChips(f.indicationIds, this.taOptions(), 'indicationIds', 'Therapy Area');
     addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
     addChips(f.markerCategoryIds, this.markerCategoryOptions(), 'markerCategoryIds', 'Category');
@@ -175,7 +175,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     return (
       f.companyIds.length > 0 ||
       f.assetIds.length > 0 ||
-      f.therapeuticAreaIds.length > 0 ||
+      f.indicationIds.length > 0 ||
       f.mechanismOfActionIds.length > 0 ||
       f.routeOfAdministrationIds.length > 0 ||
       f.phases.length > 0 ||
@@ -237,7 +237,7 @@ export class LandscapeFilterBarComponent implements OnInit {
       companyIds: [...before.companyIds],
       assetIds: [...before.assetIds],
       trialIds: [...before.trialIds],
-      therapeuticAreaIds: [...before.therapeuticAreaIds],
+      indicationIds: [...before.indicationIds],
       mechanismOfActionIds: [...before.mechanismOfActionIds],
       routeOfAdministrationIds: [...before.routeOfAdministrationIds],
       phases: [...before.phases],

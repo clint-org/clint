@@ -216,7 +216,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
   openTrials(assetId: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
       queryParams: buildFilterQueryParams({
-        'trial.product_id': { kind: 'select', values: [assetId] },
+        'trial.asset_id': { kind: 'select', values: [assetId] },
       }),
     });
   }
@@ -271,7 +271,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
       this.companies.set(companies);
       const counts: Record<string, number> = {};
       for (const trial of trials) {
-        counts[trial.product_id] = (counts[trial.product_id] ?? 0) + 1;
+        counts[trial.asset_id] = (counts[trial.asset_id] ?? 0) + 1;
       }
       this.trialCounts.set(counts);
       this.menuCache.clear();

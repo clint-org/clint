@@ -40,7 +40,7 @@
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
       <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-        @if (t.products; as prod) {
+        @if (t.assets; as prod) {
           <div
             class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
           >
@@ -92,11 +92,6 @@
           }
           @if (t.status) {
             <app-status-tag [label]="t.status" />
-          }
-          @if (t.therapeutic_areas?.name) {
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-              {{ t.therapeutic_areas?.name }}
-            </span>
           }
         </div>
       </header>
@@ -375,9 +370,9 @@
           </div>
           <div>
             <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Therapeutic area
+              Asset
             </dt>
-            <dd class="mt-1 text-sm text-slate-900">{{ t.therapeutic_areas?.name || '--' }}</dd>
+            <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
           </div>
           <div>
             <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">

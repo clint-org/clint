@@ -136,7 +136,7 @@ export interface LandscapeFilters {
   companyIds: string[];
   assetIds: string[];
   trialIds: string[];
-  therapeuticAreaIds: string[];
+  indicationIds: string[];
   mechanismOfActionIds: string[];
   routeOfAdministrationIds: string[];
   phases: RingPhase[];
@@ -149,7 +149,7 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   companyIds: [],
   assetIds: [],
   trialIds: [],
-  therapeuticAreaIds: [],
+  indicationIds: [],
   mechanismOfActionIds: [],
   routeOfAdministrationIds: [],
   phases: [],

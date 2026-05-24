@@ -187,7 +187,7 @@ export class LandscapeStateService {
       const nullFilters = {
         companyIds: null,
         assetIds: null,
-        therapeuticAreaIds: null,
+        indicationIds: null,
         startYear: null,
         endYear: null,
         recruitmentStatuses: null,
@@ -232,25 +232,25 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
 
   return result
     .map((c) => {
-      let products = c.products ?? [];
+      let assets = c.assets ?? [];
 
       if (filters.assetIds.length > 0) {
-        products = products.filter((p) => filters.assetIds.includes(p.id));
+        assets = assets.filter((p) => filters.assetIds.includes(p.id));
       }
       if (filters.mechanismOfActionIds.length > 0) {
-        products = products.filter((p) =>
+        assets = assets.filter((p) =>
           (p.mechanisms_of_action ?? []).some((m) => filters.mechanismOfActionIds.includes(m.id))
         );
       }
       if (filters.routeOfAdministrationIds.length > 0) {
-        products = products.filter((p) =>
+        assets = assets.filter((p) =>
           (p.routes_of_administration ?? []).some((r) =>
             filters.routeOfAdministrationIds.includes(r.id)
           )
         );
       }
 
-      products = products
+      assets = assets
         .map((p) => {
           let trials = p.trials ?? [];
 
@@ -258,12 +258,6 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             trials = trials.filter((t) => filters.trialIds.includes(t.id));
           }
 
-          if (filters.therapeuticAreaIds.length > 0) {
-            trials = trials.filter(
-              (t) =>
-                t.therapeutic_area_id && filters.therapeuticAreaIds.includes(t.therapeutic_area_id)
-            );
-          }
           if (filters.phases.length > 0) {
             trials = trials.filter(
               (t) => t.phase_type && (filters.phases as string[]).includes(t.phase_type)
@@ -297,8 +291,8 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
         })
         .filter((p): p is Asset => p !== null);
 
-      if (products.length === 0) return null;
-      return { ...c, products } as Company;
+      if (assets.length === 0) return null;
+      return { ...c, assets } as Company;
     })
     .filter((c): c is Company => c !== null);
 }
@@ -311,7 +305,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
   const catalysts: Catalyst[] = [];
 
   for (const company of companies) {
-    for (const asset of company.products ?? []) {
+    for (const asset of company.assets ?? []) {
       for (const trial of asset.trials ?? []) {
         for (const marker of trial.markers ?? []) {
           if (marker.event_date < today) continue;

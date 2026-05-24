@@ -7,7 +7,7 @@ export interface DashboardData {
 export interface DashboardFilters {
   companyIds: string[] | null;
   assetIds: string[] | null;
-  therapeuticAreaIds: string[] | null;
+  indicationIds: string[] | null;
   startYear: number | null;
   endYear: number | null;
   recruitmentStatuses: string[] | null;

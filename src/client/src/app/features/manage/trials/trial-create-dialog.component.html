@@ -91,19 +91,19 @@
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label for="trial-ta" class="text-sm font-medium text-slate-700">
-        Therapeutic area <span class="text-red-500">*</span>
+      <label for="trial-indication" class="text-sm font-medium text-slate-700">
+        Indication
       </label>
       <p-select
-        inputId="trial-ta"
-        [options]="therapeuticAreas()"
+        inputId="trial-indication"
+        [options]="indications()"
         optionLabel="name"
         optionValue="id"
-        [ngModel]="therapeuticAreaId()"
-        (ngModelChange)="therapeuticAreaId.set($event)"
-        name="ta"
-        placeholder="Select therapeutic area"
+        [ngModel]="null"
+        name="indication"
+        placeholder="Select indication (optional)"
         [filter]="true"
+        [showClear]="true"
         appendTo="body"
       />
     </div>

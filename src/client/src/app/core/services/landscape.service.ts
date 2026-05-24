@@ -86,7 +86,7 @@ export class LandscapeService {
           p_count_unit: wireCountUnit,
           p_company_ids: filters.companyIds.length ? filters.companyIds : null,
           p_product_ids: filters.assetIds.length ? filters.assetIds : null,
-          p_therapeutic_area_ids: filters.therapeuticAreaIds.length ? filters.therapeuticAreaIds : null,
+          p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
           p_mechanism_of_action_ids: filters.mechanismOfActionIds.length
             ? filters.mechanismOfActionIds
             : null,

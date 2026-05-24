@@ -92,7 +92,7 @@ export class TimelineViewComponent {
       let maxYear = -Infinity;
 
       for (const company of companies) {
-        for (const product of company.products ?? []) {
+        for (const product of company.assets ?? []) {
           for (const trial of product.trials ?? []) {
             if (trial.phase_start_date) {
               const sy = new Date(trial.phase_start_date).getFullYear();

@@ -171,7 +171,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     const rows: FlattenedTrial[] = [];
     for (const company of this.companies()) {
       let isFirstInCompany = true;
-      const assets = company.products ?? [];
+      const assets = company.assets ?? [];
       for (const asset of assets) {
         let isFirstInAsset = true;
         const trials = asset.trials ?? [];

@@ -111,7 +111,7 @@ export class LandscapeComponent implements OnInit {
     const noneActive =
       f.companyIds.length === 0 &&
       f.assetIds.length === 0 &&
-      f.therapeuticAreaIds.length === 0 &&
+      f.indicationIds.length === 0 &&
       f.mechanismOfActionIds.length === 0 &&
       f.routeOfAdministrationIds.length === 0 &&
       f.phases.length === 0 &&
@@ -241,7 +241,7 @@ export class LandscapeComponent implements OnInit {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: {
         assetIds: payload.assetId,
-        therapeuticAreaIds: payload.therapeuticAreaId,
+        indicationIds: payload.therapeuticAreaId,
       },
     });
   }
@@ -251,7 +251,7 @@ export class LandscapeComponent implements OnInit {
     const taId = this.entityId();
     const queryParams: Record<string, string> = { markerId };
     if (product) queryParams['assetIds'] = product.id;
-    if (taId) queryParams['therapeuticAreaIds'] = taId;
+    if (taId) queryParams['indicationIds'] = taId;
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams,
     });

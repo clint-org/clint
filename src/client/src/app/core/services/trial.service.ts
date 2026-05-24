@@ -8,8 +8,7 @@ import { SupabaseService } from './supabase.service';
 
 const TRIAL_SELECT = `
   *,
-  therapeutic_areas(*),
-  products(id, name, companies(id, name)),
+  assets(id, name, companies(id, name)),
   marker_assignments(
     id,
     marker_id,
@@ -50,7 +49,7 @@ export class TrialService {
           const { data, error } = await this.supabase.client
             .from('trials')
             .select(TRIAL_SELECT)
-            .eq('product_id', assetId)
+            .eq('asset_id', assetId)
             .order('display_order');
           if (error) throw error;
           return (data as Record<string, unknown>[]).map(normalizeTrial);
@@ -102,7 +101,7 @@ export class TrialService {
       `space:${spaceId}:activity`,
       `space:${spaceId}:landing-stats`,
     ];
-    const assetId = (data as Trial).product_id;
+    const assetId = (data as Trial).asset_id;
     if (assetId) tags.push(`asset:${assetId}:trials`);
     this.cache.invalidateTags(tags);
     return data as Trial;
@@ -183,7 +182,7 @@ export class TrialService {
       `trial:${id}:detail`,
       `trial:${id}:activity`,
     ];
-    if (trial.product_id) tags.push(`asset:${trial.product_id}:trials`);
+    if (trial.asset_id) tags.push(`asset:${trial.asset_id}:trials`);
     this.cache.invalidateTags(tags);
     return trial;
   }
@@ -206,7 +205,7 @@ export class TrialService {
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('trials')
-      .select('space_id, product_id')
+      .select('space_id, asset_id')
       .eq('id', id)
       .single();
     const { error } = await this.supabase.client.from('trials').delete().eq('id', id);
@@ -220,7 +219,7 @@ export class TrialService {
         `trial:${id}:detail`,
         `trial:${id}:activity`,
       ];
-      if (existing.product_id) tags.push(`asset:${existing.product_id}:trials`);
+      if (existing.asset_id) tags.push(`asset:${existing.asset_id}:trials`);
       this.cache.invalidateTags(tags);
     }
   }

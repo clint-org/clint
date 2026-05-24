@@ -22,9 +22,9 @@
           {{ c.name }}
         </h1>
       </div>
-      @if ((c.products?.length ?? 0) > 0) {
+      @if ((c.assets?.length ?? 0) > 0) {
         <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500 tabular-nums">
-          {{ c.products?.length }} {{ c.products?.length === 1 ? 'asset' : 'assets' }}
+          {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
         </p>
       }
     </header>

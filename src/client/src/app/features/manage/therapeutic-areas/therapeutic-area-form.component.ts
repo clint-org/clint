@@ -13,8 +13,8 @@ import { InputText } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
-import { TherapeuticArea } from '../../../core/models/trial.model';
-import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
+import { Indication } from '../../../core/models/indication.model';
+import { IndicationService } from '../../../core/services/indication.service';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
@@ -32,10 +32,10 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
   templateUrl: './therapeutic-area-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TherapeuticAreaFormComponent implements OnInit {
-  readonly area = input<TherapeuticArea | null>(null);
+export class IndicationFormComponent implements OnInit {
+  readonly area = input<Indication | null>(null);
 
-  readonly saved = output<TherapeuticArea>();
+  readonly saved = output<Indication>();
   readonly cancelled = output<void>();
 
   readonly name = signal('');
@@ -44,7 +44,7 @@ export class TherapeuticAreaFormComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly nameBlurred = signal(false);
 
-  private areaService = inject(TherapeuticAreaService);
+  private areaService = inject(IndicationService);
   private route = inject(ActivatedRoute);
 
   ngOnInit(): void {
@@ -71,12 +71,12 @@ export class TherapeuticAreaFormComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const payload: Partial<TherapeuticArea> = {
+      const payload: Partial<Indication> = {
         name: this.name().trim(),
         abbreviation: this.abbreviation().trim() || null,
       };
 
-      let result: TherapeuticArea;
+      let result: Indication;
       const existing = this.area();
       if (existing) {
         result = await this.areaService.update(existing.id, payload);

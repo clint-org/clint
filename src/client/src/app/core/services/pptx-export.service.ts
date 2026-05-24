@@ -194,7 +194,7 @@ export class PptxExportService {
     const rows: FlatRow[] = [];
     for (const company of companies) {
       let isFirstInCompany = true;
-      for (const product of company.products ?? []) {
+      for (const product of company.assets ?? []) {
         let isFirstInAsset = true;
         for (const trial of product.trials ?? []) {
           rows.push({
@@ -615,7 +615,7 @@ export class PptxExportService {
       { name: string; color: string; shape: string; fill_style: string; display_order: number }
     >();
     for (const company of companies) {
-      for (const product of company.products ?? []) {
+      for (const product of company.assets ?? []) {
         for (const trial of product.trials ?? []) {
           for (const marker of trial.markers ?? []) {
             if (marker.marker_types && !markerTypes.has(marker.marker_types.id)) {

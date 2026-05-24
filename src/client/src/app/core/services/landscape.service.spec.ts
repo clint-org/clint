@@ -81,7 +81,7 @@ describe('LandscapeService.getPositioningData', () => {
     const filters = {
       companyIds: ['c-1'],
       assetIds: [],
-      therapeuticAreaIds: [],
+      indicationIds: [],
       mechanismOfActionIds: [],
       routeOfAdministrationIds: [],
       phases: [],

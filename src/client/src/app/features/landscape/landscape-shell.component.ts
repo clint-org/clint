@@ -329,18 +329,18 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   private applyQueryParamFilters(): void {
     const qp = this.route.snapshot.queryParamMap;
     const assetIds = this.parseIdList(qp.get('assetIds'));
-    const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
+    const indicationIds = this.parseIdList(qp.get('indicationIds'));
     // motion-strip deep-link: phase=P3 (or any RingPhase) scopes the
     // catalysts view to trials in that phase. Parsed from comma-separated
     // values so a single param suffices for the common single-phase case.
     const phases = this.parseIdList(qp.get('phase')) as
       | import('../../core/models/landscape.model').RingPhase[]
       | null;
-    if (assetIds || therapeuticAreaIds || phases) {
+    if (assetIds || indicationIds || phases) {
       this.state.filters.update((f) => ({
         ...f,
         assetIds: assetIds ?? f.assetIds,
-        therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
+        indicationIds: indicationIds ?? f.indicationIds,
         phases: phases ?? f.phases,
       }));
     }

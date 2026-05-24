@@ -22,7 +22,7 @@ export class DashboardService {
           p_space_id: spaceId,
           p_company_ids: filters.companyIds,
           p_product_ids: filters.assetIds,
-          p_therapeutic_area_ids: filters.therapeuticAreaIds,
+          p_indication_ids: filters.indicationIds,
           p_start_year: filters.startYear,
           p_end_year: filters.endYear,
           p_recruitment_statuses: filters.recruitmentStatuses,
@@ -36,12 +36,11 @@ export class DashboardService {
 
         const companies = (data ?? []).map((c: any) => ({
           ...c,
-          products: (c.products ?? []).map((p: any) => ({
+          assets: (c.assets ?? c.products ?? []).map((p: any) => ({
             ...p,
             trials: (p.trials ?? []).map((t: any) => ({
               ...t,
               identifier: t.identifier ?? null,
-              therapeutic_areas: t.therapeutic_area ?? null,
               phase_type: t.phase_data?.phase_type ?? null,
               phase_start_date: t.phase_data?.phase_start_date ?? null,
               phase_end_date: t.phase_data?.phase_end_date ?? null,
@@ -75,7 +74,7 @@ export class DashboardService {
       `space:${spaceId}:landing-stats`,
       `space:${spaceId}:companies`,
       `space:${spaceId}:products`,
-      `space:${spaceId}:therapeutic-areas`,
+      `space:${spaceId}:indications`,
       `space:${spaceId}:moa`,
       `space:${spaceId}:roa`,
     ]);

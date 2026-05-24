@@ -516,7 +516,7 @@ function emptyFilters() {
   return {
     companyIds: null,
     assetIds: null,
-    therapeuticAreaIds: null,
+    indicationIds: null,
     startYear: null,
     endYear: null,
     recruitmentStatuses: null,
@@ -555,7 +555,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
   const out: UpcomingCatalyst[] = [];
 
   for (const company of companies) {
-    for (const asset of company.products ?? ([] as Asset[])) {
+    for (const asset of company.assets ?? ([] as Asset[])) {
       for (const trial of asset.trials ?? ([] as Trial[])) {
         for (const marker of trial.markers ?? ([] as Marker[])) {
           if (!marker.event_date) continue;
