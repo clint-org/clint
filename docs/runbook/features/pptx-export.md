@@ -14,7 +14,7 @@ The `PptxExportService` generates a `.pptx` file replicating the dashboard view 
 
 Export details:
 - Fixed slide dimensions: 13.33" x 7.5" (widescreen)
-- Label column width: 2.8" (Company / Product / Trial names)
+- Label column width: 2.8" (Company / Asset / Trial names)
 - Phase bars rendered with exact colors matching the dashboard
 - Markers rendered with shape/fill/color matching their type definitions
 - Date labels on markers with overlap detection
@@ -44,7 +44,7 @@ Export details:
     - markers
     - marker_types
     - companies
-    - products
+    - assets
   related:
     - timeline-grid
   user_facing: true

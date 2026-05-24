@@ -34,25 +34,28 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 |---|---|---|
 | `_audit_trigger_space_invite_issued` | - | spaces |
 | `_audit_trigger_space_members` | - | spaces |
+| `_auto_derive_on_trial_condition_change` | - | trials |
 | `_cleanup_orphan_marker` | markers | marker_assignments |
 | `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
+| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
+| `_seed_demo_asset_indications` | asset_indications | - |
+| `_seed_demo_assets` | assets | - |
 | `_seed_demo_companies` | companies | - |
-| `_seed_demo_events` | events | - |
+| `_seed_demo_events` | events | assets |
+| `_seed_demo_indications` | condition_indication_map, conditions, indications | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
-| `_seed_demo_moa_roa` | mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, routes_of_administration | - |
-| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | companies, events, products |
-| `_seed_demo_products` | products | - |
+| `_seed_demo_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration, mechanisms_of_action, routes_of_administration | - |
+| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | assets, companies, events |
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
-| `_seed_demo_therapeutic_areas` | therapeutic_areas | - |
 | `_seed_demo_trial_notes` | trial_notes | - |
-| `_seed_demo_trials` | trials | - |
+| `_seed_demo_trials` | trial_conditions, trials | - |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
@@ -61,9 +64,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | companies, markers, primary_intelligence, primary_intelligence_links, products, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
-| `check_subdomain_available` | - | agencies, retired_hostnames, tenants |
+| `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -78,32 +82,32 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
-| `get_activity_feed` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |
+| `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
-| `get_bullseye_by_company` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_bullseye_by_moa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
-| `get_bullseye_by_roa` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, trials |
-| `get_bullseye_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_catalyst_detail` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
+| `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
+| `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
+| `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
+| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
+| `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | companies, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trial_change_events, trial_notes, trials |
-| `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, products, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_change_events, trial_conditions, trial_notes, trials |
+| `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
-| `get_events_page_data` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, products, trials |
-| `get_landscape_index` | - | companies, products, therapeutic_areas, trials |
-| `get_landscape_index_by_company` | - | companies, products, trials |
-| `get_landscape_index_by_moa` | - | companies, mechanisms_of_action, product_mechanisms_of_action, products, trials |
-| `get_landscape_index_by_roa` | - | companies, product_routes_of_administration, products, routes_of_administration, trials |
+| `get_events_page_data` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
+| `get_landscape_index` | - | asset_indications, assets, indications |
+| `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
+| `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
+| `get_landscape_index_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration |
 | `get_latest_sync_run` | - | ctgov_sync_runs |
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
-| `get_positioning_data` | - | companies, mechanisms_of_action, product_mechanisms_of_action, product_routes_of_administration, products, routes_of_administration, therapeutic_areas, trials |
-| `get_primary_intelligence_history` | - | companies, events, markers, primary_intelligence, primary_intelligence_links, products, trials |
-| `get_product_detail_with_intelligence` | - | products |
-| `get_space_landing_stats` | - | companies, marker_assignments, marker_types, markers, primary_intelligence, products, trial_change_events, trials |
+| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trials |
+| `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
-| `get_trial_activity` | - | companies, marker_changes, marker_types, markers, products, trial_change_events, trials |
+| `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trials_for_polling` | - | trials |
 | `handle_new_user` | agency_invites, agency_members | - |
@@ -126,14 +130,14 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
-| `palette_empty_state` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
+| `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
-| `permanently_delete_space` | markers, spaces | companies, events, marker_types, materials, primary_intelligence, products, tenants, trials |
+| `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `prepare_material_upload` | - | materials |
-| `preview_company_delete` | - | companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, products, trial_notes, trials |
-| `preview_product_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, products, trial_notes, trials |
+| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
+| `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
@@ -147,9 +151,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `register_custom_domain` | tenants | agencies, retired_hostnames |
 | `register_material` | material_links, materials | spaces, tenants |
 | `release_retired_hostname` | retired_hostnames | - |
+| `reset_asset_indication_status` | asset_indications | assets |
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
-| `search_palette` | - | companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, products, trials |
+| `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `trigger_single_trial_sync` | - | trials |
@@ -181,8 +186,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 get_dashboard_data(
   p_space_id uuid,
   p_company_ids uuid[],
-  p_product_ids uuid[],
-  p_therapeutic_area_ids uuid[],
+  p_asset_ids uuid[],
+  p_indication_ids uuid[],
   p_start_year int,
   p_end_year int,
   p_recruitment_statuses text[],
@@ -191,24 +196,29 @@ get_dashboard_data(
 )
 ```
 
-The single most important function. Accepts a space ID and optional filter arrays, and returns a single nested JSON object:
+The single most important function. Accepts a space ID and optional filter arrays, and returns a single nested JSON object. The hierarchy is companies > assets > indications > trials:
 
 ```json
 {
   "companies": [
     {
       "id": "...", "name": "...", "color": "...",
-      "products": [
+      "assets": [
         {
           "id": "...", "name": "...",
-          "trials": [
+          "indications": [
             {
-              "id": "...", "name": "...",
-              "therapeutic_area": { "name": "...", "abbreviation": "..." },
-              "recruitment_status": "...", "study_type": "...", "phase": "...",
-              "phases": [{ "phase_type": "...", "start_date": "...", "end_date": "..." }],
-              "markers": [{ "event_date": "...", "marker_type": { "shape": "...", "color": "..." } }],
-              "notes": [{ "content": "..." }]
+              "id": "...", "name": "...", "abbreviation": "...",
+              "development_status": "P3",
+              "trials": [
+                {
+                  "id": "...", "name": "...",
+                  "recruitment_status": "...", "study_type": "...", "phase": "...",
+                  "phases": [{ "phase_type": "...", "start_date": "...", "end_date": "..." }],
+                  "markers": [{ "event_date": "...", "marker_type": { "shape": "...", "color": "..." } }],
+                  "notes": [{ "content": "..." }]
+                }
+              ]
             }
           ]
         }
@@ -218,7 +228,7 @@ The single most important function. Accepts a space ID and optional filter array
 }
 ```
 
-This eliminates N+1 query problems. The entire dashboard renders from a single RPC call. Uses `SECURITY INVOKER` so RLS policies apply to the calling user.
+This eliminates N+1 query problems. The entire dashboard renders from a single RPC call. Uses `SECURITY INVOKER` so RLS policies apply to the calling user. The `development_status` on each indication is auto-derived from trial phase data via the `_recompute_asset_indication_status` trigger.
 
 ### create_tenant
 
@@ -242,9 +252,9 @@ Creates a new space and adds the calling user as the space owner. Verifies the c
 seed_demo_data(p_space_id uuid) -> void
 ```
 
-Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 assets across 4 therapeutic areas, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
+Populates a space with comprehensive competitor-landscape demo fixture (8 real pharma companies, 20 assets across multiple indications, 26 trials covering all development phases, 55+ markers, 12 trial notes, 20 events with threads/links/sources, 5 published primary intelligence reads plus 2 drafts, and 3 materials with multi-entity links). Idempotent: returns early if the space already has companies.
 
-Two helpers added on 2026-05-01: `_seed_demo_primary_intelligence` (4 trial-anchored published reads, 1 space-level thematic read, 2 drafts; cross-entity links across products and companies; revisions written by the existing trigger) and `_seed_demo_materials` (briefing PPTX, priority notice PDF, ad hoc DOCX with multi-entity links). Material rows reference plausible storage paths but do not upload files; demo download flows 404 cleanly.
+Two helpers added on 2026-05-01: `_seed_demo_primary_intelligence` (4 trial-anchored published reads, 1 space-level thematic read, 2 drafts; cross-entity links across assets and companies; revisions written by the existing trigger) and `_seed_demo_materials` (briefing PPTX, priority notice PDF, ad hoc DOCX with multi-entity links). Material rows reference plausible storage paths but do not upload files; demo download flows 404 cleanly.
 
 Helper added on 2026-05-10: `_seed_demo_activity_variety` emits one demo event of every supported `event_type` (12 CT.gov-source via direct insert with payload shapes matching `_classify_change`, plus 5 analyst-source via direct insert and one `marker_removed` via the marker trigger on a deleted marker) so the Activity page renders the full row-renderer matrix on a freshly-seeded cardiometabolic space. Bails out silently if the realistic cardiometabolic seed is not loaded (no `REDEFINE-2` trial in the space).
 
@@ -564,7 +574,7 @@ flowchart TD
 
 **User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
 
-- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `products` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
+- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
 - `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
@@ -587,6 +597,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_audit_trigger_tenant_invite_issued`
 - `_audit_trigger_tenant_members`
 - `_audit_trigger_tenant_suspension`
+- `_auto_derive_asset_indication_status`
+- `_auto_derive_on_trial_condition_change`
 - `_cleanup_orphan_marker`
 - `_cleanup_polymorphic_refs`
 - `_emit_events_from_marker_change`
@@ -595,6 +607,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
+- `_recompute_asset_indication_status`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
@@ -604,10 +617,12 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `auto_join_demo_tenant_local`
 - `backfill_marker_history`
 - `build_intelligence_payload`
+- `build_intelligence_payload`
 - `claim_pending_r2_deletes`
 - `delete_material`
 - `export_audit_events_csv`
 - `finalize_material`
+- `get_asset_detail_with_intelligence`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`
@@ -623,7 +638,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
-- `get_product_detail_with_intelligence`
 - `get_space_intelligence`
 - `get_space_landing_stats`
 - `get_space_tags`
@@ -647,14 +661,15 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_touch_recent`
 - `palette_unpin`
 - `permanently_delete_space`
+- `preview_asset_delete`
 - `preview_company_delete`
-- `preview_product_delete`
 - `preview_trial_delete`
 - `record_audit_event`
 - `redact_user`
 - `redact_user_pii`
 - `referenced_in_entity`
 - `register_material`
+- `reset_asset_indication_status`
 - `restore_space`
 - `search_palette`
 - `update_material`

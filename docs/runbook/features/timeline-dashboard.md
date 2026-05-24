@@ -9,8 +9,9 @@ The primary view of the engagement once the user clicks past the home page. Disp
 
 ```
 Company
-  +-- Product
-        +-- Trial (with phase bars and event markers)
+  +-- Asset
+        +-- Indication (with development_status)
+              +-- Trial (with phase bars and event markers)
 ```
 
 **Phase Bars** -- horizontal bands that span the timeline for each trial phase. Color-coded by phase type:
@@ -28,7 +29,7 @@ Company
 
 **Notes** -- free-text annotations attached to trials, displayed inline.
 
-**Entity-page surfaces.** The timeline now mounts on trial, product, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
+**Entity-page surfaces.** The timeline now mounts on trial, asset, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
 
 ## Timeline Zoom
 
@@ -52,8 +53,8 @@ When the grid mounts, `DashboardGridComponent` computes the X position of the ea
 The `FilterPanelComponent` lets users narrow the dashboard to:
 
 - **Companies** -- show only selected companies
-- **Products** -- show only selected products
-- **Therapeutic Areas** -- filter by medical indication (Oncology, Cardiology, etc.)
+- **Assets** -- show only selected assets
+- **Indications** -- filter by indication (Oncology, Cardiology, etc.)
 - **Date Range** -- clamp the visible timeline window (start year / end year)
 - **Recruitment Status** -- Active, Completed, Suspended, etc.
 - **Study Type** -- Interventional, Observational, Expanded Access
@@ -69,14 +70,16 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
 
 ```yaml
 - id: timeline-grid
-  summary: Hierarchical Company / Product / Trial grid with phase bars and event markers across a configurable time window.
+  summary: Hierarchical Company / Asset / Indication / Trial grid with phase bars and event markers across a configurable time window.
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:
     - get_dashboard_data
   tables:
     - companies
-    - products
+    - assets
+    - indications
+    - asset_indications
     - trials
     - markers
     - marker_types
@@ -131,7 +134,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   role: viewer
   status: active
 - id: timeline-entity-page-mount
-  summary: Timeline embedded on trial, product, and company detail pages with filters locked to the entity and persistence disabled.
+  summary: Timeline embedded on trial, asset, and company detail pages with filters locked to the entity and persistence disabled.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials/:id
     - /t/:tenantId/s/:spaceId/manage/assets/:id
@@ -141,7 +144,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - get_events_page_data
   tables:
     - trials
-    - products
+    - assets
     - companies
     - events
   related:
@@ -162,15 +165,15 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   role: viewer
   status: active
 - id: timeline-filtering
-  summary: Filter panel for company, product, therapeutic area, date range, recruitment status, study type, and phase.
+  summary: Filter panel for company, asset, indication, date range, recruitment status, study type, and phase.
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:
     - get_dashboard_data
   tables:
     - companies
-    - products
-    - therapeutic_areas
+    - assets
+    - indications
   related:
     - timeline-grid
   user_facing: true

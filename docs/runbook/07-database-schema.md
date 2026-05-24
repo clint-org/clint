@@ -27,18 +27,32 @@ Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraint
 erDiagram
   AGENCIES ||--o{ AGENCY_INVITES : "agency_id"
   AGENCIES ||--o{ AGENCY_MEMBERS : "agency_id"
+  ASSETS ||--o{ ASSET_INDICATIONS : "asset_id"
+  INDICATIONS ||--o{ ASSET_INDICATIONS : "indication_id"
+  SPACES ||--o{ ASSET_INDICATIONS : "space_id"
+  ASSETS ||--o{ ASSET_MECHANISMS_OF_ACTION : "asset_id"
+  MECHANISMS_OF_ACTION ||--o{ ASSET_MECHANISMS_OF_ACTION : "moa_id"
+  ASSETS ||--o{ ASSET_ROUTES_OF_ADMINISTRATION : "asset_id"
+  ROUTES_OF_ADMINISTRATION ||--o{ ASSET_ROUTES_OF_ADMINISTRATION : "roa_id"
+  COMPANIES ||--o{ ASSETS : "company_id"
+  SPACES ||--o{ ASSETS : "space_id"
   SPACES ||--o{ COMPANIES : "space_id"
+  CONDITIONS ||--o{ CONDITION_INDICATION_MAP : "condition_id"
+  INDICATIONS ||--o{ CONDITION_INDICATION_MAP : "indication_id"
+  SPACES ||--o{ CONDITIONS : "space_id"
   SPACES ||--o{ EVENT_CATEGORIES : "space_id"
   EVENTS ||--o{ EVENT_LINKS : "source_event_id"
   EVENTS ||--o{ EVENT_LINKS : "target_event_id"
   EVENTS ||--o{ EVENT_SOURCES : "event_id"
   SPACES ||--o{ EVENT_THREADS : "space_id"
+  ASSETS ||--o{ EVENTS : "asset_id"
   EVENT_CATEGORIES ||--o{ EVENTS : "category_id"
   COMPANIES ||--o{ EVENTS : "company_id"
-  PRODUCTS ||--o{ EVENTS : "product_id"
   SPACES ||--o{ EVENTS : "space_id"
   EVENT_THREADS ||--o{ EVENTS : "thread_id"
   TRIALS ||--o{ EVENTS : "trial_id"
+  INDICATIONS ||--o{ INDICATIONS : "parent_id"
+  SPACES ||--o{ INDICATIONS : "space_id"
   MARKERS ||--o{ MARKER_ASSIGNMENTS : "marker_id"
   TRIALS ||--o{ MARKER_ASSIGNMENTS : "trial_id"
   SPACES ||--o{ MARKER_CATEGORIES : "space_id"
@@ -54,12 +68,6 @@ erDiagram
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
-  MECHANISMS_OF_ACTION ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "moa_id"
-  PRODUCTS ||--o{ PRODUCT_MECHANISMS_OF_ACTION : "product_id"
-  PRODUCTS ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "product_id"
-  ROUTES_OF_ADMINISTRATION ||--o{ PRODUCT_ROUTES_OF_ADMINISTRATION : "roa_id"
-  COMPANIES ||--o{ PRODUCTS : "company_id"
-  SPACES ||--o{ PRODUCTS : "space_id"
   SPACES ||--o{ ROUTES_OF_ADMINISTRATION : "space_id"
   SPACES ||--o{ SPACE_INVITES : "space_id"
   SPACES ||--o{ SPACE_MEMBERS : "space_id"
@@ -67,12 +75,13 @@ erDiagram
   TENANTS ||--o{ TENANT_INVITES : "tenant_id"
   TENANTS ||--o{ TENANT_MEMBERS : "tenant_id"
   AGENCIES ||--o{ TENANTS : "agency_id"
-  SPACES ||--o{ THERAPEUTIC_AREAS : "space_id"
   TRIAL_FIELD_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_change_id"
   MARKER_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_marker_change_id"
   MARKERS ||--o{ TRIAL_CHANGE_EVENTS : "marker_id"
   SPACES ||--o{ TRIAL_CHANGE_EVENTS : "space_id"
   TRIALS ||--o{ TRIAL_CHANGE_EVENTS : "trial_id"
+  CONDITIONS ||--o{ TRIAL_CONDITIONS : "condition_id"
+  TRIALS ||--o{ TRIAL_CONDITIONS : "trial_id"
   SPACES ||--o{ TRIAL_CTGOV_SNAPSHOTS : "space_id"
   TRIALS ||--o{ TRIAL_CTGOV_SNAPSHOTS : "trial_id"
   TRIAL_CTGOV_SNAPSHOTS ||--o{ TRIAL_FIELD_CHANGES : "source_snapshot_id"
@@ -80,9 +89,8 @@ erDiagram
   TRIALS ||--o{ TRIAL_FIELD_CHANGES : "trial_id"
   SPACES ||--o{ TRIAL_NOTES : "space_id"
   TRIALS ||--o{ TRIAL_NOTES : "trial_id"
-  PRODUCTS ||--o{ TRIALS : "product_id"
+  ASSETS ||--o{ TRIALS : "asset_id"
   SPACES ||--o{ TRIALS : "space_id"
-  THERAPEUTIC_AREAS ||--o{ TRIALS : "therapeutic_area_id"
   AUDIT_EVENTS { }
   CTGOV_SYNC_RUNS { }
   PLATFORM_ADMINS { }
@@ -110,7 +118,7 @@ The unique partial index `primary_intelligence_one_published` (one published row
 
 | # | File | Purpose |
 |---|---|---|
-| 1 | `20260315120000_create_core_tables.sql` | Core domain tables: companies, products, therapeutic_areas |
+| 1 | `20260315120000_create_core_tables.sql` | Core domain tables: companies, products (now assets), therapeutic_areas (now indications) |
 | 2 | `20260315120100_create_trial_tables.sql` | Trial tables: trials, trial_phases, marker_types, trial_markers, trial_notes |
 | 3 | `20260315120200_create_rls_policies.sql` | Initial user_id-based RLS policies |
 | 4 | `20260315120300_create_dashboard_function.sql` | `get_dashboard_data()` RPC with JSON aggregation |
@@ -163,8 +171,9 @@ The unique partial index `primary_intelligence_one_published` (one published row
 | 85 | `20260501080000_block_remove_agency_owner_from_tenant_members.sql` | Blocks tenant clients from evicting agency owners from their own tenant. `tenant_members_view` recreated to add `is_agency_backed` boolean (true when the row's user is also an `agency_members` owner of the tenant's parent agency). `enforce_tenant_member_guards` gains a third DELETE clause: when the target row is agency-backed and the caller is not a platform admin, raise `42501`. Without this guard, the existing trigger only blocked self-removal and last-owner removal; deleting an agency-backed row succeeded but `is_tenant_member()` retained access via the agency-owner disjunct, so the tenant client believed they had fired the agency while access was still in place. Closes follow-up #10 from the access-model retest. The agency-tenant boundary is now enforced at the DB layer regardless of UI state; only platform admins can detach a tenant from its parent agency. |
 | 86 | `20260501160000_materials_r2_cutover.sql` | Cuts over engagement materials storage from Supabase Storage to Cloudflare R2. Deletes existing test materials rows and drops the `materials` Supabase Storage bucket and its RLS policies. Adds `finalized_at timestamptz` to `materials` (NULL until the file is confirmed in R2; all list/download RPCs filter on `finalized_at IS NOT NULL`) and `idx_materials_finalized` partial index. New RPCs: `prepare_material_upload(p_material_id)` (SECURITY DEFINER; verifies uploader ownership, editor space access, and non-finalized state; returns metadata for the Worker to sign a presigned PUT URL) and `finalize_material(p_material_id)` (SECURITY DEFINER; idempotent; sets `finalized_at = now()`). Recreates `list_materials_for_space`, `list_materials_for_entity`, `list_recent_materials_for_space`, and `download_material` with `finalized_at IS NOT NULL` filter. Updates `_seed_demo_materials` helper to set `finalized_at` so demo rows are visible in the landing feed. Includes an inline assertion test that verifies the register-prepare-finalize-list-download invariant. |
 | 87+ | `20260502*`--`20260521*` | Change feed tables, CT.gov polling/ingest RPCs, marker audit triggers, surface RPCs, intelligence history, audit log system, events hierarchical scope, cascade safety (FK flips, preview delete, orphan marker cleanup, space archive lifecycle), R2 drain RPCs, user redaction, trial phase CT.gov truth |
-| 112 | `20260523120000_entity_name_uniqueness.sql` | Adds `unique(space_id, name)` constraints to `therapeutic_areas`, `marker_types`, and `event_categories`. Includes dedup safety net (keeps oldest row per group, reassigns FK references) and partial unique indexes for system rows (`space_id IS NULL, is_system = true`) on `marker_types` and `event_categories`, since PostgreSQL treats NULLs as distinct in table-level unique constraints. `mechanisms_of_action` and `routes_of_administration` already had these constraints since migration 17. |
-| -- | `20260523120000_add_updated_by_columns.sql` | Adds `updated_by uuid references auth.users(id)` to companies, products, trials, markers, events, trial_notes. Server-side BEFORE triggers enforce all audit columns from JWT |
+| 112 | `20260523120000_entity_name_uniqueness.sql` | Adds `unique(space_id, name)` constraints to `therapeutic_areas` (now indications), `marker_types`, and `event_categories`. Includes dedup safety net (keeps oldest row per group, reassigns FK references) and partial unique indexes for system rows (`space_id IS NULL, is_system = true`) on `marker_types` and `event_categories`, since PostgreSQL treats NULLs as distinct in table-level unique constraints. `mechanisms_of_action` and `routes_of_administration` already had these constraints since migration 17. |
+| -- | `20260523120000_add_updated_by_columns.sql` | Adds `updated_by uuid references auth.users(id)` to companies, assets, trials, markers, events, trial_notes. Server-side BEFORE triggers enforce all audit columns from JWT |
+| 113-124 | `20260524120000`--`20260524121100` | Indication model redesign. New tables: `indications`, `conditions`, `condition_indication_map`, `asset_indications`, `trial_conditions`. Renames `products` to `assets`, `trials.product_id` to `trials.asset_id`. Narrows `trial_phases.phase_type` constraint (removes APPROVED/LAUNCHED, now development statuses on `asset_indications`). Adds auto-derive trigger `_recompute_asset_indication_status` to compute `asset_indications.development_status` from trial phase data. Migrates data from `therapeutic_areas` to `indications`. Updates all RPCs: `get_dashboard_data` returns companies > assets > indications > trials hierarchy; `get_bullseye_data` scoped by indication_id; `get_positioning_data` grouping 'indication' replaces 'therapeutic-area'; `get_landscape_index` groups by indications; `preview_product_delete` renamed to `preview_asset_delete`; `get_product_detail_with_intelligence` renamed to `get_asset_detail_with_intelligence`. Drops `therapeutic_areas` table after data migration. |
 
 ## Core Data Tables
 
@@ -182,8 +191,8 @@ companies (
   updated_by    uuid                       -- set by Angular service on update
 )
 
--- Drug/therapy products belonging to a company
-products (
+-- Drug/therapy assets belonging to a company (renamed from products)
+assets (
   id            uuid PRIMARY KEY,
   space_id      uuid REFERENCES spaces(id) NOT NULL,
   created_by    uuid NOT NULL,
@@ -197,13 +206,62 @@ products (
   updated_by    uuid                       -- set by Angular service on update
 )
 
+-- Disease indications (replaces therapeutic_areas)
+indications (
+  id            uuid PRIMARY KEY,
+  space_id      uuid REFERENCES spaces(id) NOT NULL,
+  created_by    uuid NOT NULL,
+  name          text NOT NULL,
+  abbreviation  text,
+  parent_id     uuid REFERENCES indications(id),  -- hierarchical grouping
+  created_at    timestamptz,
+  updated_at    timestamptz
+)
+
+-- Granular disease conditions within an indication
+conditions (
+  id            uuid PRIMARY KEY,
+  space_id      uuid REFERENCES spaces(id) NOT NULL,
+  created_by    uuid NOT NULL,
+  name          text NOT NULL,
+  created_at    timestamptz,
+  updated_at    timestamptz
+)
+
+-- Many-to-many: conditions mapped to indications
+condition_indication_map (
+  id            uuid PRIMARY KEY,
+  condition_id  uuid REFERENCES conditions(id) ON DELETE CASCADE NOT NULL,
+  indication_id uuid REFERENCES indications(id) ON DELETE CASCADE NOT NULL,
+  UNIQUE (condition_id, indication_id)
+)
+
+-- Asset-indication relationship with auto-derived development status
+asset_indications (
+  id                uuid PRIMARY KEY,
+  asset_id          uuid REFERENCES assets(id) ON DELETE CASCADE NOT NULL,
+  indication_id     uuid REFERENCES indications(id) ON DELETE CASCADE NOT NULL,
+  space_id          uuid REFERENCES spaces(id) NOT NULL,
+  development_status text,  -- PRECLIN|P1|P2|P3|P4|APPROVED|LAUNCHED (auto-derived from trial phases)
+  created_at        timestamptz,
+  updated_at        timestamptz,
+  UNIQUE (asset_id, indication_id)
+)
+
+-- Trial-condition mapping (links trials to conditions for indication derivation)
+trial_conditions (
+  id            uuid PRIMARY KEY,
+  trial_id      uuid REFERENCES trials(id) ON DELETE CASCADE NOT NULL,
+  condition_id  uuid REFERENCES conditions(id) ON DELETE CASCADE NOT NULL,
+  UNIQUE (trial_id, condition_id)
+)
+
 -- Clinical trial entries
 trials (
   id                          uuid PRIMARY KEY,
   space_id                    uuid NOT NULL,
   created_by                  uuid NOT NULL,
-  product_id                  uuid REFERENCES products(id),
-  therapeutic_area_id         uuid REFERENCES therapeutic_areas(id),
+  asset_id                    uuid REFERENCES assets(id),
   name                        text NOT NULL,
   identifier                  text,
   sample_size                 integer,
@@ -263,7 +321,7 @@ trial_phases (
   space_id      uuid NOT NULL,
   created_by    uuid NOT NULL,
   trial_id      uuid REFERENCES trials(id),
-  phase_type    text NOT NULL,    -- 'P1'|'P2'|'P3'|'P4'|'OBS'
+  phase_type    text NOT NULL,    -- 'P1'|'P2'|'P3'|'P4'|'OBS' (APPROVED/LAUNCHED removed; those are development statuses on asset_indications)
   start_date    date,
   end_date      date,
   color         text,             -- hex color override
@@ -317,16 +375,7 @@ marker_types (
   updated_at    timestamptz
 )
 
--- Therapeutic area classifications
-therapeutic_areas (
-  id            uuid PRIMARY KEY,
-  space_id      uuid NOT NULL,
-  created_by    uuid NOT NULL,
-  name          text NOT NULL,     -- unique(space_id, name)
-  abbreviation  text,
-  created_at    timestamptz,
-  updated_at    timestamptz
-)
+-- Note: therapeutic_areas table has been dropped and replaced by the indications table (see above)
 ```
 
 ## Multi-Tenant Tables
@@ -545,8 +594,8 @@ materials (
 material_links (
   id            uuid PRIMARY KEY,
   material_id   uuid REFERENCES materials(id) ON DELETE CASCADE NOT NULL,
-  entity_type   text NOT NULL       -- 'trial' | 'marker' | 'company' | 'product' | 'space'
-    CHECK (entity_type IN ('trial', 'marker', 'company', 'product', 'space')),
+  entity_type   text NOT NULL       -- 'trial' | 'marker' | 'company' | 'asset' | 'space'
+    CHECK (entity_type IN ('trial', 'marker', 'company', 'asset', 'space')),
   entity_id     uuid NOT NULL,
   display_order int NOT NULL DEFAULT 0,
   created_at    timestamptz NOT NULL DEFAULT now(),
@@ -601,8 +650,9 @@ Idempotent: if `finalized_at` is already set, returns without error (safe for re
 ## Indexes
 
 Indexes on frequently filtered/joined columns:
-- `companies.space_id`, `products.space_id`, `trials.space_id`
-- `products.company_id`, `trials.product_id`, `trials.therapeutic_area_id`
+- `companies.space_id`, `assets.space_id`, `trials.space_id`
+- `assets.company_id`, `trials.asset_id`
+- `asset_indications(asset_id)`, `asset_indications(indication_id)`, `trial_conditions(trial_id)`, `trial_conditions(condition_id)`
 - `trial_phases.trial_id`, `trial_markers.trial_id`, `trial_markers.marker_type_id`
 - `trial_notes.trial_id`
 - CT.gov filter columns: `trials.recruitment_status`, `trials.study_type`, `trials.phase`, `trials.intervention_type`
@@ -614,13 +664,17 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
+- `asset_indications`
+- `asset_mechanisms_of_action`
+- `asset_routes_of_administration`
 - `audit_events`
+- `condition_indication_map`
+- `indications`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
-- `product_mechanisms_of_action`
-- `product_routes_of_administration`
 - `r2_pending_deletes`
+- `trial_conditions`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -771,4 +825,16 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260521200900_seed_demo_data_phase_sources.sql`
 - `20260523140000_add_updated_by_columns.sql`
 - `20260523150000_audit_columns_server_side.sql`
+- `20260524120000_create_indication_condition_tables.sql`
+- `20260524120100_migrate_ta_to_indications.sql`
+- `20260524120200_rename_products_to_assets.sql`
+- `20260524120300_narrow_trial_phase_constraint.sql`
+- `20260524120400_asset_indication_auto_derive.sql`
+- `20260524120500_rpcs_dashboard_entity_crud.sql`
+- `20260524120600_rpcs_bullseye_landscape_index.sql`
+- `20260524120700_rpcs_positioning.sql`
+- `20260524120800_drop_therapeutic_areas.sql`
+- `20260524120900_seed_demo_indication_model.sql`
+- `20260524121000_fix_remaining_product_refs.sql`
+- `20260524121100_fix_events_rpc_structure.sql`
 <!-- /AUTO-GEN:DRIFT -->
