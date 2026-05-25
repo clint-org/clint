@@ -5,7 +5,7 @@ spec: docs/specs/primary-intelligence/spec.md
 
 # Primary Intelligence
 
-Stout's primary analytical work product, attached to entities in an engagement. Surfaces the read on entity detail pages, the marker tooltip, the engagement landing's "Latest from Stout" feed, and the filterable browse view.
+Stout's primary analytical work product, attached to entities in an engagement. Surfaces the read on entity detail pages, the marker tooltip, the bullseye detail panel (navigable intelligence note rows with headlines, lazy-loaded via `get_intelligence_notes_for_asset`), the engagement landing's "Latest from Stout" feed, and the filterable browse view.
 
 **Data model.** Single polymorphic table `primary_intelligence` keyed on `(space_id, entity_type, entity_id)` where `entity_type in ('trial', 'marker', 'company', 'product', 'space')`. Each row carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published`, and four lifecycle columns: `publish_note` + `published_by` set at publish, `archived_at` set when a newer version publishes over this one, `withdraw_note` set when the row is withdrawn. A unique partial index on `state = 'published'` enforces one published row per anchor; drafts can co-exist. One child table: `primary_intelligence_links` (cross-entity relations with `relationship_type` and optional gloss).
 
@@ -136,6 +136,21 @@ Stout's primary analytical work product, attached to entities in an engagement. 
     - primary_intelligence
   related:
     - primary-intelligence-block
+  user_facing: true
+  role: viewer
+  status: active
+- id: primary-intelligence-bullseye-notes
+  summary: Lightweight RPC returning published intelligence notes for an asset and its trials, used by the bullseye detail panel to show navigable note rows.
+  routes:
+    - /t/:tenantId/s/:spaceId/bullseye
+  rpcs:
+    - get_intelligence_notes_for_asset
+  tables:
+    - primary_intelligence
+    - trials
+  related:
+    - bullseye-chart
+    - primary-intelligence-entity-bundle
   user_facing: true
   role: viewer
   status: active
