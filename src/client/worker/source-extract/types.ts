@@ -169,4 +169,6 @@ export interface ExtractResponse {
   warnings: string[];
   /** Maps "companies_0", "assets_1", etc. to display names resolved from inventory. */
   resolved_names: Record<string, string>;
+  /** Maps "trials_0", etc. to external identifiers (NCT IDs) resolved from inventory for existing matches. */
+  resolved_identifiers: Record<string, string>;
 }

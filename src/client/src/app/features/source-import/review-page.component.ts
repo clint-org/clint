@@ -67,6 +67,18 @@ interface FieldEdit {
                 <span class="mx-1 text-slate-300">|</span>
                 {{ p.source_date }}
               }
+              @if (p.source_url) {
+                <span class="mx-1 text-slate-300">|</span>
+                <a
+                  [href]="p.source_url"
+                  target="_blank"
+                  rel="noopener"
+                  class="text-brand-600 hover:underline"
+                  [pTooltip]="p.source_url"
+                  tooltipPosition="bottom"
+                  >{{ sourceHostname() }}</a
+                >
+              }
             </p>
           }
         </div>
@@ -227,6 +239,19 @@ interface FieldEdit {
                             class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
                             >Existing</span
                           >
+                          @let identifier = resolvedIdentifier(type, $index);
+                          @if (identifier) {
+                            <a
+                              [href]="ctgovUrl(identifier)"
+                              target="_blank"
+                              rel="noopener"
+                              class="inline-flex items-center gap-0.5 font-mono text-[10px] text-brand-600 hover:underline"
+                              pTooltip="View on ClinicalTrials.gov"
+                              tooltipPosition="top"
+                              (click)="$event.stopPropagation()"
+                              >{{ identifier }}<i class="pi pi-external-link text-[8px]"></i
+                            ></a>
+                          }
                         }
 
                         <!-- Evidence pill -->
@@ -341,7 +366,14 @@ interface FieldEdit {
                                       (change)="setTrialNctOverride($index, c.nct_id)"
                                       class="accent-brand-600"
                                     />
-                                    <span class="font-mono text-slate-600">{{ c.nct_id }}</span>
+                                    <a
+                                      [href]="ctgovUrl(c.nct_id)"
+                                      target="_blank"
+                                      rel="noopener"
+                                      class="font-mono text-brand-600 hover:underline"
+                                      (click)="$event.stopPropagation()"
+                                      >{{ c.nct_id }}</a
+                                    >
                                     <span class="truncate text-slate-500">{{ c.brief_title }}</span>
                                     <span
                                       class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
@@ -567,6 +599,25 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   hasUnsavedChanges(): boolean {
     return this.dirty() && !this.committed();
+  }
+
+  protected sourceHostname(): string {
+    const url = this.proposal()?.source_url;
+    if (!url) return '';
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  protected resolvedIdentifier(type: EntityType, index: number): string | null {
+    if (type !== 'trials') return null;
+    return this.proposal()?.resolved_identifiers?.[`${type}_${index}`] ?? null;
+  }
+
+  protected ctgovUrl(nctId: string): string {
+    return `https://clinicaltrials.gov/study/${nctId}`;
   }
 
   protected entityLabel(type: EntityType): string {

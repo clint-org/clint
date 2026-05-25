@@ -48,6 +48,7 @@ export interface SourceImportProposal {
   inventory_snapshot_hash: string;
   warnings: string[];
   resolved_names: Record<string, string>;
+  resolved_identifiers: Record<string, string>;
 }
 
 @Injectable({ providedIn: 'root' })

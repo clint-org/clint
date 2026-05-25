@@ -334,6 +334,7 @@ export async function handleSourceExtract(
         inventory_snapshot_hash: inventory.hash,
         warnings: [...warnings, 'empty_extraction'],
         resolved_names: {},
+        resolved_identifiers: {},
       } satisfies ExtractResponse,
       cors
     );
@@ -387,6 +388,16 @@ export async function handleSourceExtract(
       m.kind === 'new' ? m.name : (inventory.trials.find((it) => it.id === m.id)?.name ?? t.name);
   });
 
+  const resolvedIdentifiers: Record<string, string> = {};
+  proposals.trials.forEach((t, i) => {
+    if (t.match.kind === 'existing') {
+      const invTrial = inventory.trials.find((it) => it.id === t.match.id);
+      if (invTrial?.identifier) {
+        resolvedIdentifiers[`trials_${i}`] = invTrial.identifier;
+      }
+    }
+  });
+
   const costCents = (promptTokens * 3 + completionTokens * 15) / 1_000_000;
 
   await closeAiCall(
@@ -419,6 +430,7 @@ export async function handleSourceExtract(
     inventory_snapshot_hash: inventory.hash,
     warnings,
     resolved_names: resolvedNames,
+    resolved_identifiers: resolvedIdentifiers,
   };
 
   return json(200, response, cors);
