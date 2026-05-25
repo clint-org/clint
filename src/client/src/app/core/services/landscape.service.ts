@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import {
+  BullseyeAsset,
   BullseyeData,
   BullseyeDimension,
   CountUnit,
@@ -65,6 +66,32 @@ export class LandscapeService {
         });
         if (error) throw error;
         return data as BullseyeData;
+      },
+    });
+  }
+
+  async getBullseyeAssets(
+    spaceId: string,
+    filters: LandscapeFilters
+  ): Promise<BullseyeAsset[]> {
+    return this.cache.get('get_bullseye_assets', { spaceId, filters }, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${spaceId}:bullseye:assets`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('get_bullseye_assets', {
+          p_space_id: spaceId,
+          p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
+          p_company_ids: filters.companyIds.length ? filters.companyIds : null,
+          p_moa_ids: filters.mechanismOfActionIds.length ? filters.mechanismOfActionIds : null,
+          p_roa_ids: filters.routeOfAdministrationIds.length
+            ? filters.routeOfAdministrationIds
+            : null,
+          p_phases: filters.phases.length ? filters.phases : null,
+          p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
+        });
+        if (error) throw error;
+        const result = data as { assets: BullseyeAsset[] };
+        return result.assets;
       },
     });
   }
