@@ -163,7 +163,7 @@ export class PositioningDetailPanelComponent {
     const k = b.group_keys;
     const parts = [
       k['moa_name'],
-      k['therapeutic_area_name'],
+      k['indication_name'],
       k['company_name'],
       k['roa_name'],
     ].filter(Boolean);

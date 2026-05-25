@@ -243,7 +243,7 @@ create or replace function public.search_palette (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -369,7 +369,7 @@ create or replace function public.palette_empty_state (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_uid uuid := auth.uid();
@@ -806,8 +806,8 @@ begin
     'observed_at', ce.observed_at,
     'trial_name', t.name,
     'trial_identifier', t.identifier,
-    'asset_name', a.name,
-    'asset_id', a.id,
+    'product_name', a.name,
+    'product_id', a.id,
     'company_name', co.name,
     'company_id', co.id,
     'company_logo_url', co.logo_url,
@@ -867,8 +867,8 @@ begin
     'observed_at', ce.observed_at,
     'trial_name', t.name,
     'trial_identifier', t.identifier,
-    'asset_name', a.name,
-    'asset_id', a.id,
+    'product_name', a.name,
+    'product_id', a.id,
     'company_name', co.name,
     'company_id', co.id,
     'company_logo_url', co.logo_url,

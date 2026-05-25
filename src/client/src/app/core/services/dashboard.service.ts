@@ -36,7 +36,7 @@ export class DashboardService {
 
         const companies = (data ?? []).map((c: any) => ({
           ...c,
-          assets: (c.assets ?? c.products ?? []).map((p: any) => {
+          assets: (c.assets ?? []).map((p: any) => {
             const indicationTrials = (p.indications ?? []).flatMap((ind: any) =>
               (ind.trials ?? []).map((t: any) => ({ ...t, _indication: ind }))
             );

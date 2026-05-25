@@ -66,12 +66,6 @@ export interface BullseyeScope {
   abbreviation?: string | null;
 }
 
-export interface BullseyeTherapeuticArea {
-  id: string;
-  name: string;
-  abbreviation: string | null;
-}
-
 export interface BullseyeTrial {
   id: string;
   name: string;

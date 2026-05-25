@@ -49,7 +49,7 @@ export class PositioningTooltipComponent {
     const keys = b.group_keys;
     const parts: string[] = [];
     if (keys['moa_name']) parts.push(keys['moa_name']);
-    if (keys['therapeutic_area_name']) parts.push(keys['therapeutic_area_name']);
+    if (keys['indication_name']) parts.push(keys['indication_name']);
     if (keys['company_name']) parts.push(keys['company_name']);
     if (keys['roa_name']) parts.push(keys['roa_name']);
     return parts.length > 0 ? parts.join(' / ') : b.label;
