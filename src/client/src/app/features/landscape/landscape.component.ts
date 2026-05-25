@@ -17,6 +17,7 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
 import {
   BullseyeAsset,
   BullseyeData,
+  BullseyeSpoke,
   LandscapeFilters,
   RING_ORDER,
   RingPhase,
@@ -84,7 +85,8 @@ export class LandscapeComponent implements OnInit {
   /** Intermediate computed that holds the raw grouping result. */
   private readonly groupedResult = computed(() => {
     const assets = this.bullseyeAssets.value();
-    if (!assets?.length) return null;
+    if (!assets) return null;
+    if (assets.length === 0) return { spokes: [] as BullseyeSpoke[], duplicatedAssetIds: new Set<string>() };
     return groupAssetsIntoSpokes(assets, this.state.spokeGrouping());
   });
 

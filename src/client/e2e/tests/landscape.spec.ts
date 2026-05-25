@@ -73,10 +73,10 @@ test.describe('Landscape bullseye', () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
 
-    // Default grouping is by company; spoke labels should include our test companies
-    await expect(page.locator('app-bullseye-chart')).toContainText('AstraZeneca');
-    await expect(page.locator('app-bullseye-chart')).toContainText('Merck');
-    await expect(page.locator('app-bullseye-chart')).toContainText('Pfizer');
+    // Default grouping is by company; spoke labels render uppercase
+    await expect(page.locator('app-bullseye-chart')).toContainText('ASTRAZENECA');
+    await expect(page.locator('app-bullseye-chart')).toContainText('MERCK');
+    await expect(page.locator('app-bullseye-chart')).toContainText('PFIZER');
   });
 
   test('hovering a dot shows the product name in a tooltip', async () => {
