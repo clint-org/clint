@@ -7,12 +7,7 @@ import { buildPrompt, estimateTokens } from './prompt-builder';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
-import type {
-  ExtractRequest,
-  ExtractResponse,
-  InventorySnapshot,
-  DroppedEntity,
-} from './types';
+import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
 const LLM_TIMEOUT_MS = 25_000;
@@ -72,34 +67,54 @@ export async function handleSourceExtract(
       });
       clearTimeout(timeout);
     } catch {
-      return jsonErrorWithCode(422, 'fetch_timeout',
-        "Couldn't reach the source URL. The site may be slow or blocking us. Paste the article text instead.", cors);
+      return jsonErrorWithCode(
+        422,
+        'fetch_timeout',
+        "Couldn't reach the source URL. The site may be slow or blocking us. Paste the article text instead.",
+        cors
+      );
     }
 
     if (fetchResult.status === 403 || fetchResult.status === 429) {
-      return jsonErrorWithCode(422, 'fetch_blocked',
-        `${new URL(body.source_url).hostname} blocked our fetch. Paste the text instead.`, cors);
+      return jsonErrorWithCode(
+        422,
+        'fetch_blocked',
+        `${new URL(body.source_url).hostname} blocked our fetch. Paste the text instead.`,
+        cors
+      );
     }
     if (fetchResult.status === 404) {
       return jsonErrorWithCode(422, 'fetch_notfound', 'Page not found.', cors);
     }
     if (!fetchResult.ok) {
-      return jsonErrorWithCode(422, 'fetch_failed',
-        `Source returned HTTP ${fetchResult.status}. Paste the text instead.`, cors);
+      return jsonErrorWithCode(
+        422,
+        'fetch_failed',
+        `Source returned HTTP ${fetchResult.status}. Paste the text instead.`,
+        cors
+      );
     }
 
     const contentType = fetchResult.headers.get('Content-Type') ?? '';
     if (!contentType.includes('text/html') && !contentType.includes('text/plain')) {
-      return jsonErrorWithCode(422, 'fetch_unsupported',
-        'Only HTML pages are supported. Paste the text instead.', cors);
+      return jsonErrorWithCode(
+        422,
+        'fetch_unsupported',
+        'Only HTML pages are supported. Paste the text instead.',
+        cors
+      );
     }
 
     const rawHtml = await fetchResult.text();
     const cleaned = cleanHtml(rawHtml);
 
     if (cleaned.paywall_detected) {
-      return jsonErrorWithCode(422, 'fetch_paywall',
-        'Article appears to be behind a paywall. Paste the text instead.', cors);
+      return jsonErrorWithCode(
+        422,
+        'fetch_paywall',
+        'Article appears to be behind a paywall. Paste the text instead.',
+        cors
+      );
     }
 
     sourceText = cleaned.text;
@@ -113,8 +128,12 @@ export async function handleSourceExtract(
   }
 
   if (sourceText.length > MAX_SOURCE_BYTES) {
-    return jsonErrorWithCode(422, 'fetch_too_large',
-      'Source text exceeds the 500KB limit. Trim to the relevant sections and try again.', cors);
+    return jsonErrorWithCode(
+      422,
+      'fetch_too_large',
+      'Source text exceeds the 500KB limit. Trim to the relevant sections and try again.',
+      cors
+    );
   }
 
   const textHash = await sha256(sourceText);
@@ -125,18 +144,15 @@ export async function handleSourceExtract(
   const userId = jwtSubject(auth);
   if (!userId) return jsonError(401, 'unauthenticated', cors);
 
-  const aiCallId = await callRpc<string>(
-    cfg, null, 'ai_call_open',
-    {
-      p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
-      p_tenant_id: tenantId,
-      p_space_id: body.space_id,
-      p_user_id: userId,
-      p_model: 'claude-sonnet-4-6',
-      p_feature: 'source_extract',
-      p_input_hash: textHash,
-    }
-  );
+  const aiCallId = await callRpc<string>(cfg, null, 'ai_call_open', {
+    p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
+    p_tenant_id: tenantId,
+    p_space_id: body.space_id,
+    p_user_id: userId,
+    p_model: 'claude-sonnet-4-6',
+    p_feature: 'source_extract',
+    p_input_hash: textHash,
+  });
 
   const preflight = await callRpc<{
     allowed: boolean;
@@ -150,13 +166,22 @@ export async function handleSourceExtract(
   });
 
   if (!preflight.allowed) {
-    await closeAiCall(cfg, env, aiCallId, preflight.reason === 'daily_cost_cap' ? 'cost_capped' : 'rate_limited',
-      Date.now() - start, null, null, preflight.reason);
-    const msg = preflight.reason === 'daily_cost_cap'
-      ? 'Daily AI quota reached. Resets at midnight UTC.'
-      : preflight.reason === 'ai_disabled'
-        ? 'AI features are not enabled for this organization.'
-        : 'Too many imports in a short window. Try again shortly.';
+    await closeAiCall(
+      cfg,
+      env,
+      aiCallId,
+      preflight.reason === 'daily_cost_cap' ? 'cost_capped' : 'rate_limited',
+      Date.now() - start,
+      null,
+      null,
+      preflight.reason
+    );
+    const msg =
+      preflight.reason === 'daily_cost_cap'
+        ? 'Daily AI quota reached. Resets at midnight UTC.'
+        : preflight.reason === 'ai_disabled'
+          ? 'AI features are not enabled for this organization.'
+          : 'Too many imports in a short window. Try again shortly.';
     return jsonErrorWithCode(429, preflight.reason ?? 'rate_limited', msg, cors);
   }
 
@@ -167,9 +192,22 @@ export async function handleSourceExtract(
   const prompt = buildPrompt(sourceText, inventory);
   const totalTokens = estimateTokens(prompt.system + prompt.user);
   if (totalTokens > 190_000) {
-    await closeAiCall(cfg, env, aiCallId, 'fetch_failed', Date.now() - start, null, null, 'source_too_large_for_context');
-    return jsonErrorWithCode(422, 'source_too_large',
-      'Source text is too large for the AI context window. Trim to the relevant sections.', cors);
+    await closeAiCall(
+      cfg,
+      env,
+      aiCallId,
+      'fetch_failed',
+      Date.now() - start,
+      null,
+      null,
+      'source_too_large_for_context'
+    );
+    return jsonErrorWithCode(
+      422,
+      'source_too_large',
+      'Source text is too large for the AI context window. Trim to the relevant sections.',
+      cors
+    );
   }
 
   let rawOutput: string;
@@ -180,94 +218,197 @@ export async function handleSourceExtract(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8192,
-      system: prompt.system,
-      messages: [{ role: 'user', content: prompt.user }],
-    }, { signal: controller.signal });
+    const response = await client.messages.create(
+      {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        system: prompt.system,
+        messages: [{ role: 'user', content: prompt.user }],
+      },
+      { signal: controller.signal }
+    );
 
     clearTimeout(timeout);
 
     promptTokens = response.usage?.input_tokens ?? 0;
     completionTokens = response.usage?.output_tokens ?? 0;
 
-    const textBlock = response.content.find(b => b.type === 'text');
+    const textBlock = response.content.find((b) => b.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
-      await closeAiCall(cfg, env, aiCallId, 'parse_failed', Date.now() - start, promptTokens, completionTokens, 'no_text_block');
-      return jsonErrorWithCode(500, 'parse_failed', "Couldn't read the AI response. Try again.", cors);
+      await closeAiCall(
+        cfg,
+        env,
+        aiCallId,
+        'parse_failed',
+        Date.now() - start,
+        promptTokens,
+        completionTokens,
+        'no_text_block'
+      );
+      return jsonErrorWithCode(
+        500,
+        'parse_failed',
+        "Couldn't read the AI response. Try again.",
+        cors
+      );
     }
     rawOutput = textBlock.text;
   } catch (e) {
     const isAbort = e instanceof Error && e.name === 'AbortError';
     const outcome = isAbort ? 'timeout' : 'parse_failed';
-    const msg = isAbort ? 'Extraction timed out. Try again or use a shorter source.' : "Couldn't read the AI response. Try again.";
-    await closeAiCall(cfg, env, aiCallId, outcome, Date.now() - start, promptTokens, completionTokens, String(e));
+    const msg = isAbort
+      ? 'Extraction timed out. Try again or use a shorter source.'
+      : "Couldn't read the AI response. Try again.";
+    await closeAiCall(
+      cfg,
+      env,
+      aiCallId,
+      outcome,
+      Date.now() - start,
+      promptTokens,
+      completionTokens,
+      String(e)
+    );
     return jsonErrorWithCode(500, outcome, msg, cors);
   }
 
   const validation = validateExtraction(rawOutput, inventory, sourceText);
   if (!validation.ok) {
-    await closeAiCall(cfg, env, aiCallId, 'parse_failed', Date.now() - start, promptTokens, completionTokens, validation.reason,
-      { raw_output: rawOutput.substring(0, 5000) });
-    return jsonErrorWithCode(500, 'parse_failed', "Couldn't read the AI response. Try again.", cors);
+    await closeAiCall(
+      cfg,
+      env,
+      aiCallId,
+      'parse_failed',
+      Date.now() - start,
+      promptTokens,
+      completionTokens,
+      validation.reason,
+      { raw_output: rawOutput.substring(0, 5000) }
+    );
+    return jsonErrorWithCode(
+      500,
+      'parse_failed',
+      "Couldn't read the AI response. Try again.",
+      cors
+    );
   }
 
   const proposals = validation.result;
   const dropped = validation.dropped;
   const warnings = [...validation.warnings];
 
-  if (proposals.companies.length === 0 && proposals.assets.length === 0 &&
-      proposals.trials.length === 0 && proposals.markers.length === 0 &&
-      proposals.events.length === 0) {
-    await closeAiCall(cfg, env, aiCallId, 'success', Date.now() - start, promptTokens, completionTokens, null,
-      { proposals, dropped }, warnings);
-    return json(200, {
-      ai_call_id: aiCallId,
-      source_text: sourceText,
-      source_title: sourceTitle ?? proposals.source_title,
-      source_date: proposals.source_date,
-      source_summary: proposals.source_summary,
-      proposals,
-      dropped,
-      fuzzy_alternates: {},
-      ctgov_candidates: {},
-      inventory_snapshot_hash: inventory.hash,
-      warnings: [...warnings, 'empty_extraction'],
-    } satisfies ExtractResponse, cors);
+  if (
+    proposals.companies.length === 0 &&
+    proposals.assets.length === 0 &&
+    proposals.trials.length === 0 &&
+    proposals.markers.length === 0 &&
+    proposals.events.length === 0
+  ) {
+    await closeAiCall(
+      cfg,
+      env,
+      aiCallId,
+      'success',
+      Date.now() - start,
+      promptTokens,
+      completionTokens,
+      null,
+      { proposals, dropped },
+      warnings
+    );
+    return json(
+      200,
+      {
+        ai_call_id: aiCallId,
+        source_kind: body.source_kind,
+        source_url: sourceUrl,
+        source_text: sourceText,
+        source_text_hash: textHash,
+        source_title: sourceTitle ?? proposals.source_title,
+        source_date: proposals.source_date,
+        source_summary: proposals.source_summary,
+        proposals,
+        dropped,
+        fuzzy_alternates: {},
+        ctgov_candidates: {},
+        inventory_snapshot_hash: inventory.hash,
+        warnings: [...warnings, 'empty_extraction'],
+        resolved_names: {},
+      } satisfies ExtractResponse,
+      cors
+    );
   }
 
-  const companyNames = proposals.companies.map(c => {
+  const companyNames = proposals.companies.map((c) => {
     const m = c.match;
-    return m.kind === 'new' ? m.name : inventory.companies.find(ic => ic.id === m.id)?.name ?? '';
+    return m.kind === 'new'
+      ? m.name
+      : (inventory.companies.find((ic) => ic.id === m.id)?.name ?? '');
   });
-  const assetNames = proposals.assets.map(a => {
+  const assetNames = proposals.assets.map((a) => {
     const m = a.match;
-    return m.kind === 'new' ? m.name : inventory.assets.find(ia => ia.id === m.id)?.name ?? '';
+    return m.kind === 'new' ? m.name : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
   });
 
   const [ctgovResult, fuzzyAlternates] = await Promise.all([
     enrichWithCtgov(proposals, companyNames, assetNames, { timeout: 8000 }),
-    Promise.resolve(computeFuzzyAlternates(
-      [
-        ...proposals.companies.flatMap((c, i) => c.match.kind === 'new' ? [{ type: 'company' as const, index: i, name: c.match.name }] : []),
-        ...proposals.assets.flatMap((a, i) => a.match.kind === 'new' ? [{ type: 'asset' as const, index: i, name: a.match.name }] : []),
-        ...proposals.trials.flatMap((t, i) => t.match.kind === 'new' ? [{ type: 'trial' as const, index: i, name: t.match.name }] : []),
-      ],
-      inventory
-    )),
+    Promise.resolve(
+      computeFuzzyAlternates(
+        [
+          ...proposals.companies.flatMap((c, i) =>
+            c.match.kind === 'new'
+              ? [{ type: 'company' as const, index: i, name: c.match.name }]
+              : []
+          ),
+          ...proposals.assets.flatMap((a, i) =>
+            a.match.kind === 'new' ? [{ type: 'asset' as const, index: i, name: a.match.name }] : []
+          ),
+          ...proposals.trials.flatMap((t, i) =>
+            t.match.kind === 'new' ? [{ type: 'trial' as const, index: i, name: t.match.name }] : []
+          ),
+        ],
+        inventory
+      )
+    ),
   ]);
 
   warnings.push(...ctgovResult.warnings);
 
+  const resolvedNames: Record<string, string> = {};
+  companyNames.forEach((n, i) => {
+    resolvedNames[`companies_${i}`] = n;
+  });
+  assetNames.forEach((n, i) => {
+    resolvedNames[`assets_${i}`] = n;
+  });
+  proposals.trials.forEach((t, i) => {
+    const m = t.match;
+    resolvedNames[`trials_${i}`] =
+      m.kind === 'new' ? m.name : (inventory.trials.find((it) => it.id === m.id)?.name ?? t.name);
+  });
+
   const costCents = (promptTokens * 3 + completionTokens * 15) / 1_000_000;
 
-  await closeAiCall(cfg, env, aiCallId, 'success', Date.now() - start, promptTokens, completionTokens, null,
-    { proposals, dropped }, warnings, costCents);
+  await closeAiCall(
+    cfg,
+    env,
+    aiCallId,
+    'success',
+    Date.now() - start,
+    promptTokens,
+    completionTokens,
+    null,
+    { proposals, dropped },
+    warnings,
+    costCents
+  );
 
   const response: ExtractResponse = {
     ai_call_id: aiCallId,
+    source_kind: body.source_kind,
+    source_url: sourceUrl,
     source_text: sourceText,
+    source_text_hash: textHash,
     source_title: sourceTitle ?? proposals.source_title,
     source_date: proposals.source_date,
     source_summary: proposals.source_summary,
@@ -277,15 +418,24 @@ export async function handleSourceExtract(
     ctgov_candidates: ctgovResult.candidates,
     inventory_snapshot_hash: inventory.hash,
     warnings,
+    resolved_names: resolvedNames,
   };
 
   return json(200, response, cors);
 }
 
 async function closeAiCall(
-  cfg: SupabaseConfig, env: Env, aiCallId: string, outcome: string,
-  durationMs: number, promptTokens: number | null, completionTokens: number | null,
-  errorMessage: string | null, output?: unknown, warnings?: string[], costCents?: number
+  cfg: SupabaseConfig,
+  env: Env,
+  aiCallId: string,
+  outcome: string,
+  durationMs: number,
+  promptTokens: number | null,
+  completionTokens: number | null,
+  errorMessage: string | null,
+  output?: unknown,
+  warnings?: string[],
+  costCents?: number
 ): Promise<void> {
   try {
     await callRpc(cfg, null, 'ai_call_close', {
@@ -306,7 +456,11 @@ async function closeAiCall(
   }
 }
 
-async function fetchTenantId(cfg: SupabaseConfig, auth: string, spaceId: string): Promise<string | null> {
+async function fetchTenantId(
+  cfg: SupabaseConfig,
+  auth: string,
+  spaceId: string
+): Promise<string | null> {
   try {
     const url = `${cfg.url}/rest/v1/spaces?id=eq.${spaceId}&select=tenant_id&limit=1`;
     const res = await fetch(url, {
@@ -328,7 +482,7 @@ async function sha256(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
   const hash = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
+    .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
@@ -343,6 +497,11 @@ function jsonError(status: number, error: string, cors: Record<string, string>):
   return json(status, { error }, cors);
 }
 
-function jsonErrorWithCode(status: number, code: string, message: string, cors: Record<string, string>): Response {
+function jsonErrorWithCode(
+  status: number,
+  code: string,
+  message: string,
+  cors: Record<string, string>
+): Response {
   return json(status, { error: code, message }, cors);
 }

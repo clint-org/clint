@@ -49,13 +49,7 @@ interface FieldEdit {
 
 @Component({
   selector: 'app-review-page',
-  imports: [
-    FormsModule,
-    Checkbox,
-    ButtonModule,
-    Tooltip,
-    MessageModule,
-  ],
+  imports: [FormsModule, Checkbox, ButtonModule, Tooltip, MessageModule],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -65,9 +59,7 @@ interface FieldEdit {
       <!-- Header -->
       <header class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
         <div class="min-w-0 flex-1">
-          <h1 class="truncate text-base font-semibold text-slate-900">
-            Review import proposals
-          </h1>
+          <h1 class="truncate text-base font-semibold text-slate-900">Review import proposals</h1>
           @if (proposal(); as p) {
             <p class="mt-0.5 truncate text-xs text-slate-500">
               {{ p.source_title ?? 'Untitled source' }}
@@ -108,9 +100,10 @@ interface FieldEdit {
             Source text
           </h2>
           @if (proposal(); as p) {
-            <p class="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"
-               [innerHTML]="highlightedSourceText()">
-            </p>
+            <p
+              class="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"
+              [innerHTML]="highlightedSourceText()"
+            ></p>
           }
         </aside>
 
@@ -158,14 +151,48 @@ interface FieldEdit {
                   >
                     {{ allOfTypeSelected(type) ? 'Deselect all' : 'Select all' }}
                   </button>
+
+                  <!-- CT.gov enrichment summary for trials -->
+                  @if (type === 'trials') {
+                    @let summary = ctgovSummary();
+                    @if (summary.status === 'matched') {
+                      <span
+                        class="ml-auto inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+                      >
+                        <i class="pi pi-check-circle text-[10px]"></i>
+                        CT.gov: {{ summary.matchedCount }}
+                        {{ summary.matchedCount === 1 ? 'trial' : 'trials' }} enriched
+                      </span>
+                    } @else if (summary.status === 'no_new') {
+                      <span
+                        class="ml-auto inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                      >
+                        CT.gov: all trials already in inventory
+                      </span>
+                    } @else if (summary.status === 'no_matches') {
+                      <span
+                        class="ml-auto inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                      >
+                        CT.gov: no matches found
+                      </span>
+                    } @else if (summary.status === 'failed') {
+                      <span
+                        class="ml-auto inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+                      >
+                        <i class="pi pi-exclamation-triangle text-[10px]"></i>
+                        CT.gov: lookup failed
+                      </span>
+                    }
+                  }
                 </div>
 
                 @for (entity of items; track $index) {
                   @let key = entityKey(type, $index);
                   @let selected = isSelected(key);
                   <div
-                    class="flex items-start gap-3 rounded px-3 py-2 transition-colors"
-                    [class.bg-brand-50]="selected"
+                    class="flex items-start gap-3 rounded border border-transparent px-3 py-2 transition-colors hover:bg-slate-50"
+                    [class.bg-white]="selected"
+                    [class.border-slate-200]="selected"
                     [class.opacity-50]="!selected"
                   >
                     <p-checkbox
@@ -193,11 +220,13 @@ interface FieldEdit {
                         @if (isNew(type, $index)) {
                           <span
                             class="inline-block rounded bg-brand-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700"
-                          >New</span>
+                            >New</span
+                          >
                         } @else {
                           <span
                             class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                          >Existing</span>
+                            >Existing</span
+                          >
                         }
 
                         <!-- Evidence pill -->
@@ -205,7 +234,9 @@ interface FieldEdit {
                         @if (evidence) {
                           <button
                             class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-                            (mouseenter)="highlightedEvidence.set({ text: evidence, pinned: false })"
+                            (mouseenter)="
+                              highlightedEvidence.set({ text: evidence, pinned: false })
+                            "
                             (mouseleave)="clearHighlightIfNotPinned()"
                             (click)="highlightedEvidence.set({ text: evidence, pinned: true })"
                             pTooltip="Click to pin highlight in source pane"
@@ -258,37 +289,69 @@ interface FieldEdit {
                         </div>
                       }
 
-                      <!-- Trial-specific: CT.gov candidates -->
+                      <!-- Trial-specific: CT.gov enrichment -->
                       @if (type === 'trials') {
-                        @let candidates = ctgovCandidatesFor($index);
-                        @if (candidates.length > 0) {
-                          <div class="mt-1.5">
-                            <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
-                              NCT candidates
-                            </span>
-                            <div class="mt-1 flex flex-col gap-1">
-                              @let currentNct = getTrialNctOverride($index);
-                              @for (c of candidates; track c.nct_id) {
-                                <label
-                                  class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-slate-50"
-                                  [class.bg-brand-50]="currentNct === c.nct_id"
+                        @let ctgovStatus = trialCtgovStatus($index);
+                        @if (ctgovStatus !== 'skipped') {
+                          <div
+                            class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2"
+                          >
+                            <div class="flex items-center gap-2">
+                              <span
+                                class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                              >
+                                ClinicalTrials.gov
+                              </span>
+                              @if (ctgovStatus === 'matched') {
+                                @let candidates = ctgovCandidatesFor($index);
+                                <span
+                                  class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+                                  >{{ candidates.length }}
+                                  {{ candidates.length === 1 ? 'match' : 'matches' }}</span
                                 >
-                                  <input
-                                    type="radio"
-                                    [name]="'nct_' + $index"
-                                    [value]="c.nct_id"
-                                    [checked]="currentNct === c.nct_id"
-                                    (change)="setTrialNctOverride($index, c.nct_id)"
-                                    class="accent-brand-600"
-                                  />
-                                  <span class="font-mono text-slate-600">{{ c.nct_id }}</span>
-                                  <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                                  <span class="ml-auto font-mono text-[10px] text-slate-400">
-                                    {{ c.phase }} / {{ c.status }}
-                                  </span>
-                                </label>
+                              } @else if (ctgovStatus === 'no_matches') {
+                                <span
+                                  class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                                  >No matches</span
+                                >
+                              } @else if (ctgovStatus === 'failed') {
+                                <span
+                                  class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+                                  >Lookup failed</span
+                                >
                               }
                             </div>
+
+                            @let candidates = ctgovCandidatesFor($index);
+                            @if (candidates.length > 0) {
+                              <div class="mt-1.5 flex flex-col gap-1">
+                                @let currentNct = getTrialNctOverride($index);
+                                @for (c of candidates; track c.nct_id) {
+                                  <label
+                                    class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
+                                    [class.bg-white]="currentNct === c.nct_id"
+                                    [class.ring-1]="currentNct === c.nct_id"
+                                    [class.ring-brand-300]="currentNct === c.nct_id"
+                                  >
+                                    <input
+                                      type="radio"
+                                      [name]="'nct_' + $index"
+                                      [value]="c.nct_id"
+                                      [checked]="currentNct === c.nct_id"
+                                      (change)="setTrialNctOverride($index, c.nct_id)"
+                                      class="accent-brand-600"
+                                    />
+                                    <span class="font-mono text-slate-600">{{ c.nct_id }}</span>
+                                    <span class="truncate text-slate-500">{{ c.brief_title }}</span>
+                                    <span
+                                      class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
+                                    >
+                                      {{ c.phase }} / {{ c.status }}
+                                    </span>
+                                  </label>
+                                }
+                              </div>
+                            }
                           </div>
                         }
 
@@ -335,8 +398,7 @@ interface FieldEdit {
         class="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-3"
       >
         <span class="text-xs text-slate-500">
-          {{ selectedCount() }} of {{ totalCount() }} selected
-          ({{ selectionSummary() }})
+          {{ selectedCount() }} of {{ totalCount() }} selected ({{ selectionSummary() }})
         </span>
 
         @if (commitError()) {
@@ -404,6 +466,35 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   readonly droppedItems = computed(() => this.proposal()?.dropped ?? []);
 
+  readonly ctgovSummary = computed<{
+    status: 'matched' | 'no_matches' | 'failed' | 'no_new';
+    matchedCount: number;
+  }>(() => {
+    const p = this.proposal();
+    if (!p) return { status: 'no_new', matchedCount: 0 };
+
+    const trials = p.proposals.trials ?? [];
+    const newTrials = trials.filter((t) => {
+      const match = t['match'] as { kind: string } | undefined;
+      return !match || match.kind !== 'existing';
+    });
+
+    if (newTrials.length === 0) return { status: 'no_new', matchedCount: 0 };
+
+    const anyFailed = p.warnings.some((w) => w.startsWith('ctgov_partial:'));
+    let matchedCount = 0;
+    for (let i = 0; i < trials.length; i++) {
+      const match = trials[i]['match'] as { kind: string } | undefined;
+      if (match?.kind === 'existing') continue;
+      const candidates = p.ctgov_candidates[`trials_${i}`] ?? [];
+      if (candidates.length > 0) matchedCount++;
+    }
+
+    if (matchedCount > 0) return { status: 'matched', matchedCount };
+    if (anyFailed) return { status: 'failed', matchedCount: 0 };
+    return { status: 'no_matches', matchedCount: 0 };
+  });
+
   readonly selectedCount = computed(() => {
     const sel = this.selections();
     return Object.values(sel).filter((v) => v).length;
@@ -445,20 +536,28 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const p = this.proposal();
     if (!p) return '';
     const evidence = this.highlightedEvidence();
-    let text = escapeHtml(p.source_text);
-    if (evidence?.text) {
-      const escaped = escapeHtml(evidence.text);
-      const idx = text.toLowerCase().indexOf(escaped.toLowerCase());
-      if (idx >= 0) {
-        text =
-          text.slice(0, idx) +
-          '<mark class="bg-amber-200 rounded px-0.5">' +
-          text.slice(idx, idx + escaped.length) +
-          '</mark>' +
-          text.slice(idx + escaped.length);
-      }
-    }
-    return text;
+    const raw = p.source_text;
+    if (!evidence?.text) return escapeHtml(raw);
+
+    const needle = evidence.text
+      .replace(/\.\.\./g, '')
+      .replace(/…/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    const rawLower = raw.toLowerCase();
+    const idx = fuzzyIndexOf(rawLower, needle);
+    if (idx < 0) return escapeHtml(raw);
+
+    const endIdx = fuzzyEndIndex(rawLower, needle, idx);
+    return (
+      escapeHtml(raw.slice(0, idx)) +
+      '<mark class="bg-amber-200 rounded px-0.5">' +
+      escapeHtml(raw.slice(idx, endIdx)) +
+      '</mark>' +
+      escapeHtml(raw.slice(endIdx))
+    );
   });
 
   ngOnInit(): void {
@@ -489,12 +588,16 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected isNew(type: EntityType, index: number): boolean {
     const entity = this.entitiesOf(type)[index];
     if (!entity) return true;
-    return !entity['existing_id'];
+    const match = entity['match'] as { kind: string } | undefined;
+    if (!match) return true;
+    return match.kind !== 'existing';
   }
 
   protected entityName(type: EntityType, index: number): string {
     const entity = this.entitiesOf(type)[index];
     if (!entity) return '';
+    const resolved = this.proposal()?.resolved_names?.[`${type}_${index}`];
+    if (resolved) return resolved;
     return (entity['name'] as string) ?? (entity['title'] as string) ?? `${type} #${index + 1}`;
   }
 
@@ -508,8 +611,21 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const entity = this.entitiesOf(type)[index];
     if (!entity) return [];
     const skip = new Set([
-      'name', 'title', 'existing_id', 'evidence', 'asset_ref',
-      'company_ref', 'trial_ref', 'marker_ref',
+      'match',
+      'name',
+      'title',
+      'existing_id',
+      'evidence',
+      'asset_ref',
+      'company_ref',
+      'trial_ref',
+      'marker_ref',
+      'sponsor_ref',
+      'moa',
+      'roa',
+      'trial_refs',
+      'tags',
+      'anchor',
     ]);
     const out: FieldEdit[] = [];
     for (const [k, v] of Object.entries(entity)) {
@@ -534,8 +650,26 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return p.ctgov_candidates[`trials_${index}`] ?? [];
   }
 
+  protected trialCtgovStatus(index: number): 'matched' | 'no_matches' | 'failed' | 'skipped' {
+    const entity = this.entitiesOf('trials')[index];
+    if (!entity) return 'skipped';
+    const match = entity['match'] as { kind: string } | undefined;
+    if (match?.kind === 'existing') return 'skipped';
+
+    const p = this.proposal();
+    if (!p) return 'skipped';
+
+    const hasFailed = p.warnings.some((w) => w === `ctgov_partial:trial_${index}`);
+    if (hasFailed) return 'failed';
+
+    const candidates = p.ctgov_candidates[`trials_${index}`] ?? [];
+    return candidates.length > 0 ? 'matched' : 'no_matches';
+  }
+
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
-    return !entity['asset_ref'] && !entity['existing_id'];
+    const match = entity['match'] as { kind: string } | undefined;
+    if (match?.kind === 'existing') return false;
+    return entity['asset_ref'] == null;
   }
 
   protected toggleSelection(key: string, value: boolean): void {
@@ -604,10 +738,9 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   }
 
   protected downloadProposal(): void {
-    const blob = new Blob(
-      [JSON.stringify(this.buildExportPayload(), null, 2)],
-      { type: 'application/json' },
-    );
+    const blob = new Blob([JSON.stringify(this.buildExportPayload(), null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -718,9 +851,9 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
           const matchOvr = overrides[key];
           if (matchOvr === '__new__') {
-            delete patched['existing_id'];
+            patched['match'] = { kind: 'new', name: (patched['name'] as string) ?? '' };
           } else if (matchOvr) {
-            patched['existing_id'] = matchOvr;
+            patched['match'] = { kind: 'existing', id: matchOvr };
           }
 
           if (type === 'trials' && nctOvr[i]) {
@@ -741,10 +874,13 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
     return {
       sourceDocument: {
+        source_kind: p.source_kind,
+        source_url: p.source_url,
         source_title: p.source_title,
         source_date: p.source_date,
         source_summary: p.source_summary,
         source_text: p.source_text,
+        text_hash: p.source_text_hash,
       },
       proposal: {
         ...filteredProposals,
@@ -778,4 +914,41 @@ function escapeHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function fuzzyIndexOf(haystack: string, needle: string): number {
+  const h = haystack.replace(/\s+/g, ' ');
+  const n = needle.replace(/\s+/g, ' ').trim();
+  const pos = h.indexOf(n);
+  if (pos < 0) return -1;
+
+  let realPos = 0;
+  let normPos = 0;
+  while (normPos < pos && realPos < haystack.length) {
+    if (/\s/.test(haystack[realPos]) && realPos > 0 && /\s/.test(haystack[realPos - 1])) {
+      realPos++;
+    } else {
+      realPos++;
+      normPos++;
+    }
+  }
+  return realPos;
+}
+
+function fuzzyEndIndex(haystack: string, needle: string, startIdx: number): number {
+  const n = needle.replace(/\s+/g, ' ').trim();
+  let matched = 0;
+  let pos = startIdx;
+  while (matched < n.length && pos < haystack.length) {
+    if (haystack[pos].toLowerCase() === n[matched].toLowerCase()) {
+      matched++;
+      pos++;
+    } else if (/\s/.test(haystack[pos])) {
+      pos++;
+    } else {
+      pos++;
+      matched++;
+    }
+  }
+  return pos;
 }

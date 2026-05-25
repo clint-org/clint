@@ -44,11 +44,7 @@ const AssetSchema = z.object({
 const TrialSchema = z.object({
   match: z.discriminatedUnion('kind', [existingMatch, newEntityMatch]),
   name: z.string(),
-  phase: z
-    .enum(['phase_1', 'phase_2', 'phase_3', 'phase_4'])
-    .nullable()
-    .optional()
-    .default(null),
+  phase: z.enum(['phase_1', 'phase_2', 'phase_3', 'phase_4']).nullable().optional().default(null),
   phase_start_date: dateString.nullable().optional().default(null),
   phase_end_date: dateString.nullable().optional().default(null),
   status: z
@@ -158,7 +154,10 @@ export interface CtgovCandidate {
 
 export interface ExtractResponse {
   ai_call_id: string;
+  source_kind: 'url' | 'text';
+  source_url: string | null;
   source_text: string;
+  source_text_hash: string;
   source_title: string | null;
   source_date: string | null;
   source_summary: string;
@@ -168,4 +167,6 @@ export interface ExtractResponse {
   ctgov_candidates: Record<string, CtgovCandidate[]>;
   inventory_snapshot_hash: string;
   warnings: string[];
+  /** Maps "companies_0", "assets_1", etc. to display names resolved from inventory. */
+  resolved_names: Record<string, string>;
 }

@@ -14,14 +14,10 @@ import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { MessageModule } from 'primeng/message';
 
 import { SupabaseService } from '../../core/services/supabase.service';
-import {
-  SourceImportProposal,
-  SourceImportService,
-} from './source-import.service';
+import { SourceImportProposal, SourceImportService } from './source-import.service';
 
 type Mode = 'url' | 'text';
 type Step = 'idle' | 'fetching' | 'extracting' | 'enriching';
@@ -31,8 +27,9 @@ interface ExtractErrorBody {
   message?: string;
 }
 
-const WORKER_BASE =
-  ((window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE) ?? '';
+function workerBase(): string {
+  return (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
+}
 
 const STEP_LABELS: Record<Exclude<Step, 'idle'>, string> = {
   fetching: 'Fetching source...',
@@ -40,24 +37,12 @@ const STEP_LABELS: Record<Exclude<Step, 'idle'>, string> = {
   enriching: 'Enriching from CT.gov...',
 };
 
-const STEP_SEQUENCE: Exclude<Step, 'idle'>[] = [
-  'fetching',
-  'extracting',
-  'enriching',
-];
+const STEP_SEQUENCE: Exclude<Step, 'idle'>[] = ['fetching', 'extracting', 'enriching'];
 const STEP_TIMINGS_MS = [1200, 3000, 6000];
 
 @Component({
   selector: 'app-import-from-source-dialog',
-  imports: [
-    FormsModule,
-    Dialog,
-    ButtonModule,
-    InputText,
-    Textarea,
-    ProgressSpinner,
-    MessageModule,
-  ],
+  imports: [FormsModule, Dialog, ButtonModule, InputText, Textarea, MessageModule],
   template: `
     <p-dialog
       header="Import from source"
@@ -115,13 +100,35 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
 
         <!-- Progress steps -->
         @if (extracting()) {
-          <div class="flex items-center gap-2">
-            <p-progressspinner
-              strokeWidth="4"
-              styleClass="w-[1.25rem] h-[1.25rem]"
-              aria-label="Extracting"
-            />
-            <span class="text-sm text-slate-600">{{ stepLabel() }}</span>
+          <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+            <div class="flex flex-col gap-2">
+              @for (s of stepSequence; track s; let i = $index) {
+                <div class="flex items-center gap-2.5">
+                  @if (stepIndex() > i) {
+                    <span
+                      class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600"
+                    >
+                      <i class="pi pi-check text-[9px] text-white"></i>
+                    </span>
+                    <span class="text-xs text-slate-500">{{ stepLabels[s] }}</span>
+                  } @else if (stepIndex() === i) {
+                    <span class="relative flex h-4 w-4">
+                      <span
+                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"
+                      ></span>
+                      <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
+                    </span>
+                    <span class="text-xs font-medium text-slate-700">{{ stepLabels[s] }}</span>
+                  } @else {
+                    <span
+                      class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"
+                    >
+                    </span>
+                    <span class="text-xs text-slate-400">{{ stepLabels[s] }}</span>
+                  }
+                </div>
+              }
+            </div>
           </div>
         }
 
@@ -153,20 +160,13 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
               [outlined]="true"
               (onClick)="extract(true)"
             />
-            <p-button
-              label="Cancel"
-              size="small"
-              [text]="true"
-              (onClick)="clearDuplicate()"
-            />
+            <p-button label="Cancel" size="small" [text]="true" (onClick)="clearDuplicate()" />
           </div>
         }
 
         <!-- Rate limit countdown -->
         @if (rateLimitCountdown() > 0) {
-          <span class="text-sm text-slate-500">
-            Try again in {{ rateLimitCountdown() }}s
-          </span>
+          <span class="text-sm text-slate-500"> Try again in {{ rateLimitCountdown() }}s </span>
         }
       </div>
 
@@ -215,6 +215,12 @@ export class ImportFromSourceDialogComponent implements OnDestroy {
 
   protected readonly stepLabel = computed(
     () => STEP_LABELS[this.step() as Exclude<Step, 'idle'>] ?? ''
+  );
+
+  protected readonly stepSequence = STEP_SEQUENCE;
+  protected readonly stepLabels = STEP_LABELS;
+  protected readonly stepIndex = computed(() =>
+    STEP_SEQUENCE.indexOf(this.step() as Exclude<Step, 'idle'>)
   );
 
   protected readonly canExtract = computed(() => {
@@ -271,7 +277,7 @@ export class ImportFromSourceDialogComponent implements OnDestroy {
     }
 
     try {
-      const res = await fetch(`${WORKER_BASE}/api/source/extract`, {
+      const res = await fetch(`${workerBase()}/api/source/extract`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,17 +293,27 @@ export class ImportFromSourceDialogComponent implements OnDestroy {
       }
 
       const result = (await res.json()) as SourceImportProposal;
+      console.log('[source-import] extraction success, ai_call_id:', result.ai_call_id);
       this.sourceImportService.setProposal(result);
-      this.visible.set(false);
-      await this.router.navigate([
-        '/t', this.tenantId(),
-        's', this.spaceId(),
-        'import', result.ai_call_id, 'review',
-      ]);
-    } catch {
-      this.error.set(
-        'Could not reach the server. Check your connection and try again.'
+      console.log(
+        '[source-import] proposal set, hasProposal:',
+        this.sourceImportService.hasProposal()
       );
+      this.visible.set(false);
+      const target = [
+        '/t',
+        this.tenantId(),
+        's',
+        this.spaceId(),
+        'import',
+        result.ai_call_id,
+        'review',
+      ];
+      console.log('[source-import] navigating to:', target.join('/'));
+      const navResult = await this.router.navigate(target);
+      console.log('[source-import] navigation result:', navResult);
+    } catch {
+      this.error.set('Could not reach the server. Check your connection and try again.');
     } finally {
       this.extracting.set(false);
       this.step.set('idle');
@@ -310,9 +326,7 @@ export class ImportFromSourceDialogComponent implements OnDestroy {
     this.errorCode.set(code);
 
     if (code === 'duplicate_source') {
-      this.duplicateInfo.set(
-        body.message ?? 'This source was already imported. Continue anyway?'
-      );
+      this.duplicateInfo.set(body.message ?? 'This source was already imported. Continue anyway?');
       return;
     }
 
@@ -334,10 +348,7 @@ export class ImportFromSourceDialogComponent implements OnDestroy {
     this.clearStepTimers();
     this.step.set(STEP_SEQUENCE[0]);
     for (let i = 1; i < STEP_SEQUENCE.length; i++) {
-      const timer = setTimeout(
-        () => this.step.set(STEP_SEQUENCE[i]),
-        STEP_TIMINGS_MS[i - 1]
-      );
+      const timer = setTimeout(() => this.step.set(STEP_SEQUENCE[i]), STEP_TIMINGS_MS[i - 1]);
       this.stepTimers.push(timer);
     }
   }

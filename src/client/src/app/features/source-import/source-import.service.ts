@@ -34,7 +34,10 @@ export interface SourceImportProposals {
 
 export interface SourceImportProposal {
   ai_call_id: string;
+  source_kind: 'url' | 'text';
+  source_url: string | null;
   source_text: string;
+  source_text_hash: string;
   source_title: string | null;
   source_date: string | null;
   source_summary: string;
@@ -44,6 +47,7 @@ export interface SourceImportProposal {
   ctgov_candidates: Record<string, CtgovCandidate[]>;
   inventory_snapshot_hash: string;
   warnings: string[];
+  resolved_names: Record<string, string>;
 }
 
 @Injectable({ providedIn: 'root' })
