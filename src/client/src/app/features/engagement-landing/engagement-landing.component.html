@@ -26,22 +26,35 @@
             </span>
           }
         </div>
-        @if (inventoryTotals(); as inv) {
-          <div
-            class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
-            aria-label="Engagement inventory"
-          >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+        <div class="flex items-baseline gap-4">
+          @if (inventoryTotals(); as inv) {
+            <div
+              class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
+              aria-label="Engagement inventory"
             >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
-            >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
-            >
-          </div>
-        }
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+              >
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
+              >
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
+              >
+            </div>
+          }
+          @if (isAgencyBrand()) {
+            <button
+              pButton
+              label="Import from source"
+              [outlined]="true"
+              icon="pi pi-file-import"
+              class="text-xs"
+              aria-label="Import from source"
+              (click)="importDialogVisible.set(true)"
+            >Import from source</button>
+          }
+        </div>
       </div>
     </div>
 
@@ -509,3 +522,9 @@
     </div>
   </div>
 </div>
+
+<app-import-from-source-dialog
+  [(visible)]="importDialogVisible"
+  [spaceId]="spaceId()"
+  [tenantId]="tenantId()"
+/>

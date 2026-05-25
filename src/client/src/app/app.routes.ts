@@ -9,6 +9,8 @@ import { auditTenantGuard } from './core/guards/audit-tenant.guard';
 import { auditAgencyGuard } from './core/guards/audit-agency.guard';
 import { auditSpaceGuard } from './core/guards/audit-space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
+import { sourceImportGuard } from './core/guards/source-import.guard';
+import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 
 export const routes: Routes = [
   {
@@ -109,6 +111,13 @@ export const routes: Routes = [
             (m) => m.SuperAdminAuditLogComponent
           ),
       },
+      {
+        path: 'ai-usage',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-ai-usage.component').then(
+            (m) => m.SuperAdminAiUsageComponent
+          ),
+      },
     ],
   },
   {
@@ -176,6 +185,15 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/engagement-landing/engagement-landing.component').then(
                 (m) => m.EngagementLandingComponent
+              ),
+          },
+          {
+            path: 'import/:aiCallId/review',
+            canActivate: [sourceImportGuard],
+            canDeactivate: [sourceImportDeactivateGuard],
+            loadComponent: () =>
+              import('./features/source-import/review-page.component').then(
+                (m) => m.ReviewPageComponent
               ),
           },
           {

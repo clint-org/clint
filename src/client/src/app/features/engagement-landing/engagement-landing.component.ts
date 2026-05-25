@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -38,6 +39,7 @@ import {
 import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
+import { ImportFromSourceDialogComponent } from '../source-import/import-from-source-dialog.component';
 
 interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
@@ -88,11 +90,13 @@ interface InventoryTotals {
     DatePipe,
     LowerCasePipe,
     RouterLink,
+    ButtonModule,
     MessageModule,
     MarkerIconComponent,
     SkeletonComponent,
     RecentMaterialsWidgetComponent,
     WhatChangedWidgetComponent,
+    ImportFromSourceDialogComponent,
   ],
   templateUrl: './engagement-landing.component.html',
   host: { class: 'block h-full overflow-y-auto bg-white' },
@@ -120,6 +124,8 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
   readonly feedFilter = signal<'all' | IntelligenceEntityType>('all');
+  readonly importDialogVisible = signal(false);
+  readonly isAgencyBrand = computed(() => this.brand.kind() === 'agency');
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
