@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 import {
+  AssetIntelligenceNote,
   IntelligenceDetailBundle,
   IntelligenceEntityType,
   IntelligenceFeedResult,
@@ -167,6 +168,28 @@ export class PrimaryIntelligenceService {
           });
           if (error) throw error;
           return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
+        },
+      }
+    );
+  }
+
+  async getIntelligenceNotesForAsset(
+    spaceId: string,
+    assetId: string
+  ): Promise<AssetIntelligenceNote[]> {
+    return this.cache.get(
+      'get_intelligence_notes_for_asset',
+      { spaceId, assetId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:primary-intelligence`, `asset:${assetId}:detail`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client.rpc(
+            'get_intelligence_notes_for_asset',
+            { p_space_id: spaceId, p_asset_id: assetId }
+          );
+          if (error) throw error;
+          return (data as AssetIntelligenceNote[]) ?? [];
         },
       }
     );
