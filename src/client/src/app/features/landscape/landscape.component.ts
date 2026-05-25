@@ -25,9 +25,9 @@ import {
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
+import { BullseyeControlsPanelComponent } from './bullseye-controls-panel.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
-import { CompetitiveReadBarComponent } from './competitive-read-bar.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 
@@ -35,9 +35,9 @@ import { LandscapeStateService } from './landscape-state.service';
   selector: 'app-landscape',
   imports: [
     BullseyeChartComponent,
+    BullseyeControlsPanelComponent,
     BullseyeDetailPanelComponent,
     BullseyeTooltipComponent,
-    CompetitiveReadBarComponent,
     RouterLink,
     ButtonModule,
     MessageModule,
