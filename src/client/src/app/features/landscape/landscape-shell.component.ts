@@ -15,8 +15,7 @@ import { filter } from 'rxjs';
 import {
   BullseyeDimension,
   LandscapeIndexEntry,
-  dimensionToSegment,
-  segmentToDimension,
+  SpokeGrouping,
   groupingToSegment,
   segmentToGrouping,
   POSITIONING_SEGMENTS,
@@ -103,31 +102,37 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly subTabEffect = effect(() => {
     const mode = this.viewMode();
     if (mode === 'bullseye') {
-      const seg = dimensionToSegment(this.dimension());
+      const grouping = this.state.spokeGrouping();
       this.topbarState.subTabs.set([
         {
-          label: 'Indication',
-          value: 'by-indication',
-          active: seg === 'by-indication',
-          tooltip: 'Spokes grouped by indication',
-        },
-        {
           label: 'Company',
-          value: 'by-company',
-          active: seg === 'by-company',
+          value: 'company',
+          active: grouping === 'company',
           tooltip: 'Spokes grouped by company',
         },
         {
+          label: 'Indication',
+          value: 'indication',
+          active: grouping === 'indication',
+          tooltip: 'Spokes grouped by indication',
+        },
+        {
           label: 'MOA',
-          value: 'by-moa',
-          active: seg === 'by-moa',
+          value: 'moa',
+          active: grouping === 'moa',
           tooltip: 'Spokes grouped by mechanism of action',
         },
         {
           label: 'ROA',
-          value: 'by-roa',
-          active: seg === 'by-roa',
+          value: 'roa',
+          active: grouping === 'roa',
           tooltip: 'Spokes grouped by route of administration',
+        },
+        {
+          label: 'Asset',
+          value: 'asset',
+          active: grouping === 'asset',
+          tooltip: 'Each asset as its own spoke',
         },
       ]);
     } else if (mode === 'positioning') {
@@ -209,10 +214,11 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // (e.g. bullseye "Open in Timeline" links).
     this.applyQueryParamFilters();
 
-    // Sub-tab click handler: navigates for both Bullseye and Positioning.
+    // Sub-tab click handler: bullseye updates spokeGrouping signal directly
+    // (no navigation); positioning still navigates to dimension routes.
     this.topbarState.onSubTabClick.set((value: string) => {
       if (this.viewMode() === 'bullseye') {
-        this.router.navigate([...this.spaceBase(), 'bullseye', value]);
+        this.state.spokeGrouping.set(value as SpokeGrouping);
       } else if (this.viewMode() === 'positioning') {
         this.router.navigate([...this.spaceBase(), 'positioning', value]);
       }
@@ -240,16 +246,23 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   }
 
   onEntityChange(entityId: string | null): void {
-    if (entityId) {
-      this.router.navigate([
-        ...this.spaceBase(),
-        'bullseye',
-        dimensionToSegment(this.dimension()),
-        entityId,
-      ]);
-    } else {
-      this.router.navigate([...this.spaceBase(), 'bullseye', dimensionToSegment(this.dimension())]);
-    }
+    // In the new query-param model, entity selection sets a scope filter
+    // on the current dimension and navigates to /bullseye with query params.
+    const dim = this.dimension();
+    const paramKey =
+      dim === 'indication'
+        ? 'indications'
+        : dim === 'company'
+          ? 'companies'
+          : dim === 'moa'
+            ? 'moas'
+            : 'roas';
+    const queryParams: Record<string, string | null> = { [paramKey]: entityId };
+    this.router.navigate([...this.spaceBase(), 'bullseye'], {
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   onExportClick(): void {
@@ -291,10 +304,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const parentSegments = child.snapshot.parent?.url.map((s) => s.path) ?? [];
     const allSegments = [...parentSegments, ...segments];
 
-    const dimSegment = allSegments.find((s) =>
-      ['by-indication', 'by-company', 'by-moa', 'by-roa'].includes(s)
-    );
-
     const posSegment = allSegments.find((s) =>
       (POSITIONING_SEGMENTS as readonly string[]).includes(s)
     );
@@ -305,13 +314,17 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       if (posSegment) {
         this.state.positioningGrouping.set(segmentToGrouping(posSegment));
       }
-    } else if (dimSegment) {
-      this.viewMode.set('bullseye');
-      this.dimension.set(segmentToDimension(dimSegment));
-      this.entityId.set(child.snapshot.paramMap.get('entityId'));
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');
       this.entityId.set(null);
+      // Sync spokeGrouping from the ?group= query param if present
+      const groupParam = this.route.snapshot.queryParamMap.get('group');
+      if (
+        groupParam &&
+        ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)
+      ) {
+        this.state.spokeGrouping.set(groupParam as SpokeGrouping);
+      }
     } else if (allSegments.includes('catalysts')) {
       this.viewMode.set('catalysts');
       this.entityId.set(null);
@@ -328,19 +341,28 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private applyQueryParamFilters(): void {
     const qp = this.route.snapshot.queryParamMap;
+    // Legacy deep-link params (camelCase)
     const assetIds = this.parseIdList(qp.get('assetIds'));
     const indicationIds = this.parseIdList(qp.get('indicationIds'));
+    // Bullseye scope params (short names per spec)
+    const indications = this.parseIdList(qp.get('indications'));
+    const companies = this.parseIdList(qp.get('companies'));
+    const moas = this.parseIdList(qp.get('moas'));
+    const roas = this.parseIdList(qp.get('roas'));
     // motion-strip deep-link: phase=P3 (or any RingPhase) scopes the
     // catalysts view to trials in that phase. Parsed from comma-separated
     // values so a single param suffices for the common single-phase case.
     const phases = this.parseIdList(qp.get('phase')) as
       | import('../../core/models/landscape.model').RingPhase[]
       | null;
-    if (assetIds || indicationIds || phases) {
+    if (assetIds || indicationIds || indications || companies || moas || roas || phases) {
       this.state.filters.update((f) => ({
         ...f,
         assetIds: assetIds ?? f.assetIds,
-        indicationIds: indicationIds ?? f.indicationIds,
+        indicationIds: indications ?? indicationIds ?? f.indicationIds,
+        companyIds: companies ?? f.companyIds,
+        mechanismOfActionIds: moas ?? f.mechanismOfActionIds,
+        routeOfAdministrationIds: roas ?? f.routeOfAdministrationIds,
         phases: phases ?? f.phases,
       }));
     }
