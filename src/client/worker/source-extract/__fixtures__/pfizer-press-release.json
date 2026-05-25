@@ -1,0 +1,97 @@
+{
+  "source_summary": "Pfizer reports Q1 2026 earnings and pipeline updates including Paxlovid and Eikon partnership for ETX-101.",
+  "source_title": "Pfizer Reports First-Quarter 2026 Results",
+  "source_date": "2026-04-28",
+  "companies": [
+    {
+      "match": { "kind": "existing", "id": "11111111-1111-4111-8111-111111111111" },
+      "evidence": "Pfizer Inc. (NYSE: PFE) today reported..."
+    },
+    {
+      "match": { "kind": "new", "name": "Eikon Therapeutics", "website": "https://eikontx.com" },
+      "evidence": "...in collaboration with Eikon Therapeutics..."
+    }
+  ],
+  "assets": [
+    {
+      "match": { "kind": "existing", "id": "22222222-2222-4222-8222-222222222222" },
+      "name": "Paxlovid",
+      "generic_name": "nirmatrelvir/ritonavir",
+      "company_ref": 0,
+      "moa": ["protease inhibitor"],
+      "roa": ["oral"],
+      "evidence": "Paxlovid revenues reached $1.2B in Q1..."
+    },
+    {
+      "match": { "kind": "new", "name": "ETX-101" },
+      "name": "ETX-101",
+      "generic_name": null,
+      "company_ref": 1,
+      "moa": ["protein degradation"],
+      "roa": ["oral"],
+      "evidence": "ETX-101, a novel protein degrader..."
+    }
+  ],
+  "trials": [
+    {
+      "match": { "kind": "existing", "id": "33333333-3333-4333-8333-333333333333" },
+      "name": "ATTAIN-1",
+      "phase": "phase_3",
+      "phase_start_date": "2025-06-15",
+      "phase_end_date": null,
+      "status": "Active",
+      "sample_size": 1200,
+      "sponsor_ref": 0,
+      "asset_ref": 0,
+      "indication": "COVID-19",
+      "evidence": "The Phase 3 ATTAIN-1 trial continues to enroll..."
+    },
+    {
+      "match": { "kind": "new", "name": "ETX-101-001" },
+      "name": "ETX-101-001",
+      "phase": "phase_1",
+      "phase_start_date": "2026-03-01",
+      "phase_end_date": null,
+      "status": "Active",
+      "sample_size": 60,
+      "sponsor_ref": 1,
+      "asset_ref": 1,
+      "indication": "solid tumors",
+      "evidence": "Eikon initiated a Phase 1 first-in-human study..."
+    }
+  ],
+  "markers": [
+    {
+      "marker_type": "data_readout",
+      "title": "ATTAIN-1 interim analysis",
+      "event_date": "2026-09-15",
+      "end_date": null,
+      "projection": "company",
+      "description": "Interim efficacy and safety readout expected H2 2026",
+      "trial_refs": [0],
+      "evidence": "Management expects interim data from ATTAIN-1 in H2 2026..."
+    },
+    {
+      "marker_type": "regulatory_submission",
+      "title": "Paxlovid pediatric sNDA",
+      "event_date": "2026-06-30",
+      "end_date": null,
+      "projection": "company",
+      "description": "Supplemental NDA for pediatric indication",
+      "trial_refs": [0],
+      "evidence": "Pfizer plans to submit a supplemental NDA for pediatric Paxlovid..."
+    }
+  ],
+  "events": [
+    {
+      "category": "earnings",
+      "title": "Pfizer Q1 2026 Earnings Call",
+      "event_date": "2026-04-28",
+      "description": "Q1 2026 financial results and pipeline update",
+      "priority": "high",
+      "tags": ["earnings", "pipeline"],
+      "anchor": { "level": "company", "ref": 0 },
+      "evidence": "Pfizer will host its Q1 2026 earnings call..."
+    }
+  ]
+}
