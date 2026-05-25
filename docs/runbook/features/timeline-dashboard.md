@@ -62,6 +62,14 @@ The `FilterPanelComponent` lets users narrow the dashboard to:
 
 All filter values are passed as arrays to the `get_dashboard_data()` RPC function.
 
+## Insight Strip
+
+A horizontal strip (`TimelineInsightStripComponent`) between the filter bar and the grid that surfaces three sections:
+
+- **READ** -- auto-generated competitive intelligence one-liner computed by `buildCompetitiveRead()` in `competitive-read.ts`. Identifies the leader (most late-stage trials), deepest P3 pipeline, and most active company (by recent changes count). Handles edge cases: single company shows a sole-entrant summary; suppresses duplicate names when one company wins both deepest and most-active.
+- **STATS** -- company, asset, trial, and catalyst counts. Catalyst count covers markers with `event_date` in the next 90 days, computed by `computeTimelineStats()`.
+- **COLUMNS** -- checkbox toggles for MOA, ROA, and Notes column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showNotesColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
+
 ## Legend
 
 A grouped reference panel (`LegendComponent`) showing all marker types with their SVG icons and labels. Organized by category. Collapsible for more dashboard space.
@@ -150,6 +158,23 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   related:
     - timeline-grid
     - events-feed
+  user_facing: true
+  role: viewer
+  status: active
+- id: timeline-insight-strip
+  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Notes).
+  routes:
+    - /t/:tenantId/s/:spaceId/timeline
+  rpcs:
+    - get_dashboard_data
+  tables:
+    - companies
+    - assets
+    - trials
+    - markers
+  related:
+    - timeline-grid
+    - competitive-read-bar
   user_facing: true
   role: viewer
   status: active

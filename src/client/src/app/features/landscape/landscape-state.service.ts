@@ -24,6 +24,9 @@ interface PersistedLandscapeState {
   spokeGrouping: SpokeGrouping;
   positioningGrouping: PositioningGrouping;
   countUnit: CountUnit;
+  showMoaColumn: boolean;
+  showRoaColumn: boolean;
+  showNotesColumn: boolean;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -68,6 +71,11 @@ export class LandscapeStateService {
   readonly positioningGrouping = signal<PositioningGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
 
+  // ─── Column visibility (timeline grid) ──────────────────────────────
+  readonly showMoaColumn = signal(true);
+  readonly showRoaColumn = signal(true);
+  readonly showNotesColumn = signal(true);
+
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
   readonly selectedDetail = signal<CatalystDetail | null>(null);
@@ -102,6 +110,9 @@ export class LandscapeStateService {
       spokeGrouping: this.spokeGrouping(),
       positioningGrouping: this.positioningGrouping(),
       countUnit: this.countUnit(),
+      showMoaColumn: this.showMoaColumn(),
+      showRoaColumn: this.showRoaColumn(),
+      showNotesColumn: this.showNotesColumn(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -221,6 +232,10 @@ export class LandscapeStateService {
       if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
       if (saved.positioningGrouping) this.positioningGrouping.set(saved.positioningGrouping);
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
+      if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
+      if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
+      if (typeof saved.showNotesColumn === 'boolean')
+        this.showNotesColumn.set(saved.showNotesColumn);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }

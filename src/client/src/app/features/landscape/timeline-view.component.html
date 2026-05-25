@@ -40,6 +40,7 @@
         </div>
       </div>
     } @else if (companies().length > 0) {
+      <app-timeline-insight-strip [companies]="companies()" />
       <app-dashboard-grid
         [companies]="companies()"
         [zoomLevel]="state.zoomLevel()"
@@ -78,7 +79,6 @@
       </div>
     }
   </div>
-
 </div>
 
 <app-export-dialog
