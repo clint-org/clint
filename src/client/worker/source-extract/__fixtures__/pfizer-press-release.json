@@ -36,7 +36,7 @@
     {
       "match": { "kind": "existing", "id": "33333333-3333-4333-8333-333333333333" },
       "name": "ATTAIN-1",
-      "phase": "phase_3",
+      "phase": "P3",
       "phase_start_date": "2025-06-15",
       "phase_end_date": null,
       "status": "Active",
@@ -49,7 +49,7 @@
     {
       "match": { "kind": "new", "name": "ETX-101-001" },
       "name": "ETX-101-001",
-      "phase": "phase_1",
+      "phase": "P1",
       "phase_start_date": "2026-03-01",
       "phase_end_date": null,
       "status": "Active",

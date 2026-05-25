@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  validateExtraction,
-} from '../../source-extract/response-validator';
+import { validateExtraction } from '../../source-extract/response-validator';
 import type { InventorySnapshot } from '../../source-extract/types';
 
 const C1 = '11111111-1111-4111-8111-111111111111';
@@ -13,14 +11,10 @@ const SOURCE_TEXT =
   'Pfizer Inc reported results from the ATTAIN-1 trial for Paxlovid. ' +
   'Eikon Therapeutics initiated a Phase 1 study of ETX-101 (ETX-101-001).';
 
-function makeInventory(
-  overrides: Partial<InventorySnapshot> = {},
-): InventorySnapshot {
+function makeInventory(overrides: Partial<InventorySnapshot> = {}): InventorySnapshot {
   return {
     companies: [{ id: C1, name: 'Pfizer' }],
-    assets: [
-      { id: A1, name: 'Paxlovid', company_id: C1, generic_name: 'nirmatrelvir' },
-    ],
+    assets: [{ id: A1, name: 'Paxlovid', company_id: C1, generic_name: 'nirmatrelvir' }],
     trials: [{ id: T1, name: 'ATTAIN-1', asset_id: A1 }],
     indications: [],
     hash: 'h1',
@@ -55,7 +49,7 @@ function validJson(): string {
       {
         match: { kind: 'existing', id: T1 },
         name: 'ATTAIN-1',
-        phase: 'phase_3',
+        phase: 'P3',
         phase_start_date: null,
         phase_end_date: null,
         status: 'Active',
@@ -104,7 +98,7 @@ describe('validateExtraction', () => {
     const r = validateExtraction(
       JSON.stringify({ companies: [{ match: { kind: 'invalid' } }] }),
       makeInventory(),
-      SOURCE_TEXT,
+      SOURCE_TEXT
     );
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toContain('schema_invalid');
@@ -131,16 +125,10 @@ describe('validateExtraction', () => {
       roa: [],
       evidence: 'ghost',
     });
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'asset' && d.name === 'Ghost',
-      );
+      const drop = r.dropped.find((d) => d.type === 'asset' && d.name === 'Ghost');
       expect(drop).toBeDefined();
       expect(drop!.reason).toContain('company_ref');
     }
@@ -152,11 +140,7 @@ describe('validateExtraction', () => {
       kind: 'existing',
       id: UNKNOWN_UUID,
     };
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.warnings.some((w) => w.includes('demoted to new'))).toBe(true);
@@ -169,16 +153,10 @@ describe('validateExtraction', () => {
       match: { kind: 'new', name: 'Nonexistent Corp' },
       evidence: 'none',
     });
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'company' && d.name === 'Nonexistent Corp',
-      );
+      const drop = r.dropped.find((d) => d.type === 'company' && d.name === 'Nonexistent Corp');
       expect(drop).toBeDefined();
       expect(drop!.reason).toContain('name not found');
     }
@@ -195,24 +173,17 @@ describe('validateExtraction', () => {
       roa: [],
       evidence: 'fake',
     });
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'asset' && d.name === 'FakeAsset',
-      );
+      const drop = r.dropped.find((d) => d.type === 'asset' && d.name === 'FakeAsset');
       expect(drop).toBeDefined();
       expect(drop!.reason).toContain('neither name nor generic_name');
     }
   });
 
   it('keeps new asset where generic_name passes even if name does not', () => {
-    const sourceWithGeneric =
-      SOURCE_TEXT + ' nirmatrelvir is a protease inhibitor.';
+    const sourceWithGeneric = SOURCE_TEXT + ' nirmatrelvir is a protease inhibitor.';
     const json = JSON.parse(validJson());
     json.assets.push({
       match: { kind: 'new', name: 'BrandXYZ' },
@@ -223,16 +194,10 @@ describe('validateExtraction', () => {
       roa: [],
       evidence: 'nirmatrelvir',
     });
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      sourceWithGeneric,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), sourceWithGeneric);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'asset' && d.name === 'BrandXYZ',
-      );
+      const drop = r.dropped.find((d) => d.type === 'asset' && d.name === 'BrandXYZ');
       expect(drop).toBeUndefined();
     }
   });
@@ -243,7 +208,7 @@ describe('validateExtraction', () => {
       {
         match: { kind: 'new', name: 'PHANTOM-1' },
         name: 'PHANTOM-1',
-        phase: 'phase_2',
+        phase: 'P2',
         phase_start_date: null,
         phase_end_date: null,
         status: null,
@@ -266,16 +231,10 @@ describe('validateExtraction', () => {
         evidence: 'phantom',
       },
     ];
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'marker' && d.name === 'Phantom readout',
-      );
+      const drop = r.dropped.find((d) => d.type === 'marker' && d.name === 'Phantom readout');
       expect(drop).toBeDefined();
     }
   });
@@ -296,16 +255,10 @@ describe('validateExtraction', () => {
       anchor: { level: 'company', ref: 2 },
       evidence: 'invisible',
     });
-    const r = validateExtraction(
-      JSON.stringify(json),
-      makeInventory(),
-      SOURCE_TEXT,
-    );
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find(
-        (d) => d.type === 'event' && d.name === 'Invisible conf',
-      );
+      const drop = r.dropped.find((d) => d.type === 'event' && d.name === 'Invisible conf');
       expect(drop).toBeDefined();
     }
   });

@@ -6,9 +6,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-function makeProposals(
-  overrides: Partial<ExtractionResult> = {},
-): ExtractionResult {
+function makeProposals(overrides: Partial<ExtractionResult> = {}): ExtractionResult {
   return {
     source_summary: 'test',
     source_title: null,
@@ -47,7 +45,7 @@ describe('enrichWithCtgov', () => {
             designModule: { phases: ['PHASE3'] },
           },
         },
-      ]),
+      ])
     );
 
     const proposals = makeProposals({
@@ -56,7 +54,7 @@ describe('enrichWithCtgov', () => {
         {
           match: { kind: 'new', name: 'ETX-101-001' },
           name: 'ETX-101-001',
-          phase: 'phase_1',
+          phase: 'P1',
           phase_start_date: null,
           phase_end_date: null,
           status: null,
@@ -75,7 +73,7 @@ describe('enrichWithCtgov', () => {
     expect(result.candidates['0']).toBeDefined();
     expect(result.candidates['0'].length).toBeGreaterThan(0);
     expect(result.candidates['0'][0].score).toBeGreaterThanOrEqual(
-      result.candidates['0'][1]?.score ?? 0,
+      result.candidates['0'][1]?.score ?? 0
     );
   });
 
@@ -107,9 +105,7 @@ describe('enrichWithCtgov', () => {
   });
 
   it('handles CT.gov 5xx gracefully', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response('Server Error', { status: 503 }),
-    );
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Server Error', { status: 503 }));
 
     const proposals = makeProposals({
       companies: [{ match: { kind: 'new', name: 'Co' }, evidence: 'e' }],
@@ -135,19 +131,15 @@ describe('enrichWithCtgov', () => {
   });
 
   it('skips enrichment for existing trials', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      ctgovResponse([]),
-    );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(ctgovResponse([]));
 
     const proposals = makeProposals({
-      companies: [
-        { match: { kind: 'existing', id: 'c1' }, evidence: 'e' },
-      ],
+      companies: [{ match: { kind: 'existing', id: 'c1' }, evidence: 'e' }],
       trials: [
         {
           match: { kind: 'existing', id: 't1' },
           name: 'ATTAIN-1',
-          phase: 'phase_3',
+          phase: 'P3',
           phase_start_date: null,
           phase_end_date: null,
           status: 'Active',
@@ -166,9 +158,7 @@ describe('enrichWithCtgov', () => {
   });
 
   it('builds correct query params', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      ctgovResponse([]),
-    );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(ctgovResponse([]));
 
     const proposals = makeProposals({
       companies: [{ match: { kind: 'new', name: 'Eikon' }, evidence: 'e' }],
@@ -187,7 +177,7 @@ describe('enrichWithCtgov', () => {
         {
           match: { kind: 'new', name: 'ETX-101-001' },
           name: 'ETX-101-001',
-          phase: 'phase_1',
+          phase: 'P1',
           phase_start_date: null,
           phase_end_date: null,
           status: null,

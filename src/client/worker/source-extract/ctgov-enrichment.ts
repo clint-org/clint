@@ -11,10 +11,12 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 const MAX_CANDIDATES = 3;
 
 const PHASE_MAP: Record<string, string> = {
-  phase_1: 'PHASE1',
-  phase_2: 'PHASE2',
-  phase_3: 'PHASE3',
-  phase_4: 'PHASE4',
+  P1: 'PHASE1',
+  P1_2: 'PHASE1|PHASE2',
+  P2: 'PHASE2',
+  P2_3: 'PHASE2|PHASE3',
+  P3: 'PHASE3',
+  P4: 'PHASE4',
 };
 
 interface CtgovStudy {
@@ -35,7 +37,7 @@ interface CtgovStudy {
 function buildSearchUrl(
   trial: ExtractionResult['trials'][number],
   companyName: string | undefined,
-  assetName: string | undefined,
+  assetName: string | undefined
 ): string {
   const params = new URLSearchParams({
     pageSize: '10',
@@ -54,10 +56,7 @@ function buildSearchUrl(
   return `${CTGOV_BASE}?${params.toString()}`;
 }
 
-function rankStudies(
-  studies: CtgovStudy[],
-  trialName: string,
-): CtgovCandidate[] {
+function rankStudies(studies: CtgovStudy[], trialName: string): CtgovCandidate[] {
   return studies
     .map((s) => {
       const id = s.protocolSection?.identificationModule;
@@ -75,9 +74,7 @@ function rankStudies(
     .slice(0, MAX_CANDIDATES);
 }
 
-function needsCtgovLookup(
-  trial: ExtractionResult['trials'][number],
-): boolean {
+function needsCtgovLookup(trial: ExtractionResult['trials'][number]): boolean {
   return trial.match.kind === 'new';
 }
 
@@ -85,7 +82,7 @@ export async function enrichWithCtgov(
   proposals: ExtractionResult,
   companyNames: string[],
   assetNames: string[],
-  options?: { timeout?: number },
+  options?: { timeout?: number }
 ): Promise<CtgovEnrichmentResult> {
   const timeoutMs = options?.timeout ?? DEFAULT_TIMEOUT_MS;
   const candidates: Record<string, CtgovCandidate[]> = {};
