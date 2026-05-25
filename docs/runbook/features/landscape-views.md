@@ -15,6 +15,7 @@ Key components:
 - **LandscapeComponent**: fetches a flat asset list via `get_bullseye_assets` RPC with multi-select scope filters, then groups client-side via `groupAssetsIntoSpokes()`. Regrouping is instant (no re-fetch). Two-column layout: controls panel left, chart right.
 - **BullseyeControlsPanelComponent**: left sidebar (220px) with Group By toggle, competitive read summary, spoke/asset stats, and full legend (phase colors, intelligence ring, activity pulse, duplicate ring indicators).
 - **BullseyeChartComponent**: renders SVG radial chart. Dots use a halo ring system: teal ring for intelligence, amber pulse for recent activity, dashed ring for duplicates. Cross-spoke hover highlighting dims non-matching dots to 15%.
+- **BullseyeDetailPanelComponent**: right sidebar detail pane shown on dot click. Renders asset name, company, MOA, ROA, trials (with CT.gov field overlays and change badges), and recent markers. An intelligence summary card at the top surfaces the latest activity event (type + date) and intelligence note count when present.
 - **LandscapeFilterBar**: shared filter bar for cross-view scope filters. Group-by toggle lives in the controls panel, not the filter bar.
 - **LandscapeStateService**: persists `spokeGrouping` signal to sessionStorage alongside filters.
 
