@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bullseye Spoke Redesign -- Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --brand-600: #0d9488;
+    --brand-500: #14b8a6;
+    --brand-400: #2dd4bf;
+    --brand-100: #ccfbf1;
+    --brand-50: #f0fdfa;
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-500: #64748b;
+    --slate-400: #94a3b8;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --slate-50: #f8fafc;
+    --white: #ffffff;
+    --cyan-600: #0891b2;
+    --violet-600: #7c3aed;
+    --violet-700: #6d28d9;
+    --emerald-600: #059669;
+    --amber-500: #f59e0b;
+    --red-500: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--slate-50);
+    color: var(--slate-800);
+    min-height: 100vh;
+  }
+
+  /* ---------- Layout ---------- */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--slate-200);
+    padding: 0 24px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+
+  .topbar-brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--slate-700);
+  }
+
+  .topbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--slate-200);
+  }
+
+  .topbar-view-tabs {
+    display: flex;
+    gap: 2px;
+  }
+
+  .view-tab {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+  }
+  .view-tab:hover { color: var(--slate-700); background: var(--slate-100); }
+  .view-tab.active { color: var(--brand-600); background: var(--brand-50); }
+
+  .topbar-spacer { flex: 1; }
+
+  .topbar-hint {
+    font-size: 11px;
+    color: var(--slate-400);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---------- Main content ---------- */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- Control bar ---------- */
+  .control-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--slate-200);
+    padding: 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .control-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate-400);
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+
+  /* ---------- Filter pills (multi-select dropdowns) ---------- */
+  .filter-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--slate-200);
+    background: var(--white);
+    color: var(--slate-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    position: relative;
+  }
+  .filter-pill:hover {
+    border-color: var(--slate-300);
+    background: var(--slate-50);
+  }
+  .filter-pill.has-values {
+    border-color: var(--brand-400);
+    background: var(--brand-50);
+    color: var(--brand-600);
+  }
+  .filter-pill .pill-chevron {
+    font-size: 8px;
+    opacity: 0.5;
+  }
+  .filter-pill .pill-count {
+    background: var(--brand-600);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 8px;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  /* ---------- Group-by toggle ---------- */
+  .group-toggle {
+    display: inline-flex;
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--slate-100);
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .group-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border: none;
+    background: transparent;
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .group-btn:hover { color: var(--slate-700); }
+  .group-btn.active {
+    background: var(--white);
+    color: var(--brand-600);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    font-weight: 600;
+  }
+
+  /* ---------- Active filter chips ---------- */
+  .active-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    min-height: 0;
+  }
+  .active-chips:empty { display: none; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--slate-100);
+    color: var(--slate-600);
+    border: 1px solid var(--slate-200);
+  }
+  .chip-cat {
+    color: var(--slate-400);
+    font-weight: 400;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .chip-x {
+    margin-left: 2px;
+    cursor: pointer;
+    opacity: 0.4;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .chip-x:hover { opacity: 1; }
+
+  .clear-all-btn {
+    font-size: 11px;
+    color: var(--slate-400);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .clear-all-btn:hover { color: var(--slate-600); }
+
+  /* ---------- Chart area ---------- */
+  .chart-area {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .chart-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+  }
+
+  /* ---------- SVG bullseye ---------- */
+  .bullseye-svg {
+    width: 100%;
+    max-width: 680px;
+    max-height: 680px;
+    aspect-ratio: 1;
+  }
+
+  /* ---------- Detail panel ---------- */
+  .detail-panel {
+    width: 340px;
+    background: var(--white);
+    border-left: 1px solid var(--slate-200);
+    overflow-y: auto;
+    padding: 20px;
+    flex-shrink: 0;
+    display: none;
+  }
+  .detail-panel.open { display: block; }
+
+  .panel-header {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate-400);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .panel-asset-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--slate-900);
+    margin-bottom: 4px;
+  }
+
+  .panel-company {
+    font-size: 13px;
+    color: var(--slate-500);
+    margin-bottom: 16px;
+  }
+
+  .panel-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .panel-meta-label { color: var(--slate-400); }
+  .panel-meta-value { color: var(--slate-700); font-weight: 500; }
+
+  .phase-badge {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---------- Spoke count badge ---------- */
+  .spoke-count-badge {
+    position: absolute;
+    bottom: 16px;
+    left: 24px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--slate-400);
+    background: var(--white);
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+  .spoke-count-badge strong {
+    color: var(--slate-600);
+    font-weight: 600;
+  }
+
+  /* ---------- Dropdown overlay ---------- */
+  .dropdown-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 99;
+    display: none;
+  }
+  .dropdown-overlay.open { display: block; }
+
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--white);
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    min-width: 220px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+    padding: 4px;
+  }
+  .dropdown-menu.open { display: block; }
+
+  .dropdown-search {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--slate-100);
+    padding: 8px 10px;
+    font-size: 12px;
+    outline: none;
+    color: var(--slate-700);
+    background: transparent;
+  }
+  .dropdown-search::placeholder { color: var(--slate-300); }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--slate-600);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.1s;
+  }
+  .dropdown-item:hover { background: var(--slate-50); }
+  .dropdown-item.selected { color: var(--brand-600); font-weight: 500; }
+
+  .dropdown-check {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--slate-300);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.1s;
+  }
+  .dropdown-item.selected .dropdown-check {
+    background: var(--brand-600);
+    border-color: var(--brand-600);
+    color: var(--white);
+  }
+
+  /* ---------- Mode comparison ---------- */
+  .mode-comparison {
+    display: none;
+    padding: 32px 24px;
+    overflow-y: auto;
+  }
+
+  .mode-comparison.active {
+    display: block;
+    flex: 1;
+  }
+
+  .comparison-header {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--slate-900);
+    margin-bottom: 8px;
+  }
+
+  .comparison-subheader {
+    font-size: 13px;
+    color: var(--slate-500);
+    margin-bottom: 32px;
+    max-width: 640px;
+    line-height: 1.5;
+  }
+
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1000px;
+  }
+
+  .comparison-card {
+    border: 1px solid var(--slate-200);
+    border-radius: 12px;
+    background: var(--white);
+    overflow: hidden;
+  }
+
+  .comparison-card-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--slate-100);
+  }
+
+  .comparison-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-800);
+    margin-bottom: 4px;
+  }
+
+  .comparison-card-subtitle {
+    font-size: 11px;
+    color: var(--slate-400);
+    line-height: 1.4;
+  }
+
+  .comparison-card-body {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+
+  .mini-bullseye {
+    width: 180px;
+    height: 180px;
+  }
+
+  .card-tag {
+    display: inline-flex;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-left: 8px;
+  }
+  .card-tag.current {
+    background: var(--slate-100);
+    color: var(--slate-500);
+  }
+  .card-tag.proposed {
+    background: var(--brand-50);
+    color: var(--brand-600);
+  }
+
+  /* ---------- Scenario tabs ---------- */
+  .scenario-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--slate-200);
+    padding: 8px 24px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .scenario-tab {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--slate-200);
+    background: var(--white);
+    color: var(--slate-500);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .scenario-tab:hover { border-color: var(--slate-300); color: var(--slate-700); }
+  .scenario-tab.active {
+    border-color: var(--brand-500);
+    background: var(--brand-50);
+    color: var(--brand-600);
+    font-weight: 600;
+  }
+
+  /* ---------- Annotations ---------- */
+  .annotation {
+    position: absolute;
+    background: var(--slate-800);
+    color: var(--white);
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    max-width: 200px;
+    line-height: 1.4;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .annotation::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--slate-800);
+    transform: rotate(45deg);
+  }
+  .annotation.left::before { right: -4px; top: 50%; margin-top: -4px; }
+  .annotation.bottom::before { top: -4px; left: 20px; }
+  .annotation.top::before { bottom: -4px; left: 20px; }
+
+  /* ---------- Legend ---------- */
+  .chart-legend {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: var(--white);
+    border: 1px solid var(--slate-200);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .legend-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate-400);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--slate-500);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ---------- Duplicate dot indicators ---------- */
+  .bullseye-svg circle.duplicate-dot {
+    stroke-dasharray: 3 2;
+  }
+  .bullseye-svg circle.asset-highlight {
+    stroke: var(--slate-900) !important;
+    stroke-width: 2.5px !important;
+    stroke-dasharray: none !important;
+    filter: drop-shadow(0 0 3px rgba(15,23,42,0.3));
+  }
+  .bullseye-svg.has-hover circle.asset-dot:not(.asset-highlight) {
+    opacity: 0.15 !important;
+    transition: opacity 0.15s;
+  }
+  .bullseye-svg circle.asset-dot {
+    transition: opacity 0.15s;
+    cursor: pointer;
+  }
+
+  /* ---------- Duplicate legend entry ---------- */
+  .legend-dup {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--slate-500);
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--slate-100);
+  }
+  .legend-dup-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px dashed var(--slate-400);
+    flex-shrink: 0;
+  }
+
+  /* ---------- Competitive read bar ---------- */
+  .insight-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--slate-200);
+    padding: 10px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .insight-bar-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate-400);
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 72px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .insight-bar-content {
+    font-size: 12px;
+    color: var(--slate-600);
+    line-height: 1.6;
+    flex: 1;
+  }
+  .insight-bar-content strong {
+    color: var(--slate-800);
+    font-weight: 600;
+  }
+  .insight-leader {
+    color: var(--brand-600);
+    font-weight: 600;
+  }
+  .insight-separator {
+    color: var(--slate-300);
+    margin: 0 6px;
+  }
+
+  /* ---------- Activity pulse on dots ---------- */
+  @keyframes pulse-sm {
+    0% { r: 6; opacity: 0.5; }
+    100% { r: 16; opacity: 0; }
+  }
+  @keyframes pulse-md {
+    0% { r: 10; opacity: 0.5; }
+    100% { r: 22; opacity: 0; }
+  }
+  @keyframes pulse-lg {
+    0% { r: 14; opacity: 0.5; }
+    100% { r: 26; opacity: 0; }
+  }
+  .bullseye-svg .activity-pulse {
+    fill: none;
+    stroke: var(--amber-500);
+    pointer-events: none;
+  }
+  .bullseye-svg .activity-pulse.pulse-size {
+    stroke-width: 2.5;
+    animation: pulse-lg 2.5s ease-out infinite;
+  }
+  .bullseye-svg .activity-pulse.pulse-halo {
+    stroke-width: 2;
+    animation: pulse-md 2.5s ease-out infinite;
+  }
+  .bullseye-svg .activity-pulse.pulse-badge {
+    stroke-width: 1.5;
+    animation: pulse-sm 2s ease-out infinite;
+  }
+  .bullseye-svg .non-interactive {
+    pointer-events: none;
+  }
+
+  /* ---------- Annotation indicator ---------- */
+  .annotation-badge {
+    font-size: 7px;
+    font-weight: 700;
+    fill: white;
+    pointer-events: none;
+  }
+  .annotation-bg {
+    pointer-events: none;
+  }
+
+
+  /* ---------- Empty state ---------- */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    max-width: 400px;
+  }
+  .empty-state-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 8px;
+  }
+  .empty-state-desc {
+    font-size: 12px;
+    color: var(--slate-400);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-brand">Clint</span>
+    <span class="topbar-sep"></span>
+    <div class="topbar-view-tabs">
+      <button class="view-tab" onclick="showTab('comparison')">Before / After</button>
+      <button class="view-tab active" onclick="showTab('prototype')">Interactive Prototype</button>
+      <button class="view-tab" onclick="showTab('scenarios')">Scenarios</button>
+    </div>
+    <span class="topbar-spacer"></span>
+    <span class="topbar-hint">PROTOTYPE -- SPOKE REDESIGN</span>
+  </div>
+
+  <!-- ==================== TAB: COMPARISON ==================== -->
+  <div id="tab-comparison" class="mode-comparison">
+    <div class="comparison-header">Before / After: Scope vs. Spoke Grouping</div>
+    <div class="comparison-subheader">
+      The current model couples scope selection (which data to show) with spoke grouping (how to arrange it).
+      The redesign decouples them into two independent controls.
+    </div>
+    <div class="comparison-grid">
+
+      <!-- Current -->
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Current: Pick one entity, spokes auto-assigned <span class="card-tag current">Current</span></div>
+          <div class="comparison-card-subtitle">
+            Select dimension (TA/Company/MOA/ROA), then pick one entity.
+            Spokes are the cross-dimension. Cannot mix categories.
+          </div>
+        </div>
+        <div class="comparison-card-body">
+          <svg class="mini-bullseye" viewBox="0 0 200 200">
+            <!-- Rings -->
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="50" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="30" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <!-- Spokes (4 companies) -->
+            <line x1="100" y1="100" x2="100" y2="8" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="192" y2="100" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="100" y2="192" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="8" y2="100" stroke="#cbd5e1" stroke-width="0.5"/>
+            <!-- Center -->
+            <circle cx="100" cy="100" r="18" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+            <text x="100" y="97" text-anchor="middle" font-size="6" font-weight="600" fill="#334155" font-family="Inter">ONCOLOGY</text>
+            <text x="100" y="107" text-anchor="middle" font-size="5" fill="#94a3b8" font-family="JetBrains Mono">scope: 1 TA</text>
+            <!-- Spoke labels -->
+            <text x="100" y="4" text-anchor="middle" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">PFIZER</text>
+            <text x="197" y="102" text-anchor="start" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">ROCHE</text>
+            <text x="100" y="199" text-anchor="middle" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">MERCK</text>
+            <text x="3" y="102" text-anchor="end" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">NOVARTIS</text>
+            <!-- Dots -->
+            <circle cx="100" cy="40" r="4" fill="#0d9488"/>
+            <circle cx="108" cy="52" r="4" fill="#0891b2"/>
+            <circle cx="160" cy="95" r="4" fill="#94a3b8"/>
+            <circle cx="155" cy="108" r="4" fill="#0891b2"/>
+            <circle cx="100" cy="160" r="4" fill="#7c3aed"/>
+            <circle cx="45" cy="95" r="4" fill="#0d9488"/>
+            <circle cx="50" cy="110" r="4" fill="#059669"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Proposed: Filter scope freely, group by any axis <span class="card-tag proposed">Proposed</span></div>
+          <div class="comparison-card-subtitle">
+            Multi-select filters define which assets appear. A separate toggle controls spoke grouping.
+            Regroup instantly without re-fetching.
+          </div>
+        </div>
+        <div class="comparison-card-body">
+          <svg class="mini-bullseye" viewBox="0 0 200 200">
+            <!-- Rings -->
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="50" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <circle cx="100" cy="100" r="30" fill="none" stroke="#e2e8f0" stroke-width="0.5"/>
+            <!-- 6 spokes (mixed) -->
+            <line x1="100" y1="100" x2="100" y2="8" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="178" y2="55" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="178" y2="145" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="100" y2="192" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="22" y2="145" stroke="#cbd5e1" stroke-width="0.5"/>
+            <line x1="100" y1="100" x2="22" y2="55" stroke="#cbd5e1" stroke-width="0.5"/>
+            <!-- Center -->
+            <circle cx="100" cy="100" r="18" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+            <text x="100" y="97" text-anchor="middle" font-size="5" font-weight="600" fill="#334155" font-family="Inter">ONC + IMMUNO</text>
+            <text x="100" y="107" text-anchor="middle" font-size="5" fill="#94a3b8" font-family="JetBrains Mono">by company</text>
+            <!-- Spoke labels -->
+            <text x="100" y="4" text-anchor="middle" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">PFIZER</text>
+            <text x="183" y="52" text-anchor="start" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">ROCHE</text>
+            <text x="183" y="148" text-anchor="start" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">MERCK</text>
+            <text x="100" y="199" text-anchor="middle" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">NOVARTIS</text>
+            <text x="17" y="148" text-anchor="end" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">BMS</text>
+            <text x="17" y="52" text-anchor="end" font-size="5" fill="#64748b" font-family="JetBrains Mono" font-weight="500">LILLY</text>
+            <!-- More dots, denser -->
+            <circle cx="100" cy="38" r="4" fill="#0d9488"/>
+            <circle cx="106" cy="48" r="4" fill="#0891b2"/>
+            <circle cx="94" cy="55" r="4" fill="#94a3b8"/>
+            <circle cx="162" cy="68" r="4" fill="#0d9488"/>
+            <circle cx="155" cy="78" r="4" fill="#059669"/>
+            <circle cx="165" cy="130" r="4" fill="#0891b2"/>
+            <circle cx="158" cy="138" r="4" fill="#7c3aed"/>
+            <circle cx="100" cy="162" r="4" fill="#0d9488"/>
+            <circle cx="93" cy="155" r="4" fill="#94a3b8"/>
+            <circle cx="38" cy="130" r="4" fill="#059669"/>
+            <circle cx="42" cy="120" r="4" fill="#0891b2"/>
+            <circle cx="35" cy="68" r="4" fill="#0d9488"/>
+            <circle cx="45" cy="60" r="4" fill="#7c3aed"/>
+            <circle cx="40" cy="75" r="4" fill="#0891b2"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- UX Flow Current -->
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Current UX flow</div>
+          <div class="comparison-card-subtitle">4 steps to see the chart</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:8px;padding:20px;">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--slate-500)">1</span>
+            <span style="font-size:12px;color:var(--slate-600)">Pick dimension tab (TA, Company...)</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--slate-500)">2</span>
+            <span style="font-size:12px;color:var(--slate-600)">Browse entity index grid</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--slate-500)">3</span>
+            <span style="font-size:12px;color:var(--slate-600)">Click one entity to load chart</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--slate-500)">4</span>
+            <span style="font-size:12px;color:var(--slate-600)">Use filters to narrow within that entity</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            To compare Oncology + Immunology: navigate back, pick the other TA, open in a second tab
+          </div>
+        </div>
+      </div>
+
+      <!-- UX Flow Proposed -->
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Proposed UX flow</div>
+          <div class="comparison-card-subtitle">2 steps, then explore</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:8px;padding:20px;">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--brand-100);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--brand-600)">1</span>
+            <span style="font-size:12px;color:var(--slate-600)">Filter to the data you care about (multi-select)</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--brand-100);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--brand-600)">2</span>
+            <span style="font-size:12px;color:var(--slate-600)">Pick spoke grouping (Company, Indication, MOA...)</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            Toggle grouping instantly. Add/remove filters without leaving the chart. Cross-dimension views are native.
+          </div>
+          <div style="margin-top:4px;font-size:11px;color:var(--brand-600);font-weight:500">
+            Oncology + Immunology, grouped by Company: one click.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: INTERACTIVE PROTOTYPE ==================== -->
+  <div id="tab-prototype" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+
+    <!-- Control bar -->
+    <div class="control-bar">
+      <!-- Row 1: Scope filters -->
+      <div class="control-row">
+        <span class="control-label">Scope</span>
+        <div class="filter-group">
+          <!-- Indication filter -->
+          <div style="position:relative" id="filter-indication">
+            <button class="filter-pill has-values" onclick="toggleDropdown('indication')">
+              Indication <span class="pill-count" id="indication-count">2</span> <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-indication">
+              <input class="dropdown-search" placeholder="Search indications..." />
+              <div class="dropdown-item selected" data-filter="indication" data-id="onc" onclick="toggleFilter(this)">
+                <span class="dropdown-check">&#10003;</span> Oncology
+              </div>
+              <div class="dropdown-item selected" data-filter="indication" data-id="imm" onclick="toggleFilter(this)">
+                <span class="dropdown-check">&#10003;</span> Immunology
+              </div>
+              <div class="dropdown-item" data-filter="indication" data-id="cv" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Cardiovascular
+              </div>
+              <div class="dropdown-item" data-filter="indication" data-id="cns" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> CNS / Neurology
+              </div>
+              <div class="dropdown-item" data-filter="indication" data-id="meta" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Metabolic
+              </div>
+              <div class="dropdown-item" data-filter="indication" data-id="rare" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Rare Disease
+              </div>
+            </div>
+          </div>
+
+          <!-- Company filter -->
+          <div style="position:relative" id="filter-company">
+            <button class="filter-pill" onclick="toggleDropdown('company')">
+              Company <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-company">
+              <input class="dropdown-search" placeholder="Search companies..." />
+              <div class="dropdown-item" data-filter="company" data-id="pfizer" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Pfizer
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="roche" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Roche
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="merck" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Merck
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="novartis" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Novartis
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="bms" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Bristol-Myers Squibb
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="lilly" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Eli Lilly
+              </div>
+              <div class="dropdown-item" data-filter="company" data-id="az" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> AstraZeneca
+              </div>
+            </div>
+          </div>
+
+          <!-- MOA filter -->
+          <div style="position:relative" id="filter-moa">
+            <button class="filter-pill" onclick="toggleDropdown('moa')">
+              MOA <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-moa">
+              <input class="dropdown-search" placeholder="Search mechanisms..." />
+              <div class="dropdown-item" data-filter="moa" data-id="pd1" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> PD-1 / PD-L1
+              </div>
+              <div class="dropdown-item" data-filter="moa" data-id="car-t" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> CAR-T
+              </div>
+              <div class="dropdown-item" data-filter="moa" data-id="bispecific" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Bispecific antibody
+              </div>
+              <div class="dropdown-item" data-filter="moa" data-id="adc" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> ADC
+              </div>
+              <div class="dropdown-item" data-filter="moa" data-id="jak" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> JAK inhibitor
+              </div>
+            </div>
+          </div>
+
+          <!-- ROA filter -->
+          <div style="position:relative" id="filter-roa">
+            <button class="filter-pill" onclick="toggleDropdown('roa')">
+              ROA <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-roa">
+              <input class="dropdown-search" placeholder="Search routes..." />
+              <div class="dropdown-item" data-filter="roa" data-id="iv" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Intravenous
+              </div>
+              <div class="dropdown-item" data-filter="roa" data-id="oral" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Oral
+              </div>
+              <div class="dropdown-item" data-filter="roa" data-id="sc" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Subcutaneous
+              </div>
+              <div class="dropdown-item" data-filter="roa" data-id="topical" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Topical
+              </div>
+            </div>
+          </div>
+
+          <!-- Phase filter -->
+          <div style="position:relative" id="filter-phase">
+            <button class="filter-pill" onclick="toggleDropdown('phase')">
+              Phase <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-phase">
+              <div class="dropdown-item" data-filter="phase" data-id="preclin" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Preclinical
+              </div>
+              <div class="dropdown-item" data-filter="phase" data-id="p1" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Phase 1
+              </div>
+              <div class="dropdown-item" data-filter="phase" data-id="p2" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Phase 2
+              </div>
+              <div class="dropdown-item" data-filter="phase" data-id="p3" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Phase 3
+              </div>
+              <div class="dropdown-item" data-filter="phase" data-id="approved" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Approved
+              </div>
+              <div class="dropdown-item" data-filter="phase" data-id="launched" onclick="toggleFilter(this)">
+                <span class="dropdown-check"></span> Launched
+              </div>
+            </div>
+          </div>
+
+          <!-- Asset filter -->
+          <div style="position:relative" id="filter-asset">
+            <button class="filter-pill" onclick="toggleDropdown('asset')">
+              Asset <span class="pill-chevron">&#9662;</span>
+            </button>
+            <div class="dropdown-menu" id="dropdown-asset" style="max-height:320px;">
+              <input class="dropdown-search" placeholder="Search assets..." oninput="filterDropdownItems(this, 'asset')" />
+              <!-- Populated dynamically from SEED_ASSETS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Group-by toggle -->
+      <div class="control-row">
+        <span class="control-label">Group by</span>
+        <div class="group-toggle">
+          <button class="group-btn active" onclick="setGrouping(this, 'company')">Company</button>
+          <button class="group-btn" onclick="setGrouping(this, 'indication')">Indication</button>
+          <button class="group-btn" onclick="setGrouping(this, 'moa')">MOA</button>
+          <button class="group-btn" onclick="setGrouping(this, 'roa')">ROA</button>
+          <button class="group-btn" onclick="setGrouping(this, 'asset')">Asset</button>
+        </div>
+      </div>
+
+      <!-- Row 2b: Chart surface toggle -->
+      <div class="control-row">
+        <span class="control-label">Surface</span>
+        <div class="group-toggle" id="surface-toggle">
+          <button class="group-btn active" onclick="setSurface(this, 'light')">Light</button>
+          <button class="group-btn" onclick="setSurface(this, 'tinted')">Tinted well</button>
+          <button class="group-btn" onclick="setSurface(this, 'instrument')">Instrument</button>
+        </div>
+        <span style="font-size:11px;color:var(--slate-400);margin-left:8px;" id="surface-desc">Standard light surface</span>
+      </div>
+
+      <!-- Row 3: Active chips -->
+      <div class="control-row" id="chips-row">
+        <span class="control-label">Active</span>
+        <div class="active-chips" id="active-chips">
+          <div class="chip"><span class="chip-cat">IND</span> Oncology <span class="chip-x" onclick="removeChip(this, 'indication', 'onc')">&times;</span></div>
+          <div class="chip"><span class="chip-cat">IND</span> Immunology <span class="chip-x" onclick="removeChip(this, 'indication', 'imm')">&times;</span></div>
+        </div>
+        <button class="clear-all-btn" onclick="clearAll()">Clear all (2)</button>
+      </div>
+    </div>
+
+    <!-- Competitive read / insight bar -->
+    <div class="insight-bar" id="insight-bar">
+      <span class="insight-bar-label">Read</span>
+      <div class="insight-bar-content" id="insight-content">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <!-- Chart area -->
+    <div class="chart-area">
+      <div class="chart-container">
+        <svg id="main-bullseye" class="bullseye-svg" viewBox="0 0 1000 1000"></svg>
+
+        <div class="spoke-count-badge">
+          <strong id="spoke-count-num">7</strong> spokes &middot; <strong id="asset-count-num">42</strong> assets<span id="unique-count-label"></span>
+        </div>
+
+        <div class="chart-legend">
+          <div class="legend-title">Phase</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#059669"></span> Launched</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#6d28d9"></span> Approved</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#7c3aed"></span> P4</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#0d9488"></span> P3</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#0891b2"></span> P2</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#64748b"></span> P1</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Preclinical</div>
+          <div class="legend-dup" id="legend-dup" style="display:none"><span class="legend-dup-dot"></span> Appears on multiple spokes</div>
+          <div class="legend-dup" style="border-top:1px solid var(--slate-100);padding-top:4px;margin-top:4px">
+            <span style="width:10px;height:10px;border-radius:50%;border:1.5px solid #f59e0b;flex-shrink:0;display:inline-block;animation:pulse-ring 2s ease-out infinite"></span> Recent activity
+          </div>
+          <div class="legend-dup">
+            <span style="width:10px;height:10px;border-radius:50%;background:#1e293b;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:6px;color:white;font-weight:700">N</span> Analyst note attached
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: SCENARIOS ==================== -->
+  <div id="tab-scenarios" class="mode-comparison">
+    <div class="comparison-header">Usage Scenarios</div>
+    <div class="comparison-subheader">
+      Each scenario shows a question a CI analyst might ask, how they would configure the chart, and what they see.
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:24px;max-width:720px;">
+
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Scenario A: "Who is competing in Oncology + Immunology?"</div>
+          <div class="comparison-card-subtitle">Multi-indication competitive landscape</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);">
+            <strong style="color:var(--slate-700)">Scope:</strong> Indication = Oncology, Immunology<br/>
+            <strong style="color:var(--slate-700)">Group by:</strong> Company<br/>
+            <strong style="color:var(--slate-700)">Result:</strong> 7 spokes (companies active in either TA), 42 asset dots.
+            Instant comparison of pipeline depth across companies spanning both areas.
+          </div>
+          <div style="font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            Not possible today: would require opening two separate bullseye views and mentally merging them.
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Scenario B: "How does Pfizer's oral portfolio compare across indications?"</div>
+          <div class="comparison-card-subtitle">Single company, filtered by ROA, grouped by indication</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);">
+            <strong style="color:var(--slate-700)">Scope:</strong> Company = Pfizer, ROA = Oral<br/>
+            <strong style="color:var(--slate-700)">Group by:</strong> Indication<br/>
+            <strong style="color:var(--slate-700)">Result:</strong> Spokes are indications where Pfizer has oral assets.
+            Shows which therapeutic areas Pfizer is pushing oral formulations into.
+          </div>
+          <div style="font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            Today: pick Company dimension, select Pfizer, then filter by ROA. But spokes are TAs, not indications (post-redesign these are separate). Close but not the same cross-cut.
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Scenario C: "What does the PD-1/PD-L1 landscape look like?"</div>
+          <div class="comparison-card-subtitle">MOA-centric view, grouped by company</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);">
+            <strong style="color:var(--slate-700)">Scope:</strong> MOA = PD-1/PD-L1<br/>
+            <strong style="color:var(--slate-700)">Group by:</strong> Company (default), then toggle to Indication<br/>
+            <strong style="color:var(--slate-700)">Result:</strong> First view: which companies are developing checkpoint inhibitors and how far along.
+            Toggle to Indication grouping: which diseases are being targeted with this mechanism.
+          </div>
+          <div style="font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            Today: pick MOA dimension, select PD-1/PD-L1. Spokes are auto-assigned. No toggle to regroup.
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-card-header">
+          <div class="comparison-card-title">Scenario D: "Show me everything in this space"</div>
+          <div class="comparison-card-subtitle">Full portfolio overview, no scope filters</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);">
+            <strong style="color:var(--slate-700)">Scope:</strong> (none -- all assets)<br/>
+            <strong style="color:var(--slate-700)">Group by:</strong> Company<br/>
+            <strong style="color:var(--slate-700)">Result:</strong> Full competitive landscape. If >20 spokes, auto-collapse to top 15 by asset count + "Other" spoke.
+            User can then progressively filter to narrow.
+          </div>
+          <div style="font-size:11px;color:var(--slate-400);border-top:1px solid var(--slate-100);padding-top:8px;width:100%">
+            Today: not possible. Must pick one entity first. The index grid is the closest, but it is not a chart.
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-card" style="border-color:var(--amber-500);border-width:1.5px;">
+        <div class="comparison-card-header" style="background:rgba(245,158,11,0.04)">
+          <div class="comparison-card-title">Pitfall: Spoke explosion</div>
+          <div class="comparison-card-subtitle">What happens when there are too many spokes?</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);line-height:1.6">
+            <strong style="color:var(--slate-700)">Problem:</strong> No filters + group by Company could yield 40+ spokes. Labels overlap, sectors narrow, dots collide.<br/><br/>
+            <strong style="color:var(--slate-700)">Mitigations (pick one or combine):</strong><br/>
+            <strong>A.</strong> Auto-cap at 15 spokes. Remaining collapse into "Other (25 more)". Click to expand.<br/>
+            <strong>B.</strong> Require at least one scope filter before rendering. Show an empty state: "Filter by indication, company, or mechanism to see the bullseye."<br/>
+            <strong>C.</strong> At >20 spokes, auto-suggest switching to matrix/heatmap view.<br/>
+            <strong>D.</strong> Progressive disclosure: start zoomed to a quadrant, scroll/rotate to see more.
+          </div>
+        </div>
+      </div>
+
+      <div class="comparison-card" style="border-color:var(--amber-500);border-width:1.5px;">
+        <div class="comparison-card-header" style="background:rgba(245,158,11,0.04)">
+          <div class="comparison-card-title">Pitfall: Duplicate asset dots</div>
+          <div class="comparison-card-subtitle">An asset in 3 indications appears on 3 spokes when grouped by indication</div>
+        </div>
+        <div class="comparison-card-body" style="flex-direction:column;align-items:flex-start;gap:12px;padding:20px;">
+          <div style="font-size:12px;color:var(--slate-600);line-height:1.6">
+            <strong style="color:var(--slate-700)">Problem:</strong> Keytruda (Merck) is approved in 15+ indications. Grouped by indication, it appears 15 times.<br/><br/>
+            <strong style="color:var(--slate-700)">Mitigations:</strong><br/>
+            <strong>A.</strong> Accept duplication (analytically correct). Count badge says "42 assets (38 unique)".<br/>
+            <strong>B.</strong> Outline duplicate dots with a dashed ring to signal they appear elsewhere.<br/>
+            <strong>C.</strong> On hover, highlight all copies of the same asset across spokes.<br/>
+            <strong>D.</strong> "Unique placement" toggle: assign each asset to its highest-phase spoke only.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Click-away overlay for dropdowns -->
+<div class="dropdown-overlay" id="dropdown-overlay" onclick="closeAllDropdowns()"></div>
+
+<script>
+// ============================================================
+// Mock data
+// ============================================================
+const COMPANIES = ['Pfizer','Roche','Merck','Novartis','BMS','Eli Lilly','AstraZeneca'];
+const INDICATIONS = ['Oncology','Immunology','Cardiovascular','CNS','Metabolic','Rare Disease'];
+const MOAS = ['PD-1/PD-L1','CAR-T','Bispecific Ab','ADC','JAK Inhibitor','mTOR','VEGF'];
+const ROAS = ['IV','Oral','SC','Topical'];
+const PHASES = ['PRECLIN','P1','P2','P3','P4','APPROVED','LAUNCHED'];
+const PHASE_COLORS = {
+  PRECLIN:'#94a3b8', P1:'#64748b', P2:'#0891b2',
+  P3:'#0d9488', P4:'#7c3aed', APPROVED:'#6d28d9', LAUNCHED:'#059669'
+};
+const PHASE_RANK = { PRECLIN:0, P1:1, P2:2, P3:3, P4:4, APPROVED:5, LAUNCHED:6 };
+
+function randomPick(arr, n) {
+  const copy = [...arr];
+  const out = [];
+  n = Math.min(n, copy.length);
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+// Seed consistent mock assets
+const SEED_ASSETS = [];
+(function generateAssets() {
+  const names = [
+    'Avelumab','Bavencio','Crizotinib','Durvalumab','Encorafenib',
+    'Fruquintinib','Glasdegib','Herceptin','Ibrutinib','Jakafi',
+    'Keytruda','Lorlatinib','Momelotinib','Nivolumab','Olaparib',
+    'Pembrolizumab','Quizartinib','Ruxolitinib','Selpercatinib','Trastuzumab',
+    'Upadacitinib','Venetoclax','Wipetanib','Xalkori','Yervoy','Zanubrutinib',
+    'Abrocitinib','Baricitinib','Capmatinib','Dabrafenib','Erdafitinib',
+    'Fam-trastuzumab','Gilteritinib','Infigratinib','Larotrectinib','Mobocertinib',
+    'Niraparib','Osimertinib','Pirtobrutinib','Repotrectinib','Sacituzumab',
+    'Teclistamab','Tucatinib','Vosoritide'
+  ];
+  const rng = mulberry32(42);
+  for (let i = 0; i < names.length; i++) {
+    SEED_ASSETS.push({
+      id: 'a' + i,
+      name: names[i],
+      company: COMPANIES[Math.floor(rng() * COMPANIES.length)],
+      indications: randomPickSeeded(INDICATIONS, 1 + Math.floor(rng() * 2), rng),
+      moas: randomPickSeeded(MOAS, 1 + Math.floor(rng() * 2), rng),
+      roas: randomPickSeeded(ROAS, 1, rng),
+      phase: PHASES[Math.floor(rng() * PHASES.length)],
+      hasRecentActivity: rng() < 0.3,
+      hasAnnotation: rng() < 0.2,
+    });
+  }
+})();
+
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function randomPickSeeded(arr, n, rng) {
+  const copy = [...arr];
+  const out = [];
+  n = Math.min(n, copy.length);
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(rng() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+// ============================================================
+// State
+// ============================================================
+let currentGrouping = 'company';
+let activeFilters = {
+  indication: new Set(['onc','imm']),
+  company: new Set(),
+  moa: new Set(),
+  roa: new Set(),
+  phase: new Set(),
+  asset: new Set(),
+};
+
+const FILTER_ID_TO_NAME = {
+  onc:'Oncology', imm:'Immunology', cv:'Cardiovascular', cns:'CNS / Neurology', meta:'Metabolic', rare:'Rare Disease',
+  pfizer:'Pfizer', roche:'Roche', merck:'Merck', novartis:'Novartis', bms:'Bristol-Myers Squibb', lilly:'Eli Lilly', az:'AstraZeneca',
+  pd1:'PD-1 / PD-L1', 'car-t':'CAR-T', bispecific:'Bispecific antibody', adc:'ADC', jak:'JAK inhibitor',
+  iv:'Intravenous', oral:'Oral', sc:'Subcutaneous', topical:'Topical',
+  preclin:'Preclinical', p1:'Phase 1', p2:'Phase 2', p3:'Phase 3', approved:'Approved', launched:'Launched',
+};
+// Asset name->name entries added dynamically after SEED_ASSETS is built
+const FILTER_CAT_LABELS = { indication:'IND', company:'CO', moa:'MOA', roa:'ROA', phase:'PH', asset:'ASSET' };
+
+const ID_TO_DATA_NAME = {
+  onc:'Oncology', imm:'Immunology', cv:'Cardiovascular', cns:'CNS', meta:'Metabolic', rare:'Rare Disease',
+  pfizer:'Pfizer', roche:'Roche', merck:'Merck', novartis:'Novartis', bms:'BMS', lilly:'Eli Lilly', az:'AstraZeneca',
+  pd1:'PD-1/PD-L1', 'car-t':'CAR-T', bispecific:'Bispecific Ab', adc:'ADC', jak:'JAK Inhibitor',
+  iv:'IV', oral:'Oral', sc:'SC', topical:'Topical',
+  preclin:'PRECLIN', p1:'P1', p2:'P2', p3:'P3', approved:'APPROVED', launched:'LAUNCHED',
+};
+
+// ============================================================
+// Filter & dropdown logic
+// ============================================================
+function toggleDropdown(name) {
+  const el = document.getElementById('dropdown-' + name);
+  const overlay = document.getElementById('dropdown-overlay');
+  const isOpen = el.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) {
+    el.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('open'));
+  document.getElementById('dropdown-overlay').classList.remove('open');
+}
+
+function toggleFilter(el) {
+  const cat = el.dataset.filter;
+  const id = el.dataset.id;
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) {
+    activeFilters[cat].add(id);
+  } else {
+    activeFilters[cat].delete(id);
+  }
+  updateUI();
+}
+
+function filterDropdownItems(input, cat) {
+  const q = input.value.toLowerCase();
+  const items = input.parentElement.querySelectorAll('.dropdown-item');
+  items.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+function removeChip(chipX, cat, id) {
+  activeFilters[cat].delete(id);
+  const item = document.querySelector(`.dropdown-item[data-filter="${cat}"][data-id="${id}"]`);
+  if (item) item.classList.remove('selected');
+  updateUI();
+}
+
+function clearAll() {
+  for (const cat in activeFilters) activeFilters[cat].clear();
+  document.querySelectorAll('.dropdown-item.selected').forEach(el => el.classList.remove('selected'));
+  updateUI();
+}
+
+let currentDotStyle = 'halo';
+let currentSurface = 'light';
+
+function setGrouping(btn, grouping) {
+  btn.closest('.group-toggle').querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentGrouping = grouping;
+  renderBullseye();
+}
+
+function setSurface(btn, surface) {
+  btn.closest('.group-toggle').querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSurface = surface;
+  const descs = {
+    light: 'Standard light surface',
+    tinted: 'Slate-washed chart well. Dots pop against the darker ground.',
+    instrument: 'Dark data surface, light chrome. Bloomberg-style instrument feel.',
+  };
+  document.getElementById('surface-desc').textContent = descs[surface];
+  renderBullseye();
+}
+
+function updateUI() {
+  // Update pill badges
+  for (const cat of ['indication','company','moa','roa','phase','asset']) {
+    const pill = document.querySelector(`#filter-${cat} .filter-pill`);
+    const count = activeFilters[cat].size;
+    if (count > 0) {
+      pill.classList.add('has-values');
+      let badge = pill.querySelector('.pill-count');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'pill-count';
+        pill.insertBefore(badge, pill.querySelector('.pill-chevron'));
+      }
+      badge.textContent = count;
+    } else {
+      pill.classList.remove('has-values');
+      const badge = pill.querySelector('.pill-count');
+      if (badge) badge.remove();
+    }
+  }
+
+  // Update chips
+  const chipsEl = document.getElementById('active-chips');
+  chipsEl.innerHTML = '';
+  let total = 0;
+  for (const cat of ['indication','company','moa','roa','phase','asset']) {
+    for (const id of activeFilters[cat]) {
+      total++;
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = `<span class="chip-cat">${FILTER_CAT_LABELS[cat]}</span> ${FILTER_ID_TO_NAME[id] || id} <span class="chip-x" onclick="removeChip(this, '${cat}', '${id}')">&times;</span>`;
+      chipsEl.appendChild(chip);
+    }
+  }
+  const clearBtn = document.querySelector('.clear-all-btn');
+  if (total > 0) {
+    clearBtn.style.display = '';
+    clearBtn.textContent = `Clear all (${total})`;
+    document.getElementById('chips-row').style.display = '';
+  } else {
+    clearBtn.style.display = 'none';
+    document.getElementById('chips-row').style.display = 'none';
+  }
+
+  renderBullseye();
+}
+
+// ============================================================
+// Bullseye rendering
+// ============================================================
+const CX = 500, CY = 500;
+const INNER_R = 95, OUTER_R = 335;
+const RINGS = 7;
+
+function ringRadius(devRank) {
+  const ringRank = RINGS - 1 - devRank;
+  const step = (OUTER_R - INNER_R) / (RINGS - 1);
+  return INNER_R + step * ringRank;
+}
+
+function polar(angle, r) {
+  return { x: CX + r * Math.cos(angle), y: CY + r * Math.sin(angle) };
+}
+
+function spokeAngle(idx, total) {
+  const deg = -90 + (360 / total) * idx;
+  return (deg * Math.PI) / 180;
+}
+
+function filterAssets() {
+  return SEED_ASSETS.filter(a => {
+    if (activeFilters.indication.size > 0) {
+      const names = [...activeFilters.indication].map(id => ID_TO_DATA_NAME[id]);
+      if (!a.indications.some(i => names.includes(i))) return false;
+    }
+    if (activeFilters.company.size > 0) {
+      const names = [...activeFilters.company].map(id => ID_TO_DATA_NAME[id]);
+      if (!names.includes(a.company)) return false;
+    }
+    if (activeFilters.moa.size > 0) {
+      const names = [...activeFilters.moa].map(id => ID_TO_DATA_NAME[id]);
+      if (!a.moas.some(m => names.includes(m))) return false;
+    }
+    if (activeFilters.roa.size > 0) {
+      const names = [...activeFilters.roa].map(id => ID_TO_DATA_NAME[id]);
+      if (!a.roas.some(r => names.includes(r))) return false;
+    }
+    if (activeFilters.phase.size > 0) {
+      const names = [...activeFilters.phase].map(id => ID_TO_DATA_NAME[id]);
+      if (!names.includes(a.phase)) return false;
+    }
+    if (activeFilters.asset.size > 0) {
+      if (!activeFilters.asset.has(a.id)) return false;
+    }
+    return true;
+  });
+}
+
+function groupAssets(assets) {
+  const groups = {};
+  if (currentGrouping === 'asset') {
+    assets.forEach(a => { groups[a.name] = [a]; });
+    return groups;
+  }
+  assets.forEach(a => {
+    let keys;
+    switch (currentGrouping) {
+      case 'company': keys = [a.company]; break;
+      case 'indication': keys = a.indications; break;
+      case 'moa': keys = a.moas; break;
+      case 'roa': keys = a.roas; break;
+      default: keys = [a.company];
+    }
+    keys.forEach(k => {
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(a);
+    });
+  });
+  return groups;
+}
+
+function renderBullseye() {
+  const svg = document.getElementById('main-bullseye');
+  const assets = filterAssets();
+  const grouped = groupAssets(assets);
+
+  // Detect duplicates: assets appearing in more than one spoke
+  const assetSpokeCount = {};
+  for (const [spokeName, spokeAssets] of Object.entries(grouped)) {
+    for (const a of spokeAssets) {
+      if (!assetSpokeCount[a.id]) assetSpokeCount[a.id] = 0;
+      assetSpokeCount[a.id]++;
+    }
+  }
+  const duplicateIds = new Set(Object.keys(assetSpokeCount).filter(id => assetSpokeCount[id] > 1));
+  const uniqueAssetCount = new Set(assets.map(a => a.id)).size;
+  const totalDotCount = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
+  const hasDuplicates = duplicateIds.size > 0;
+
+  let spokeNames = Object.keys(grouped).sort((a, b) => {
+    const maxA = Math.max(...grouped[a].map(x => PHASE_RANK[x.phase]));
+    const maxB = Math.max(...grouped[b].map(x => PHASE_RANK[x.phase]));
+    return maxB - maxA;
+  });
+
+  // Cap at 16 spokes
+  let collapsed = null;
+  if (spokeNames.length > 16) {
+    const overflow = spokeNames.slice(15);
+    collapsed = { count: overflow.length, assets: overflow.flatMap(n => grouped[n]) };
+    spokeNames = spokeNames.slice(0, 15);
+    spokeNames.push(`+${collapsed.count} more`);
+  }
+
+  const totalSpokes = spokeNames.length;
+
+  // Surface palette
+  const palette = {
+    light: {
+      bg: '#f8fafc',
+      wedgeA: '#f1f5f9', wedgeB: '#ffffff',
+      ring: '#e2e8f0', ringOuter: '#94a3b8',
+      spoke: '#cbd5e1',
+      ringLabel: '#94a3b8',
+      spokeLabel: '#475569', spokeLabelOverflow: '#94a3b8',
+      centerBg: 'white', centerStroke: '#e2e8f0',
+      centerText: '#334155', centerSub: '#94a3b8',
+      dotStroke: 'white',
+      haloIntel: '#0d9488',
+    },
+    tinted: {
+      bg: '#e2e8f0',
+      wedgeA: '#dce4ed', wedgeB: '#e8eef4',
+      ring: '#cbd5e1', ringOuter: '#64748b',
+      spoke: '#94a3b8',
+      ringLabel: '#64748b',
+      spokeLabel: '#334155', spokeLabelOverflow: '#64748b',
+      centerBg: '#f1f5f9', centerStroke: '#cbd5e1',
+      centerText: '#1e293b', centerSub: '#64748b',
+      dotStroke: '#e2e8f0',
+      haloIntel: '#0d9488',
+    },
+    instrument: {
+      bg: '#1e293b',
+      wedgeA: '#1a2536', wedgeB: '#213044',
+      ring: '#334155', ringOuter: '#64748b',
+      spoke: '#475569',
+      ringLabel: '#94a3b8',
+      spokeLabel: '#e2e8f0', spokeLabelOverflow: '#64748b',
+      centerBg: '#0f172a', centerStroke: '#475569',
+      centerText: '#f1f5f9', centerSub: '#94a3b8',
+      dotStroke: '#1e293b',
+      haloIntel: '#2dd4bf',
+    },
+  }[currentSurface];
+
+  let html = '';
+
+  // Background
+  html += `<rect x="0" y="0" width="1000" height="1000" fill="${palette.bg}" rx="12"/>`;
+
+  // Sector wedges
+  if (totalSpokes > 0) {
+    for (let i = 0; i < totalSpokes; i++) {
+      const a1 = spokeAngle(i, totalSpokes) - Math.PI / totalSpokes;
+      const a2 = spokeAngle(i, totalSpokes) + Math.PI / totalSpokes;
+      const p1 = polar(a1, OUTER_R + 20);
+      const p2 = polar(a2, OUTER_R + 20);
+      const fill = i % 2 === 0 ? palette.wedgeA : palette.wedgeB;
+      const largeArc = (a2 - a1) > Math.PI ? 1 : 0;
+      html += `<path d="M ${CX} ${CY} L ${p1.x} ${p1.y} A ${OUTER_R+20} ${OUTER_R+20} 0 ${largeArc} 1 ${p2.x} ${p2.y} Z" fill="${fill}" stroke="none"/>`;
+    }
+  }
+
+  // Rings
+  for (let r = 0; r < RINGS; r++) {
+    const rad = ringRadius(r);
+    const isOuter = r === 0;
+    html += `<circle cx="${CX}" cy="${CY}" r="${rad}" fill="none" stroke="${isOuter ? palette.ringOuter : palette.ring}" stroke-width="${isOuter ? 1.5 : 0.5}"/>`;
+  }
+
+  // Spoke lines
+  for (let i = 0; i < totalSpokes; i++) {
+    const angle = spokeAngle(i, totalSpokes);
+    const inner = polar(angle, INNER_R - 5);
+    const outer = polar(angle, OUTER_R + 10);
+    html += `<line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}" stroke="${palette.spoke}" stroke-width="0.7"/>`;
+  }
+
+  // Ring labels at 12 o'clock
+  const ringLabels = ['LAUNCHED','APPROVED','P4','P3','P2','P1','PRECLIN'];
+  for (let r = 0; r < RINGS; r++) {
+    const rad = ringRadius(RINGS - 1 - r);
+    html += `<text x="${CX + 8}" y="${CY - rad - 4}" font-size="10" fill="${palette.ringLabel}" font-family="JetBrains Mono, monospace" font-weight="500">${ringLabels[r]}</text>`;
+  }
+
+  // Asset dots with duplicate detection -- style-aware
+  for (let i = 0; i < totalSpokes; i++) {
+    const name = spokeNames[i];
+    if (name.startsWith('+')) continue;
+    const spokeAssets = grouped[name] || [];
+    const centerAngle = spokeAngle(i, totalSpokes);
+    const sectorWidth = (2 * Math.PI) / totalSpokes;
+
+    const byPhase = {};
+    spokeAssets.forEach(a => {
+      if (!byPhase[a.phase]) byPhase[a.phase] = [];
+      byPhase[a.phase].push(a);
+    });
+
+    for (const phase in byPhase) {
+      const dots = byPhase[phase];
+      const rad = ringRadius(PHASE_RANK[phase]);
+      const maxOffset = Math.min(sectorWidth * 0.35, 0.25);
+
+      dots.forEach((a, j) => {
+        const t = dots.length === 1 ? 0 : (2 * j) / (dots.length - 1) - 1;
+        const angle = centerAngle + maxOffset * t;
+        const radJitter = rad + (j % 2 === 0 ? -4 : 4) * (dots.length > 2 ? 1 : 0);
+        const pos = polar(angle, radJitter);
+        const isDup = duplicateIds.has(a.id);
+        const tooltip = `${a.name} (${a.company}) -- ${phase}${isDup ? ' [' + assetSpokeCount[a.id] + ' spokes]' : ''}${a.hasRecentActivity ? ' -- recent activity' : ''}${a.hasAnnotation ? ' -- intelligence attached' : ''}`;
+
+        if (currentDotStyle === 'size') {
+          // STYLE A: Size encodes intelligence
+          // Base: 10px, with intel: 14px, selected/hovered scales further
+          const baseR = a.hasAnnotation ? 12 : 8;
+          const dupStroke = isDup ? 'stroke="#475569" stroke-width="2.5" stroke-dasharray="4 3"' : 'stroke="white" stroke-width="1.5"';
+
+          if (a.hasRecentActivity) {
+            html += `<circle class="activity-pulse pulse-size non-interactive" cx="${pos.x}" cy="${pos.y}" r="${baseR}" stroke="#f59e0b"/>`;
+          }
+
+          html += `<circle class="asset-dot${isDup ? ' duplicate-dot' : ''}" data-asset-id="${a.id}"
+            cx="${pos.x}" cy="${pos.y}" r="${baseR}"
+            fill="${PHASE_COLORS[phase]}" opacity="0.9"
+            ${dupStroke}>
+            <title>${tooltip}</title>
+          </circle>`;
+
+          // Intel dots get a small inner icon (filled white circle as "note" hint)
+          if (a.hasAnnotation) {
+            html += `<circle class="non-interactive" cx="${pos.x}" cy="${pos.y}" r="3" fill="white" opacity="0.9"/>`;
+            html += `<circle class="non-interactive" cx="${pos.x}" cy="${pos.y}" r="1.5" fill="${PHASE_COLORS[phase]}"/>`;
+          }
+
+        } else if (currentDotStyle === 'halo') {
+          // STYLE B: Halo/ring system
+          // Base dot: 8px. Intel = brand-colored ring at 13px. Activity = amber pulse at 17px.
+          const baseR = 7;
+
+          // Outermost: activity pulse
+          if (a.hasRecentActivity) {
+            html += `<circle class="activity-pulse pulse-halo non-interactive" cx="${pos.x}" cy="${pos.y}" r="${baseR + 5}" stroke="#f59e0b"/>`;
+          }
+
+          // Intel halo ring (static, always visible)
+          if (a.hasAnnotation) {
+            html += `<circle class="non-interactive" cx="${pos.x}" cy="${pos.y}" r="${baseR + 5}"
+              fill="none" stroke="${palette.haloIntel}" stroke-width="2" opacity="0.8"/>`;
+          }
+
+          // Duplicate ring
+          if (isDup) {
+            const dupR = baseR + (a.hasAnnotation ? 8 : 5);
+            const dupColor = currentSurface === 'instrument' ? '#94a3b8' : '#475569';
+            html += `<circle class="non-interactive" cx="${pos.x}" cy="${pos.y}" r="${dupR}"
+              fill="none" stroke="${dupColor}" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.6"/>`;
+          }
+
+          html += `<circle class="asset-dot" data-asset-id="${a.id}"
+            cx="${pos.x}" cy="${pos.y}" r="${baseR}"
+            fill="${PHASE_COLORS[phase]}" opacity="0.95"
+            stroke="${palette.dotStroke}" stroke-width="1.5">
+            <title>${tooltip}</title>
+          </circle>`;
+
+        } else {
+          // STYLE C: Badge (current approach, scaled up)
+          const baseR = 7;
+          const dupStroke = isDup ? 'stroke="#475569" stroke-width="2" stroke-dasharray="4 3"' : 'stroke="white" stroke-width="1.5"';
+
+          if (a.hasRecentActivity) {
+            html += `<circle class="activity-pulse pulse-badge non-interactive" cx="${pos.x}" cy="${pos.y}" r="${baseR}" stroke="#f59e0b"/>`;
+          }
+
+          html += `<circle class="asset-dot${isDup ? ' duplicate-dot' : ''}" data-asset-id="${a.id}"
+            cx="${pos.x}" cy="${pos.y}" r="${baseR}"
+            fill="${PHASE_COLORS[phase]}" opacity="0.9"
+            ${dupStroke}>
+            <title>${tooltip}</title>
+          </circle>`;
+
+          // Scaled-up badge (7px circle instead of 4px)
+          if (a.hasAnnotation) {
+            html += `<circle class="non-interactive" cx="${pos.x + 7}" cy="${pos.y - 7}" r="6" fill="#1e293b" stroke="white" stroke-width="1"/>`;
+            html += `<text class="non-interactive" x="${pos.x + 7}" y="${pos.y - 4.5}" text-anchor="middle" font-size="8" font-weight="700" fill="white" font-family="JetBrains Mono, monospace">i</text>`;
+          }
+        }
+      });
+    }
+  }
+
+  // Spoke labels outside the outer ring
+  for (let i = 0; i < totalSpokes; i++) {
+    const name = spokeNames[i];
+    const angle = spokeAngle(i, totalSpokes);
+    const labelR = OUTER_R + 30;
+    const pos = polar(angle, labelR);
+    const deg = (angle * 180 / Math.PI);
+
+    let anchor = 'middle';
+    let adjustedDeg = deg;
+    if (deg > 90 && deg < 270) {
+      adjustedDeg = deg + 180;
+    }
+    if (deg > 45 && deg < 135) anchor = 'start';
+    if (deg > 225 && deg < 315) anchor = 'end';
+
+    const displayName = name.length > 14 ? name.slice(0, 13) + '...' : name;
+    const isOverflow = name.startsWith('+');
+
+    html += `<text x="${pos.x}" y="${pos.y}"
+      text-anchor="${anchor}"
+      font-size="11"
+      fill="${isOverflow ? palette.spokeLabelOverflow : palette.spokeLabel}"
+      font-family="JetBrains Mono, monospace"
+      font-weight="${isOverflow ? '400' : '600'}"
+      letter-spacing="0.04em"
+      transform="rotate(${adjustedDeg}, ${pos.x}, ${pos.y})"
+      style="text-transform:uppercase"
+    >${displayName}</text>`;
+  }
+
+  // Center disc
+  html += `<circle cx="${CX}" cy="${CY}" r="${INNER_R - 8}" fill="${palette.centerBg}" stroke="${palette.centerStroke}" stroke-width="1"/>`;
+
+  // Center text
+  const scopeParts = [];
+  if (activeFilters.indication.size > 0) {
+    scopeParts.push([...activeFilters.indication].map(id => FILTER_ID_TO_NAME[id]).join(' + '));
+  }
+  if (activeFilters.company.size > 0) {
+    scopeParts.push([...activeFilters.company].map(id => FILTER_ID_TO_NAME[id]).join(' + '));
+  }
+  if (activeFilters.moa.size > 0) {
+    scopeParts.push([...activeFilters.moa].map(id => FILTER_ID_TO_NAME[id]).join(' + '));
+  }
+  if (activeFilters.asset.size > 0) {
+    const assetNames = [...activeFilters.asset].map(id => {
+      const a = SEED_ASSETS.find(x => x.id === id);
+      return a ? a.name : id;
+    });
+    scopeParts.push(assetNames.join(' + '));
+  }
+  const scopeLabel = scopeParts.length > 0 ? scopeParts.join(', ') : 'All assets';
+  const groupLabel = 'by ' + currentGrouping;
+
+  // Wrap center text
+  const maxChars = 16;
+  const scopeLines = [];
+  if (scopeLabel.length <= maxChars) {
+    scopeLines.push(scopeLabel);
+  } else {
+    const words = scopeLabel.split(' ');
+    let line = '';
+    for (const word of words) {
+      if ((line + ' ' + word).trim().length > maxChars) {
+        scopeLines.push(line.trim());
+        line = word;
+      } else {
+        line = (line + ' ' + word).trim();
+      }
+    }
+    if (line) scopeLines.push(line.trim());
+  }
+  if (scopeLines.length > 3) {
+    scopeLines.length = 3;
+    scopeLines[2] = scopeLines[2].slice(0, 12) + '...';
+  }
+
+  const startY = CY - (scopeLines.length * 7) - 2;
+  scopeLines.forEach((line, idx) => {
+    html += `<text x="${CX}" y="${startY + idx * 14}" text-anchor="middle" font-size="11" font-weight="600" fill="${palette.centerText}" font-family="Inter, sans-serif">${line}</text>`;
+  });
+  html += `<text x="${CX}" y="${startY + scopeLines.length * 14 + 2}" text-anchor="middle" font-size="10" fill="${palette.centerSub}" font-family="JetBrains Mono, monospace">${groupLabel}</text>`;
+  const brandAccent = currentSurface === 'instrument' ? '#2dd4bf' : '#0d9488';
+  html += `<text x="${CX}" y="${startY + scopeLines.length * 14 + 16}" text-anchor="middle" font-size="12" font-weight="600" fill="${brandAccent}" font-family="JetBrains Mono, monospace">${uniqueAssetCount}</text>`;
+
+  svg.innerHTML = html;
+
+  // Update badge
+  document.getElementById('spoke-count-num').textContent = totalSpokes;
+  document.getElementById('asset-count-num').textContent = uniqueAssetCount;
+  const uniqueLabel = document.getElementById('unique-count-label');
+  if (hasDuplicates) {
+    uniqueLabel.textContent = ` (${totalDotCount} dots, ${totalDotCount - uniqueAssetCount} duplicates)`;
+  } else {
+    uniqueLabel.textContent = '';
+  }
+
+  // Show/hide duplicate legend entry
+  document.getElementById('legend-dup').style.display = hasDuplicates ? '' : 'none';
+
+  // Update competitive read
+  document.getElementById('insight-content').innerHTML = generateCompetitiveRead(assets, grouped, spokeNames);
+
+  // Attach hover handlers for cross-spoke highlighting (behavior C)
+  attachDotHoverHandlers();
+}
+
+function attachDotHoverHandlers() {
+  const svg = document.getElementById('main-bullseye');
+  const dots = svg.querySelectorAll('.asset-dot');
+
+  dots.forEach(dot => {
+    dot.addEventListener('mouseenter', () => {
+      const assetId = dot.dataset.assetId;
+      svg.classList.add('has-hover');
+      // Highlight all dots for the same asset
+      svg.querySelectorAll(`.asset-dot[data-asset-id="${assetId}"]`).forEach(d => {
+        d.classList.add('asset-highlight');
+      });
+    });
+
+    dot.addEventListener('mouseleave', () => {
+      svg.classList.remove('has-hover');
+      svg.querySelectorAll('.asset-highlight').forEach(d => {
+        d.classList.remove('asset-highlight');
+      });
+    });
+  });
+}
+
+// ============================================================
+// Tab switching
+// ============================================================
+function showTab(tab) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  document.getElementById('tab-comparison').classList.remove('active');
+  document.getElementById('tab-comparison').style.display = 'none';
+  document.getElementById('tab-prototype').style.display = 'none';
+  document.getElementById('tab-scenarios').classList.remove('active');
+  document.getElementById('tab-scenarios').style.display = 'none';
+
+  if (tab === 'comparison') {
+    document.getElementById('tab-comparison').style.display = 'block';
+    document.getElementById('tab-comparison').classList.add('active');
+  } else if (tab === 'prototype') {
+    document.getElementById('tab-prototype').style.display = 'flex';
+  } else if (tab === 'scenarios') {
+    document.getElementById('tab-scenarios').style.display = 'block';
+    document.getElementById('tab-scenarios').classList.add('active');
+  }
+}
+
+// ============================================================
+// Competitive read generator
+// ============================================================
+function generateCompetitiveRead(assets, grouped, spokeNames) {
+  if (assets.length === 0) return '<span style="color:#94a3b8">Apply scope filters to generate the competitive read.</span>';
+  if (currentGrouping === 'asset') return generateAssetModeRead(assets);
+
+  // Rank spokes by pipeline advancement
+  const spokeStats = spokeNames.filter(n => !n.startsWith('+')).map(name => {
+    const items = grouped[name] || [];
+    const launched = items.filter(a => a.phase === 'LAUNCHED').length;
+    const approved = items.filter(a => a.phase === 'APPROVED').length;
+    const p3 = items.filter(a => a.phase === 'P3').length;
+    const latePlus = launched + approved + p3;
+    const total = items.length;
+    const maxRank = Math.max(...items.map(a => PHASE_RANK[a.phase]), 0);
+    const recentActivity = items.filter(a => a.hasRecentActivity).length;
+    return { name, launched, approved, p3, latePlus, total, maxRank, recentActivity };
+  }).sort((a, b) => {
+    if (b.launched !== a.launched) return b.launched - a.launched;
+    if (b.latePlus !== a.latePlus) return b.latePlus - a.latePlus;
+    return b.total - a.total;
+  });
+
+  const parts = [];
+
+  // Leader
+  const leader = spokeStats[0];
+  if (leader) {
+    let leaderDesc;
+    if (leader.launched > 0) {
+      leaderDesc = `leads with ${leader.launched} launched asset${leader.launched > 1 ? 's' : ''}`;
+    } else if (leader.approved > 0) {
+      leaderDesc = `leads with ${leader.approved} approved asset${leader.approved > 1 ? 's' : ''}`;
+    } else {
+      leaderDesc = `leads (${leader.total} assets, furthest at ${phaseLabel(leader.maxRank)})`;
+    }
+    parts.push(`<strong class="insight-leader">${leader.name}</strong> ${leaderDesc}`);
+  }
+
+  // Deepest late-stage (if different from leader)
+  const deepestLate = spokeStats.filter(s => s !== leader).sort((a, b) => b.p3 - a.p3)[0];
+  if (deepestLate && deepestLate.p3 > 0) {
+    parts.push(`<strong>${deepestLate.name}</strong> has the deepest P3 pipeline (${deepestLate.p3})`);
+  }
+
+  // Most active
+  const mostActive = spokeStats.filter(s => s.recentActivity > 0).sort((a, b) => b.recentActivity - a.recentActivity)[0];
+  if (mostActive && mostActive.recentActivity >= 2) {
+    parts.push(`<strong>${mostActive.name}</strong> most active recently (${mostActive.recentActivity} events)`);
+  }
+
+  // Emerging (most preclinical)
+  const emerging = spokeStats.filter(s => s !== leader && s !== deepestLate).sort((a, b) => b.total - a.total)[0];
+  if (emerging && emerging.total >= 3 && emerging.maxRank <= 2) {
+    parts.push(`<strong>${emerging.name}</strong> emerging (${emerging.total} early-stage)`);
+  }
+
+  if (parts.length === 0) {
+    parts.push(`${assets.length} assets across ${spokeNames.length} ${currentGrouping === 'company' ? 'companies' : currentGrouping + 's'}`);
+  }
+
+  return parts.join('<span class="insight-separator">|</span>');
+}
+
+function generateAssetModeRead(assets) {
+  const launched = assets.filter(a => a.phase === 'LAUNCHED');
+  const p3 = assets.filter(a => a.phase === 'P3');
+  const parts = [];
+  if (launched.length > 0) parts.push(`${launched.length} launched: ${launched.slice(0, 3).map(a => '<strong>' + a.name + '</strong>').join(', ')}`);
+  if (p3.length > 0) parts.push(`${p3.length} in Phase 3: ${p3.slice(0, 3).map(a => '<strong>' + a.name + '</strong>').join(', ')}`);
+  if (parts.length === 0) parts.push(`${assets.length} assets shown`);
+  return parts.join('<span class="insight-separator">|</span>');
+}
+
+function phaseLabel(rank) {
+  return ['Preclinical', 'P1', 'P2', 'P3', 'P4', 'Approved', 'Launched'][rank] || '?';
+}
+
+// ============================================================
+// Populate asset dropdown from SEED_ASSETS
+// ============================================================
+(function populateAssetDropdown() {
+  const dropdown = document.getElementById('dropdown-asset');
+  const sorted = [...SEED_ASSETS].sort((a, b) => a.name.localeCompare(b.name));
+  sorted.forEach(asset => {
+    FILTER_ID_TO_NAME[asset.id] = asset.name;
+    const div = document.createElement('div');
+    div.className = 'dropdown-item';
+    div.dataset.filter = 'asset';
+    div.dataset.id = asset.id;
+    div.onclick = function() { toggleFilter(this); };
+    div.innerHTML = `<span class="dropdown-check"></span> ${asset.name} <span style="font-size:10px;color:#94a3b8;margin-left:auto">${asset.company}</span>`;
+    dropdown.appendChild(div);
+  });
+})();
+
+// ============================================================
+// Initial render
+// ============================================================
+updateUI();
+</script>
+</body>
+</html>

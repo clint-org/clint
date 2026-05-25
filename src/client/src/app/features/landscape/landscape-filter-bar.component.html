@@ -32,31 +32,18 @@
         <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
       }
 
-      <!-- View-specific: spoke mode + entity selector (bullseye) -->
+      <!-- View-specific: spoke grouping toggle (bullseye) -->
       @if (viewMode() === 'bullseye') {
+        <span class="text-xs font-medium text-slate-500 whitespace-nowrap">Group by</span>
         <p-selectbutton
-          [options]="spokeModeOptions"
-          [ngModel]="state.spokeMode()"
-          (ngModelChange)="state.spokeMode.set($event)"
+          [options]="spokeGroupingOptions"
+          [ngModel]="state.spokeGrouping()"
+          (ngModelChange)="state.spokeGrouping.set($event)"
           optionLabel="label"
           optionValue="value"
           [allowEmpty]="false"
           size="small"
         />
-        @if (entityId()) {
-          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-          <p-select
-            [options]="entityOptions()"
-            [ngModel]="entityId()"
-            (ngModelChange)="entityChange.emit($event)"
-            optionLabel="label"
-            optionValue="value"
-            [showClear]="true"
-            styleClass="min-w-[12rem]"
-            size="small"
-            placeholder="Select entity"
-          />
-        }
         <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
       }
 

@@ -10,6 +10,7 @@ import {
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
   PositioningGrouping,
+  SpokeGrouping,
   SpokeMode,
 } from '../../core/models/landscape.model';
 import { CatalystService } from '../../core/services/catalyst.service';
@@ -20,6 +21,7 @@ interface PersistedLandscapeState {
   filters: LandscapeFilters;
   zoomLevel: ZoomLevel;
   spokeMode: SpokeMode;
+  spokeGrouping: SpokeGrouping;
   positioningGrouping: PositioningGrouping;
   countUnit: CountUnit;
 }
@@ -60,7 +62,9 @@ export class LandscapeStateService {
 
   // ─── View-specific settings ──────────────────────────────────────────
   readonly zoomLevel = signal<ZoomLevel>('yearly');
+  /** @deprecated Use spokeGrouping instead. Kept during migration. */
   readonly spokeMode = signal<SpokeMode>('grouped');
+  readonly spokeGrouping = signal<SpokeGrouping>('company');
   readonly positioningGrouping = signal<PositioningGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
 
@@ -95,6 +99,7 @@ export class LandscapeStateService {
       filters: this.filters(),
       zoomLevel: this.zoomLevel(),
       spokeMode: this.spokeMode(),
+      spokeGrouping: this.spokeGrouping(),
       positioningGrouping: this.positioningGrouping(),
       countUnit: this.countUnit(),
     };
@@ -213,6 +218,7 @@ export class LandscapeStateService {
       if (saved.filters) this.filters.set(saved.filters);
       if (saved.zoomLevel) this.zoomLevel.set(saved.zoomLevel);
       if (saved.spokeMode) this.spokeMode.set(saved.spokeMode);
+      if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
       if (saved.positioningGrouping) this.positioningGrouping.set(saved.positioningGrouping);
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
     } catch {

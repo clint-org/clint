@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   effect,
-  HostListener,
   inject,
   OnInit,
   resource,
@@ -16,27 +15,29 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import {
-  BullseyeDimension,
   BullseyeAsset,
-  BullseyeSpoke,
+  BullseyeData,
   LandscapeFilters,
+  RING_ORDER,
   RingPhase,
-  segmentToDimension,
+  SPOKE_GROUPING_OPTIONS,
+  groupAssetsIntoSpokes,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component';
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
+import { CompetitiveReadBarComponent } from './competitive-read-bar.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
   selector: 'app-landscape',
-  standalone: true,
   imports: [
     BullseyeChartComponent,
     BullseyeDetailPanelComponent,
     BullseyeTooltipComponent,
+    CompetitiveReadBarComponent,
     RouterLink,
     ButtonModule,
     MessageModule,
@@ -46,17 +47,18 @@ import { LandscapeStateService } from './landscape-state.service';
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
 })
 export class LandscapeComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  readonly state = inject(LandscapeStateService);
+  protected readonly state = inject(LandscapeStateService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
-  readonly entityId = signal('');
-  readonly dimension = signal<BullseyeDimension>('indication');
 
   readonly selectedAssetId = signal<string | null>(null);
   readonly hoveredAssetId = signal<string | null>(null);
@@ -64,41 +66,44 @@ export class LandscapeComponent implements OnInit {
   readonly tooltipX = signal(0);
   readonly tooltipY = signal(0);
 
-  readonly bullseyeData = resource({
+  readonly bullseyeAssets = resource({
     params: () => ({
       spaceId: this.spaceId(),
-      dimension: this.dimension(),
-      entityId: this.entityId(),
+      filters: this.state.filters(),
     }),
     loader: async ({ params }) => {
-      if (!params.spaceId || !params.entityId) return null;
-      return this.landscapeService.getBullseyeData(
-        params.spaceId,
-        params.dimension,
-        params.entityId
-      );
+      if (!params.spaceId) return null;
+      return this.landscapeService.getBullseyeAssets(params.spaceId, params.filters);
     },
   });
 
-  readonly allAssets = computed<BullseyeAsset[]>(
-    () => this.bullseyeData.value()?.spokes.flatMap((s) => s.products) ?? []
-  );
+  readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value() ?? []);
 
-  readonly chartData = computed(() => {
-    const data = this.bullseyeData.value();
-    if (!data) return null;
-    if (this.state.spokeMode() === 'grouped') return data;
-
-    const allAssets = data.spokes.flatMap((s) => s.products);
-    const productSpokes: BullseyeSpoke[] = allAssets.map((p) => ({
-      id: p.id,
-      name: p.name,
-      display_order: 0,
-      highest_phase_rank: p.highest_phase_rank,
-      products: [p],
-    }));
-    return { ...data, spokes: productSpokes, spoke_label: 'Assets' };
+  /** Intermediate computed that holds the raw grouping result. */
+  private readonly groupedResult = computed(() => {
+    const assets = this.bullseyeAssets.value();
+    if (!assets?.length) return null;
+    return groupAssetsIntoSpokes(assets, this.state.spokeGrouping());
   });
+
+  readonly chartData = computed<BullseyeData | null>(() => {
+    const result = this.groupedResult();
+    if (!result) return null;
+    return {
+      dimension: this.state.spokeGrouping() as BullseyeData['dimension'],
+      scope: { id: 'scope', name: 'Filtered' },
+      ring_order: RING_ORDER as unknown as RingPhase[],
+      spokes: result.spokes,
+      spoke_label:
+        SPOKE_GROUPING_OPTIONS.find((o) => o.value === this.state.spokeGrouping())?.label ??
+        'Company',
+    } satisfies BullseyeData;
+  });
+
+  /** Tracks asset IDs that appear on multiple spokes (dashed outline). */
+  readonly duplicatedAssetIds = computed<Set<string>>(
+    () => this.groupedResult()?.duplicatedAssetIds ?? new Set()
+  );
 
   readonly selectedAsset = computed<BullseyeAsset | null>(() => {
     const id = this.selectedAssetId();
@@ -106,22 +111,19 @@ export class LandscapeComponent implements OnInit {
     return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
+  /**
+   * Dims assets that don't match recruitment status or study type filters.
+   * Scope-level filters (companies, indications, moas, roas, phases, assets)
+   * are handled at the fetch level and no longer need client-side matching.
+   */
   readonly matchedAssetIds = computed<Set<string> | null>(() => {
     const f = this.state.filters();
-    const noneActive =
-      f.companyIds.length === 0 &&
-      f.assetIds.length === 0 &&
-      f.indicationIds.length === 0 &&
-      f.mechanismOfActionIds.length === 0 &&
-      f.routeOfAdministrationIds.length === 0 &&
-      f.phases.length === 0 &&
-      f.recruitmentStatuses.length === 0 &&
-      f.studyTypes.length === 0;
-    if (noneActive) return null;
+    const hasDimFilters = f.recruitmentStatuses.length > 0 || f.studyTypes.length > 0;
+    if (!hasDimFilters) return null;
 
     const matched = new Set<string>();
     for (const product of this.allAssets()) {
-      if (this.productMatches(product, f)) matched.add(product.id);
+      if (this.productMatchesDimFilters(product, f)) matched.add(product.id);
     }
     return matched;
   });
@@ -132,12 +134,20 @@ export class LandscapeComponent implements OnInit {
     return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
+  /** Number of spokes the hovered asset appears on (for duplicate indicator). */
+  readonly hoveredAssetSpokeCount = computed<number>(() => {
+    const id = this.hoveredAssetId();
+    const result = this.groupedResult();
+    if (!id || !result) return 0;
+    return result.spokes.filter((s) => s.products.some((p) => p.id === id)).length;
+  });
+
   constructor() {
     effect(() => {
-      const data = this.bullseyeData.value();
+      const assets = this.bullseyeAssets.value();
       const currentSelected = this.selectedAssetId();
-      if (!data || !currentSelected) return;
-      const exists = data.spokes.some((s) => s.products.some((p) => p.id === currentSelected));
+      if (!assets || !currentSelected) return;
+      const exists = assets.some((a) => a.id === currentSelected);
       if (!exists) {
         this.selectedAssetId.set(null);
         this.updateQueryParam(null);
@@ -158,21 +168,11 @@ export class LandscapeComponent implements OnInit {
   ngOnInit(): void {
     this.tenantId.set(this.collectParam('tenantId'));
     this.spaceId.set(this.collectParam('spaceId'));
-    this.entityId.set(this.collectParam('entityId'));
     this.selectedAssetId.set(this.route.snapshot.queryParamMap.get('product'));
-
-    const urlSegments = this.route.snapshot.url;
-    const dimensionSegment = urlSegments.find((s) =>
-      ['by-indication', 'by-company', 'by-moa', 'by-roa'].includes(s.path)
-    );
-    if (dimensionSegment) {
-      this.dimension.set(segmentToDimension(dimensionSegment.path));
-    }
 
     this.route.paramMap.subscribe(() => {
       this.tenantId.set(this.collectParam('tenantId'));
       this.spaceId.set(this.collectParam('spaceId'));
-      this.entityId.set(this.collectParam('entityId'));
     });
     this.route.queryParamMap.subscribe((qp) => {
       this.selectedAssetId.set(qp.get('product'));
@@ -235,9 +235,6 @@ export class LandscapeComponent implements OnInit {
   }
 
   onOpenInTimeline(payload: { assetId: string; therapeuticAreaId: string }): void {
-    // Land on the actual timeline view, not the space root (which renders
-    // the landscape index). Filters thread through as query params and are
-    // applied in landscape-shell's applyQueryParamFilters().
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: {
         assetIds: payload.assetId,
@@ -248,31 +245,29 @@ export class LandscapeComponent implements OnInit {
 
   onOpenMarker(markerId: string): void {
     const product = this.selectedAsset();
-    const taId = this.entityId();
     const queryParams: Record<string, string> = { markerId };
     if (product) queryParams['assetIds'] = product.id;
-    if (taId) queryParams['indicationIds'] = taId;
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams,
     });
   }
 
   retry(): void {
-    this.bullseyeData.reload();
+    this.bullseyeAssets.reload();
   }
 
-  private productMatches(product: BullseyeAsset, f: LandscapeFilters): boolean {
-    if (f.companyIds.length > 0 && !f.companyIds.includes(product.company_id)) return false;
-    if (f.assetIds.length > 0 && !f.assetIds.includes(product.id)) return false;
-    if (f.mechanismOfActionIds.length > 0) {
-      const ok = (product.moas ?? []).some((m) => f.mechanismOfActionIds.includes(m.id));
-      if (!ok) return false;
+  protected onEscape(): void {
+    if (this.selectedAssetId() !== null) {
+      this.onClearSelection();
     }
-    if (f.routeOfAdministrationIds.length > 0) {
-      const ok = (product.roas ?? []).some((r) => f.routeOfAdministrationIds.includes(r.id));
-      if (!ok) return false;
-    }
-    if (f.phases.length > 0 && !f.phases.includes(product.highest_phase)) return false;
+  }
+
+  /**
+   * Matches assets against dim-level filters that should dim (not exclude).
+   * Recruitment statuses and study types are not part of the RPC scope filters,
+   * so they are applied client-side as visual dimming.
+   */
+  private productMatchesDimFilters(product: BullseyeAsset, f: LandscapeFilters): boolean {
     if (f.recruitmentStatuses.length > 0) {
       const ok = (product.trials ?? []).some(
         (t) => t.recruitment_status != null && f.recruitmentStatuses.includes(t.recruitment_status)
@@ -286,13 +281,6 @@ export class LandscapeComponent implements OnInit {
       if (!ok) return false;
     }
     return true;
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.selectedAssetId() !== null) {
-      this.onClearSelection();
-    }
   }
 
   private updateQueryParam(assetId: string | null): void {
