@@ -16,8 +16,8 @@ export interface Catalyst {
   no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
-  product_name: string | null;
-  product_id: string | null;
+  asset_name: string | null;
+  asset_id: string | null;
   trial_name: string | null;
   trial_id: string | null;
   trial_phase: string | null;

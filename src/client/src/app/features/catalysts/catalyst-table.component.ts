@@ -157,9 +157,9 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                 class="uppercase"
                 [innerHTML]="catalyst.company_name | highlight: query()"
               ></span>
-              @if (catalyst.product_name) {
+              @if (catalyst.asset_name) {
                 <span>
-                  &middot; <span [innerHTML]="catalyst.product_name | highlight: query()"></span
+                  &middot; <span [innerHTML]="catalyst.asset_name | highlight: query()"></span
                 ></span>
               }
             }

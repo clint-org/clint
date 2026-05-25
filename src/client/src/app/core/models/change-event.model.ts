@@ -32,7 +32,7 @@ export interface ChangeEvent {
   // joined for display
   trial_name: string;
   trial_identifier: string | null;
-  product_name: string | null;
+  asset_name: string | null;
   company_name: string | null;
   company_logo_url: string | null;
   marker_title: string | null;

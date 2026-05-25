@@ -147,9 +147,9 @@ interface CtgovProvenanceBlock {
               } @else {
                 <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
               }
-              @if (d.catalyst.product_name) {
+              @if (d.catalyst.asset_name) {
                 &middot;
-                @if (d.catalyst.product_id && tenantIdSig() && spaceId()) {
+                @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
                   <a
                     [routerLink]="[
                       '/t',
@@ -158,14 +158,14 @@ interface CtgovProvenanceBlock {
                       spaceId(),
                       'manage',
                       'assets',
-                      d.catalyst.product_id,
+                      d.catalyst.asset_id,
                     ]"
                     class="text-brand-700 hover:underline"
                   >
-                    {{ d.catalyst.product_name }}
+                    {{ d.catalyst.asset_name }}
                   </a>
                 } @else {
-                  {{ d.catalyst.product_name }}
+                  {{ d.catalyst.asset_name }}
                 }
               }
             </p>

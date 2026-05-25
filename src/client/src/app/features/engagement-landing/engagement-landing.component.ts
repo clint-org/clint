@@ -306,7 +306,7 @@ export class EngagementLandingComponent implements OnInit {
         monthLabel: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
         isToday: c.event_date === todayIso(),
         title: c.title || c.category_name || 'Catalyst',
-        who: [c.company_name?.toUpperCase(), c.product_name, c.is_projected ? 'PROJECTED' : null]
+        who: [c.company_name?.toUpperCase(), c.asset_name, c.is_projected ? 'PROJECTED' : null]
           .filter((p): p is string => !!p)
           .join(' · '),
         color: c.marker_type_color || '#16a34a',
@@ -573,7 +573,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
             marker_type_fill_style: mt?.fill_style ?? 'filled',
             marker_type_inner_mark: mt?.inner_mark ?? 'none',
             company_name: company.name,
-            product_name: asset.name,
+            asset_name: asset.name,
             trial_name: trial.name ?? null,
           });
         }

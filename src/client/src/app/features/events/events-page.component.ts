@@ -328,18 +328,18 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         priority: null,
         entity_level: detail.catalyst.trial_id
           ? 'trial'
-          : detail.catalyst.product_id
+          : detail.catalyst.asset_id
             ? 'product'
             : detail.catalyst.company_id
               ? 'company'
               : 'space',
         entity_name:
           detail.catalyst.trial_name ??
-          detail.catalyst.product_name ??
+          detail.catalyst.asset_name ??
           detail.catalyst.company_name ??
           '',
         entity_id:
-          detail.catalyst.trial_id ?? detail.catalyst.product_id ?? detail.catalyst.company_id,
+          detail.catalyst.trial_id ?? detail.catalyst.asset_id ?? detail.catalyst.company_id,
         company_name: detail.catalyst.company_name,
         tags: [],
         has_thread: false,

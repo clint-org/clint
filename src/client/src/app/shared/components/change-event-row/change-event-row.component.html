@@ -46,7 +46,7 @@
             >{{ monogram() }}</span
           >
         }
-        @if (event().product_name; as asset) {
+        @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
         } @else if (event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>
@@ -112,7 +112,7 @@
             >{{ monogram() }}</span
           >
         }
-        @if (event().product_name; as asset) {
+        @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
         } @else if (event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>

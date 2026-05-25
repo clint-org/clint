@@ -54,7 +54,7 @@ export interface UpcomingCatalyst {
   marker_type_fill_style: FillStyle;
   marker_type_inner_mark: InnerMark;
   company_name: string | null;
-  product_name: string | null;
+  asset_name: string | null;
   trial_name: string | null;
 }
 
