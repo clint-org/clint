@@ -1,6 +1,6 @@
 <div class="flex flex-col h-full">
   <div class="flex-1 overflow-hidden">
-    @if (bullseyeData.isLoading()) {
+    @if (bullseyeAssets.isLoading()) {
       <div
         class="flex h-full items-center justify-center"
         aria-busy="true"
@@ -8,7 +8,7 @@
       >
         <app-skeleton w="200px" h="14px" />
       </div>
-    } @else if (bullseyeData.error()) {
+    } @else if (bullseyeAssets.error()) {
       <div class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
           <p-message severity="error" [closable]="false">
@@ -23,8 +23,8 @@
           <div class="flex items-center justify-center h-full">
             <div class="flex flex-col items-center gap-3 text-center max-w-md">
               <p-message severity="info" [closable]="false">
-                No assets tracked for {{ bullseyeData.value()?.scope?.name }} yet. Add assets and
-                trials to see them here.
+                No assets match the current filters. Adjust scope or add assets and trials to see
+                them here.
               </p-message>
               <p-button
                 label="Manage assets"
@@ -72,8 +72,8 @@
             @if (selectedAsset()) {
               <div class="landscape-panel-wrap" @slidePanel>
                 <app-bullseye-detail-panel
-                  [data]="bullseyeData.value()!"
-                  [dimension]="dimension()"
+                  [data]="chartData()!"
+                  [dimension]="chartData()!.dimension"
                   [selectedAsset]="selectedAsset()"
                   (openTrial)="onOpenTrial($event)"
                   (openCompany)="onOpenCompany($event)"
