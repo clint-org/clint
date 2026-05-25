@@ -27,6 +27,8 @@ const inventory: InventorySnapshot = {
     },
   ],
   indications: [],
+  marker_types: [{ id: 'mt1', name: 'Topline Data' }],
+  event_categories: [{ id: 'ec1', name: 'Clinical' }],
   hash: 'golden',
 };
 

@@ -19,6 +19,8 @@ declare
   v_assets    jsonb;
   v_trials    jsonb;
   v_indications jsonb;
+  v_marker_types jsonb;
+  v_event_categories jsonb;
   v_hash      text;
 begin
   if not public.has_space_access(p_space_id) then
@@ -43,13 +45,31 @@ begin
     into v_indications
     from public.indications i where i.space_id = p_space_id;
 
-  v_hash := md5(v_companies::text || v_assets::text || v_trials::text || v_indications::text);
+  select coalesce(jsonb_agg(
+    jsonb_build_object('id', mt.id, 'name', mt.name) order by mt.display_order
+  ), '[]'::jsonb)
+    into v_marker_types
+    from public.marker_types mt
+   where (mt.space_id = p_space_id or (mt.space_id is null and mt.is_system))
+     and mt.display_order >= 0;
+
+  select coalesce(jsonb_agg(
+    jsonb_build_object('id', ec.id, 'name', ec.name) order by ec.display_order
+  ), '[]'::jsonb)
+    into v_event_categories
+    from public.event_categories ec
+   where ec.space_id = p_space_id or (ec.space_id is null and ec.is_system);
+
+  v_hash := md5(v_companies::text || v_assets::text || v_trials::text || v_indications::text
+    || v_marker_types::text || v_event_categories::text);
 
   return jsonb_build_object(
     'companies', v_companies,
     'assets', v_assets,
     'trials', v_trials,
     'indications', v_indications,
+    'marker_types', v_marker_types,
+    'event_categories', v_event_categories,
     'hash', v_hash
   );
 end;
@@ -120,7 +140,9 @@ begin
     coalesce((select jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name) order by c.name) from public.companies c where c.space_id = p_space_id), '[]'::jsonb)::text ||
     coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'company_id', a.company_id, 'generic_name', a.generic_name) order by a.name) from public.assets a where a.space_id = p_space_id), '[]'::jsonb)::text ||
     coalesce((select jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'identifier', t.identifier, 'asset_id', t.asset_id, 'phase_type', t.phase_type) order by t.name) from public.trials t where t.space_id = p_space_id), '[]'::jsonb)::text ||
-    coalesce((select jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name) order by i.name) from public.indications i where i.space_id = p_space_id), '[]'::jsonb)::text
+    coalesce((select jsonb_agg(jsonb_build_object('id', i.id, 'name', i.name) order by i.name) from public.indications i where i.space_id = p_space_id), '[]'::jsonb)::text ||
+    coalesce((select jsonb_agg(jsonb_build_object('id', mt.id, 'name', mt.name) order by mt.display_order) from public.marker_types mt where (mt.space_id = p_space_id or (mt.space_id is null and mt.is_system)) and mt.display_order >= 0), '[]'::jsonb)::text ||
+    coalesce((select jsonb_agg(jsonb_build_object('id', ec.id, 'name', ec.name) order by ec.display_order) from public.event_categories ec where ec.space_id = p_space_id or (ec.space_id is null and ec.is_system)), '[]'::jsonb)::text
   ) into v_current_hash;
 
   if v_current_hash <> p_inventory_snapshot_hash then
@@ -344,31 +366,20 @@ begin
        limit 1;
 
       if v_marker_type_id is null then
-        insert into public.marker_types (
-          name, space_id, is_system,
-          shape, fill_style, color, inner_mark, category_id
-        ) values (
-          v_item->>'marker_type', p_space_id, false,
-          'circle', 'filled', '#94a3b8', 'none',
-          coalesce(
-            (select id from public.marker_categories
-              where name = case
-                when (v_item->>'marker_type') like '%data%' or (v_item->>'marker_type') like '%readout%' then 'Data'
-                when (v_item->>'marker_type') like '%regulatory%' or (v_item->>'marker_type') like '%submission%' or (v_item->>'marker_type') like '%approval%' then 'Regulatory'
-                else 'Data'
-              end
-              limit 1),
-            (select id from public.marker_categories order by display_order limit 1)
-          )
-        )
-          on conflict (space_id, name) do nothing
-          returning id into v_marker_type_id;
+        select id into v_marker_type_id
+          from public.marker_types
+         where (space_id = p_space_id or (space_id is null and is_system))
+           and lower(name) = lower(v_item->>'marker_type')
+         order by space_id nulls last
+         limit 1;
+      end if;
 
-        if v_marker_type_id is null then
-          select id into v_marker_type_id
-            from public.marker_types
-           where space_id = p_space_id and name = v_item->>'marker_type';
-        end if;
+      if v_marker_type_id is null then
+        select id into v_marker_type_id
+          from public.marker_types
+         where is_system and space_id is null and display_order >= 0
+         order by display_order
+         limit 1;
       end if;
 
       insert into public.markers (

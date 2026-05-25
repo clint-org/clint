@@ -5,13 +5,30 @@ export interface PromptParts {
   user: string;
 }
 
-const SYSTEM_PROMPT = `You are a pharma competitive intelligence extraction engine. Extract structured entities from a source document. You will receive the source text and the current space inventory.
+const MARKER_TYPE_FALLBACK =
+  'Topline Data | Interim Data | Full Data | Regulatory Filing | Submission | Acceptance | Approval';
+const EVENT_CATEGORY_FALLBACK =
+  'Regulatory | Financial | Clinical | Commercial | Strategic | Leadership';
+
+function buildSystemPrompt(inventory: InventorySnapshot): string {
+  const markerTypeEnum =
+    inventory.marker_types?.length > 0
+      ? inventory.marker_types.map((mt) => mt.name).join(' | ')
+      : MARKER_TYPE_FALLBACK;
+
+  const categoryEnum =
+    inventory.event_categories?.length > 0
+      ? inventory.event_categories.map((ec) => ec.name).join(' | ')
+      : EVENT_CATEGORY_FALLBACK;
+
+  return `You are a pharma competitive intelligence extraction engine. Extract structured entities from a source document. You will receive the source text and the current space inventory.
 
 Rules:
 - Extract ONLY facts explicitly stated in the source text. Never infer or hallucinate.
 - Prefer matching existing inventory items by id over creating new entities.
 - Never infer regulatory dates that are not explicitly stated.
 - For every entity, quote the relevant evidence verbatim from the source.
+- Use ONLY the marker_type and category values listed in the schema. Pick the closest match.
 - Output ONLY valid JSON. No markdown fences, no explanation, no preamble.
 
 Output schema (follow this exactly):
@@ -46,7 +63,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "markers": [{
-    "marker_type": "Topline Data | Interim Data | Full Data | Regulatory Filing | Submission | Acceptance | Approval | Primary Completion Date (PCD) | Trial Start | Trial End | Loss of Exclusivity | Conference Presentation",
+    "marker_type": "${markerTypeEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
     "end_date": "YYYY-MM-DD or null",
@@ -56,7 +73,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "events": [{
-    "category": "Regulatory | Financial | Clinical | Commercial | Strategic | Leadership",
+    "category": "${categoryEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
     "description": "string or null",
@@ -70,8 +87,10 @@ Output schema (follow this exactly):
 company_ref, sponsor_ref, asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
 
 If nothing can be extracted, return all arrays as empty.`;
+}
 
 export function buildPrompt(sourceText: string, inventory: InventorySnapshot): PromptParts {
+  const system = buildSystemPrompt(inventory);
   const user = `<source_text>
 ${sourceText}
 </source_text>
@@ -80,7 +99,7 @@ ${sourceText}
 ${JSON.stringify(inventory)}
 </inventory>`;
 
-  return { system: SYSTEM_PROMPT, user };
+  return { system, user };
 }
 
 export function estimateTokens(text: string): number {

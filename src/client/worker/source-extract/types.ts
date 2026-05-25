@@ -125,6 +125,8 @@ export interface InventorySnapshot {
     phase_type?: string;
   }[];
   indications: { id: string; name: string }[];
+  marker_types: { id: string; name: string }[];
+  event_categories: { id: string; name: string }[];
   hash: string;
 }
 

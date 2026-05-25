@@ -17,6 +17,8 @@ function makeInventory(overrides: Partial<InventorySnapshot> = {}): InventorySna
     assets: [{ id: A1, name: 'Paxlovid', company_id: C1, generic_name: 'nirmatrelvir' }],
     trials: [{ id: T1, name: 'ATTAIN-1', asset_id: A1 }],
     indications: [],
+    marker_types: [{ id: 'mt1', name: 'Topline Data' }],
+    event_categories: [{ id: 'ec1', name: 'Clinical' }],
     hash: 'h1',
     ...overrides,
   };
