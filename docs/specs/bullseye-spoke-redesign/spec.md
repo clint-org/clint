@@ -2,7 +2,7 @@
 id: spec-2026-bullseye-spoke-redesign
 title: Bullseye Spoke Redesign
 slug: bullseye-spoke-redesign
-status: draft
+status: approved
 created: 2026-05-24
 updated: 2026-05-24
 depends-on: spec-2026-indication-model
