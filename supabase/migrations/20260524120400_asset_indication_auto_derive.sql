@@ -190,6 +190,7 @@ declare
   v_trial_2    uuid;
   v_status     text;
   v_source     text;
+  v_had_member boolean;
 begin
   select s.id into v_space_id from public.spaces s limit 1;
   select u.id into v_user_id from auth.users u limit 1;
@@ -272,6 +273,19 @@ begin
   assert v_status = 'LAUNCHED', format('analyst override should stay LAUNCHED, got %s', v_status);
   assert v_source = 'analyst', 'source should stay analyst';
 
+  -- impersonate test user for the RPC (has_space_access checks auth.uid())
+  select exists(
+    select 1 from public.space_members
+    where space_id = v_space_id and user_id = v_user_id
+  ) into v_had_member;
+
+  if not v_had_member then
+    insert into public.space_members (space_id, user_id, role)
+      values (v_space_id, v_user_id, 'owner');
+  end if;
+
+  perform set_config('request.jwt.claim.sub', v_user_id::text, true);
+
   -- reset to auto via RPC
   perform public.reset_asset_indication_status(v_ai_id);
 
@@ -281,6 +295,12 @@ begin
   assert v_status = 'P1', format('expected P1 after reset, got %s', v_status);
 
   -- cleanup
+  perform set_config('request.jwt.claim.sub', '', true);
+  if not v_had_member then
+    delete from public.space_members
+      where space_id = v_space_id and user_id = v_user_id;
+  end if;
+
   delete from public.trials where id = v_trial_1;
   delete from public.asset_indications where id = v_ai_id;
   delete from public.condition_indication_map where condition_id = v_cond_id;
