@@ -5,6 +5,7 @@ import { callRpc } from './supabase';
 import { presignPut, presignGet } from './r2';
 import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
 import { drainR2DeleteQueue, type R2DeleteClient } from './r2-drain/queue';
+import { handleSourceExtract } from './source-extract/handler';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
@@ -35,6 +36,8 @@ export interface Env {
   CTGOV_BATCH_SIZE: string;
   CTGOV_PARALLEL_FETCHES: string;
   CTGOV_WORKER_SECRET: string;
+  ANTHROPIC_API_KEY: string;
+  EXTRACT_SOURCE_WORKER_SECRET: string;
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
 }
 
@@ -63,6 +66,9 @@ export default {
     }
     if (url.pathname === '/api/ctgov/sync-trial' && request.method === 'POST') {
       return handleSingleTrialSync(request, env, cors);
+    }
+    if (url.pathname === '/api/source/extract' && request.method === 'POST') {
+      return handleSourceExtract(request, env, cors);
     }
 
     if (url.pathname.startsWith('/api/')) {
