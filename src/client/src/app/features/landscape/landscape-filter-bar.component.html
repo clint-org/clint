@@ -32,21 +32,6 @@
         <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
       }
 
-      <!-- View-specific: spoke grouping toggle (bullseye) -->
-      @if (viewMode() === 'bullseye') {
-        <span class="text-xs font-medium text-slate-500 whitespace-nowrap">Group by</span>
-        <p-selectbutton
-          [options]="spokeGroupingOptions"
-          [ngModel]="state.spokeGrouping()"
-          (ngModelChange)="state.spokeGrouping.set($event)"
-          optionLabel="label"
-          optionValue="value"
-          [allowEmpty]="false"
-          size="small"
-        />
-        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-      }
-
       <!-- View-specific: count unit toggle (positioning) -->
       @if (viewMode() === 'positioning') {
         <p-selectbutton
