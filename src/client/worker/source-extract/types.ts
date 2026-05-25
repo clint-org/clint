@@ -44,7 +44,11 @@ const AssetSchema = z.object({
 const TrialSchema = z.object({
   match: z.discriminatedUnion('kind', [existingMatch, newEntityMatch]),
   name: z.string(),
-  phase: z.enum(['phase_1', 'phase_2', 'phase_3', 'phase_4']).nullable().optional().default(null),
+  phase: z
+    .enum(['PRECLIN', 'P1', 'P1_2', 'P2', 'P2_3', 'P3', 'P4', 'OBS'])
+    .nullable()
+    .optional()
+    .default(null),
   phase_start_date: dateString.nullable().optional().default(null),
   phase_end_date: dateString.nullable().optional().default(null),
   status: z

@@ -35,7 +35,7 @@ Output schema (follow this exactly):
   "trials": [{
     "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new", "name": "string"},
     "name": "trial name or acronym",
-    "phase": "phase_1 | phase_2 | phase_3 | phase_4 | null",
+    "phase": "PRECLIN | P1 | P1_2 | P2 | P2_3 | P3 | P4 | OBS | null",
     "phase_start_date": "YYYY-MM-DD or null",
     "phase_end_date": "YYYY-MM-DD or null",
     "status": "Planned | Active | Completed | Terminated | Withdrawn | null",
@@ -46,7 +46,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "markers": [{
-    "marker_type": "data_readout | regulatory_submission | regulatory_decision | conference_presentation | other",
+    "marker_type": "Topline Data | Interim Data | Full Data | Regulatory Filing | Submission | Acceptance | Approval | Primary Completion Date (PCD) | Trial Start | Trial End | Loss of Exclusivity | Conference Presentation",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
     "end_date": "YYYY-MM-DD or null",
@@ -56,7 +56,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "events": [{
-    "category": "regulatory | financing | partnership | publication | other",
+    "category": "Regulatory | Financial | Clinical | Commercial | Strategic | Leadership",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
     "description": "string or null",
@@ -71,10 +71,7 @@ company_ref, sponsor_ref, asset_ref, trial_refs, and anchor.ref are zero-based i
 
 If nothing can be extracted, return all arrays as empty.`;
 
-export function buildPrompt(
-  sourceText: string,
-  inventory: InventorySnapshot,
-): PromptParts {
+export function buildPrompt(sourceText: string, inventory: InventorySnapshot): PromptParts {
   const user = `<source_text>
 ${sourceText}
 </source_text>

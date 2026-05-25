@@ -344,8 +344,23 @@ begin
        limit 1;
 
       if v_marker_type_id is null then
-        insert into public.marker_types (name, space_id, is_system)
-          values (v_item->>'marker_type', p_space_id, false)
+        insert into public.marker_types (
+          name, space_id, is_system,
+          shape, fill_style, color, inner_mark, category_id
+        ) values (
+          v_item->>'marker_type', p_space_id, false,
+          'circle', 'filled', '#94a3b8', 'none',
+          coalesce(
+            (select id from public.marker_categories
+              where name = case
+                when (v_item->>'marker_type') like '%data%' or (v_item->>'marker_type') like '%readout%' then 'Data'
+                when (v_item->>'marker_type') like '%regulatory%' or (v_item->>'marker_type') like '%submission%' or (v_item->>'marker_type') like '%approval%' then 'Regulatory'
+                else 'Data'
+              end
+              limit 1),
+            (select id from public.marker_categories order by display_order limit 1)
+          )
+        )
           on conflict (space_id, name) do nothing
           returning id into v_marker_type_id;
 
@@ -363,7 +378,7 @@ begin
         p_space_id, v_marker_type_id,
         v_item->>'title',
         coalesce(v_item->>'projection', 'company'),
-        (v_item->>'event_date')::date,
+        coalesce((v_item->>'event_date')::date, current_date),
         (v_item->>'end_date')::date,
         v_item->>'description',
         p_source_document->>'source_url',
@@ -393,14 +408,17 @@ begin
     loop
       select id into v_category_id
         from public.event_categories
-       where name = v_item->>'category'
+       where lower(name) = lower(v_item->>'category')
          and (space_id = p_space_id or (space_id is null and is_system))
        order by space_id nulls last
        limit 1;
 
       if v_category_id is null then
-        raise exception 'unknown event category: %', v_item->>'category'
-          using errcode = '22023';
+        select id into v_category_id
+          from public.event_categories
+         where is_system
+         order by display_order
+         limit 1;
       end if;
 
       declare
@@ -428,7 +446,7 @@ begin
         ) values (
           p_space_id, v_company_id, v_asset_id, v_trial_id, v_category_id,
           v_item->>'title',
-          (v_item->>'event_date')::date,
+          coalesce((v_item->>'event_date')::date, current_date),
           v_item->>'description',
           coalesce(v_item->>'priority', 'low'),
           coalesce(

@@ -10,7 +10,7 @@ import { computeFuzzyAlternates } from './fuzzy-alternates';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
-const LLM_TIMEOUT_MS = 25_000;
+const LLM_TIMEOUT_MS = 60_000;
 const FETCH_TIMEOUT_MS = 10_000;
 
 export async function handleSourceExtract(
