@@ -60,6 +60,16 @@ export type BullseyeDimension = 'indication' | 'company' | 'moa' | 'roa';
 
 export type SpokeMode = 'grouped' | 'assets';
 
+export type SpokeGrouping = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
+
+export const SPOKE_GROUPING_OPTIONS: { label: string; value: SpokeGrouping }[] = [
+  { label: 'Company', value: 'company' },
+  { label: 'Indication', value: 'indication' },
+  { label: 'Mechanism of Action', value: 'moa' },
+  { label: 'Route of Administration', value: 'roa' },
+  { label: 'Asset', value: 'asset' },
+];
+
 export interface BullseyeScope {
   id: string;
   name: string;
@@ -108,6 +118,11 @@ export interface BullseyeAsset {
   recent_markers: BullseyeMarker[];
   moas: { id: string; name: string }[];
   roas: { id: string; name: string; abbreviation: string | null }[];
+  indications: { id: string; name: string; abbreviation: string | null }[];
+  intelligence_count: number;
+  has_recent_activity: boolean;
+  latest_event_date: string | null;
+  latest_event_type: string | null;
 }
 
 export interface BullseyeSpoke {
@@ -195,6 +210,80 @@ export function segmentToDimension(segment: string): BullseyeDimension {
     'by-roa': 'roa',
   };
   return map[segment] ?? 'indication';
+}
+
+// --- Spoke grouping utility ---
+
+export interface GroupedSpokesResult {
+  spokes: BullseyeSpoke[];
+  duplicatedAssetIds: Set<string>;
+}
+
+/**
+ * Groups a flat list of assets into spokes by the selected dimension.
+ * For multi-valued dimensions (indication, moa, roa), an asset may appear
+ * in multiple spokes. The returned `duplicatedAssetIds` tracks those assets.
+ */
+export function groupAssetsIntoSpokes(
+  assets: BullseyeAsset[],
+  grouping: SpokeGrouping,
+): GroupedSpokesResult {
+  const groups = new Map<string, { name: string; assets: BullseyeAsset[] }>();
+  const assetSpokeCount = new Map<string, number>();
+
+  for (const asset of assets) {
+    const keys = getSpokeKeys(asset, grouping);
+    for (const key of keys) {
+      const existing = groups.get(key.id);
+      if (existing) {
+        existing.assets.push(asset);
+      } else {
+        groups.set(key.id, { name: key.name, assets: [asset] });
+      }
+      assetSpokeCount.set(asset.id, (assetSpokeCount.get(asset.id) ?? 0) + 1);
+    }
+  }
+
+  const duplicatedAssetIds = new Set<string>();
+  for (const [id, count] of assetSpokeCount) {
+    if (count > 1) {
+      duplicatedAssetIds.add(id);
+    }
+  }
+
+  const spokes: BullseyeSpoke[] = [...groups.entries()].map(([id, group]) => ({
+    id,
+    name: group.name,
+    display_order: 0,
+    highest_phase_rank: Math.max(...group.assets.map((a) => a.highest_phase_rank)),
+    products: group.assets,
+  }));
+
+  spokes.sort((a, b) => {
+    const phaseCompare = b.highest_phase_rank - a.highest_phase_rank;
+    if (phaseCompare !== 0) return phaseCompare;
+    return b.products.length - a.products.length;
+  });
+
+  return { spokes, duplicatedAssetIds };
+}
+
+function getSpokeKeys(
+  asset: BullseyeAsset,
+  grouping: SpokeGrouping,
+): { id: string; name: string }[] {
+  switch (grouping) {
+    case 'company':
+      return [{ id: asset.company_id, name: asset.company_name }];
+    case 'indication':
+      return asset.indications.map((ind) => ({ id: ind.id, name: ind.name }));
+    case 'moa':
+      return asset.moas.map((m) => ({ id: m.id, name: m.name }));
+    case 'roa':
+      return asset.roas.map((r) => ({ id: r.id, name: r.name }));
+    case 'asset':
+      return [{ id: asset.id, name: asset.name }];
+  }
 }
 
 // --- Competitive Positioning types ---
