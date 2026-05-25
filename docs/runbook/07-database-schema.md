@@ -664,17 +664,13 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
-- `asset_indications`
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
-- `condition_indication_map`
-- `indications`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
 - `r2_pending_deletes`
-- `trial_conditions`
 - `user_redactions`
 
 **Migration files not in history table:**

@@ -710,7 +710,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `EventCategoryService`
 - `EventThreadService`
 - `EventService`
-- `IndicationService`
 - `LandscapeService`
 - `MarkerCategoryService`
 - `MarkerService`
@@ -727,12 +726,9 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `SpaceFieldVisibilityService`
 
 **Models:**
-- `Asset`
 - `AuditEvent`
 - `ChangeEvent`
-- `Condition`
 - `CtgovField`
-- `Indication`
 - `MechanismOfAction`
 - `Palette`
 - `PrimaryIntelligence`

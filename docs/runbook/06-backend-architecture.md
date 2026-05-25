@@ -64,8 +64,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -95,7 +95,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
-| `get_landscape_index` | - | asset_indications, assets, indications |
+| `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
 | `get_landscape_index_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration |
@@ -607,7 +607,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
-- `_recompute_asset_indication_status`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
