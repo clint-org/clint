@@ -181,7 +181,7 @@ export async function handleSourceExtract(
     const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 8192,
       system: prompt.system,
       messages: [{ role: 'user', content: prompt.user }],
@@ -208,7 +208,8 @@ export async function handleSourceExtract(
 
   const validation = validateExtraction(rawOutput, inventory, sourceText);
   if (!validation.ok) {
-    await closeAiCall(cfg, env, aiCallId, 'parse_failed', Date.now() - start, promptTokens, completionTokens, validation.reason);
+    await closeAiCall(cfg, env, aiCallId, 'parse_failed', Date.now() - start, promptTokens, completionTokens, validation.reason,
+      { raw_output: rawOutput.substring(0, 5000) });
     return jsonErrorWithCode(500, 'parse_failed', "Couldn't read the AI response. Try again.", cors);
   }
 

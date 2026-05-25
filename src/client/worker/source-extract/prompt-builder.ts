@@ -5,27 +5,71 @@ export interface PromptParts {
   user: string;
 }
 
-const SYSTEM_PROMPT = `You are a pharma competitive intelligence extraction engine. Your task is to extract structured data from a source article about pharmaceutical pipelines, clinical trials, and regulatory events.
+const SYSTEM_PROMPT = `You are a pharma competitive intelligence extraction engine. Extract structured entities from a source document. You will receive the source text and the current space inventory.
 
 Rules:
 - Extract ONLY facts explicitly stated in the source text. Never infer or hallucinate.
-- When an entity (company, asset, trial, indication) matches an existing inventory item, use the existing id. Only create new entities when no match exists.
-- Never infer regulatory dates that are not explicitly stated in the text.
-- For every extracted fact, include a verbatim quote from the source text as evidence.
-- Output strict JSON matching the schema below. No markdown, no explanation, no wrapper.
+- Prefer matching existing inventory items by id over creating new entities.
+- Never infer regulatory dates that are not explicitly stated.
+- For every entity, quote the relevant evidence verbatim from the source.
+- Output ONLY valid JSON. No markdown fences, no explanation, no preamble.
 
-Output JSON schema:
+Output schema (follow this exactly):
 {
-  "companies": [{ "id": "existing id or null for new", "name": "string" }],
-  "assets": [{ "id": "existing id or null for new", "name": "string", "company_id": "string", "generic_name": "string or null" }],
-  "trials": [{ "id": "existing id or null for new", "name": "string", "identifier": "NCT number or null", "asset_id": "string", "phase_type": "string or null" }],
-  "indications": [{ "id": "existing id or null for new", "name": "string" }],
-  "trial_indications": [{ "trial_id": "string", "indication_id": "string" }],
-  "catalysts": [{ "trial_id": "string", "type": "string", "date": "YYYY-MM-DD or null", "description": "string", "evidence_quote": "verbatim quote from source" }],
-  "regulatory_events": [{ "asset_id": "string", "type": "string", "date": "YYYY-MM-DD or null", "agency": "string or null", "description": "string", "evidence_quote": "verbatim quote from source" }]
+  "source_summary": "1-2 sentence factual summary, max 200 chars",
+  "source_title": "article title or null",
+  "source_date": "YYYY-MM-DD or null",
+  "companies": [{
+    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new", "name": "string", "website": "string or null"},
+    "evidence": "verbatim quote from source"
+  }],
+  "assets": [{
+    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new", "name": "string"},
+    "name": "asset name",
+    "generic_name": "string or null",
+    "company_ref": 0,
+    "moa": ["mechanism of action strings"],
+    "roa": ["route of administration strings"],
+    "evidence": "verbatim quote"
+  }],
+  "trials": [{
+    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new", "name": "string"},
+    "name": "trial name or acronym",
+    "phase": "phase_1 | phase_2 | phase_3 | phase_4 | null",
+    "phase_start_date": "YYYY-MM-DD or null",
+    "phase_end_date": "YYYY-MM-DD or null",
+    "status": "Planned | Active | Completed | Terminated | Withdrawn | null",
+    "sample_size": number or null,
+    "sponsor_ref": 0,
+    "asset_ref": 0 or null,
+    "indication": "disease/condition string or null",
+    "evidence": "verbatim quote"
+  }],
+  "markers": [{
+    "marker_type": "data_readout | regulatory_submission | regulatory_decision | conference_presentation | other",
+    "title": "short descriptive title",
+    "event_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD or null",
+    "projection": "actual | company | primary",
+    "description": "string or null",
+    "trial_refs": [0],
+    "evidence": "verbatim quote"
+  }],
+  "events": [{
+    "category": "regulatory | financing | partnership | publication | other",
+    "title": "short descriptive title",
+    "event_date": "YYYY-MM-DD",
+    "description": "string or null",
+    "priority": "high | low",
+    "tags": ["tag strings"],
+    "anchor": {"level": "space | company | asset | trial", "ref": 0 or null},
+    "evidence": "verbatim quote"
+  }]
 }
 
-If nothing can be extracted, return: { "companies": [], "assets": [], "trials": [], "indications": [], "trial_indications": [], "catalysts": [], "regulatory_events": [] }`;
+company_ref, sponsor_ref, asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
+
+If nothing can be extracted, return all arrays as empty.`;
 
 export function buildPrompt(
   sourceText: string,

@@ -27,14 +27,16 @@ export function validateExtraction(
 ): ValidationResult {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(rawJson);
+    const cleaned = extractJsonBlock(rawJson);
+    parsed = JSON.parse(cleaned);
   } catch {
     return { ok: false, reason: 'invalid_json' };
   }
 
   const zodResult = ExtractionResultSchema.safeParse(parsed);
   if (!zodResult.success) {
-    return { ok: false, reason: 'schema_invalid' };
+    const issues = zodResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ');
+    return { ok: false, reason: `schema_invalid: ${issues}` };
   }
 
   const data = zodResult.data;
@@ -292,4 +294,20 @@ export function validateExtraction(
   };
 
   return { ok: true, result: cleanedResult, dropped, warnings };
+}
+
+function extractJsonBlock(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('{')) return trimmed;
+
+  const fenceMatch = trimmed.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+  if (fenceMatch) return fenceMatch[1].trim();
+
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+
+  return trimmed;
 }

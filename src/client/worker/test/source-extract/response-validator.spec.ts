@@ -102,12 +102,12 @@ describe('validateExtraction', () => {
 
   it('returns ok:false on schema-invalid JSON', () => {
     const r = validateExtraction(
-      JSON.stringify({ bad: true }),
+      JSON.stringify({ companies: [{ match: { kind: 'invalid' } }] }),
       makeInventory(),
       SOURCE_TEXT,
     );
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toBe('schema_invalid');
+    if (!r.ok) expect(r.reason).toContain('schema_invalid');
   });
 
   it('passes valid extraction through', () => {

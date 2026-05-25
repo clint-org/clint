@@ -34,10 +34,10 @@ const CompanySchema = z.object({
 const AssetSchema = z.object({
   match: z.discriminatedUnion('kind', [existingMatch, newEntityMatch]),
   name: z.string(),
-  generic_name: z.string().nullable(),
+  generic_name: z.string().nullable().optional().default(null),
   company_ref: z.number().int(),
-  moa: z.array(z.string()),
-  roa: z.array(z.string()),
+  moa: z.array(z.string()).optional().default([]),
+  roa: z.array(z.string()).optional().default([]),
   evidence: z.string(),
 });
 
@@ -46,40 +46,44 @@ const TrialSchema = z.object({
   name: z.string(),
   phase: z
     .enum(['phase_1', 'phase_2', 'phase_3', 'phase_4'])
-    .nullable(),
-  phase_start_date: dateString.nullable(),
-  phase_end_date: dateString.nullable(),
+    .nullable()
+    .optional()
+    .default(null),
+  phase_start_date: dateString.nullable().optional().default(null),
+  phase_end_date: dateString.nullable().optional().default(null),
   status: z
     .enum(['Planned', 'Active', 'Completed', 'Terminated', 'Withdrawn'])
-    .nullable(),
-  sample_size: z.number().int().nullable(),
+    .nullable()
+    .optional()
+    .default(null),
+  sample_size: z.number().int().nullable().optional().default(null),
   sponsor_ref: z.number().int(),
-  asset_ref: z.number().int().nullable(),
-  indication: z.string().nullable(),
+  asset_ref: z.number().int().nullable().optional().default(null),
+  indication: z.string().nullable().optional().default(null),
   evidence: z.string(),
 });
 
 const MarkerSchema = z.object({
   marker_type: z.string(),
   title: z.string(),
-  event_date: dateString,
-  end_date: dateString.nullable(),
-  projection: z.enum(['actual', 'company', 'primary']),
-  description: z.string().nullable(),
-  trial_refs: z.array(z.number().int()),
+  event_date: dateString.nullable().optional().default(null),
+  end_date: dateString.nullable().optional().default(null),
+  projection: z.enum(['actual', 'company', 'primary']).optional().default('company'),
+  description: z.string().nullable().optional().default(null),
+  trial_refs: z.array(z.number().int()).optional().default([]),
   evidence: z.string(),
 });
 
 const EventSchema = z.object({
   category: z.string(),
   title: z.string(),
-  event_date: dateString,
-  description: z.string().nullable(),
-  priority: z.enum(['high', 'low']),
-  tags: z.array(z.string()),
+  event_date: dateString.nullable().optional().default(null),
+  description: z.string().nullable().optional().default(null),
+  priority: z.enum(['high', 'low']).optional().default('low'),
+  tags: z.array(z.string()).optional().default([]),
   anchor: z.object({
     level: z.enum(['space', 'company', 'asset', 'trial']),
-    ref: z.number().int().nullable(),
+    ref: z.number().int().nullable().optional().default(null),
   }),
   evidence: z.string(),
 });
@@ -89,14 +93,14 @@ const EventSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const ExtractionResultSchema = z.object({
-  source_summary: z.string().max(200),
-  source_title: z.string().nullable(),
-  source_date: dateString.nullable(),
-  companies: z.array(CompanySchema),
-  assets: z.array(AssetSchema),
-  trials: z.array(TrialSchema),
-  markers: z.array(MarkerSchema),
-  events: z.array(EventSchema),
+  source_summary: z.string(),
+  source_title: z.string().nullable().optional().default(null),
+  source_date: dateString.nullable().optional().default(null),
+  companies: z.array(CompanySchema).optional().default([]),
+  assets: z.array(AssetSchema).optional().default([]),
+  trials: z.array(TrialSchema).optional().default([]),
+  markers: z.array(MarkerSchema).optional().default([]),
+  events: z.array(EventSchema).optional().default([]),
 });
 
 export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
