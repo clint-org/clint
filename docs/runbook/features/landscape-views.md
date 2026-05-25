@@ -12,10 +12,10 @@ The landscape area provides cross-cutting views of the same space dataset -- Tim
 The Bullseye view renders a concentric-ring chart of assets grouped by a user-selected spoke dimension. Scope (which assets appear) is decoupled from grouping (how they arrange into spokes). The chart lives at `/t/:tenantId/s/:spaceId/bullseye` with scope and grouping controlled via query params (`?indications=id1,id2&group=company`). Old dimension routes (`by-company`, `by-moa`, `by-roa`, `by-indication`) redirect to the new query-param format.
 
 Key components:
-- **LandscapeComponent**: fetches a flat asset list via `get_bullseye_assets` RPC with multi-select scope filters, then groups client-side via `groupAssetsIntoSpokes()`. Regrouping is instant (no re-fetch).
+- **LandscapeComponent**: fetches a flat asset list via `get_bullseye_assets` RPC with multi-select scope filters, then groups client-side via `groupAssetsIntoSpokes()`. Regrouping is instant (no re-fetch). Two-column layout: controls panel left, chart right.
+- **BullseyeControlsPanelComponent**: left sidebar (220px) with Group By toggle, competitive read summary, spoke/asset stats, and full legend (phase colors, intelligence ring, activity pulse, duplicate ring indicators).
 - **BullseyeChartComponent**: renders SVG radial chart. Dots use a halo ring system: teal ring for intelligence, amber pulse for recent activity, dashed ring for duplicates. Cross-spoke hover highlighting dims non-matching dots to 15%.
-- **CompetitiveReadBarComponent**: auto-generates a one-line competitive summary (leader, deepest P3 pipeline, most active spoke).
-- **LandscapeFilterBar**: shared filter bar with a "Group by" toggle (Company, Indication, MOA, ROA, Asset) visible only in bullseye view.
+- **LandscapeFilterBar**: shared filter bar for cross-view scope filters. Group-by toggle lives in the controls panel, not the filter bar.
 - **LandscapeStateService**: persists `spokeGrouping` signal to sessionStorage alongside filters.
 
 ## Positioning
