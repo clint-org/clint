@@ -228,15 +228,15 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     (empty)   LandscapeShellComponent
       /timeline   TimelineViewComponent
       /bullseye
-        (empty)   -> by-indication
-        /by-indication   LandscapeIndexComponent
-        /by-indication/:entityId   LandscapeComponent
-        /by-company   LandscapeIndexComponent
-        /by-company/:entityId   LandscapeComponent
-        /by-moa   LandscapeIndexComponent
-        /by-moa/:entityId   LandscapeComponent
-        /by-roa   LandscapeIndexComponent
-        /by-roa/:entityId   LandscapeComponent
+        (empty)   LandscapeComponent | exact
+        /by-indication   -> /
+        /by-indication/:entityId   -> /
+        /by-company   -> /
+        /by-company/:entityId   -> /
+        /by-moa   -> /
+        /by-moa/:entityId   -> /
+        /by-roa   -> /
+        /by-roa/:entityId   -> /
       /positioning
         (empty)   -> by-moa
         /by-moa   PositioningViewComponent
@@ -248,16 +248,16 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
     /activity   EngagementActivityPageComponent
-    /landscape   -> bullseye/by-indication
-    /landscape/by-therapy-area   -> bullseye/by-indication
-    /landscape/by-therapy-area/:entityId   -> bullseye/by-indication/:entityId
-    /landscape/by-company   -> bullseye/by-company
-    /landscape/by-company/:entityId   -> bullseye/by-company/:entityId
-    /landscape/by-moa   -> bullseye/by-moa
-    /landscape/by-moa/:entityId   -> bullseye/by-moa/:entityId
-    /landscape/by-roa   -> bullseye/by-roa
-    /landscape/by-roa/:entityId   -> bullseye/by-roa/:entityId
-    /landscape/:therapeuticAreaId   -> bullseye/by-indication/:therapeuticAreaId
+    /landscape   -> bullseye
+    /landscape/by-therapy-area   -> bullseye
+    /landscape/by-therapy-area/:entityId   -> bullseye
+    /landscape/by-company   -> bullseye
+    /landscape/by-company/:entityId   -> bullseye
+    /landscape/by-moa   -> bullseye
+    /landscape/by-moa/:entityId   -> bullseye
+    /landscape/by-roa   -> bullseye
+    /landscape/by-roa/:entityId   -> bullseye
+    /landscape/:therapeuticAreaId   -> bullseye
     /manage/companies   CompanyListComponent
     /manage/assets   AssetListComponent
     /manage/trials   TrialListComponent
