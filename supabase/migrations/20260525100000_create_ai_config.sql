@@ -21,11 +21,11 @@ alter table public.ai_config enable row level security;
 create policy "tenant owner or platform admin can read ai_config"
   on public.ai_config for select to authenticated
   using (
-    public.is_platform_admin()
+    (select public.is_platform_admin())
     or exists (
       select 1 from public.tenant_members tm
        where tm.tenant_id = ai_config.tenant_id
-         and tm.user_id = auth.uid()
+         and tm.user_id = (select auth.uid())
          and tm.role = 'owner'
     )
   );
@@ -33,11 +33,11 @@ create policy "tenant owner or platform admin can read ai_config"
 create policy "tenant owner or platform admin can update ai_config"
   on public.ai_config for update to authenticated
   using (
-    public.is_platform_admin()
+    (select public.is_platform_admin())
     or exists (
       select 1 from public.tenant_members tm
        where tm.tenant_id = ai_config.tenant_id
-         and tm.user_id = auth.uid()
+         and tm.user_id = (select auth.uid())
          and tm.role = 'owner'
     )
   );
@@ -48,7 +48,7 @@ create policy "tenant owner can delete ai_config"
     exists (
       select 1 from public.tenant_members tm
        where tm.tenant_id = ai_config.tenant_id
-         and tm.user_id = auth.uid()
+         and tm.user_id = (select auth.uid())
          and tm.role = 'owner'
     )
   );
