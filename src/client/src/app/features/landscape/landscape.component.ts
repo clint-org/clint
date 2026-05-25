@@ -23,6 +23,8 @@ import {
   SPOKE_GROUPING_OPTIONS,
   groupAssetsIntoSpokes,
 } from '../../core/models/landscape.model';
+import { IntelligenceEntityType } from '../../core/models/primary-intelligence.model';
+import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { BullseyeChartComponent } from './bullseye-chart.component';
 import { BullseyeControlsPanelComponent } from './bullseye-controls-panel.component';
@@ -250,6 +252,16 @@ export class LandscapeComponent implements OnInit {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams,
     });
+  }
+
+  onOpenIntelligence(payload: { entityType: IntelligenceEntityType; entityId: string }): void {
+    const link = buildEntityRouterLink(
+      this.tenantId(),
+      this.spaceId(),
+      payload.entityType,
+      payload.entityId
+    );
+    if (link) this.router.navigate(link as string[]);
   }
 
   retry(): void {

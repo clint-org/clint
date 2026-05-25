@@ -834,4 +834,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260524121000_fix_remaining_product_refs.sql`
 - `20260524121100_fix_events_rpc_structure.sql`
 - `20260525120000_create_bullseye_assets_rpc.sql`
+- `20260525140000_get_intelligence_notes_for_asset.sql`
 <!-- /AUTO-GEN:DRIFT -->

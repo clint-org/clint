@@ -22,22 +22,12 @@
         }
       </div>
 
-      @if (asset.has_recent_activity || asset.intelligence_count > 0) {
-        <div class="mt-2 flex flex-col gap-1 rounded border border-slate-100 bg-slate-50 px-3 py-2">
-          @if (asset.has_recent_activity && asset.latest_event_type) {
-            <div class="flex items-center gap-1.5 font-mono text-[12px] font-semibold text-amber-700">
-              <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
-              <span>{{ asset.latest_event_type }}</span>
-              @if (asset.latest_event_date) {
-                <span class="font-normal text-slate-500">{{ asset.latest_event_date | date:'mediumDate' }}</span>
-              }
-            </div>
-          }
-          @if (asset.intelligence_count > 0) {
-            <div class="flex items-center gap-1.5 text-[12px] text-cyan-700">
-              <i class="fa-solid fa-file-lines text-[10px] text-cyan-500" aria-hidden="true"></i>
-              <span>{{ asset.intelligence_count }} intelligence {{ asset.intelligence_count === 1 ? 'note' : 'notes' }}</span>
-            </div>
+      @if (asset.has_recent_activity && asset.latest_event_type) {
+        <div class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700">
+          <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
+          <span>{{ asset.latest_event_type }}</span>
+          @if (asset.latest_event_date) {
+            <span class="font-normal text-slate-500">{{ asset.latest_event_date | date:'mediumDate' }}</span>
           }
         </div>
       }
@@ -92,6 +82,33 @@
               >
             }
           </div>
+        </app-detail-panel-section>
+      }
+
+      @if (asset.intelligence_count > 0) {
+        <app-detail-panel-section [label]="'Intelligence (' + asset.intelligence_count + ')'">
+          @if (intelligenceNotes().length > 0) {
+            <app-detail-panel-entity-list>
+              @for (note of intelligenceNotes(); track note.id) {
+                <app-detail-panel-entity-row (rowClick)="onIntelligenceClick(note)">
+                  <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span class="truncate text-[12px] font-medium text-slate-800">{{ note.headline }}</span>
+                    <span class="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span
+                        class="shrink-0 rounded-sm bg-cyan-50 px-1 py-px text-[10px] font-medium text-cyan-700"
+                      >{{ entityTypeLabel(note.entity_type) }}</span>
+                      <span class="truncate">{{ note.entity_name }}</span>
+                    </span>
+                  </span>
+                </app-detail-panel-entity-row>
+              }
+            </app-detail-panel-entity-list>
+          } @else {
+            <div class="flex flex-col gap-1.5">
+              <div class="h-3 w-4/5 animate-pulse rounded bg-slate-100"></div>
+              <div class="h-3 w-3/5 animate-pulse rounded bg-slate-100"></div>
+            </div>
+          }
         </app-detail-panel-section>
       }
 

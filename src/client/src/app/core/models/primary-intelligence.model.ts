@@ -120,6 +120,15 @@ export const RELATIONSHIP_OPTIONS: readonly string[] = [
   'Partner',
 ];
 
+export interface AssetIntelligenceNote {
+  id: string;
+  entity_type: 'product' | 'trial';
+  entity_id: string;
+  entity_name: string;
+  headline: string;
+  updated_at: string;
+}
+
 export const ENTITY_TYPE_LABEL: Record<IntelligenceEntityType, string> = {
   trial: 'Trial',
   marker: 'Marker',
