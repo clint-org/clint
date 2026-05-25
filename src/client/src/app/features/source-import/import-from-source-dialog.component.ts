@@ -102,16 +102,16 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
         @if (extracting()) {
           <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
             <div class="flex flex-col gap-2">
-              @for (s of stepSequence; track s; let i = $index) {
+              @for (s of stepSequence; track s) {
                 <div class="flex items-center gap-2.5">
-                  @if (stepIndex() > i) {
+                  @if (stepIndex() > $index) {
                     <span
                       class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600"
                     >
                       <i class="pi pi-check text-[9px] text-white"></i>
                     </span>
                     <span class="text-xs text-slate-500">{{ stepLabels[s] }}</span>
-                  } @else if (stepIndex() === i) {
+                  } @else if (stepIndex() === $index) {
                     <span class="relative flex h-4 w-4">
                       <span
                         class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"
