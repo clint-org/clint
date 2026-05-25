@@ -35,59 +35,46 @@
             </div>
           </div>
         } @else {
-          <app-competitive-read-bar
-            [spokes]="chartData()?.spokes ?? []"
-            [grouping]="state.spokeGrouping()"
-          />
-          <div class="landscape-layout">
-            <div
-              class="absolute top-3 left-4 z-[5] flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
-              aria-label="Bullseye chart legend"
-            >
-              <span>Rings</span>
-              <span class="text-slate-600 normal-case tracking-normal">Phase</span>
-              <a
-                [routerLink]="['/t', tenantId(), 'help', 'phases']"
-                class="text-slate-300 hover:text-brand-700"
-                pTooltip="Open phase guide"
-                tooltipPosition="top"
-                aria-label="Open phase guide"
-              >
-                <i class="fa-solid fa-circle-question text-[11px]"></i>
-              </a>
-              <span class="text-slate-300">·</span>
-              <span>Spokes</span>
-              <span class="text-slate-600 normal-case tracking-normal">{{ cd.spoke_label }}</span>
-            </div>
-            <div class="landscape-chart-wrap">
-              <div class="bullseye-chart-frame">
-                <app-bullseye-chart
-                  [data]="cd"
-                  [selectedAssetId]="selectedAssetId()"
-                  [hoveredAssetId]="hoveredAssetId()"
-                  [highlightedRing]="highlightedRing()"
-                  [matchedAssetIds]="matchedAssetIds()"
-                  (productHover)="onAssetHover($event)"
-                  (assetClick)="onAssetClick($event)"
-                  (backgroundClick)="onBackgroundClick()"
-                />
+          <div class="flex h-full overflow-hidden">
+            <app-bullseye-controls-panel
+              [spokes]="cd.spokes"
+              [grouping]="state.spokeGrouping()"
+              [assetCount]="allAssets().length"
+              [spokeCount]="cd.spokes.length"
+              [hasDuplicates]="duplicatedAssetIds().size > 0"
+            />
+            <div class="flex-1 overflow-hidden landscape-layout">
+              <div class="landscape-chart-wrap">
+                <div class="bullseye-chart-frame">
+                  <app-bullseye-chart
+                    [data]="cd"
+                    [selectedAssetId]="selectedAssetId()"
+                    [hoveredAssetId]="hoveredAssetId()"
+                    [highlightedRing]="highlightedRing()"
+                    [matchedAssetIds]="matchedAssetIds()"
+                    [duplicatedAssetIds]="duplicatedAssetIds()"
+                    (productHover)="onAssetHover($event)"
+                    (assetClick)="onAssetClick($event)"
+                    (backgroundClick)="onBackgroundClick()"
+                  />
+                </div>
               </div>
+              @if (selectedAsset()) {
+                <div class="landscape-panel-wrap" @slidePanel>
+                  <app-bullseye-detail-panel
+                    [data]="chartData()!"
+                    [dimension]="chartData()!.dimension"
+                    [selectedAsset]="selectedAsset()"
+                    (openTrial)="onOpenTrial($event)"
+                    (openCompany)="onOpenCompany($event)"
+                    (openInTimeline)="onOpenInTimeline($event)"
+                    (openMarker)="onOpenMarker($event)"
+                    (ringHighlightToggle)="onRingHighlightToggle($event)"
+                    (clearSelection)="onClearSelection()"
+                  />
+                </div>
+              }
             </div>
-            @if (selectedAsset()) {
-              <div class="landscape-panel-wrap" @slidePanel>
-                <app-bullseye-detail-panel
-                  [data]="chartData()!"
-                  [dimension]="chartData()!.dimension"
-                  [selectedAsset]="selectedAsset()"
-                  (openTrial)="onOpenTrial($event)"
-                  (openCompany)="onOpenCompany($event)"
-                  (openInTimeline)="onOpenInTimeline($event)"
-                  (openMarker)="onOpenMarker($event)"
-                  (ringHighlightToggle)="onRingHighlightToggle($event)"
-                  (clearSelection)="onClearSelection()"
-                />
-              </div>
-            }
           </div>
         }
       }
