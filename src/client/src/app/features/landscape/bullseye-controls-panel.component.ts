@@ -95,7 +95,7 @@ interface SpokeStats {
   `,
   styles: `
     .bullseye-controls {
-      width: 220px;
+      width: 260px;
       flex-shrink: 0;
       border-right: 1px solid #e2e8f0;
       background: white;

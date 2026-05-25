@@ -35,7 +35,7 @@
             </div>
           </div>
         } @else {
-          <div class="flex h-full overflow-hidden">
+          <div class="flex h-full overflow-auto">
             <app-bullseye-controls-panel
               [spokes]="cd.spokes"
               [grouping]="state.spokeGrouping()"
@@ -43,7 +43,7 @@
               [spokeCount]="cd.spokes.length"
               [hasDuplicates]="duplicatedAssetIds().size > 0"
             />
-            <div class="flex-1 overflow-hidden landscape-layout">
+            <div class="flex-1 min-w-[600px] overflow-hidden landscape-layout">
               <div class="landscape-chart-wrap">
                 <div class="bullseye-chart-frame">
                   <app-bullseye-chart
