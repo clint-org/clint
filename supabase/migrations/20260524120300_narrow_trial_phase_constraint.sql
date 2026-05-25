@@ -12,9 +12,16 @@
 -- =============================================================================
 -- all currently seeded APPROVED/LAUNCHED trials are completed pivotal P3 trials.
 -- their development status is now tracked on asset_indications (backfilled in T2).
+-- bypass the ctgov truth trigger for this data migration: some trials with
+-- APPROVED/LAUNCHED have phase_type_source='ctgov', and the guard trigger
+-- rejects direct writes on those rows.
+set local clint.materialize_in_progress = 'on';
+
 update public.trials
   set phase_type = 'P3'
   where phase_type in ('APPROVED', 'LAUNCHED');
+
+reset clint.materialize_in_progress;
 
 -- =============================================================================
 -- 2. narrow the CHECK constraint
