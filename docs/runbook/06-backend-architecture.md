@@ -85,6 +85,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
+| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trials |
 | `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
@@ -95,6 +96,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
+| `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
@@ -622,6 +624,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `export_audit_events_csv`
 - `finalize_material`
 - `get_asset_detail_with_intelligence`
+- `get_bullseye_assets`
 - `get_bullseye_by_company`
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`
@@ -631,6 +634,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
+- `get_intelligence_notes_for_asset`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
