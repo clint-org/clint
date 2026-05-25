@@ -12,16 +12,13 @@ import {
   signal,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
-import { ButtonModule } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Popover } from 'primeng/popover';
+import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
@@ -45,27 +42,21 @@ export interface FlattenedTrial {
 
 @Component({
   selector: 'app-dashboard-grid',
-  standalone: true,
   imports: [
-    ButtonModule,
     ChangeBadgeComponent,
-    Checkbox,
-    FormsModule,
     GridHeaderComponent,
     MarkerComponent,
     NgOptimizedImage,
     PhaseBarComponent,
-    Popover,
     RowNotesComponent,
   ],
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
-  private static readonly STORAGE_KEY = 'timeline-column-visibility';
-
   private readonly timeline = inject(TimelineService);
   private readonly elRef = inject(ElementRef);
+  private readonly landscapeState = inject(LandscapeStateService, { optional: true });
   private scrollListener: (() => void) | null = null;
   private scrollRafId: number | null = null;
   private readonly scrollContainerEl = signal<HTMLElement | null>(null);
@@ -89,43 +80,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly assetClick = output<string>();
 
   readonly isScrolled = signal(false);
-  readonly showMoaColumn = signal(true);
-  readonly showRoaColumn = signal(true);
-  readonly showNotesColumn = signal(true);
-  readonly columnSettingsOpen = signal(false);
-
-  protected readonly hasAnyToggleableColumn = computed(() =>
-    !this.hideMoaColumn() || !this.hideRoaColumn() || !this.hideNotesColumn()
-  );
+  readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
+  readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
+  readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
 
   constructor() {
-    try {
-      const stored = sessionStorage.getItem(DashboardGridComponent.STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { moa?: boolean; roa?: boolean; notes?: boolean };
-        if (typeof parsed.moa === 'boolean') this.showMoaColumn.set(parsed.moa);
-        if (typeof parsed.roa === 'boolean') this.showRoaColumn.set(parsed.roa);
-        if (typeof parsed.notes === 'boolean') this.showNotesColumn.set(parsed.notes);
-      }
-    } catch {
-      // ignore corrupt data
-    }
-
-    effect(() => {
-      try {
-        sessionStorage.setItem(
-          DashboardGridComponent.STORAGE_KEY,
-          JSON.stringify({
-            moa: this.showMoaColumn(),
-            roa: this.showRoaColumn(),
-            notes: this.showNotesColumn(),
-          })
-        );
-      } catch {
-        // ignore full storage
-      }
-    });
-
     effect(() => {
       const el = this.scrollContainerEl();
       const x = this.earliestEventX();
@@ -202,7 +161,9 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   });
 
   ngAfterViewInit(): void {
-    const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto') as HTMLElement | null;
+    const scrollEl = this.elRef.nativeElement.querySelector(
+      '.overflow-x-auto'
+    ) as HTMLElement | null;
     if (scrollEl) {
       this.scrollContainerEl.set(scrollEl);
       this.scrollListener = () => {
