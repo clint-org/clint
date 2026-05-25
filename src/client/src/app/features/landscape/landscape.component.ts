@@ -134,6 +134,14 @@ export class LandscapeComponent implements OnInit {
     return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
+  /** Number of spokes the hovered asset appears on (for duplicate indicator). */
+  readonly hoveredAssetSpokeCount = computed<number>(() => {
+    const id = this.hoveredAssetId();
+    const result = this.groupedResult();
+    if (!id || !result) return 0;
+    return result.spokes.filter((s) => s.products.some((p) => p.id === id)).length;
+  });
+
   constructor() {
     effect(() => {
       const assets = this.bullseyeAssets.value();
