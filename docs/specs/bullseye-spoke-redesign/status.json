@@ -1,15 +1,18 @@
 {
   "spec_id": "spec-2026-bullseye-spoke-redesign",
+  "status": "completed",
+  "branch": "bullseye-spoke-redesign",
+  "updatedAt": "2026-05-25T00:00:00Z",
   "tasks": {
-    "rpc": { "status": "pending" },
-    "model": { "status": "pending" },
-    "service": { "status": "pending" },
-    "state": { "status": "pending" },
-    "component": { "status": "pending" },
-    "chart-dots": { "status": "pending" },
-    "read-bar": { "status": "pending" },
-    "filter-bar": { "status": "pending" },
-    "routing": { "status": "pending" },
-    "tooltip": { "status": "pending" }
+    "rpc": { "status": "completed" },
+    "model": { "status": "completed" },
+    "service": { "status": "completed" },
+    "state": { "status": "completed" },
+    "component": { "status": "completed" },
+    "chart-dots": { "status": "completed" },
+    "read-bar": { "status": "completed" },
+    "filter-bar": { "status": "completed" },
+    "routing": { "status": "completed" },
+    "tooltip": { "status": "completed" }
   }
 }
