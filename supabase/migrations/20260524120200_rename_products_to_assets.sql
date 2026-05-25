@@ -107,6 +107,19 @@ create trigger _cleanup_polymorphic_refs_asset
   after delete on public.assets
   for each row execute function public._cleanup_polymorphic_refs('asset');
 
+-- update CHECK constraints on polymorphic entity_type columns BEFORE updating data
+alter table public.primary_intelligence
+  drop constraint if exists primary_intelligence_entity_type_check;
+alter table public.primary_intelligence
+  add constraint primary_intelligence_entity_type_check
+  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product', 'space'));
+
+alter table public.primary_intelligence_links
+  drop constraint if exists primary_intelligence_links_entity_type_check;
+alter table public.primary_intelligence_links
+  add constraint primary_intelligence_links_entity_type_check
+  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product'));
+
 update public.primary_intelligence set entity_type = 'asset' where entity_type = 'product';
 update public.primary_intelligence_links set entity_type = 'asset' where entity_type = 'product';
 update public.material_links set entity_type = 'asset' where entity_type = 'product';
