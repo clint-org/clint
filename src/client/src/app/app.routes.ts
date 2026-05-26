@@ -11,6 +11,7 @@ import { auditSpaceGuard } from './core/guards/audit-space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
+import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
 
 export const routes: Routes = [
   {
@@ -303,10 +304,9 @@ export const routes: Routes = [
           },
           {
             path: 'activity',
-            loadComponent: () =>
-              import('./features/engagement-activity/engagement-activity-page.component').then(
-                (m) => m.EngagementActivityPageComponent
-              ),
+            canActivate: [activityRedirectGuard],
+            // Guard always redirects; component is never rendered.
+            children: [],
           },
           // Redirects: old /landscape/* paths -> /bullseye
           { path: 'landscape', pathMatch: 'full', redirectTo: 'bullseye' },

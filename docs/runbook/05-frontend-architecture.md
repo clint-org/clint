@@ -249,7 +249,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
       /catalysts   CatalystsPageComponent
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
-    /activity   EngagementActivityPageComponent
+    /activity   activityRedirectGuard
     /landscape   -> bullseye
     /landscape/by-therapy-area   -> bullseye
     /landscape/by-therapy-area/:entityId   -> bullseye
@@ -707,6 +707,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 
 <!-- AUTO-GEN:DRIFT -->
 **Services:**
+- `AnnotationService`
 - `AuditEventService`
 - `ChangeEventService`
 - `EventCategoryService`

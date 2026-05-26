@@ -1,6 +1,6 @@
 # Unified Feed Merge: Events + Activity
 
-**Status:** approved
+**Status:** completed
 **Date:** 2026-05-26
 **Prototype:** `src/client/public/internal/unified-feed-merge.html`
 

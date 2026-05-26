@@ -260,11 +260,14 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agencies` | yes | 3 |
 | `agency_invites` | yes | 1 |
 | `agency_members` | yes | 4 |
+| `ai_calls` | yes | 2 |
+| `ai_config` | yes | 3 |
 | `asset_indications` | yes | 4 |
 | `asset_mechanisms_of_action` | yes | 3 |
 | `asset_routes_of_administration` | yes | 3 |
 | `assets` | yes | 4 |
 | `audit_events` | yes | 1 |
+| `change_event_annotations` | yes | 4 |
 | `companies` | yes | 4 |
 | `condition_indication_map` | yes | 3 |
 | `conditions` | yes | 4 |
@@ -291,6 +294,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `r2_pending_deletes` | yes | 0 |
 | `retired_hostnames` | yes | 1 |
 | `routes_of_administration` | yes | 4 |
+| `source_documents` | yes | 2 |
 | `space_invites` | yes | 1 |
 | `space_members` | yes | 4 |
 | `spaces` | yes | 4 |
@@ -311,6 +315,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` whose conventional name does not appear anywhere in this file.
 
 <!-- AUTO-GEN:DRIFT -->
+- `activityRedirectGuard`
 - `auditAgencyGuard`
 - `auditSpaceGuard`
 - `auditTenantGuard`
