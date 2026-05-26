@@ -119,7 +119,8 @@ async function listEventsScopedTo(
     p_offset: 0,
   });
   if (error) throw new Error(`get_events_page_data(${level}): ${error.message}`);
-  return (data as Array<{ title: string }>).map((r) => r.title).sort();
+  const result = data as { items: Array<{ title: string }>; total: number };
+  return result.items.map((r) => r.title).sort();
 }
 
 describe('get_events_page_data hierarchical scope', () => {
