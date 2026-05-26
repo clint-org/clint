@@ -319,10 +319,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.entityId.set(null);
       // Sync spokeGrouping from the ?group= query param if present
       const groupParam = this.route.snapshot.queryParamMap.get('group');
-      if (
-        groupParam &&
-        ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)
-      ) {
+      if (groupParam && ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)) {
         this.state.spokeGrouping.set(groupParam as SpokeGrouping);
       }
     } else if (allSegments.includes('catalysts')) {

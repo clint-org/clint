@@ -23,27 +23,25 @@ export class MarkerService {
   private cache = inject(RpcCache);
 
   async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
-    const { data, error } = await this.supabase.client
-      .from('markers')
-      .insert({ ...marker, space_id: spaceId })
-      .select()
-      .single();
+    const { data: newId, error } = await this.supabase.client.rpc('create_marker', {
+      p_space_id: spaceId,
+      p_marker_type_id: marker.marker_type_id!,
+      p_title: marker.title!,
+      p_projection: marker.projection!,
+      p_event_date: marker.event_date!,
+      p_end_date: marker.end_date ?? null,
+      p_description: marker.description ?? null,
+      p_source_url: marker.source_url ?? null,
+      p_trial_ids: trialIds.length > 0 ? trialIds : null,
+      p_change_source: 'analyst',
+    });
     if (error) throw error;
-
-    if (trialIds.length > 0) {
-      const assignments = trialIds.map((trialId) => ({
-        marker_id: data.id,
-        trial_id: trialId,
-      }));
-      const { error: assignError } = await this.supabase.client
-        .from('marker_assignments')
-        .insert(assignments);
-      if (assignError) throw assignError;
-    }
 
     this.cache.invalidateTags([...spaceTagsFor(spaceId), ...trialDetailTags(trialIds)]);
 
-    return data as Marker;
+    const created = await this.getById(newId as string);
+    if (!created) throw new Error('Marker not found after creation');
+    return created;
   }
 
   async update(id: string, changes: Partial<Marker>): Promise<Marker> {

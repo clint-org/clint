@@ -123,6 +123,7 @@ describe('EventService.getSpaceTags', () => {
 
 describe('EventService.create', () => {
   let from: ReturnType<typeof vi.fn>;
+  let rpc: ReturnType<typeof vi.fn>;
   let invalidateTags: ReturnType<typeof vi.fn>;
   let service: EventService;
 
@@ -133,11 +134,12 @@ describe('EventService.create', () => {
       if (table === 'events') return eventQb;
       return insertQb;
     });
+    rpc = vi.fn().mockResolvedValue({ data: 'event-1', error: null });
     invalidateTags = vi.fn();
     service = makeService(
       {
         from,
-        rpc: vi.fn(),
+        rpc,
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }), getSession: vi.fn() },
       },
       { get: vi.fn(), invalidateTags }
@@ -145,8 +147,17 @@ describe('EventService.create', () => {
   });
 
   it('invalidates space events and tags after create', async () => {
-    await service.create('space-1', { title: 'New Event' }, [], []);
+    await service.create(
+      'space-1',
+      { title: 'New Event', category_id: 'cat-1', event_date: '2026-01-01' },
+      [],
+      []
+    );
 
+    expect(rpc).toHaveBeenCalledWith('create_event', expect.objectContaining({
+      p_space_id: 'space-1',
+      p_title: 'New Event',
+    }));
     expect(invalidateTags).toHaveBeenCalledWith([
       'space:space-1:events',
       'space:space-1:tags',

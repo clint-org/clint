@@ -314,4 +314,6 @@ Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` 
 - `auditAgencyGuard`
 - `auditSpaceGuard`
 - `auditTenantGuard`
+- `sourceImportDeactivateGuard`
+- `sourceImportGuard`
 <!-- /AUTO-GEN:DRIFT -->

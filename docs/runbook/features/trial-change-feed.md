@@ -7,7 +7,7 @@ spec: docs/superpowers/specs/2026-05-02-trial-change-feed-design.md
 
 A unified, typed event stream that captures every meaningful update to a trial: both CT.gov-derived (overall recruitment status, primary completion date, design fields, etc.) and analyst-derived (marker added, edited, deleted). A daily Cloudflare Worker pulls fresh CT.gov payloads and a BEFORE trigger on `markers` writes audit rows; both feed a single `trial_change_events` table that the UI reads from in six places. See [docs/superpowers/specs/2026-05-02-trial-change-feed-design.md](../superpowers/specs/2026-05-02-trial-change-feed-design.md).
 
-Four-stage pipeline: observe, store, classify, surface.
+Four-stage pipeline: observe, store, classify, surface. Three sources feed the event stream: `ctgov` (automated CT.gov polling), `analyst` (manual marker edits via the UI), and `source_import` (AI-extracted markers committed via source import). The activity page exposes all three as filter chips.
 
 ```mermaid
 flowchart LR
@@ -28,8 +28,9 @@ flowchart LR
   RPC --> TRIALS
   RPC --> RAW
   RAW -->|classify| EVT
-  MK -->|AFTER trigger| MKC
+  MK -->|BEFORE trigger| MKC
   MKC -->|classify| EVT
+  SI[create_marker RPC<br/>source import] -->|re-emit after<br/>assignments| EVT
   EVT --> UI
 ```
 
@@ -59,6 +60,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - _classify_change
     - _compute_field_diffs
     - recompute_trial_change_events
+    - create_marker
   tables:
     - trial_change_events
     - trial_field_changes

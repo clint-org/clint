@@ -86,7 +86,8 @@ export class LandscapeComponent implements OnInit {
   private readonly groupedResult = computed(() => {
     const assets = this.bullseyeAssets.value();
     if (!assets) return null;
-    if (assets.length === 0) return { spokes: [] as BullseyeSpoke[], duplicatedAssetIds: new Set<string>() };
+    if (assets.length === 0)
+      return { spokes: [] as BullseyeSpoke[], duplicatedAssetIds: new Set<string>() };
     return groupAssetsIntoSpokes(assets, this.state.spokeGrouping());
   });
 

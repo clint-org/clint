@@ -87,9 +87,7 @@ export class CompetitiveReadBarComponent {
         if (asset.highest_phase === 'LAUNCHED') launched++;
         if (asset.highest_phase === 'APPROVED') approved++;
         if (asset.highest_phase === 'P3') p3++;
-        if (
-          RING_DEV_RANK[asset.highest_phase] >= RING_DEV_RANK['P3']
-        ) {
+        if (RING_DEV_RANK[asset.highest_phase] >= RING_DEV_RANK['P3']) {
           lateStage++;
         }
         if (asset.has_recent_activity) recentActivity++;
@@ -142,9 +140,7 @@ export class CompetitiveReadBarComponent {
     }
 
     // Most active: spoke with most has_recent_activity assets (if >= 2)
-    const mostActive = [...stats].sort(
-      (a, b) => b.recentActivity - a.recentActivity
-    )[0];
+    const mostActive = [...stats].sort((a, b) => b.recentActivity - a.recentActivity)[0];
     if (mostActive && mostActive.recentActivity >= 2 && mostActive !== leader) {
       const name = `<strong>${this.escapeName(mostActive.spoke.name)}</strong>`;
       parts.push(`${name} most active (${mostActive.recentActivity} events)`);
@@ -167,9 +163,6 @@ export class CompetitiveReadBarComponent {
   }
 
   private escapeName(name: string): string {
-    return name
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    return name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }

@@ -36,7 +36,9 @@ interface SpokeStats {
               type="button"
               [class.active]="state.spokeGrouping() === opt.value"
               (click)="state.spokeGrouping.set(opt.value)"
-            >{{ opt.label }}</button>
+            >
+              {{ opt.label }}
+            </button>
           }
         </div>
       </div>
@@ -332,9 +334,7 @@ export class BullseyeControlsPanelComponent {
     }
 
     // Most active: spoke with most has_recent_activity assets (if >= 2)
-    const mostActive = [...stats].sort(
-      (a, b) => b.recentActivity - a.recentActivity
-    )[0];
+    const mostActive = [...stats].sort((a, b) => b.recentActivity - a.recentActivity)[0];
     if (mostActive && mostActive.recentActivity >= 2 && mostActive !== leader) {
       const name = `<strong>${this.escapeName(mostActive.spoke.name)}</strong>`;
       parts.push(`${name} most active (${mostActive.recentActivity} events)`);
@@ -357,9 +357,6 @@ export class BullseyeControlsPanelComponent {
   }
 
   private escapeName(name: string): string {
-    return name
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    return name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }

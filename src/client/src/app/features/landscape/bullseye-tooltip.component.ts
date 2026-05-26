@@ -24,24 +24,28 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
         @if (p.generic_name) {
           <div class="text-slate-300">{{ p.generic_name }}</div>
         }
-        <div class="text-slate-300">{{ p.company_name }}, highest phase: {{ phaseLabel(p.highest_phase) }}</div>
+        <div class="text-slate-300">
+          {{ p.company_name }}, highest phase: {{ phaseLabel(p.highest_phase) }}
+        </div>
         <div class="text-slate-300">
           {{ p.trials.length }} {{ p.trials.length === 1 ? 'trial' : 'trials' }}
         </div>
         @if (p.has_recent_activity && p.latest_event_type) {
           <div class="text-amber-300 font-mono mt-1">
-            {{ p.latest_event_type }}@if (p.latest_event_date) { -- {{ p.latest_event_date | date:'mediumDate' }}}
+            {{ p.latest_event_type }}
+            @if (p.latest_event_date) {
+              -- {{ p.latest_event_date | date: 'mediumDate' }}
+            }
           </div>
         }
         @if (p.intelligence_count > 0) {
           <div class="text-cyan-300 mt-0.5">
-            {{ p.intelligence_count }} intelligence {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
+            {{ p.intelligence_count }} intelligence
+            {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
           </div>
         }
         @if (spokeCount() > 1) {
-          <div class="text-slate-400 mt-0.5">
-            Appears on {{ spokeCount() }} spokes
-          </div>
+          <div class="text-slate-400 mt-0.5">Appears on {{ spokeCount() }} spokes</div>
         }
         @if (moaList().length > 0) {
           <div class="text-slate-400 mt-1 border-t border-slate-600 pt-1">

@@ -25,6 +25,7 @@ import {
   ActivityFeedCursor,
   ActivityFeedFilters,
   ChangeEvent,
+  ChangeEventSource,
   ChangeEventType,
 } from '../../core/models/change-event.model';
 import { Trial } from '../../core/models/trial.model';
@@ -106,7 +107,7 @@ export class EngagementActivityPageComponent implements OnInit {
 
   // UI filter signals.
   readonly dateRange = signal<'7d' | '30d' | 'all'>('30d');
-  readonly source = signal<'All' | 'CT.gov' | 'Analyst'>('All');
+  readonly source = signal<'All' | 'CT.gov' | 'Analyst' | 'Source Import'>('All');
   readonly selectedEventTypes = signal<ChangeEventType[]>([]);
   readonly selectedTrialIds = signal<string[]>([]);
 
@@ -117,10 +118,11 @@ export class EngagementActivityPageComponent implements OnInit {
     { label: 'All time', value: 'all' },
   ];
 
-  readonly sourceOptions: PillOption<'All' | 'CT.gov' | 'Analyst'>[] = [
+  readonly sourceOptions: PillOption<'All' | 'CT.gov' | 'Analyst' | 'Source Import'>[] = [
     { label: 'All', value: 'All' },
     { label: 'CT.gov', value: 'CT.gov' },
     { label: 'Analyst', value: 'Analyst' },
+    { label: 'Source Import', value: 'Source Import' },
   ];
 
   // All event-type options for the multi-select. Order mirrors the
@@ -159,7 +161,12 @@ export class EngagementActivityPageComponent implements OnInit {
       result.event_types = this.selectedEventTypes();
     }
     if (this.source() !== 'All') {
-      result.sources = [this.source() === 'CT.gov' ? 'ctgov' : 'analyst'];
+      const sourceMap: Record<string, ChangeEventSource> = {
+        'CT.gov': 'ctgov',
+        Analyst: 'analyst',
+        'Source Import': 'source_import',
+      };
+      result.sources = [sourceMap[this.source()]];
     }
     if (this.selectedTrialIds().length) {
       result.trial_ids = this.selectedTrialIds();

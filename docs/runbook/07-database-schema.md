@@ -833,6 +833,18 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260524120900_seed_demo_indication_model.sql`
 - `20260524121000_fix_remaining_product_refs.sql`
 - `20260524121100_fix_events_rpc_structure.sql`
+- `20260525100000_create_ai_config.sql`
+- `20260525100100_create_source_documents.sql`
+- `20260525100200_create_ai_calls.sql`
+- `20260525100300_add_source_doc_provenance.sql`
+- `20260525100400_extract_source_worker_secret.sql`
+- `20260525100500_rpc_ai_call_open.sql`
+- `20260525100600_rpc_ai_call_preflight.sql`
+- `20260525100700_rpc_ai_call_close.sql`
+- `20260525100800_rpc_commit_source_import.sql`
+- `20260525100900_rpc_platform_admin_set_ai_enabled.sql`
+- `20260525101000_rpc_get_ai_usage_rollup.sql`
 - `20260525120000_create_bullseye_assets_rpc.sql`
+- `20260525120000_shared_entity_create_rpcs.sql`
 - `20260525140000_get_intelligence_notes_for_asset.sql`
 <!-- /AUTO-GEN:DRIFT -->
