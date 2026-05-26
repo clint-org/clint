@@ -89,11 +89,16 @@ export class TrialService {
   }
 
   async create(spaceId: string, trial: Partial<Trial>): Promise<Trial> {
-    const { data, error } = await this.supabase.client
-      .from('trials')
-      .insert({ ...trial, space_id: spaceId })
-      .select()
-      .single();
+    const { data: newId, error } = await this.supabase.client.rpc('create_trial', {
+      p_space_id: spaceId,
+      p_asset_id: trial.asset_id!,
+      p_name: trial.name!,
+      p_identifier: trial.identifier ?? null,
+      p_status: trial.status ?? null,
+      p_phase_type: trial.phase_type ?? null,
+      p_phase_start_date: trial.phase_start_date ?? null,
+      p_phase_end_date: trial.phase_end_date ?? null,
+    });
     if (error) throw error;
     const tags: string[] = [
       `space:${spaceId}:trials`,
@@ -101,10 +106,9 @@ export class TrialService {
       `space:${spaceId}:activity`,
       `space:${spaceId}:landing-stats`,
     ];
-    const assetId = (data as Trial).asset_id;
-    if (assetId) tags.push(`asset:${assetId}:trials`);
+    if (trial.asset_id) tags.push(`asset:${trial.asset_id}:trials`);
     this.cache.invalidateTags(tags);
-    return data as Trial;
+    return this.getById(newId as string);
   }
 
   async getLatestSnapshot(

@@ -37,11 +37,7 @@ function flattenAsset(row: RawAssetRow): Asset {
   const routes_of_administration = (row.asset_routes_of_administration ?? [])
     .map((j) => j.roa)
     .filter((r): r is { id: string; name: string; abbreviation: string | null } => r !== null);
-  const {
-    asset_mechanisms_of_action: _amoa,
-    asset_routes_of_administration: _aroa,
-    ...rest
-  } = row;
+  const { asset_mechanisms_of_action: _amoa, asset_routes_of_administration: _aroa, ...rest } = row;
   void _amoa;
   void _aroa;
   return {
@@ -87,15 +83,16 @@ export class AssetService {
   }
 
   async create(spaceId: string, asset: Partial<Asset>): Promise<Asset> {
-    // Strip virtual join fields before insert
-    const { mechanisms_of_action: _m, routes_of_administration: _r, ...insertable } = asset;
-    void _m;
-    void _r;
-    const { data, error } = await this.supabase.client
-      .from('assets')
-      .insert({ ...insertable, space_id: spaceId })
-      .select()
-      .single();
+    const moaNames = (asset.mechanisms_of_action ?? []).map((m) => m.name);
+    const roaNames = (asset.routes_of_administration ?? []).map((r) => r.name);
+    const { data: newId, error } = await this.supabase.client.rpc('create_asset', {
+      p_space_id: spaceId,
+      p_company_id: asset.company_id!,
+      p_name: asset.name!,
+      p_generic_name: asset.generic_name ?? null,
+      p_moa_names: moaNames.length > 0 ? moaNames : null,
+      p_roa_names: roaNames.length > 0 ? roaNames : null,
+    });
     if (error) throw error;
     this.cache.invalidateTags([
       `space:${spaceId}:products`,
@@ -103,7 +100,7 @@ export class AssetService {
       `space:${spaceId}:dashboard`,
       `space:${spaceId}:landing-stats`,
     ]);
-    return data as Asset;
+    return this.getById(newId as string);
   }
 
   async update(id: string, changes: Partial<Asset>): Promise<Asset> {

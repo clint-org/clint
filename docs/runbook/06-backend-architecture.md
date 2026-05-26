@@ -96,6 +96,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
+| `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
@@ -633,6 +634,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_detail`
 - `get_event_thread`
 - `get_events_page_data`
+- `get_intelligence_notes_for_asset`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`

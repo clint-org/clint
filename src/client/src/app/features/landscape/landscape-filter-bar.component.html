@@ -219,7 +219,10 @@
           size="small"
           (onClick)="clearAll()"
           [attr.aria-label]="
-            'Clear ' + activeFilterCount() + ' active filter' + (activeFilterCount() === 1 ? '' : 's')
+            'Clear ' +
+            activeFilterCount() +
+            ' active filter' +
+            (activeFilterCount() === 1 ? '' : 's')
           "
         />
       }

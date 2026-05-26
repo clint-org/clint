@@ -76,14 +76,21 @@ const DIMMED_OPACITY = 0.55;
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     @keyframes pulse-ring {
-      0% { r: 10; opacity: 0.5; }
-      100% { r: 22; opacity: 0; }
+      0% {
+        r: 10;
+        opacity: 0.5;
+      }
+      100% {
+        r: 22;
+        opacity: 0;
+      }
     }
     .activity-pulse {
       animation: pulse-ring 2.5s ease-out infinite;
       pointer-events: none;
     }
-    .halo-ring, .dup-ring {
+    .halo-ring,
+    .dup-ring {
       pointer-events: none;
     }
   `,

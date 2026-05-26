@@ -26,22 +26,36 @@
             </span>
           }
         </div>
-        @if (inventoryTotals(); as inv) {
-          <div
-            class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
-            aria-label="Engagement inventory"
-          >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+        <div class="flex items-center gap-4">
+          @if (inventoryTotals(); as inv) {
+            <div
+              class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
+              aria-label="Engagement inventory"
             >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+              >
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
+              >
+              <span
+                ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
+              >
+            </div>
+          }
+          @if (spaceRole.canEdit()) {
+            <button
+              class="flex cursor-pointer items-center gap-1.5 border-l border-slate-200 pl-4 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 transition-colors hover:text-brand-600"
+              aria-label="Import from source"
+              pTooltip="Import structured data from a press release or article"
+              tooltipPosition="bottom"
+              (click)="importDialogVisible.set(true)"
             >
-            <span
-              ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
-            >
-          </div>
-        }
+              <i class="pi pi-file-import text-[11px]"></i>
+              Import
+            </button>
+          }
+        </div>
       </div>
     </div>
 
@@ -509,3 +523,9 @@
     </div>
   </div>
 </div>
+
+<app-import-from-source-dialog
+  [(visible)]="importDialogVisible"
+  [spaceId]="spaceId()"
+  [tenantId]="tenantId()"
+/>

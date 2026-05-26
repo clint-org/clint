@@ -51,6 +51,7 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 <!-- AUTO-GEN:DRIFT -->
 - `@angular/cdk`
 - `@angular/core`
+- `@anthropic-ai/sdk`
 - `@aws-sdk/client-s3`
 - `@aws-sdk/s3-request-presigner`
 - `@fortawesome/fontawesome-free`
@@ -58,6 +59,7 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `@supabase/supabase-js`
 - `@types/diff`
 - `diff`
+- `jaro-winkler`
 - `primeng`
 - `prosemirror-commands`
 - `prosemirror-history`
@@ -72,6 +74,7 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `rxjs`
 - `tailwindcss-primeui`
 - `tslib`
+- `zod`
 - `zone.js`
 - `@cloudflare/vitest-pool-workers`
 - `@cloudflare/workers-types`

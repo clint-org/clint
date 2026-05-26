@@ -1,4 +1,4 @@
-export type ChangeEventSource = 'ctgov' | 'analyst';
+export type ChangeEventSource = 'ctgov' | 'analyst' | 'source_import';
 
 export type ChangeEventType =
   | 'status_changed'

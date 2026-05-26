@@ -141,7 +141,6 @@ $$;
 alter table public.material_links
   add constraint material_links_entity_type_check
   check (entity_type in ('trial', 'marker', 'company', 'asset', 'product', 'space'));
-
 update public.primary_intelligence set entity_type = 'asset' where entity_type = 'product';
 update public.primary_intelligence_links set entity_type = 'asset' where entity_type = 'product';
 update public.material_links set entity_type = 'asset' where entity_type = 'product';

@@ -166,7 +166,13 @@
         [attr.r]="dotRadius(dot)"
         [attr.fill]="dotFill(dot)"
         [attr.opacity]="dotOpacity(dot)"
-        [attr.stroke]="isHighlighted(dot.product.id) ? '#0f172a' : (isAssetMatched(dot.product.id) ? 'white' : '#cbd5e1')"
+        [attr.stroke]="
+          isHighlighted(dot.product.id)
+            ? '#0f172a'
+            : isAssetMatched(dot.product.id)
+              ? 'white'
+              : '#cbd5e1'
+        "
         [attr.stroke-width]="isHighlighted(dot.product.id) ? 2 : 1.5"
         [attr.tabindex]="isAssetMatched(dot.product.id) ? 0 : -1"
         role="button"

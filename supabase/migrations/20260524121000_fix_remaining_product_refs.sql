@@ -22,24 +22,9 @@
 --   get_product_detail_with_intelligence -> get_asset_detail_with_intelligence
 
 -- =============================================================================
--- 0. fix entity_type CHECK constraints missed by 20260524120200
+-- 0. entity_type CHECK constraints: now handled in 20260524120200
 -- =============================================================================
--- The rename migration updated data (entity_type 'product' -> 'asset') but
--- forgot to update the CHECK constraints on primary_intelligence and
--- primary_intelligence_links. Fix them here so that new inserts with
--- entity_type = 'asset' are accepted.
-
-alter table public.primary_intelligence
-  drop constraint if exists primary_intelligence_entity_type_check;
-alter table public.primary_intelligence
-  add constraint primary_intelligence_entity_type_check
-  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product', 'space'));
-
-alter table public.primary_intelligence_links
-  drop constraint if exists primary_intelligence_links_entity_type_check;
-alter table public.primary_intelligence_links
-  add constraint primary_intelligence_links_entity_type_check
-  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product'));
+-- (Moved to the rename migration so constraints are updated before data.)
 
 -- =============================================================================
 -- 1. permanently_delete_space

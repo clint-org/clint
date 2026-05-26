@@ -39,14 +39,17 @@ export class ChangeEventRowComponent {
   readonly rich = computed(() => summarySegmentsFor(this.event()));
   readonly accentColor = computed(() => this.rich().color ?? DEFAULT_ROW_COLOR);
   readonly sourceLabel = computed(() => {
-    if (this.event().source === 'ctgov') return 'CT.gov';
+    const src = this.event().source;
+    if (src === 'ctgov') return 'CT.gov';
+    if (src === 'source_import') return 'Source Import';
     return this.brand.agency()?.name ?? this.brand.appDisplayName();
   });
-  readonly sourceTooltip = computed(() =>
-    this.event().source === 'ctgov'
-      ? 'Automated polling of ClinicalTrials.gov'
-      : 'Manual entry by a team member'
-  );
+  readonly sourceTooltip = computed(() => {
+    const src = this.event().source;
+    if (src === 'ctgov') return 'Automated polling of ClinicalTrials.gov';
+    if (src === 'source_import') return 'Extracted from an imported source document';
+    return 'Manual entry by a team member';
+  });
 
   readonly monogram = computed(() => monogramFor(this.event().company_name));
   /** Stable per-company tint for the monogram fallback (when no logo URL). */

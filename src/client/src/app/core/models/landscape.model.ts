@@ -226,7 +226,7 @@ export interface GroupedSpokesResult {
  */
 export function groupAssetsIntoSpokes(
   assets: BullseyeAsset[],
-  grouping: SpokeGrouping,
+  grouping: SpokeGrouping
 ): GroupedSpokesResult {
   const groups = new Map<string, { name: string; assets: BullseyeAsset[] }>();
   const assetSpokeCount = new Map<string, number>();
@@ -270,7 +270,7 @@ export function groupAssetsIntoSpokes(
 
 function getSpokeKeys(
   asset: BullseyeAsset,
-  grouping: SpokeGrouping,
+  grouping: SpokeGrouping
 ): { id: string; name: string }[] {
   switch (grouping) {
     case 'company':
@@ -288,12 +288,7 @@ function getSpokeKeys(
 
 // --- Competitive Positioning types ---
 
-export type PositioningGrouping =
-  | 'moa'
-  | 'indication'
-  | 'moa+indication'
-  | 'company'
-  | 'roa';
+export type PositioningGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
 
 export type CountUnit = 'assets' | 'trials' | 'companies';
 

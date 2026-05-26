@@ -75,7 +75,8 @@
               "buildTarget": "clinical-trial-dashboard:build:dev"
             },
             "local": {
-              "buildTarget": "clinical-trial-dashboard:build:local"
+              "buildTarget": "clinical-trial-dashboard:build:local",
+              "proxyConfig": "proxy.local.conf.json"
             }
           },
           "defaultConfiguration": "local"
