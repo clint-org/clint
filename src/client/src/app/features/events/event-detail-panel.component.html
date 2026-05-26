@@ -271,7 +271,8 @@
 
       @if (annotationEditing()) {
         <textarea
-          [(ngModel)]="annotationBody"
+          [ngModel]="annotationBody()"
+          (ngModelChange)="annotationBody.set($event)"
           class="w-full rounded border border-slate-200 bg-white p-2 text-[12px] text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
           rows="3"
           placeholder="Why does this matter?"
