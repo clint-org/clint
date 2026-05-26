@@ -16,7 +16,7 @@ export class EventService {
     filters: EventsPageFilters,
     limit = 50,
     offset = 0
-  ): Promise<FeedItem[]> {
+  ): Promise<{ items: FeedItem[]; total: number }> {
     return this.cache.get(
       'get_events_page_data',
       { spaceId, filters, limit, offset },
@@ -38,7 +38,8 @@ export class EventService {
             p_offset: offset,
           });
           if (error) throw error;
-          return (data ?? []) as FeedItem[];
+          const result = data as { items: FeedItem[]; total: number } | null;
+          return { items: result?.items ?? [], total: result?.total ?? 0 };
         },
       }
     );

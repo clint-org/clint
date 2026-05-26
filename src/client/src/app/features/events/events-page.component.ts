@@ -289,6 +289,12 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         thread_id: detail.thread_id,
         description: detail.description,
         source_url: null,
+        change_event_type: null,
+        change_payload: null,
+        change_source: null,
+        has_annotation: false,
+        observed_at: null,
+        company_logo_url: null,
       });
       this.selectedDetail.set(detail);
     } catch (err) {
@@ -346,6 +352,12 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         thread_id: null,
         description: detail.catalyst.description,
         source_url: detail.catalyst.source_url,
+        change_event_type: null,
+        change_payload: null,
+        change_source: null,
+        has_annotation: false,
+        observed_at: null,
+        company_logo_url: null,
       });
       this.selectedCatalystDetail.set(detail);
     } catch (err) {
@@ -447,7 +459,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.eventCategoryService.list(this.spaceId),
         this.markerCategoryService.list(this.spaceId),
       ]);
-      this.feedItems.set(feed);
+      this.feedItems.set(feed.items);
       this.eventCategories.set(eCats);
       this.markerCategories.set(mCats);
     } catch (err) {
@@ -475,7 +487,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.PAGE_SIZE,
         0
       );
-      this.feedItems.set(feed);
+      this.feedItems.set(feed.items);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
     } finally {
