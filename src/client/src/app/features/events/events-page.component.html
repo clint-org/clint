@@ -45,6 +45,7 @@
                     [options]="[
                       { label: 'Event', value: 'event' },
                       { label: 'Marker', value: 'marker' },
+                      { label: 'Detected', value: 'detected' },
                     ]"
                     [ngModel]="value"
                     (ngModelChange)="filter($event)"
@@ -105,6 +106,11 @@
           <tr
             class="cursor-pointer transition-colors hover:bg-slate-50"
             [class.selected-row]="selectedItem()?.id === item.id"
+            [style.border-left]="
+              item.source_type === 'detected' && item.priority === 'high'
+                ? '3px solid rgb(217 119 6)'
+                : ''
+            "
             (click)="onRowClick(item)"
             (keydown.enter)="onRowClick(item)"
             tabindex="0"
@@ -122,16 +128,45 @@
                 [class.text-brand-700]="item.source_type === 'event'"
                 [class.bg-slate-100]="item.source_type === 'marker'"
                 [class.text-slate-500]="item.source_type === 'marker'"
+                [class.bg-amber-50]="item.source_type === 'detected'"
+                [class.text-amber-700]="item.source_type === 'detected'"
               >
-                {{ item.source_type }}
+                @if (item.source_type === 'detected') {
+                  <i class="fa-solid fa-bolt mr-0.5"></i>
+                }
+                {{ item.source_type === 'detected' ? 'Detected' : item.source_type }}
               </span>
             </td>
             <td class="max-w-xs">
               <div class="flex items-center gap-1.5">
-                <span
-                  class="truncate text-sm font-medium text-slate-900"
-                  [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
-                ></span>
+                @if (item.source_type === 'detected' && item.change_event_type) {
+                  <span class="truncate text-sm text-slate-900">
+                    @for (seg of getDetectedSummary(item).segments; track $index) {
+                      @switch (seg.kind) {
+                        @case ('plain') {
+                          <span>{{ seg.text }}</span>
+                        }
+                        @case ('old') {
+                          <span class="text-slate-400 line-through">{{ seg.text }}</span>
+                        }
+                        @case ('new') {
+                          <span class="font-semibold">{{ seg.text }}</span>
+                        }
+                        @case ('arrow') {
+                          <span class="mx-0.5 text-slate-400">&rarr;</span>
+                        }
+                        @case ('muted') {
+                          <span class="text-slate-500">{{ seg.text }}</span>
+                        }
+                      }
+                    }
+                  </span>
+                } @else {
+                  <span
+                    class="truncate text-sm font-medium text-slate-900"
+                    [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
+                  ></span>
+                }
                 @if (item.has_thread) {
                   <i
                     class="fa-solid fa-link shrink-0 text-[9px] text-slate-300"
@@ -151,6 +186,14 @@
               <span
                 [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"
               ></span>
+              @if (item.has_annotation) {
+                <i
+                  class="fa-solid fa-message text-[8px] text-brand-500 ml-1"
+                  pTooltip="Analyst note attached"
+                  tooltipPosition="top"
+                  aria-label="Analyst note attached"
+                ></i>
+              }
             </td>
             <td class="col-priority text-center">
               @if (item.priority === 'high') {
