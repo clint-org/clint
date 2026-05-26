@@ -62,13 +62,14 @@ Agency analysts paste a press release URL or text into an engagement. Claude Son
   user_facing: true
 
 - id: source-import-dialog
-  summary: Two-mode dialog (URL/paste text) that initiates extraction and navigates to the review page.
+  summary: Two-mode dialog (URL/paste text) that initiates extraction and navigates to the review page. Reachable from the engagement header button and the command palette (Cmd+K).
   routes: []
   rpcs: []
   tables: []
   related:
     - source-extract-worker
     - engagement-landing
+    - command-palette
   user_facing: true
 
 - id: ai-admin-toggle

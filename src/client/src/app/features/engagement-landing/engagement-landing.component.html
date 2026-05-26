@@ -26,7 +26,7 @@
             </span>
           }
         </div>
-        <div class="flex items-baseline gap-4">
+        <div class="flex items-center gap-4">
           @if (inventoryTotals(); as inv) {
             <div
               class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
@@ -43,16 +43,17 @@
               >
             </div>
           }
-          @if (isAgencyBrand()) {
+          @if (spaceRole.canEdit()) {
             <button
-              pButton
-              label="Import from source"
-              [outlined]="true"
-              icon="pi pi-file-import"
-              class="text-xs"
+              class="flex cursor-pointer items-center gap-1.5 border-l border-slate-200 pl-4 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 transition-colors hover:text-brand-600"
               aria-label="Import from source"
+              pTooltip="Import structured data from a press release or article"
+              tooltipPosition="bottom"
               (click)="importDialogVisible.set(true)"
-            ></button>
+            >
+              <i class="pi pi-file-import text-[11px]"></i>
+              Import
+            </button>
           }
         </div>
       </div>

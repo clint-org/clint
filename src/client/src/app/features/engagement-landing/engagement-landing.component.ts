@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -15,6 +16,7 @@ import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-ic
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -40,6 +42,7 @@ import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 import { ImportFromSourceDialogComponent } from '../source-import/import-from-source-dialog.component';
+import { SourceImportService } from '../source-import/source-import.service';
 
 interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
@@ -111,6 +114,8 @@ export class EngagementLandingComponent implements OnInit {
   private readonly tenantService = inject(TenantService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
   private readonly brand = inject(BrandContextService);
+  private readonly sourceImportService = inject(SourceImportService);
+  protected readonly spaceRole = inject(SpaceRoleService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -127,6 +132,13 @@ export class EngagementLandingComponent implements OnInit {
   readonly importDialogVisible = signal(false);
   readonly isAgencyBrand = computed(() => this.brand.kind() === 'agency');
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
+
+  private readonly _openFromPalette = effect(() => {
+    if (this.sourceImportService.dialogRequested()) {
+      this.importDialogVisible.set(true);
+      this.sourceImportService.dialogRequested.set(false);
+    }
+  });
 
   readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
   readonly spaceName = computed(() => this.space()?.name ?? '');
