@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 import {
+  AssetIntelligenceNote,
   IntelligenceDetailBundle,
   IntelligenceEntityType,
   IntelligenceFeedResult,
@@ -147,26 +148,44 @@ export class PrimaryIntelligenceService {
     limit?: number;
     offset?: number;
   }): Promise<IntelligenceFeedResult> {
+    return this.cache.get('list_primary_intelligence', opts, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${opts.spaceId}:primary-intelligence`],
+      fetch: async () => {
+        const { data, error } = await this.supabase.client.rpc('list_primary_intelligence', {
+          p_space_id: opts.spaceId,
+          p_entity_types: opts.entityTypes ?? null,
+          p_author_id: opts.authorId ?? null,
+          p_since: opts.since ?? null,
+          p_query: opts.query ?? null,
+          p_referencing_entity_type: opts.referencingEntityType ?? null,
+          p_referencing_entity_id: opts.referencingEntityId ?? null,
+          p_limit: opts.limit ?? 50,
+          p_offset: opts.offset ?? 0,
+        });
+        if (error) throw error;
+        return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
+      },
+    });
+  }
+
+  async getIntelligenceNotesForAsset(
+    spaceId: string,
+    assetId: string
+  ): Promise<AssetIntelligenceNote[]> {
     return this.cache.get(
-      'list_primary_intelligence',
-      opts,
+      'get_intelligence_notes_for_asset',
+      { spaceId, assetId },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${opts.spaceId}:primary-intelligence`],
+        tags: [`space:${spaceId}:primary-intelligence`, `asset:${assetId}:detail`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc('list_primary_intelligence', {
-            p_space_id: opts.spaceId,
-            p_entity_types: opts.entityTypes ?? null,
-            p_author_id: opts.authorId ?? null,
-            p_since: opts.since ?? null,
-            p_query: opts.query ?? null,
-            p_referencing_entity_type: opts.referencingEntityType ?? null,
-            p_referencing_entity_id: opts.referencingEntityId ?? null,
-            p_limit: opts.limit ?? 50,
-            p_offset: opts.offset ?? 0,
-          });
+          const { data, error } = await this.supabase.client.rpc(
+            'get_intelligence_notes_for_asset',
+            { p_space_id: spaceId, p_asset_id: assetId }
+          );
           if (error) throw error;
-          return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
+          return (data as AssetIntelligenceNote[]) ?? [];
         },
       }
     );

@@ -19,6 +19,7 @@ import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.compone
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
+import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -29,6 +30,7 @@ import { LandscapeStateService } from './landscape-state.service';
     LegendComponent,
     MessageModule,
     SkeletonComponent,
+    TimelineInsightStripComponent,
   ],
   templateUrl: './timeline-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

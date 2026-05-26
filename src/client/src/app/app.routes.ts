@@ -221,64 +221,20 @@ export const routes: Routes = [
                   {
                     path: '',
                     pathMatch: 'full',
-                    redirectTo: 'by-indication',
-                  },
-                  {
-                    path: 'by-indication',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-indication/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
                         (m) => m.LandscapeComponent
                       ),
                   },
-                  {
-                    path: 'by-company',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-company/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
-                  {
-                    path: 'by-moa',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-moa/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
-                  {
-                    path: 'by-roa',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-roa/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
+                  // Legacy redirects: old dimension routes -> /bullseye (query-param model)
+                  { path: 'by-indication', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-indication/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-company', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-company/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-moa', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-moa/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-roa', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-roa/:entityId', redirectTo: '', pathMatch: 'full' },
                 ],
               },
               {
@@ -352,48 +308,17 @@ export const routes: Routes = [
                 (m) => m.EngagementActivityPageComponent
               ),
           },
-          // Redirects: old /landscape/* paths -> /bullseye/*
-          {
-            path: 'landscape',
-            pathMatch: 'full',
-            redirectTo: 'bullseye/by-indication',
-          },
-          {
-            path: 'landscape/by-therapy-area',
-            redirectTo: 'bullseye/by-indication',
-          },
-          {
-            path: 'landscape/by-therapy-area/:entityId',
-            redirectTo: 'bullseye/by-indication/:entityId',
-          },
-          {
-            path: 'landscape/by-company',
-            redirectTo: 'bullseye/by-company',
-          },
-          {
-            path: 'landscape/by-company/:entityId',
-            redirectTo: 'bullseye/by-company/:entityId',
-          },
-          {
-            path: 'landscape/by-moa',
-            redirectTo: 'bullseye/by-moa',
-          },
-          {
-            path: 'landscape/by-moa/:entityId',
-            redirectTo: 'bullseye/by-moa/:entityId',
-          },
-          {
-            path: 'landscape/by-roa',
-            redirectTo: 'bullseye/by-roa',
-          },
-          {
-            path: 'landscape/by-roa/:entityId',
-            redirectTo: 'bullseye/by-roa/:entityId',
-          },
-          {
-            path: 'landscape/:therapeuticAreaId',
-            redirectTo: 'bullseye/by-indication/:therapeuticAreaId',
-          },
+          // Redirects: old /landscape/* paths -> /bullseye
+          { path: 'landscape', pathMatch: 'full', redirectTo: 'bullseye' },
+          { path: 'landscape/by-therapy-area', redirectTo: 'bullseye' },
+          { path: 'landscape/by-therapy-area/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-company', redirectTo: 'bullseye' },
+          { path: 'landscape/by-company/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-moa', redirectTo: 'bullseye' },
+          { path: 'landscape/by-moa/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-roa', redirectTo: 'bullseye' },
+          { path: 'landscape/by-roa/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/:therapeuticAreaId', redirectTo: 'bullseye' },
           // Manage routes (unchanged)
           {
             path: 'manage/companies',

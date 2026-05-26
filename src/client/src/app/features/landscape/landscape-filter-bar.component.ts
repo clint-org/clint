@@ -24,6 +24,8 @@ import {
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
   RingPhase,
+  SPOKE_GROUPING_OPTIONS,
+  SpokeGrouping,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
@@ -106,6 +108,8 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Grouped', value: 'grouped' },
     { label: 'Assets', value: 'assets' },
   ];
+
+  readonly spokeGroupingOptions: { label: string; value: SpokeGrouping }[] = SPOKE_GROUPING_OPTIONS;
 
   readonly phaseOptions: { label: string; value: RingPhase }[] = [
     { label: 'Pre-clinical', value: 'PRECLIN' },

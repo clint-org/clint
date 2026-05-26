@@ -107,7 +107,7 @@ create trigger _cleanup_polymorphic_refs_asset
   after delete on public.assets
   for each row execute function public._cleanup_polymorphic_refs('asset');
 
--- update CHECK constraints on polymorphic entity_type columns BEFORE updating data
+-- widen check constraints BEFORE updating data so 'asset' is allowed
 alter table public.primary_intelligence
   drop constraint if exists primary_intelligence_entity_type_check;
 alter table public.primary_intelligence
@@ -120,6 +120,27 @@ alter table public.primary_intelligence_links
   add constraint primary_intelligence_links_entity_type_check
   check (entity_type in ('trial', 'marker', 'company', 'asset', 'product'));
 
+do $$
+declare
+  v_con text;
+begin
+  select c.conname into v_con
+    from pg_constraint c
+    join pg_class r on r.oid = c.conrelid
+    join pg_namespace n on n.oid = r.relnamespace
+   where n.nspname = 'public'
+     and r.relname = 'material_links'
+     and c.contype = 'c'
+     and pg_get_constraintdef(c.oid) like '%entity_type%'
+   limit 1;
+  if v_con is not null then
+    execute format('alter table public.material_links drop constraint %I', v_con);
+  end if;
+end;
+$$;
+alter table public.material_links
+  add constraint material_links_entity_type_check
+  check (entity_type in ('trial', 'marker', 'company', 'asset', 'product', 'space'));
 update public.primary_intelligence set entity_type = 'asset' where entity_type = 'product';
 update public.primary_intelligence_links set entity_type = 'asset' where entity_type = 'product';
 update public.material_links set entity_type = 'asset' where entity_type = 'product';

@@ -844,4 +844,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260525100800_rpc_commit_source_import.sql`
 - `20260525100900_rpc_platform_admin_set_ai_enabled.sql`
 - `20260525101000_rpc_get_ai_usage_rollup.sql`
+- `20260525120000_create_bullseye_assets_rpc.sql`
+- `20260525120000_shared_entity_create_rpcs.sql`
+- `20260525140000_get_intelligence_notes_for_asset.sql`
 <!-- /AUTO-GEN:DRIFT -->
