@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unified Feed Merge: Events + Activity</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50:  '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4',
+          400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e',
+          800: '#115e59', 900: '#134e4a', 950: '#042f2e',
+        },
+        slate: {
+          50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1',
+          400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155',
+          800: '#1e293b', 900: '#0f172a',
+        },
+      },
+      fontFamily: {
+        mono: ['SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'monospace'],
+      },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .data-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+  .data-table td { font-size: 13px; }
+  .data-table tr { border-bottom: 1px solid #e2e8f0; }
+  .data-table tr:hover { background: #f8fafc; }
+  .data-table tr.selected-row { background: #f0fdfa; }
+  .source-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 3px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'SF Mono', monospace; }
+  .source-event { background: #f0fdfa; color: #0f766e; }
+  .source-marker { background: #f1f5f9; color: #475569; }
+  .source-change { background: #fefce8; color: #a16207; }
+  .priority-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .priority-high { background: #ef4444; }
+  .signal-bar { width: 3px; border-radius: 2px; min-height: 100%; }
+  .signal-high { background: #f59e0b; }
+  .signal-normal { background: transparent; }
+  .old-val { text-decoration: line-through; color: #94a3b8; }
+  .new-val { font-weight: 600; color: #334155; }
+  .arrow { color: #cbd5e1; font-family: monospace; margin: 0 4px; }
+  .tab-active { border-bottom: 2px solid #0d9488; color: #0f766e; font-weight: 600; }
+  .tab-inactive { border-bottom: 2px solid transparent; color: #64748b; }
+  .tab-inactive:hover { color: #334155; border-bottom-color: #e2e8f0; }
+
+  /* Prototype frame */
+  .proto-frame { max-width: 1400px; margin: 0 auto; }
+  .section-divider { border-top: 2px solid #e2e8f0; margin: 48px 0 32px; }
+  .commentary { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 16px 20px; margin: 16px 0; font-size: 13px; line-height: 1.6; color: #92400e; }
+  .commentary strong { color: #78350f; }
+  .label-tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-family: monospace; }
+</style>
+</head>
+<body class="bg-white text-slate-900">
+
+<!-- ============================================================ -->
+<!-- HEADER: Context                                               -->
+<!-- ============================================================ -->
+<div class="proto-frame px-8 pt-8 pb-4">
+  <p class="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400 mb-1">Internal prototype</p>
+  <h1 class="text-2xl font-semibold text-slate-900 mb-1">Unified Feed: Events + Activity Merge</h1>
+  <p class="text-sm text-slate-500 mb-6">One page, three source types, one answer to "what happened."</p>
+
+  <div class="commentary">
+    <strong>The problem:</strong> Today, "what happened" lives in three places: the Events page (human-authored intelligence), the Catalysts/Markers table, and a hidden Activity page (automated CT.gov change detection). A CI professional checking in on Monday morning has to visit two pages and mentally merge them. This prototype shows a single unified feed.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: Data model mapping                                 -->
+<!-- ============================================================ -->
+<div class="proto-frame px-8 py-6">
+  <h2 class="text-lg font-semibold text-slate-900 mb-4">1. Data mapping: how ChangeEvent becomes a FeedItem</h2>
+
+  <p class="text-sm text-slate-600 mb-4">The Events page already renders two source types (<span class="label-tag source-event">Event</span> and <span class="label-tag source-marker">Marker</span>). Change events become a third: <span class="label-tag source-change">Detected</span>.</p>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border border-slate-200 rounded">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">FeedItem field</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">From Event</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">From Marker</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-amber-700 font-semibold bg-amber-50">From ChangeEvent (new)</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">source_type</td>
+          <td class="px-4 py-2">'event'</td>
+          <td class="px-4 py-2">'marker'</td>
+          <td class="px-4 py-2 bg-amber-50/50 font-semibold">'detected'</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">title</td>
+          <td class="px-4 py-2">Human-authored</td>
+          <td class="px-4 py-2">Marker title</td>
+          <td class="px-4 py-2 bg-amber-50/50">Generated via <code class="text-xs bg-slate-100 px-1 rounded">summaryFor()</code></td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">event_date</td>
+          <td class="px-4 py-2">event.event_date</td>
+          <td class="px-4 py-2">marker.event_date</td>
+          <td class="px-4 py-2 bg-amber-50/50">change.occurred_at</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">category_name</td>
+          <td class="px-4 py-2">Editorial category</td>
+          <td class="px-4 py-2">Marker category</td>
+          <td class="px-4 py-2 bg-amber-50/50">Derived from event_type group<br><span class="text-[11px] text-slate-400">e.g. "Trial status", "Timeline", "Protocol design", "Regulatory"</span></td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">priority</td>
+          <td class="px-4 py-2">'high' | 'low'</td>
+          <td class="px-4 py-2">null</td>
+          <td class="px-4 py-2 bg-amber-50/50">Computed from event_type + magnitude<br><span class="text-[11px] text-slate-400">phase transition, withdrawal, delay >60d = high</span></td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">entity_level</td>
+          <td class="px-4 py-2">space/company/product/trial</td>
+          <td class="px-4 py-2">space/company/product/trial</td>
+          <td class="px-4 py-2 bg-amber-50/50">'trial' (always trial-scoped)</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">entity_name</td>
+          <td class="px-4 py-2">Entity name</td>
+          <td class="px-4 py-2">Entity name</td>
+          <td class="px-4 py-2 bg-amber-50/50">asset_name ?? trial_name</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">company_name</td>
+          <td class="px-4 py-2">Joined company</td>
+          <td class="px-4 py-2">Joined company</td>
+          <td class="px-4 py-2 bg-amber-50/50">Joined company</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">description</td>
+          <td class="px-4 py-2">Human-authored</td>
+          <td class="px-4 py-2">Marker description</td>
+          <td class="px-4 py-2 bg-amber-50/50">null (detail panel shows structured payload instead)</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-2 font-mono text-xs text-slate-600">source_url</td>
+          <td class="px-4 py-2">Attached sources</td>
+          <td class="px-4 py-2">Marker source URL</td>
+          <td class="px-4 py-2 bg-amber-50/50">CT.gov trial URL (for ctgov source)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="commentary mt-4">
+    <strong>Category mapping for change events.</strong> The 17 ChangeEventTypes group into 5 display categories:
+    <ul class="mt-1 ml-4 list-disc text-[12px]">
+      <li><strong>Trial status</strong>: status_changed, trial_withdrawn</li>
+      <li><strong>Timeline</strong>: date_moved, projection_finalized</li>
+      <li><strong>Phase</strong>: phase_transitioned</li>
+      <li><strong>Protocol design</strong>: enrollment_target_changed, arm_added, arm_removed, intervention_changed, outcome_measure_changed, eligibility_criteria_changed, eligibility_changed</li>
+      <li><strong>Catalyst lifecycle</strong>: marker_added, marker_removed, marker_updated, marker_reclassified, sponsor_changed</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: Merged table prototype                             -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2">
+  <h2 class="text-lg font-semibold text-slate-900 mb-1">2. The merged Events page</h2>
+  <p class="text-sm text-slate-500 mb-5">Source column gains a third value. Everything else stays the same.</p>
+
+  <!-- Simulated page shell -->
+  <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+    <!-- Topbar -->
+    <div class="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3">
+      <div class="flex items-center gap-3">
+        <h1 class="text-sm font-semibold text-slate-900">Events</h1>
+        <span class="font-mono text-[10px] tabular-nums text-slate-400">47</span>
+      </div>
+      <button class="flex items-center gap-1.5 rounded border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-brand-500 hover:text-brand-700">
+        <i class="fa-solid fa-plus text-[10px]"></i> New Event
+      </button>
+    </div>
+
+    <!-- Search bar -->
+    <div class="border-b border-slate-200 px-5 py-2.5">
+      <div class="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-3 py-1.5">
+        <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400"></i>
+        <span class="text-xs text-slate-400">Search events...</span>
+      </div>
+    </div>
+
+    <div class="flex">
+      <!-- Table -->
+      <div class="flex-1 overflow-x-auto">
+        <table class="data-table w-full">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/70">
+              <th class="w-[3px] px-0"></th>
+              <th class="px-4 py-2.5 text-left w-[100px]">Date</th>
+              <th class="px-4 py-2.5 text-left w-[90px]">Source</th>
+              <th class="px-4 py-2.5 text-left">Title</th>
+              <th class="px-4 py-2.5 text-left w-[130px]">Category</th>
+              <th class="px-4 py-2.5 text-left w-[160px]">Entity</th>
+              <th class="px-4 py-2.5 text-center w-[60px]">Priority</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- HIGH SIGNAL: Phase transition (detected) -->
+            <tr class="selected-row cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-high"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 24, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Phase: <span class="old-val">Phase 2</span> <span class="arrow">&rarr;</span> <span class="new-val">Phase 3</span></td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Phase</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly / orforglipron <i class="fa-solid fa-message text-[8px] text-brand-500 ml-1" title="Analyst note attached"></i></td>
+              <td class="px-4 py-2.5 text-center"><span class="priority-dot priority-high inline-block"></span></td>
+            </tr>
+            <!-- HIGH SIGNAL: Trial withdrawn (detected) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-high"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 23, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Trial withdrawn from CT.gov (last seen 2026-04-28)</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Trial status</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Pfizer / Vyndaqel</td>
+              <td class="px-4 py-2.5 text-center"><span class="priority-dot priority-high inline-block"></span></td>
+            </tr>
+            <!-- Editorial event (human-authored) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 22, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-event">Event</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Lilly Q2 earnings: raised obesity franchise guidance by $2B</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Earnings</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly</td>
+              <td class="px-4 py-2.5 text-center"><span class="priority-dot priority-high inline-block"></span></td>
+            </tr>
+            <!-- HIGH SIGNAL: Date delay >60d (detected) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-high"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 22, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Primary completion delayed 100 days (<span class="old-val">Aug 15</span> <span class="arrow">&rarr;</span> <span class="new-val">Nov 23, 2026</span>)</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Timeline</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly / orforglipron</td>
+              <td class="px-4 py-2.5 text-center"><span class="priority-dot priority-high inline-block"></span></td>
+            </tr>
+            <!-- Marker (catalyst) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 21, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-marker">Marker</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">PDUFA decision expected</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Regulatory</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Novo Nordisk / CagriSema</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+            <!-- Status change (detected) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 21, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Status: <span class="old-val">Recruiting</span> <span class="arrow">&rarr;</span> <span class="new-val">Active, not recruiting</span></td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Trial status</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Novo Nordisk / CagriSema</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+            <!-- Editorial event -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 20, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-event">Event</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">
+                AZ/Daiichi licensing deal expanded to include TROP2 ADC
+                <i class="fa-solid fa-link text-[9px] text-slate-300 ml-1"></i>
+              </td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Licensing</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">AstraZeneca</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+            <!-- Sponsor change (detected) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-high"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 20, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Sponsor: <span class="old-val">Novo Nordisk A/S</span> <span class="arrow">&rarr;</span> <span class="new-val">Sanofi</span></td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Trial status</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Novo Nordisk / Wegovy <i class="fa-solid fa-message text-[8px] text-brand-500 ml-1" title="Analyst note attached"></i></td>
+              <td class="px-4 py-2.5 text-center"><span class="priority-dot priority-high inline-block"></span></td>
+            </tr>
+            <!-- Outcome change (detected, normal signal) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 19, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Primary outcome changed: <span class="new-val">+KCCQ-CSS at week 24</span>, <span class="old-val">-Change in LV mass index</span></td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Protocol design</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly / Zepbound</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+            <!-- Enrollment change (detected, normal signal) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 19, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Enrollment target: <span class="old-val">200</span> <span class="arrow">&rarr;</span> <span class="new-val">180</span> <span class="text-slate-400">(-10%)</span></td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Protocol design</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly / retatrutide</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+            <!-- Marker (catalyst) -->
+            <tr class="cursor-pointer">
+              <td class="px-0"><div class="signal-bar signal-normal"></div></td>
+              <td class="px-4 py-2.5 font-mono text-xs tabular-nums text-slate-500">May 18, 2026</td>
+              <td class="px-4 py-2.5"><span class="source-badge source-marker">Marker</span></td>
+              <td class="px-4 py-2.5 text-sm text-slate-900">Advisory committee meeting</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Regulatory</td>
+              <td class="px-4 py-2.5 text-xs text-slate-500">Eli Lilly / orforglipron</td>
+              <td class="px-4 py-2.5 text-center"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500">
+          <span>Showing 1-10 of 47</span>
+          <div class="flex items-center gap-1">
+            <button class="rounded border border-slate-200 px-2 py-1 text-slate-400"><i class="fa-solid fa-chevron-left text-[9px]"></i></button>
+            <button class="rounded border border-brand-500 bg-brand-50 px-2.5 py-1 font-semibold text-brand-700">1</button>
+            <button class="rounded border border-slate-200 px-2.5 py-1 text-slate-600 hover:bg-slate-50">2</button>
+            <button class="rounded border border-slate-200 px-2.5 py-1 text-slate-600 hover:bg-slate-50">3</button>
+            <button class="rounded border border-slate-200 px-2 py-1 text-slate-600"><i class="fa-solid fa-chevron-right text-[9px]"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail panel (selected: Phase transition) -->
+      <div class="w-[380px] shrink-0 border-l border-slate-200 bg-white">
+        <div class="px-5 pt-4 pb-3 border-b border-slate-100">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-brand-700">Phase</span>
+            <button class="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+              <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="px-5 py-4">
+          <h2 class="text-base font-semibold leading-snug text-slate-900 mb-2">
+            Phase: <span class="old-val">Phase 2</span> <span class="arrow">&rarr;</span> <span class="new-val" style="color: #0d9488;">Phase 3</span>
+          </h2>
+
+          <div class="flex items-center gap-2 text-[12px] text-slate-500 mb-4">
+            <span class="font-mono tabular-nums">May 24, 2026</span>
+            <span class="priority-dot priority-high inline-block"></span>
+            <span class="text-red-600 text-[11px] font-semibold">High signal</span>
+          </div>
+
+          <!-- Structured change detail (unique to detected events) -->
+          <div class="rounded border border-slate-200 bg-slate-50 p-3 mb-4">
+            <p class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500 mb-2">Change detail</p>
+            <div class="space-y-2 text-[13px]">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500">Previous</span>
+                <span class="font-mono text-slate-600">Phase 2</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500">Current</span>
+                <span class="font-mono font-semibold" style="color: #0d9488;">Phase 3</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500">Detected</span>
+                <span class="font-mono tabular-nums text-slate-600">May 24, 2026 at 14:32</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Source provenance -->
+          <div class="mb-4">
+            <p class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500 mb-1.5">Source</p>
+            <a href="#" class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline">
+              ClinicalTrials.gov
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+            </a>
+          </div>
+
+          <!-- Entity context -->
+          <div class="mb-4">
+            <p class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500 mb-1.5">Trial</p>
+            <div class="flex items-center gap-2">
+              <img src="https://cdn.brandfetch.io/domain/lilly.com" alt="Eli Lilly" class="h-4 w-4 rounded-sm border border-slate-200 bg-white object-contain">
+              <a href="#" class="text-[13px] text-brand-700 hover:text-brand-800 hover:underline">orforglipron -- NCT0912345</a>
+            </div>
+          </div>
+
+          <!-- Analyst note (primary output surface for advisory use case) -->
+          <div class="rounded border border-brand-200 bg-brand-50/40 p-3">
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <i class="fa-solid fa-message text-[9px] text-brand-600"></i>
+              <p class="font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700 font-semibold">Analyst note</p>
+            </div>
+            <p class="text-[12px] text-slate-700 leading-relaxed">Phase 3 entry signals pivotal-trial readiness. Lilly has previously guided H2 2026 for registrational start; this move is consistent with that timeline. Watch for IND amendment or protocol publication in the next 30 days.</p>
+            <p class="text-[10px] text-slate-400 mt-2 font-mono tabular-nums">Added May 24, 2026 by J. Chen</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: Source filter behavior                              -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2">
+  <h2 class="text-lg font-semibold text-slate-900 mb-1">3. Source filter: three-way toggle</h2>
+  <p class="text-sm text-slate-500 mb-5">The existing Source column filter gains a third option. The what-changed widget and motion strip deep-link directly to source=detected.</p>
+
+  <div class="flex gap-4 mb-6">
+    <!-- All sources -->
+    <div class="flex-1 rounded border border-slate-200 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500 mb-3">Default: All sources</p>
+      <div class="flex gap-1.5">
+        <span class="source-badge source-event px-3 py-1">Event</span>
+        <span class="source-badge source-marker px-3 py-1">Marker</span>
+        <span class="source-badge source-change px-3 py-1"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span>
+      </div>
+      <p class="mt-2 text-xs text-slate-400">Full timeline. Human-authored intelligence interleaved with automated detection.</p>
+    </div>
+    <!-- Detected only -->
+    <div class="flex-1 rounded border-2 border-amber-300 bg-amber-50/30 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-700 mb-3">Filtered: Detected only</p>
+      <div class="flex gap-1.5">
+        <span class="source-badge bg-slate-100 text-slate-300 px-3 py-1 line-through">Event</span>
+        <span class="source-badge bg-slate-100 text-slate-300 px-3 py-1 line-through">Marker</span>
+        <span class="source-badge source-change px-3 py-1 ring-2 ring-amber-400"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span>
+      </div>
+      <p class="mt-2 text-xs text-amber-700">This is what the "What changed" widget and motion strip link to. Replaces the standalone Activity page.</p>
+    </div>
+    <!-- Events only -->
+    <div class="flex-1 rounded border border-slate-200 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500 mb-3">Filtered: Events only</p>
+      <div class="flex gap-1.5">
+        <span class="source-badge source-event px-3 py-1 ring-2 ring-brand-400">Event</span>
+        <span class="source-badge bg-slate-100 text-slate-300 px-3 py-1 line-through">Marker</span>
+        <span class="source-badge bg-slate-100 text-slate-300 px-3 py-1 line-through">Detected</span>
+      </div>
+      <p class="mt-2 text-xs text-slate-400">Human-authored intelligence only. The editorial view.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: Connection points impact                           -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2">
+  <h2 class="text-lg font-semibold text-slate-900 mb-1">4. Connection points: what changes</h2>
+  <p class="text-sm text-slate-500 mb-5">Every place that currently links to or uses the Activity feed, and what happens to it.</p>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm border border-slate-200 rounded">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold w-[220px]">Connection point</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Current behavior</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-brand-700 font-semibold bg-brand-50/50">After merge</th>
+          <th class="text-left px-4 py-2.5 text-[11px] uppercase tracking-wide text-slate-500 font-semibold w-[80px]">Effort</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">"What changed" widget</td>
+          <td class="px-4 py-3 text-slate-600">"View all" links to <code class="text-xs bg-slate-100 px-1 rounded">/activity</code>. Rows show event summary only, no entity context.</td>
+          <td class="px-4 py-3 bg-brand-50/20">Links to <code class="text-xs bg-slate-100 px-1 rounded">/events?source=detected</code>. Each row gains company/asset label. Summary shows entity count ("3 events across 2 assets"). Annotation indicator on rows with analyst notes.</td>
+          <td class="px-4 py-3 font-mono text-xs text-amber-700">Medium</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Motion strip "Trial moves"</td>
+          <td class="px-4 py-3 text-slate-600">Links to <code class="text-xs bg-slate-100 px-1 rounded">/activity?eventTypes=phase_transitioned,status_changed&within=30d</code></td>
+          <td class="px-4 py-3 bg-brand-50/20">Links to <code class="text-xs bg-slate-100 px-1 rounded">/events?source=detected&category=Trial+status,Phase</code>. Events page reads query params to pre-set filters.</td>
+          <td class="px-4 py-3 font-mono text-xs text-green-700">Small</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Activity page route</td>
+          <td class="px-4 py-3 text-slate-600"><code class="text-xs bg-slate-100 px-1 rounded">/activity</code> loads EngagementActivityPageComponent</td>
+          <td class="px-4 py-3 bg-brand-50/20">Route removed. Redirect <code class="text-xs bg-slate-100 px-1 rounded">/activity</code> to <code class="text-xs bg-slate-100 px-1 rounded">/events?source=detected</code> for any bookmarks.</td>
+          <td class="px-4 py-3 font-mono text-xs text-green-700">Small</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Activity page component</td>
+          <td class="px-4 py-3 text-slate-600">engagement-activity-page.component.ts + .html</td>
+          <td class="px-4 py-3 bg-brand-50/20">Deleted. All its logic absorbed into the Events page.</td>
+          <td class="px-4 py-3 font-mono text-xs text-green-700">Small</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Events page RPC</td>
+          <td class="px-4 py-3 text-slate-600"><code class="text-xs bg-slate-100 px-1 rounded">get_events_page_data</code> UNIONs events + markers</td>
+          <td class="px-4 py-3 bg-brand-50/20">Add a third UNION leg for <code class="text-xs bg-slate-100 px-1 rounded">trial_change_events</code> mapped to FeedItem shape. Filter by source_type in WHERE clause.</td>
+          <td class="px-4 py-3 font-mono text-xs text-amber-700">Medium</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">FeedItem model</td>
+          <td class="px-4 py-3 text-slate-600"><code class="text-xs bg-slate-100 px-1 rounded">source_type: 'event' | 'marker'</code></td>
+          <td class="px-4 py-3 bg-brand-50/20"><code class="text-xs bg-slate-100 px-1 rounded">source_type: 'event' | 'marker' | 'detected'</code></td>
+          <td class="px-4 py-3 font-mono text-xs text-green-700">Small</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Events page Source filter</td>
+          <td class="px-4 py-3 text-slate-600">Two options: Event, Marker</td>
+          <td class="px-4 py-3 bg-brand-50/20">Three options: Event, Marker, Detected</td>
+          <td class="px-4 py-3 font-mono text-xs text-green-700">Small</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Event detail panel</td>
+          <td class="px-4 py-3 text-slate-600">Two branches: event detail, catalyst/marker detail</td>
+          <td class="px-4 py-3 bg-brand-50/20">Third branch: structured change detail panel (before/after values, source provenance, CT.gov link, annotation placeholder). No edit button for detected events.</td>
+          <td class="px-4 py-3 font-mono text-xs text-amber-700">Medium</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Change event row component</td>
+          <td class="px-4 py-3 text-slate-600">Used by what-changed widget and activity page</td>
+          <td class="px-4 py-3 bg-brand-50/20">Updated: rows gain company/asset entity label, humanized enum values, and annotation indicator icon. Still used by what-changed widget. Events page table renders detected rows directly.</td>
+          <td class="px-4 py-3 font-mono text-xs text-amber-700">Medium</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">ChangeEventService</td>
+          <td class="px-4 py-3 text-slate-600">Used by activity page, what-changed widget, trial detail, marker history</td>
+          <td class="px-4 py-3 bg-brand-50/20">Stays. Still used by the what-changed widget (high-signal 3-row preview), trial-detail activity card, and marker history panel. Only the standalone activity page stops using it.</td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">No change</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Sidebar / header nav</td>
+          <td class="px-4 py-3 text-slate-600">Events in sidebar + header. Activity not in either.</td>
+          <td class="px-4 py-3 bg-brand-50/20">No change. Events link stays. Activity never had a nav entry.</td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">No change</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Trial detail activity card</td>
+          <td class="px-4 py-3 text-slate-600">Shows trial-scoped change events inline</td>
+          <td class="px-4 py-3 bg-brand-50/20">No change. Still calls ChangeEventService.getTrialActivity() directly. This is a scoped, in-context view, not part of the feed merge.</td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">No change</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Change badge component</td>
+          <td class="px-4 py-3 text-slate-600">Shown on catalyst table, dashboard grid, bullseye panel</td>
+          <td class="px-4 py-3 bg-brand-50/20">No change. These badges indicate recency, not part of the feed.</td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">No change</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3 font-medium text-slate-700">Database tables</td>
+          <td class="px-4 py-3 text-slate-600"><code class="text-xs bg-slate-100 px-1 rounded">events</code>, <code class="text-xs bg-slate-100 px-1 rounded">markers</code>, <code class="text-xs bg-slate-100 px-1 rounded">trial_change_events</code> (separate)</td>
+          <td class="px-4 py-3 bg-brand-50/20">All three tables stay. No schema changes. Only the RPC that feeds the Events page adds a UNION leg.</td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-500">No change</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: Detail panel comparison                            -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2">
+  <h2 class="text-lg font-semibold text-slate-900 mb-1">5. Detail panel: three modes</h2>
+  <p class="text-sm text-slate-500 mb-5">Each source type gets its own detail panel layout. The detected panel shows structured before/after data instead of free-text description.</p>
+
+  <div class="flex gap-4">
+    <!-- Event detail -->
+    <div class="flex-1 rounded border border-slate-200 overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+        <span class="source-badge source-event">Event</span>
+        <span class="ml-2 text-xs text-slate-500">Human-authored</span>
+      </div>
+      <div class="px-4 py-3 text-[13px] space-y-2">
+        <p class="font-semibold text-slate-900">Title</p>
+        <p class="text-slate-600">Description (free text)</p>
+        <p class="text-slate-400 text-xs">Sources (URLs)</p>
+        <p class="text-slate-400 text-xs">Tags</p>
+        <p class="text-slate-400 text-xs">Thread</p>
+        <p class="text-slate-400 text-xs">Related events</p>
+        <p class="text-brand-700 text-xs font-medium">Edit button</p>
+      </div>
+    </div>
+    <!-- Marker detail -->
+    <div class="flex-1 rounded border border-slate-200 overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+        <span class="source-badge source-marker">Marker</span>
+        <span class="ml-2 text-xs text-slate-500">Catalyst / milestone</span>
+      </div>
+      <div class="px-4 py-3 text-[13px] space-y-2">
+        <p class="font-semibold text-slate-900">Marker title</p>
+        <p class="text-slate-600">Description</p>
+        <p class="text-slate-400 text-xs">Event date + marker type</p>
+        <p class="text-slate-400 text-xs">Phase bar context</p>
+        <p class="text-slate-400 text-xs">Trial link</p>
+        <p class="text-slate-400 text-xs">Source URL</p>
+        <p class="text-slate-400 text-xs">Related markers</p>
+      </div>
+    </div>
+    <!-- Detected detail (NEW) -->
+    <div class="flex-1 rounded border-2 border-amber-300 overflow-hidden bg-amber-50/20">
+      <div class="px-4 py-2.5 border-b border-amber-200 bg-amber-50">
+        <span class="source-badge source-change"><i class="fa-solid fa-bolt text-[8px]"></i> Detected</span>
+        <span class="ml-2 text-xs text-amber-700 font-semibold">New</span>
+      </div>
+      <div class="px-4 py-3 text-[13px] space-y-2">
+        <p class="font-semibold text-slate-900">Generated summary (rich segments)</p>
+        <p class="text-amber-800 text-xs font-medium">Structured change detail (before/after table)</p>
+        <p class="text-slate-400 text-xs">Detection timestamp</p>
+        <p class="text-slate-400 text-xs">Source: CT.gov link or "Analyst"</p>
+        <p class="text-slate-400 text-xs">Trial link (with company logo)</p>
+        <p class="text-brand-700 text-xs font-semibold">Analyst note (primary output surface, branded header)</p>
+        <p class="text-slate-300 text-xs line-through">No edit button (automated)</p>
+        <p class="text-slate-300 text-xs line-through">No thread, no tags</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: What-changed widget update                        -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2 pb-4">
+  <h2 class="text-lg font-semibold text-slate-900 mb-1">6. What-changed widget: entity context + link update</h2>
+  <p class="text-sm text-slate-500 mb-5">Each row gains company/asset context so the widget is self-contained. Summary shows entity count. "View all" link moves to the Events page.</p>
+
+  <div class="flex gap-8">
+    <!-- Before -->
+    <div class="flex-1">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400 mb-2">Before</p>
+      <div class="rounded border border-slate-200 p-4">
+        <div class="flex items-baseline justify-between border-b border-slate-200 pb-2 mb-3">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700">What changed</span>
+          <a href="#" class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600">View all &rarr;</a>
+        </div>
+        <p class="text-[11px] text-slate-400 mb-2">3 events, last 7d</p>
+        <div class="space-y-2 text-xs text-slate-600">
+          <div class="flex items-center gap-2 py-1.5 border-b border-slate-100">
+            <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-slate-400 w-4"></i>
+            <span>Phase: PHASE2 &rarr; <strong>PHASE3</strong></span>
+          </div>
+          <div class="flex items-center gap-2 py-1.5 border-b border-slate-100">
+            <i class="fa-solid fa-calendar-days text-[10px] text-slate-400 w-4"></i>
+            <span>Primary completion delayed 100 days</span>
+          </div>
+          <div class="flex items-center gap-2 py-1.5">
+            <i class="fa-solid fa-ban text-[10px] text-slate-400 w-4"></i>
+            <span>Trial withdrawn from CT.gov</span>
+          </div>
+        </div>
+        <p class="mt-3 text-[10px] text-red-500">Links to: <code>/activity</code> (standalone page, no nav entry)</p>
+      </div>
+    </div>
+    <!-- After -->
+    <div class="flex-1">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-brand-700 mb-2">After</p>
+      <div class="rounded border-2 border-brand-300 p-4 bg-brand-50/20">
+        <div class="flex items-baseline justify-between border-b border-slate-200 pb-2 mb-3">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700">What changed</span>
+          <a href="#" class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand-600">View all &rarr;</a>
+        </div>
+        <p class="text-[11px] text-slate-400 mb-2">3 events across 2 assets, last 7d</p>
+        <div class="space-y-2 text-xs text-slate-600">
+          <div class="flex items-start gap-2 py-1.5 border-b border-slate-100">
+            <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-slate-400 w-4 mt-0.5"></i>
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wide text-slate-400">Lilly / orforglipron</span>
+              <div>Phase: Phase 2 &rarr; <strong>Phase 3</strong> <i class="fa-solid fa-message text-[7px] text-brand-500 ml-0.5"></i></div>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 py-1.5 border-b border-slate-100">
+            <i class="fa-solid fa-calendar-days text-[10px] text-slate-400 w-4 mt-0.5"></i>
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wide text-slate-400">Lilly / orforglipron</span>
+              <div>Primary completion delayed 100 days</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 py-1.5">
+            <i class="fa-solid fa-ban text-[10px] text-slate-400 w-4 mt-0.5"></i>
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wide text-slate-400">Pfizer / Vyndaqel</span>
+              <div>Trial withdrawn from CT.gov</div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-3 text-[10px] text-brand-700">Links to: <code>/events?source=detected</code> (same Events page, pre-filtered)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: Summary                                           -->
+<!-- ============================================================ -->
+<div class="section-divider proto-frame mx-8"></div>
+<div class="proto-frame px-8 py-2 pb-16">
+  <h2 class="text-lg font-semibold text-slate-900 mb-4">7. Merge summary</h2>
+
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="rounded border border-green-200 bg-green-50 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-green-800 font-semibold mb-2">What gets simpler</p>
+      <ul class="text-xs text-green-900 space-y-1.5">
+        <li>One page for "what happened" instead of two</li>
+        <li>Activity page route + component deleted</li>
+        <li>No hidden, undiscoverable page</li>
+        <li>One mental model for the CI analyst</li>
+        <li>Source filter replaces page navigation</li>
+      </ul>
+    </div>
+    <div class="rounded border border-amber-200 bg-amber-50 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-800 font-semibold mb-2">What stays the same</p>
+      <ul class="text-xs text-amber-900 space-y-1.5">
+        <li>All three database tables (no schema change)</li>
+        <li>ChangeEventService (still used by widget, trial detail, marker history)</li>
+        <li>Change event row component (still used by widget)</li>
+        <li>What-changed widget data source (still ChangeEventService)</li>
+        <li>Sidebar and header nav (Events was already there)</li>
+        <li>Trial-detail activity card</li>
+        <li>Change badge component</li>
+      </ul>
+    </div>
+    <div class="rounded border border-blue-200 bg-blue-50 p-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.1em] text-blue-800 font-semibold mb-2">New work</p>
+      <ul class="text-xs text-blue-900 space-y-1.5">
+        <li>RPC: add UNION leg to get_events_page_data</li>
+        <li>FeedItem: add 'detected' source_type</li>
+        <li>Events page: third source filter option</li>
+        <li>Detail panel: detected-event branch with promoted analyst note</li>
+        <li>Widget: entity context per row, entity-count summary, annotation indicator</li>
+        <li>Humanized enum labels (Phase 2, Recruiting, etc.)</li>
+        <li>Annotation indicator on feed table rows</li>
+        <li>Query param handling: source= deep links</li>
+        <li>Redirect: /activity &rarr; /events?source=detected</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="commentary">
+    <strong>Risk check.</strong> The Events page currently loads all data in one RPC call with client-side table pagination. Adding change events increases the row count significantly (change events are high-volume). The RPC may need a page-size limit or server-side pagination to keep load times acceptable. This is the main technical risk of the merge.
+  </div>
+</div>
+
+</body>
+</html>
