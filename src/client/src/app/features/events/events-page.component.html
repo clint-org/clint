@@ -204,6 +204,7 @@
         <app-event-detail-panel
           [detail]="selectedDetail()"
           [catalystDetail]="selectedCatalystDetail()"
+          [selectedFeedItem]="selectedItem()"
           [canEdit]="spaceRole.canEdit()"
           [feedItems]="feedItems()"
           (edit)="openEditModal(selectedItem()!.id)"
@@ -214,6 +215,7 @@
           (categoryFilter)="onCategoryFilter($event)"
           (markerSelect)="openByMarkerId($event)"
           (trialClick)="onTrialClick($event)"
+          (annotationChanged)="onAnnotationChanged()"
         />
       }
     </div>

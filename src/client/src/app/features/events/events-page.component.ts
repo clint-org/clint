@@ -222,6 +222,13 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.selectedItem.set(item);
     this.selectedDetail.set(null);
     this.selectedCatalystDetail.set(null);
+
+    // Detected items carry all detail data in the FeedItem itself, no RPC needed
+    if (item.source_type === 'detected') {
+      this.detailLoading.set(false);
+      return;
+    }
+
     this.detailLoading.set(true);
 
     try {
@@ -247,6 +254,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.selectedItem.set(null);
     this.selectedDetail.set(null);
     this.selectedCatalystDetail.set(null);
+  }
+
+  /** Refresh the feed when an annotation is created, updated, or deleted. */
+  async onAnnotationChanged(): Promise<void> {
+    await this.loadFeed();
   }
 
   /**
