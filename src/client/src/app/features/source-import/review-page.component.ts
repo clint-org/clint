@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
 
+import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import {
   type CtgovCandidate,
@@ -47,9 +49,34 @@ interface FieldEdit {
   value: string;
 }
 
+interface CompanyNode {
+  companyIdx: number;
+  assets: AssetNode[];
+  events: number[];
+}
+
+interface AssetNode {
+  assetIdx: number;
+  trials: TrialNode[];
+  markers: number[];
+  events: number[];
+}
+
+interface TrialNode {
+  trialIdx: number;
+  markers: number[];
+  events: number[];
+}
+
+interface HierarchicalTree {
+  companies: CompanyNode[];
+  orphanMarkers: number[];
+  orphanEvents: number[];
+}
+
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, Checkbox, ButtonModule, Tooltip, MessageModule],
+  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -148,279 +175,438 @@ interface FieldEdit {
             </details>
           }
 
-          <!-- Entity sections -->
-          @for (type of entityOrder; track type) {
-            @let items = entitiesOf(type);
-            @if (items.length > 0) {
-              <section class="mb-6">
-                <div class="mb-2 flex items-center gap-2">
-                  <h2 class="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
-                    {{ entityLabel(type) }} ({{ items.length }})
-                  </h2>
-                  <button
-                    class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400 hover:text-brand-600"
-                    (click)="toggleAllOfType(type)"
-                  >
-                    {{ allOfTypeSelected(type) ? 'Deselect all' : 'Select all' }}
-                  </button>
+          <!-- Reusable entity row template -->
+          <ng-template #entityRow let-type="type" let-idx="idx">
+            @let erk = entityKey(type, idx);
+            @let erSel = isSelected(erk);
+            <div
+              class="flex items-start gap-3 rounded py-1.5 transition-colors"
+              [class.opacity-50]="!erSel"
+            >
+              <p-checkbox
+                [ngModel]="erSel"
+                (ngModelChange)="toggleSelection(erk, $event)"
+                [binary]="true"
+                [inputId]="erk"
+                size="small"
+              />
 
-                  <!-- CT.gov enrichment summary for trials -->
-                  @if (type === 'trials') {
-                    @let summary = ctgovSummary();
-                    @if (summary.status === 'matched') {
-                      <span
-                        class="ml-auto inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Entity name: link for existing, label for new -->
+                  @if (!isNew(type, idx)) {
+                    @let erUrl = entityDetailUrl(type, idx);
+                    @if (erUrl) {
+                      <a
+                        [href]="erUrl"
+                        target="_blank"
+                        rel="noopener"
+                        class="cursor-pointer truncate text-sm font-semibold text-brand-600 hover:underline"
+                        [class.font-mono]="type === 'companies'"
+                        [class.font-bold]="type === 'companies'"
+                        [class.uppercase]="type === 'companies'"
+                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
+                        (click)="$event.stopPropagation()"
+                        >{{ entityName(type, idx) }}</a
                       >
-                        <i class="pi pi-check-circle text-[10px]"></i>
-                        CT.gov: {{ summary.matchedCount }}
-                        {{ summary.matchedCount === 1 ? 'trial' : 'trials' }} enriched
-                      </span>
-                    } @else if (summary.status === 'no_new') {
+                    } @else {
                       <span
-                        class="ml-auto inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                        class="truncate text-sm text-slate-700"
+                        [class.font-mono]="type === 'companies'"
+                        [class.font-bold]="type === 'companies'"
+                        [class.uppercase]="type === 'companies'"
+                        [class.font-semibold]="type !== 'companies'"
+                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
+                        >{{ entityName(type, idx) }}</span
                       >
-                        CT.gov: all trials already in inventory
-                      </span>
-                    } @else if (summary.status === 'no_matches') {
-                      <span
-                        class="ml-auto inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                      >
-                        CT.gov: no matches found
-                      </span>
-                    } @else if (summary.status === 'failed') {
-                      <span
-                        class="ml-auto inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                      >
-                        <i class="pi pi-exclamation-triangle text-[10px]"></i>
-                        CT.gov: lookup failed
-                      </span>
                     }
+                    <span
+                      class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                      >Existing</span
+                    >
+                    @let erIdentifier = resolvedIdentifier(type, idx);
+                    @if (erIdentifier) {
+                      <a
+                        [href]="ctgovUrl(erIdentifier)"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex items-center gap-0.5 font-mono text-[10px] text-brand-600 hover:underline"
+                        pTooltip="View on ClinicalTrials.gov"
+                        tooltipPosition="top"
+                        (click)="$event.stopPropagation()"
+                        >{{ erIdentifier }}<i class="pi pi-external-link text-[8px]"></i
+                      ></a>
+                    }
+                  } @else {
+                    <label
+                      [for]="erk"
+                      class="cursor-pointer truncate text-sm font-semibold text-slate-900"
+                      [class.font-mono]="type === 'companies'"
+                      [class.font-bold]="type === 'companies'"
+                      [class.uppercase]="type === 'companies'"
+                      [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
+                      >{{ entityName(type, idx) }}</label
+                    >
+                    <span
+                      class="inline-block rounded bg-brand-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700"
+                      >New</span
+                    >
+                  }
+
+                  <!-- Phase badge for trials -->
+                  @if (type === 'trials') {
+                    @let erPhase = trialPhase(idx);
+                    @if (erPhase) {
+                      <span
+                        class="inline-block rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-600"
+                        >{{ erPhase }}</span
+                      >
+                    }
+                    @let erStatus = trialStatus(idx);
+                    @if (erStatus) {
+                      <span class="text-xs text-slate-400">{{ erStatus }}</span>
+                    }
+                  }
+
+                  <!-- Generic name for assets -->
+                  @if (type === 'assets') {
+                    @let erGeneric = assetGenericName(idx);
+                    @if (erGeneric) {
+                      <span class="text-xs text-slate-400">{{ erGeneric }}</span>
+                    }
+                  }
+
+                  <!-- Evidence pill -->
+                  @let erEvidence = entityEvidence(type, idx);
+                  @if (erEvidence) {
+                    <button
+                      class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                      (mouseenter)="highlightedEvidence.set({ text: erEvidence, pinned: false })"
+                      (mouseleave)="clearHighlightIfNotPinned()"
+                      (click)="highlightedEvidence.set({ text: erEvidence, pinned: true })"
+                      pTooltip="Click to pin highlight in source pane"
+                      tooltipPosition="top"
+                    >
+                      Evidence
+                    </button>
                   }
                 </div>
 
-                @for (entity of items; track $index) {
-                  @let key = entityKey(type, $index);
-                  @let selected = isSelected(key);
-                  <div
-                    class="flex items-start gap-3 rounded border border-transparent px-3 py-2 transition-colors hover:bg-slate-50"
-                    [class.bg-white]="selected"
-                    [class.border-slate-200]="selected"
-                    [class.opacity-50]="!selected"
-                  >
-                    <p-checkbox
-                      [ngModel]="selected"
-                      (ngModelChange)="toggleSelection(key, $event)"
-                      [binary]="true"
-                      [inputId]="key"
-                      size="small"
-                    />
+                <!-- Fuzzy alternates for match override -->
+                @let erAlts = fuzzyAlternatesFor(type, idx);
+                @if (erAlts.length > 0) {
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    @let erOverride = getMatchOverride(erk);
+                    <button
+                      class="rounded px-1.5 py-0.5 text-[10px]"
+                      [class.bg-brand-100]="!erOverride"
+                      [class.text-brand-700]="!erOverride"
+                      [class.bg-slate-100]="!!erOverride"
+                      [class.text-slate-500]="!!erOverride"
+                      (click)="clearMatchOverride(erk)"
+                    >
+                      LLM pick
+                    </button>
+                    @for (alt of erAlts; track alt.id) {
+                      <button
+                        class="rounded px-1.5 py-0.5 text-[10px]"
+                        [class.bg-brand-100]="erOverride === alt.id"
+                        [class.text-brand-700]="erOverride === alt.id"
+                        [class.bg-slate-100]="erOverride !== alt.id"
+                        [class.text-slate-500]="erOverride !== alt.id"
+                        (click)="setMatchOverride(erk, alt.id)"
+                        [pTooltip]="'Score: ' + alt.score.toFixed(2)"
+                        tooltipPosition="top"
+                      >
+                        {{ alt.name }}
+                      </button>
+                    }
+                    <button
+                      class="rounded px-1.5 py-0.5 text-[10px]"
+                      [class.bg-brand-100]="erOverride === '__new__'"
+                      [class.text-brand-700]="erOverride === '__new__'"
+                      [class.bg-slate-100]="erOverride !== '__new__'"
+                      [class.text-slate-500]="erOverride !== '__new__'"
+                      (click)="setMatchOverride(erk, '__new__')"
+                    >
+                      Create new
+                    </button>
+                  </div>
+                }
 
-                    <div class="min-w-0 flex-1">
+                <!-- Trial-specific: CT.gov enrichment -->
+                @if (type === 'trials') {
+                  @let erCtgovStatus = trialCtgovStatus(idx);
+                  @if (erCtgovStatus !== 'skipped') {
+                    <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
                       <div class="flex items-center gap-2">
-                        <!-- Entity name -->
-                        <label
-                          [for]="key"
-                          class="cursor-pointer truncate text-sm"
-                          [class.font-semibold]="isNew(type, $index)"
-                          [class.text-slate-900]="isNew(type, $index)"
-                          [class.text-slate-700]="!isNew(type, $index)"
+                        <span
+                          class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                          >ClinicalTrials.gov</span
                         >
-                          {{ entityName(type, $index) }}
-                        </label>
-
-                        <!-- Match status badge -->
-                        @if (isNew(type, $index)) {
+                        @if (erCtgovStatus === 'matched') {
+                          @let erCandidates = ctgovCandidatesFor(idx);
                           <span
-                            class="inline-block rounded bg-brand-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700"
-                            >New</span
+                            class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+                            >{{ erCandidates.length }}
+                            {{ erCandidates.length === 1 ? 'match' : 'matches' }}</span
                           >
-                        } @else {
+                        } @else if (erCtgovStatus === 'no_matches') {
                           <span
                             class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                            >Existing</span
+                            >No matches</span
                           >
-                          @let identifier = resolvedIdentifier(type, $index);
-                          @if (identifier) {
-                            <a
-                              [href]="ctgovUrl(identifier)"
-                              target="_blank"
-                              rel="noopener"
-                              class="inline-flex items-center gap-0.5 font-mono text-[10px] text-brand-600 hover:underline"
-                              pTooltip="View on ClinicalTrials.gov"
-                              tooltipPosition="top"
-                              (click)="$event.stopPropagation()"
-                              >{{ identifier }}<i class="pi pi-external-link text-[8px]"></i
-                            ></a>
-                          }
-                        }
-
-                        <!-- Evidence pill -->
-                        @let evidence = entityEvidence(type, $index);
-                        @if (evidence) {
-                          <button
-                            class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-                            (mouseenter)="
-                              highlightedEvidence.set({ text: evidence, pinned: false })
-                            "
-                            (mouseleave)="clearHighlightIfNotPinned()"
-                            (click)="highlightedEvidence.set({ text: evidence, pinned: true })"
-                            pTooltip="Click to pin highlight in source pane"
-                            tooltipPosition="top"
+                        } @else if (erCtgovStatus === 'failed') {
+                          <span
+                            class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+                            >Lookup failed</span
                           >
-                            Evidence
-                          </button>
                         }
                       </div>
 
-                      <!-- Fuzzy alternates for match override -->
-                      @let alts = fuzzyAlternatesFor(type, $index);
-                      @if (alts.length > 0) {
-                        <div class="mt-1 flex flex-wrap gap-1">
-                          @let override = getMatchOverride(key);
-                          <button
-                            class="rounded px-1.5 py-0.5 text-[10px]"
-                            [class.bg-brand-100]="!override"
-                            [class.text-brand-700]="!override"
-                            [class.bg-slate-100]="!!override"
-                            [class.text-slate-500]="!!override"
-                            (click)="clearMatchOverride(key)"
-                          >
-                            LLM pick
-                          </button>
-                          @for (alt of alts; track alt.id) {
-                            <button
-                              class="rounded px-1.5 py-0.5 text-[10px]"
-                              [class.bg-brand-100]="override === alt.id"
-                              [class.text-brand-700]="override === alt.id"
-                              [class.bg-slate-100]="override !== alt.id"
-                              [class.text-slate-500]="override !== alt.id"
-                              (click)="setMatchOverride(key, alt.id)"
-                              [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                              tooltipPosition="top"
+                      @let erCands = ctgovCandidatesFor(idx);
+                      @if (erCands.length > 0) {
+                        <div class="mt-1.5 flex flex-col gap-1">
+                          @let erCurrentNct = getTrialNctOverride(idx);
+                          @for (c of erCands; track c.nct_id) {
+                            <label
+                              class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
+                              [class.bg-white]="erCurrentNct === c.nct_id"
+                              [class.ring-1]="erCurrentNct === c.nct_id"
+                              [class.ring-brand-300]="erCurrentNct === c.nct_id"
                             >
-                              {{ alt.name }}
-                            </button>
-                          }
-                          <button
-                            class="rounded px-1.5 py-0.5 text-[10px]"
-                            [class.bg-brand-100]="override === '__new__'"
-                            [class.text-brand-700]="override === '__new__'"
-                            [class.bg-slate-100]="override !== '__new__'"
-                            [class.text-slate-500]="override !== '__new__'"
-                            (click)="setMatchOverride(key, '__new__')"
-                          >
-                            Create new
-                          </button>
-                        </div>
-                      }
-
-                      <!-- Trial-specific: CT.gov enrichment -->
-                      @if (type === 'trials') {
-                        @let ctgovStatus = trialCtgovStatus($index);
-                        @if (ctgovStatus !== 'skipped') {
-                          <div
-                            class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2"
-                          >
-                            <div class="flex items-center gap-2">
-                              <span
-                                class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                              >
-                                ClinicalTrials.gov
-                              </span>
-                              @if (ctgovStatus === 'matched') {
-                                @let candidates = ctgovCandidatesFor($index);
-                                <span
-                                  class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                                  >{{ candidates.length }}
-                                  {{ candidates.length === 1 ? 'match' : 'matches' }}</span
-                                >
-                              } @else if (ctgovStatus === 'no_matches') {
-                                <span
-                                  class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                                  >No matches</span
-                                >
-                              } @else if (ctgovStatus === 'failed') {
-                                <span
-                                  class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                                  >Lookup failed</span
-                                >
-                              }
-                            </div>
-
-                            @let candidates = ctgovCandidatesFor($index);
-                            @if (candidates.length > 0) {
-                              <div class="mt-1.5 flex flex-col gap-1">
-                                @let currentNct = getTrialNctOverride($index);
-                                @for (c of candidates; track c.nct_id) {
-                                  <label
-                                    class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                                    [class.bg-white]="currentNct === c.nct_id"
-                                    [class.ring-1]="currentNct === c.nct_id"
-                                    [class.ring-brand-300]="currentNct === c.nct_id"
-                                  >
-                                    <input
-                                      type="radio"
-                                      [name]="'nct_' + $index"
-                                      [value]="c.nct_id"
-                                      [checked]="currentNct === c.nct_id"
-                                      (change)="setTrialNctOverride($index, c.nct_id)"
-                                      class="accent-brand-600"
-                                    />
-                                    <a
-                                      [href]="ctgovUrl(c.nct_id)"
-                                      target="_blank"
-                                      rel="noopener"
-                                      class="font-mono text-brand-600 hover:underline"
-                                      (click)="$event.stopPropagation()"
-                                      >{{ c.nct_id }}</a
-                                    >
-                                    <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                                    <span
-                                      class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                                    >
-                                      {{ c.phase }} / {{ c.status }}
-                                    </span>
-                                  </label>
-                                }
-                              </div>
-                            }
-                          </div>
-                        }
-
-                        <!-- Trial validation: asset required -->
-                        @if (trialMissingAsset(entity)) {
-                          <p-message
-                            severity="warn"
-                            [closable]="false"
-                            styleClass="mt-1.5 w-full text-xs"
-                          >
-                            Asset required: link this trial to an asset above.
-                          </p-message>
-                        }
-                      }
-
-                      <!-- Inline field edits -->
-                      @let fields = editableFields(type, $index);
-                      @if (fields.length > 0) {
-                        <div class="mt-1.5 flex flex-wrap gap-2">
-                          @for (f of fields; track f.field) {
-                            <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                              <span class="font-mono uppercase">{{ f.field }}:</span>
                               <input
-                                type="text"
-                                class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                                [value]="getFieldEdit(key, f.field) ?? f.value"
-                                (input)="onFieldEdit(key, f.field, $event)"
+                                type="radio"
+                                [name]="'nct_' + idx"
+                                [value]="c.nct_id"
+                                [checked]="erCurrentNct === c.nct_id"
+                                (change)="setTrialNctOverride(idx, c.nct_id)"
+                                class="accent-brand-600"
                               />
+                              <a
+                                [href]="ctgovUrl(c.nct_id)"
+                                target="_blank"
+                                rel="noopener"
+                                class="font-mono text-brand-600 hover:underline"
+                                (click)="$event.stopPropagation()"
+                                >{{ c.nct_id }}</a
+                              >
+                              <span class="truncate text-slate-500">{{ c.brief_title }}</span>
+                              <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
+                                >{{ c.phase }} / {{ c.status }}</span
+                              >
                             </label>
                           }
                         </div>
                       }
                     </div>
+                  }
+
+                  @if (trialMissingAsset(entitiesOf('trials')[idx])) {
+                    <p-message
+                      severity="warn"
+                      [closable]="false"
+                      styleClass="mt-1.5 w-full text-xs"
+                    >
+                      Asset required: link this trial to an asset above.
+                    </p-message>
+                  }
+                }
+
+                <!-- Inline field edits -->
+                @let erFields = editableFields(type, idx);
+                @if (erFields.length > 0) {
+                  <div class="mt-1.5 flex flex-wrap gap-2">
+                    @for (f of erFields; track f.field) {
+                      <label class="flex items-center gap-1 text-[11px] text-slate-500">
+                        <span class="font-mono uppercase">{{ f.field }}:</span>
+                        <input
+                          type="text"
+                          class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
+                          [value]="getFieldEdit(erk, f.field) ?? f.value"
+                          (input)="onFieldEdit(erk, f.field, $event)"
+                        />
+                      </label>
+                    }
                   </div>
                 }
-              </section>
-            }
+              </div>
+            </div>
+          </ng-template>
+
+          <!-- CT.gov enrichment summary -->
+          @let ctgovSummaryVal = ctgovSummary();
+          @if (ctgovSummaryVal.status === 'matched') {
+            <div
+              class="mb-3 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+            >
+              <i class="pi pi-check-circle text-[10px]"></i>
+              CT.gov: {{ ctgovSummaryVal.matchedCount }}
+              {{ ctgovSummaryVal.matchedCount === 1 ? 'trial' : 'trials' }} enriched
+            </div>
+          } @else if (ctgovSummaryVal.status === 'failed') {
+            <div
+              class="mb-3 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+            >
+              <i class="pi pi-exclamation-triangle text-[10px]"></i>
+              CT.gov: lookup failed
+            </div>
+          }
+
+          <!-- Hierarchical tree view -->
+          @let tree = hierarchicalTree();
+
+          @for (cn of tree.companies; track cn.companyIdx) {
+            <div class="mb-4 overflow-hidden rounded border border-slate-200 bg-white">
+              <!-- Company header -->
+              <div class="border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+                <ng-container
+                  [ngTemplateOutlet]="entityRow"
+                  [ngTemplateOutletContext]="{ type: 'companies', idx: cn.companyIdx }"
+                />
+              </div>
+
+              <!-- Company body -->
+              @for (an of cn.assets; track an.assetIdx) {
+                <div class="border-b border-slate-100 last:border-b-0">
+                  <!-- Asset header -->
+                  <div class="py-2 pl-8 pr-4">
+                    <ng-container
+                      [ngTemplateOutlet]="entityRow"
+                      [ngTemplateOutletContext]="{ type: 'assets', idx: an.assetIdx }"
+                    />
+                  </div>
+
+                  <!-- Trials under this asset -->
+                  @for (tn of an.trials; track tn.trialIdx) {
+                    <div class="border-t border-slate-100">
+                      <div class="py-2 pl-14 pr-4">
+                        <ng-container
+                          [ngTemplateOutlet]="entityRow"
+                          [ngTemplateOutletContext]="{ type: 'trials', idx: tn.trialIdx }"
+                        />
+                      </div>
+
+                      @if (tn.markers.length > 0 || tn.events.length > 0) {
+                        <div class="pb-3 pl-14 pr-4">
+                          @if (tn.markers.length > 0) {
+                            <div
+                              class="pb-1 pt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                            >
+                              Markers
+                            </div>
+                            @for (mi of tn.markers; track mi) {
+                              <ng-container
+                                [ngTemplateOutlet]="entityRow"
+                                [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
+                              />
+                            }
+                          }
+                          @if (tn.events.length > 0) {
+                            <div
+                              class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                            >
+                              Events
+                            </div>
+                            @for (ei of tn.events; track ei) {
+                              <ng-container
+                                [ngTemplateOutlet]="entityRow"
+                                [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                              />
+                            }
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Asset-level markers (not linked to any trial) -->
+                  @if (an.markers.length > 0) {
+                    <div class="border-t border-slate-100 pb-3 pl-8 pr-4">
+                      <div
+                        class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                      >
+                        Asset-level markers
+                      </div>
+                      @for (mi of an.markers; track mi) {
+                        <ng-container
+                          [ngTemplateOutlet]="entityRow"
+                          [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
+                        />
+                      }
+                    </div>
+                  }
+
+                  <!-- Asset-level events -->
+                  @if (an.events.length > 0) {
+                    <div class="border-t border-slate-100 pb-3 pl-8 pr-4">
+                      <div
+                        class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                      >
+                        Asset-level events
+                      </div>
+                      @for (ei of an.events; track ei) {
+                        <ng-container
+                          [ngTemplateOutlet]="entityRow"
+                          [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                        />
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Company-level events -->
+              @if (cn.events.length > 0) {
+                <div class="border-t border-slate-100 px-4 pb-3">
+                  <div
+                    class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                  >
+                    Company-level events
+                  </div>
+                  @for (ei of cn.events; track ei) {
+                    <ng-container
+                      [ngTemplateOutlet]="entityRow"
+                      [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                    />
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Orphaned markers (no trial_refs) -->
+          @if (tree.orphanMarkers.length > 0) {
+            <section class="mb-4">
+              <h2 class="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                Unlinked markers ({{ tree.orphanMarkers.length }})
+              </h2>
+              <div class="rounded border border-slate-200 bg-white px-4 py-2">
+                @for (mi of tree.orphanMarkers; track mi) {
+                  <ng-container
+                    [ngTemplateOutlet]="entityRow"
+                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
+                  />
+                }
+              </div>
+            </section>
+          }
+
+          <!-- Orphaned events (space-level) -->
+          @if (tree.orphanEvents.length > 0) {
+            <section class="mb-4">
+              <h2 class="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                Unlinked events ({{ tree.orphanEvents.length }})
+              </h2>
+              <div class="rounded border border-slate-200 bg-white px-4 py-2">
+                @for (ei of tree.orphanEvents; track ei) {
+                  <ng-container
+                    [ngTemplateOutlet]="entityRow"
+                    [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                  />
+                }
+              </div>
+            </section>
           }
         </main>
       </div>
@@ -466,6 +652,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
   private readonly messages = inject(MessageService);
+  private readonly rpcCache = inject(RpcCache);
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -564,6 +751,98 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return true;
   });
 
+  readonly hierarchicalTree = computed<HierarchicalTree>(() => {
+    const p = this.proposal();
+    if (!p) return { companies: [], orphanMarkers: [], orphanEvents: [] };
+
+    const companies = p.proposals.companies ?? [];
+    const assets = p.proposals.assets ?? [];
+    const trials = p.proposals.trials ?? [];
+    const markers = p.proposals.markers ?? [];
+    const events = p.proposals.events ?? [];
+
+    const trialMarkersMap = new Map<number, number[]>();
+    const assignedMarkers = new Set<number>();
+    for (let mi = 0; mi < markers.length; mi++) {
+      const refs = (markers[mi]['trial_refs'] as number[]) ?? [];
+      for (const tr of refs) {
+        if (tr < trials.length) {
+          if (!trialMarkersMap.has(tr)) trialMarkersMap.set(tr, []);
+          trialMarkersMap.get(tr)!.push(mi);
+          assignedMarkers.add(mi);
+        }
+      }
+    }
+
+    const trialEventsMap = new Map<number, number[]>();
+    const assetEventsMap = new Map<number, number[]>();
+    const companyEventsMap = new Map<number, number[]>();
+    const assignedEvents = new Set<number>();
+    for (let ei = 0; ei < events.length; ei++) {
+      const anchor = events[ei]['anchor'] as { level: string; ref: number | null } | undefined;
+      if (!anchor || anchor.ref == null) continue;
+      const ref = anchor.ref;
+      if (anchor.level === 'trial' && ref < trials.length) {
+        if (!trialEventsMap.has(ref)) trialEventsMap.set(ref, []);
+        trialEventsMap.get(ref)!.push(ei);
+        assignedEvents.add(ei);
+      } else if (anchor.level === 'asset' && ref < assets.length) {
+        if (!assetEventsMap.has(ref)) assetEventsMap.set(ref, []);
+        assetEventsMap.get(ref)!.push(ei);
+        assignedEvents.add(ei);
+      } else if (anchor.level === 'company' && ref < companies.length) {
+        if (!companyEventsMap.has(ref)) companyEventsMap.set(ref, []);
+        companyEventsMap.get(ref)!.push(ei);
+        assignedEvents.add(ei);
+      }
+    }
+
+    const assetTrialsMap = new Map<number, number[]>();
+    for (let ti = 0; ti < trials.length; ti++) {
+      const ar = trials[ti]['asset_ref'] as number | null | undefined;
+      if (ar != null && ar < assets.length) {
+        if (!assetTrialsMap.has(ar)) assetTrialsMap.set(ar, []);
+        assetTrialsMap.get(ar)!.push(ti);
+      }
+    }
+
+    const companyAssetsMap = new Map<number, number[]>();
+    for (let ai = 0; ai < assets.length; ai++) {
+      const cr = assets[ai]['company_ref'] as number | undefined;
+      if (cr != null && cr < companies.length) {
+        if (!companyAssetsMap.has(cr)) companyAssetsMap.set(cr, []);
+        companyAssetsMap.get(cr)!.push(ai);
+      }
+    }
+
+    const companyNodes: CompanyNode[] = companies.map((_, ci) => ({
+      companyIdx: ci,
+      assets: (companyAssetsMap.get(ci) ?? []).map((ai) => ({
+        assetIdx: ai,
+        trials: (assetTrialsMap.get(ai) ?? []).map((ti) => ({
+          trialIdx: ti,
+          markers: trialMarkersMap.get(ti) ?? [],
+          events: trialEventsMap.get(ti) ?? [],
+        })),
+        markers: [] as number[],
+        events: assetEventsMap.get(ai) ?? [],
+      })),
+      events: companyEventsMap.get(ci) ?? [],
+    }));
+
+    const orphanMarkers: number[] = [];
+    for (let mi = 0; mi < markers.length; mi++) {
+      if (!assignedMarkers.has(mi)) orphanMarkers.push(mi);
+    }
+
+    const orphanEvents: number[] = [];
+    for (let ei = 0; ei < events.length; ei++) {
+      if (!assignedEvents.has(ei)) orphanEvents.push(ei);
+    }
+
+    return { companies: companyNodes, orphanMarkers, orphanEvents };
+  });
+
   readonly highlightedSourceText = computed(() => {
     const p = this.proposal();
     if (!p) return '';
@@ -650,6 +929,38 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const resolved = this.proposal()?.resolved_names?.[`${type}_${index}`];
     if (resolved) return resolved;
     return (entity['name'] as string) ?? (entity['title'] as string) ?? `${type} #${index + 1}`;
+  }
+
+  protected entityDetailUrl(type: EntityType, index: number): string | null {
+    if (this.isNew(type, index)) return null;
+    const entity = this.entitiesOf(type)[index];
+    if (!entity) return null;
+    const match = entity['match'] as { kind: string; id?: string } | undefined;
+    if (!match || match.kind !== 'existing' || !match.id) return null;
+    const routeMap: Partial<Record<EntityType, string>> = {
+      companies: 'companies',
+      assets: 'assets',
+      trials: 'trials',
+      markers: 'markers',
+    };
+    const segment = routeMap[type];
+    if (!segment) return null;
+    return `/t/${this.tenantId()}/s/${this.spaceId()}/manage/${segment}/${match.id}`;
+  }
+
+  protected trialPhase(index: number): string | null {
+    const entity = this.entitiesOf('trials')[index];
+    return (entity?.['phase'] as string) ?? null;
+  }
+
+  protected trialStatus(index: number): string | null {
+    const entity = this.entitiesOf('trials')[index];
+    return (entity?.['status'] as string) ?? null;
+  }
+
+  protected assetGenericName(index: number): string | null {
+    const entity = this.entitiesOf('assets')[index];
+    return (entity?.['generic_name'] as string) ?? null;
   }
 
   protected entityEvidence(type: EntityType, index: number): string | null {
@@ -829,6 +1140,18 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     this.committed.set(true);
     this.committing.set(false);
     this.sourceImportService.clearProposal();
+
+    const sid = this.spaceId();
+    this.rpcCache.invalidateTags([
+      `space:${sid}:dashboard`,
+      `space:${sid}:landing-stats`,
+      `space:${sid}:companies`,
+      `space:${sid}:products`,
+      `space:${sid}:trials`,
+      `space:${sid}:activity`,
+      `space:${sid}:events`,
+      `space:${sid}:tags`,
+    ]);
 
     const title = this.proposal()?.source_title ?? 'source';
     this.messages.add({

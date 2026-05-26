@@ -86,16 +86,25 @@ export class EventService {
     sources: { url: string; label: string }[],
     linkedEventIds: string[]
   ): Promise<AppEvent> {
-    const { data, error } = await this.supabase.client
-      .from('events')
-      .insert({ ...event, space_id: spaceId })
-      .select()
-      .single();
+    const { data: newId, error } = await this.supabase.client.rpc('create_event', {
+      p_space_id: spaceId,
+      p_category_id: event.category_id!,
+      p_title: event.title!,
+      p_event_date: event.event_date!,
+      p_description: event.description ?? null,
+      p_priority: event.priority ?? 'low',
+      p_tags: event.tags?.length ? event.tags : null,
+      p_company_id: event.company_id ?? null,
+      p_asset_id: event.asset_id ?? null,
+      p_trial_id: event.trial_id ?? null,
+    });
     if (error) throw error;
+
+    const eventId = newId as string;
 
     if (sources.length > 0) {
       const sourceRows = sources.map((s) => ({
-        event_id: data.id,
+        event_id: eventId,
         url: s.url,
         label: s.label || null,
       }));
@@ -105,7 +114,7 @@ export class EventService {
 
     if (linkedEventIds.length > 0) {
       const linkRows = linkedEventIds.map((targetId) => ({
-        source_event_id: data.id,
+        source_event_id: eventId,
         target_event_id: targetId,
       }));
       const { error: linkErr } = await this.supabase.client.from('event_links').insert(linkRows);
@@ -114,7 +123,13 @@ export class EventService {
 
     this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
 
-    return data as AppEvent;
+    const { data: row, error: fetchErr } = await this.supabase.client
+      .from('events')
+      .select()
+      .eq('id', eventId)
+      .single();
+    if (fetchErr) throw fetchErr;
+    return row as AppEvent;
   }
 
   async update(id: string, changes: Partial<AppEvent>): Promise<AppEvent> {

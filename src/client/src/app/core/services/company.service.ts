@@ -43,18 +43,18 @@ export class CompanyService {
   }
 
   async create(spaceId: string, company: Partial<Company>): Promise<Company> {
-    const { data, error } = await this.supabase.client
-      .from('companies')
-      .insert({ ...company, space_id: spaceId })
-      .select()
-      .single();
+    const { data: newId, error } = await this.supabase.client.rpc('create_company', {
+      p_space_id: spaceId,
+      p_name: company.name!,
+      p_logo_url: company.logo_url ?? null,
+    });
     if (error) throw error;
     this.cache.invalidateTags([
       `space:${spaceId}:companies`,
       `space:${spaceId}:dashboard`,
       `space:${spaceId}:landing-stats`,
     ]);
-    return data as Company;
+    return this.getById(newId as string);
   }
 
   async update(id: string, changes: Partial<Company>): Promise<Company> {
