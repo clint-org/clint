@@ -1,15 +1,4 @@
-// supabase/functions/brandfetch-lookup/index.ts
-//
-// Edge Function: brandfetch-lookup
-//
-// Called by authenticated users to fetch brand assets (logo, icon, colors)
-// from the Brandfetch API given a company domain. Returns a normalized
-// result the client can preview and apply to agency or tenant branding.
-//
-// Auth model: JWT (default verify_jwt = true). Only authenticated users
-// can invoke this function.
-
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { errorResponse } from './errors';
 
 interface BrandfetchLogo {
   type: string;
@@ -34,7 +23,7 @@ interface BrandfetchResponse {
   colors?: BrandfetchColor[];
 }
 
-interface BrandResult {
+export interface BrandResult {
   name: string | null;
   domain: string;
   logo_url: string | null;
@@ -42,17 +31,6 @@ interface BrandResult {
   primary_color: string | null;
   accent_color: string | null;
 }
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const json = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 
 function pickLogoUrl(logos: BrandfetchLogo[], type: string): string | null {
   const match = logos.find((l) => l.type === type && l.theme !== 'dark');
@@ -73,34 +51,8 @@ function pickColor(colors: BrandfetchColor[], type: string): string | null {
   return hex.toLowerCase();
 }
 
-serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (req.method !== 'POST') {
-    return json(405, { error: 'method_not_allowed' });
-  }
-
-  const apiKey = Deno.env.get('BRANDFETCH_API_KEY') || '';
-  if (!apiKey) {
-    console.log('brandfetch-lookup: missing BRANDFETCH_API_KEY');
-    return json(500, { error: 'server_misconfigured' });
-  }
-
-  let domain: string;
-  try {
-    const body = await req.json();
-    domain = typeof body.domain === 'string' ? body.domain.trim().toLowerCase() : '';
-  } catch {
-    return json(400, { error: 'invalid_json' });
-  }
-
-  if (!domain) {
-    return json(400, { error: 'domain_required' });
-  }
-
-  // Strip protocol and path if the user pasted a full URL
+function cleanDomain(raw: string): string {
+  let domain = raw.trim().toLowerCase();
   try {
     if (domain.includes('://')) {
       domain = new URL(domain).hostname;
@@ -110,6 +62,34 @@ serve(async (req: Request) => {
   } catch {
     // keep as-is
   }
+  return domain;
+}
+
+export async function handleBrandfetchLookup(
+  request: Request,
+  apiKey: string,
+  cors: Record<string, string>
+): Promise<Response> {
+  const auth = request.headers.get('Authorization');
+  if (!auth) {
+    return errorResponse(401, 'unauthorized', cors);
+  }
+
+  if (!apiKey) {
+    return errorResponse(500, 'server_misconfigured', cors);
+  }
+
+  let body: { domain?: string };
+  try {
+    body = (await request.json()) as { domain?: string };
+  } catch {
+    return errorResponse(400, 'invalid_json', cors);
+  }
+
+  const domain = typeof body.domain === 'string' ? cleanDomain(body.domain) : '';
+  if (!domain) {
+    return errorResponse(400, 'domain_required', cors);
+  }
 
   const brandfetchUrl = `https://api.brandfetch.io/v2/brands/${encodeURIComponent(domain)}`;
   let bfRes: Response;
@@ -117,24 +97,22 @@ serve(async (req: Request) => {
     bfRes = await fetch(brandfetchUrl, {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
-  } catch (e) {
-    console.log('brandfetch-lookup: fetch failed', (e as Error).message);
-    return json(502, { error: 'brandfetch_unreachable' });
+  } catch {
+    return errorResponse(502, 'brandfetch_unreachable', cors);
   }
 
   if (!bfRes.ok) {
     if (bfRes.status === 404) {
-      return json(404, { error: 'domain_not_found', domain });
+      return errorResponse(404, 'domain_not_found', cors);
     }
-    console.log('brandfetch-lookup: non-2xx', bfRes.status);
-    return json(502, { error: 'brandfetch_error', status: bfRes.status });
+    return errorResponse(502, 'brandfetch_error', cors);
   }
 
   let data: BrandfetchResponse;
   try {
     data = (await bfRes.json()) as BrandfetchResponse;
   } catch {
-    return json(502, { error: 'brandfetch_invalid_response' });
+    return errorResponse(502, 'brandfetch_invalid_response', cors);
   }
 
   const logos = data.logos ?? [];
@@ -149,5 +127,8 @@ serve(async (req: Request) => {
     accent_color: pickColor(colors, 'accent') ?? pickColor(colors, 'vibrant'),
   };
 
-  return json(200, result);
-});
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', ...cors },
+  });
+}

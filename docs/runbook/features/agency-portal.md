@@ -87,8 +87,8 @@ All writes go through SECURITY DEFINER RPCs; agency owners do all writes, agency
     - /admin/branding
   rpcs:
     - update_agency_branding
-  edge_functions:
-    - brandfetch-lookup
+  worker_routes:
+    - /api/brandfetch/lookup
   tables:
     - agencies
   related:

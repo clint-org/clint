@@ -285,11 +285,21 @@ export class AgencyService {
   // ---------------------------------------------------------------------------
 
   async fetchBrandFromDomain(domain: string): Promise<BrandfetchResult> {
-    const { data, error } = await this.supabase.client.functions.invoke('brandfetch-lookup', {
-      body: { domain },
+    const session = (await this.supabase.client.auth.getSession()).data.session;
+    const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
+    const res = await fetch(`${apiBase}/api/brandfetch/lookup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ domain }),
     });
-    if (error) throw error;
-    return data as BrandfetchResult;
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(errBody.error ?? `brandfetch lookup failed (${res.status})`);
+    }
+    return (await res.json()) as BrandfetchResult;
   }
 
   private generateCode(): string {
