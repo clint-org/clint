@@ -310,12 +310,14 @@ export interface PositioningBubble {
   highest_phase: RingPhase;
   highest_phase_rank: number;
   unit_count: number;
+  phase_counts: Partial<Record<RingPhase, number>>;
   products: PositioningAsset[];
 }
 
 export interface PositioningData {
   grouping: PositioningGrouping;
   count_unit: CountUnit;
+  latest_event_date: string | null;
   bubbles: PositioningBubble[];
 }
 
