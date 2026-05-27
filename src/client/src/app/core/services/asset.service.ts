@@ -60,12 +60,12 @@ export class AssetService {
         ttl: REFERENCE_TTL,
         tags: [`space:${spaceId}:products`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client
+          const { data } = await this.supabase.client
             .from('assets')
             .select(ASSET_WITH_MOA_ROA_SELECT)
             .eq('space_id', spaceId)
-            .order('display_order');
-          if (error) throw error;
+            .order('display_order')
+            .throwOnError();
           return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
         },
       }
@@ -73,27 +73,28 @@ export class AssetService {
   }
 
   async getById(id: string): Promise<Asset> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('assets')
       .select(ASSET_WITH_MOA_ROA_SELECT)
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return flattenAsset(data as unknown as RawAssetRow);
   }
 
   async create(spaceId: string, asset: Partial<Asset>): Promise<Asset> {
     const moaNames = (asset.mechanisms_of_action ?? []).map((m) => m.name);
     const roaNames = (asset.routes_of_administration ?? []).map((r) => r.name);
-    const { data: newId, error } = await this.supabase.client.rpc('create_asset', {
-      p_space_id: spaceId,
-      p_company_id: asset.company_id!,
-      p_name: asset.name!,
-      p_generic_name: asset.generic_name ?? null,
-      p_moa_names: moaNames.length > 0 ? moaNames : null,
-      p_roa_names: roaNames.length > 0 ? roaNames : null,
-    });
-    if (error) throw error;
+    const { data: newId } = await this.supabase.client
+      .rpc('create_asset', {
+        p_space_id: spaceId,
+        p_company_id: asset.company_id!,
+        p_name: asset.name!,
+        p_generic_name: asset.generic_name ?? null,
+        p_moa_names: moaNames.length > 0 ? moaNames : null,
+        p_roa_names: roaNames.length > 0 ? roaNames : null,
+      })
+      .throwOnError();
     this.cache.invalidateTags([
       `space:${spaceId}:products`,
       `space:${spaceId}:companies`,
@@ -107,13 +108,13 @@ export class AssetService {
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...updatable } = changes;
     void _m;
     void _r;
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('assets')
       .update(updatable)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     const spaceId = (data as Asset).space_id;
     this.cache.invalidateTags([
       `space:${spaceId}:products`,
@@ -125,10 +126,11 @@ export class AssetService {
   }
 
   async previewDelete(id: string): Promise<DeleteCountBreakdown> {
-    const { data, error } = await this.supabase.client.rpc('preview_asset_delete', {
-      p_asset_id: id,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('preview_asset_delete', {
+        p_asset_id: id,
+      })
+      .throwOnError();
     return (data ?? {}) as DeleteCountBreakdown;
   }
 
@@ -138,8 +140,7 @@ export class AssetService {
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('assets').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('assets').delete().eq('id', id).throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:products`,
@@ -161,18 +162,15 @@ export class AssetService {
       .eq('id', assetId)
       .single();
 
-    const { error: deleteError } = await this.supabase.client
+    await this.supabase.client
       .from('asset_mechanisms_of_action')
       .delete()
-      .eq('asset_id', assetId);
-    if (deleteError) throw deleteError;
+      .eq('asset_id', assetId)
+      .throwOnError();
 
     if (moaIds.length > 0) {
       const rows = moaIds.map((moa_id) => ({ asset_id: assetId, moa_id }));
-      const { error: insertError } = await this.supabase.client
-        .from('asset_mechanisms_of_action')
-        .insert(rows);
-      if (insertError) throw insertError;
+      await this.supabase.client.from('asset_mechanisms_of_action').insert(rows).throwOnError();
     }
 
     if (assetRow?.space_id) {
@@ -194,18 +192,15 @@ export class AssetService {
       .eq('id', assetId)
       .single();
 
-    const { error: deleteError } = await this.supabase.client
+    await this.supabase.client
       .from('asset_routes_of_administration')
       .delete()
-      .eq('asset_id', assetId);
-    if (deleteError) throw deleteError;
+      .eq('asset_id', assetId)
+      .throwOnError();
 
     if (roaIds.length > 0) {
       const rows = roaIds.map((roa_id) => ({ asset_id: assetId, roa_id }));
-      const { error: insertError } = await this.supabase.client
-        .from('asset_routes_of_administration')
-        .insert(rows);
-      if (insertError) throw insertError;
+      await this.supabase.client.from('asset_routes_of_administration').insert(rows).throwOnError();
     }
 
     if (assetRow?.space_id) {

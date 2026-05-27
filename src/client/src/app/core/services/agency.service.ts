@@ -20,21 +20,21 @@ export class AgencyService {
   // ---------------------------------------------------------------------------
 
   async listMyAgencies(): Promise<Agency[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('agencies')
       .select('*')
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
   async getAgency(id: string): Promise<Agency> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('agencies')
       .select('*')
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
@@ -42,11 +42,12 @@ export class AgencyService {
     id: string,
     branding: AgencyBrandingUpdate
   ): Promise<{ id: string; updated: boolean }> {
-    const { data, error } = await this.supabase.client.rpc('update_agency_branding', {
-      p_agency_id: id,
-      p_branding: branding,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('update_agency_branding', {
+        p_agency_id: id,
+        p_branding: branding,
+      })
+      .throwOnError();
     if (typeof window !== 'undefined') {
       clearBrandCache(window.location.host);
       broadcastBrandInvalidation(window.location.host);
@@ -66,12 +67,12 @@ export class AgencyService {
       .eq('agency_id', agencyId)
       .order('created_at');
     if (error) {
-      const { data: rawData, error: rawError } = await this.supabase.client
+      const { data: rawData } = await this.supabase.client
         .from('agency_members')
         .select('*')
         .eq('agency_id', agencyId)
-        .order('created_at');
-      if (rawError) throw rawError;
+        .order('created_at')
+        .throwOnError();
       return rawData ?? [];
     }
     return data ?? [];
@@ -82,12 +83,12 @@ export class AgencyService {
     userId: string,
     role: 'owner' | 'member'
   ): Promise<AgencyMember> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('agency_members')
       .insert({ agency_id: agencyId, user_id: userId, role })
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data as AgencyMember;
   }
 
@@ -107,12 +108,13 @@ export class AgencyService {
     invite_id?: string;
     email?: string;
   }> {
-    const { data, error } = await this.supabase.client.rpc('add_agency_member', {
-      p_agency_id: agencyId,
-      p_email: email,
-      p_role: role,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('add_agency_member', {
+        p_agency_id: agencyId,
+        p_email: email,
+        p_role: role,
+      })
+      .throwOnError();
     return data as {
       member_invited: boolean;
       user_id?: string;
@@ -122,16 +124,15 @@ export class AgencyService {
   }
 
   async removeAgencyMember(memberId: string): Promise<void> {
-    const { error } = await this.supabase.client.from('agency_members').delete().eq('id', memberId);
-    if (error) throw error;
+    await this.supabase.client.from('agency_members').delete().eq('id', memberId).throwOnError();
   }
 
   async updateAgencyMemberRole(memberId: string, role: 'owner' | 'member'): Promise<void> {
-    const { error } = await this.supabase.client
+    await this.supabase.client
       .from('agency_members')
       .update({ role })
-      .eq('id', memberId);
-    if (error) throw error;
+      .eq('id', memberId)
+      .throwOnError();
   }
 
   /**
@@ -142,10 +143,11 @@ export class AgencyService {
   async lookupUserByEmail(
     email: string
   ): Promise<{ user_id: string; display_name: string } | null> {
-    const { data, error } = await this.supabase.client.rpc('lookup_user_by_email', {
-      p_email: email,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('lookup_user_by_email', {
+        p_email: email,
+      })
+      .throwOnError();
     const result = data as { found: boolean; user_id?: string; display_name?: string };
     if (!result?.found || !result.user_id) return null;
     return { user_id: result.user_id, display_name: result.display_name ?? email };
@@ -156,27 +158,27 @@ export class AgencyService {
   // ---------------------------------------------------------------------------
 
   async listAgencyTenants(agencyId: string): Promise<AgencyTenantSummary[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenants')
       .select(
         'id, name, subdomain, custom_domain, app_display_name, primary_color, logo_url, suspended_at, created_at'
       )
       .eq('agency_id', agencyId)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
 
     // Fetch member counts in a separate query (pragmatic v1 — fine for <50 tenants).
     const tenants = data ?? [];
     if (tenants.length === 0) return [];
 
-    const { data: memberRows, error: memberError } = await this.supabase.client
+    const { data: memberRows } = await this.supabase.client
       .from('tenant_members')
       .select('tenant_id')
       .in(
         'tenant_id',
         tenants.map((t) => t.id)
-      );
-    if (memberError) throw memberError;
+      )
+      .throwOnError();
 
     const counts = new Map<string, number>();
     for (const row of memberRows ?? []) {
@@ -204,21 +206,23 @@ export class AgencyService {
     subdomain: string,
     brand: Record<string, unknown> = {}
   ): Promise<{ id: string; name: string; subdomain: string; default_space_id: string }> {
-    const { data, error } = await this.supabase.client.rpc('provision_tenant', {
-      p_agency_id: agencyId,
-      p_name: name,
-      p_subdomain: subdomain,
-      p_brand: brand,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('provision_tenant', {
+        p_agency_id: agencyId,
+        p_name: name,
+        p_subdomain: subdomain,
+        p_brand: brand,
+      })
+      .throwOnError();
     return data as { id: string; name: string; subdomain: string; default_space_id: string };
   }
 
   async checkSubdomainAvailable(subdomain: string): Promise<boolean> {
-    const { data, error } = await this.supabase.client.rpc('check_subdomain_available', {
-      p_subdomain: subdomain,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('check_subdomain_available', {
+        p_subdomain: subdomain,
+      })
+      .throwOnError();
     return data === true;
   }
 
@@ -230,11 +234,12 @@ export class AgencyService {
     tenantId: string,
     branding: TenantBrandingUpdate
   ): Promise<{ id: string; updated: boolean }> {
-    const { data, error } = await this.supabase.client.rpc('update_tenant_branding', {
-      p_tenant_id: tenantId,
-      p_branding: branding,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('update_tenant_branding', {
+        p_tenant_id: tenantId,
+        p_branding: branding,
+      })
+      .throwOnError();
     if (typeof window !== 'undefined') {
       clearBrandCache(window.location.host);
       broadcastBrandInvalidation(window.location.host);
@@ -243,14 +248,14 @@ export class AgencyService {
   }
 
   async getTenantBranding(tenantId: string): Promise<TenantBrandFields> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenants')
       .select(
         'id, name, subdomain, custom_domain, app_display_name, logo_url, favicon_url, primary_color, email_from_name, suspended_at'
       )
       .eq('id', tenantId)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data as TenantBrandFields;
   }
 
@@ -262,14 +267,16 @@ export class AgencyService {
     const code = this.generateCode();
     const userId = (await this.supabase.client.auth.getUser()).data.user?.id;
     if (!userId) throw new Error('Not authenticated');
-    const { error } = await this.supabase.client.from('tenant_invites').insert({
-      tenant_id: tenantId,
-      email,
-      role,
-      invite_code: code,
-      created_by: userId,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .from('tenant_invites')
+      .insert({
+        tenant_id: tenantId,
+        email,
+        role,
+        invite_code: code,
+        created_by: userId,
+      })
+      .throwOnError();
   }
 
   private generateCode(): string {

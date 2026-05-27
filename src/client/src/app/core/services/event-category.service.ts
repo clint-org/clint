@@ -12,23 +12,26 @@ export class EventCategoryService {
   private cache = inject(RpcCache);
 
   async list(spaceId?: string): Promise<EventCategory[]> {
-    return this.cache.get('event_categories', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: ['markers:types'],
-      fetch: async () => {
-        let query = this.supabase.client
-          .from('event_categories')
-          .select('*')
-          .order('display_order');
+    return this.cache.get(
+      'event_categories',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: ['markers:types'],
+        fetch: async () => {
+          let query = this.supabase.client
+            .from('event_categories')
+            .select('*')
+            .order('display_order');
 
-        if (spaceId) {
-          query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
-        }
+          if (spaceId) {
+            query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
+          }
 
-        const { data, error } = await query;
-        if (error) throw error;
-        return data as EventCategory[];
-      },
-    });
+          const { data } = await query.throwOnError();
+          return data as EventCategory[];
+        },
+      }
+    );
   }
 }

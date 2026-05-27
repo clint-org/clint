@@ -17,20 +17,22 @@ export class AnnotationService {
   private cache = inject(RpcCache);
 
   async upsert(changeEventId: string, body: string): Promise<Annotation> {
-    const { data, error } = await this.supabase.client.rpc('upsert_change_event_annotation', {
-      p_change_event_id: changeEventId,
-      p_body: body,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('upsert_change_event_annotation', {
+        p_change_event_id: changeEventId,
+        p_body: body,
+      })
+      .throwOnError();
     this.cache.invalidateTags([`change_event:${changeEventId}:annotation`]);
     return data as Annotation;
   }
 
   async delete(changeEventId: string): Promise<void> {
-    const { error } = await this.supabase.client.rpc('delete_change_event_annotation', {
-      p_change_event_id: changeEventId,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('delete_change_event_annotation', {
+        p_change_event_id: changeEventId,
+      })
+      .throwOnError();
     this.cache.invalidateTags([`change_event:${changeEventId}:annotation`]);
   }
 }

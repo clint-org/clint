@@ -20,12 +20,12 @@ export class CompanyService {
         ttl: REFERENCE_TTL,
         tags: [`space:${spaceId}:companies`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client
+          const { data } = await this.supabase.client
             .from('companies')
             .select('*, assets(*)')
             .eq('space_id', spaceId)
-            .order('display_order');
-          if (error) throw error;
+            .order('display_order')
+            .throwOnError();
           return (data ?? []) as Company[];
         },
       }
@@ -33,22 +33,23 @@ export class CompanyService {
   }
 
   async getById(id: string): Promise<Company> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('companies')
       .select('*, assets(*)')
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data as Company;
   }
 
   async create(spaceId: string, company: Partial<Company>): Promise<Company> {
-    const { data: newId, error } = await this.supabase.client.rpc('create_company', {
-      p_space_id: spaceId,
-      p_name: company.name!,
-      p_logo_url: company.logo_url ?? null,
-    });
-    if (error) throw error;
+    const { data: newId } = await this.supabase.client
+      .rpc('create_company', {
+        p_space_id: spaceId,
+        p_name: company.name!,
+        p_logo_url: company.logo_url ?? null,
+      })
+      .throwOnError();
     this.cache.invalidateTags([
       `space:${spaceId}:companies`,
       `space:${spaceId}:dashboard`,
@@ -58,13 +59,13 @@ export class CompanyService {
   }
 
   async update(id: string, changes: Partial<Company>): Promise<Company> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('companies')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     const spaceId = (data as Company).space_id;
     this.cache.invalidateTags([
       `space:${spaceId}:companies`,
@@ -83,10 +84,11 @@ export class CompanyService {
    * Backed by public.preview_company_delete (cascade-safety T7).
    */
   async previewDelete(id: string): Promise<DeleteCountBreakdown> {
-    const { data, error } = await this.supabase.client.rpc('preview_company_delete', {
-      p_company_id: id,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('preview_company_delete', {
+        p_company_id: id,
+      })
+      .throwOnError();
     return (data ?? {}) as DeleteCountBreakdown;
   }
 
@@ -96,8 +98,7 @@ export class CompanyService {
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('companies').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('companies').delete().eq('id', id).throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:companies`,

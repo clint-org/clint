@@ -12,28 +12,32 @@ export class IndicationService {
   private cache = inject(RpcCache);
 
   async list(spaceId: string): Promise<Indication[]> {
-    return this.cache.get('list_indications', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: [`space:${spaceId}:indications`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('indications')
-          .select('*')
-          .eq('space_id', spaceId)
-          .order('name');
-        if (error) throw error;
-        return (data ?? []) as Indication[];
-      },
-    });
+    return this.cache.get(
+      'list_indications',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: [`space:${spaceId}:indications`],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .from('indications')
+            .select('*')
+            .eq('space_id', spaceId)
+            .order('name')
+            .throwOnError();
+          return (data ?? []) as Indication[];
+        },
+      }
+    );
   }
 
   async create(spaceId: string, indication: Partial<Indication>): Promise<Indication> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('indications')
       .insert({ ...indication, space_id: spaceId })
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     this.cache.invalidateTags([
       `space:${spaceId}:indications`,
       `space:${spaceId}:dashboard`,
@@ -43,13 +47,13 @@ export class IndicationService {
   }
 
   async update(id: string, changes: Partial<Indication>): Promise<Indication> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('indications')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     const spaceId = (data as Indication).space_id;
     this.cache.invalidateTags([
       `space:${spaceId}:indications`,
@@ -65,8 +69,7 @@ export class IndicationService {
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('indications').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('indications').delete().eq('id', id).throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:indications`,

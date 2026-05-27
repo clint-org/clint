@@ -77,19 +77,19 @@ export class SuperAdminService {
    * we don't depend on a server-side view.
    */
   async listAllAgencies(): Promise<SuperAdminAgencySummary[]> {
-    const { data: agencies, error: agencyError } = await this.supabase.client
+    const { data: agencies } = await this.supabase.client
       .from('agencies')
       .select('*')
-      .order('name');
-    if (agencyError) throw agencyError;
+      .order('name')
+      .throwOnError();
 
     const list = (agencies ?? []) as Agency[];
     if (list.length === 0) return [];
 
-    const { data: tenantRows, error: tenantError } = await this.supabase.client
+    const { data: tenantRows } = await this.supabase.client
       .from('tenants')
-      .select('agency_id');
-    if (tenantError) throw tenantError;
+      .select('agency_id')
+      .throwOnError();
 
     const counts = new Map<string, number>();
     for (const row of tenantRows ?? []) {
@@ -111,16 +111,15 @@ export class SuperAdminService {
    */
   async listAllTenants(): Promise<SuperAdminTenantSummary[]> {
     const [agencyRes, tenantRes] = await Promise.all([
-      this.supabase.client.from('agencies').select('id, name, slug'),
+      this.supabase.client.from('agencies').select('id, name, slug').throwOnError(),
       this.supabase.client
         .from('tenants')
         .select(
           'id, agency_id, name, subdomain, custom_domain, app_display_name, primary_color, logo_url, suspended_at, created_at'
         )
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .throwOnError(),
     ]);
-    if (agencyRes.error) throw agencyRes.error;
-    if (tenantRes.error) throw tenantRes.error;
 
     const agencyMap = new Map<string, { name: string; slug: string }>();
     for (const a of agencyRes.data ?? []) {
@@ -175,8 +174,7 @@ export class SuperAdminService {
     if (!includeExpired) {
       query = query.gt('released_at', new Date().toISOString());
     }
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data } = await query.throwOnError();
     return (data ?? []) as RetiredHostname[];
   }
 
@@ -191,30 +189,33 @@ export class SuperAdminService {
     ownerEmail: string,
     contactEmail: string | null
   ): Promise<ProvisionAgencyResult> {
-    const { data, error } = await this.supabase.client.rpc('provision_agency', {
-      p_name: name,
-      p_slug: slug,
-      p_subdomain: subdomain,
-      p_owner_email: ownerEmail,
-      p_contact_email: contactEmail,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('provision_agency', {
+        p_name: name,
+        p_slug: slug,
+        p_subdomain: subdomain,
+        p_owner_email: ownerEmail,
+        p_contact_email: contactEmail,
+      })
+      .throwOnError();
     return data as ProvisionAgencyResult;
   }
 
   async deleteAgency(agencyId: string): Promise<DeleteAgencyResult> {
-    const { data, error } = await this.supabase.client.rpc('delete_agency', {
-      p_agency_id: agencyId,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('delete_agency', {
+        p_agency_id: agencyId,
+      })
+      .throwOnError();
     return data as DeleteAgencyResult;
   }
 
   async releaseRetiredHostname(hostname: string): Promise<ReleaseRetiredHostnameResult> {
-    const { data, error } = await this.supabase.client.rpc('release_retired_hostname', {
-      p_hostname: hostname,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('release_retired_hostname', {
+        p_hostname: hostname,
+      })
+      .throwOnError();
     return data as ReleaseRetiredHostnameResult;
   }
 
@@ -222,19 +223,21 @@ export class SuperAdminService {
     tenantId: string,
     customDomain: string
   ): Promise<RegisterCustomDomainResult> {
-    const { data, error } = await this.supabase.client.rpc('register_custom_domain', {
-      p_tenant_id: tenantId,
-      p_custom_domain: customDomain,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('register_custom_domain', {
+        p_tenant_id: tenantId,
+        p_custom_domain: customDomain,
+      })
+      .throwOnError();
     return data as RegisterCustomDomainResult;
   }
 
   async checkSubdomainAvailable(subdomain: string): Promise<boolean> {
-    const { data, error } = await this.supabase.client.rpc('check_subdomain_available', {
-      p_subdomain: subdomain,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('check_subdomain_available', {
+        p_subdomain: subdomain,
+      })
+      .throwOnError();
     return data === true;
   }
 
@@ -250,10 +253,11 @@ export class SuperAdminService {
   async lookupUserByEmail(
     email: string
   ): Promise<{ user_id: string; display_name: string } | null> {
-    const { data, error } = await this.supabase.client.rpc('lookup_user_by_email', {
-      p_email: email,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('lookup_user_by_email', {
+        p_email: email,
+      })
+      .throwOnError();
     const result = data as { found: boolean; user_id?: string; display_name?: string };
     if (!result?.found || !result.user_id) return null;
     return { user_id: result.user_id, display_name: result.display_name ?? email };

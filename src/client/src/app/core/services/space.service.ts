@@ -8,12 +8,13 @@ export class SpaceService {
   private supabase = inject(SupabaseService);
 
   async createSpace(tenantId: string, name: string, description?: string): Promise<Space> {
-    const { data, error } = await this.supabase.client.rpc('create_space', {
-      p_tenant_id: tenantId,
-      p_name: name,
-      p_description: description ?? null,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('create_space', {
+        p_tenant_id: tenantId,
+        p_name: name,
+        p_description: description ?? null,
+      })
+      .throwOnError();
     return data as Space;
   }
 
@@ -21,13 +22,13 @@ export class SpaceService {
     // Default list excludes archived spaces (cascade-safety #1: archived
     // spaces are still in the table but should not surface in the picker).
     // Use SpaceService.listArchivedSpaces to fetch the inverse.
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('spaces')
       .select('*')
       .eq('tenant_id', tenantId)
       .is('archived_at', null)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
@@ -37,13 +38,13 @@ export class SpaceService {
    * a tenant owner / platform admin) to see them.
    */
   async listArchivedSpaces(tenantId: string): Promise<Space[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('spaces')
       .select('*')
       .eq('tenant_id', tenantId)
       .not('archived_at', 'is', null)
-      .order('archived_at', { ascending: false });
-    if (error) throw error;
+      .order('archived_at', { ascending: false })
+      .throwOnError();
     return data ?? [];
   }
 
@@ -52,10 +53,11 @@ export class SpaceService {
    * has_space_access(p_space_id, array['owner']).
    */
   async archiveSpace(id: string): Promise<void> {
-    const { error } = await this.supabase.client.rpc('archive_space', {
-      p_space_id: id,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('archive_space', {
+        p_space_id: id,
+      })
+      .throwOnError();
   }
 
   /**
@@ -63,10 +65,11 @@ export class SpaceService {
    * has_space_access(p_space_id, array['owner']).
    */
   async restoreSpace(id: string): Promise<void> {
-    const { error } = await this.supabase.client.rpc('restore_space', {
-      p_space_id: id,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('restore_space', {
+        p_space_id: id,
+      })
+      .throwOnError();
   }
 
   /**
@@ -76,42 +79,40 @@ export class SpaceService {
    * the jsonb count breakdown of what was purged.
    */
   async permanentlyDeleteSpace(id: string): Promise<Record<string, unknown>> {
-    const { data, error } = await this.supabase.client.rpc(
-      'permanently_delete_space',
-      { p_space_id: id }
-    );
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('permanently_delete_space', { p_space_id: id })
+      .throwOnError();
     return (data ?? {}) as Record<string, unknown>;
   }
 
   async getSpace(id: string): Promise<Space> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('spaces')
       .select('*')
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
   async updateSpace(id: string, updates: Partial<Space>): Promise<Space> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('spaces')
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
   async listMembers(spaceId: string): Promise<SpaceMember[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('space_members_view')
       .select('*')
       .eq('space_id', spaceId)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
@@ -120,12 +121,12 @@ export class SpaceService {
     userId: string,
     role: 'owner' | 'editor' | 'viewer'
   ): Promise<SpaceMember> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('space_members')
       .insert({ space_id: spaceId, user_id: userId, role })
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
@@ -134,21 +135,21 @@ export class SpaceService {
     userId: string,
     role: 'owner' | 'editor' | 'viewer'
   ): Promise<void> {
-    const { error } = await this.supabase.client
+    await this.supabase.client
       .from('space_members')
       .update({ role })
       .eq('space_id', spaceId)
-      .eq('user_id', userId);
-    if (error) throw error;
+      .eq('user_id', userId)
+      .throwOnError();
   }
 
   async removeMember(spaceId: string, userId: string): Promise<void> {
-    const { error } = await this.supabase.client
+    await this.supabase.client
       .from('space_members')
       .delete()
       .eq('space_id', spaceId)
-      .eq('user_id', userId);
-    if (error) throw error;
+      .eq('user_id', userId)
+      .throwOnError();
   }
 
   /**
@@ -168,12 +169,13 @@ export class SpaceService {
     invite_code?: string;
     email?: string;
   }> {
-    const { data, error } = await this.supabase.client.rpc('invite_to_space', {
-      p_space_id: spaceId,
-      p_email: email,
-      p_role: role,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('invite_to_space', {
+        p_space_id: spaceId,
+        p_email: email,
+        p_role: role,
+      })
+      .throwOnError();
     return data as {
       invited: boolean;
       user_id?: string;
@@ -184,29 +186,28 @@ export class SpaceService {
   }
 
   async listInvites(spaceId: string): Promise<SpaceInvite[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('space_invites')
       .select('*')
       .eq('space_id', spaceId)
       .is('accepted_at', null)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
   async deleteInvite(inviteId: string): Promise<void> {
-    const { error } = await this.supabase.client
-      .from('space_invites')
-      .delete()
-      .eq('id', inviteId);
-    if (error) throw error;
+    await this.supabase.client.from('space_invites').delete().eq('id', inviteId).throwOnError();
   }
 
-  async acceptSpaceInviteByCode(code: string): Promise<{ id: string; name: string; tenant_id: string }> {
-    const { data, error } = await this.supabase.client.rpc('accept_space_invite', {
-      p_code: code,
-    });
-    if (error) throw error;
+  async acceptSpaceInviteByCode(
+    code: string
+  ): Promise<{ id: string; name: string; tenant_id: string }> {
+    const { data } = await this.supabase.client
+      .rpc('accept_space_invite', {
+        p_code: code,
+      })
+      .throwOnError();
     return data as { id: string; name: string; tenant_id: string };
   }
 }

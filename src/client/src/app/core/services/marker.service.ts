@@ -23,19 +23,20 @@ export class MarkerService {
   private cache = inject(RpcCache);
 
   async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
-    const { data: newId, error } = await this.supabase.client.rpc('create_marker', {
-      p_space_id: spaceId,
-      p_marker_type_id: marker.marker_type_id!,
-      p_title: marker.title!,
-      p_projection: marker.projection!,
-      p_event_date: marker.event_date!,
-      p_end_date: marker.end_date ?? null,
-      p_description: marker.description ?? null,
-      p_source_url: marker.source_url ?? null,
-      p_trial_ids: trialIds.length > 0 ? trialIds : null,
-      p_change_source: 'analyst',
-    });
-    if (error) throw error;
+    const { data: newId } = await this.supabase.client
+      .rpc('create_marker', {
+        p_space_id: spaceId,
+        p_marker_type_id: marker.marker_type_id!,
+        p_title: marker.title!,
+        p_projection: marker.projection!,
+        p_event_date: marker.event_date!,
+        p_end_date: marker.end_date ?? null,
+        p_description: marker.description ?? null,
+        p_source_url: marker.source_url ?? null,
+        p_trial_ids: trialIds.length > 0 ? trialIds : null,
+        p_change_source: 'analyst',
+      })
+      .throwOnError();
 
     this.cache.invalidateTags([...spaceTagsFor(spaceId), ...trialDetailTags(trialIds)]);
 
@@ -53,13 +54,13 @@ export class MarkerService {
       .eq('marker_id', id);
     const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
 
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('markers')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
 
     const updated = data as Marker;
     this.cache.invalidateTags([
@@ -85,21 +86,18 @@ export class MarkerService {
       .eq('marker_id', markerId);
     const previousTrialIds = (oldRows ?? []).map((r) => r.trial_id as string);
 
-    const { error: deleteError } = await this.supabase.client
+    await this.supabase.client
       .from('marker_assignments')
       .delete()
-      .eq('marker_id', markerId);
-    if (deleteError) throw deleteError;
+      .eq('marker_id', markerId)
+      .throwOnError();
 
     if (trialIds.length > 0) {
       const assignments = trialIds.map((trialId) => ({
         marker_id: markerId,
         trial_id: trialId,
       }));
-      const { error: insertError } = await this.supabase.client
-        .from('marker_assignments')
-        .insert(assignments);
-      if (insertError) throw insertError;
+      await this.supabase.client.from('marker_assignments').insert(assignments).throwOnError();
     }
 
     const affectedTrialIds = Array.from(new Set([...previousTrialIds, ...trialIds]));
@@ -121,8 +119,7 @@ export class MarkerService {
       .eq('marker_id', id);
     const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
 
-    const { error } = await this.supabase.client.from('markers').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('markers').delete().eq('id', id).throwOnError();
 
     const tags: string[] = trialDetailTags(trialIds);
     if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));

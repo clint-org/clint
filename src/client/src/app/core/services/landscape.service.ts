@@ -38,10 +38,11 @@ export class LandscapeService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:landscape:${dimension}`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(rpcName, {
-            p_space_id: spaceId,
-          });
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc(rpcName, {
+              p_space_id: spaceId,
+            })
+            .throwOnError();
           return (data ?? []) as LandscapeIndexEntry[];
         },
       }
@@ -67,11 +68,12 @@ export class LandscapeService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:bullseye:${dimension}:${entityId}`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(name, {
-            p_space_id: spaceId,
-            [paramKey]: entityId,
-          });
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc(name, {
+              p_space_id: spaceId,
+              [paramKey]: entityId,
+            })
+            .throwOnError();
           return data as BullseyeData;
         },
       }
@@ -86,18 +88,19 @@ export class LandscapeService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:bullseye:assets`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc('get_bullseye_assets', {
-            p_space_id: spaceId,
-            p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
-            p_company_ids: filters.companyIds.length ? filters.companyIds : null,
-            p_moa_ids: filters.mechanismOfActionIds.length ? filters.mechanismOfActionIds : null,
-            p_roa_ids: filters.routeOfAdministrationIds.length
-              ? filters.routeOfAdministrationIds
-              : null,
-            p_phases: filters.phases.length ? filters.phases : null,
-            p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
-          });
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_bullseye_assets', {
+              p_space_id: spaceId,
+              p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
+              p_company_ids: filters.companyIds.length ? filters.companyIds : null,
+              p_moa_ids: filters.mechanismOfActionIds.length ? filters.mechanismOfActionIds : null,
+              p_roa_ids: filters.routeOfAdministrationIds.length
+                ? filters.routeOfAdministrationIds
+                : null,
+              p_phases: filters.phases.length ? filters.phases : null,
+              p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
+            })
+            .throwOnError();
           const result = data as { assets: BullseyeAsset[] };
           return result.assets;
         },
@@ -119,26 +122,27 @@ export class LandscapeService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:positioning`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc('get_positioning_data', {
-            p_space_id: spaceId,
-            p_grouping: grouping,
-            p_count_unit: wireCountUnit,
-            p_company_ids: filters.companyIds.length ? filters.companyIds : null,
-            p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
-            p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
-            p_mechanism_of_action_ids: filters.mechanismOfActionIds.length
-              ? filters.mechanismOfActionIds
-              : null,
-            p_route_of_administration_ids: filters.routeOfAdministrationIds.length
-              ? filters.routeOfAdministrationIds
-              : null,
-            p_phases: filters.phases.length ? filters.phases : null,
-            p_recruitment_statuses: filters.recruitmentStatuses.length
-              ? filters.recruitmentStatuses
-              : null,
-            p_study_types: filters.studyTypes.length ? filters.studyTypes : null,
-          });
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_positioning_data', {
+              p_space_id: spaceId,
+              p_grouping: grouping,
+              p_count_unit: wireCountUnit,
+              p_company_ids: filters.companyIds.length ? filters.companyIds : null,
+              p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
+              p_indication_ids: filters.indicationIds.length ? filters.indicationIds : null,
+              p_mechanism_of_action_ids: filters.mechanismOfActionIds.length
+                ? filters.mechanismOfActionIds
+                : null,
+              p_route_of_administration_ids: filters.routeOfAdministrationIds.length
+                ? filters.routeOfAdministrationIds
+                : null,
+              p_phases: filters.phases.length ? filters.phases : null,
+              p_recruitment_statuses: filters.recruitmentStatuses.length
+                ? filters.recruitmentStatuses
+                : null,
+              p_study_types: filters.studyTypes.length ? filters.studyTypes : null,
+            })
+            .throwOnError();
           const raw = data as Omit<PositioningData, 'count_unit'> & { count_unit: string };
           return {
             ...raw,

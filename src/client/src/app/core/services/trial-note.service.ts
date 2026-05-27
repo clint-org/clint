@@ -8,28 +8,27 @@ export class TrialNoteService {
   private supabase = inject(SupabaseService);
 
   async create(spaceId: string, note: Partial<TrialNote>): Promise<TrialNote> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('trial_notes')
       .insert({ ...note, space_id: spaceId })
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data as TrialNote;
   }
 
   async update(id: string, changes: Partial<TrialNote>): Promise<TrialNote> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('trial_notes')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data as TrialNote;
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from('trial_notes').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('trial_notes').delete().eq('id', id).throwOnError();
   }
 }
