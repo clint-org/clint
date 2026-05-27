@@ -226,6 +226,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
   /help/phases   PhasesHelpComponent
   /s/:spaceId   spaceGuard
     (empty)   EngagementLandingComponent | exact
+    /import   importGuard | ImportPageComponent
     /import/:aiCallId/review   sourceImportGuard | ReviewPageComponent
     /help/markers   MarkersHelpComponent
     (empty)   LandscapeShellComponent

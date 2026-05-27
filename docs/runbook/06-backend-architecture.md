@@ -41,7 +41,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
+| `_materialize_trial_from_snapshot` | trials | - |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
@@ -622,6 +622,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
 - `_guard_ctgov_locked_phase_fields`
+- `_humanize_phase`
+- `_humanize_status`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
@@ -646,6 +648,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `create_event`
 - `create_marker`
 - `create_trial`
+- `delete_change_event_annotation`
 - `delete_material`
 - `export_audit_events_csv`
 - `finalize_material`
@@ -660,6 +663,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_company_detail_with_intelligence`
 - `get_event_detail`
 - `get_event_thread`
+- `get_events_page_data`
 - `get_intelligence_notes_for_asset`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
@@ -705,6 +709,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `search_palette`
 - `tenant_owner_update_ai_config`
 - `update_material`
+- `upsert_change_event_annotation`
 - `validate_material_links_payload`
 
 **Edge functions in `supabase/functions/` not documented:**

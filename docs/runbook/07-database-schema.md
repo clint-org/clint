@@ -681,6 +681,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
+- `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
@@ -865,6 +866,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260527100000_rpc_tenant_owner_update_ai_config.sql`
 - `20260527120000_change_event_annotations.sql`
 - `20260527120100_events_rpc_unified_feed.sql`
-- `20260527120200_positioning_phase_counts.sql`
+- `20260527130000_add_nct_source_kind.sql`
+- `20260527140000_positioning_phase_counts.sql`
 - `20260527225705_fix_phase_end_date_coalesce_order.sql`
 <!-- /AUTO-GEN:DRIFT -->
