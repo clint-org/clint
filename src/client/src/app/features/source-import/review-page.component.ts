@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
 
+import { ChangeEventService } from '../../core/services/change-event.service';
 import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import {
@@ -710,6 +711,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly supabase = inject(SupabaseService);
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
+  private readonly changeEventService = inject(ChangeEventService);
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -1215,7 +1217,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
     const payload = this.buildCommitPayload();
 
-    const { error } = await this.supabase.client.rpc('commit_source_import', {
+    const { data, error } = await this.supabase.client.rpc('commit_source_import', {
       p_space_id: this.spaceId(),
       p_ai_call_id: this.aiCallId(),
       p_source_document: payload.sourceDocument,
@@ -1227,6 +1229,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       this.committing.set(false);
       this.commitError.set(error.message);
       return;
+    }
+
+    if (this.isNctImport()) {
+      const result = data as { created?: { trials?: string[] } } | null;
+      const createdTrialIds = result?.created?.trials ?? [];
+      for (const trialId of createdTrialIds) {
+        // fire-and-forget: sync runs in the background via the worker
+        this.changeEventService.triggerSingleTrialSync(trialId).catch(Function.prototype as () => void);
+      }
     }
 
     this.committed.set(true);
