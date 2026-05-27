@@ -21,7 +21,7 @@ Key components:
 
 ## Positioning
 
-The Positioning view contrasts assets across two dimensions on a single canvas. It lives at `/t/:tenantId/s/:spaceId/positioning` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`.
+The Positioning view renders a competitive density matrix: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the 7 development phases, and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/positioning` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render positioning sub-tabs).
 
 ## Capabilities
 
@@ -109,7 +109,7 @@ The Positioning view contrasts assets across two dimensions on a single canvas. 
   role: viewer
   status: active
 - id: positioning-overview
-  summary: Two-dimension contrast canvas for assets at /positioning, with company, MOA, ROA, indication, and combined MOA-by-indication cuts.
+  summary: Competitive density heatmap at /positioning. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and density LEGEND.
   routes:
     - /t/:tenantId/s/:spaceId/positioning
     - /t/:tenantId/s/:spaceId/positioning/by-company
