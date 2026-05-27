@@ -17,6 +17,7 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -115,6 +116,7 @@ export class EngagementLandingComponent implements OnInit {
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
   private readonly brand = inject(BrandContextService);
   private readonly sourceImportService = inject(SourceImportService);
+  private readonly supabase = inject(SupabaseService);
   protected readonly spaceRole = inject(SpaceRoleService);
 
   readonly tenantId = signal('');
@@ -130,6 +132,7 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestLoading = signal(true);
   readonly feedFilter = signal<'all' | IntelligenceEntityType>('all');
   readonly importDialogVisible = signal(false);
+  readonly aiEnabled = signal(false);
   readonly isAgencyBrand = computed(() => this.brand.kind() === 'agency');
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
@@ -469,7 +472,15 @@ export class EngagementLandingComponent implements OnInit {
     ]);
 
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
-    if (tenantRes.status === 'fulfilled') this.tenant.set(tenantRes.value);
+    if (tenantRes.status === 'fulfilled') {
+      this.tenant.set(tenantRes.value);
+      this.supabase.client
+        .from('ai_config')
+        .select('ai_enabled')
+        .eq('tenant_id', tid)
+        .maybeSingle()
+        .then(({ data }) => this.aiEnabled.set(data?.ai_enabled === true));
+    }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);
     } else {

@@ -96,6 +96,11 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
             [disabled]="extracting()"
             aria-label="Source text"
           ></textarea>
+          @if (textInput().trim().length > 0 && textInput().trim().length < 50) {
+            <span class="text-[11px] text-slate-400">
+              Paste at least 50 characters for the model to extract from.
+            </span>
+          }
         }
 
         <!-- Progress steps -->
