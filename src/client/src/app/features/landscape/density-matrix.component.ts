@@ -1,15 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import {
   type CountUnit,
+  type DensityBubble,
   PHASE_COLOR,
-  type PositioningBubble,
   RING_ORDER,
   type RingPhase,
 } from '../../core/models/landscape.model';
@@ -32,7 +26,7 @@ export interface SortEvent {
 }
 
 export interface MatrixRow {
-  bubble: PositioningBubble;
+  bubble: DensityBubble;
   cells: MatrixCell[];
   total: number;
 }
@@ -269,14 +263,38 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       transition: all 0.12s;
     }
 
-    .heat-pip.intensity-1 { background: var(--brand-50); color: var(--brand-700); }
-    .heat-pip.intensity-2 { background: var(--brand-100); color: var(--brand-800); }
-    .heat-pip.intensity-3 { background: var(--brand-200); color: var(--brand-900); }
-    .heat-pip.intensity-4 { background: var(--amber-50); color: var(--amber-600); }
-    .heat-pip.intensity-5 { background: var(--amber-100); color: var(--amber-600); }
-    .heat-pip.intensity-6 { background: var(--red-50); color: var(--red-600); }
-    .heat-pip.intensity-7 { background: var(--red-100); color: var(--red-700); }
-    .heat-pip.intensity-8 { background: var(--red-200); color: var(--red-700); }
+    .heat-pip.intensity-1 {
+      background: var(--brand-50);
+      color: var(--brand-700);
+    }
+    .heat-pip.intensity-2 {
+      background: var(--brand-100);
+      color: var(--brand-800);
+    }
+    .heat-pip.intensity-3 {
+      background: var(--brand-200);
+      color: var(--brand-900);
+    }
+    .heat-pip.intensity-4 {
+      background: var(--amber-50);
+      color: var(--amber-600);
+    }
+    .heat-pip.intensity-5 {
+      background: var(--amber-100);
+      color: var(--amber-600);
+    }
+    .heat-pip.intensity-6 {
+      background: var(--red-50);
+      color: var(--red-600);
+    }
+    .heat-pip.intensity-7 {
+      background: var(--red-100);
+      color: var(--red-700);
+    }
+    .heat-pip.intensity-8 {
+      background: var(--red-200);
+      color: var(--red-700);
+    }
 
     .heat-pip.empty {
       background: transparent;
@@ -327,7 +345,9 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
             <th
               class="sortable"
               role="columnheader"
-              [attr.aria-sort]="sortField() === 'name' ? (sortDir() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              [attr.aria-sort]="
+                sortField() === 'name' ? (sortDir() === 'asc' ? 'ascending' : 'descending') : 'none'
+              "
               (click)="onSortClick('name')"
             >
               Group
@@ -337,13 +357,20 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
             </th>
             @for (phase of phases; track phase) {
               <th role="columnheader">
-                <span class="phase-dot" [style.background]="phaseColor(phase)"></span>{{ phaseShort(phase) }}
+                <span class="phase-dot" [style.background]="phaseColor(phase)"></span
+                >{{ phaseShort(phase) }}
               </th>
             }
             <th
               class="sortable"
               role="columnheader"
-              [attr.aria-sort]="sortField() === 'total' ? (sortDir() === 'asc' ? 'ascending' : 'descending') : 'none'"
+              [attr.aria-sort]="
+                sortField() === 'total'
+                  ? sortDir() === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : 'none'
+              "
               (click)="onSortClick('total')"
             >
               Total
@@ -366,7 +393,8 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
               <td>
                 <span class="row-label-text">{{ row.bubble.label }}</span>
                 <div class="row-label-sub">
-                  {{ row.bubble.competitor_count }} {{ row.bubble.competitor_count === 1 ? 'company' : 'companies' }}
+                  {{ row.bubble.competitor_count }}
+                  {{ row.bubble.competitor_count === 1 ? 'company' : 'companies' }}
                 </div>
               </td>
               @for (cell of row.cells; track cell.phase) {
@@ -389,20 +417,20 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
   `,
 })
 export class DensityMatrixComponent {
-  readonly bubbles = input.required<PositioningBubble[]>();
+  readonly bubbles = input.required<DensityBubble[]>();
   readonly countUnit = input<CountUnit>('assets');
-  readonly selectedBubble = input<PositioningBubble | null>(null);
+  readonly selectedBubble = input<DensityBubble | null>(null);
   readonly sortField = input<SortField>('total');
   readonly sortDir = input<'asc' | 'desc'>('desc');
   readonly latestEventDate = input<string | null>(null);
 
-  readonly rowClick = output<PositioningBubble>();
+  readonly rowClick = output<DensityBubble>();
   readonly sortChange = output<SortEvent>();
 
   readonly phases = RING_ORDER;
 
   protected readonly freshnessText = computed(() =>
-    formatFreshness(this.latestEventDate(), new Date()),
+    formatFreshness(this.latestEventDate(), new Date())
   );
 
   protected readonly nonZeroValues = computed(() => {
@@ -462,7 +490,7 @@ export class DensityMatrixComponent {
     return PHASE_SHORT[phase];
   }
 
-  protected onRowClick(bubble: PositioningBubble): void {
+  protected onRowClick(bubble: DensityBubble): void {
     this.rowClick.emit(bubble);
   }
 
@@ -474,6 +502,6 @@ export class DensityMatrixComponent {
   }
 
   protected onEscape(): void {
-    this.rowClick.emit(undefined as unknown as PositioningBubble);
+    this.rowClick.emit(undefined as unknown as DensityBubble);
   }
 }

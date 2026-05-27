@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 /**
- * Canonical container for every detail pane (marker, event, positioning,
+ * Canonical container for every detail pane (marker, event, density matrix,
  * bullseye). Owns the header strip, scroll body, and footer slot, plus the
  * accessibility primitives (aria-live, escape-to-close).
  *

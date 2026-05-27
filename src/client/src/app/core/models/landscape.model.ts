@@ -176,12 +176,12 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye' | 'positioning' | 'catalysts';
+export type ViewMode = 'timeline' | 'bullseye' | 'density-matrix' | 'catalysts';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
-  { label: 'Positioning', value: 'positioning' },
+  { label: 'Density Matrix', value: 'density-matrix' },
   { label: 'Future Catalysts', value: 'catalysts' },
 ];
 
@@ -286,13 +286,13 @@ function getSpokeKeys(
   }
 }
 
-// --- Competitive Positioning types ---
+// --- Density Matrix types ---
 
-export type PositioningGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
+export type DensityGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
 
 export type CountUnit = 'assets' | 'trials' | 'companies';
 
-export interface PositioningAsset {
+export interface DensityAsset {
   id: string;
   name: string;
   generic_name: string | null;
@@ -303,7 +303,7 @@ export interface PositioningAsset {
   trial_count: number;
 }
 
-export interface PositioningBubble {
+export interface DensityBubble {
   label: string;
   group_keys: Record<string, string>;
   competitor_count: number;
@@ -311,17 +311,17 @@ export interface PositioningBubble {
   highest_phase_rank: number;
   unit_count: number;
   phase_counts: Partial<Record<RingPhase, number>>;
-  products: PositioningAsset[];
+  products: DensityAsset[];
 }
 
-export interface PositioningData {
-  grouping: PositioningGrouping;
+export interface DensityData {
+  grouping: DensityGrouping;
   count_unit: CountUnit;
   latest_event_date: string | null;
-  bubbles: PositioningBubble[];
+  bubbles: DensityBubble[];
 }
 
-export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGrouping }[] = [
+export const DENSITY_GROUPING_OPTIONS: { label: string; value: DensityGrouping }[] = [
   { label: 'Mechanism of Action', value: 'moa' },
   { label: 'Indication', value: 'indication' },
   { label: 'MOA + Indication', value: 'moa+indication' },
@@ -329,8 +329,8 @@ export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGr
   { label: 'Route of Administration', value: 'roa' },
 ];
 
-export function groupingToSegment(g: PositioningGrouping): string {
-  const map: Record<PositioningGrouping, string> = {
+export function groupingToSegment(g: DensityGrouping): string {
+  const map: Record<DensityGrouping, string> = {
     moa: 'by-moa',
     indication: 'by-indication',
     'moa+indication': 'by-moa-indication',
@@ -340,8 +340,8 @@ export function groupingToSegment(g: PositioningGrouping): string {
   return map[g];
 }
 
-export function segmentToGrouping(segment: string): PositioningGrouping {
-  const map: Record<string, PositioningGrouping> = {
+export function segmentToGrouping(segment: string): DensityGrouping {
+  const map: Record<string, DensityGrouping> = {
     'by-moa': 'moa',
     'by-indication': 'indication',
     'by-moa-indication': 'moa+indication',
@@ -351,7 +351,7 @@ export function segmentToGrouping(segment: string): PositioningGrouping {
   return map[segment] ?? 'moa';
 }
 
-export const POSITIONING_SEGMENTS = [
+export const DENSITY_SEGMENTS = [
   'by-moa',
   'by-indication',
   'by-moa-indication',

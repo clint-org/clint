@@ -4,10 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
+  DENSITY_GROUPING_OPTIONS,
+  DensityBubble,
+  DensityGrouping,
   PHASE_COLOR,
-  POSITIONING_GROUPING_OPTIONS,
-  PositioningBubble,
-  PositioningGrouping,
   RING_ORDER,
   RingPhase,
   groupingToSegment,
@@ -295,11 +295,11 @@ export class DensityControlsPanelComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly bubbles = input<PositioningBubble[]>([]);
-  readonly grouping = input<PositioningGrouping>('moa');
+  readonly bubbles = input<DensityBubble[]>([]);
+  readonly grouping = input<DensityGrouping>('moa');
   readonly countUnit = input<CountUnit>('assets');
 
-  protected readonly groupingOptions = POSITIONING_GROUPING_OPTIONS;
+  protected readonly groupingOptions = DENSITY_GROUPING_OPTIONS;
   protected readonly countOptions = COUNT_UNIT_OPTIONS;
 
   protected readonly phases: { value: RingPhase; label: string; color: string }[] = RING_ORDER.map(
@@ -352,7 +352,7 @@ export class DensityControlsPanelComponent {
     return parts.join(' | ');
   });
 
-  protected navigateToGrouping(grouping: PositioningGrouping): void {
+  protected navigateToGrouping(grouping: DensityGrouping): void {
     const segment = groupingToSegment(grouping);
     this.router.navigate(['..', segment], { relativeTo: this.route });
   }

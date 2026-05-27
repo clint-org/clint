@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import type {
   CountUnit,
-  PositioningBubble,
-  PositioningGrouping,
+  DensityBubble,
+  DensityGrouping,
   RingPhase,
 } from '../../core/models/landscape.model';
 
-function makeBubble(overrides: Partial<PositioningBubble> = {}): PositioningBubble {
+function makeBubble(overrides: Partial<DensityBubble> = {}): DensityBubble {
   return {
     label: 'Test MOA',
     group_keys: {},
@@ -39,7 +39,7 @@ function escapeName(name: string): string {
   return name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function buildReadText(list: PositioningBubble[], unit: CountUnit): string {
+function buildReadText(list: DensityBubble[], unit: CountUnit): string {
   if (list.length < 2) return '';
 
   const parts: string[] = [];
@@ -63,12 +63,12 @@ function buildReadText(list: PositioningBubble[], unit: CountUnit): string {
 }
 
 function buildComputeds(
-  initialBubbles: PositioningBubble[] = [],
-  initialGrouping: PositioningGrouping = 'moa',
+  initialBubbles: DensityBubble[] = [],
+  initialGrouping: DensityGrouping = 'moa',
   initialCountUnit: CountUnit = 'assets'
 ) {
-  const bubbles = signal<PositioningBubble[]>(initialBubbles);
-  const grouping = signal<PositioningGrouping>(initialGrouping);
+  const bubbles = signal<DensityBubble[]>(initialBubbles);
+  const grouping = signal<DensityGrouping>(initialGrouping);
   const countUnit = signal<CountUnit>(initialCountUnit);
 
   const groupCount = computed(() => bubbles().length);
@@ -119,9 +119,19 @@ describe('DensityControlsPanelComponent READ', () => {
 
   it('generates crowded + sparse text with mock bubbles', () => {
     const bubbles = [
-      makeBubble({ label: 'PD-1/PD-L1', unit_count: 31, highest_phase_rank: 6, highest_phase: 'LAUNCHED' }),
+      makeBubble({
+        label: 'PD-1/PD-L1',
+        unit_count: 31,
+        highest_phase_rank: 6,
+        highest_phase: 'LAUNCHED',
+      }),
       makeBubble({ label: 'KRAS G12C', unit_count: 4, highest_phase_rank: 3, highest_phase: 'P3' }),
-      makeBubble({ label: 'VEGF', unit_count: 19, highest_phase_rank: 5, highest_phase: 'APPROVED' }),
+      makeBubble({
+        label: 'VEGF',
+        unit_count: 19,
+        highest_phase_rank: 5,
+        highest_phase: 'APPROVED',
+      }),
     ];
     const { readText } = buildComputeds(bubbles);
     const text = readText();
@@ -135,7 +145,12 @@ describe('DensityControlsPanelComponent READ', () => {
 
   it('identifies the sparse opportunity as lowest non-zero unit_count with rank >= 2', () => {
     const bubbles = [
-      makeBubble({ label: 'Big MOA', unit_count: 20, highest_phase_rank: 5, highest_phase: 'APPROVED' }),
+      makeBubble({
+        label: 'Big MOA',
+        unit_count: 20,
+        highest_phase_rank: 5,
+        highest_phase: 'APPROVED',
+      }),
       makeBubble({ label: 'Early MOA', unit_count: 1, highest_phase_rank: 1, highest_phase: 'P1' }),
       makeBubble({ label: 'Mid MOA', unit_count: 3, highest_phase_rank: 2, highest_phase: 'P2' }),
     ];
@@ -227,10 +242,7 @@ describe('DensityControlsPanelComponent STATS', () => {
     expect(groupCount()).toBe(1);
     expect(totalCount()).toBe(5);
 
-    bubbles.set([
-      makeBubble({ unit_count: 5 }),
-      makeBubble({ unit_count: 15 }),
-    ]);
+    bubbles.set([makeBubble({ unit_count: 5 }), makeBubble({ unit_count: 15 })]);
     expect(groupCount()).toBe(2);
     expect(totalCount()).toBe(20);
   });

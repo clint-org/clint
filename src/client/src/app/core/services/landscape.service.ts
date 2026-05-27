@@ -5,10 +5,10 @@ import {
   BullseyeData,
   BullseyeDimension,
   CountUnit,
+  DensityData,
+  DensityGrouping,
   LandscapeFilters,
   LandscapeIndexEntry,
-  PositioningData,
-  PositioningGrouping,
 } from '../models/landscape.model';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
@@ -108,19 +108,19 @@ export class LandscapeService {
     );
   }
 
-  async getPositioningData(
+  async getDensityData(
     spaceId: string,
-    grouping: PositioningGrouping,
+    grouping: DensityGrouping,
     countUnit: CountUnit,
     filters: LandscapeFilters
-  ): Promise<PositioningData> {
+  ): Promise<DensityData> {
     const wireCountUnit = countUnit === 'assets' ? 'products' : countUnit;
     return this.cache.get(
       'get_positioning_data',
       { spaceId, grouping, countUnit, filters },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:positioning`],
+        tags: [`space:${spaceId}:density`],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc('get_positioning_data', {
@@ -143,7 +143,7 @@ export class LandscapeService {
               p_study_types: filters.studyTypes.length ? filters.studyTypes : null,
             })
             .throwOnError();
-          const raw = data as Omit<PositioningData, 'count_unit'> & { count_unit: string };
+          const raw = data as Omit<DensityData, 'count_unit'> & { count_unit: string };
           return {
             ...raw,
             count_unit: (raw.count_unit === 'products' ? 'assets' : raw.count_unit) as CountUnit,

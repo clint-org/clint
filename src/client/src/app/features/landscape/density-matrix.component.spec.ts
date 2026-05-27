@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import type { PositioningBubble, RingPhase } from '../../core/models/landscape.model';
+import type { DensityBubble, RingPhase } from '../../core/models/landscape.model';
 import { computeIntensity, formatFreshness } from './density-matrix.component';
 
 function makeBubble(
   label: string,
   phaseCounts: Partial<Record<RingPhase, number>>,
-  overrides: Partial<PositioningBubble> = {},
-): PositioningBubble {
+  overrides: Partial<DensityBubble> = {}
+): DensityBubble {
   const total = Object.values(phaseCounts).reduce((s, v) => s + (v ?? 0), 0);
   return {
     label,
@@ -140,7 +140,7 @@ describe('DensityMatrixComponent row computation', () => {
   });
 
   it('handles empty bubbles array', () => {
-    const bubbles: PositioningBubble[] = [];
+    const bubbles: DensityBubble[] = [];
     expect(bubbles).toHaveLength(0);
   });
 
@@ -170,9 +170,7 @@ describe('DensityMatrixComponent row computation', () => {
       LAUNCHED: 7,
     });
 
-    const phases: RingPhase[] = [
-      'PRECLIN', 'P1', 'P2', 'P3', 'P4', 'APPROVED', 'LAUNCHED',
-    ];
+    const phases: RingPhase[] = ['PRECLIN', 'P1', 'P2', 'P3', 'P4', 'APPROVED', 'LAUNCHED'];
 
     const cells = phases.map((phase) => ({
       phase,

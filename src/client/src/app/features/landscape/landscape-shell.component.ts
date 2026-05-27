@@ -17,7 +17,7 @@ import {
   LandscapeIndexEntry,
   SpokeGrouping,
   segmentToGrouping,
-  POSITIONING_SEGMENTS,
+  DENSITY_SEGMENTS,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
@@ -97,7 +97,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     }
   });
 
-  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Positioning views. */
+  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Density Matrix views. */
   private readonly subTabEffect = effect(() => {
     const mode = this.viewMode();
     if (mode === 'bullseye') {
@@ -135,7 +135,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         },
       ]);
     } else {
-      // Positioning sub-tabs removed: sidebar GROUP BY in
+      // Density Matrix sub-tabs removed: sidebar GROUP BY in
       // DensityControlsPanelComponent replaces the top-bar tabs.
       this.topbarState.subTabs.set([]);
     }
@@ -171,8 +171,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.extractRouteParams();
 
     // Restore persisted landscape state before reading the URL. restorePersistedState()
-    // writes positioningGrouping, so syncStateFromUrl() must run after it to ensure
-    // the URL wins — otherwise a fresh load of /positioning/by-X shows whichever
+    // writes densityGrouping, so syncStateFromUrl() must run after it to ensure
+    // the URL wins -- otherwise a fresh load of /density-matrix/by-X shows whichever
     // grouping was in sessionStorage as active, and clicking the URL's tab no-ops.
     this.state.init(this.spaceId());
     this.syncStateFromUrl();
@@ -182,7 +182,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.applyQueryParamFilters();
 
     // Sub-tab click handler: bullseye updates spokeGrouping signal directly
-    // (no navigation). Positioning sub-tabs removed (sidebar GROUP BY
+    // (no navigation). Density Matrix sub-tabs removed (sidebar GROUP BY
     // handles navigation now).
     this.topbarState.onSubTabClick.set((value: string) => {
       if (this.viewMode() === 'bullseye') {
@@ -196,12 +196,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.applyQueryParamFilters();
       // Marker selection only makes sense in marker-bearing views
       // (timeline, catalysts). Clear it when entering bullseye /
-      // positioning so a previously-opened drawer doesn't trail along
+      // density-matrix so a previously-opened drawer doesn't trail along
       // into a view where it has no referent. Selection is preserved
       // between timeline <-> catalysts (same markers, different
       // layout) and across same-mode dimension switches.
       const mode = this.viewMode();
-      if (mode === 'bullseye' || mode === 'positioning') {
+      if (mode === 'bullseye' || mode === 'density-matrix') {
         this.state.clearSelection();
       }
     });
@@ -270,15 +270,15 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const parentSegments = child.snapshot.parent?.url.map((s) => s.path) ?? [];
     const allSegments = [...parentSegments, ...segments];
 
-    const posSegment = allSegments.find((s) =>
-      (POSITIONING_SEGMENTS as readonly string[]).includes(s)
+    const densitySegment = allSegments.find((s) =>
+      (DENSITY_SEGMENTS as readonly string[]).includes(s)
     );
 
-    if (allSegments.includes('positioning')) {
-      this.viewMode.set('positioning');
+    if (allSegments.includes('density-matrix')) {
+      this.viewMode.set('density-matrix');
       this.entityId.set(null);
-      if (posSegment) {
-        this.state.positioningGrouping.set(segmentToGrouping(posSegment));
+      if (densitySegment) {
+        this.state.densityGrouping.set(segmentToGrouping(densitySegment));
       }
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');

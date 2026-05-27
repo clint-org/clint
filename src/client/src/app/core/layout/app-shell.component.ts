@@ -413,7 +413,7 @@ export class AppShellComponent implements OnInit {
       route === '' ||
       route === 'timeline' ||
       route.startsWith('bullseye') ||
-      route.startsWith('positioning') ||
+      route.startsWith('density-matrix') ||
       route === 'events' ||
       route === 'intelligence' ||
       route === 'materials' ||
@@ -468,10 +468,10 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['bullseye'],
           },
           {
-            label: 'Positioning',
-            value: 'positioning',
-            active: route.startsWith('positioning'),
-            icon: NAV_ICONS['positioning'],
+            label: 'Density Matrix',
+            value: 'density-matrix',
+            active: route.startsWith('density-matrix'),
+            icon: NAV_ICONS['density-matrix'],
           },
           {
             label: 'Future Catalysts',
@@ -527,7 +527,7 @@ export class AppShellComponent implements OnInit {
     }
   });
 
-  // Sub-tabs pushed by feature pages (e.g., Bullseye dimensions, Positioning groupings)
+  // Sub-tabs pushed by feature pages (e.g., Bullseye dimensions, Density Matrix groupings)
   readonly featureSubTabs = this.topbarState.subTabs;
 
   // Topbar metadata for list pages
@@ -651,8 +651,8 @@ export class AppShellComponent implements OnInit {
           case 'bullseye':
             this.navigateToSpaceRoute('bullseye/by-indication');
             break;
-          case 'positioning':
-            this.navigateToSpaceRoute('positioning/by-moa');
+          case 'density-matrix':
+            this.navigateToSpaceRoute('density-matrix/by-moa');
             break;
           case 'catalysts':
             this.navigateToSpaceRoute('catalysts');

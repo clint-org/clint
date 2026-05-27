@@ -45,15 +45,15 @@ const NAV_SECTIONS: NavSection[] = [
         ],
       },
       {
-        label: 'Positioning',
-        route: 'positioning',
-        icon: NAV_ICONS['positioning'],
+        label: 'Density Matrix',
+        route: 'density-matrix',
+        icon: NAV_ICONS['density-matrix'],
         children: [
-          { label: 'MOA', route: 'positioning/by-moa' },
-          { label: 'Indication', route: 'positioning/by-indication' },
-          { label: 'MOA + Ind.', route: 'positioning/by-moa-indication' },
-          { label: 'Company', route: 'positioning/by-company' },
-          { label: 'ROA', route: 'positioning/by-roa' },
+          { label: 'MOA', route: 'density-matrix/by-moa' },
+          { label: 'Indication', route: 'density-matrix/by-indication' },
+          { label: 'MOA + Ind.', route: 'density-matrix/by-moa-indication' },
+          { label: 'Company', route: 'density-matrix/by-company' },
+          { label: 'ROA', route: 'density-matrix/by-roa' },
         ],
       },
       { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
@@ -247,7 +247,11 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       <div class="sidebar__footer">
         <button
           type="button"
-          [class]="userAvatarUrl() ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent' : 'avatar-btn'"
+          [class]="
+            userAvatarUrl()
+              ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent'
+              : 'avatar-btn'
+          "
           [attr.aria-label]="'User account: ' + userInitials()"
           [pTooltip]="isExpanded() ? '' : 'Account'"
           tooltipPosition="right"

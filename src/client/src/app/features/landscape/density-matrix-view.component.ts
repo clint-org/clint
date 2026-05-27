@@ -12,55 +12,55 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { PositioningBubble, PositioningGrouping } from '../../core/models/landscape.model';
+import { DensityBubble, DensityGrouping } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 import { DensityMatrixComponent, type SortEvent, type SortField } from './density-matrix.component';
 import { DensityControlsPanelComponent } from './density-controls-panel.component';
-import { PositioningDetailPanelComponent } from './positioning-detail-panel.component';
+import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel.component';
 
 @Component({
-  selector: 'app-positioning-view',
+  selector: 'app-density-matrix-view',
   imports: [
     DensityMatrixComponent,
     DensityControlsPanelComponent,
-    PositioningDetailPanelComponent,
+    DensityMatrixDetailPanelComponent,
     SkeletonComponent,
     MessageModule,
     ButtonModule,
   ],
   animations: [slidePanelAnimation],
   template: `
-    @if (positioningData.isLoading()) {
+    @if (densityData.isLoading()) {
       <div
         class="flex h-full items-center justify-center"
         aria-busy="true"
-        aria-label="Loading positioning data"
+        aria-label="Loading density matrix data"
       >
         <app-skeleton w="200px" h="14px" />
       </div>
-    } @else if (positioningData.error()) {
+    } @else if (densityData.error()) {
       <div class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
           <p-message severity="error" [closable]="false">
-            Failed to load positioning data. Please try again.
+            Failed to load density matrix data. Please try again.
           </p-message>
           <p-button
             label="Retry"
             severity="primary"
             size="small"
-            (onClick)="positioningData.reload()"
+            (onClick)="densityData.reload()"
           />
         </div>
       </div>
     } @else {
-      @let data = positioningData.value();
+      @let data = densityData.value();
       @if (data && data.bubbles.length > 0) {
         <div class="flex h-full overflow-auto">
           <app-density-controls-panel
             [bubbles]="data.bubbles"
-            [grouping]="state.positioningGrouping()"
+            [grouping]="state.densityGrouping()"
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout">
@@ -77,11 +77,11 @@ import { PositioningDetailPanelComponent } from './positioning-detail-panel.comp
               />
             </div>
             <div class="landscape-panel-wrap">
-              <app-positioning-detail-panel
+              <app-density-matrix-detail-panel
                 [bubble]="selectedBubble()"
                 [countUnit]="state.countUnit()"
                 [totalBubbles]="data.bubbles.length"
-                [grouping]="state.positioningGrouping()"
+                [grouping]="state.densityGrouping()"
                 (clearSelection)="selectedBubble.set(null)"
                 (openAsset)="onOpenAsset($event)"
                 (openInBullseye)="onOpenInBullseye()"
@@ -100,7 +100,7 @@ import { PositioningDetailPanelComponent } from './positioning-detail-panel.comp
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PositioningViewComponent implements OnInit {
+export class DensityMatrixViewComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
   private readonly route = inject(ActivatedRoute);
   readonly state = inject(LandscapeStateService);
@@ -108,30 +108,30 @@ export class PositioningViewComponent implements OnInit {
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
-  readonly selectedBubble = signal<PositioningBubble | null>(null);
+  readonly selectedBubble = signal<DensityBubble | null>(null);
   readonly sortField = signal<SortField>('total');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
 
   constructor() {
     // Clear selection when grouping, count unit, or filters change
     effect(() => {
-      this.state.positioningGrouping();
+      this.state.densityGrouping();
       this.state.countUnit();
       this.state.filters();
       this.selectedBubble.set(null);
     });
   }
 
-  readonly positioningData = resource({
+  readonly densityData = resource({
     params: () => ({
       spaceId: this.spaceId(),
-      grouping: this.state.positioningGrouping(),
+      grouping: this.state.densityGrouping(),
       countUnit: this.state.countUnit(),
       filters: this.state.filters(),
     }),
     loader: async ({ params }) => {
       if (!params.spaceId) return null;
-      return this.landscapeService.getPositioningData(
+      return this.landscapeService.getDensityData(
         params.spaceId,
         params.grouping,
         params.countUnit,
@@ -153,7 +153,7 @@ export class PositioningViewComponent implements OnInit {
     }
   }
 
-  onBubbleClick(bubble: PositioningBubble): void {
+  onBubbleClick(bubble: DensityBubble): void {
     if (!bubble || this.selectedBubble() === bubble) {
       this.selectedBubble.set(null);
     } else {
@@ -183,15 +183,15 @@ export class PositioningViewComponent implements OnInit {
     ]);
   }
 
-  /** Map positioning grouping to the closest bullseye dimension segment. */
+  /** Map density grouping to the closest bullseye dimension segment. */
   private bullseyeSegment(): string {
-    const map: Record<PositioningGrouping, string> = {
+    const map: Record<DensityGrouping, string> = {
       moa: 'by-moa',
       indication: 'by-indication',
       'moa+indication': 'by-indication',
       company: 'by-company',
       roa: 'by-roa',
     };
-    return map[this.state.positioningGrouping()] ?? 'by-indication';
+    return map[this.state.densityGrouping()] ?? 'by-indication';
   }
 }
