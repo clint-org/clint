@@ -20,10 +20,15 @@ export interface ValidationFailure {
 
 export type ValidationResult = ValidationSuccess | ValidationFailure;
 
+export interface ValidationOptions {
+  skipNameGrounding?: boolean;
+}
+
 export function validateExtraction(
   rawJson: string,
   inventory: InventorySnapshot,
   sourceText: string,
+  options?: ValidationOptions,
 ): ValidationResult {
   let parsed: unknown;
   try {
@@ -169,114 +174,125 @@ export function validateExtraction(
   data.assets.forEach((a, i) => checkExistingId(a, 'asset', i));
   data.trials.forEach((t, i) => checkExistingId(t, 'trial', i));
 
-  // --- Step 5: Name-substring rule ---
+  // --- Step 5: Name-substring rule (skipped when skipNameGrounding is true) ---
 
-  // Track which entities are "grounded" (existing or name-validated new)
   const groundedCompany = new Set<number>();
   const groundedAsset = new Set<number>();
   const groundedTrial = new Set<number>();
 
-  for (let i = 0; i < data.companies.length; i++) {
-    if (isDropped('company', i)) continue;
-    const c = data.companies[i];
-    if (c.match.kind === 'existing') {
-      groundedCompany.add(i);
-    } else if (isNameSubstring(c.match.name, sourceText)) {
-      groundedCompany.add(i);
-    } else {
-      dropped.push({
-        type: 'company',
-        index: i,
-        name: c.match.name,
-        reason: 'name not found in source text',
-      });
-      droppedByTypeIndex.get('company')?.add(i) ??
-        droppedByTypeIndex.set('company', new Set([i]));
+  if (options?.skipNameGrounding) {
+    for (let i = 0; i < data.companies.length; i++) {
+      if (!isDropped('company', i)) groundedCompany.add(i);
     }
-  }
-
-  for (let i = 0; i < data.assets.length; i++) {
-    if (isDropped('asset', i)) continue;
-    const a = data.assets[i];
-    if (a.match.kind === 'existing') {
-      groundedAsset.add(i);
-    } else {
-      const nameOk = isNameSubstring(a.match.name, sourceText);
-      const genericOk =
-        a.generic_name !== null &&
-        isNameSubstring(a.generic_name, sourceText);
-      if (nameOk || genericOk) {
-        groundedAsset.add(i);
+    for (let i = 0; i < data.assets.length; i++) {
+      if (!isDropped('asset', i)) groundedAsset.add(i);
+    }
+    for (let i = 0; i < data.trials.length; i++) {
+      if (!isDropped('trial', i)) groundedTrial.add(i);
+    }
+  } else {
+    for (let i = 0; i < data.companies.length; i++) {
+      if (isDropped('company', i)) continue;
+      const c = data.companies[i];
+      if (c.match.kind === 'existing') {
+        groundedCompany.add(i);
+      } else if (isNameSubstring(c.match.name, sourceText)) {
+        groundedCompany.add(i);
       } else {
         dropped.push({
-          type: 'asset',
+          type: 'company',
           index: i,
-          name: a.name,
-          reason: 'neither name nor generic_name found in source text',
+          name: c.match.name,
+          reason: 'name not found in source text',
         });
-        droppedByTypeIndex.get('asset')?.add(i) ??
-          droppedByTypeIndex.set('asset', new Set([i]));
+        droppedByTypeIndex.get('company')?.add(i) ??
+          droppedByTypeIndex.set('company', new Set([i]));
       }
     }
-  }
 
-  for (let i = 0; i < data.trials.length; i++) {
-    if (isDropped('trial', i)) continue;
-    const t = data.trials[i];
-    if (t.match.kind === 'existing') {
-      groundedTrial.add(i);
-    } else if (isNameSubstring(t.match.name, sourceText)) {
-      groundedTrial.add(i);
-    } else {
-      dropped.push({
-        type: 'trial',
-        index: i,
-        name: t.name,
-        reason: 'name not found in source text',
-      });
-      droppedByTypeIndex.get('trial')?.add(i) ??
-        droppedByTypeIndex.set('trial', new Set([i]));
+    for (let i = 0; i < data.assets.length; i++) {
+      if (isDropped('asset', i)) continue;
+      const a = data.assets[i];
+      if (a.match.kind === 'existing') {
+        groundedAsset.add(i);
+      } else {
+        const nameOk = isNameSubstring(a.match.name, sourceText);
+        const genericOk =
+          a.generic_name !== null &&
+          isNameSubstring(a.generic_name, sourceText);
+        if (nameOk || genericOk) {
+          groundedAsset.add(i);
+        } else {
+          dropped.push({
+            type: 'asset',
+            index: i,
+            name: a.name,
+            reason: 'neither name nor generic_name found in source text',
+          });
+          droppedByTypeIndex.get('asset')?.add(i) ??
+            droppedByTypeIndex.set('asset', new Set([i]));
+        }
+      }
     }
-  }
 
-  for (let i = 0; i < data.markers.length; i++) {
-    if (isDropped('marker', i)) continue;
-    const marker = data.markers[i];
-    const hasGroundedTrial = marker.trial_refs.some((ref) =>
-      groundedTrial.has(ref),
-    );
-    if (!hasGroundedTrial) {
-      dropped.push({
-        type: 'marker',
-        index: i,
-        name: marker.title,
-        reason: 'no trial_refs point to a grounded trial',
-      });
-      droppedByTypeIndex.get('marker')?.add(i) ??
-        droppedByTypeIndex.set('marker', new Set([i]));
+    for (let i = 0; i < data.trials.length; i++) {
+      if (isDropped('trial', i)) continue;
+      const t = data.trials[i];
+      if (t.match.kind === 'existing') {
+        groundedTrial.add(i);
+      } else if (isNameSubstring(t.match.name, sourceText)) {
+        groundedTrial.add(i);
+      } else {
+        dropped.push({
+          type: 'trial',
+          index: i,
+          name: t.name,
+          reason: 'name not found in source text',
+        });
+        droppedByTypeIndex.get('trial')?.add(i) ??
+          droppedByTypeIndex.set('trial', new Set([i]));
+      }
     }
-  }
 
-  for (let i = 0; i < data.events.length; i++) {
-    if (isDropped('event', i)) continue;
-    const event = data.events[i];
-    if (event.anchor.level === 'space') continue;
-    const ref = event.anchor.ref!;
-    const grounded =
-      event.anchor.level === 'company'
-        ? groundedCompany.has(ref)
-        : event.anchor.level === 'asset'
-          ? groundedAsset.has(ref)
-          : groundedTrial.has(ref);
-    if (!grounded) {
-      dropped.push({
-        type: 'event',
-        index: i,
-        name: event.title,
-        reason: `anchor ref ${ref} points to a dropped ${event.anchor.level}`,
-      });
-      droppedByTypeIndex.get('event')?.add(i) ??
-        droppedByTypeIndex.set('event', new Set([i]));
+    for (let i = 0; i < data.markers.length; i++) {
+      if (isDropped('marker', i)) continue;
+      const marker = data.markers[i];
+      const hasGroundedTrial = marker.trial_refs.some((ref) =>
+        groundedTrial.has(ref),
+      );
+      if (!hasGroundedTrial) {
+        dropped.push({
+          type: 'marker',
+          index: i,
+          name: marker.title,
+          reason: 'no trial_refs point to a grounded trial',
+        });
+        droppedByTypeIndex.get('marker')?.add(i) ??
+          droppedByTypeIndex.set('marker', new Set([i]));
+      }
+    }
+
+    for (let i = 0; i < data.events.length; i++) {
+      if (isDropped('event', i)) continue;
+      const event = data.events[i];
+      if (event.anchor.level === 'space') continue;
+      const ref = event.anchor.ref!;
+      const grounded =
+        event.anchor.level === 'company'
+          ? groundedCompany.has(ref)
+          : event.anchor.level === 'asset'
+            ? groundedAsset.has(ref)
+            : groundedTrial.has(ref);
+      if (!grounded) {
+        dropped.push({
+          type: 'event',
+          index: i,
+          name: event.title,
+          reason: `anchor ref ${ref} points to a dropped ${event.anchor.level}`,
+        });
+        droppedByTypeIndex.get('event')?.add(i) ??
+          droppedByTypeIndex.set('event', new Set([i]));
+      }
     }
   }
 

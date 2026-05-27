@@ -131,20 +131,25 @@ interface HierarchicalTree {
         </div>
       </header>
 
-      <!-- Two-pane body -->
-      <div class="grid min-h-0 flex-1 grid-cols-[minmax(280px,1fr)_minmax(400px,2fr)]">
-        <!-- Left pane: source text -->
-        <aside class="overflow-y-auto border-r border-slate-200 bg-slate-50/50 p-4">
-          <h2 class="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
-            Source text
-          </h2>
-          @if (proposal(); as p) {
-            <p
-              class="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"
-              [innerHTML]="highlightedSourceText()"
-            ></p>
-          }
-        </aside>
+      <!-- Two-pane body (single pane for NCT imports: no source text) -->
+      <div
+        class="grid min-h-0 flex-1"
+        [style.gridTemplateColumns]="isNctImport() ? '1fr' : 'minmax(280px,1fr) minmax(400px,2fr)'"
+      >
+        @if (!isNctImport()) {
+          <!-- Left pane: source text -->
+          <aside class="overflow-y-auto border-r border-slate-200 bg-slate-50/50 p-4">
+            <h2 class="font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
+              Source text
+            </h2>
+            @if (proposal(); as p) {
+              <p
+                class="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"
+                [innerHTML]="highlightedSourceText()"
+              ></p>
+            }
+          </aside>
+        }
 
         <!-- Right pane: proposals -->
         <main class="overflow-y-auto p-4">
@@ -266,6 +271,18 @@ interface HierarchicalTree {
                     @if (erStatus) {
                       <span class="text-xs text-slate-400">{{ erStatus }}</span>
                     }
+                    @if (isNctImport()) {
+                      <span
+                        class="inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-cyan-700 border border-cyan-200"
+                        >CT.gov</span
+                      >
+                      @if (isObservationalTrial(idx)) {
+                        <span
+                          class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-700 border border-amber-200"
+                          >Observational</span
+                        >
+                      }
+                    }
                   }
 
                   <!-- Generic name for assets -->
@@ -276,159 +293,199 @@ interface HierarchicalTree {
                     }
                   }
 
-                  <!-- Evidence pill -->
+                  <!-- Evidence / Source pill -->
                   @let erEvidence = entityEvidence(type, idx);
                   @if (erEvidence) {
+                    @if (isNctImport()) {
+                      @let erNctIds = nctIdFromEvidence(type, idx);
+                      @if (erNctIds) {
+                        <a
+                          [href]="ctgovUrl(erNctIds.split(',')[0].trim())"
+                          target="_blank"
+                          rel="noopener"
+                          class="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-600 hover:bg-slate-200 hover:underline"
+                          pTooltip="View on ClinicalTrials.gov"
+                          tooltipPosition="top"
+                          (click)="$event.stopPropagation()"
+                        >
+                          Source: {{ erNctIds }}<i class="pi pi-external-link text-[8px]"></i>
+                        </a>
+                      } @else {
+                        <span
+                          class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                        >
+                          Source
+                        </span>
+                      }
+                    } @else {
+                      <button
+                        class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                        (mouseenter)="highlightedEvidence.set({ text: erEvidence, pinned: false })"
+                        (mouseleave)="clearHighlightIfNotPinned()"
+                        (click)="highlightedEvidence.set({ text: erEvidence, pinned: true })"
+                        pTooltip="Click to pin highlight in source pane"
+                        tooltipPosition="top"
+                      >
+                        Evidence
+                      </button>
+                    }
+                  }
+
+                  @if (isNctImport() && type === 'trials') {
                     <button
-                      class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-                      (mouseenter)="highlightedEvidence.set({ text: erEvidence, pinned: false })"
-                      (mouseleave)="clearHighlightIfNotPinned()"
-                      (click)="highlightedEvidence.set({ text: erEvidence, pinned: true })"
-                      pTooltip="Click to pin highlight in source pane"
+                      class="ml-auto shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      (click)="toggleCollapsed(erk)"
+                      [pTooltip]="isCollapsed(erk) ? 'Expand' : 'Collapse'"
                       tooltipPosition="top"
                     >
-                      Evidence
+                      <i
+                        class="pi text-[10px]"
+                        [class.pi-chevron-right]="isCollapsed(erk)"
+                        [class.pi-chevron-down]="!isCollapsed(erk)"
+                      ></i>
                     </button>
                   }
                 </div>
 
-                <!-- Fuzzy alternates for match override -->
-                @let erAlts = fuzzyAlternatesFor(type, idx);
-                @if (erAlts.length > 0) {
-                  <div class="mt-1 flex flex-wrap gap-1">
-                    @let erOverride = getMatchOverride(erk);
-                    <button
-                      class="rounded px-1.5 py-0.5 text-[10px]"
-                      [class.bg-brand-100]="!erOverride"
-                      [class.text-brand-700]="!erOverride"
-                      [class.bg-slate-100]="!!erOverride"
-                      [class.text-slate-500]="!!erOverride"
-                      (click)="clearMatchOverride(erk)"
-                    >
-                      LLM pick
-                    </button>
-                    @for (alt of erAlts; track alt.id) {
+                @if (!isCollapsed(erk)) {
+                  <!-- Fuzzy alternates for match override -->
+                  @let erAlts = fuzzyAlternatesFor(type, idx);
+                  @if (erAlts.length > 0) {
+                    <div class="mt-1 flex flex-wrap gap-1">
+                      @let erOverride = getMatchOverride(erk);
                       <button
                         class="rounded px-1.5 py-0.5 text-[10px]"
-                        [class.bg-brand-100]="erOverride === alt.id"
-                        [class.text-brand-700]="erOverride === alt.id"
-                        [class.bg-slate-100]="erOverride !== alt.id"
-                        [class.text-slate-500]="erOverride !== alt.id"
-                        (click)="setMatchOverride(erk, alt.id)"
-                        [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                        tooltipPosition="top"
+                        [class.bg-brand-100]="!erOverride"
+                        [class.text-brand-700]="!erOverride"
+                        [class.bg-slate-100]="!!erOverride"
+                        [class.text-slate-500]="!!erOverride"
+                        (click)="clearMatchOverride(erk)"
                       >
-                        {{ alt.name }}
+                        LLM pick
                       </button>
-                    }
-                    <button
-                      class="rounded px-1.5 py-0.5 text-[10px]"
-                      [class.bg-brand-100]="erOverride === '__new__'"
-                      [class.text-brand-700]="erOverride === '__new__'"
-                      [class.bg-slate-100]="erOverride !== '__new__'"
-                      [class.text-slate-500]="erOverride !== '__new__'"
-                      (click)="setMatchOverride(erk, '__new__')"
-                    >
-                      Create new
-                    </button>
-                  </div>
-                }
-
-                <!-- Trial-specific: CT.gov enrichment -->
-                @if (type === 'trials') {
-                  @let erCtgovStatus = trialCtgovStatus(idx);
-                  @if (erCtgovStatus !== 'skipped') {
-                    <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
-                      <div class="flex items-center gap-2">
-                        <span
-                          class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                          >ClinicalTrials.gov</span
+                      @for (alt of erAlts; track alt.id) {
+                        <button
+                          class="rounded px-1.5 py-0.5 text-[10px]"
+                          [class.bg-brand-100]="erOverride === alt.id"
+                          [class.text-brand-700]="erOverride === alt.id"
+                          [class.bg-slate-100]="erOverride !== alt.id"
+                          [class.text-slate-500]="erOverride !== alt.id"
+                          (click)="setMatchOverride(erk, alt.id)"
+                          [pTooltip]="'Score: ' + alt.score.toFixed(2)"
+                          tooltipPosition="top"
                         >
-                        @if (erCtgovStatus === 'matched') {
-                          @let erCandidates = ctgovCandidatesFor(idx);
-                          <span
-                            class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                            >{{ erCandidates.length }}
-                            {{ erCandidates.length === 1 ? 'match' : 'matches' }}</span
-                          >
-                        } @else if (erCtgovStatus === 'no_matches') {
-                          <span
-                            class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                            >No matches</span
-                          >
-                        } @else if (erCtgovStatus === 'failed') {
-                          <span
-                            class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                            >Lookup failed</span
-                          >
-                        }
-                      </div>
-
-                      @let erCands = ctgovCandidatesFor(idx);
-                      @if (erCands.length > 0) {
-                        <div class="mt-1.5 flex flex-col gap-1">
-                          @let erCurrentNct = getTrialNctOverride(idx);
-                          @for (c of erCands; track c.nct_id) {
-                            <label
-                              class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                              [class.bg-white]="erCurrentNct === c.nct_id"
-                              [class.ring-1]="erCurrentNct === c.nct_id"
-                              [class.ring-brand-300]="erCurrentNct === c.nct_id"
-                            >
-                              <input
-                                type="radio"
-                                [name]="'nct_' + idx"
-                                [value]="c.nct_id"
-                                [checked]="erCurrentNct === c.nct_id"
-                                (change)="setTrialNctOverride(idx, c.nct_id)"
-                                class="accent-brand-600"
-                              />
-                              <a
-                                [href]="ctgovUrl(c.nct_id)"
-                                target="_blank"
-                                rel="noopener"
-                                class="font-mono text-brand-600 hover:underline"
-                                (click)="$event.stopPropagation()"
-                                >{{ c.nct_id }}</a
-                              >
-                              <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                              <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                                >{{ c.phase }} / {{ c.status }}</span
-                              >
-                            </label>
-                          }
-                        </div>
+                          {{ alt.name }}
+                        </button>
                       }
+                      <button
+                        class="rounded px-1.5 py-0.5 text-[10px]"
+                        [class.bg-brand-100]="erOverride === '__new__'"
+                        [class.text-brand-700]="erOverride === '__new__'"
+                        [class.bg-slate-100]="erOverride !== '__new__'"
+                        [class.text-slate-500]="erOverride !== '__new__'"
+                        (click)="setMatchOverride(erk, '__new__')"
+                      >
+                        Create new
+                      </button>
                     </div>
                   }
 
-                  @if (trialMissingAsset(entitiesOf('trials')[idx])) {
-                    <p-message
-                      severity="warn"
-                      [closable]="false"
-                      styleClass="mt-1.5 w-full text-xs"
-                    >
-                      Asset required: link this trial to an asset above.
-                    </p-message>
-                  }
-                }
+                  <!-- Trial-specific: CT.gov enrichment -->
+                  @if (type === 'trials') {
+                    @let erCtgovStatus = trialCtgovStatus(idx);
+                    @if (erCtgovStatus !== 'skipped') {
+                      <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                            >ClinicalTrials.gov</span
+                          >
+                          @if (erCtgovStatus === 'matched') {
+                            @let erCandidates = ctgovCandidatesFor(idx);
+                            <span
+                              class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+                              >{{ erCandidates.length }}
+                              {{ erCandidates.length === 1 ? 'match' : 'matches' }}</span
+                            >
+                          } @else if (erCtgovStatus === 'no_matches') {
+                            <span
+                              class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                              >No matches</span
+                            >
+                          } @else if (erCtgovStatus === 'failed') {
+                            <span
+                              class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+                              >Lookup failed</span
+                            >
+                          }
+                        </div>
 
-                <!-- Inline field edits -->
-                @let erFields = editableFields(type, idx);
-                @if (erFields.length > 0) {
-                  <div class="mt-1.5 flex flex-wrap gap-2">
-                    @for (f of erFields; track f.field) {
-                      <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                        <span class="font-mono uppercase">{{ f.field }}:</span>
-                        <input
-                          type="text"
-                          class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                          [value]="getFieldEdit(erk, f.field) ?? f.value"
-                          (input)="onFieldEdit(erk, f.field, $event)"
-                        />
-                      </label>
+                        @let erCands = ctgovCandidatesFor(idx);
+                        @if (erCands.length > 0) {
+                          <div class="mt-1.5 flex flex-col gap-1">
+                            @let erCurrentNct = getTrialNctOverride(idx);
+                            @for (c of erCands; track c.nct_id) {
+                              <label
+                                class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
+                                [class.bg-white]="erCurrentNct === c.nct_id"
+                                [class.ring-1]="erCurrentNct === c.nct_id"
+                                [class.ring-brand-300]="erCurrentNct === c.nct_id"
+                              >
+                                <input
+                                  type="radio"
+                                  [name]="'nct_' + idx"
+                                  [value]="c.nct_id"
+                                  [checked]="erCurrentNct === c.nct_id"
+                                  (change)="setTrialNctOverride(idx, c.nct_id)"
+                                  class="accent-brand-600"
+                                />
+                                <a
+                                  [href]="ctgovUrl(c.nct_id)"
+                                  target="_blank"
+                                  rel="noopener"
+                                  class="font-mono text-brand-600 hover:underline"
+                                  (click)="$event.stopPropagation()"
+                                  >{{ c.nct_id }}</a
+                                >
+                                <span class="truncate text-slate-500">{{ c.brief_title }}</span>
+                                <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
+                                  >{{ c.phase }} / {{ c.status }}</span
+                                >
+                              </label>
+                            }
+                          </div>
+                        }
+                      </div>
                     }
-                  </div>
+
+                    @if (trialMissingAsset(entitiesOf('trials')[idx])) {
+                      <p-message
+                        severity="warn"
+                        [closable]="false"
+                        styleClass="mt-1.5 w-full text-xs"
+                      >
+                        Asset required: link this trial to an asset above.
+                      </p-message>
+                    }
+                  }
+
+                  <!-- Inline field edits -->
+                  @let erFields = editableFields(type, idx);
+                  @if (erFields.length > 0) {
+                    <div class="mt-1.5 flex flex-wrap gap-2">
+                      @for (f of erFields; track f.field) {
+                        <label class="flex items-center gap-1 text-[11px] text-slate-500">
+                          <span class="font-mono uppercase">{{ f.field }}:</span>
+                          <input
+                            type="text"
+                            class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
+                            [value]="getFieldEdit(erk, f.field) ?? f.value"
+                            (input)="onFieldEdit(erk, f.field, $event)"
+                          />
+                        </label>
+                      }
+                    </div>
+                  }
                 }
               </div>
             </div>
@@ -673,12 +730,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly aiCallId = signal('');
 
   readonly proposal = computed(() => this.sourceImportService.proposal());
+  readonly isNctImport = computed(() => this.proposal()?.source_kind === 'nct');
 
   readonly selections = signal<Record<string, boolean>>({});
   readonly matchOverrides = signal<Record<string, string>>({});
   readonly fieldEdits = signal<Record<string, Record<string, string>>>({});
   readonly nctOverrides = signal<Record<number, string>>({});
 
+  readonly collapsedRows = signal<Record<string, boolean>>({});
   readonly committing = signal(false);
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
@@ -1104,6 +1163,27 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     }));
   }
 
+  protected isCollapsed(key: string): boolean {
+    return this.collapsedRows()[key] === true;
+  }
+
+  protected toggleCollapsed(key: string): void {
+    this.collapsedRows.update((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  protected isObservationalTrial(index: number): boolean {
+    const entity = this.entitiesOf('trials')[index];
+    if (!entity) return false;
+    return entity['asset_ref'] == null;
+  }
+
+  protected nctIdFromEvidence(type: EntityType, index: number): string | null {
+    const evidence = this.entityEvidence(type, index);
+    if (!evidence) return null;
+    const match = evidence.match(/^CT\.gov:\s*(NCT\d{8}(?:,\s*NCT\d{8})*)$/i);
+    return match ? match[1] : null;
+  }
+
   protected clearHighlightIfNotPinned(): void {
     const current = this.highlightedEvidence();
     if (current && !current.pinned) {
@@ -1213,6 +1293,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       }
     }
     this.selections.set(sel);
+
+    if (this.isNctImport()) {
+      const collapsed: Record<string, boolean> = {};
+      const trials = p.trials ?? [];
+      for (let i = 0; i < trials.length; i++) {
+        collapsed[`trials_${i}`] = true;
+      }
+      this.collapsedRows.set(collapsed);
+    }
   }
 
   private buildCommitPayload(): {

@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   OnInit,
   signal,
@@ -42,8 +41,6 @@ import {
 import { BriefResult, computeBrief } from './brief-window';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
-import { ImportFromSourceDialogComponent } from '../source-import/import-from-source-dialog.component';
-import { SourceImportService } from '../source-import/source-import.service';
 
 interface FeedFilter {
   key: 'all' | IntelligenceEntityType;
@@ -100,7 +97,6 @@ interface InventoryTotals {
     SkeletonComponent,
     RecentMaterialsWidgetComponent,
     WhatChangedWidgetComponent,
-    ImportFromSourceDialogComponent,
   ],
   templateUrl: './engagement-landing.component.html',
   host: { class: 'block h-full overflow-y-auto bg-white' },
@@ -115,7 +111,6 @@ export class EngagementLandingComponent implements OnInit {
   private readonly tenantService = inject(TenantService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
   private readonly brand = inject(BrandContextService);
-  private readonly sourceImportService = inject(SourceImportService);
   private readonly supabase = inject(SupabaseService);
   protected readonly spaceRole = inject(SpaceRoleService);
 
@@ -131,16 +126,14 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
   readonly feedFilter = signal<'all' | IntelligenceEntityType>('all');
-  readonly importDialogVisible = signal(false);
   readonly aiEnabled = signal(false);
   readonly isAgencyBrand = computed(() => this.brand.kind() === 'agency');
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
-  private readonly _openFromPalette = effect(() => {
-    if (this.sourceImportService.dialogRequested()) {
-      this.importDialogVisible.set(true);
-      this.sourceImportService.dialogRequested.set(false);
-    }
+  readonly isEmptySpace = computed(() => {
+    const s = this.stats();
+    if (!s) return false;
+    return s.active_trials === 0 && s.companies === 0;
   });
 
   readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
@@ -390,6 +383,10 @@ export class EngagementLandingComponent implements OnInit {
     void this.loadAll();
   }
 
+  navigateToImport(): void {
+    void this.router.navigate(['import'], { relativeTo: this.route });
+  }
+
   setFeedFilter(key: FeedFilter['key']): void {
     this.feedFilter.set(key);
   }
@@ -474,17 +471,30 @@ export class EngagementLandingComponent implements OnInit {
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
     if (tenantRes.status === 'fulfilled') {
       this.tenant.set(tenantRes.value);
-      this.supabase.client
+      const { data } = await this.supabase.client
         .from('ai_config')
         .select('ai_enabled')
         .eq('tenant_id', tid)
-        .maybeSingle()
-        .then(({ data }) => this.aiEnabled.set(data?.ai_enabled === true));
+        .maybeSingle();
+      this.aiEnabled.set(data?.ai_enabled === true);
     }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);
     } else {
       this.loadError.set(formatError(statsRes.reason, 'Failed to load engagement stats.'));
+    }
+
+    // Redirect editors on empty spaces to the import page
+    const statsVal = this.stats();
+    if (
+      statsVal &&
+      statsVal.active_trials === 0 &&
+      statsVal.companies === 0 &&
+      this.spaceRole.canEdit() &&
+      this.aiEnabled()
+    ) {
+      void this.router.navigate(['/t', tid, 's', sid, 'import']);
+      return;
     }
     if (dashRes.status === 'fulfilled') {
       this.upcoming.set(extractUpcoming(dashRes.value.companies, 90));

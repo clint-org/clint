@@ -6,6 +6,8 @@ import { presignPut, presignGet } from './r2';
 import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
 import { drainR2DeleteQueue, type R2DeleteClient } from './r2-drain/queue';
 import { handleSourceExtract } from './source-extract/handler';
+import { handleNctResolve } from './source-extract/nct-handler';
+import { handleAiHealth } from './source-extract/ai-health';
 import { handleBrandfetchLookup } from './brandfetch';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
@@ -71,6 +73,12 @@ export default {
     }
     if (url.pathname === '/api/source/extract' && request.method === 'POST') {
       return handleSourceExtract(request, env, cors);
+    }
+    if (url.pathname === '/api/source/nct-resolve' && request.method === 'POST') {
+      return handleNctResolve(request, env, cors);
+    }
+    if (url.pathname === '/api/ai/health' && request.method === 'GET') {
+      return handleAiHealth(env, cors);
     }
     if (url.pathname === '/api/brandfetch/lookup' && request.method === 'POST') {
       const auth = request.headers.get('Authorization');
