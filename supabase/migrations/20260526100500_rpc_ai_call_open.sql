@@ -39,14 +39,23 @@ grant execute on function public.ai_call_open(text, uuid, uuid, uuid, text, text
 comment on function public.ai_call_open(text, uuid, uuid, uuid, text, text, text) is
   'Worker-callable. Opens a pending ai_calls row before the LLM call. Returns the ai_call_id.';
 
--- smoke test
+-- smoke test (reads actual vault value so it works on both local and remote)
 do $$
 declare
+  v_secret text;
   v_tid uuid;
   v_sid uuid;
   v_uid uuid;
   v_id  uuid;
 begin
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'extract_source_worker_secret';
+  if v_secret is null then
+    raise notice 'smoke: no extract_source_worker_secret in vault, skipping ai_call_open smoke';
+    return;
+  end if;
+
   select t.id, s.id into v_tid, v_sid
     from public.tenants t
     join public.spaces s on s.tenant_id = t.id
@@ -63,7 +72,7 @@ begin
   end if;
 
   v_id := public.ai_call_open(
-    'local-dev-extract-source-secret',
+    v_secret,
     v_tid, v_sid, v_uid,
     'claude-sonnet-4-6', 'source_extract'
   );

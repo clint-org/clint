@@ -59,15 +59,24 @@ grant execute on function public.ai_call_close(text, uuid, text, int, int, numer
 comment on function public.ai_call_close(text, uuid, text, int, int, numeric, int, jsonb, jsonb, text, text) is
   'Worker-callable. Closes a pending ai_calls row with outcome, tokens, cost, output.';
 
--- smoke test
+-- smoke test (reads actual vault value so it works on both local and remote)
 do $$
 declare
+  v_secret text;
   v_tid uuid;
   v_sid uuid;
   v_uid uuid;
   v_id  uuid;
   v_threw boolean := false;
 begin
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'extract_source_worker_secret';
+  if v_secret is null then
+    raise notice 'smoke: no extract_source_worker_secret in vault, skipping ai_call_close smoke';
+    return;
+  end if;
+
   select t.id, s.id into v_tid, v_sid
     from public.tenants t
     join public.spaces s on s.tenant_id = t.id
@@ -79,13 +88,13 @@ begin
   end if;
 
   v_id := public.ai_call_open(
-    'local-dev-extract-source-secret',
+    v_secret,
     v_tid, v_sid, v_uid,
     'claude-sonnet-4-6', 'source_extract'
   );
 
   perform public.ai_call_close(
-    'local-dev-extract-source-secret',
+    v_secret,
     v_id, 'success',
     p_prompt_tokens := 100,
     p_completion_tokens := 50,
@@ -100,7 +109,7 @@ begin
 
   begin
     perform public.ai_call_close(
-      'local-dev-extract-source-secret',
+      v_secret,
       v_id, 'success'
     );
   exception when sqlstate '22023' then

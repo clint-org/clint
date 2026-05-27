@@ -106,13 +106,22 @@ grant execute on function public.ai_call_preflight(text, uuid, uuid) to anon;
 comment on function public.ai_call_preflight(text, uuid, uuid) is
   'Worker-callable. Read-only check: ai_enabled, daily cost cap, per-user rate limits. Returns {allowed, reason, remaining_*}.';
 
--- smoke test
+-- smoke test (reads actual vault value so it works on both local and remote)
 do $$
 declare
+  v_secret text;
   v_tid    uuid;
   v_uid    uuid;
   v_result jsonb;
 begin
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'extract_source_worker_secret';
+  if v_secret is null then
+    raise notice 'smoke: no extract_source_worker_secret in vault, skipping ai_call_preflight smoke';
+    return;
+  end if;
+
   select id into v_tid from public.tenants limit 1;
   select id into v_uid from auth.users limit 1;
   if v_tid is null or v_uid is null then
@@ -121,7 +130,7 @@ begin
   end if;
 
   v_result := public.ai_call_preflight(
-    'local-dev-extract-source-secret', v_tid, v_uid
+    v_secret, v_tid, v_uid
   );
   assert (v_result->>'allowed')::boolean = false,
     format('expected not allowed (no ai_config row), got %s', v_result);
@@ -131,7 +140,7 @@ begin
     on conflict (tenant_id) do update set ai_enabled = true;
 
   v_result := public.ai_call_preflight(
-    'local-dev-extract-source-secret', v_tid, v_uid
+    v_secret, v_tid, v_uid
   );
   assert (v_result->>'allowed')::boolean = true,
     format('expected allowed, got %s', v_result);
