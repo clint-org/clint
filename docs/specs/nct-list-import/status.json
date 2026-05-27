@@ -1,7 +1,7 @@
 {
   "specId": "spec-2026-009",
-  "status": "approved",
-  "branch": null,
+  "status": "in-progress",
+  "branch": "onboarding-wizard-spaces",
   "tasks": {
     "T0": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
