@@ -22,6 +22,7 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { TopbarStateService } from '../services/topbar-state.service';
 import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
+import { SpaceRoleService } from '../services/space-role.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -62,6 +63,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [pinned]="sidebarPinned()"
         [activeRoute]="activeSpaceRoute()"
         [hasSpace]="!!spaceId()"
+        [canEdit]="spaceRole.canEdit()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"
@@ -329,6 +331,7 @@ export class AppShellComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   readonly topbarState = inject(TopbarStateService);
   readonly onboardingTooltip = inject(OnboardingTooltipService);
+  protected readonly spaceRole = inject(SpaceRoleService);
   protected readonly appVersion = APP_VERSION;
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
@@ -502,6 +505,7 @@ export class AppShellComponent implements OnInit {
           },
         ];
       case 'manage':
+        if (!this.spaceRole.canEdit()) return [];
         return [
           {
             label: 'Companies',

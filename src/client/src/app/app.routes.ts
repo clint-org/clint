@@ -12,6 +12,7 @@ import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
+import { editGuard } from './core/guards/edit.guard';
 
 export const routes: Routes = [
   {
@@ -322,6 +323,7 @@ export const routes: Routes = [
           // Manage routes (unchanged)
           {
             path: 'manage/companies',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/companies/company-list.component').then(
                 (m) => m.CompanyListComponent
@@ -329,6 +331,7 @@ export const routes: Routes = [
           },
           {
             path: 'manage/assets',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/assets/asset-list.component').then(
                 (m) => m.AssetListComponent
@@ -336,6 +339,7 @@ export const routes: Routes = [
           },
           {
             path: 'manage/trials',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/trials/trial-list.component').then(
                 (m) => m.TrialListComponent
