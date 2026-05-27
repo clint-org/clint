@@ -34,7 +34,7 @@ export interface SourceImportProposals {
 
 export interface SourceImportProposal {
   ai_call_id: string;
-  source_kind: 'url' | 'text';
+  source_kind: 'url' | 'text' | 'nct';
   source_url: string | null;
   source_text: string;
   source_text_hash: string;

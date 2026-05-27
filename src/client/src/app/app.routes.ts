@@ -12,6 +12,7 @@ import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
+import { importGuard } from './core/guards/import.guard';
 
 export const routes: Routes = [
   {
@@ -186,6 +187,14 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/engagement-landing/engagement-landing.component').then(
                 (m) => m.EngagementLandingComponent
+              ),
+          },
+          {
+            path: 'import',
+            canActivate: [importGuard],
+            loadComponent: () =>
+              import('./features/source-import/import-page.component').then(
+                (m) => m.ImportPageComponent
               ),
           },
           {
