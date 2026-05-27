@@ -38,12 +38,12 @@ export class PaletteCommandRegistry {
           ),
       },
       {
-        id: 'go-positioning',
-        label: 'Go to Positioning',
+        id: 'go-density-matrix',
+        label: 'Go to Density Matrix',
         hint: 'Navigation',
         run: () =>
           void this.router.navigateByUrl(
-            `/t/${currentTenantId}/s/${currentSpaceId}/positioning/by-moa`
+            `/t/${currentTenantId}/s/${currentSpaceId}/density-matrix/by-moa`
           ),
       },
       {

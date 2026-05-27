@@ -240,13 +240,19 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
         /by-moa/:entityId   -> /
         /by-roa   -> /
         /by-roa/:entityId   -> /
-      /positioning
+      /density-matrix
         (empty)   -> by-moa
-        /by-moa   PositioningViewComponent
-        /by-indication   PositioningViewComponent
-        /by-moa-indication   PositioningViewComponent
-        /by-company   PositioningViewComponent
-        /by-roa   PositioningViewComponent
+        /by-moa   DensityMatrixViewComponent
+        /by-indication   DensityMatrixViewComponent
+        /by-moa-indication   DensityMatrixViewComponent
+        /by-company   DensityMatrixViewComponent
+        /by-roa   DensityMatrixViewComponent
+      /positioning   -> density-matrix
+      /positioning/by-moa   -> density-matrix/by-moa
+      /positioning/by-indication   -> density-matrix/by-indication
+      /positioning/by-moa-indication   -> density-matrix/by-moa-indication
+      /positioning/by-company   -> density-matrix/by-company
+      /positioning/by-roa   -> density-matrix/by-roa
       /catalysts   CatalystsPageComponent
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
@@ -709,7 +715,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 
 <!-- AUTO-GEN:DRIFT -->
 **Services:**
-- `AnnotationService`
 - `AuditEventService`
 - `ChangeEventService`
 - `EventCategoryService`

@@ -68,8 +68,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -173,6 +173,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
 | `update_agency_branding` | agencies | - |
 | `update_material` | material_links, materials | - |
@@ -625,8 +626,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
 - `_guard_ctgov_locked_phase_fields`
-- `_humanize_phase`
-- `_humanize_status`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
@@ -651,7 +650,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `create_event`
 - `create_marker`
 - `create_trial`
-- `delete_change_event_annotation`
 - `delete_material`
 - `export_audit_events_csv`
 - `finalize_material`
@@ -666,7 +664,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_company_detail_with_intelligence`
 - `get_event_detail`
 - `get_event_thread`
-- `get_events_page_data`
 - `get_intelligence_notes_for_asset`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
@@ -710,8 +707,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `reset_asset_indication_status`
 - `restore_space`
 - `search_palette`
+- `tenant_owner_update_ai_config`
 - `update_material`
-- `upsert_change_event_annotation`
 - `validate_material_links_payload`
 
 **Edge functions in `supabase/functions/` not documented:**

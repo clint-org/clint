@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { Tooltip } from 'primeng/tooltip';
 
 import {
-  PositioningBubble,
-  PositioningGrouping,
-  PositioningAsset,
+  DensityBubble,
+  DensityGrouping,
+  DensityAsset,
 } from '../../core/models/landscape.model';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -16,7 +16,7 @@ import {
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
-const GROUPING_LABEL: Record<PositioningGrouping, string> = {
+const GROUPING_LABEL: Record<DensityGrouping, string> = {
   moa: 'MOA group',
   indication: 'Indication group',
   'moa+indication': 'MOA + Indication group',
@@ -25,12 +25,12 @@ const GROUPING_LABEL: Record<PositioningGrouping, string> = {
 };
 
 /**
- * Bullseye destination per positioning grouping. Mirrors
- * `positioning-view.bullseyeSegment()`. The `moa+indication` row
+ * Bullseye destination per density grouping. Mirrors
+ * `density-matrix-view.bullseyeSegment()`. The `moa+indication` row
  * intentionally drops MOA and lands on Indication; the tooltip names
  * the resolved dimension so the user can predict the navigation.
  */
-const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
+const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
   moa: 'mechanism of action',
   indication: 'indication',
   'moa+indication': 'indication',
@@ -39,8 +39,7 @@ const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
 };
 
 @Component({
-  selector: 'app-positioning-detail-panel',
-  standalone: true,
+  selector: 'app-density-matrix-detail-panel',
   imports: [
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,
@@ -111,12 +110,12 @@ const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
           </app-detail-panel-entity-list>
         </app-detail-panel-section>
       } @else {
-        <app-detail-panel-empty-state prompt="Click a bubble to see details">
+        <app-detail-panel-empty-state prompt="Click a row to see details">
           <p class="mt-2 text-[13px] text-slate-700">
             <span class="text-base font-semibold tabular-nums text-slate-900">{{
               totalBubbles()
             }}</span>
-            {{ totalBubbles() === 1 ? 'group' : 'groups' }} plotted
+            {{ totalBubbles() === 1 ? 'group' : 'groups' }} in the matrix
           </p>
         </app-detail-panel-empty-state>
       }
@@ -139,18 +138,18 @@ const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PositioningDetailPanelComponent {
-  readonly bubble = input<PositioningBubble | null>(null);
+export class DensityMatrixDetailPanelComponent {
+  readonly bubble = input<DensityBubble | null>(null);
   readonly countUnit = input<string>('assets');
   readonly totalBubbles = input<number>(0);
-  readonly grouping = input<PositioningGrouping>('moa');
+  readonly grouping = input<DensityGrouping>('moa');
 
   readonly clearSelection = output<void>();
   readonly openAsset = output<string>();
   readonly openInBullseye = output<void>();
 
   readonly headerLabel = computed(() =>
-    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Positioning · overview'
+    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Density . overview'
   );
 
   readonly openInBullseyeTooltip = computed(
@@ -170,7 +169,7 @@ export class PositioningDetailPanelComponent {
     return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 
-  readonly sortedAssets = computed<PositioningAsset[]>(() => {
+  readonly sortedAssets = computed<DensityAsset[]>(() => {
     const b = this.bubble();
     if (!b) return [];
     return [...b.products].sort((a, x) => x.highest_phase_rank - a.highest_phase_rank);

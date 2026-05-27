@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="googlebot" content="noindex, nofollow, noarchive">
+<title>Competitive Density Matrix -- Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --brand-50:  #f0fdfa;
+    --brand-100: #ccfbf1;
+    --brand-200: #99f6e4;
+    --brand-300: #5eead4;
+    --brand-400: #2dd4bf;
+    --brand-500: #14b8a6;
+    --brand-600: #0d9488;
+    --brand-700: #0f766e;
+    --brand-800: #115e59;
+    --brand-900: #134e4a;
+    --slate-50:  #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --red-50:    #fef2f2;
+    --red-100:   #fee2e2;
+    --red-200:   #fecaca;
+    --red-600:   #dc2626;
+    --red-700:   #b91c1c;
+    --amber-50:  #fffbeb;
+    --amber-100: #fef3c7;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --green-600: #16a34a;
+    --emerald-600: #059669;
+    --cyan-600:  #0891b2;
+    --violet-600:#7c3aed;
+    --violet-700:#6d28d9;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --panel-width: 340px;
+    --sidebar-width: 240px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--slate-50);
+    color: var(--slate-700);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ================================================================
+     ACCENT BAR (3px teal at top)
+     ================================================================ */
+  .accent-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 3px; background: var(--brand-600); z-index: 100;
+  }
+
+  /* ================================================================
+     APP LAYOUT
+     ================================================================ */
+  .app { display: flex; flex-direction: column; height: 100vh; padding-top: 3px; }
+
+  /* ================================================================
+     TOP BAR (matches real app: logo, space selector, view tabs, dimension tabs)
+     ================================================================ */
+  .topbar {
+    display: flex; align-items: center;
+    padding: 0 16px;
+    height: 44px;
+    background: white;
+    border-bottom: 1px solid var(--slate-200);
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .topbar-brand {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--slate-800);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-weight: 700; font-size: 11px;
+    color: white; letter-spacing: 0.06em;
+    margin-right: 4px; flex-shrink: 0;
+  }
+  .topbar-space {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 500; color: var(--slate-800);
+    padding: 4px 8px; cursor: pointer;
+    border-radius: 4px;
+  }
+  .topbar-space:hover { background: var(--slate-100); }
+  .topbar-space .chevron { font-size: 9px; color: var(--slate-400); }
+  .topbar-sep {
+    width: 1px; height: 20px; background: var(--slate-200);
+    margin: 0 8px; flex-shrink: 0;
+  }
+  .topbar-cmd {
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--slate-400); font-size: 14px; cursor: pointer;
+    border: 1px solid var(--slate-200);
+  }
+  .topbar-cmd:hover { border-color: var(--slate-300); color: var(--slate-600); }
+  .topbar-section-label {
+    font-size: 14px; font-weight: 600; color: var(--slate-900);
+    margin: 0 8px 0 4px;
+  }
+
+  /* View tabs (Home, Timeline, Bullseye, Positioning, Future Catalysts) */
+  .view-tabs { display: flex; align-items: center; gap: 0; margin-right: auto; }
+  .view-tab {
+    display: flex; align-items: center; gap: 5px;
+    padding: 10px 12px; font-size: 13px; color: var(--slate-500);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: color 0.12s;
+    white-space: nowrap;
+  }
+  .view-tab:hover { color: var(--slate-800); }
+  .view-tab.active {
+    color: var(--slate-900); font-weight: 500;
+    border-bottom-color: var(--brand-600);
+  }
+  .view-tab .tab-icon { font-size: 13px; color: var(--slate-400); }
+  .view-tab.active .tab-icon { color: var(--brand-600); }
+
+  /* Dimension sub-tabs (MOA, Indication, Company, ROA) */
+  .dim-tabs { display: flex; align-items: center; gap: 2px; }
+  .dim-tab {
+    padding: 5px 12px; font-size: 12px; font-weight: 500;
+    color: var(--slate-500); cursor: pointer;
+    border: 1px solid transparent; border-radius: 0;
+    transition: all 0.12s;
+  }
+  .dim-tab:hover { color: var(--slate-800); }
+  .dim-tab.active {
+    color: var(--slate-900); font-weight: 600;
+    border-color: var(--slate-800); background: white;
+  }
+
+  /* ================================================================
+     FILTER BAR (row of dropdowns, matches real app)
+     ================================================================ */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border-bottom: 1px solid var(--slate-200);
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .filter-drop {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 10px; font-size: 13px; color: var(--slate-600);
+    background: white; border: 1px solid var(--slate-200);
+    cursor: pointer; border-radius: 0;
+    white-space: nowrap;
+    transition: border-color 0.12s;
+  }
+  .filter-drop:hover { border-color: var(--slate-400); }
+  .filter-drop .drop-chevron { font-size: 8px; color: var(--slate-400); margin-left: 4px; }
+
+  /* ================================================================
+     BODY LAYOUT: sidebar + chart + detail panel
+     ================================================================ */
+  .body-layout { flex: 1; display: flex; min-height: 0; }
+
+  /* ================================================================
+     LEFT SIDEBAR (GROUP BY, COUNT, READ, STATS, LEGEND)
+     ================================================================ */
+  .left-sidebar {
+    width: var(--sidebar-width);
+    background: white;
+    border-right: 1px solid var(--slate-200);
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .sidebar-section {
+    margin-bottom: 20px;
+  }
+  .sidebar-section-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--slate-400); letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* GROUP BY items */
+  .group-btn {
+    display: block; width: 100%; text-align: left;
+    padding: 7px 10px; font-size: 13px; font-weight: 400;
+    color: var(--slate-600); background: white;
+    border: 1px solid var(--slate-200); cursor: pointer;
+    margin-bottom: 4px;
+    transition: all 0.12s;
+  }
+  .group-btn:hover { border-color: var(--slate-400); color: var(--slate-900); }
+  .group-btn.active {
+    background: var(--brand-50); border-color: var(--brand-600);
+    color: var(--brand-700); font-weight: 600;
+  }
+
+  /* COUNT toggle */
+  .count-toggle { display: flex; gap: 0; }
+  .count-opt {
+    flex: 1; text-align: center;
+    padding: 5px 8px; font-size: 12px; font-weight: 500;
+    color: var(--slate-600); background: white;
+    border: 1px solid var(--slate-200); cursor: pointer;
+    transition: all 0.12s;
+    margin-right: -1px;
+  }
+  .count-opt:first-child { border-radius: 0; }
+  .count-opt:last-child { border-radius: 0; margin-right: 0; }
+  .count-opt:hover { color: var(--slate-900); z-index: 1; }
+  .count-opt.active {
+    background: var(--brand-50); border-color: var(--brand-600);
+    color: var(--brand-700); font-weight: 600; z-index: 1;
+  }
+
+  /* READ section */
+  .read-line {
+    font-size: 13px; color: var(--slate-700); line-height: 1.5;
+  }
+  .read-line strong { color: var(--slate-900); font-weight: 600; }
+  .read-line .brand-accent { color: var(--brand-700); font-weight: 600; }
+
+  /* STATS row */
+  .stats-row {
+    display: flex; gap: 12px;
+  }
+  .stat-box {
+    flex: 1; padding: 8px 10px;
+    border: 1px solid var(--slate-200);
+  }
+  .stat-value {
+    font-size: 20px; font-weight: 700; color: var(--slate-900);
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px; color: var(--slate-400); margin-top: 2px;
+  }
+
+  /* LEGEND */
+  .legend-list { display: flex; flex-direction: column; gap: 5px; }
+  .legend-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--slate-600);
+  }
+  .legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-scale-row {
+    display: flex; align-items: center; gap: 2px;
+    margin-top: 8px;
+  }
+  .legend-swatch {
+    width: 20px; height: 10px;
+  }
+  .legend-scale-label {
+    font-family: var(--font-mono); font-size: 9px; color: var(--slate-400);
+    margin: 0 2px;
+  }
+  .legend-opportunity-swatch {
+    width: 14px; height: 10px;
+    outline: 2px solid var(--brand-400);
+    outline-offset: -2px;
+    background: white;
+  }
+
+  /* ================================================================
+     CHART AREA (center)
+     ================================================================ */
+  .chart-area {
+    flex: 1; min-width: 0;
+    padding: 16px 20px 16px;
+    overflow-y: auto; overflow-x: hidden;
+  }
+
+  /* Matrix header */
+  .matrix-header {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+  }
+  .matrix-title {
+    font-size: 14px; font-weight: 600; color: var(--slate-900);
+  }
+  .matrix-subtitle {
+    font-size: 12px; color: var(--slate-400);
+  }
+  .matrix-freshness {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px; color: var(--slate-400);
+    letter-spacing: 0.06em;
+  }
+
+  /* Matrix table */
+  .matrix-wrap {
+    background: white;
+    border: 1px solid var(--slate-200);
+    overflow: hidden;
+  }
+
+  table.matrix {
+    width: 100%; border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  table.matrix col.row-label { width: 200px; }
+  table.matrix col.phase-col { width: auto; }
+  table.matrix col.total-col { width: 64px; }
+
+  table.matrix thead th {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--slate-500); letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 9px 6px; text-align: center;
+    border-bottom: 2px solid var(--slate-200);
+    background: var(--slate-50);
+    position: sticky; top: 0; z-index: 2;
+  }
+  table.matrix thead th:first-child {
+    text-align: left; padding-left: 14px;
+  }
+  table.matrix thead th:last-child {
+    border-left: 2px solid var(--slate-200);
+  }
+  table.matrix thead th .phase-dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 3px; vertical-align: middle; position: relative; top: -0.5px;
+  }
+  table.matrix thead th.sortable { cursor: pointer; user-select: none; }
+  table.matrix thead th.sortable:hover { color: var(--slate-700); }
+  .sort-arrow { font-size: 8px; margin-left: 2px; opacity: 0.5; }
+
+  table.matrix tbody tr {
+    cursor: pointer; transition: background 0.1s;
+  }
+  table.matrix tbody tr:hover { background: var(--slate-50); }
+  table.matrix tbody tr.selected { background: var(--brand-50); }
+  table.matrix tbody tr.selected td:first-child {
+    border-left: 3px solid var(--brand-600);
+    padding-left: 11px;
+  }
+
+  table.matrix tbody td {
+    padding: 0; height: 40px;
+    border-bottom: 1px solid var(--slate-100);
+    text-align: center; vertical-align: middle;
+  }
+  table.matrix tbody td:first-child {
+    text-align: left; padding-left: 14px;
+    border-left: 3px solid transparent;
+  }
+  table.matrix tbody td:last-child {
+    border-left: 2px solid var(--slate-200);
+  }
+
+  .row-label-text {
+    font-size: 13px; font-weight: 500; color: var(--slate-800);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block; max-width: 180px;
+  }
+  .row-label-sub {
+    font-size: 10px; color: var(--slate-400); margin-top: 1px;
+    font-family: var(--font-mono);
+  }
+
+  /* Heat cells */
+  .heat-cell {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; padding: 3px;
+  }
+  .heat-pip {
+    width: 100%; height: 100%; display: flex;
+    align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    transition: all 0.12s;
+  }
+  .heat-pip.intensity-1 { background: var(--brand-50); color: var(--brand-700); }
+  .heat-pip.intensity-2 { background: var(--brand-100); color: var(--brand-800); }
+  .heat-pip.intensity-3 { background: var(--brand-200); color: var(--brand-900); }
+  .heat-pip.intensity-4 { background: var(--amber-50); color: var(--amber-600); }
+  .heat-pip.intensity-5 { background: var(--amber-100); color: var(--amber-600); }
+  .heat-pip.intensity-6 { background: var(--red-50); color: var(--red-600); }
+  .heat-pip.intensity-7 { background: var(--red-100); color: var(--red-700); }
+  .heat-pip.intensity-8 { background: var(--red-200); color: var(--red-700); }
+
+  .heat-pip.empty { background: transparent; }
+  .heat-pip.empty::after {
+    content: ''; width: 3px; height: 3px; border-radius: 50%;
+    background: var(--slate-200);
+  }
+
+  .heat-pip.opportunity {
+    outline: 2px solid var(--brand-400);
+    outline-offset: -2px;
+  }
+
+  .total-cell {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+    color: var(--slate-900); font-variant-numeric: tabular-nums;
+  }
+
+  /* Annotation badge on row */
+  .annotation-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px; color: var(--brand-700);
+    margin-left: 6px; vertical-align: middle;
+  }
+  .annotation-badge-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--brand-500);
+  }
+
+  /* ================================================================
+     DETAIL PANEL (right, matches real app structure)
+     ================================================================ */
+  .detail-panel {
+    width: var(--panel-width); flex-shrink: 0;
+    background: white; border-left: 1px solid var(--slate-200);
+    display: flex; flex-direction: column;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  /* Panel close row */
+  .panel-close-row {
+    display: flex; justify-content: flex-end;
+    padding: 10px 14px 0;
+    flex-shrink: 0;
+  }
+  .panel-close {
+    width: 24px; height: 24px; border: none; background: none;
+    color: var(--slate-400); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel-close:hover { color: var(--slate-600); }
+
+  /* Panel header label (uppercase) */
+  .panel-header-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--brand-700); letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 8px 20px 4px;
+  }
+
+  .panel-body { flex: 1; overflow-y: auto; }
+
+  /* Panel title (large) */
+  .panel-title {
+    font-size: 18px; font-weight: 700; color: var(--slate-900);
+    padding: 0 20px 4px; line-height: 1.2;
+  }
+
+  /* Panel section label */
+  .panel-section-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--slate-400); letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 14px 20px 6px;
+    border-top: 1px solid var(--slate-100);
+  }
+
+  /* Panel stats */
+  .panel-stats {
+    display: flex; gap: 20px; padding: 10px 20px 14px;
+  }
+  .panel-stat-value {
+    font-size: 18px; font-weight: 700; color: var(--slate-900);
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  }
+  .panel-stat-label {
+    font-size: 11px; color: var(--slate-400); margin-top: 1px;
+  }
+
+  /* Annotation block in panel */
+  .annotation-block {
+    margin: 0 20px 12px; padding: 10px 12px;
+    background: var(--brand-50); border-left: 3px solid var(--brand-600);
+    font-size: 12px; color: var(--slate-700); line-height: 1.5;
+  }
+  .annotation-author {
+    font-family: var(--font-mono); font-size: 10px; color: var(--brand-700);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* Phase breakdown bars */
+  .phase-breakdown { padding: 0 20px 12px; }
+  .phase-breakdown-title {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--slate-400); letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .phase-bar-row {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+  }
+  .phase-bar-label {
+    width: 48px; font-family: var(--font-mono); font-size: 10px;
+    font-weight: 500; color: var(--slate-500); text-align: right;
+    flex-shrink: 0;
+  }
+  .phase-bar-track {
+    flex: 1; height: 12px; background: var(--slate-100);
+    position: relative;
+  }
+  .phase-bar-fill {
+    position: absolute; top: 0; bottom: 0; left: 0;
+  }
+  .phase-bar-count {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+    color: var(--slate-700); width: 20px; text-align: right; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Asset rows */
+  .asset-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 20px; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .asset-row:hover { background: var(--slate-50); }
+  .asset-info { flex: 1; min-width: 0; }
+  .asset-name {
+    font-size: 13px; font-weight: 500; color: var(--slate-800);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
+  }
+  .asset-generic {
+    font-weight: 400; font-style: italic; color: var(--slate-400);
+  }
+  .asset-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--slate-400);
+    margin-top: 1px;
+  }
+  .asset-phase-badge {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+    padding: 2px 5px; letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .asset-arrow {
+    color: var(--slate-300); font-size: 11px; flex-shrink: 0;
+    transition: color 0.12s;
+  }
+  .asset-row:hover .asset-arrow { color: var(--brand-600); }
+
+  /* Panel footer */
+  .panel-footer {
+    padding: 12px 20px; border-top: 1px solid var(--slate-100);
+    flex-shrink: 0;
+  }
+  .panel-footer-btn {
+    width: 100%; padding: 8px 12px;
+    font-size: 12px; font-weight: 500; color: var(--slate-700);
+    background: white; border: 1px solid var(--slate-200);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.12s;
+  }
+  .panel-footer-btn:hover {
+    border-color: var(--brand-600); color: var(--brand-700);
+  }
+  .panel-version {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+    color: var(--brand-700); background: var(--brand-50);
+    padding: 2px 6px; letter-spacing: 0.06em;
+    margin-left: 8px;
+  }
+
+  /* ================================================================
+     EMPTY PANEL STATE
+     ================================================================ */
+  .panel-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 20px; text-align: center;
+  }
+  .panel-empty-prompt {
+    font-size: 13px; color: var(--slate-400);
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="accent-bar"></div>
+
+<div class="app">
+
+  <!-- ============================================================
+       TOP BAR: brand, space, view tabs, dimension sub-tabs
+       ============================================================ -->
+  <div class="topbar">
+    <div class="topbar-brand">BI</div>
+    <div class="topbar-space">Obesity Test <span class="chevron">&#9662;</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-cmd" title="Command palette">&#8984;K</div>
+
+    <div class="topbar-section-label">Landscape</div>
+
+    <div class="view-tabs">
+      <div class="view-tab">
+        <span class="tab-icon">&#8962;</span> Home
+      </div>
+      <div class="view-tab">
+        <span class="tab-icon">&#10070;</span> Timeline
+      </div>
+      <div class="view-tab">
+        <span class="tab-icon">&#9678;</span> Bullseye
+      </div>
+      <div class="view-tab active">
+        <span class="tab-icon">&#9638;</span> Positioning
+      </div>
+      <div class="view-tab">
+        <span class="tab-icon">&#10023;</span> Future Catalysts
+      </div>
+    </div>
+
+    <!-- Dimension sub-tabs for density view -->
+    <div class="dim-tabs">
+      <div class="dim-tab active">MOA</div>
+      <div class="dim-tab">Indication</div>
+      <div class="dim-tab">MOA + Ind</div>
+      <div class="dim-tab">Company</div>
+      <div class="dim-tab">ROA</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FILTER BAR: dropdown row
+       ============================================================ -->
+  <div class="filter-bar">
+    <div class="filter-drop">Company <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">Asset <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">MOA <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">ROA <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">Phase <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">Status <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">Study type <span class="drop-chevron">&#9662;</span></div>
+    <div class="filter-drop">Category <span class="drop-chevron">&#9662;</span></div>
+  </div>
+
+  <!-- ============================================================
+       BODY: left sidebar + chart + detail panel
+       ============================================================ -->
+  <div class="body-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="left-sidebar">
+
+      <!-- GROUP BY -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Group By</div>
+        <button class="group-btn active">Mechanism of Action</button>
+        <button class="group-btn">Indication</button>
+        <button class="group-btn">MOA + Indication</button>
+        <button class="group-btn">Company</button>
+        <button class="group-btn">Route of Administration</button>
+      </div>
+
+      <!-- COUNT -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Count</div>
+        <div class="count-toggle">
+          <button class="count-opt active">Assets</button>
+          <button class="count-opt">Trials</button>
+          <button class="count-opt">Companies</button>
+        </div>
+      </div>
+
+      <!-- READ -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Read</div>
+        <div class="read-line">
+          <strong>PD-1/PD-L1</strong> most crowded (31 assets) |
+          <span class="brand-accent">KRAS G12C</span> sparse at P3 (opportunity)
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Stats</div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-value">14</div>
+            <div class="stat-label">groups</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value">89</div>
+            <div class="stat-label">assets</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Legend</div>
+        <div class="legend-list">
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#cbd5e1"></div> Preclinical
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#94a3b8"></div> Phase 1
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#0891b2"></div> Phase 2
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#0d9488"></div> Phase 3
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#7c3aed"></div> Phase 4
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#6d28d9"></div> Approved
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#059669"></div> Launched
+          </div>
+        </div>
+
+        <div class="legend-scale-row">
+          <span class="legend-scale-label">1</span>
+          <div class="legend-swatch" style="background:var(--brand-50)"></div>
+          <div class="legend-swatch" style="background:var(--brand-100)"></div>
+          <div class="legend-swatch" style="background:var(--brand-200)"></div>
+          <div class="legend-swatch" style="background:var(--amber-50)"></div>
+          <div class="legend-swatch" style="background:var(--amber-100)"></div>
+          <div class="legend-swatch" style="background:var(--red-50)"></div>
+          <div class="legend-swatch" style="background:var(--red-100)"></div>
+          <div class="legend-swatch" style="background:var(--red-200)"></div>
+          <span class="legend-scale-label">8+</span>
+        </div>
+
+        <div class="legend-row" style="margin-top:8px">
+          <div class="legend-opportunity-swatch"></div>
+          <span style="font-size:11px">Opportunity zone</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- CHART AREA (center) -->
+    <div class="chart-area">
+
+      <div class="matrix-header">
+        <div class="matrix-title">Competitive Density by Mechanism of Action</div>
+        <div class="matrix-subtitle">14 groups across 7 phases</div>
+        <div class="matrix-freshness">Updated 2h ago</div>
+      </div>
+
+      <div class="matrix-wrap">
+        <table class="matrix" role="grid" aria-label="Competitive density heatmap by mechanism of action and development phase">
+          <colgroup>
+            <col class="row-label">
+            <col class="phase-col"><col class="phase-col"><col class="phase-col"><col class="phase-col">
+            <col class="phase-col"><col class="phase-col"><col class="phase-col">
+            <col class="total-col">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="sortable">Mechanism of Action <span class="sort-arrow">&#9660;</span></th>
+              <th><span class="phase-dot" style="background:#cbd5e1"></span>Pre</th>
+              <th><span class="phase-dot" style="background:#94a3b8"></span>P1</th>
+              <th><span class="phase-dot" style="background:#0891b2"></span>P2</th>
+              <th><span class="phase-dot" style="background:#0d9488"></span>P3</th>
+              <th><span class="phase-dot" style="background:#7c3aed"></span>P4</th>
+              <th><span class="phase-dot" style="background:#6d28d9"></span>App</th>
+              <th><span class="phase-dot" style="background:#059669"></span>Lnch</th>
+              <th class="sortable">Total <span class="sort-arrow">&#9660;</span></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <tr class="selected" onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">PD-1 / PD-L1 Inhibitors<span class="annotation-badge"><span class="annotation-badge-dot"></span>1</span></span>
+                <div class="row-label-sub">7 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-3">4</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-5">6</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-7">8</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-4">5</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-3">4</div></div></td>
+              <td class="total-cell">31</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">VEGF / VEGFR Inhibitors</span>
+                <div class="row-label-sub">5 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-4">5</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-3">4</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td class="total-cell">19</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">CDK4/6 Inhibitors</span>
+                <div class="row-label-sub">4 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-3">4</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td class="total-cell">15</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">EGFR Inhibitors</span>
+                <div class="row-label-sub">4 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td class="total-cell">14</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">ADC (Antibody-Drug Conjugate)</span>
+                <div class="row-label-sub">6 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-3">4</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">13</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">Bispecific T-cell Engagers</span>
+                <div class="row-label-sub">4 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-2">3</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">10</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">PARP Inhibitors</span>
+                <div class="row-label-sub">3 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td class="total-cell">9</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">PI3K Inhibitors</span>
+                <div class="row-label-sub">3 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">7</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">CAR-T Cell Therapy</span>
+                <div class="row-label-sub">3 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">6</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">mRNA Vaccines (Oncology)</span>
+                <div class="row-label-sub">2 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">2</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">5</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">KRAS G12C Inhibitors</span>
+                <div class="row-label-sub">3 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">4</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">TIGIT Inhibitors</span>
+                <div class="row-label-sub">2 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">3</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">LAG-3 Inhibitors</span>
+                <div class="row-label-sub">2 companies</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">2</td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td>
+                <span class="row-label-text">CEACAM5 Targeting</span>
+                <div class="row-label-sub">1 company</div>
+              </td>
+              <td><div class="heat-cell"><div class="heat-pip intensity-1 opportunity">1</div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td><div class="heat-cell"><div class="heat-pip empty"></div></div></td>
+              <td class="total-cell">1</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- DETAIL PANEL (right, matches bullseye panel structure) -->
+    <div class="detail-panel">
+      <div class="panel-close-row">
+        <button class="panel-close" title="Close">&times;</button>
+      </div>
+
+      <div class="panel-header-label">MOA Group</div>
+
+      <div class="panel-body">
+        <div class="panel-title">PD-1 / PD-L1 Inhibitors</div>
+
+        <div class="panel-stats">
+          <div>
+            <div class="panel-stat-value">31</div>
+            <div class="panel-stat-label">assets</div>
+          </div>
+          <div>
+            <div class="panel-stat-value">7</div>
+            <div class="panel-stat-label">companies</div>
+          </div>
+          <div>
+            <div class="panel-stat-value">47</div>
+            <div class="panel-stat-label">trials</div>
+          </div>
+        </div>
+
+        <!-- Stout annotation -->
+        <div class="annotation-block">
+          <div class="annotation-author">Stout Strategic Note</div>
+          Most crowded MOA in this landscape. Watch for Merck's sNDA filing in Q3 2026 and the BMS combination readout. Differentiation now hinges on IO+chemo vs IO+IO combinations.
+        </div>
+
+        <!-- Phase breakdown -->
+        <div class="phase-breakdown">
+          <div class="phase-breakdown-title">Phase Distribution</div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">Pre</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:9.7%;background:#cbd5e1"></div></div>
+            <span class="phase-bar-count">3</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">P1</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:12.9%;background:#94a3b8"></div></div>
+            <span class="phase-bar-count">4</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">P2</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:19.4%;background:#0891b2"></div></div>
+            <span class="phase-bar-count">6</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">P3</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:25.8%;background:#0d9488"></div></div>
+            <span class="phase-bar-count">8</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">P4</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:3.2%;background:#7c3aed"></div></div>
+            <span class="phase-bar-count">1</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">Appr</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:16.1%;background:#6d28d9"></div></div>
+            <span class="phase-bar-count">5</span>
+          </div>
+          <div class="phase-bar-row">
+            <span class="phase-bar-label">Lnch</span>
+            <div class="phase-bar-track"><div class="phase-bar-fill" style="width:12.9%;background:#059669"></div></div>
+            <span class="phase-bar-count">4</span>
+          </div>
+        </div>
+
+        <!-- Assets -->
+        <div class="panel-section-label">Assets (31)</div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Keytruda <span class="asset-generic">(pembrolizumab)</span></span>
+            <div class="asset-meta"><span>Merck</span> <span>12 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#059669;color:white">LNCH</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Opdivo <span class="asset-generic">(nivolumab)</span></span>
+            <div class="asset-meta"><span>BMS</span> <span>9 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#059669;color:white">LNCH</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Tecentriq <span class="asset-generic">(atezolizumab)</span></span>
+            <div class="asset-meta"><span>Roche</span> <span>7 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#059669;color:white">LNCH</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Imfinzi <span class="asset-generic">(durvalumab)</span></span>
+            <div class="asset-meta"><span>AstraZeneca</span> <span>6 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#059669;color:white">LNCH</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Libtayo <span class="asset-generic">(cemiplimab)</span></span>
+            <div class="asset-meta"><span>Regeneron</span> <span>4 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#6d28d9;color:white">APPR</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Jemperli <span class="asset-generic">(dostarlimab)</span></span>
+            <div class="asset-meta"><span>GSK</span> <span>3 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#6d28d9;color:white">APPR</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Tyvyt <span class="asset-generic">(sintilimab)</span></span>
+            <div class="asset-meta"><span>Innovent</span> <span>3 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#0d9488;color:white">P3</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row">
+          <div class="asset-info">
+            <span class="asset-name">Tislelizumab</span>
+            <div class="asset-meta"><span>BeiGene</span> <span>2 trials</span></div>
+          </div>
+          <span class="asset-phase-badge" style="background:#0d9488;color:white">P3</span>
+          <span class="asset-arrow">&rarr;</span>
+        </div>
+        <div class="asset-row" style="opacity:0.5;pointer-events:none;padding:5px 20px">
+          <span style="font-size:12px;color:var(--slate-400)">+ 23 more assets</span>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <button class="panel-footer-btn" style="flex:1">
+            Open in bullseye &rarr;
+          </button>
+          <span class="panel-version">DEV v0.0.1</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function selectRow(tr) {
+  document.querySelectorAll('table.matrix tbody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+}
+</script>
+
+</body>
+</html>
