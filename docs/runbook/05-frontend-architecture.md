@@ -522,7 +522,7 @@ Global CSS-based entrance animations imported via `styles.css`. Angular handles 
 - **`.animate-content-enter`** -- fade + subtle 6px lift (250ms). For page-level content blocks.
 - **`.animate-fade-in`** -- simple opacity fade (200ms). For lighter entrance needs.
 - **`.animate-stagger`** -- apply to parent; children animate sequentially with 30ms delays (capped at 8 children / 210ms to stay authoritative, not playful).
-- **PrimeNG overrides** -- dialog gets a subtle scale-up entrance; toast messages use a cleaner slide transition. `AppComponent` configures toast to slide from the right via `showTransformOptions`.
+- **PrimeNG overrides** -- toast messages use a cleaner slide transition. `AppComponent` configures toast to slide from the right via `showTransformOptions`. Dialogs rely on PrimeNG's built-in enter animation (no custom CSS override).
 - **Reduced motion** -- `@media (prefers-reduced-motion: reduce)` disables all custom animations and transitions.
 
 ## Models
