@@ -1,0 +1,13 @@
+{
+  "spec_id": "spec-2026-competitive-density-matrix",
+  "status": "draft",
+  "branch": null,
+  "updatedAt": "2026-05-27T00:00:00Z",
+  "tasks": {
+    "rpc": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "model": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "matrix": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "controls": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "view": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+  }
+}
