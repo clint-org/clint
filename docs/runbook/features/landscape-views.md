@@ -19,15 +19,15 @@ Key components:
 - **LandscapeFilterBar**: shared filter bar for cross-view scope filters. Group-by toggle lives in the controls panel, not the filter bar.
 - **LandscapeStateService**: persists `spokeGrouping` signal to sessionStorage alongside filters.
 
-## Positioning
+## Density Matrix
 
-The Positioning view renders a competitive density matrix: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the 7 development phases, and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/positioning` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render positioning sub-tabs).
+The Density Matrix view renders a competitive density heatmap: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the 7 development phases, and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/density-matrix` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render density sub-tabs). Legacy `/positioning/*` routes redirect to `/density-matrix/*`.
 
 ## Capabilities
 
 ```yaml
 - id: landscape-shell
-  summary: Shared landscape shell hosting Timeline, Bullseye, Positioning, and Future Catalysts tabs with cross-tab filter and detail-panel continuity.
+  summary: Shared landscape shell hosting Timeline, Bullseye, Density Matrix, and Future Catalysts tabs with cross-tab filter and detail-panel continuity.
   routes:
     - /t/:tenantId
   rpcs: []
@@ -108,15 +108,15 @@ The Positioning view renders a competitive density matrix: rows are the grouping
   user_facing: true
   role: viewer
   status: active
-- id: positioning-overview
-  summary: Competitive density heatmap at /positioning. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and density LEGEND.
+- id: density-matrix
+  summary: Competitive density heatmap at /density-matrix. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and density LEGEND. Legacy /positioning/* routes redirect here.
   routes:
-    - /t/:tenantId/s/:spaceId/positioning
-    - /t/:tenantId/s/:spaceId/positioning/by-company
-    - /t/:tenantId/s/:spaceId/positioning/by-moa
-    - /t/:tenantId/s/:spaceId/positioning/by-roa
-    - /t/:tenantId/s/:spaceId/positioning/by-indication
-    - /t/:tenantId/s/:spaceId/positioning/by-moa-indication
+    - /t/:tenantId/s/:spaceId/density-matrix
+    - /t/:tenantId/s/:spaceId/density-matrix/by-company
+    - /t/:tenantId/s/:spaceId/density-matrix/by-moa
+    - /t/:tenantId/s/:spaceId/density-matrix/by-roa
+    - /t/:tenantId/s/:spaceId/density-matrix/by-indication
+    - /t/:tenantId/s/:spaceId/density-matrix/by-moa-indication
   rpcs:
     - get_positioning_data
   tables:
