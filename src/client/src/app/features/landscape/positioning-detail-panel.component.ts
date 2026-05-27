@@ -111,12 +111,12 @@ const BULLSEYE_TARGET_LABEL: Record<PositioningGrouping, string> = {
           </app-detail-panel-entity-list>
         </app-detail-panel-section>
       } @else {
-        <app-detail-panel-empty-state prompt="Click a bubble to see details">
+        <app-detail-panel-empty-state prompt="Click a row to see details">
           <p class="mt-2 text-[13px] text-slate-700">
             <span class="text-base font-semibold tabular-nums text-slate-900">{{
               totalBubbles()
             }}</span>
-            {{ totalBubbles() === 1 ? 'group' : 'groups' }} plotted
+            {{ totalBubbles() === 1 ? 'group' : 'groups' }} in the matrix
           </p>
         </app-detail-panel-empty-state>
       }

@@ -64,7 +64,7 @@ import { PositioningDetailPanelComponent } from './positioning-detail-panel.comp
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout">
-            <div class="landscape-chart-wrap min-w-0 min-h-0 overflow-hidden">
+            <div class="flex-1 min-w-0 min-h-0 overflow-auto">
               <app-density-matrix
                 [bubbles]="data.bubbles"
                 [countUnit]="state.countUnit()"
