@@ -1,0 +1,15 @@
+{
+  "specId": "spec-2026-009",
+  "status": "approved",
+  "branch": null,
+  "tasks": {
+    "T0": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T3": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T4": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T5": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T6": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+  },
+  "updatedAt": "2026-05-27T00:00:00Z"
+}
