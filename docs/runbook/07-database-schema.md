@@ -18,6 +18,26 @@ The trial change feed introduces five new tables that together replace the wide 
 
 `trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. 36 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
 
+### change_event_annotations
+
+Analyst notes attached to detected change events. One annotation per change event (upsert semantics). The annotation is the deliverable for the advisory use case: analysts attach context to detected CT.gov changes so the intelligence team can record their read on each signal.
+
+```sql
+change_event_annotations (
+  id               uuid PRIMARY KEY,
+  change_event_id  uuid NOT NULL REFERENCES trial_change_events(id) ON DELETE CASCADE,
+  space_id         uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+  body             text NOT NULL,
+  created_by       uuid REFERENCES auth.users(id),   -- set by _set_created_by trigger
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now(),
+  updated_by       uuid REFERENCES auth.users(id),   -- set by _set_updated_audit trigger
+  CONSTRAINT uq_annotations_change_event_id UNIQUE (change_event_id)
+)
+```
+
+The UNIQUE constraint on `change_event_id` enforces at most one annotation per change event. RPCs `upsert_change_event_annotation` and `delete_change_event_annotation` handle CRUD with SECURITY INVOKER (RLS does the access check). Audit columns `created_by` and `updated_by` are set server-side by the existing `_set_created_by` / `_set_updated_audit` triggers.
+
 ## Schema Diagram
 
 Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraints on the local Supabase database. Run `npm run docs:arch` from `src/client/` to regenerate. Tables without any FK relationship render as empty boxes so they remain visible.
@@ -27,6 +47,10 @@ Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraint
 erDiagram
   AGENCIES ||--o{ AGENCY_INVITES : "agency_id"
   AGENCIES ||--o{ AGENCY_MEMBERS : "agency_id"
+  SOURCE_DOCUMENTS ||--o{ AI_CALLS : "source_doc_id"
+  SPACES ||--o{ AI_CALLS : "space_id"
+  TENANTS ||--o{ AI_CALLS : "tenant_id"
+  TENANTS ||--o{ AI_CONFIG : "tenant_id"
   ASSETS ||--o{ ASSET_INDICATIONS : "asset_id"
   INDICATIONS ||--o{ ASSET_INDICATIONS : "indication_id"
   SPACES ||--o{ ASSET_INDICATIONS : "space_id"
@@ -35,7 +59,11 @@ erDiagram
   ASSETS ||--o{ ASSET_ROUTES_OF_ADMINISTRATION : "asset_id"
   ROUTES_OF_ADMINISTRATION ||--o{ ASSET_ROUTES_OF_ADMINISTRATION : "roa_id"
   COMPANIES ||--o{ ASSETS : "company_id"
+  SOURCE_DOCUMENTS ||--o{ ASSETS : "source_doc_id"
   SPACES ||--o{ ASSETS : "space_id"
+  TRIAL_CHANGE_EVENTS ||--o{ CHANGE_EVENT_ANNOTATIONS : "change_event_id"
+  SPACES ||--o{ CHANGE_EVENT_ANNOTATIONS : "space_id"
+  SOURCE_DOCUMENTS ||--o{ COMPANIES : "source_doc_id"
   SPACES ||--o{ COMPANIES : "space_id"
   CONDITIONS ||--o{ CONDITION_INDICATION_MAP : "condition_id"
   INDICATIONS ||--o{ CONDITION_INDICATION_MAP : "indication_id"
@@ -48,6 +76,7 @@ erDiagram
   ASSETS ||--o{ EVENTS : "asset_id"
   EVENT_CATEGORIES ||--o{ EVENTS : "category_id"
   COMPANIES ||--o{ EVENTS : "company_id"
+  SOURCE_DOCUMENTS ||--o{ EVENTS : "source_doc_id"
   SPACES ||--o{ EVENTS : "space_id"
   EVENT_THREADS ||--o{ EVENTS : "thread_id"
   TRIALS ||--o{ EVENTS : "trial_id"
@@ -60,6 +89,7 @@ erDiagram
   MARKER_CATEGORIES ||--o{ MARKER_TYPES : "category_id"
   SPACES ||--o{ MARKER_TYPES : "space_id"
   MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
+  SOURCE_DOCUMENTS ||--o{ MARKERS : "source_doc_id"
   SPACES ||--o{ MARKERS : "space_id"
   MATERIALS ||--o{ MATERIAL_LINKS : "material_id"
   SPACES ||--o{ MATERIALS : "space_id"
@@ -69,6 +99,7 @@ erDiagram
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
   SPACES ||--o{ ROUTES_OF_ADMINISTRATION : "space_id"
+  SPACES ||--o{ SOURCE_DOCUMENTS : "space_id"
   SPACES ||--o{ SPACE_INVITES : "space_id"
   SPACES ||--o{ SPACE_MEMBERS : "space_id"
   TENANTS ||--o{ SPACES : "tenant_id"
@@ -90,6 +121,7 @@ erDiagram
   SPACES ||--o{ TRIAL_NOTES : "space_id"
   TRIALS ||--o{ TRIAL_NOTES : "trial_id"
   ASSETS ||--o{ TRIALS : "asset_id"
+  SOURCE_DOCUMENTS ||--o{ TRIALS : "source_doc_id"
   SPACES ||--o{ TRIALS : "space_id"
   AUDIT_EVENTS { }
   CTGOV_SYNC_RUNS { }
@@ -664,13 +696,17 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 
 <!-- AUTO-GEN:DRIFT -->
 **Tables in `public` schema not mentioned:**
+- `ai_calls`
+- `ai_config`
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
+- `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
 - `primary_intelligence_links`
 - `r2_pending_deletes`
+- `source_documents`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -845,6 +881,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260525100900_rpc_platform_admin_set_ai_enabled.sql`
 - `20260525101000_rpc_get_ai_usage_rollup.sql`
 - `20260525120000_create_bullseye_assets_rpc.sql`
-- `20260525120000_shared_entity_create_rpcs.sql`
+- `20260525120100_shared_entity_create_rpcs.sql`
 - `20260525140000_get_intelligence_notes_for_asset.sql`
+- `20260527120000_change_event_annotations.sql`
+- `20260527120100_events_rpc_unified_feed.sql`
 <!-- /AUTO-GEN:DRIFT -->

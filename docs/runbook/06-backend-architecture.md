@@ -60,17 +60,27 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
+| `ai_call_close` | ai_calls | - |
+| `ai_call_open` | ai_calls | - |
+| `ai_call_preflight` | - | ai_calls, ai_config |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
+| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_categories, events, marker_types, markers, spaces, trials |
+| `create_asset` | asset_mechanisms_of_action, asset_routes_of_administration, assets | mechanisms_of_action, routes_of_administration |
+| `create_company` | companies | - |
+| `create_event` | events | - |
+| `create_marker` | marker_assignments, markers | marker_changes |
 | `create_space` | space_members, spaces | tenant_members, tenants |
+| `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
+| `delete_change_event_annotation` | change_event_annotations | trial_change_events |
 | `delete_material` | materials | - |
 | `delete_primary_intelligence` | primary_intelligence | - |
 | `download_material` | - | materials |
@@ -83,6 +93,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
 | `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, indications, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trials |
@@ -95,7 +106,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_change_events, trial_conditions, trial_notes, trials |
 | `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
-| `get_events_page_data` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
+| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
@@ -106,6 +117,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
@@ -137,6 +149,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
+| `platform_admin_set_ai_enabled` | ai_config | - |
 | `prepare_material_upload` | - | materials |
 | `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
@@ -165,6 +178,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_space_field_visibility` | spaces | - |
 | `update_tenant_access` | tenants | - |
 | `update_tenant_branding` | tenants | - |
+| `upsert_change_event_annotation` | change_event_annotations | trial_change_events |
 | `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
 | `withdraw_primary_intelligence` | primary_intelligence | - |
 <!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
@@ -576,13 +590,17 @@ flowchart TD
 
 **User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
 
-- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
+- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the engagement-landing what-changed widget and the trial-detail Activity section; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`. The standalone `/activity` page has been retired; its route now redirects to `/events?source=detected`.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
 - `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
 - `update_space_field_visibility(p_space_id, p_visibility)`: writes the per-space field-visibility map that drives which CT.gov columns render on trial-detail.
 - `recompute_trial_change_events(p_trial_id)`: admin-only; replays the classifier over existing `trial_field_changes` for a trial. Used after classifier rule changes.
 - `get_latest_sync_run()`: reads the most recent `ctgov_sync_runs` row for the engagement-landing freshness indicator.
+- `upsert_change_event_annotation(p_change_event_id, p_body)`: SECURITY INVOKER. Inserts or updates the analyst annotation for a detected change event. Validates that the change event exists and that the caller has editor/owner space access (via RLS on `change_event_annotations`). Returns the upserted row. One annotation per change event, enforced by the UNIQUE constraint on `change_event_id`.
+- `delete_change_event_annotation(p_change_event_id)`: SECURITY INVOKER. Deletes the annotation for a detected change event. Validates that the change event exists and that the caller has editor/owner space access (via RLS).
+
+**Unified feed extension.** `get_events_page_data` now includes a third UNION leg for `trial_change_events` (source_type = `'detected'`), returning detected CT.gov changes alongside analyst events and markers. The return shape changed from a flat JSONB array to `{ items: jsonb[], total: bigint }` to support server-side pagination. The detected leg joins `change_event_annotations` to surface `has_annotation` (boolean) per row. Two SQL helper functions support the detected-event summary rendering: `_humanize_phase(val)` (e.g. `'PHASE3'` to `'Phase 3'`) and `_humanize_status(val)` (e.g. `'ACTIVE_NOT_RECRUITING'` to `'Active, not recruiting'`).
 
 ## Documentation Drift
 
@@ -606,13 +624,19 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
 - `_guard_ctgov_locked_phase_fields`
+- `_humanize_phase`
+- `_humanize_status`
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
+- `_verify_extract_source_worker_secret`
 - `_verify_r2_drain_worker_secret`
+- `ai_call_close`
+- `ai_call_open`
+- `ai_call_preflight`
 - `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
@@ -620,9 +644,17 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `build_intelligence_payload`
 - `build_intelligence_payload`
 - `claim_pending_r2_deletes`
+- `commit_source_import`
+- `create_asset`
+- `create_company`
+- `create_event`
+- `create_marker`
+- `create_trial`
+- `delete_change_event_annotation`
 - `delete_material`
 - `export_audit_events_csv`
 - `finalize_material`
+- `get_ai_usage_rollup`
 - `get_asset_detail_with_intelligence`
 - `get_bullseye_assets`
 - `get_bullseye_by_company`
@@ -642,6 +674,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
 - `get_space_intelligence`
+- `get_space_inventory_snapshot`
 - `get_space_landing_stats`
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
@@ -664,6 +697,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_touch_recent`
 - `palette_unpin`
 - `permanently_delete_space`
+- `platform_admin_set_ai_enabled`
 - `preview_asset_delete`
 - `preview_company_delete`
 - `preview_trial_delete`
@@ -676,6 +710,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `restore_space`
 - `search_palette`
 - `update_material`
+- `upsert_change_event_annotation`
 - `validate_material_links_payload`
 
 **Edge functions in `supabase/functions/` not documented:**

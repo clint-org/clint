@@ -93,6 +93,20 @@ has_space_access(space_id, ARRAY['owner', 'editor'])
 
 `has_space_access` was extended during the whitelabel rollout with disjuncts for tenant ownership, tenant membership (implicit editor/viewer), agency ownership (write-eligible), agency membership (read-only), and platform admin (read-only). It also short-circuits to `false` for write-role checks when `tenants.suspended_at IS NOT NULL`.
 
+### Change Event Annotations
+
+`change_event_annotations` uses space-based RLS following the same pattern as data tables:
+
+```sql
+-- SELECT: any space member can read annotations
+has_space_access(space_id)
+
+-- INSERT/UPDATE/DELETE: editors and owners can write annotations
+has_space_access(space_id, ARRAY['owner', 'editor'])
+```
+
+Four policies total (SELECT, INSERT, UPDATE, DELETE). The `upsert_change_event_annotation` and `delete_change_event_annotation` RPCs are SECURITY INVOKER, so RLS is the access control.
+
 ### Marker Types
 
 - System types (`is_system = true`) are readable by all authenticated users
@@ -260,11 +274,14 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agencies` | yes | 3 |
 | `agency_invites` | yes | 1 |
 | `agency_members` | yes | 4 |
+| `ai_calls` | yes | 2 |
+| `ai_config` | yes | 3 |
 | `asset_indications` | yes | 4 |
 | `asset_mechanisms_of_action` | yes | 3 |
 | `asset_routes_of_administration` | yes | 3 |
 | `assets` | yes | 4 |
 | `audit_events` | yes | 1 |
+| `change_event_annotations` | yes | 4 |
 | `companies` | yes | 4 |
 | `condition_indication_map` | yes | 3 |
 | `conditions` | yes | 4 |
@@ -291,6 +308,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `r2_pending_deletes` | yes | 0 |
 | `retired_hostnames` | yes | 1 |
 | `routes_of_administration` | yes | 4 |
+| `source_documents` | yes | 2 |
 | `space_invites` | yes | 1 |
 | `space_members` | yes | 4 |
 | `spaces` | yes | 4 |
@@ -311,6 +329,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` whose conventional name does not appear anywhere in this file.
 
 <!-- AUTO-GEN:DRIFT -->
+- `activityRedirectGuard`
 - `auditAgencyGuard`
 - `auditSpaceGuard`
 - `auditTenantGuard`
