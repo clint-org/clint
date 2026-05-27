@@ -390,6 +390,12 @@ deno_version = 2
 enabled = true
 verify_jwt = false
 
+# Edge Function: brandfetch-lookup
+# Called by authenticated users to fetch brand assets from Brandfetch API.
+# Uses default verify_jwt = true (requires authenticated session).
+[functions.brandfetch-lookup]
+enabled = true
+
 [analytics]
 enabled = true
 port = 54327

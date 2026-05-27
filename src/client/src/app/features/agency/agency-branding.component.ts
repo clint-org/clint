@@ -6,6 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
@@ -14,7 +15,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 
 import { AgencyService } from '../../core/services/agency.service';
-import { Agency, AgencyBrandingUpdate } from '../../core/models/agency.model';
+import { Agency, AgencyBrandingUpdate, BrandfetchResult } from '../../core/models/agency.model';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
@@ -22,6 +23,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
   selector: 'app-agency-branding',
   standalone: true,
   imports: [
+    NgOptimizedImage,
     FormsModule,
     ButtonModule,
     InputText,
@@ -50,6 +52,70 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
       }
 
       @if (agency(); as a) {
+        <div class="mb-6 max-w-2xl rounded border border-slate-200 bg-slate-50 px-4 py-3">
+          <label
+            for="brandfetch-domain"
+            class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
+            Auto-fill from domain
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              pInputText
+              id="brandfetch-domain"
+              class="flex-1 font-mono text-xs"
+              [ngModel]="fetchDomain()"
+              (ngModelChange)="fetchDomain.set($event)"
+              name="fetchDomain"
+              placeholder="e.g. pfizer.com"
+              (keydown.enter)="onFetchBrand()"
+            />
+            <p-button
+              label="Fetch brand"
+              size="small"
+              [outlined]="true"
+              [loading]="fetching()"
+              [disabled]="!fetchDomain().trim() || fetching()"
+              (onClick)="onFetchBrand()"
+            />
+          </div>
+          @if (fetchError()) {
+            <p class="mt-1.5 text-[11px] text-red-600">{{ fetchError() }}</p>
+          }
+          @if (fetchPreview(); as preview) {
+            <div class="mt-3 flex items-start gap-3 rounded border border-slate-200 bg-white p-3">
+              @if (preview.logo_url) {
+                <img
+                  [ngSrc]="preview.logo_url!"
+                  alt="Fetched logo"
+                  width="120"
+                  height="40"
+                  class="h-10 w-auto max-w-[120px] object-contain"
+                />
+              }
+              <div class="flex-1 text-xs text-slate-600">
+                @if (preview.name) {
+                  <p class="font-medium text-slate-900">{{ preview.name }}</p>
+                }
+                @if (preview.primary_color) {
+                  <div class="mt-1 flex items-center gap-1.5">
+                    <span
+                      class="inline-block h-3 w-3 rounded-sm border border-slate-300"
+                      [style.background-color]="preview.primary_color"
+                    ></span>
+                    <span class="font-mono text-[10px] uppercase text-slate-400">{{ preview.primary_color }}</span>
+                  </div>
+                }
+              </div>
+              <p-button
+                label="Apply"
+                size="small"
+                (onClick)="applyFetchedBrand()"
+              />
+            </div>
+          }
+        </div>
+
         <div class="grid grid-cols-1 gap-4 max-w-2xl sm:grid-cols-2">
           <div class="sm:col-span-2">
             <label
@@ -207,6 +273,11 @@ export class AgencyBrandingComponent implements OnInit {
   readonly primaryColorHash = signal('#0d9488');
   readonly primaryColorRaw = computed(() => this.primaryColorHash().replace(/^#/, ''));
 
+  readonly fetchDomain = signal('');
+  readonly fetching = signal(false);
+  readonly fetchError = signal<string | null>(null);
+  readonly fetchPreview = signal<BrandfetchResult | null>(null);
+
   onPrimaryColorRawChange(raw: string): void {
     const stripped = (raw || '').replace(/^#/, '').toLowerCase();
     this.primaryColorHash.set(stripped ? `#${stripped}` : '');
@@ -249,6 +320,41 @@ export class AgencyBrandingComponent implements OnInit {
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load agency.');
     }
+  }
+
+  async onFetchBrand(): Promise<void> {
+    const domain = this.fetchDomain().trim();
+    if (!domain) return;
+    this.fetching.set(true);
+    this.fetchError.set(null);
+    this.fetchPreview.set(null);
+    try {
+      const result = await this.agencyService.fetchBrandFromDomain(domain);
+      if (!result.logo_url && !result.primary_color) {
+        this.fetchError.set('No brand assets found for this domain.');
+        return;
+      }
+      this.fetchPreview.set(result);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to fetch brand';
+      this.fetchError.set(msg.includes('domain_not_found') ? 'Domain not found in Brandfetch.' : msg);
+    } finally {
+      this.fetching.set(false);
+    }
+  }
+
+  applyFetchedBrand(): void {
+    const preview = this.fetchPreview();
+    if (!preview) return;
+    if (preview.logo_url) this.logoUrl.set(preview.logo_url);
+    if (preview.primary_color) this.primaryColorHash.set(preview.primary_color);
+    if (preview.name && !this.appDisplayName()) this.appDisplayName.set(preview.name);
+    this.fetchPreview.set(null);
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Brand applied. Review and save when ready.',
+      life: 4000,
+    });
   }
 
   async onSave(): Promise<void> {

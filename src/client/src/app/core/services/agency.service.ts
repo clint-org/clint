@@ -5,6 +5,7 @@ import {
   AgencyMember,
   AgencyBrandingUpdate,
   AgencyTenantSummary,
+  BrandfetchResult,
   TenantBrandFields,
   TenantBrandingUpdate,
 } from '../models/agency.model';
@@ -277,6 +278,18 @@ export class AgencyService {
         created_by: userId,
       })
       .throwOnError();
+  }
+
+  // ---------------------------------------------------------------------------
+  // brandfetch
+  // ---------------------------------------------------------------------------
+
+  async fetchBrandFromDomain(domain: string): Promise<BrandfetchResult> {
+    const { data, error } = await this.supabase.client.functions.invoke('brandfetch-lookup', {
+      body: { domain },
+    });
+    if (error) throw error;
+    return data as BrandfetchResult;
   }
 
   private generateCode(): string {
