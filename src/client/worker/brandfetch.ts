@@ -68,10 +68,10 @@ function cleanDomain(raw: string): string {
 export async function handleBrandfetchLookup(
   request: Request,
   apiKey: string,
+  jwtSub: string | null,
   cors: Record<string, string>
 ): Promise<Response> {
-  const auth = request.headers.get('Authorization');
-  if (!auth) {
+  if (!jwtSub) {
     return errorResponse(401, 'unauthorized', cors);
   }
 

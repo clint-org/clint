@@ -73,7 +73,17 @@ export default {
       return handleSourceExtract(request, env, cors);
     }
     if (url.pathname === '/api/brandfetch/lookup' && request.method === 'POST') {
-      return handleBrandfetchLookup(request, env.BRANDFETCH_API_KEY, cors);
+      const auth = request.headers.get('Authorization');
+      const sub = jwtSubject(auth);
+      const rlKey = sub ?? request.headers.get('CF-Connecting-IP') ?? 'anon';
+      const rl = await env.DOWNLOAD_LIMITER.limit({ key: `brandfetch:${rlKey}` });
+      if (!rl.success) {
+        return new Response(JSON.stringify({ error: 'rate_limited' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '60', ...cors },
+        });
+      }
+      return handleBrandfetchLookup(request, env.BRANDFETCH_API_KEY, sub, cors);
     }
 
     if (url.pathname.startsWith('/api/')) {
