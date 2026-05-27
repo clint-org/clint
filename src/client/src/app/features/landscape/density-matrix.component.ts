@@ -431,8 +431,7 @@ export class DensityMatrixComponent {
           intensity: computeIntensity(allNonZero, count),
         };
       });
-      const total = cells.reduce((sum, c) => sum + c.count, 0);
-      return { bubble, cells, total };
+      return { bubble, cells, total: bubble.unit_count };
     });
 
     rows.sort((a, b) => {

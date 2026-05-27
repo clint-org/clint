@@ -100,10 +100,9 @@ describe('DensityMatrixComponent row computation', () => {
     expect(bubbles).toHaveLength(3);
   });
 
-  it('computes total as sum of phase_counts', () => {
-    const b = makeBubble('Test', { PRECLIN: 2, P1: 3, P3: 5 });
-    const total = Object.values(b.phase_counts).reduce((s, v) => s + (v ?? 0), 0);
-    expect(total).toBe(10);
+  it('total uses unit_count from the bubble, not the sum of phase_counts', () => {
+    const b = makeBubble('Test', { PRECLIN: 2, P1: 3, P3: 5 }, { unit_count: 42 });
+    expect(b.unit_count).toBe(42);
   });
 
   it('treats missing phase keys as zero', () => {
@@ -122,7 +121,7 @@ describe('DensityMatrixComponent row computation', () => {
     const rows = bubbles
       .map((b) => ({
         label: b.label,
-        total: Object.values(b.phase_counts).reduce((s, v) => s + (v ?? 0), 0),
+        total: b.unit_count,
       }))
       .sort((a, b) => b.total - a.total);
 
