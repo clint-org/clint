@@ -143,4 +143,28 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   user_facing: true
   role: viewer
   status: active
+- id: engagement-landing-empty-space-redirect
+  summary: When a space has zero trials and zero companies, editors with AI enabled are auto-redirected to /t/:tenantId/s/:spaceId/import. Viewers see an empty-state message instead.
+  routes:
+    - /t/:tenantId/s/:spaceId
+  rpcs:
+    - get_space_landing_stats
+  tables:
+    - ai_config
+  related:
+    - source-import-page
+  user_facing: true
+  role: editor
+  status: active
+- id: engagement-landing-import-button
+  summary: Toolbar Import button navigates to the full-page import route. Visible to editors when AI is enabled. Replaces the former dialog trigger.
+  routes:
+    - /t/:tenantId/s/:spaceId
+  rpcs: []
+  tables: []
+  related:
+    - source-import-page
+  user_facing: true
+  role: editor
+  status: active
 ```

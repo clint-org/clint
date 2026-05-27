@@ -16,9 +16,8 @@ import {
   BullseyeDimension,
   LandscapeIndexEntry,
   SpokeGrouping,
-  groupingToSegment,
   segmentToGrouping,
-  POSITIONING_SEGMENTS,
+  DENSITY_SEGMENTS,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
@@ -98,7 +97,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     }
   });
 
-  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Positioning views. */
+  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Density Matrix views. */
   private readonly subTabEffect = effect(() => {
     const mode = this.viewMode();
     if (mode === 'bullseye') {
@@ -135,41 +134,9 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
           tooltip: 'Each asset as its own spoke',
         },
       ]);
-    } else if (mode === 'positioning') {
-      const seg = groupingToSegment(this.state.positioningGrouping());
-      this.topbarState.subTabs.set([
-        {
-          label: 'MOA',
-          value: 'by-moa',
-          active: seg === 'by-moa',
-          tooltip: 'Assets grouped by mechanism of action',
-        },
-        {
-          label: 'Indication',
-          value: 'by-indication',
-          active: seg === 'by-indication',
-          tooltip: 'Assets grouped by indication',
-        },
-        {
-          label: 'MOA + Ind.',
-          value: 'by-moa-indication',
-          active: seg === 'by-moa-indication',
-          tooltip: 'Assets grouped by mechanism of action, broken out by indication',
-        },
-        {
-          label: 'Company',
-          value: 'by-company',
-          active: seg === 'by-company',
-          tooltip: 'Assets grouped by company',
-        },
-        {
-          label: 'ROA',
-          value: 'by-roa',
-          active: seg === 'by-roa',
-          tooltip: 'Assets grouped by route of administration',
-        },
-      ]);
     } else {
+      // Density Matrix sub-tabs removed: sidebar GROUP BY in
+      // DensityControlsPanelComponent replaces the top-bar tabs.
       this.topbarState.subTabs.set([]);
     }
   });
@@ -204,8 +171,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.extractRouteParams();
 
     // Restore persisted landscape state before reading the URL. restorePersistedState()
-    // writes positioningGrouping, so syncStateFromUrl() must run after it to ensure
-    // the URL wins — otherwise a fresh load of /positioning/by-X shows whichever
+    // writes densityGrouping, so syncStateFromUrl() must run after it to ensure
+    // the URL wins -- otherwise a fresh load of /density-matrix/by-X shows whichever
     // grouping was in sessionStorage as active, and clicking the URL's tab no-ops.
     this.state.init(this.spaceId());
     this.syncStateFromUrl();
@@ -215,12 +182,11 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.applyQueryParamFilters();
 
     // Sub-tab click handler: bullseye updates spokeGrouping signal directly
-    // (no navigation); positioning still navigates to dimension routes.
+    // (no navigation). Density Matrix sub-tabs removed (sidebar GROUP BY
+    // handles navigation now).
     this.topbarState.onSubTabClick.set((value: string) => {
       if (this.viewMode() === 'bullseye') {
         this.state.spokeGrouping.set(value as SpokeGrouping);
-      } else if (this.viewMode() === 'positioning') {
-        this.router.navigate([...this.spaceBase(), 'positioning', value]);
       }
     });
 
@@ -230,12 +196,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.applyQueryParamFilters();
       // Marker selection only makes sense in marker-bearing views
       // (timeline, catalysts). Clear it when entering bullseye /
-      // positioning so a previously-opened drawer doesn't trail along
+      // density-matrix so a previously-opened drawer doesn't trail along
       // into a view where it has no referent. Selection is preserved
       // between timeline <-> catalysts (same markers, different
       // layout) and across same-mode dimension switches.
       const mode = this.viewMode();
-      if (mode === 'bullseye' || mode === 'positioning') {
+      if (mode === 'bullseye' || mode === 'density-matrix') {
         this.state.clearSelection();
       }
     });
@@ -304,15 +270,15 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const parentSegments = child.snapshot.parent?.url.map((s) => s.path) ?? [];
     const allSegments = [...parentSegments, ...segments];
 
-    const posSegment = allSegments.find((s) =>
-      (POSITIONING_SEGMENTS as readonly string[]).includes(s)
+    const densitySegment = allSegments.find((s) =>
+      (DENSITY_SEGMENTS as readonly string[]).includes(s)
     );
 
-    if (allSegments.includes('positioning')) {
-      this.viewMode.set('positioning');
+    if (allSegments.includes('density-matrix')) {
+      this.viewMode.set('density-matrix');
       this.entityId.set(null);
-      if (posSegment) {
-        this.state.positioningGrouping.set(segmentToGrouping(posSegment));
+      if (densitySegment) {
+        this.state.densityGrouping.set(segmentToGrouping(densitySegment));
       }
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');

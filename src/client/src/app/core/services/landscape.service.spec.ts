@@ -20,7 +20,7 @@ function makeRpcResult(data: unknown, error: unknown = null) {
   const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (t as { then: PromiseLike<unknown>['then'] }).then = (
     onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
-    onRejected?: ((r: unknown) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null
   ) => {
     if (error) return Promise.reject(error).then(null, onRejected);
     return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
@@ -84,8 +84,8 @@ describe('LandscapeService.getBullseyeData', () => {
   });
 });
 
-describe('LandscapeService.getPositioningData', () => {
-  it('uses tag space:{id}:positioning, passes all key params, and remaps products->assets', async () => {
+describe('LandscapeService.getDensityData', () => {
+  it('uses tag space:{id}:density, passes all key params, and remaps products->assets', async () => {
     const rawWireResult = { rows: [], count_unit: 'products' };
     const rpc = vi.fn().mockReturnValue(makeRpcResult(rawWireResult));
     // cache.get invokes opts.fetch() directly so the products->assets remap is exercised.
@@ -103,12 +103,17 @@ describe('LandscapeService.getPositioningData', () => {
       studyTypes: [],
     };
 
-    const result = await service.getPositioningData('space-1', 'company', 'assets', filters);
+    const result = await service.getDensityData('space-1', 'company', 'assets', filters);
 
     const [rpcName, params, opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_positioning_data');
-    expect(opts.tags).toEqual(['space:space-1:positioning']);
-    expect(params).toMatchObject({ spaceId: 'space-1', grouping: 'company', countUnit: 'assets', filters });
+    expect(opts.tags).toEqual(['space:space-1:density']);
+    expect(params).toMatchObject({
+      spaceId: 'space-1',
+      grouping: 'company',
+      countUnit: 'assets',
+      filters,
+    });
     // Inverse remap: wire value 'products' must come back as 'assets'.
     expect(result.count_unit).toBe('assets');
   });

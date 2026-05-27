@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { PaletteCommand } from '../models/palette.model';
 import { SupabaseService } from './supabase.service';
-import { SourceImportService } from '../../features/source-import/source-import.service';
 import { SpaceRoleService } from './space-role.service';
 import { filterCommands } from '../util/filter-commands';
 
@@ -12,7 +11,6 @@ export { filterCommands } from '../util/filter-commands';
 export class PaletteCommandRegistry {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
-  private readonly sourceImport = inject(SourceImportService);
   private readonly spaceRole = inject(SpaceRoleService);
 
   list(currentTenantId: string, currentSpaceId: string): PaletteCommand[] {
@@ -40,12 +38,12 @@ export class PaletteCommandRegistry {
           ),
       },
       {
-        id: 'go-positioning',
-        label: 'Go to Positioning',
+        id: 'go-density-matrix',
+        label: 'Go to Density Matrix',
         hint: 'Navigation',
         run: () =>
           void this.router.navigateByUrl(
-            `/t/${currentTenantId}/s/${currentSpaceId}/positioning/by-moa`
+            `/t/${currentTenantId}/s/${currentSpaceId}/density-matrix/by-moa`
           ),
       },
       {
@@ -79,10 +77,8 @@ export class PaletteCommandRegistry {
         label: 'Import from source',
         hint: 'Action',
         when: () => this.spaceRole.canEdit(),
-        run: async () => {
-          await this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}`);
-          this.sourceImport.dialogRequested.set(true);
-        },
+        run: () =>
+          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/import`),
       },
       {
         id: 'sign-out',

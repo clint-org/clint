@@ -1,0 +1,13 @@
+{
+  "spec_id": "spec-2026-competitive-density-matrix",
+  "status": "completed",
+  "branch": "redesign-position-chart",
+  "updatedAt": "2026-05-27T19:45:00Z",
+  "tasks": {
+    "rpc": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "model": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "matrix": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "controls": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "view": { "status": "completed", "agent": null, "attempts": 1, "error": null }
+  }
+}

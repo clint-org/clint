@@ -12,6 +12,7 @@ import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
+import { importGuard } from './core/guards/import.guard';
 import { editGuard } from './core/guards/edit.guard';
 
 export const routes: Routes = [
@@ -190,6 +191,14 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'import',
+            canActivate: [importGuard],
+            loadComponent: () =>
+              import('./features/source-import/import-page.component').then(
+                (m) => m.ImportPageComponent
+              ),
+          },
+          {
             path: 'import/:aiCallId/review',
             canActivate: [sourceImportGuard],
             canDeactivate: [sourceImportDeactivateGuard],
@@ -240,46 +249,56 @@ export const routes: Routes = [
                 ],
               },
               {
-                path: 'positioning',
+                path: 'density-matrix',
                 children: [
                   { path: '', redirectTo: 'by-moa', pathMatch: 'full' as const },
                   {
                     path: 'by-moa',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-indication',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-moa-indication',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-company',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-roa',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                 ],
               },
+              // Legacy redirects: old /positioning/* paths -> /density-matrix/*
+              { path: 'positioning', redirectTo: 'density-matrix', pathMatch: 'full' },
+              { path: 'positioning/by-moa', redirectTo: 'density-matrix/by-moa' },
+              { path: 'positioning/by-indication', redirectTo: 'density-matrix/by-indication' },
+              {
+                path: 'positioning/by-moa-indication',
+                redirectTo: 'density-matrix/by-moa-indication',
+              },
+              { path: 'positioning/by-company', redirectTo: 'density-matrix/by-company' },
+              { path: 'positioning/by-roa', redirectTo: 'density-matrix/by-roa' },
               {
                 path: 'catalysts',
                 loadComponent: () =>

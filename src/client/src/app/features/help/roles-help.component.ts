@@ -238,7 +238,7 @@ export class RolesHelpComponent {
     },
     {
       group: 'Read-only views',
-      capability: 'Timeline, bullseye landscape, positioning views',
+      capability: 'Timeline, bullseye landscape, density matrix views',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',

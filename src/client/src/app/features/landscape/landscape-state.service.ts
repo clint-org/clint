@@ -7,9 +7,9 @@ import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import {
   CountUnit,
+  DensityGrouping,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
-  PositioningGrouping,
   SpokeGrouping,
   SpokeMode,
 } from '../../core/models/landscape.model';
@@ -22,7 +22,7 @@ interface PersistedLandscapeState {
   zoomLevel: ZoomLevel;
   spokeMode: SpokeMode;
   spokeGrouping: SpokeGrouping;
-  positioningGrouping: PositioningGrouping;
+  densityGrouping: DensityGrouping;
   countUnit: CountUnit;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
@@ -40,7 +40,7 @@ const STORAGE_PREFIX = 'landscape-state:';
  * - Filter state (applied client-side)
  * - Filtered views (companies for timeline, flat catalysts for catalysts tab)
  * - Shared detail panel state (selected marker, detail, loading)
- * - View-specific settings (zoom, spoke mode, positioning grouping)
+ * - View-specific settings (zoom, spoke mode, density grouping)
  *
  * State is persisted to sessionStorage so it survives page refreshes.
  */
@@ -68,7 +68,7 @@ export class LandscapeStateService {
   /** @deprecated Use spokeGrouping instead. Kept during migration. */
   readonly spokeMode = signal<SpokeMode>('grouped');
   readonly spokeGrouping = signal<SpokeGrouping>('company');
-  readonly positioningGrouping = signal<PositioningGrouping>('moa+indication');
+  readonly densityGrouping = signal<DensityGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
 
   // ─── Column visibility (timeline grid) ──────────────────────────────
@@ -123,7 +123,7 @@ export class LandscapeStateService {
       zoomLevel: this.zoomLevel(),
       spokeMode: this.spokeMode(),
       spokeGrouping: this.spokeGrouping(),
-      positioningGrouping: this.positioningGrouping(),
+      densityGrouping: this.densityGrouping(),
       countUnit: this.countUnit(),
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
@@ -245,7 +245,7 @@ export class LandscapeStateService {
       if (saved.zoomLevel) this.zoomLevel.set(saved.zoomLevel);
       if (saved.spokeMode) this.spokeMode.set(saved.spokeMode);
       if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
-      if (saved.positioningGrouping) this.positioningGrouping.set(saved.positioningGrouping);
+      if (saved.densityGrouping) this.densityGrouping.set(saved.densityGrouping);
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
       if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);

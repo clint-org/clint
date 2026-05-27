@@ -450,3 +450,102 @@ describe('briefCompanions', () => {
     expect(result.map((c) => c.marker_id)).toEqual(['inMonth']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Empty-space redirect logic (T6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mirrors the isEmptySpace computed and the redirect decision that lives in
+ * loadAll(). We test the decision function in isolation: "given stats, canEdit,
+ * and aiEnabled, should the component redirect?"
+ */
+
+function isEmptySpace(stats: SpaceLandingStats | null): boolean {
+  if (!stats) return false;
+  return stats.active_trials === 0 && stats.companies === 0;
+}
+
+type RedirectDecision = 'redirect-to-import' | 'show-empty-state' | 'show-dashboard';
+
+function decideRedirect(
+  stats: SpaceLandingStats | null,
+  canEdit: boolean,
+  aiEnabled: boolean
+): RedirectDecision {
+  if (!isEmptySpace(stats)) return 'show-dashboard';
+  if (canEdit && aiEnabled) return 'redirect-to-import';
+  return 'show-empty-state';
+}
+
+describe('isEmptySpace', () => {
+  it('returns false when stats are null (still loading)', () => {
+    expect(isEmptySpace(null)).toBe(false);
+  });
+
+  it('returns true when active_trials and companies are both zero', () => {
+    expect(isEmptySpace(makeStats({ active_trials: 0, companies: 0 }))).toBe(true);
+  });
+
+  it('returns false when active_trials > 0', () => {
+    expect(isEmptySpace(makeStats({ active_trials: 1, companies: 0 }))).toBe(false);
+  });
+
+  it('returns false when companies > 0', () => {
+    expect(isEmptySpace(makeStats({ active_trials: 0, companies: 3 }))).toBe(false);
+  });
+
+  it('returns false when both are positive', () => {
+    expect(isEmptySpace(makeStats({ active_trials: 36, companies: 13 }))).toBe(false);
+  });
+});
+
+describe('empty-space redirect decision', () => {
+  const emptyStats = makeStats({ active_trials: 0, companies: 0 });
+  const populatedStats = makeStats({ active_trials: 36, companies: 13 });
+
+  it('redirects editors with AI enabled on an empty space', () => {
+    expect(decideRedirect(emptyStats, true, true)).toBe('redirect-to-import');
+  });
+
+  it('shows empty state for viewers on an empty space', () => {
+    expect(decideRedirect(emptyStats, false, true)).toBe('show-empty-state');
+  });
+
+  it('shows empty state for editors when AI is disabled', () => {
+    expect(decideRedirect(emptyStats, true, false)).toBe('show-empty-state');
+  });
+
+  it('shows empty state for viewers when AI is disabled', () => {
+    expect(decideRedirect(emptyStats, false, false)).toBe('show-empty-state');
+  });
+
+  it('shows dashboard on a populated space regardless of role', () => {
+    expect(decideRedirect(populatedStats, true, true)).toBe('show-dashboard');
+    expect(decideRedirect(populatedStats, false, true)).toBe('show-dashboard');
+    expect(decideRedirect(populatedStats, true, false)).toBe('show-dashboard');
+  });
+
+  it('shows dashboard when stats are null (still loading)', () => {
+    expect(decideRedirect(null, true, true)).toBe('show-dashboard');
+  });
+});
+
+describe('isEmptySpace as computed signal', () => {
+  it('reacts to stats signal changes', () => {
+    const stats = signal<SpaceLandingStats | null>(null);
+    const isEmpty = computed(() => {
+      const s = stats();
+      if (!s) return false;
+      return s.active_trials === 0 && s.companies === 0;
+    });
+
+    expect(isEmpty()).toBe(false);
+
+    stats.set(makeStats({ active_trials: 0, companies: 0 }));
+    expect(isEmpty()).toBe(true);
+
+    stats.set(makeStats({ active_trials: 1, companies: 0 }));
+    expect(isEmpty()).toBe(false);
+  });
+});

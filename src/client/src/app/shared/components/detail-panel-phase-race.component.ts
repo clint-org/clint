@@ -23,7 +23,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
 };
 
 /**
- * Visual race comparison used in the positioning detail pane. Each row is a
+ * Visual race comparison used in the density matrix detail pane. Each row is a
  * asset with a 7-segment mini phase bar (variant B from the mockup:
  * two-line label, multi-color bar). Sorted by phase rank descending so the
  * leader sits at the top.

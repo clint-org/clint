@@ -5,7 +5,7 @@ spec: docs/superpowers/specs/2026-05-21-source-ingestion-design.md
 
 # Source Document Import
 
-Agency analysts paste a press release URL or text into an engagement. Claude Sonnet 4.6 extracts structured entities (companies, assets, trials, markers, events) with evidence grounding. The analyst reviews proposals on a dedicated two-pane review page, then confirms atomically. Every confirmed row carries `source_doc_id` provenance and every LLM call writes to `ai_calls` regardless of outcome.
+Agency analysts import data into an engagement via three modes: paste NCT IDs (CT.gov is the primary data source, AI resolves companies/assets), paste a press release URL, or paste raw text. All three modes live on a full-page import route (`/t/:tenantId/s/:spaceId/import`) with tabbed navigation. Claude Sonnet 4.6 handles entity extraction (URL/text) or entity resolution (NCT). The analyst reviews proposals on a dedicated review page, then confirms atomically. Every confirmed row carries `source_doc_id` provenance and every LLM call writes to `ai_calls` regardless of outcome. New empty spaces auto-redirect editors to the import page.
 
 ## Capabilities
 
@@ -61,16 +61,59 @@ Agency analysts paste a press release URL or text into an engagement. Claude Son
     - trial-change-feed-pipeline
   user_facing: true
 
+- id: nct-resolve-worker
+  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor).
+  routes:
+    - /api/source/nct-resolve (POST)
+  rpcs:
+    - ai_call_open
+    - ai_call_preflight
+    - ai_call_close
+    - get_space_inventory_snapshot
+  tables:
+    - ai_calls
+    - ai_config
+  related:
+    - source-extract-worker
+    - source-import-commit
+    - ctgov-daily-sync
+  user_facing: false
+
+- id: ai-health-endpoint
+  summary: Lightweight health probe that fetches the Anthropic status page (status.claude.com/api/v2/summary.json), finds the "Claude API" component status, and caches the result for 60s. No auth required.
+  routes:
+    - /api/ai/health (GET)
+  rpcs: []
+  tables: []
+  related:
+    - source-import-page
+  user_facing: false
+
+- id: source-import-page
+  summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks quotas, rate limits, and Anthropic service health on load. Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
+  routes:
+    - /t/:tenantId/s/:spaceId/import
+  rpcs:
+    - ai_import_status
+  tables:
+    - ai_config
+    - ai_calls
+  related:
+    - source-extract-worker
+    - nct-resolve-worker
+    - ai-health-endpoint
+    - engagement-landing
+    - command-palette
+  user_facing: true
+
 - id: source-import-dialog
-  summary: Two-mode dialog (URL/paste text) that initiates extraction and navigates to the review page. Reachable from the engagement header button and the command palette (Cmd+K).
+  summary: "[DEPRECATED] Former two-mode dialog (URL/paste text). Replaced by source-import-page. Component file retained but no longer referenced."
   routes: []
   rpcs: []
   tables: []
   related:
-    - source-extract-worker
-    - engagement-landing
-    - command-palette
-  user_facing: true
+    - source-import-page
+  user_facing: false
 
 - id: ai-admin-toggle
   summary: Platform-admin RPC to toggle ai_enabled per tenant with required reason. Tier 1 audited.
@@ -92,16 +135,22 @@ Agency analysts paste a press release URL or text into an engagement. Claude Son
 | Table | Purpose | RLS |
 |---|---|---|
 | `ai_config` | Tenant-level AI settings (model, caps, rates, enabled flag) | Tenant owner + platform admin |
-| `source_documents` | One row per imported source (URL or pasted text) | Agency members of space + platform admin SELECT; RPC-only write |
+| `source_documents` | One row per imported source (URL, pasted text, or NCT batch). `source_kind` CHECK allows `'url'`, `'text'`, `'nct'`. | Agency members of space + platform admin SELECT; RPC-only write |
 | `ai_calls` | Every LLM call regardless of outcome | Agency SELECT; RPC-only write; platform admin DELETE |
 
 ## Provenance columns
 
 `source_doc_id` (nullable FK to `source_documents`, ON DELETE SET NULL) added to: `companies`, `assets`, `trials`, `markers`, `events`.
 
-## Worker route
+## Worker routes
 
-`POST /api/source/extract` in the existing Cloudflare Worker. Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wrangler secret put`). Vault secret mirrors the CT.gov pattern.
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/source/extract` | POST | Document extraction (URL or text). Calls Claude for full entity extraction. |
+| `/api/source/nct-resolve` | POST | NCT batch import. Fetches CT.gov studies, applies deterministic phase mapping, calls Claude for entity resolution (companies, assets). |
+| `/api/ai/health` | GET | Anthropic status page proxy. Returns Claude API component health, cached 60s. No auth. |
+
+Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wrangler secret put`). Vault secret mirrors the CT.gov pattern.
 
 ## Shared entity-create RPCs
 
@@ -119,18 +168,27 @@ Agency analysts paste a press release URL or text into an engagement. Claude Son
 
 `create_marker` is the fix for empty activity feeds: it inserts assignments before re-emitting the marker audit fan-out, so `trial_change_events` rows are produced. The `p_change_source` parameter (default `'analyst'`) is passed as `'source_import'` by `commit_source_import`.
 
+## RPCs
+
+| RPC | Purpose |
+|---|---|
+| `ai_import_status(p_tenant_id)` | Lightweight pre-check: returns `ai_enabled`, `daily_cap_cents`, `spent_today_cents`, `rate_used_hour`, `rate_limit_hour`. Callable by any authenticated user. STABLE, SECURITY DEFINER. |
+
 ## Angular components
 
 | Component | Location | Purpose |
 |---|---|---|
-| `ImportFromSourceDialogComponent` | `features/source-import/` | Two-mode input, calls worker, navigates to review |
-| `ReviewPageComponent` | `features/source-import/` | Two-pane review: source text (left) + hierarchical tree of proposals grouped Company > Asset > Trial > Markers/Events (right). Existing entities are clickable links to their manage page. Uses `ng-template` with `NgTemplateOutlet` for reusable entity row rendering. |
-| `SourceImportService` | `features/source-import/` | Ephemeral proposal state between dialog and review |
+| `ImportPageComponent` | `features/source-import/` | Full-page import shell with 3 tabs (NCT, URL, Text) and AI status panel. Route: `/import`. |
+| `NctInputComponent` | `features/source-import/nct-input/` | NCT paste area with live parsing, dedup, duplicate detection, progress, error handling. |
+| `ImportFromSourceDialogComponent` | `features/source-import/` | [DEPRECATED] Former two-mode dialog. Replaced by `ImportPageComponent`. |
+| `ReviewPageComponent` | `features/source-import/` | Review page with NCT-aware defaults: collapsed trial rows, hidden source pane, CT.gov badges for NCT imports. Full two-pane layout for URL/text imports. |
+| `SourceImportService` | `features/source-import/` | Ephemeral proposal state between import page and review. `source_kind` widened to `'url' | 'text' | 'nct'`. |
 | `SuperAdminAiUsageComponent` | `features/super-admin/` | 3-level AI usage drill-down + ai_enabled toggle |
 
 ## Guards
 
 | Guard | Type | Purpose |
 |---|---|---|
+| `importGuard` | CanActivate | Checks editor role + tenant AI enabled for the `/import` route |
 | `sourceImportGuard` | CanActivate | Checks proposal exists in service for the route's aiCallId |
 | `sourceImportDeactivateGuard` | CanDeactivate | Prompts on unsaved changes |

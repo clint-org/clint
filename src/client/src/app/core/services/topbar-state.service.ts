@@ -48,7 +48,7 @@ export class TopbarStateService {
   /** Action buttons rendered in the topbar-actions area. */
   readonly actions = signal<TopbarAction[]>([]);
 
-  /** Dimension sub-tabs rendered after the main section tabs (e.g., Bullseye dimensions, Positioning groupings). */
+  /** Dimension sub-tabs rendered after the main section tabs (e.g., Bullseye dimensions, Density Matrix groupings). */
   readonly subTabs = signal<TopbarSubTab[]>([]);
 
   /** Callback invoked when a sub-tab is clicked. Set by the feature that owns the sub-tabs. */
