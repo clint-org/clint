@@ -105,7 +105,10 @@ export class AssetDetailComponent {
   });
 
   private async initLandscape(spaceId: string, assetId: string): Promise<void> {
-    await this.landscape.init(spaceId, { disablePersistence: true });
+    await this.landscape.init(spaceId, {
+      disablePersistence: true,
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+    });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, assetIds: [assetId] });
   }
 

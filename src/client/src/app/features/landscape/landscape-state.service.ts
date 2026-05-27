@@ -143,11 +143,29 @@ export class LandscapeStateService {
    * Bind this service instance to a space, restore persisted state,
    * and fetch the full unfiltered dataset.
    */
-  async init(spaceId: string, opts?: { disablePersistence?: boolean }): Promise<void> {
+  async init(
+    spaceId: string,
+    opts?: {
+      disablePersistence?: boolean;
+      columnDefaults?: {
+        showMoaColumn?: boolean;
+        showRoaColumn?: boolean;
+        showNotesColumn?: boolean;
+      };
+    }
+  ): Promise<void> {
     this.spaceId = spaceId;
     this.spaceIdSig.set(spaceId);
     this.disablePersistence = opts?.disablePersistence ?? false;
     this.storageKey = STORAGE_PREFIX + spaceId;
+    if (opts?.columnDefaults) {
+      if (opts.columnDefaults.showMoaColumn !== undefined)
+        this.showMoaColumn.set(opts.columnDefaults.showMoaColumn);
+      if (opts.columnDefaults.showRoaColumn !== undefined)
+        this.showRoaColumn.set(opts.columnDefaults.showRoaColumn);
+      if (opts.columnDefaults.showNotesColumn !== undefined)
+        this.showNotesColumn.set(opts.columnDefaults.showNotesColumn);
+    }
     if (!this.disablePersistence) {
       this.restorePersistedState();
     }

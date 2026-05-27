@@ -55,6 +55,7 @@ export class TimelineViewComponent {
   readonly hideNotesColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
   readonly legendVisible = input<boolean>(false);
+  readonly columnsOnly = input<boolean>(false);
 
   private readonly autoStartYear = signal(2016);
   private readonly autoEndYear = signal(2026);

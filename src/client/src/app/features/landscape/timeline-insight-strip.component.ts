@@ -16,57 +16,61 @@ import { LandscapeStateService } from './landscape-state.service';
       role="region"
       aria-label="Timeline summary"
     >
-      <div class="flex flex-col gap-1 flex-1 min-w-0">
-        <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
-          >READ</span
-        >
-        @if (read().text; as text) {
+      @if (!columnsOnly()) {
+        <div class="flex flex-col gap-1 flex-1 min-w-0">
           <span
-            class="text-xs text-slate-600 leading-relaxed read-content"
-            [innerHTML]="text"
-          ></span>
-        }
-      </div>
-
-      <div class="w-px self-stretch bg-slate-200"></div>
-
-      <div class="flex flex-col gap-1 flex-shrink-0">
-        <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
-          >STATS</span
-        >
-        <div class="flex gap-3">
-          <div class="flex items-baseline gap-1 whitespace-nowrap">
-            <span class="font-mono text-sm font-semibold text-slate-800">{{
-              stats().companyCount
-            }}</span>
-            <span class="text-[11px] text-slate-400">co</span>
-          </div>
-          <div class="flex items-baseline gap-1 whitespace-nowrap">
-            <span class="font-mono text-sm font-semibold text-slate-800">{{
-              stats().assetCount
-            }}</span>
-            <span class="text-[11px] text-slate-400">assets</span>
-          </div>
-          <div class="flex items-baseline gap-1 whitespace-nowrap">
-            <span class="font-mono text-sm font-semibold text-slate-800">{{
-              stats().trialCount
-            }}</span>
-            <span class="text-[11px] text-slate-400">trials</span>
-          </div>
-          <div class="flex items-baseline gap-1 whitespace-nowrap">
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+            >READ</span
+          >
+          @if (read().text; as text) {
             <span
-              class="font-mono text-xs font-semibold px-1.5 rounded"
-              [class.text-amber-800]="stats().catalystCount90d > 0"
-              [class.bg-amber-50]="stats().catalystCount90d > 0"
-              [class.text-slate-500]="stats().catalystCount90d === 0"
-              >{{ stats().catalystCount90d }}</span
-            >
-            <span class="text-[11px] text-slate-400">cat/90d</span>
+              class="text-xs text-slate-600 leading-relaxed read-content"
+              [innerHTML]="text"
+            ></span>
+          }
+        </div>
+
+        <div class="w-px self-stretch bg-slate-200"></div>
+
+        <div class="flex flex-col gap-1 flex-shrink-0">
+          <span
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+            >STATS</span
+          >
+          <div class="flex gap-3">
+            <div class="flex items-baseline gap-1 whitespace-nowrap">
+              <span class="font-mono text-sm font-semibold text-slate-800">{{
+                stats().companyCount
+              }}</span>
+              <span class="text-[11px] text-slate-400">co</span>
+            </div>
+            <div class="flex items-baseline gap-1 whitespace-nowrap">
+              <span class="font-mono text-sm font-semibold text-slate-800">{{
+                stats().assetCount
+              }}</span>
+              <span class="text-[11px] text-slate-400">assets</span>
+            </div>
+            <div class="flex items-baseline gap-1 whitespace-nowrap">
+              <span class="font-mono text-sm font-semibold text-slate-800">{{
+                stats().trialCount
+              }}</span>
+              <span class="text-[11px] text-slate-400">trials</span>
+            </div>
+            <div class="flex items-baseline gap-1 whitespace-nowrap">
+              <span
+                class="font-mono text-xs font-semibold px-1.5 rounded"
+                [class.text-amber-800]="stats().catalystCount90d > 0"
+                [class.bg-amber-50]="stats().catalystCount90d > 0"
+                [class.text-slate-500]="stats().catalystCount90d === 0"
+                >{{ stats().catalystCount90d }}</span
+              >
+              <span class="text-[11px] text-slate-400">cat/90d</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="w-px self-stretch bg-slate-200"></div>
+        <div class="w-px self-stretch bg-slate-200"></div>
+      }
 
       <div class="flex flex-col gap-1 flex-shrink-0">
         <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
@@ -127,6 +131,7 @@ export class TimelineInsightStripComponent {
   protected readonly state = inject(LandscapeStateService);
 
   readonly companies = input.required<Company[]>();
+  readonly columnsOnly = input<boolean>(false);
 
   protected readonly read = computed(() => buildCompetitiveRead(this.companies()));
   protected readonly stats = computed(() => computeTimelineStats(this.companies()));

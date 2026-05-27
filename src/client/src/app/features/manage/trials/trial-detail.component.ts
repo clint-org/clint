@@ -243,7 +243,10 @@ export class TrialDetailComponent implements OnDestroy {
   });
 
   private async initLandscape(spaceId: string, trialId: string): Promise<void> {
-    await this.landscape.init(spaceId, { disablePersistence: true });
+    await this.landscape.init(spaceId, {
+      disablePersistence: true,
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+    });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, trialIds: [trialId] });
   }
 

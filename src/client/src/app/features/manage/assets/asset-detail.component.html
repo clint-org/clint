@@ -36,17 +36,25 @@
             loading="lazy"
           />
         }
-        <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">{{ p.name }}</h1>
+        <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
+          {{ p.name }}
+        </h1>
       </div>
-      <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+      <div
+        class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+      >
         @if (p.generic_name) {
           <span>{{ p.generic_name }}</span>
         }
         @for (moa of p.mechanisms_of_action ?? []; track moa.id) {
-          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{ moa.name }}</span>
+          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{
+            moa.name
+          }}</span>
         }
         @for (roa of p.routes_of_administration ?? []; track roa.id) {
-          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{ roa.abbreviation || roa.name }}</span>
+          <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5">{{
+            roa.abbreviation || roa.name
+          }}</span>
         }
       </div>
     </header>
@@ -69,11 +77,9 @@
         <app-timeline-view
           [hideCompanyColumn]="true"
           [hideAssetColumn]="true"
-          [hideMoaColumn]="true"
-          [hideRoaColumn]="true"
-          [hideNotesColumn]="true"
           [hideLegend]="true"
           [legendVisible]="legendVisible()"
+          [columnsOnly]="true"
         />
       </div>
       @if (asset(); as a) {
@@ -102,7 +108,7 @@
           onPurgeRequested(
             {
               id: historyHost.payload().current?.id ?? '',
-              headline: historyHost.payload().current?.headline ?? ''
+              headline: historyHost.payload().current?.headline ?? '',
             },
             false
           )
@@ -119,12 +125,8 @@
       [payload]="historyHost.payload()"
       [currentUserCanEdit]="spaceRole.canEdit()"
       (withdraw)="withdrawDialogOpen.set(true)"
-      (purgeVersion)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-      "
-      (purgeAnchor)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-      "
+      (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+      (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
     />
     <app-withdraw-intelligence-dialog
       [visible]="withdrawDialogOpen()"
@@ -139,9 +141,16 @@
       (confirmed)="onPurgeConfirmed($event)"
     />
 
-    <section class="mb-4 border border-slate-200 bg-white" aria-label="Reads referencing this asset">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Referenced in</h2>
+    <section
+      class="mb-4 border border-slate-200 bg-white"
+      aria-label="Reads referencing this asset"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+      >
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Referenced in
+        </h2>
         <span class="font-mono text-[10px] text-slate-400">
           {{ (intelligence()?.referenced_in ?? []).length }} reads
         </span>
@@ -153,7 +162,9 @@
           <ul class="divide-y divide-slate-100">
             @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
               <li class="flex flex-wrap items-baseline gap-2 py-2">
-                <span class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <span
+                  class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+                >
                   {{ ref.entity_type }}
                 </span>
                 <span class="text-sm text-slate-800">{{ ref.headline }}</span>
@@ -164,9 +175,16 @@
       </div>
     </section>
 
-    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+    <section
+      class="materials-section mb-4 border border-slate-200 bg-white"
+      aria-label="Engagement materials"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+      >
+        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Materials
+        </h2>
       </header>
       <app-materials-section entityType="product" [entityId]="assetId()" [spaceId]="spaceIdSig()" />
     </section>

@@ -46,9 +46,6 @@
       <div>
         <app-timeline-view
           [hideCompanyColumn]="true"
-          [hideMoaColumn]="true"
-          [hideRoaColumn]="true"
-          [hideNotesColumn]="true"
           [hideLegend]="true"
           [legendVisible]="legendVisible()"
         />
@@ -96,12 +93,8 @@
       [payload]="historyHost.payload()"
       [currentUserCanEdit]="spaceRole.canEdit()"
       (withdraw)="withdrawDialogOpen.set(true)"
-      (purgeVersion)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-      "
-      (purgeAnchor)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-      "
+      (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+      (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
     />
     <app-withdraw-intelligence-dialog
       [visible]="withdrawDialogOpen()"

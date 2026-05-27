@@ -369,9 +369,7 @@
             </dd>
           </div>
           <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Asset
-            </dt>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Asset</dt>
             <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
           </div>
           <div>
@@ -396,33 +394,49 @@
         @if (t.phase_type || t.phase_start_date || t.phase_end_date) {
           <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Phase type</dt>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Phase type
+              </dt>
               <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900">
                 <span>{{ t.phase_type ? phaseLabel(t.phase_type) : '--' }}</span>
                 @if (t.phase_type_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_type_source }}
                   </span>
                 }
               </dd>
             </div>
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Start date</dt>
-              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums">
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Start date
+              </dt>
+              <dd
+                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
+              >
                 <span>{{ (t.phase_start_date | date: 'mediumDate') || '--' }}</span>
                 @if (t.phase_start_date_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_start_date_source }}
                   </span>
                 }
               </dd>
             </div>
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">End date</dt>
-              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums">
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                End date
+              </dt>
+              <dd
+                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
+              >
                 <span>{{ (t.phase_end_date | date: 'mediumDate') || '--' }}</span>
                 @if (t.phase_end_date_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_end_date_source }}
                   </span>
                 }
@@ -437,7 +451,9 @@
                 href="#"
                 class="text-brand-700 hover:underline"
                 (click)="$event.preventDefault(); editingTrial.set(true)"
-              >Edit this trial</a> to add phase, start, and end dates.
+                >Edit this trial</a
+              >
+              to add phase, start, and end dates.
             } @else {
               The trial owner can add phase, start, and end dates from the edit dialog.
             }
@@ -464,11 +480,9 @@
             [hideCompanyColumn]="true"
             [hideAssetColumn]="true"
             [hideTrialColumn]="true"
-            [hideMoaColumn]="true"
-            [hideRoaColumn]="true"
-            [hideNotesColumn]="true"
             [hideLegend]="true"
             [legendVisible]="legendVisible()"
+            [columnsOnly]="true"
           />
         </div>
         @if (trial(); as t) {

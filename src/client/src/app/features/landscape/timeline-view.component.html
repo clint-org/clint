@@ -40,7 +40,7 @@
         </div>
       </div>
     } @else if (companies().length > 0) {
-      <app-timeline-insight-strip [companies]="companies()" />
+      <app-timeline-insight-strip [companies]="companies()" [columnsOnly]="columnsOnly()" />
       <app-dashboard-grid
         [companies]="companies()"
         [zoomLevel]="state.zoomLevel()"
