@@ -82,7 +82,7 @@ export class MarkerComponent {
       'Nov',
       'Dec',
     ];
-    return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+    return `${months[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`;
   });
 
   readonly ariaLabel = computed(() => {

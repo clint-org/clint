@@ -233,7 +233,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly formattedDate = computed(() => {
     if (!this.date()) return '';
     const d = new Date(this.date());
-    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   });
 
   readonly projectionLabel = computed(() => {
