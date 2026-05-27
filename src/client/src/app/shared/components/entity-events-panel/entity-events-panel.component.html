@@ -8,13 +8,15 @@
         External intelligence scoped to this {{ entityLevel() }}.
       </p>
     </div>
-    <a
-      [routerLink]="seeAllLink()"
-      [queryParams]="seeAllQueryParams()"
-      class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800 whitespace-nowrap pt-0.5"
-    >
-      See all
-    </a>
+    @if (!loading() && rows().length > 0) {
+      <a
+        [routerLink]="seeAllLink()"
+        [queryParams]="seeAllQueryParams()"
+        class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800 whitespace-nowrap pt-0.5"
+      >
+        See all
+      </a>
+    }
   </header>
 
   @if (loading()) {

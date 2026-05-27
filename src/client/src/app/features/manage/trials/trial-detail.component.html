@@ -281,7 +281,7 @@
       <!-- CT.gov data block -->
       <div id="ctgov">
         <app-section-card title="CT.gov data">
-          <ng-container actions>
+          <div actions class="flex items-center gap-1">
             @if (spaceRole.canEdit()) {
               <span
                 [pTooltip]="!t.identifier ? 'Add an NCT identifier to enable CT.gov sync.' : ''"
@@ -306,7 +306,7 @@
                 (onClick)="showAllCtgovModal.set(true)"
               />
             }
-          </ng-container>
+          </div>
 
           @if (t.identifier && nctValidity() === 'not_found') {
             <p-message severity="error" [closable]="false" styleClass="mb-3">
@@ -372,14 +372,16 @@
             <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Asset</dt>
             <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
           </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Display order
-            </dt>
-            <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-              {{ t.display_order }}
-            </dd>
-          </div>
+          @if (spaceRole.canEdit()) {
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Display order
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                {{ t.display_order }}
+              </dd>
+            </div>
+          }
         </dl>
         @if (t.notes) {
           <div class="mt-4 border-t border-slate-100 pt-4">

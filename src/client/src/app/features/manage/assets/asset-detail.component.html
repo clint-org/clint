@@ -59,41 +59,6 @@
       </div>
     </header>
 
-    <!-- Timeline + events panel -->
-    <section id="timeline" class="mb-4 bg-white border border-slate-200">
-      <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
-          Timeline
-        </h2>
-        <button
-          type="button"
-          class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
-          (click)="legendVisible.set(!legendVisible())"
-        >
-          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-        </button>
-      </header>
-      <div>
-        <app-timeline-view
-          [hideCompanyColumn]="true"
-          [hideAssetColumn]="true"
-          [hideLegend]="true"
-          [legendVisible]="legendVisible()"
-          [columnsOnly]="true"
-        />
-      </div>
-      @if (asset(); as a) {
-        <div class="border-t border-slate-200">
-          <app-entity-events-panel
-            [spaceId]="spaceIdSig()"
-            [tenantId]="tenantIdSig()"
-            entityLevel="product"
-            [entityId]="a.id"
-          />
-        </div>
-      }
-    </section>
-
     @if (hasIntelligence()) {
       <app-intelligence-block
         [published]="intelligence()?.published ?? null"
@@ -140,6 +105,41 @@
       (cancelled)="purgeDialogOpen.set(false)"
       (confirmed)="onPurgeConfirmed($event)"
     />
+
+    <!-- Timeline + events panel -->
+    <section id="timeline" class="mb-4 bg-white border border-slate-200">
+      <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+          Timeline
+        </h2>
+        <button
+          type="button"
+          class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
+          (click)="legendVisible.set(!legendVisible())"
+        >
+          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
+        </button>
+      </header>
+      <div>
+        <app-timeline-view
+          [hideCompanyColumn]="true"
+          [hideAssetColumn]="true"
+          [hideLegend]="true"
+          [legendVisible]="legendVisible()"
+          [columnsOnly]="true"
+        />
+      </div>
+      @if (asset(); as a) {
+        <div class="border-t border-slate-200">
+          <app-entity-events-panel
+            [spaceId]="spaceIdSig()"
+            [tenantId]="tenantIdSig()"
+            entityLevel="product"
+            [entityId]="a.id"
+          />
+        </div>
+      }
+    </section>
 
     <section
       class="mb-4 border border-slate-200 bg-white"

@@ -16,7 +16,7 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
   template: `
     @if (canEdit()) {
       <section
-        class="mb-4 rounded-sm border border-dashed border-slate-300 bg-slate-50/40 px-5 py-6"
+        class="rounded-sm border border-dashed border-slate-300 bg-slate-50/40 px-5 py-6"
         aria-label="No primary intelligence yet"
       >
         <div class="flex items-center justify-between gap-4">
