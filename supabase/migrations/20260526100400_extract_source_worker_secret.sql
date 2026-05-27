@@ -37,12 +37,22 @@ revoke execute on function public._verify_extract_source_worker_secret(text) fro
 comment on function public._verify_extract_source_worker_secret(text) is
   'Worker-secret gate. Called by source-extract RPCs (ai_call_open, ai_call_preflight, ai_call_close) as the first statement. Raises 42501 if the supplied secret does not match the vault entry named extract_source_worker_secret.';
 
--- smoke test
+-- smoke test (reads actual vault value so it works on both local and remote)
 do $$
 declare
+  v_actual text;
   v_threw boolean := false;
 begin
-  perform public._verify_extract_source_worker_secret('local-dev-extract-source-secret');
+  select decrypted_secret into v_actual
+    from vault.decrypted_secrets
+   where name = 'extract_source_worker_secret';
+
+  if v_actual is null then
+    raise notice 'smoke: no extract_source_worker_secret in vault, skipping verify smoke';
+    return;
+  end if;
+
+  perform public._verify_extract_source_worker_secret(v_actual);
   raise notice 'verify ok with correct secret';
 
   begin
