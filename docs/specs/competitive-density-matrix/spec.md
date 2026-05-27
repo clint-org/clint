@@ -2,7 +2,7 @@
 id: spec-2026-competitive-density-matrix
 title: Competitive Density Matrix
 slug: competitive-density-matrix
-status: approved
+status: completed
 created: 2026-05-27
 updated: 2026-05-27
 depends-on: spec-2026-bullseye-spoke-redesign
