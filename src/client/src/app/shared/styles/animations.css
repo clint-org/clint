@@ -69,24 +69,6 @@
   animation-delay: 210ms;
 }
 
-/* -- PrimeNG Dialog entrance enhancement -------------------------------- */
-
-/* Refine the dialog content entrance with a subtle scale-up. */
-.p-dialog {
-  animation: dialog-enter 200ms cubic-bezier(0.25, 1, 0.5, 1) both;
-}
-
-@keyframes dialog-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* -- PrimeNG Toast entrance refinement ---------------------------------- */
 
 /* Override PrimeNG's default toast animation with a cleaner slide. */
@@ -101,8 +83,7 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-content-enter,
   .animate-fade-in,
-  .animate-stagger > *,
-  .p-dialog {
+  .animate-stagger > * {
     animation: none !important;
     opacity: 1;
     transform: none;
