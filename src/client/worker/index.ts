@@ -6,6 +6,7 @@ import { presignPut, presignGet } from './r2';
 import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
 import { drainR2DeleteQueue, type R2DeleteClient } from './r2-drain/queue';
 import { handleSourceExtract } from './source-extract/handler';
+import { handleBrandfetchLookup } from './brandfetch';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
@@ -38,6 +39,7 @@ export interface Env {
   CTGOV_WORKER_SECRET: string;
   ANTHROPIC_API_KEY: string;
   EXTRACT_SOURCE_WORKER_SECRET: string;
+  BRANDFETCH_API_KEY: string;
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
 }
 
@@ -69,6 +71,19 @@ export default {
     }
     if (url.pathname === '/api/source/extract' && request.method === 'POST') {
       return handleSourceExtract(request, env, cors);
+    }
+    if (url.pathname === '/api/brandfetch/lookup' && request.method === 'POST') {
+      const auth = request.headers.get('Authorization');
+      const sub = jwtSubject(auth);
+      const rlKey = sub ?? request.headers.get('CF-Connecting-IP') ?? 'anon';
+      const rl = await env.DOWNLOAD_LIMITER.limit({ key: `brandfetch:${rlKey}` });
+      if (!rl.success) {
+        return new Response(JSON.stringify({ error: 'rate_limited' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '60', ...cors },
+        });
+      }
+      return handleBrandfetchLookup(request, env.BRANDFETCH_API_KEY, sub, cors);
     }
 
     if (url.pathname.startsWith('/api/')) {
