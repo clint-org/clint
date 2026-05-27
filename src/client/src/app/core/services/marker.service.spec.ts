@@ -12,6 +12,7 @@ interface QueryBuilderStub {
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
+  throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
   _error: unknown;
 }
@@ -24,19 +25,37 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     delete: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
+    throwOnError: vi.fn(),
     _data: data,
     _error: error,
   };
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
-    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null
-  ) => Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null,
+  ) => {
+    if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+    return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+  };
   qb.select.mockReturnValue(qb);
   qb.insert.mockReturnValue(qb);
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
-  qb.single.mockResolvedValue({ data: qb._data, error: qb._error });
+  qb.throwOnError.mockReturnValue(qb);
+  qb.single.mockImplementation(() => {
+    const s = { throwOnError: vi.fn() } as Record<string, unknown>;
+    const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+    (sp as { then: PromiseLike<unknown>['then'] }).then = (
+      onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null,
+    ) => {
+      if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+      return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    };
+    s['throwOnError'] = vi.fn().mockReturnValue(sp);
+    return sp;
+  });
   return qb;
 }
 

@@ -23,6 +23,7 @@ interface QueryBuilderStub {
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
+  throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
   _error: unknown;
 }
@@ -35,20 +36,42 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     delete: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
+    throwOnError: vi.fn(),
     _data: data,
     _error: error,
   };
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
-    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null
-  ) => Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null,
+  ) => {
+    if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+    return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+  };
   qb.select.mockReturnValue(qb);
   qb.insert.mockReturnValue(qb);
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
-  qb.single.mockResolvedValue({ data: qb._data, error: qb._error });
+  qb.throwOnError.mockReturnValue(qb);
+  qb.single.mockImplementation(() =>
+    qb._error ? Promise.reject(qb._error) : Promise.resolve({ data: qb._data, error: qb._error })
+  );
   return qb;
+}
+
+function makeRpcResult(data: unknown, error: unknown = null) {
+  const obj = { throwOnError: vi.fn() };
+  obj.throwOnError.mockReturnValue(obj);
+  const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (t as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null,
+  ) => {
+    if (error) return Promise.reject(error).then(null, onRejected);
+    return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
+  };
+  return obj;
 }
 
 interface ClientStub {
@@ -81,7 +104,7 @@ describe('MaterialService.delete', () => {
   let service: MaterialService;
 
   beforeEach(() => {
-    rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     // lookup row carries space_id + nested material_links the service uses to
     // build cache invalidation tags.
     const lookupQb = makeQueryBuilder({
@@ -117,7 +140,7 @@ describe('MaterialService.delete', () => {
   });
 
   it('throws when the RPC returns an error', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { message: 'rls' } });
+    rpc.mockReturnValueOnce(makeRpcResult(null, { message: 'rls' }));
     await expect(service.delete('material-1')).rejects.toMatchObject({ message: 'rls' });
   });
 });
@@ -129,7 +152,7 @@ describe('MaterialService.finalize', () => {
       material_links: [{ entity_type: 'trial', entity_id: 'trial-1' }],
     });
     const from = vi.fn().mockReturnValue(lookupQb);
-    const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
       { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
@@ -145,7 +168,7 @@ describe('MaterialService.finalize', () => {
   it('throws when the RPC returns an error', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-1', material_links: [] });
     const from = vi.fn().mockReturnValue(lookupQb);
-    const rpc = vi.fn().mockResolvedValueOnce({ data: null, error: { message: 'not uploader' } });
+    const rpc = vi.fn().mockReturnValueOnce(makeRpcResult(null, { message: 'not uploader' }));
     const service = makeService(
       { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags: vi.fn() }
@@ -157,7 +180,7 @@ describe('MaterialService.finalize', () => {
 
 describe('MaterialService.registerMaterial', () => {
   it('calls register_material RPC with the canonical jsonb payload', async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: 'new-material-id', error: null });
+    const rpc = vi.fn().mockReturnValue(makeRpcResult('new-material-id'));
     const invalidateTags = vi.fn();
     const service = makeService(
       { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
@@ -185,7 +208,7 @@ describe('MaterialService.registerMaterial', () => {
   });
 
   it('throws when the RPC returns an error', async () => {
-    const rpc = vi.fn().mockResolvedValueOnce({ data: null, error: { message: 'mime denied' } });
+    const rpc = vi.fn().mockReturnValueOnce(makeRpcResult(null, { message: 'mime denied' }));
     const service = makeService(
       { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags: vi.fn() }

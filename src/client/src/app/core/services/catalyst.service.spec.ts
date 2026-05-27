@@ -14,6 +14,20 @@ interface CacheStub {
   invalidateTags: ReturnType<typeof vi.fn>;
 }
 
+function makeRpcResult(data: unknown, error: unknown = null) {
+  const obj = { throwOnError: vi.fn() };
+  obj.throwOnError.mockReturnValue(obj);
+  const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (t as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null,
+  ) => {
+    if (error) return Promise.reject(error).then(null, onRejected);
+    return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
+  };
+  return obj;
+}
+
 function makeService(client: ClientStub, cache: CacheStub): CatalystService {
   const supabaseStub = { client } as unknown as SupabaseService;
   const cacheStub = cache as unknown as RpcCache;
@@ -45,7 +59,7 @@ describe('CatalystService.getCatalystDetail', () => {
   });
 
   it('invokes the supabase rpc via the fetch callback', async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: { id: 'marker-2' }, error: null });
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ id: 'marker-2' }));
     const get = vi.fn().mockImplementation((_rpc, _params, opts: { fetch: () => Promise<unknown> }) =>
       opts.fetch()
     );
@@ -61,7 +75,7 @@ describe('CatalystService.getCatalystDetail', () => {
   });
 
   it('re-throws when supabase rpc returns an error', async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: null, error: new Error('rpc failed') });
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null, new Error('rpc failed')));
     const get = vi.fn().mockImplementation((_rpc, _params, opts: { fetch: () => Promise<unknown> }) =>
       opts.fetch()
     );

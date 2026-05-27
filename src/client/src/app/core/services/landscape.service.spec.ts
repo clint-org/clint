@@ -14,6 +14,20 @@ interface CacheStub {
   invalidateTags: ReturnType<typeof vi.fn>;
 }
 
+function makeRpcResult(data: unknown, error: unknown = null) {
+  const obj = { throwOnError: vi.fn() };
+  obj.throwOnError.mockReturnValue(obj);
+  const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (t as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null,
+  ) => {
+    if (error) return Promise.reject(error).then(null, onRejected);
+    return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
+  };
+  return obj;
+}
+
 function makeService(client: ClientStub, cache: CacheStub): LandscapeService {
   const supabaseStub = { client } as unknown as SupabaseService;
   const cacheStub = cache as unknown as RpcCache;
@@ -32,7 +46,7 @@ describe('LandscapeService.getLandscapeIndex', () => {
   let service: LandscapeService;
 
   beforeEach(() => {
-    rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    rpc = vi.fn().mockReturnValue(makeRpcResult([]));
     get = vi.fn().mockResolvedValue([]);
     service = makeService({ rpc }, { get, invalidateTags: vi.fn() });
   });
@@ -58,7 +72,7 @@ describe('LandscapeService.getBullseyeData', () => {
   it('builds the right tag including dimension and entityId', async () => {
     const get = vi.fn().mockResolvedValue({});
     const service = makeService(
-      { rpc: vi.fn().mockResolvedValue({ data: {}, error: null }) },
+      { rpc: vi.fn().mockReturnValue(makeRpcResult({})) },
       { get, invalidateTags: vi.fn() }
     );
 
@@ -73,7 +87,7 @@ describe('LandscapeService.getBullseyeData', () => {
 describe('LandscapeService.getPositioningData', () => {
   it('uses tag space:{id}:positioning, passes all key params, and remaps products->assets', async () => {
     const rawWireResult = { rows: [], count_unit: 'products' };
-    const rpc = vi.fn().mockResolvedValue({ data: rawWireResult, error: null });
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(rawWireResult));
     // cache.get invokes opts.fetch() directly so the products->assets remap is exercised.
     const get = vi.fn().mockImplementation((_rpcName, _params, opts) => opts.fetch());
     const service = makeService({ rpc }, { get, invalidateTags: vi.fn() });
