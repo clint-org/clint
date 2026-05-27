@@ -335,4 +335,4 @@ export const CTGOV_KEY_CATALYSTS_DEFAULT_PATHS = [
 
 export const CTGOV_TIMELINE_DEFAULT_PATHS: string[] = [];
 
-export const CTGOV_TRIAL_LIST_DEFAULT_PATHS = ['protocolSection.identificationModule.nctId'];
+export const CTGOV_TRIAL_LIST_DEFAULT_PATHS = ['protocolSection.identificationModule.briefTitle'];
