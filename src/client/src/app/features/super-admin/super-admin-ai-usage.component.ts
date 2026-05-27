@@ -307,14 +307,14 @@ interface ImportRow {
             [text]="true"
             aria-label="Cancel"
             (click)="confirmVisible.set(false)"
-          >Cancel</button>
+          ></button>
           <button
             pButton
             [label]="confirmAction() === 'enable' ? 'Enable' : 'Disable'"
             [disabled]="!confirmReason().trim()"
             [attr.aria-label]="confirmAction() === 'enable' ? 'Enable' : 'Disable'"
             (click)="executeToggle()"
-          >{{ confirmAction() === 'enable' ? 'Enable' : 'Disable' }}</button>
+          ></button>
         </ng-template>
       </p-dialog>
     </div>
