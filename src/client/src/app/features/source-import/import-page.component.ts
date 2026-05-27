@@ -24,6 +24,7 @@ import {
   AiStatusStrip,
   computeStatusStrip,
 } from './ai-status';
+import { NctInputComponent } from './nct-input/nct-input.component';
 
 type ImportTab = 'nct' | 'url' | 'text';
 
@@ -70,6 +71,7 @@ function looksLikeUrl(s: string): boolean {
     Tab,
     TabPanels,
     TabPanel,
+    NctInputComponent,
   ],
   template: `
     <div class="mx-auto max-w-4xl px-6 py-8">
@@ -106,9 +108,11 @@ function looksLikeUrl(s: string): boolean {
         </p-tablist>
         <p-tabpanels>
           <p-tabpanel value="nct">
-            <div class="py-6 text-center text-sm text-slate-400">
-              NCT input coming soon
-            </div>
+            <app-nct-input
+              [aiBlocked]="aiBlocked()"
+              [spaceId]="spaceId()"
+              [tenantId]="tenantId()"
+            />
           </p-tabpanel>
 
           <p-tabpanel value="url">
@@ -291,8 +295,8 @@ export class ImportPageComponent implements OnInit, OnDestroy {
   protected readonly aiHealth = signal<AiHealthResult | null>(null);
   protected readonly statusLoading = signal(true);
 
-  private readonly tenantId = signal('');
-  private readonly spaceId = signal('');
+  protected readonly tenantId = signal('');
+  protected readonly spaceId = signal('');
   private stepTimers: ReturnType<typeof setTimeout>[] = [];
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
 
