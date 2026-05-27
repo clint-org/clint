@@ -4,7 +4,19 @@
 
 ---
 
-The backend is managed by Supabase. Non-database server-side code consists of one Supabase Edge Function (`send-invite-email`) and one Cloudflare Worker that handles R2 presigned URL signing for engagement materials.
+The backend is managed by Supabase. Non-database server-side code consists of two Supabase Edge Functions (`send-invite-email`, `brandfetch-lookup`) and one Cloudflare Worker that handles R2 presigned URL signing for engagement materials.
+
+## Brandfetch Lookup
+
+The `brandfetch-lookup` Edge Function proxies the Brandfetch API to fetch brand assets (logo, icon, colors) for a given company domain. It is called from the agency branding page to auto-fill branding fields.
+
+**Auth:** JWT-verified (default `verify_jwt = true`). Only authenticated users can invoke it.
+
+**Request:** `POST` with `{ "domain": "pfizer.com" }`.
+
+**Response:** Normalized brand record with `logo_url`, `favicon_url`, `primary_color`, `accent_color`, and `name`. Prefers SVG logos over PNG; picks light-theme variants.
+
+**Env var:** `BRANDFETCH_API_KEY` (server-side only, never exposed to the client).
 
 ## Materials Worker
 
