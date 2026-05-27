@@ -83,6 +83,21 @@ export class LandscapeStateService {
 
   // ─── Filtered views (computed) ───────────────────────────────────────
 
+  readonly lastSyncedAt = computed<string | null>(() => {
+    const raw = this.rawData();
+    if (!raw) return null;
+    let latest: string | null = null;
+    for (const company of raw.companies) {
+      for (const asset of company.assets ?? []) {
+        for (const trial of asset.trials ?? []) {
+          const ts = trial.ctgov_last_synced_at;
+          if (ts && (!latest || ts > latest)) latest = ts;
+        }
+      }
+    }
+    return latest;
+  });
+
   /** Filtered company hierarchy for the timeline view. */
   readonly filteredCompanies = computed<Company[]>(() => {
     const raw = this.rawData();

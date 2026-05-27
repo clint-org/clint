@@ -214,7 +214,8 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 }
               }
             } @else {
-              <!-- Collapsed: individual item icons with section dividers -->
+              <!-- Collapsed: section label + individual item icons -->
+              <span class="collapsed-label" aria-hidden="true">{{ section.label }}</span>
               @for (item of section.items; track item.route) {
                 <button
                   type="button"
@@ -463,6 +464,21 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         user-select: none;
       }
 
+      .collapsed-label {
+        display: none;
+      }
+      .sidebar--collapsed .collapsed-label {
+        display: block;
+        font-size: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #475569;
+        text-align: center;
+        padding: 2px 0 4px;
+        user-select: none;
+      }
+
       /* Nav items (expanded) */
       .nav-item {
         display: flex;
@@ -632,6 +648,7 @@ export class SidebarComponent {
   readonly pinned = input<boolean>(false);
   readonly activeRoute = input<string>('');
   readonly hasSpace = input<boolean>(false);
+  readonly canEdit = input<boolean>(true);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
   readonly userAvatarUrl = input<string | null>(null);
@@ -663,7 +680,10 @@ export class SidebarComponent {
 
   readonly isExpanded = computed(() => this.expanded() || this.pinned());
 
-  readonly visibleSections = computed(() => (this.hasSpace() ? NAV_SECTIONS : ORG_ONLY_SECTIONS));
+  readonly visibleSections = computed(() => {
+    if (!this.hasSpace()) return ORG_ONLY_SECTIONS;
+    return this.canEdit() ? NAV_SECTIONS : NAV_SECTIONS.filter((s) => s.id !== 'manage');
+  });
 
   isParentExpanded(route: string): boolean {
     return this.activeRoute().startsWith(route);

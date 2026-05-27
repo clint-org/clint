@@ -215,6 +215,16 @@
           "
         />
       }
+
+      @if (state.lastSyncedAt(); as ts) {
+        <span
+          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-400"
+          [pTooltip]="'Most recent CT.gov sync across all trials'"
+          tooltipPosition="left"
+        >
+          Data as of {{ ts | date: 'MMM d, y, h:mm a' }}
+        </span>
+      }
     }
   </div>
 

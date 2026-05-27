@@ -137,6 +137,11 @@ export interface ExtractRequest {
   source_text?: string;
 }
 
+export interface NctResolveRequest {
+  space_id: string;
+  nct_ids: string[];
+}
+
 export interface DroppedEntity {
   type: 'company' | 'asset' | 'trial' | 'marker' | 'event';
   index: number;
@@ -160,7 +165,7 @@ export interface CtgovCandidate {
 
 export interface ExtractResponse {
   ai_call_id: string;
-  source_kind: 'url' | 'text';
+  source_kind: 'url' | 'text' | 'nct';
   source_url: string | null;
   source_text: string;
   source_text_hash: string;
