@@ -18,26 +18,6 @@ The trial change feed introduces five new tables that together replace the wide 
 
 `trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. 36 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
 
-### change_event_annotations
-
-Analyst notes attached to detected change events. One annotation per change event (upsert semantics). The annotation is the deliverable for the advisory use case: analysts attach context to detected CT.gov changes so the intelligence team can record their read on each signal.
-
-```sql
-change_event_annotations (
-  id               uuid PRIMARY KEY,
-  change_event_id  uuid NOT NULL REFERENCES trial_change_events(id) ON DELETE CASCADE,
-  space_id         uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
-  body             text NOT NULL,
-  created_by       uuid REFERENCES auth.users(id),   -- set by _set_created_by trigger
-  created_at       timestamptz NOT NULL DEFAULT now(),
-  updated_at       timestamptz NOT NULL DEFAULT now(),
-  updated_by       uuid REFERENCES auth.users(id),   -- set by _set_updated_audit trigger
-  CONSTRAINT uq_annotations_change_event_id UNIQUE (change_event_id)
-)
-```
-
-The UNIQUE constraint on `change_event_id` enforces at most one annotation per change event. RPCs `upsert_change_event_annotation` and `delete_change_event_annotation` handle CRUD with SECURITY INVOKER (RLS does the access check). Audit columns `created_by` and `updated_by` are set server-side by the existing `_set_created_by` / `_set_updated_audit` triggers.
-
 ## Schema Diagram
 
 Auto-generated from `information_schema.tables` and the `FOREIGN KEY` constraints on the local Supabase database. Run `npm run docs:arch` from `src/client/` to regenerate. Tables without any FK relationship render as empty boxes so they remain visible.
@@ -886,4 +866,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260527120000_change_event_annotations.sql`
 - `20260527120100_events_rpc_unified_feed.sql`
 - `20260527120200_positioning_phase_counts.sql`
+- `20260527225705_fix_phase_end_date_coalesce_order.sql`
 <!-- /AUTO-GEN:DRIFT -->

@@ -267,9 +267,9 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /landscape/by-roa   -> bullseye
     /landscape/by-roa/:entityId   -> bullseye
     /landscape/:therapeuticAreaId   -> bullseye
-    /manage/companies   CompanyListComponent
-    /manage/assets   AssetListComponent
-    /manage/trials   TrialListComponent
+    /manage/companies   editGuard | CompanyListComponent
+    /manage/assets   editGuard | AssetListComponent
+    /manage/trials   editGuard | TrialListComponent
     /manage/trials/:id   TrialDetailComponent
     /manage/companies/:id   CompanyDetailComponent
     /manage/assets/:id   AssetDetailComponent

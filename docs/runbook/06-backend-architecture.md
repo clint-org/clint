@@ -592,17 +592,13 @@ flowchart TD
 
 **User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
 
-- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the engagement-landing what-changed widget and the trial-detail Activity section; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`. The standalone `/activity` page has been retired; its route now redirects to `/events?source=detected`.
+- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
 - `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
 - `update_space_field_visibility(p_space_id, p_visibility)`: writes the per-space field-visibility map that drives which CT.gov columns render on trial-detail.
 - `recompute_trial_change_events(p_trial_id)`: admin-only; replays the classifier over existing `trial_field_changes` for a trial. Used after classifier rule changes.
 - `get_latest_sync_run()`: reads the most recent `ctgov_sync_runs` row for the engagement-landing freshness indicator.
-- `upsert_change_event_annotation(p_change_event_id, p_body)`: SECURITY INVOKER. Inserts or updates the analyst annotation for a detected change event. Validates that the change event exists and that the caller has editor/owner space access (via RLS on `change_event_annotations`). Returns the upserted row. One annotation per change event, enforced by the UNIQUE constraint on `change_event_id`.
-- `delete_change_event_annotation(p_change_event_id)`: SECURITY INVOKER. Deletes the annotation for a detected change event. Validates that the change event exists and that the caller has editor/owner space access (via RLS).
-
-**Unified feed extension.** `get_events_page_data` now includes a third UNION leg for `trial_change_events` (source_type = `'detected'`), returning detected CT.gov changes alongside analyst events and markers. The return shape changed from a flat JSONB array to `{ items: jsonb[], total: bigint }` to support server-side pagination. The detected leg joins `change_event_annotations` to surface `has_annotation` (boolean) per row. Two SQL helper functions support the detected-event summary rendering: `_humanize_phase(val)` (e.g. `'PHASE3'` to `'Phase 3'`) and `_humanize_status(val)` (e.g. `'ACTIVE_NOT_RECRUITING'` to `'Active, not recruiting'`).
 
 ## Documentation Drift
 
