@@ -93,6 +93,20 @@ has_space_access(space_id, ARRAY['owner', 'editor'])
 
 `has_space_access` was extended during the whitelabel rollout with disjuncts for tenant ownership, tenant membership (implicit editor/viewer), agency ownership (write-eligible), agency membership (read-only), and platform admin (read-only). It also short-circuits to `false` for write-role checks when `tenants.suspended_at IS NOT NULL`.
 
+### Change Event Annotations
+
+`change_event_annotations` uses space-based RLS following the same pattern as data tables:
+
+```sql
+-- SELECT: any space member can read annotations
+has_space_access(space_id)
+
+-- INSERT/UPDATE/DELETE: editors and owners can write annotations
+has_space_access(space_id, ARRAY['owner', 'editor'])
+```
+
+Four policies total (SELECT, INSERT, UPDATE, DELETE). The `upsert_change_event_annotation` and `delete_change_event_annotation` RPCs are SECURITY INVOKER, so RLS is the access control.
+
 ### Marker Types
 
 - System types (`is_system = true`) are readable by all authenticated users

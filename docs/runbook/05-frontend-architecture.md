@@ -19,6 +19,7 @@ src/client/
           agency.guard.ts                # kind === 'agency' AND (is_agency_member OR is_platform_admin) (gates /admin/*)
           super-admin.guard.ts           # kind === 'super-admin' AND is_platform_admin (gates /super-admin/*)
           tenant.guard.ts                # is_tenant_member(:tenantId) OR is_platform_admin (gates /t/:tenantId/*)
+          activity-redirect.guard.ts     # activityRedirectGuard: redirects /activity to /events?source=detected (standalone activity page retired)
           marketing-landing.guard.ts     # gates /; routes by kind + auth + role-on-host (cross-host redirect when user lacks role for current host)
         util/
           color-scale.ts                 # generateBrandScale(seedHex) -> 50..950 hex scale (HSL math); pickStopForSurface(scale, surfaceHex) -> stop with WCAG 4.5:1 contrast against the surface (drives --brand-on-dark/--brand-on-light)
@@ -36,7 +37,7 @@ src/client/
           indication.model.ts # Indication, Condition, AssetIndication
           marker.model.ts       # MarkerType, TrialMarker
           catalyst.model.ts     # Catalyst, CatalystDetail, CatalystFilters, CatalystGroup, FlatCatalyst
-          event.model.ts        # AppEvent, FeedItem, EventDetail, EventsPageFilters
+          event.model.ts        # AppEvent, FeedItem (source_type: 'event'|'marker'|'detected' + 6 detected-event fields), EventDetail, EventsPageFilters
           dashboard.model.ts    # DashboardData, DashboardFilters, ZoomLevel
           tenant.model.ts       # Tenant, TenantMember, TenantInvite, TenantAccessSettings
           space.model.ts        # Space, SpaceMember
@@ -69,9 +70,9 @@ src/client/
           indications/          # indication-list, indication-form
           conditions/           # condition-list, condition-form
           taxonomies/           # Consolidated page: Indications, Conditions, MOA, ROA with segmented control
-        events/                 # Intelligence feed: table + detail panel
-          events-page.component  # p-table with createGridState, detail panel toggle
-          event-detail-panel.component # Right-side panel: description, sources, tags, thread, links
+        events/                 # Intelligence feed: unified table + detail panel (three source types: event, marker, detected)
+          events-page.component  # p-table with createGridState, detail panel toggle, server-side pagination for detected events
+          event-detail-panel.component # Right-side panel: description, sources, tags, thread, links; third branch for detected events with structured change detail + annotation CRUD
           event-form.component   # Create/edit event modal (p-dialog)
         catalysts/              # Key Catalysts: forward-looking marker timeline (child of landscape shell)
           catalysts-page.component   # Thin presenter: reads state.filteredCatalysts(), delegates detail to shared panel
@@ -312,6 +313,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 | `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
 | `SpaceRoleService` | Resolves the current user's `space_members.role` for the current `:spaceId` URL segment. Watches `NavigationEnd`, refetches on space change, exposes `currentUserRole()`, `isOwner()`, `canEdit()` (owner or editor), `canRead()` signals. Drives role-aware UI gating: write controls render only when `canEdit()` or `isOwner()` is true (Save/Delete on space-general, Invite + role dropdown + remove on space-members, Add buttons on manage lists, row Edit/Delete menus, etc.). Server-side RLS remains the authoritative gate; this service prevents the UI from offering actions the caller cannot execute. |
+| `AnnotationService` | CRUD for analyst annotations on detected change events. Wraps `upsert_change_event_annotation` (insert or update) and `delete_change_event_annotation` RPCs. One annotation per change event (upsert semantics). Used by the event detail panel's detected-event branch. |
 
 ## Client-side caching
 
@@ -483,7 +485,7 @@ Every detail pane in the platform (marker, event, positioning, bullseye) is buil
 ### Consumers
 
 - **Timeline + Catalysts** — `MarkerDetailPanelComponent` (`mode='drawer'`, `density='compact'`) rendered by `LandscapeShellComponent`. Body is `MarkerDetailContentComponent` composed from the primitives above. The catalyst's projection state is collapsed into a single status pill ("Confirmed actual" or "Projected · Stout estimate") in the meta strip directly under the title — there is no separate Date/Status grid. Source treatment is unified: the slate-50 box is gone; CT.gov-derived markers render a small `Field / Date type / Last synced` dl under the standard `Source` section eyebrow, analyst-created markers render just the URL link in the same slot. History uses `DetailPanelHistoryComponent` with field-level diff (`event_date`, `projection`, `is_projected`, etc. via `MARKER_FIELD_LABELS` from `shared/utils/marker-fields.ts` — same vocabulary used by the activity feed's `summaryFor()` so a `marker_updated` event reads with the same field names as the History pane).
-- **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Selected state uses `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events, and a slim ghost footer button "Open thread" when the event has a thread. Thread / related-event / category-filter outputs are wired in `EventsPageComponent`: `relatedEventClick` and `threadEventClick` both call `openByEventId(id)` (which loads detail directly by id rather than searching the feed window), and `categoryFilter` updates the grid's `category_name` text filter so the chip row stays in sync. The `?eventId=` deep-link uses a `queryParamMap` subscription (not a one-shot `ngOnInit` read) so cross-page jumps from the marker drawer continue to work when the events page is already mounted. All `&mdash;` separators are gone (project rule); replaced with middle dots.
+- **Events** — `EventDetailPanelComponent` is **always** rendered in the right column. When no row is selected, it shows an empty-state overview (count + high-priority count + clickable "By category" histogram + "Most recent" list) so the column is never blank. Three branches for the selected state: (1) analyst events use `DetailPanelPill` for the priority badge, `DetailPanelEntityRow` for thread + linked events, and a slim ghost footer button "Open thread" when the event has a thread; (2) markers render the marker detail content; (3) detected change events render structured change detail (change type, payload summary, source) plus annotation CRUD (create/edit/delete via `AnnotationService`), an annotation indicator, and a signal bar. Thread / related-event / category-filter outputs are wired in `EventsPageComponent`: `relatedEventClick` and `threadEventClick` both call `openByEventId(id)` (which loads detail directly by id rather than searching the feed window), and `categoryFilter` updates the grid's `category_name` text filter so the chip row stays in sync. The `?eventId=` deep-link uses a `queryParamMap` subscription (not a one-shot `ngOnInit` read) so cross-page jumps from the marker drawer continue to work when the events page is already mounted. The `?source=detected` query param filters to detected events on load (used by the `/activity` redirect guard and the what-changed widget). All `&mdash;` separators are gone (project rule); replaced with middle dots.
 - **Positioning** — `PositioningDetailPanelComponent` is **always** rendered. Header eyebrow now reflects the active grouping ("MOA group" / "Indication group" / "MOA + Indication group" / "Company group" / "ROA group") instead of generic "COMPETITIVE GROUP". Selected state replaces the old phase-breakdown chips with a `DetailPanelPhaseRace` (every asset, leader at top, 7-segment bar). Empty state pattern matches bullseye.
 - **Bullseye** — `BullseyeDetailPanelComponent` header eyebrow renamed `SELECTED` → `Drug` (says what is selected, not that something is). Selected and empty states migrated onto the shell + primitives. Recent markers list renders the real `<app-marker-icon>` (not a colored dot) and each row is clickable: emits `openMarker` on the panel, which `LandscapeComponent` routes to `/timeline?markerId=` so the timeline drawer opens on arrival. Trial list keeps the inline CT.gov field renderer.
 
