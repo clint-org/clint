@@ -1348,8 +1348,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
             patched['match'] = { kind: 'existing', id: matchOvr };
           }
 
-          if (type === 'trials' && nctOvr[i]) {
-            patched['nct_id'] = nctOvr[i];
+          if (type === 'trials') {
+            const nctId = nctOvr[i] ?? p.resolved_identifiers?.[`trials_${i}`];
+            if (nctId) {
+              patched['nct_id'] = nctId;
+            }
           }
 
           const fieldPatch = edits[key];
