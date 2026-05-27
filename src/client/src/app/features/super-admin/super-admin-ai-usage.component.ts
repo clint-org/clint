@@ -457,9 +457,9 @@ export class SuperAdminAiUsageComponent implements OnInit {
     try {
       const s = this.scope();
       const { data, error } = await this.supabase.client.rpc('get_ai_usage_rollup', {
-        p_scope: s === 'tenants' ? 'tenant' : s === 'spaces' ? 'space' : 'import',
-        p_id: s === 'tenants' ? null : s === 'spaces' ? this.selectedTenantId() : this.selectedSpaceId(),
-        p_window_days: this.windowDays(),
+        p_scope: s === 'tenants' ? 'platform' : s === 'spaces' ? 'tenant' : 'space',
+        p_id: s === 'tenants' ? null : s === 'spaces' ? this.selectedTenantId() : this.selectedSpaceId() ?? null,
+        p_window: `${this.windowDays()} days`,
       });
 
       if (error) {
