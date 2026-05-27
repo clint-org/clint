@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
   inject,
   OnInit,
@@ -17,17 +16,16 @@ import { PositioningBubble, PositioningGrouping } from '../../core/models/landsc
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { PositioningChartComponent } from './positioning-chart.component';
+import { DensityMatrixComponent, type SortEvent, type SortField } from './density-matrix.component';
+import { DensityControlsPanelComponent } from './density-controls-panel.component';
 import { PositioningDetailPanelComponent } from './positioning-detail-panel.component';
-import { PositioningTooltipComponent } from './positioning-tooltip.component';
 
 @Component({
   selector: 'app-positioning-view',
-  standalone: true,
   imports: [
-    PositioningChartComponent,
+    DensityMatrixComponent,
+    DensityControlsPanelComponent,
     PositioningDetailPanelComponent,
-    PositioningTooltipComponent,
     SkeletonComponent,
     MessageModule,
     ButtonModule,
@@ -58,30 +56,37 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
       </div>
     } @else {
       @let data = positioningData.value();
-      @if (data && chartBubbles().length > 0) {
-        <div class="landscape-layout">
-          <div class="landscape-chart-wrap min-w-0 min-h-0 overflow-hidden">
-            <app-positioning-chart
-              [bubbles]="chartBubbles()"
-              [width]="1200"
-              [height]="700"
-              [countUnit]="state.countUnit()"
-              [xLabel]="xAxisLabel()"
-              [selectedBubble]="selectedBubble()"
-              (bubbleHover)="onBubbleHover($event)"
-              (bubbleClick)="onBubbleClick($event)"
-            />
-          </div>
-          <div class="landscape-panel-wrap">
-            <app-positioning-detail-panel
-              [bubble]="selectedBubble()"
-              [countUnit]="state.countUnit()"
-              [totalBubbles]="data.bubbles.length"
-              [grouping]="state.positioningGrouping()"
-              (clearSelection)="selectedBubble.set(null)"
-              (openAsset)="onOpenAsset($event)"
-              (openInBullseye)="onOpenInBullseye()"
-            />
+      @if (data && data.bubbles.length > 0) {
+        <div class="flex h-full overflow-auto">
+          <app-density-controls-panel
+            [bubbles]="data.bubbles"
+            [grouping]="state.positioningGrouping()"
+            [countUnit]="state.countUnit()"
+          />
+          <div class="flex-1 min-w-0 overflow-hidden landscape-layout">
+            <div class="landscape-chart-wrap min-w-0 min-h-0 overflow-hidden">
+              <app-density-matrix
+                [bubbles]="data.bubbles"
+                [countUnit]="state.countUnit()"
+                [selectedBubble]="selectedBubble()"
+                [sortField]="sortField()"
+                [sortDir]="sortDir()"
+                [latestEventDate]="data.latest_event_date ?? null"
+                (rowClick)="onBubbleClick($event)"
+                (sortChange)="onSortChange($event)"
+              />
+            </div>
+            <div class="landscape-panel-wrap">
+              <app-positioning-detail-panel
+                [bubble]="selectedBubble()"
+                [countUnit]="state.countUnit()"
+                [totalBubbles]="data.bubbles.length"
+                [grouping]="state.positioningGrouping()"
+                (clearSelection)="selectedBubble.set(null)"
+                (openAsset)="onOpenAsset($event)"
+                (openInBullseye)="onOpenInBullseye()"
+              />
+            </div>
           </div>
         </div>
       } @else if (data) {
@@ -92,13 +97,6 @@ import { PositioningTooltipComponent } from './positioning-tooltip.component';
         </div>
       }
     }
-
-    <app-positioning-tooltip
-      [bubble]="hoveredBubble()"
-      [x]="tooltipX()"
-      [y]="tooltipY()"
-      [countUnit]="state.countUnit()"
-    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -111,9 +109,8 @@ export class PositioningViewComponent implements OnInit {
   readonly spaceId = signal('');
   readonly tenantId = signal('');
   readonly selectedBubble = signal<PositioningBubble | null>(null);
-  readonly hoveredBubble = signal<PositioningBubble | null>(null);
-  readonly tooltipX = signal(0);
-  readonly tooltipY = signal(0);
+  readonly sortField = signal<SortField>('total');
+  readonly sortDir = signal<'asc' | 'desc'>('desc');
 
   constructor() {
     // Clear selection when grouping, count unit, or filters change
@@ -143,28 +140,6 @@ export class PositioningViewComponent implements OnInit {
     },
   });
 
-  /** X-axis label changes based on grouping type. */
-  readonly xAxisLabel = computed(() => {
-    const g = this.state.positioningGrouping();
-    return g === 'company' ? 'Assets' : 'Competitors';
-  });
-
-  /**
-   * Transform bubbles for chart display. For company grouping, replace
-   * competitor_count (always 1) with product count so bubbles spread
-   * across the X-axis meaningfully.
-   */
-  readonly chartBubbles = computed<PositioningBubble[]>(() => {
-    const data = this.positioningData.value();
-    if (!data) return [];
-    const grouping = this.state.positioningGrouping();
-    if (grouping !== 'company') return data.bubbles;
-    return data.bubbles.map((b) => ({
-      ...b,
-      competitor_count: b.products.length,
-    }));
-  });
-
   ngOnInit(): void {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
     while (snap) {
@@ -178,18 +153,6 @@ export class PositioningViewComponent implements OnInit {
     }
   }
 
-  onBubbleHover(bubble: PositioningBubble | null): void {
-    this.hoveredBubble.set(bubble);
-    if (bubble) {
-      const handler = (e: MouseEvent) => {
-        this.tooltipX.set(e.clientX);
-        this.tooltipY.set(e.clientY);
-        document.removeEventListener('mousemove', handler);
-      };
-      document.addEventListener('mousemove', handler);
-    }
-  }
-
   onBubbleClick(bubble: PositioningBubble): void {
     if (!bubble || this.selectedBubble() === bubble) {
       this.selectedBubble.set(null);
@@ -198,10 +161,12 @@ export class PositioningViewComponent implements OnInit {
     }
   }
 
+  onSortChange(event: SortEvent): void {
+    this.sortField.set(event.field as SortField);
+    this.sortDir.set(event.dir);
+  }
+
   onOpenAsset(assetId: string): void {
-    // Open the timeline filtered by this product so the analyst sees the
-    // product's trials and markers in time. The footer "Open in bullseye"
-    // button still routes to bullseye for the cross-positional view.
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: { assetIds: assetId },
     });

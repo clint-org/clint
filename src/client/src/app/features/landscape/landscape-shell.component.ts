@@ -16,7 +16,6 @@ import {
   BullseyeDimension,
   LandscapeIndexEntry,
   SpokeGrouping,
-  groupingToSegment,
   segmentToGrouping,
   POSITIONING_SEGMENTS,
   ViewMode,
@@ -135,41 +134,9 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
           tooltip: 'Each asset as its own spoke',
         },
       ]);
-    } else if (mode === 'positioning') {
-      const seg = groupingToSegment(this.state.positioningGrouping());
-      this.topbarState.subTabs.set([
-        {
-          label: 'MOA',
-          value: 'by-moa',
-          active: seg === 'by-moa',
-          tooltip: 'Assets grouped by mechanism of action',
-        },
-        {
-          label: 'Indication',
-          value: 'by-indication',
-          active: seg === 'by-indication',
-          tooltip: 'Assets grouped by indication',
-        },
-        {
-          label: 'MOA + Ind.',
-          value: 'by-moa-indication',
-          active: seg === 'by-moa-indication',
-          tooltip: 'Assets grouped by mechanism of action, broken out by indication',
-        },
-        {
-          label: 'Company',
-          value: 'by-company',
-          active: seg === 'by-company',
-          tooltip: 'Assets grouped by company',
-        },
-        {
-          label: 'ROA',
-          value: 'by-roa',
-          active: seg === 'by-roa',
-          tooltip: 'Assets grouped by route of administration',
-        },
-      ]);
     } else {
+      // Positioning sub-tabs removed: sidebar GROUP BY in
+      // DensityControlsPanelComponent replaces the top-bar tabs.
       this.topbarState.subTabs.set([]);
     }
   });
@@ -215,12 +182,11 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.applyQueryParamFilters();
 
     // Sub-tab click handler: bullseye updates spokeGrouping signal directly
-    // (no navigation); positioning still navigates to dimension routes.
+    // (no navigation). Positioning sub-tabs removed (sidebar GROUP BY
+    // handles navigation now).
     this.topbarState.onSubTabClick.set((value: string) => {
       if (this.viewMode() === 'bullseye') {
         this.state.spokeGrouping.set(value as SpokeGrouping);
-      } else if (this.viewMode() === 'positioning') {
-        this.router.navigate([...this.spaceBase(), 'positioning', value]);
       }
     });
 
