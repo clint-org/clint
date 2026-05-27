@@ -467,12 +467,13 @@ export class SuperAdminAiUsageComponent implements OnInit {
         return;
       }
 
+      const rows = (data as Record<string, unknown>)?.['data'] ?? [];
       if (s === 'tenants') {
-        this.tenantRows.set((data ?? []) as TenantRow[]);
+        this.tenantRows.set(rows as TenantRow[]);
       } else if (s === 'spaces') {
-        this.spaceRows.set((data ?? []) as SpaceRow[]);
+        this.spaceRows.set(rows as SpaceRow[]);
       } else {
-        this.importRows.set((data ?? []) as ImportRow[]);
+        this.importRows.set(rows as ImportRow[]);
       }
     } catch (err) {
       this.loadError.set(err instanceof Error ? err.message : 'Failed to load AI usage data.');
