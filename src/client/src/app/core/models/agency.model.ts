@@ -56,6 +56,15 @@ export interface TenantBrandingUpdate {
   email_from_name?: string;
 }
 
+export interface BrandfetchResult {
+  name: string | null;
+  domain: string;
+  logo_url: string | null;
+  favicon_url: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+}
+
 export interface TenantBrandFields {
   id: string;
   name: string;

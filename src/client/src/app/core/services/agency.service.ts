@@ -5,6 +5,7 @@ import {
   AgencyMember,
   AgencyBrandingUpdate,
   AgencyTenantSummary,
+  BrandfetchResult,
   TenantBrandFields,
   TenantBrandingUpdate,
 } from '../models/agency.model';
@@ -277,6 +278,28 @@ export class AgencyService {
         created_by: userId,
       })
       .throwOnError();
+  }
+
+  // ---------------------------------------------------------------------------
+  // brandfetch
+  // ---------------------------------------------------------------------------
+
+  async fetchBrandFromDomain(domain: string): Promise<BrandfetchResult> {
+    const session = (await this.supabase.client.auth.getSession()).data.session;
+    const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
+    const res = await fetch(`${apiBase}/api/brandfetch/lookup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ domain }),
+    });
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(errBody.error ?? `brandfetch lookup failed (${res.status})`);
+    }
+    return (await res.json()) as BrandfetchResult;
   }
 
   private generateCode(): string {

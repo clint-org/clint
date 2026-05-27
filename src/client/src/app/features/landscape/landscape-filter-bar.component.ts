@@ -8,6 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -53,6 +54,7 @@ interface FilterChip {
   selector: 'app-landscape-filter-bar',
   standalone: true,
   imports: [
+    DatePipe,
     FormsModule,
     MultiSelect,
     Select,
