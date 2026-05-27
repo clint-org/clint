@@ -1283,7 +1283,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   }
 
   private initSelections(): void {
-    const p = this.proposal()?.proposals;
+    const proposal = this.proposal();
+    const p = proposal?.proposals;
     if (!p) return;
     const sel: Record<string, boolean> = {};
     for (const type of ENTITY_ORDER) {
@@ -1293,6 +1294,22 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       }
     }
     this.selections.set(sel);
+
+    if (proposal) {
+      const nctDefaults: Record<number, string> = {};
+      const trials = p['trials'] ?? [];
+      for (let i = 0; i < trials.length; i++) {
+        const match = trials[i]['match'] as { kind: string } | undefined;
+        if (match?.kind === 'existing') continue;
+        const candidates = proposal.ctgov_candidates[`trials_${i}`] ?? [];
+        if (candidates.length > 0) {
+          nctDefaults[i] = candidates[0].nct_id;
+        }
+      }
+      if (Object.keys(nctDefaults).length > 0) {
+        this.nctOverrides.set(nctDefaults);
+      }
+    }
 
     if (this.isNctImport()) {
       const collapsed: Record<string, boolean> = {};
