@@ -12,6 +12,7 @@ import { Dialog } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -40,8 +41,7 @@ interface SelectOption {
  */
 @Component({
   selector: 'app-trial-edit-dialog',
-  standalone: true,
-  imports: [Dialog, ButtonModule, InputTextModule, Select, Tooltip, FormsModule],
+  imports: [Dialog, ButtonModule, InputTextModule, Select, DatePicker, Tooltip, FormsModule],
   templateUrl: './trial-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -70,6 +70,9 @@ export class TrialEditDialogComponent {
   readonly phaseTypeLocked = computed(() => this.trial().phase_type_source === 'ctgov');
   readonly phaseStartLocked = computed(() => this.trial().phase_start_date_source === 'ctgov');
   readonly phaseEndLocked = computed(() => this.trial().phase_end_date_source === 'ctgov');
+
+  readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
+  readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
 
   protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
@@ -118,14 +121,25 @@ export class TrialEditDialogComponent {
     this.visibleChange.emit(false);
   }
 
-  protected setPhaseStart(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseStart.set(value || null);
+  protected setPhaseStartDate(date: Date | null): void {
+    this.phaseStart.set(date ? this.formatDate(date) : null);
   }
 
-  protected setPhaseEnd(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseEnd.set(value || null);
+  protected setPhaseEndDate(date: Date | null): void {
+    this.phaseEnd.set(date ? this.formatDate(date) : null);
+  }
+
+  private parseDate(value: string | null): Date | null {
+    if (!value) return null;
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  private formatDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   async save(): Promise<void> {
