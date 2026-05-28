@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -106,6 +107,18 @@ export class EventDetailPanelComponent {
   protected readonly annotationData = signal<Annotation | null>(null);
   protected readonly annotationLoading = signal(false);
 
+  constructor() {
+    effect(() => {
+      const item = this.selectedFeedItem();
+      this.annotationEditing.set(false);
+      this.annotationBody.set('');
+      this.annotationData.set(null);
+      if (item?.source_type === 'detected' && item.has_annotation) {
+        void this.loadAnnotation(item.id);
+      }
+    });
+  }
+
   protected readonly isDetected = computed(
     () => this.selectedFeedItem()?.source_type === 'detected'
   );
@@ -194,12 +207,16 @@ export class EventDetailPanelComponent {
         .select('id, body, change_event_id, created_at, updated_at')
         .eq('change_event_id', changeEventId)
         .maybeSingle();
+      if (this.selectedFeedItem()?.id !== changeEventId) return;
       if (error) throw error;
       this.annotationData.set(data as Annotation | null);
     } catch {
+      if (this.selectedFeedItem()?.id !== changeEventId) return;
       this.annotationData.set(null);
     } finally {
-      this.annotationLoading.set(false);
+      if (this.selectedFeedItem()?.id === changeEventId) {
+        this.annotationLoading.set(false);
+      }
     }
   }
 
