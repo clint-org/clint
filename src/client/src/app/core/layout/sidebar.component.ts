@@ -467,17 +467,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       .collapsed-label {
         display: none;
       }
-      .sidebar--collapsed .collapsed-label {
-        display: block;
-        font-size: 8px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #475569;
-        text-align: center;
-        padding: 2px 0 4px;
-        user-select: none;
-      }
 
       /* Nav items (expanded) */
       .nav-item {
