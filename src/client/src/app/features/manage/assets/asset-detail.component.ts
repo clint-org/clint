@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -11,6 +12,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
@@ -31,8 +33,10 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Asset } from '../../../core/models/asset.model';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import { AssetFormComponent } from './asset-form.component';
 
 @Component({
   selector: 'app-asset-detail',
@@ -40,6 +44,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     NgOptimizedImage,
     RouterLink,
     ConfirmDialogModule,
+    Dialog,
     ToastModule,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
@@ -52,18 +57,20 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    AssetFormComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetDetailComponent {
+export class AssetDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
   private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
+  private readonly topbarState = inject(TopbarStateService);
 
   // Route paramMap as a signal so assetId reacts to in-place navigation
   // when clicking a LINKED product chip on an asset detail page (same route
@@ -86,6 +93,33 @@ export class AssetDetailComponent {
   protected readonly purgeAnchorMode = signal(false);
   protected readonly purgeTargetHeadline = signal('');
   protected readonly purgeTargetId = signal<string | null>(null);
+
+  readonly editingAsset = signal(false);
+
+  private readonly topbarActionsEffect = effect(() => {
+    if (!this.asset() || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
+      return;
+    }
+    this.topbarState.actions.set([
+      {
+        label: 'Edit details',
+        icon: 'fa-solid fa-pen',
+        text: true,
+        callback: () => this.editingAsset.set(true),
+      },
+    ]);
+  });
+
+  ngOnDestroy(): void {
+    this.topbarState.clear();
+  }
+
+  async onAssetEdited(): Promise<void> {
+    this.editingAsset.set(false);
+    await this.loadAsset();
+    this.messageService.add({ severity: 'success', summary: 'Asset updated.', life: 3000 });
+  }
 
   protected readonly hasIntelligence = computed(() => {
     const i = this.intelligence();

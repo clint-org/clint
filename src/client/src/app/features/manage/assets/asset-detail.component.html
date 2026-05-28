@@ -199,6 +199,21 @@
         (published)="onIntelligencePublished()"
       />
     }
+    <p-dialog
+      header="Edit asset"
+      [(visible)]="editingAsset"
+      [modal]="true"
+      styleClass="!w-[32rem]"
+      (onHide)="editingAsset.set(false)"
+    >
+      @if (editingAsset()) {
+        <app-asset-form
+          [asset]="asset()"
+          (saved)="onAssetEdited()"
+          (cancelled)="editingAsset.set(false)"
+        />
+      }
+    </p-dialog>
   } @else {
     <div class="px-4 py-8 text-sm text-slate-500">Asset not found.</div>
   }
