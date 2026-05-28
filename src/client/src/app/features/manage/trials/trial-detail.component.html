@@ -39,7 +39,7 @@
 } @else {
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
-      <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+      <header class="mb-4 border border-slate-200 bg-white px-4 py-2">
         @if (t.assets; as prod) {
           <div
             class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
@@ -69,10 +69,10 @@
             </a>
           </div>
         }
-        <h1 class="mt-0.5 text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
+        <h1 class="mt-0.5 text-sm font-semibold uppercase tracking-[0.08em] text-slate-900">
           {{ t.acronym ?? t.name }}
         </h1>
-        @if (t.acronym) {
+        @if (t.acronym && t.name !== t.identifier) {
           <p class="mt-0.5 text-xs text-slate-500">{{ t.name }}</p>
         }
         <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -88,9 +88,8 @@
             </a>
           }
           @if (t.phase_type || t.phase) {
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-              <span class="text-slate-400">Phase</span>
-              <span class="ml-1 text-slate-700">{{ phaseLabel(t.phase_type || t.phase) }}</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-700">
+              {{ phaseLabel(t.phase_type || t.phase) }}
             </span>
           }
           @if (t.status) {
