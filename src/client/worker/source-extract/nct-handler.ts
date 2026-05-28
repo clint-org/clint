@@ -7,6 +7,7 @@ import { mapCtgovPhase } from './nct-phase-map';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
+import { enrichCompanyLogos } from './logo-enrichment';
 import type { NctResolveRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const NCT_REGEX = /^NCT\d{8}$/i;
@@ -263,6 +264,29 @@ export async function handleNctResolve(
   const proposals = validation.result;
   const dropped = validation.dropped;
   warnings.push(...validation.warnings);
+
+  const newCompanies = proposals.companies
+    .map((c, i) =>
+      c.match.kind === 'new'
+        ? { index: i, name: c.match.name, website: (c.match as { website?: string }).website }
+        : null
+    )
+    .filter((x): x is { index: number; name: string; website: string | null | undefined } => x !== null);
+  const companyLogos = enrichCompanyLogos(newCompanies);
+  for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
+    const idx = Number(idxStr);
+    const company = proposals.companies[idx];
+    if (company?.match.kind === 'new') {
+      (company.match as Record<string, unknown>)['logo_url'] = logoUrl;
+    }
+  }
+  console.log('[nct-resolve] proposal companies', JSON.stringify(
+    proposals.companies.map((c) => ({
+      kind: c.match.kind,
+      name: c.match.kind === 'new' ? c.match.name : (inventory.companies.find((ic) => ic.id === (c.match as { id: string }).id)?.name ?? '?'),
+      logo_url: c.match.kind === 'new' ? (c.match as Record<string, unknown>)['logo_url'] ?? null : null,
+    }))
+  ));
 
   const fuzzyAlternates = computeFuzzyAlternates(
     [
