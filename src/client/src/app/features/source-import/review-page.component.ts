@@ -1415,6 +1415,25 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         .filter((item): item is Record<string, unknown> => item !== null);
     }
 
+    const assets = (filteredProposals['assets'] ?? []) as Record<string, unknown>[];
+    for (const asset of assets) {
+      if (asset['moa'] && !asset['moas']) {
+        asset['moas'] = asset['moa'];
+        delete asset['moa'];
+      }
+      if (asset['roa'] && !asset['roas']) {
+        asset['roas'] = asset['roa'];
+        delete asset['roa'];
+      }
+    }
+
+    const moaSet = new Set<string>();
+    const roaSet = new Set<string>();
+    for (const asset of assets) {
+      for (const m of (asset['moas'] as string[]) ?? []) moaSet.add(m);
+      for (const r of (asset['roas'] as string[]) ?? []) roaSet.add(r);
+    }
+
     return {
       sourceDocument: {
         source_kind: p.source_kind,
@@ -1427,6 +1446,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       },
       proposal: {
         ...filteredProposals,
+        new_moas: [...moaSet].map((name) => ({ name })),
+        new_roas: [...roaSet].map((name) => ({ name })),
         dropped: p.dropped,
       },
     };
