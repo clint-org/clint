@@ -119,10 +119,12 @@
             [attr.aria-pressed]="selectedItem()?.id === item.id"
           >
             <td class="col-date text-xs tabular-nums text-slate-500">
-              <div>{{ item.feed_ts | date: 'MMM d, y' }}</div>
-              <div class="text-[10px] uppercase tracking-wider text-slate-400">
-                {{ item.feed_ts | date: 'h:mm a' }}
-              </div>
+              <time [attr.datetime]="item.feed_ts">
+                <div>{{ item.feed_ts | date: 'MMM d, y' }}</div>
+                <div class="text-[10px] uppercase tracking-wider text-slate-400">
+                  {{ item.feed_ts | date: 'h:mm a' }}
+                </div>
+              </time>
             </td>
             <td class="col-source">
               <span
