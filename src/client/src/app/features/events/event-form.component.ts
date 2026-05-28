@@ -35,11 +35,16 @@ import { EventThreadService } from '../../core/services/event-thread.service';
 import { CompanyService } from '../../core/services/company.service';
 import { AssetService } from '../../core/services/asset.service';
 import { TrialService } from '../../core/services/trial.service';
+import { toTrialOption, type TrialOption } from '../../core/utils/to-trial-option';
 
 interface SourceRow {
   url: string;
   label: string;
 }
+
+type EntityOption =
+  | { kind: 'company' | 'product'; id: string; label: string }
+  | (TrialOption & { kind: 'trial' });
 
 @Component({
   selector: 'app-event-form',
@@ -96,12 +101,38 @@ interface SourceRow {
               [ngModel]="entityId()"
               (ngModelChange)="entityId.set($event)"
               name="entityId"
-              optionLabel="name"
+              optionLabel="label"
               optionValue="id"
               placeholder="Select..."
               [filter]="true"
+              filterBy="label,identifier,companyName,assetName,briefTitle"
               styleClass="w-full"
-            />
+              appendTo="body"
+            >
+              <ng-template let-opt pTemplate="item">
+                @if (opt.kind === 'trial') {
+                  <div class="flex flex-col py-0.5">
+                    <span class="text-sm text-slate-900">{{ opt.label }}</span>
+                    <span class="text-xs text-slate-500 truncate">
+                      {{ opt.companyName }}
+                      @if (opt.companyName && opt.assetName) {
+                        <span class="mx-1">&middot;</span>
+                      }
+                      {{ opt.assetName }}
+                      @if ((opt.companyName || opt.assetName) && opt.identifier) {
+                        <span class="mx-1">&middot;</span>
+                      }
+                      <span class="font-mono">{{ opt.identifier }}</span>
+                    </span>
+                  </div>
+                } @else {
+                  <span class="text-sm">{{ opt.label }}</span>
+                }
+              </ng-template>
+              <ng-template let-opt pTemplate="selectedItem">
+                <span class="text-sm">{{ opt.label }}</span>
+              </ng-template>
+            </p-select>
           </div>
         }
       </div>
@@ -321,7 +352,7 @@ export class EventFormComponent implements OnInit {
   readonly companies = signal<Company[]>([]);
   readonly assets = signal<Asset[]>([]);
   readonly trials = signal<Trial[]>([]);
-  readonly entityOptions = signal<{ id: string; name: string }[]>([]);
+  readonly entityOptions = signal<EntityOption[]>([]);
 
   // Form fields -- signals so writes from loadExisting trigger change detection
   // and so reset() between edits clears stale state. Plain class properties
@@ -375,11 +406,17 @@ export class EventFormComponent implements OnInit {
     this.entityLevel.set(level);
     this.entityId.set('');
     if (level === 'company') {
-      this.entityOptions.set(this.companies().map((c) => ({ id: c.id, name: c.name })));
+      this.entityOptions.set(
+        this.companies().map((c) => ({ kind: 'company' as const, id: c.id, label: c.name }))
+      );
     } else if (level === 'product') {
-      this.entityOptions.set(this.assets().map((p) => ({ id: p.id, name: p.name })));
+      this.entityOptions.set(
+        this.assets().map((p) => ({ kind: 'product' as const, id: p.id, label: p.name }))
+      );
     } else if (level === 'trial') {
-      this.entityOptions.set(this.trials().map((t) => ({ id: t.id, name: t.name })));
+      this.entityOptions.set(
+        this.trials().map((t) => ({ kind: 'trial' as const, ...toTrialOption(t) }))
+      );
     } else {
       this.entityOptions.set([]);
     }
@@ -513,15 +550,21 @@ export class EventFormComponent implements OnInit {
       if (detail.entity_level === 'company' && detail.entity_id) {
         this.entityLevel.set('company');
         this.entityId.set(detail.entity_id);
-        this.entityOptions.set(this.companies().map((c) => ({ id: c.id, name: c.name })));
+        this.entityOptions.set(
+          this.companies().map((c) => ({ kind: 'company' as const, id: c.id, label: c.name }))
+        );
       } else if (detail.entity_level === 'product' && detail.entity_id) {
         this.entityLevel.set('product');
         this.entityId.set(detail.entity_id);
-        this.entityOptions.set(this.assets().map((p) => ({ id: p.id, name: p.name })));
+        this.entityOptions.set(
+          this.assets().map((p) => ({ kind: 'product' as const, id: p.id, label: p.name }))
+        );
       } else if (detail.entity_level === 'trial' && detail.entity_id) {
         this.entityLevel.set('trial');
         this.entityId.set(detail.entity_id);
-        this.entityOptions.set(this.trials().map((t) => ({ id: t.id, name: t.name })));
+        this.entityOptions.set(
+          this.trials().map((t) => ({ kind: 'trial' as const, ...toTrialOption(t) }))
+        );
       } else {
         this.entityLevel.set('space');
       }

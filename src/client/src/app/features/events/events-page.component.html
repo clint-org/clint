@@ -172,7 +172,7 @@
                     [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
                   ></span>
                   @if (formatEventDateSuffix(item)) {
-                    <span class="text-sm text-slate-400">{{ formatEventDateSuffix(item) }}</span>
+                    <span class="text-sm text-slate-400 shrink-0 ml-1">{{ formatEventDateSuffix(item) }}</span>
                   }
                 }
                 @if (item.has_thread) {
