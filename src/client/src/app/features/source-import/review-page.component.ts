@@ -292,6 +292,33 @@ interface HierarchicalTree {
                     @if (erGeneric) {
                       <span class="text-xs text-slate-400">{{ erGeneric }}</span>
                     }
+                    @let erMoas = assetMoas(idx);
+                    @let erRoas = assetRoas(idx);
+                    @if (erMoas.length > 0) {
+                      @for (m of erMoas; track m) {
+                        <span
+                          class="inline-block rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-violet-700 border border-violet-200"
+                          pTooltip="Mechanism of action"
+                          tooltipPosition="top"
+                        >{{ m }}</span>
+                      }
+                    }
+                    @if (erRoas.length > 0) {
+                      @for (r of erRoas; track r) {
+                        <span
+                          class="inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-cyan-700 border border-cyan-200"
+                          pTooltip="Route of administration"
+                          tooltipPosition="top"
+                        >{{ r }}</span>
+                      }
+                    }
+                    @if (erMoas.length === 0 && erRoas.length === 0) {
+                      <span
+                        class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-600 border border-amber-200"
+                        pTooltip="MOA and ROA were not detected from the source. Add them manually after import."
+                        tooltipPosition="top"
+                      >No MOA/ROA</span>
+                    }
                   }
 
                   <!-- Evidence / Source pill -->
@@ -1034,6 +1061,16 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected assetGenericName(index: number): string | null {
     const entity = this.entitiesOf('assets')[index];
     return (entity?.['generic_name'] as string) ?? null;
+  }
+
+  protected assetMoas(index: number): string[] {
+    const entity = this.entitiesOf('assets')[index];
+    return (entity?.['moa'] as string[]) ?? [];
+  }
+
+  protected assetRoas(index: number): string[] {
+    const entity = this.entitiesOf('assets')[index];
+    return (entity?.['roa'] as string[]) ?? [];
   }
 
   protected entityEvidence(type: EntityType, index: number): string | null {

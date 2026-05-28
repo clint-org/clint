@@ -13,7 +13,7 @@ export interface NctStudyRecord {
   primary_completion_date: string | null;
   lead_sponsor: string;
   collaborators: string[];
-  interventions: { name: string; other_names: string[] }[];
+  interventions: { name: string; type: string | null; description: string | null; other_names: string[] }[];
   conditions: string[];
 }
 
@@ -23,6 +23,8 @@ function buildNctSystemPrompt(): string {
 Rules:
 - Companies: normalize sponsor names to common industry shorthand. "Hoffmann-La Roche" becomes "Roche". "Eli Lilly and Company" becomes "Lilly". Academic institutions are valid sponsors; create company entries for them (e.g., "Memorial Sloan Kettering"). CROs (Parexel, ICON, Syneos, PPD, IQVIA, Covance, Medpace) are not sponsors; ignore them. Prefer matching existing inventory companies by id.
 - Assets: extract the drug/therapy name from intervention descriptions. Strip dosing, formulation, and route details ("Tirzepatide 5 mg SC injection" becomes "Tirzepatide"). Map otherNames to generic_name. One asset per distinct drug, not per trial. For observational studies with no intervention, set asset_ref to null. Prefer matching existing inventory assets by id.
+- MOA: extract the mechanism of action from intervention descriptions when stated (e.g., "GLP-1 receptor agonist", "PD-1 inhibitor", "SGLT2 inhibitor"). Use standard pharmacological class names. Only extract what the data supports; leave as empty array if the intervention description does not indicate a mechanism.
+- ROA: extract the route of administration from intervention type and description when stated (e.g., "Oral", "Subcutaneous", "Intravenous"). Normalize to standard terms. If intervention type is DRUG with no route detail, leave as empty array rather than guessing.
 - Co-development: when collaborators includes another pharmaceutical company (not academic/CRO), create both companies and duplicate the asset under each. Signal uncertainty if the collaborator role is ambiguous.
 - Therapeutic areas: group CT.gov conditions into clean TA labels. Prefer existing inventory indications.
 - Trials: map each NCT study to a trial entry. Use the pre-mapped phase value directly; do not change it. Use the provided overallStatus, dates, and enrollment count directly. Do not infer or hallucinate.
@@ -45,8 +47,8 @@ Output schema (follow this exactly):
     "name": "asset name",
     "generic_name": "string or null",
     "company_ref": 0,
-    "moa": [],
-    "roa": [],
+    "moa": ["mechanism of action, if determinable from intervention type/description/name"],
+    "roa": ["route of administration, if determinable from intervention type/description/name"],
     "evidence": "CT.gov: NCTxxxxxxxx"
   }],
   "trials": [{

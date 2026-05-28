@@ -396,6 +396,8 @@ function toStudyRecord(study: unknown): NctStudyRecord {
   const collaborators = (sponsors.collaborators ?? []).map((c: any) => c.name as string);
   const interventions = (arms.interventions ?? []).map((iv: any) => ({
     name: (iv.name ?? '') as string,
+    type: (iv.type as string) ?? null,
+    description: (iv.description as string) ?? null,
     other_names: (iv.otherNames ?? []) as string[],
   }));
 
