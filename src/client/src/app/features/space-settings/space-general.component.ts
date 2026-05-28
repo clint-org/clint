@@ -22,6 +22,7 @@ import { SpaceRoleService } from '../../core/services/space-role.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { FormFieldComponent } from '../../shared/components/form-field.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { resolveSpaceBadge } from '../../core/utils/display-fallbacks';
@@ -54,6 +55,7 @@ import { resolveSpaceBadge } from '../../core/utils/display-fallbacks';
     MessageModule,
     ManagePageShellComponent,
     SkeletonComponent,
+    FormFieldComponent,
   ],
   templateUrl: './space-general.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

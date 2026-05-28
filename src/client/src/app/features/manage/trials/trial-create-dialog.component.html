@@ -6,15 +6,13 @@
   styleClass="!w-[32rem]"
   [closeOnEscape]="true"
 >
-  <form (ngSubmit)="save()" class="flex flex-col gap-4">
-    <div class="flex flex-col gap-1">
-      <label for="trial-nct" class="text-sm font-medium text-slate-700">
-        NCT identifier (optional)
-      </label>
+  <form (ngSubmit)="save()" novalidate>
+    <app-form-field label="NCT identifier (optional)" fieldId="trial-nct">
       <input
         id="trial-nct"
         type="text"
         pInputText
+        class="w-full"
         [ngModel]="identifier()"
         (ngModelChange)="onIdentifierChanged($event)"
         name="identifier"
@@ -23,7 +21,7 @@
         [attr.aria-invalid]="!nctFormatValid() || nctLookupState() === 'not_found' ? true : null"
         aria-describedby="trial-nct-status"
       />
-      <p id="trial-nct-status" class="text-[11px]">
+      <p id="trial-nct-status" class="mt-1 text-[11px]">
         @switch (nctLookupState()) {
           @case ('looking_up') {
             <span class="text-slate-500">Looking up at CT.gov...</span>
@@ -58,26 +56,23 @@
           }
         }
       </p>
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="trial-name" class="text-sm font-medium text-slate-700">
-        Name <span class="text-red-500">*</span>
-      </label>
+    </app-form-field>
+
+    <app-form-field label="Name" fieldId="trial-name" [required]="true">
       <input
         id="trial-name"
         type="text"
         pInputText
+        class="w-full"
         [ngModel]="name()"
         (ngModelChange)="onNameChanged($event)"
         name="name"
         required
         aria-required="true"
       />
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="trial-product" class="text-sm font-medium text-slate-700">
-        Asset <span class="text-red-500">*</span>
-      </label>
+    </app-form-field>
+
+    <app-form-field label="Asset" fieldId="trial-product" [required]="true">
       <p-select
         inputId="trial-product"
         [options]="products()"
@@ -88,12 +83,13 @@
         name="product"
         placeholder="Select product"
         [filter]="true"
+        styleClass="w-full"
         appendTo="body"
         [attr.aria-required]="true"
       />
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="trial-indication" class="text-sm font-medium text-slate-700"> Indication </label>
+    </app-form-field>
+
+    <app-form-field label="Indication" fieldId="trial-indication">
       <p-select
         inputId="trial-indication"
         [options]="indications()"
@@ -104,15 +100,13 @@
         placeholder="Select indication (optional)"
         [filter]="true"
         [showClear]="true"
+        styleClass="w-full"
         appendTo="body"
       />
-    </div>
-    <div class="mb-3">
-      <label
-        for="create-phase-type"
-        class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
-      >
-        Phase
+    </app-form-field>
+
+    <app-form-field label="Phase" fieldId="create-phase-type">
+      <span labelSuffix>
         @if (phaseTypeFromCtgov()) {
           <span
             class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
@@ -120,7 +114,7 @@
             ct.gov
           </span>
         }
-      </label>
+      </span>
       <p-select
         inputId="create-phase-type"
         [options]="PHASE_OPTIONS"
@@ -128,78 +122,78 @@
         optionValue="id"
         [ngModel]="phaseType()"
         (ngModelChange)="phaseType.set($event)"
+        name="phaseType"
         [disabled]="phaseTypeFromCtgov()"
         placeholder="Select a phase"
         [showClear]="true"
+        styleClass="w-full"
         appendTo="body"
         [pTooltip]="
           phaseTypeFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
         "
         tooltipPosition="top"
       />
-    </div>
-    <div class="mb-3 grid grid-cols-2 gap-3">
-      <div>
-        <label
-          for="create-phase-start"
-          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
-        >
-          Phase start
+    </app-form-field>
+
+    <div class="grid grid-cols-2 gap-4">
+      <app-form-field label="Phase start" fieldId="create-phase-start" spacing="">
+        <span labelSuffix>
           @if (phaseStartFromCtgov()) {
             <span
               class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
               >ct.gov</span
             >
           }
-        </label>
-        <input
-          id="create-phase-start"
-          type="date"
-          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
-          [value]="phaseStart() ?? ''"
-          (input)="setPhaseStart($event)"
+        </span>
+        <p-datepicker
+          inputId="create-phase-start"
+          [ngModel]="phaseStartDate()"
+          (ngModelChange)="setPhaseStartDate($event)"
+          name="phaseStart"
+          dateFormat="yy-mm-dd"
+          styleClass="w-full"
           [disabled]="phaseStartFromCtgov()"
+          [showIcon]="true"
+          appendTo="body"
           [pTooltip]="
             phaseStartFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
           "
           tooltipPosition="top"
         />
-      </div>
-      <div>
-        <label
-          for="create-phase-end"
-          class="block text-[10px] font-medium uppercase tracking-wider text-slate-500"
-        >
-          Phase end
+      </app-form-field>
+
+      <app-form-field label="Phase end" fieldId="create-phase-end" spacing="">
+        <span labelSuffix>
           @if (phaseEndFromCtgov()) {
             <span
               class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
               >ct.gov</span
             >
           }
-        </label>
-        <input
-          id="create-phase-end"
-          type="date"
-          class="block w-full border border-slate-200 px-2 py-1 text-sm tabular-nums"
-          [value]="phaseEnd() ?? ''"
-          (input)="setPhaseEnd($event)"
+        </span>
+        <p-datepicker
+          inputId="create-phase-end"
+          [ngModel]="phaseEndDate()"
+          (ngModelChange)="setPhaseEndDate($event)"
+          name="phaseEnd"
+          dateFormat="yy-mm-dd"
+          styleClass="w-full"
           [disabled]="phaseEndFromCtgov()"
+          [showIcon]="true"
+          appendTo="body"
           [pTooltip]="
             phaseEndFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
           "
           tooltipPosition="top"
         />
-      </div>
+      </app-form-field>
     </div>
-    <div class="flex justify-end gap-2 pt-2">
-      <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
-      <p-button
-        label="Create"
-        [disabled]="!isValid() || saving()"
-        [loading]="saving()"
-        type="submit"
-      />
-    </div>
+
+    <app-form-actions
+      submitLabel="Create"
+      [loading]="saving()"
+      [disabled]="!isValid() || saving()"
+      (cancelled)="close()"
+    />
   </form>
 </p-dialog>

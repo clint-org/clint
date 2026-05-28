@@ -17,8 +17,10 @@ import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
 import { AutoComplete } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+
+import { FormFieldComponent } from '../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../shared/components/form-actions.component';
 
 import {
   AppEvent,
@@ -58,8 +60,9 @@ type EntityOption =
     Select,
     DatePicker,
     AutoComplete,
-    ButtonModule,
     MessageModule,
+    FormFieldComponent,
+    FormActionsComponent,
   ],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4" aria-label="Event form">
@@ -69,10 +72,7 @@ type EntityOption =
 
       <!-- Entity level + entity picker -->
       <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label for="event-level" class="mb-1 block text-xs font-medium text-slate-600"
-            >Level</label
-          >
+        <app-form-field label="Level" fieldId="event-level" spacing="">
           <p-select
             inputId="event-level"
             [options]="entityLevelOptions"
@@ -84,19 +84,10 @@ type EntityOption =
             placeholder="Select level"
             styleClass="w-full"
           />
-        </div>
+        </app-form-field>
 
         @if (entityLevel() && entityLevel() !== 'space') {
-          <div>
-            <label for="event-entity" class="mb-1 block text-xs font-medium text-slate-600">
-              {{
-                entityLevel() === 'company'
-                  ? 'Company'
-                  : entityLevel() === 'product'
-                    ? 'Asset'
-                    : 'Trial'
-              }}
-            </label>
+          <app-form-field [label]="entityLabel()" fieldId="event-entity" spacing="">
             <p-select
               inputId="event-entity"
               [options]="entityOptions()"
@@ -135,16 +126,13 @@ type EntityOption =
                 <span class="text-sm">{{ opt.label }}</span>
               </ng-template>
             </p-select>
-          </div>
+          </app-form-field>
         }
       </div>
 
       <!-- Title + Date -->
       <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label for="event-title" class="mb-1 block text-xs font-medium text-slate-600">
-            Title <span aria-hidden="true" class="text-red-600">*</span>
-          </label>
+        <app-form-field label="Title" fieldId="event-title" [required]="true" spacing="">
           <input
             pInputText
             id="event-title"
@@ -155,11 +143,8 @@ type EntityOption =
             required
             aria-required="true"
           />
-        </div>
-        <div>
-          <label for="event-date" class="mb-1 block text-xs font-medium text-slate-600">
-            Date <span aria-hidden="true" class="text-red-600">*</span>
-          </label>
+        </app-form-field>
+        <app-form-field label="Date" fieldId="event-date" [required]="true" spacing="">
           <p-datepicker
             inputId="event-date"
             [ngModel]="eventDateValue()"
@@ -167,18 +152,16 @@ type EntityOption =
             name="eventDate"
             dateFormat="yy-mm-dd"
             styleClass="w-full"
+            [showIcon]="true"
             appendTo="body"
             [attr.aria-required]="true"
           />
-        </div>
+        </app-form-field>
       </div>
 
       <!-- Category + Priority -->
       <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label for="event-category" class="mb-1 block text-xs font-medium text-slate-600">
-            Category <span aria-hidden="true" class="text-red-600">*</span>
-          </label>
+        <app-form-field label="Category" fieldId="event-category" [required]="true" spacing="">
           <p-select
             inputId="event-category"
             [options]="categories()"
@@ -191,11 +174,8 @@ type EntityOption =
             styleClass="w-full"
             [attr.aria-required]="true"
           />
-        </div>
-        <div>
-          <label for="event-priority" class="mb-1 block text-xs font-medium text-slate-600"
-            >Priority</label
-          >
+        </app-form-field>
+        <app-form-field label="Priority" fieldId="event-priority" spacing="">
           <p-select
             inputId="event-priority"
             [options]="priorityOptions"
@@ -206,14 +186,11 @@ type EntityOption =
             optionValue="value"
             styleClass="w-full"
           />
-        </div>
+        </app-form-field>
       </div>
 
       <!-- Description -->
-      <div>
-        <label for="event-description" class="mb-1 block text-xs font-medium text-slate-600"
-          >Description</label
-        >
+      <app-form-field label="Description" fieldId="event-description" spacing="">
         <textarea
           pTextarea
           id="event-description"
@@ -223,11 +200,10 @@ type EntityOption =
           rows="3"
           class="w-full"
         ></textarea>
-      </div>
+      </app-form-field>
 
       <!-- Tags -->
-      <div>
-        <label for="event-tags" class="mb-1 block text-xs font-medium text-slate-600">Tags</label>
+      <app-form-field label="Tags" fieldId="event-tags" spacing="">
         <p-auto-complete
           inputId="event-tags"
           [ngModel]="tags()"
@@ -238,11 +214,10 @@ type EntityOption =
           placeholder="Add tags..."
           styleClass="w-full"
         />
-      </div>
+      </app-form-field>
 
       <!-- Sources -->
-      <div>
-        <p class="mb-1 text-xs font-medium text-slate-600" id="source-urls-label">Source URLs</p>
+      <app-form-field label="Source URLs" fieldId="event-sources" spacing="">
         @for (src of sources(); track $index) {
           <div class="mb-2 flex items-center gap-2">
             <input
@@ -278,13 +253,10 @@ type EntityOption =
         >
           + Add source
         </button>
-      </div>
+      </app-form-field>
 
       <!-- Thread -->
-      <div>
-        <label for="event-thread" class="mb-1 block text-xs font-medium text-slate-600"
-          >Thread (optional)</label
-        >
+      <app-form-field label="Thread (optional)" fieldId="event-thread" spacing="">
         <div class="flex items-center gap-2">
           <p-select
             inputId="event-thread"
@@ -311,24 +283,15 @@ type EntityOption =
             />
           </div>
         }
-      </div>
+      </app-form-field>
 
       <!-- Actions -->
-      <div class="flex justify-end gap-2 pt-2">
-        <p-button
-          label="Cancel"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="cancelled.emit()"
-          type="button"
-        />
-        <p-button
-          [label]="eventId() ? 'Update' : 'Create'"
-          type="submit"
-          [loading]="saving()"
-          [disabled]="!canSubmit()"
-        />
-      </div>
+      <app-form-actions
+        [submitLabel]="eventId() ? 'Update' : 'Create'"
+        [loading]="saving()"
+        [disabled]="!canSubmit()"
+        (cancelled)="cancelled.emit()"
+      />
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -389,6 +352,14 @@ export class EventFormComponent implements OnInit {
 
   readonly canSubmit = computed(() =>
     isEventFormComplete(this.title(), this.eventDateValue(), this.categoryId())
+  );
+
+  readonly entityLabel = computed(() =>
+    this.entityLevel() === 'company'
+      ? 'Company'
+      : this.entityLevel() === 'product'
+        ? 'Asset'
+        : 'Trial'
   );
 
   constructor() {

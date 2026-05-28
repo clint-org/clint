@@ -6,43 +6,38 @@
   styleClass="!w-[32rem]"
   [closeOnEscape]="true"
 >
-  <form (ngSubmit)="save()" class="flex flex-col gap-4">
-    <div class="flex flex-col gap-1">
-      <label for="edit-trial-name" class="text-sm font-medium text-slate-700">
-        Name <span class="text-red-500">*</span>
-      </label>
+  <form (ngSubmit)="save()" novalidate>
+    <app-form-field label="Name" fieldId="edit-trial-name" [required]="true">
       <input
         id="edit-trial-name"
         type="text"
         pInputText
+        class="w-full"
         [ngModel]="name()"
         (ngModelChange)="name.set($event)"
         name="name"
         required
         aria-required="true"
       />
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="edit-trial-nct" class="text-sm font-medium text-slate-700">
-        NCT identifier (optional)
-      </label>
+    </app-form-field>
+
+    <app-form-field label="NCT identifier (optional)" fieldId="edit-trial-nct">
       <input
         id="edit-trial-nct"
         type="text"
         pInputText
+        class="w-full"
         [ngModel]="identifier()"
         (ngModelChange)="identifier.set($event)"
         name="identifier"
         placeholder="NCT12345678"
       />
-      <p class="text-[11px] text-slate-500">
+      <p class="mt-1 text-[11px] text-slate-500">
         Format: NCT followed by 8 digits. Sync from CT.gov runs after save.
       </p>
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="edit-trial-product" class="text-sm font-medium text-slate-700">
-        Asset <span class="text-red-500">*</span>
-      </label>
+    </app-form-field>
+
+    <app-form-field label="Asset" fieldId="edit-trial-product" [required]="true">
       <p-select
         inputId="edit-trial-product"
         [options]="products()"
@@ -53,14 +48,13 @@
         name="product"
         placeholder="Select product"
         [filter]="true"
+        styleClass="w-full"
         appendTo="body"
         [attr.aria-required]="true"
       />
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="edit-trial-indication" class="text-sm font-medium text-slate-700">
-        Indication
-      </label>
+    </app-form-field>
+
+    <app-form-field label="Indication" fieldId="edit-trial-indication">
       <p-select
         inputId="edit-trial-indication"
         [options]="indications()"
@@ -71,12 +65,13 @@
         placeholder="Select indication (optional)"
         [filter]="true"
         [showClear]="true"
+        styleClass="w-full"
         appendTo="body"
       />
-    </div>
-    <div class="flex flex-col gap-1">
-      <label for="phase-type" class="text-sm font-medium text-slate-700">
-        Phase
+    </app-form-field>
+
+    <app-form-field label="Phase" fieldId="phase-type">
+      <span labelSuffix>
         @if (phaseTypeLocked()) {
           <span
             class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
@@ -84,7 +79,7 @@
             ct.gov
           </span>
         }
-      </label>
+      </span>
       <p-select
         inputId="phase-type"
         [options]="PHASE_OPTIONS"
@@ -92,9 +87,11 @@
         optionValue="id"
         [ngModel]="phaseType()"
         (ngModelChange)="phaseType.set($event)"
+        name="phaseType"
         [disabled]="phaseTypeLocked()"
         placeholder="Select a phase"
         [showClear]="true"
+        styleClass="w-full"
         appendTo="body"
         [pTooltip]="
           phaseTypeLocked()
@@ -103,24 +100,24 @@
         "
         tooltipPosition="top"
       />
-    </div>
+    </app-form-field>
+
     <div class="grid grid-cols-2 gap-4">
-      <div class="flex flex-col gap-1">
-        <label for="phase-start" class="text-sm font-medium text-slate-700">
-          Phase start
+      <app-form-field label="Phase start" fieldId="phase-start" spacing="">
+        <span labelSuffix>
           @if (phaseStartLocked()) {
             <span
               class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
               >ct.gov</span
             >
           }
-        </label>
+        </span>
         <p-datepicker
           inputId="phase-start"
           [ngModel]="phaseStartDate()"
           (ngModelChange)="setPhaseStartDate($event)"
           name="phaseStart"
-          dateFormat="mm/dd/yy"
+          dateFormat="yy-mm-dd"
           styleClass="w-full"
           [disabled]="phaseStartLocked()"
           [showIcon]="true"
@@ -128,23 +125,23 @@
           [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
           tooltipPosition="top"
         />
-      </div>
-      <div class="flex flex-col gap-1">
-        <label for="phase-end" class="text-sm font-medium text-slate-700">
-          Phase end
+      </app-form-field>
+
+      <app-form-field label="Phase end" fieldId="phase-end" spacing="">
+        <span labelSuffix>
           @if (phaseEndLocked()) {
             <span
               class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
               >ct.gov</span
             >
           }
-        </label>
+        </span>
         <p-datepicker
           inputId="phase-end"
           [ngModel]="phaseEndDate()"
           (ngModelChange)="setPhaseEndDate($event)"
           name="phaseEnd"
-          dateFormat="mm/dd/yy"
+          dateFormat="yy-mm-dd"
           styleClass="w-full"
           [disabled]="phaseEndLocked()"
           [showIcon]="true"
@@ -152,16 +149,14 @@
           [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
           tooltipPosition="top"
         />
-      </div>
+      </app-form-field>
     </div>
-    <div class="flex justify-end gap-2 pt-2">
-      <p-button label="Cancel" [text]="true" (click)="close()" type="button" />
-      <p-button
-        label="Save"
-        [disabled]="!isValid() || saving()"
-        [loading]="saving()"
-        type="submit"
-      />
-    </div>
+
+    <app-form-actions
+      submitLabel="Save"
+      [loading]="saving()"
+      [disabled]="!isValid() || saving()"
+      (cancelled)="close()"
+    />
   </form>
 </p-dialog>

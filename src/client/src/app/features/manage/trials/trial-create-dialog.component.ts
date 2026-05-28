@@ -9,9 +9,9 @@ import {
   signal,
 } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +21,8 @@ import { AssetService } from '../../../core/services/asset.service';
 import { IndicationService } from '../../../core/services/indication.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { Trial } from '../../../core/models/trial.model';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 interface SelectOption {
   id: string;
@@ -30,7 +32,16 @@ interface SelectOption {
 @Component({
   selector: 'app-trial-create-dialog',
   standalone: true,
-  imports: [Dialog, ButtonModule, InputTextModule, Select, Tooltip, FormsModule],
+  imports: [
+    Dialog,
+    InputTextModule,
+    Select,
+    DatePicker,
+    Tooltip,
+    FormsModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './trial-create-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -64,6 +75,11 @@ export class TrialCreateDialogComponent {
   protected readonly phaseTypeFromCtgov = signal(false);
   protected readonly phaseStartFromCtgov = signal(false);
   protected readonly phaseEndFromCtgov = signal(false);
+
+  // p-datepicker binds Date objects; the phaseStart/phaseEnd signals stay
+  // YYYY-MM-DD strings (the save payload + ct.gov prefill use strings).
+  readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
+  readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
 
   protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
@@ -276,14 +292,25 @@ export class TrialCreateDialogComponent {
     this.visibleChange.emit(false);
   }
 
-  protected setPhaseStart(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseStart.set(value || null);
+  protected setPhaseStartDate(date: Date | null): void {
+    this.phaseStart.set(date ? this.formatDate(date) : null);
   }
 
-  protected setPhaseEnd(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseEnd.set(value || null);
+  protected setPhaseEndDate(date: Date | null): void {
+    this.phaseEnd.set(date ? this.formatDate(date) : null);
+  }
+
+  private parseDate(value: string | null): Date | null {
+    if (!value) return null;
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  private formatDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   async save(): Promise<void> {

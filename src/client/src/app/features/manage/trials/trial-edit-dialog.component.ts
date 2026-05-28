@@ -9,7 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { DatePicker } from 'primeng/datepicker';
@@ -21,6 +20,8 @@ import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { IndicationService } from '../../../core/services/indication.service';
 import { Trial } from '../../../core/models/trial.model';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 interface SelectOption {
   id: string;
@@ -41,7 +42,16 @@ interface SelectOption {
  */
 @Component({
   selector: 'app-trial-edit-dialog',
-  imports: [Dialog, ButtonModule, InputTextModule, Select, DatePicker, Tooltip, FormsModule],
+  imports: [
+    Dialog,
+    InputTextModule,
+    Select,
+    DatePicker,
+    Tooltip,
+    FormsModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './trial-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

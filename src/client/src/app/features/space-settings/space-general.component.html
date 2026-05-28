@@ -29,13 +29,7 @@
         </p>
       }
 
-      <div class="mb-6">
-        <label
-          for="space-name"
-          class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-        >
-          Space name
-        </label>
+      <app-form-field label="Space name" fieldId="space-name" spacing="mb-6">
         <input
           pInputText
           id="space-name"
@@ -44,15 +38,9 @@
           (ngModelChange)="name.set($event)"
           [readonly]="!canEditFields()"
         />
-      </div>
+      </app-form-field>
 
-      <div class="mb-6">
-        <label
-          for="space-desc"
-          class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-        >
-          Description
-        </label>
+      <app-form-field label="Description" fieldId="space-desc" spacing="mb-6">
         <textarea
           pTextarea
           id="space-desc"
@@ -62,7 +50,7 @@
           rows="3"
           [readonly]="!canEditFields()"
         ></textarea>
-      </div>
+      </app-form-field>
 
       @if (spaceRole.isOwner()) {
         @if (canEditFields()) {
