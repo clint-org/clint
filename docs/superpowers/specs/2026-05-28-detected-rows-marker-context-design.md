@@ -196,12 +196,12 @@ No backfill of historical rows. The feed shows mixed rendering during the transi
 
 ## Migration file
 
-`supabase/migrations/20260528130100_marker_change_payload_full_context.sql` — replaces `_emit_events_from_marker_change` in full via `create or replace function`. Timestamp `130100` follows the parallel `130000` migration (`update_event_sources_rpc`) that is in the same date.
+`supabase/migrations/20260528130200_marker_change_payload_full_context.sql` — replaces `_emit_events_from_marker_change` in full via `create or replace function`. Timestamp `130200` follows two parallel-session migrations already landed at `130000` (`update_event_sources_rpc`) and `130100` (`update_event_links_rpc`).
 
 ## Files touched
 
 **Create:**
-- `supabase/migrations/20260528130100_marker_change_payload_full_context.sql`
+- `supabase/migrations/20260528130200_marker_change_payload_full_context.sql`
 
 **Modify:**
 - `src/client/src/app/features/events/events-page.component.ts` — `getDetectedSummary` reads marker context from `item.change_payload`.
