@@ -869,4 +869,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260527130000_add_nct_source_kind.sql`
 - `20260527140000_positioning_phase_counts.sql`
 - `20260527225705_fix_phase_end_date_coalesce_order.sql`
+- `20260528003300_trial_acronym.sql`
+- `20260528010000_fix_event_detail_product_refs.sql`
+- `20260528012544_event_detail_add_entity_ids.sql`
+- `20260528020000_inventory_snapshot_add_moa_roa.sql`
+- `20260528021842_fix_brandfetch_logo_urls.sql`
+- `20260528030000_commit_source_import_link_moa_roa_existing.sql`
+- `20260528040000_fix_commit_source_import_trial_name.sql`
+- `20260528050000_feed_rpcs_prefer_trial_acronym.sql`
 <!-- /AUTO-GEN:DRIFT -->

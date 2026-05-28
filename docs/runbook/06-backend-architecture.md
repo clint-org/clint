@@ -64,6 +64,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `ai_call_close` | ai_calls | - |
 | `ai_call_open` | ai_calls | - |
 | `ai_call_preflight` | - | ai_calls, ai_config |
+| `ai_import_status` | - | ai_calls, ai_config |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
@@ -73,7 +74,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
-| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_categories, events, marker_types, markers, spaces, trials |
+| `commit_source_import` | ai_calls, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, conditions, events, indications, marker_assignments, markers, mechanisms_of_action, routes_of_administration, source_documents, trial_conditions, trials | event_categories, marker_types, spaces |
 | `create_asset` | asset_mechanisms_of_action, asset_routes_of_administration, assets | mechanisms_of_action, routes_of_administration |
 | `create_company` | companies | - |
 | `create_event` | events | - |
@@ -105,10 +106,11 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
 | `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_change_events, trial_conditions, trial_notes, trials |
-| `get_event_detail` | - | companies, event_categories, event_links, event_sources, event_threads, events, trials |
+| `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
+| `get_key_catalysts` | - | assets, companies, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
@@ -118,7 +120,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
-| `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, trials |
+| `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
@@ -635,6 +637,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `ai_call_close`
 - `ai_call_open`
 - `ai_call_preflight`
+- `ai_import_status`
 - `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
@@ -665,6 +668,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_event_thread`
 - `get_events_page_data`
 - `get_intelligence_notes_for_asset`
+- `get_key_catalysts`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
