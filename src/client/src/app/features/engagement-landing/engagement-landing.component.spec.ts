@@ -31,7 +31,6 @@ function makeStats(overrides: Partial<SpaceLandingStats> = {}): SpaceLandingStat
     p3_readouts_90d: 3,
     new_intel_7d: 2,
     trial_moves_30d: 1,
-    loe_365d: 2,
     ...overrides,
   };
 }
@@ -43,7 +42,7 @@ interface SpaceStub {
 }
 
 interface MotionCell {
-  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves' | 'loe';
+  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves';
   label: string;
   windowLabel: string;
   value: number | null;
@@ -145,16 +144,6 @@ function buildComputeds(
           : null,
         warn: false,
       },
-      {
-        key: 'loe',
-        label: 'Loss of excl.',
-        windowLabel: 'next 365d',
-        value: v(s?.loe_365d),
-        display: s?.loe_365d == null ? '' : String(s.loe_365d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
-        queryParams: hasRoute ? { markerKind: 'loe', within: '365d' } : null,
-        warn: (s?.loe_365d ?? 0) > 0,
-      },
     ];
     return cells;
   });
@@ -191,7 +180,7 @@ describe('EngagementLandingComponent header computeds', () => {
     expect(inventoryTotals()).toBeNull();
   });
 
-  it('motionStats produces 5 cells in fixed order', () => {
+  it('motionStats produces 4 cells in fixed order', () => {
     const { motionStats } = buildComputeds();
     const cells = motionStats();
     expect(cells.map((cell) => cell.key)).toEqual([
@@ -199,17 +188,15 @@ describe('EngagementLandingComponent header computeds', () => {
       'catalysts',
       'newIntel',
       'trialMoves',
-      'loe',
     ]);
   });
 
-  it('motionStats sets warn=true on P3 readouts, catalysts, and LOE when > 0', () => {
+  it('motionStats sets warn=true on P3 readouts and catalysts when > 0', () => {
     const { stats, motionStats } = buildComputeds();
     stats.set(
       makeStats({
         p3_readouts_90d: 3,
         catalysts_90d: 7,
-        loe_365d: 2,
         trial_moves_30d: 1,
         new_intel_7d: 2,
       })
@@ -218,19 +205,17 @@ describe('EngagementLandingComponent header computeds', () => {
     const byKey = Object.fromEntries(cells.map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].warn).toBe(true);
     expect(byKey['catalysts'].warn).toBe(true);
-    expect(byKey['loe'].warn).toBe(true);
     expect(byKey['trialMoves'].warn).toBe(false);
     expect(byKey['newIntel'].warn).toBe(false);
   });
 
   it('motionStats clears warn on cells with zero values', () => {
     const { stats, motionStats } = buildComputeds();
-    stats.set(makeStats({ p3_readouts_90d: 0, catalysts_90d: 0, loe_365d: 0 }));
+    stats.set(makeStats({ p3_readouts_90d: 0, catalysts_90d: 0 }));
     const cells = motionStats();
     const byKey = Object.fromEntries(cells.map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].warn).toBe(false);
     expect(byKey['catalysts'].warn).toBe(false);
-    expect(byKey['loe'].warn).toBe(false);
   });
 
   it('newIntel cell prefixes value with + when > 0', () => {

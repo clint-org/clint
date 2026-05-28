@@ -49,7 +49,7 @@ interface FeedFilter {
 }
 
 interface MotionCell {
-  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves' | 'loe';
+  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves';
   label: string;
   windowLabel: string;
   value: number | null;
@@ -234,16 +234,6 @@ export class EngagementLandingComponent implements OnInit {
           ? { eventTypes: 'phase_transitioned,status_changed', within: '30d' }
           : null,
         warn: false,
-      },
-      {
-        key: 'loe',
-        label: 'Loss of excl.',
-        windowLabel: 'next 365d',
-        value: v(s?.loe_365d),
-        display: s?.loe_365d == null ? '' : String(s.loe_365d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
-        queryParams: hasRoute ? { markerKind: 'loe', within: '365d' } : null,
-        warn: (s?.loe_365d ?? 0) > 0,
       },
     ];
     return cells;

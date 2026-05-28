@@ -22,7 +22,6 @@ export interface SpaceLandingStats {
   p3_readouts_90d: number;
   new_intel_7d: number;
   trial_moves_30d: number;
-  loe_365d: number;
 }
 
 interface RawSpaceLandingStats {
@@ -34,7 +33,6 @@ interface RawSpaceLandingStats {
   p3_readouts_90d: number;
   new_intel_7d: number;
   trial_moves_30d: number;
-  loe_365d: number;
 }
 
 /**
@@ -88,7 +86,6 @@ export class EngagementLandingService {
             p3_readouts_90d: raw.p3_readouts_90d,
             new_intel_7d: raw.new_intel_7d,
             trial_moves_30d: raw.trial_moves_30d,
-            loe_365d: raw.loe_365d,
           };
         },
       }
