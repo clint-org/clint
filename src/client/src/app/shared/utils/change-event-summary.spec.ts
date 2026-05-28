@@ -95,4 +95,155 @@ describe('summarySegmentsFor marker-related events', () => {
     );
     expect(joinText(result.segments)).toContain('May 29, 2026');
   });
+
+  it('marker_updated renders each changed field as old → new', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'marker_updated',
+        payload: {
+          changed_fields: ['title', 'description'],
+          changes: {
+            title: { from: 'Old title', to: 'New title' },
+            description: { from: 'Old text', to: 'New text' },
+          },
+          event_date: '2026-06-20',
+          marker_title: 'PDUFA decision',
+          marker_type_name: 'Topline readout',
+          marker_color: '#0ea5e9',
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('Old title');
+    expect(text).toContain('New title');
+    expect(text).toContain('Old text');
+    expect(text).toContain('New text');
+  });
+
+  it('marker_updated truncates values longer than 40 chars with ellipsis', () => {
+    const longOld = 'A'.repeat(60);
+    const longNew = 'B'.repeat(60);
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'marker_updated',
+        payload: {
+          changed_fields: ['description'],
+          changes: { description: { from: longOld, to: longNew } },
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('…');
+    expect(text).not.toContain(longOld);
+    expect(text).not.toContain(longNew);
+  });
+
+  it('marker_updated legacy slim payload (changed_fields only) still renders field names', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'marker_updated',
+        payload: { changed_fields: ['title', 'description'] },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('title');
+    expect(text).toContain('description');
+    expect(text).not.toContain('→');
+  });
+
+  it('marker_added picks up marker_title gracefully when ChangeEvent.marker_title is null', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'marker_added',
+        marker_title: null,
+        payload: {
+          event_date: '2026-06-20',
+          marker_title: 'PDUFA decision (from payload)',
+          marker_type_name: 'Topline readout',
+        },
+      })
+    );
+    expect(result.segments.length).toBeGreaterThan(0);
+  });
+
+  it('date_moved with simultaneous description edit renders BOTH primary and secondary', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'date_moved',
+        marker_title: 'TRIUMPH-1 readout',
+        payload: {
+          which_date: 'event_date',
+          from: '2026-10-19',
+          to: '2026-10-21',
+          days_diff: 2,
+          direction: 'slip',
+          changes: { description: { from: 'Old desc', to: 'New desc' } },
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('event date');
+    expect(text).toContain('Old desc');
+    expect(text).toContain('New desc');
+  });
+
+  it('date_moved still reads legacy secondary_changes key (in-flight rows)', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'date_moved',
+        marker_title: 'TRIUMPH-1 readout',
+        payload: {
+          which_date: 'event_date',
+          from: '2026-10-19',
+          to: '2026-10-21',
+          days_diff: 2,
+          direction: 'slip',
+          secondary_changes: { description: { from: 'Old desc', to: 'New desc' } },
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('Old desc');
+    expect(text).toContain('New desc');
+  });
+
+  it('projection_finalized with simultaneous title edit renders both', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'projection_finalized',
+        payload: {
+          from: 'projected',
+          to: 'actual',
+          event_date: '2026-06-20',
+          changes: { title: { from: 'Old', to: 'New' } },
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('projected');
+    expect(text).toContain('actual');
+    expect(text).toContain('Old');
+    expect(text).toContain('New');
+  });
+
+  it('marker_reclassified with simultaneous end_date edit renders both', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'marker_reclassified',
+        from_marker_type_name: 'Interim readout',
+        to_marker_type_name: 'Topline readout',
+        payload: {
+          from_type_id: 'a',
+          to_type_id: 'b',
+          event_date: '2026-06-20',
+          changes: { end_date: { from: '2026-06-01', to: '2026-07-15' } },
+        },
+      })
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('Interim readout');
+    expect(text).toContain('Topline readout');
+    expect(text).toContain('Jun 1, 2026');
+    expect(text).toContain('Jul 15, 2026');
+  });
 });

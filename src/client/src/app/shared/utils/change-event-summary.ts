@@ -4,7 +4,12 @@ import {
   type DevelopmentStatus,
   PHASE_COLORS,
 } from '../../core/models/phase-colors';
-import { MARKER_FIELD_LABELS, formatDateRange, formatShortDate } from './marker-fields';
+import {
+  MARKER_FIELD_LABELS,
+  formatDateRange,
+  formatMarkerFieldValue,
+  formatShortDate,
+} from './marker-fields';
 
 /**
  * A typed summary fragment for a change event row. The row template renders
@@ -233,6 +238,43 @@ function markerContextSegments(
   return segs;
 }
 
+const TRUNCATE_AT = 40;
+
+function truncate(s: string): string {
+  return s.length > TRUNCATE_AT ? s.slice(0, TRUNCATE_AT - 1) + '…' : s;
+}
+
+interface FieldChange {
+  from: unknown;
+  to: unknown;
+}
+
+function isFieldChange(v: unknown): v is FieldChange {
+  return typeof v === 'object' && v !== null && ('from' in v || 'to' in v);
+}
+
+function renderFieldChanges(payload: Record<string, unknown>): SummarySegment[] {
+  const raw = payload['changes'] ?? payload['secondary_changes'];
+  if (typeof raw !== 'object' || raw === null) return [];
+  const entries = Object.entries(raw as Record<string, unknown>).filter(([, v]) =>
+    isFieldChange(v)
+  );
+  if (entries.length === 0) return [];
+  const segs: SummarySegment[] = [];
+  for (const [field, change] of entries) {
+    const { from, to } = change as FieldChange;
+    const label = (MARKER_FIELD_LABELS[field] ?? field.replace(/_/g, ' ')).toLowerCase();
+    const fromStr = truncate(formatMarkerFieldValue(field, from) ?? '');
+    const toStr = truncate(formatMarkerFieldValue(field, to) ?? '');
+    segs.push({ kind: 'plain', text: `, ${label} (` });
+    segs.push({ kind: 'old', text: fromStr });
+    segs.push({ kind: 'arrow' });
+    segs.push({ kind: 'new', text: toStr });
+    segs.push({ kind: 'plain', text: ')' });
+  }
+  return segs;
+}
+
 /**
  * Structured version of summaryFor: returns segments the row template can
  * render with strikethrough on `old` and bold/colored on `new`, plus a color
@@ -277,28 +319,26 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
       const toStr = typeof p['to'] === 'string' ? formatShortDate(p['to']) : '?';
       // marker-level: lead with marker title, then "event date {direction}"
       if (which === 'event_date' && e.marker_title) {
-        return {
-          color,
-          segments: [
-            { kind: 'plain', text: `${e.marker_title}: event date ${direction}${magnitude} (` },
-            { kind: 'old', text: fromStr },
-            { kind: 'arrow' },
-            { kind: 'new', text: toStr },
-            { kind: 'plain', text: ')' },
-          ],
-        };
-      }
-      const label = TRIAL_DATE_LABEL[which] ?? MARKER_FIELD_LABELS[which] ?? 'Date';
-      return {
-        color,
-        segments: [
-          { kind: 'plain', text: `${label} ${direction}${magnitude} (` },
+        const segments: SummarySegment[] = [
+          { kind: 'plain', text: `${e.marker_title}: event date ${direction}${magnitude} (` },
           { kind: 'old', text: fromStr },
           { kind: 'arrow' },
           { kind: 'new', text: toStr },
           { kind: 'plain', text: ')' },
-        ],
-      };
+        ];
+        segments.push(...renderFieldChanges(p));
+        return { color, segments };
+      }
+      const label = TRIAL_DATE_LABEL[which] ?? MARKER_FIELD_LABELS[which] ?? 'Date';
+      const segments: SummarySegment[] = [
+        { kind: 'plain', text: `${label} ${direction}${magnitude} (` },
+        { kind: 'old', text: fromStr },
+        { kind: 'arrow' },
+        { kind: 'new', text: toStr },
+        { kind: 'plain', text: ')' },
+      ];
+      segments.push(...renderFieldChanges(p));
+      return { color, segments };
     }
     case 'phase_transitioned': {
       const from = (p['from'] as string[] | undefined)?.join('/') ?? '';
@@ -448,17 +488,23 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
       return { color, segments };
     }
     case 'marker_updated': {
-      const raw = (p['changed_fields'] as string[] | undefined) ?? [];
-      const fields = raw
-        .map((f) => MARKER_FIELD_LABELS[f] ?? f.replace(/_/g, ' '))
-        .map((label) => label.charAt(0).toLowerCase() + label.slice(1))
-        .join(', ');
-      const segments: SummarySegment[] = fields
-        ? [
-            { kind: 'plain', text: 'Marker edited: ' },
-            { kind: 'plain', text: fields },
-          ]
-        : [{ kind: 'plain', text: 'Marker edited' }];
+      const changesSegs = renderFieldChanges(p);
+      let segments: SummarySegment[];
+      if (changesSegs.length > 0) {
+        segments = [{ kind: 'plain', text: 'Marker edited' }, ...changesSegs];
+      } else {
+        const raw = (p['changed_fields'] as string[] | undefined) ?? [];
+        const fields = raw
+          .map((f) => MARKER_FIELD_LABELS[f] ?? f.replace(/_/g, ' '))
+          .map((label) => label.charAt(0).toLowerCase() + label.slice(1))
+          .join(', ');
+        segments = fields
+          ? [
+              { kind: 'plain', text: 'Marker edited: ' },
+              { kind: 'plain', text: fields },
+            ]
+          : [{ kind: 'plain', text: 'Marker edited' }];
+      }
       segments.push(...markerContextSegments(e, p));
       return { color, segments };
     }
@@ -474,6 +520,7 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
               { kind: 'new', text: to },
             ]
           : [{ kind: 'plain', text: 'Reclassified' }];
+      segments.push(...renderFieldChanges(p));
       segments.push(...markerContextSegments(e, p));
       return { color, segments };
     }
@@ -484,6 +531,7 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
         { kind: 'arrow' },
         { kind: 'new', text: 'actual' },
       ];
+      segments.push(...renderFieldChanges(p));
       segments.push(...markerContextSegments(e, p));
       return { color, segments };
     }
