@@ -62,7 +62,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   user_facing: true
 
 - id: nct-resolve-worker
-  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor).
+  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor). Extracts MOA and ROA from intervention type/description when determinable; leaves empty otherwise.
   routes:
     - /api/source/nct-resolve (POST)
   rpcs:
@@ -181,7 +181,7 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 | `ImportPageComponent` | `features/source-import/` | Full-page import shell with 3 tabs (NCT, URL, Text) and AI status panel. Route: `/import`. |
 | `NctInputComponent` | `features/source-import/nct-input/` | NCT paste area with live parsing, dedup, duplicate detection, progress, error handling. |
 | `ImportFromSourceDialogComponent` | `features/source-import/` | [DEPRECATED] Former two-mode dialog. Replaced by `ImportPageComponent`. |
-| `ReviewPageComponent` | `features/source-import/` | Review page with NCT-aware defaults: collapsed trial rows, hidden source pane, CT.gov badges for NCT imports. Full two-pane layout for URL/text imports. |
+| `ReviewPageComponent` | `features/source-import/` | Review page with NCT-aware defaults: collapsed trial rows, hidden source pane, CT.gov badges for NCT imports. Full two-pane layout for URL/text imports. Shows MOA/ROA pills on assets (violet for MOA, cyan for ROA, amber "No MOA/ROA" when empty with tooltip to add manually). |
 | `SourceImportService` | `features/source-import/` | Ephemeral proposal state between import page and review. `source_kind` widened to `'url' | 'text' | 'nct'`. |
 | `SuperAdminAiUsageComponent` | `features/super-admin/` | 3-level AI usage drill-down + ai_enabled toggle |
 
