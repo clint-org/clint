@@ -327,7 +327,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         source_type: 'event',
         id: detail.id,
         title: detail.title,
-        feed_ts: detail.event_date,
+        feed_ts: detail.created_at, // feed_ts mirrors get_events_page_data: events use created_at
         event_date: detail.event_date,
         category_name: detail.category.name,
         category_id: detail.category.id,
@@ -380,7 +380,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         source_type: 'marker',
         id: detail.catalyst.marker_id,
         title: detail.catalyst.title,
-        feed_ts: detail.catalyst.event_date,
+        feed_ts: detail.catalyst.event_date, // Catalyst lacks created_at; event_date is the best available approximation
         event_date: detail.catalyst.event_date,
         category_name: detail.catalyst.category_name,
         category_id: detail.catalyst.category_id,
