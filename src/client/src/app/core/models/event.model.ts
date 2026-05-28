@@ -105,6 +105,8 @@ export interface EventDetail {
   entity_name: string;
   entity_id: string | null;
   company_name: string | null;
+  company_id: string | null;
+  asset_id: string | null;
   sources: { id: string; url: string; label: string | null }[];
   thread: {
     id: string;

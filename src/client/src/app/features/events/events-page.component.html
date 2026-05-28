@@ -250,6 +250,8 @@
           [selectedFeedItem]="selectedItem()"
           [canEdit]="spaceRole.canEdit()"
           [feedItems]="feedItems()"
+          [spaceId]="spaceId"
+          [tenantId]="tenantId"
           (edit)="openEditModal(selectedItem()!.id)"
           (panelClose)="closePanel()"
           (recentClick)="onRecentClick($event)"

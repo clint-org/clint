@@ -29,9 +29,26 @@
         <span class="text-slate-400">Industry</span>
       } @else if (d.company_name) {
         <span class="text-slate-400">
-          {{ d.company_name }}
+          @if (d.company_id && tenantId() && spaceId()) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', d.company_id]"
+              class="text-slate-500 hover:text-brand-700 hover:underline"
+              >{{ d.company_name }}</a
+            >
+          } @else {
+            {{ d.company_name }}
+          }
           @if (d.entity_level !== 'company' && d.entity_name) {
-            <span class="text-slate-300"> / </span>{{ d.entity_name }}
+            <span class="text-slate-300"> / </span>
+            @if (d.asset_id && tenantId() && spaceId()) {
+              <a
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', d.asset_id]"
+                class="text-slate-500 hover:text-brand-700 hover:underline"
+                >{{ d.entity_name }}</a
+              >
+            } @else {
+              {{ d.entity_name }}
+            }
           }
         </span>
       }
@@ -319,6 +336,7 @@
   } @else if (catalystDetail()) {
     <app-marker-detail-content
       [detail]="catalystDetail()"
+      [spaceId]="spaceId()"
       (markerClick)="markerSelect.emit($event)"
       (eventClick)="relatedEventClick.emit($event)"
       (trialClick)="trialClick.emit($event)"

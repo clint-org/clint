@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
@@ -55,6 +56,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     DatePipe,
     FormsModule,
     NgOptimizedImage,
+    RouterLink,
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
@@ -74,6 +76,8 @@ export class EventDetailPanelComponent {
   readonly detail = input<EventDetail | null>(null);
   readonly catalystDetail = input<CatalystDetail | null>(null);
   readonly canEdit = input<boolean>(true);
+  readonly spaceId = input<string>('');
+  readonly tenantId = input<string>('');
 
   /** The currently selected FeedItem (used for detected branch). */
   readonly selectedFeedItem = input<FeedItem | null>(null);

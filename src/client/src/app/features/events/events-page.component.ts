@@ -93,6 +93,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   });
 
   spaceId = '';
+  tenantId = '';
 
   // Data
   readonly feedItems = signal<FeedItem[]>([]);
@@ -195,6 +196,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
+    this.tenantId = this.getTenantId();
 
     const sourceParam = this.route.snapshot.queryParamMap.get('source');
     if (sourceParam === 'detected' || sourceParam === 'event' || sourceParam === 'marker') {
