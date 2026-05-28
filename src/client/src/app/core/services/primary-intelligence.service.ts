@@ -41,23 +41,6 @@ export class PrimaryIntelligenceService {
     );
   }
 
-  async getMarkerDetail(markerId: string): Promise<IntelligenceDetailBundle | null> {
-    return this.cache.get(
-      'get_marker_detail_with_intelligence',
-      { markerId },
-      {
-        ttl: HEAVY_TTL,
-        tags: [`marker:${markerId}:detail`],
-        fetch: async () => {
-          const { data } = await this.supabase.client
-            .rpc('get_marker_detail_with_intelligence', { p_marker_id: markerId })
-            .throwOnError();
-          return (data as IntelligenceDetailBundle | null) ?? null;
-        },
-      }
-    );
-  }
-
   async getCompanyDetail(companyId: string): Promise<IntelligenceDetailBundle | null> {
     return this.cache.get(
       'get_company_detail_with_intelligence',

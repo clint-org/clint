@@ -1,6 +1,10 @@
 /**
  * Primary intelligence -- Stout's authored read on an entity in the
- * engagement (trial, marker, company, product, or the space itself).
+ * engagement (trial, company, product, or the space itself). Markers
+ * are no longer first-class owners of primary intelligence; the
+ * marker's own description carries the catalyst-level write-up, and
+ * trial/asset PI carries the competitive read. Markers remain valid
+ * link targets so a trial PI can still cite a specific catalyst.
  *
  * Mirrors the Postgres tables `primary_intelligence` and
  * `primary_intelligence_links`. The `*Detail` types match the jsonb
@@ -8,9 +12,9 @@
  * `get_space_intelligence()`.
  */
 
-export type IntelligenceEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space';
+export type IntelligenceEntityType = 'trial' | 'company' | 'product' | 'space';
 
-export type IntelligenceLinkEntityType = Exclude<IntelligenceEntityType, 'space'>;
+export type IntelligenceLinkEntityType = 'trial' | 'marker' | 'company' | 'product';
 
 export type IntelligenceState = 'draft' | 'published' | 'archived' | 'withdrawn';
 
@@ -129,7 +133,10 @@ export interface AssetIntelligenceNote {
   updated_at: string;
 }
 
-export const ENTITY_TYPE_LABEL: Record<IntelligenceEntityType, string> = {
+export const ENTITY_TYPE_LABEL: Record<
+  IntelligenceEntityType | IntelligenceLinkEntityType,
+  string
+> = {
   trial: 'Trial',
   marker: 'Marker',
   company: 'Company',

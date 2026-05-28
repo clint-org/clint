@@ -386,13 +386,6 @@ export const routes: Routes = [
               ),
           },
           {
-            path: 'manage/markers/:id',
-            loadComponent: () =>
-              import('./features/manage/markers/marker-detail.component').then(
-                (m) => m.MarkerDetailComponent
-              ),
-          },
-          {
             path: 'manage/engagement',
             loadComponent: () =>
               import('./features/manage/engagement/engagement-detail.component').then(

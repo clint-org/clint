@@ -352,7 +352,7 @@ export class EngagementLandingComponent implements OnInit {
     for (const r of rows) {
       counts.set(r.entity_type, (counts.get(r.entity_type) ?? 0) + 1);
     }
-    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'marker', 'space'];
+    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'space'];
     const out: FeedFilter[] = [{ key: 'all', label: 'All', count: rows.length }];
     for (const type of order) {
       const n = counts.get(type) ?? 0;
@@ -422,8 +422,6 @@ export class EngagementLandingComponent implements OnInit {
         return 'text-slate-600';
       case 'product':
         return 'text-brand-700';
-      case 'marker':
-        return 'text-orange-800';
       case 'space':
         return 'text-slate-600';
       default:

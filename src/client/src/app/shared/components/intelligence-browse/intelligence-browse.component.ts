@@ -27,7 +27,6 @@ import { parseDayOffset } from '../../utils/parse-day-offset';
 
 const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
-  { label: 'Marker', value: 'marker' },
   { label: 'Company', value: 'company' },
   { label: 'Asset', value: 'product' },
   { label: 'Engagement', value: 'space' },

@@ -274,7 +274,6 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /manage/trials/:id   TrialDetailComponent
     /manage/companies/:id   CompanyDetailComponent
     /manage/assets/:id   AssetDetailComponent
-    /manage/markers/:id   MarkerDetailComponent
     /manage/engagement   EngagementDetailComponent
     /settings/marker-types   MarkerTypeListComponent
     /settings/taxonomies   TaxonomiesPageComponent

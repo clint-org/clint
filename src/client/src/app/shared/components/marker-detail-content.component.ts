@@ -99,7 +99,7 @@ interface CtgovProvenanceBlock {
         }
       </div>
 
-      @if (d.catalyst.marker_id && tenantIdSig() && spaceId()) {
+      @if (d.catalyst.marker_id && d.catalyst.trial_id && tenantIdSig() && spaceId()) {
         <div class="mt-2 flex justify-end">
           <a
             [routerLink]="[
@@ -108,12 +108,13 @@ interface CtgovProvenanceBlock {
               's',
               spaceId(),
               'manage',
-              'markers',
-              d.catalyst.marker_id,
+              'trials',
+              d.catalyst.trial_id,
             ]"
+            [queryParams]="{ marker: d.catalyst.marker_id }"
             class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
           >
-            View detail
+            Edit marker
           </a>
         </div>
       }

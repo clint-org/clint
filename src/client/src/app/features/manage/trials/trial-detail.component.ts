@@ -404,11 +404,27 @@ export class TrialDetailComponent implements OnDestroy {
       // History panel depends on the loaded trial's space_id; refresh once
       // the trial resolves so the inline panel reflects the latest versions.
       await this.refreshHistory();
+      this.applyMarkerQueryParam();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load trial');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // When the page is reached via ?marker=<id> (e.g. "View detail" on a
+  // catalyst panel), open that marker in the inline editor and scroll to
+  // the markers section. Markers no longer have their own detail page.
+  private applyMarkerQueryParam(): void {
+    const markerId = this.route.snapshot.queryParamMap.get('marker');
+    if (!markerId) return;
+    const target = this.trial()?.markers?.find((m) => m.id === markerId);
+    if (!target) return;
+    this.editingMarker.set(target);
+    this.addingMarker.set(false);
+    queueMicrotask(() => {
+      document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   async loadIntelligence(): Promise<void> {

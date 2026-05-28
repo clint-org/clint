@@ -87,10 +87,7 @@
                 class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
               >
                 {{ t.identifier }}
-                <i
-                  class="fa-solid fa-arrow-up-right-from-square text-[9px]"
-                  aria-hidden="true"
-                ></i>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
               </a>
             }
             @if (t.phase_type || t.phase) {
@@ -570,20 +567,17 @@
                 <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
                 <td class="col-secondary max-w-xs">
                   <div class="flex items-center gap-1.5">
-                    <a
-                      [routerLink]="[
-                        '/t',
-                        tenantIdSig(),
-                        's',
-                        spaceIdSig(),
-                        'manage',
-                        'markers',
-                        marker.id,
-                      ]"
-                      class="truncate text-brand-700 hover:underline"
-                    >
-                      {{ marker.title }}
-                    </a>
+                    @if (spaceRole.canEdit()) {
+                      <button
+                        type="button"
+                        class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        (click)="editingMarker.set(marker); addingMarker.set(false)"
+                      >
+                        {{ marker.title }}
+                      </button>
+                    } @else {
+                      <span class="truncate text-slate-900">{{ marker.title }}</span>
+                    }
                     <app-ctgov-source-tag [metadata]="marker.metadata" />
                   </div>
                 </td>

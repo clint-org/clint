@@ -367,8 +367,6 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     switch (this.entityType()) {
       case 'trial':
         return this.intelligence.getTrialDetail(this.entityId());
-      case 'marker':
-        return this.intelligence.getMarkerDetail(this.entityId());
       case 'company':
         return this.intelligence.getCompanyDetail(this.entityId());
       case 'product':

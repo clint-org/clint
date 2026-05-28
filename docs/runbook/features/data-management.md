@@ -65,9 +65,9 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-markers
-  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials.
+  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. Edited inline on the trial detail page; "View detail" links on catalyst rows deep-link via ?marker=<id> which opens the inline editor. Markers no longer have their own detail page.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/markers/:id
+    - /t/:tenantId/s/:spaceId/manage/trials/:id
   rpcs: []
   tables:
     - markers
