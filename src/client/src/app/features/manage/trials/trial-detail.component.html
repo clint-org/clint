@@ -110,19 +110,19 @@
         </a>
         <span class="text-slate-300">|</span>
         <a
+          href="#timeline"
+          (click)="scrollToSection($event, 'timeline')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Timeline
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
           href="#referenced-in"
           (click)="scrollToSection($event, 'referenced-in')"
           class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
         >
           Referenced in
-        </a>
-        <span class="text-slate-300">|</span>
-        <a
-          href="#recent-activity"
-          (click)="scrollToSection($event, 'recent-activity')"
-          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-        >
-          Recent activity
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -139,14 +139,6 @@
           class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
         >
           CT.gov
-        </a>
-        <span class="text-slate-300">|</span>
-        <a
-          href="#timeline"
-          (click)="scrollToSection($event, 'timeline')"
-          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-        >
-          Timeline
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -215,6 +207,42 @@
           (confirmed)="onPurgeConfirmed($event)"
         />
       </div>
+
+      <!-- Timeline + events panel -->
+      <section id="timeline" class="mb-4 bg-white border border-slate-200">
+        <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+            Timeline
+          </h2>
+          <button
+            type="button"
+            class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
+            (click)="legendVisible.set(!legendVisible())"
+          >
+            {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
+          </button>
+        </header>
+        <div>
+          <app-timeline-view
+            [hideCompanyColumn]="true"
+            [hideAssetColumn]="true"
+            [hideTrialColumn]="true"
+            [hideLegend]="true"
+            [legendVisible]="legendVisible()"
+            [columnsOnly]="true"
+          />
+        </div>
+        @if (trial(); as t) {
+          <div class="border-t border-slate-200">
+            <app-entity-events-panel
+              [spaceId]="spaceIdSig()"
+              [tenantId]="tenantIdSig() ?? ''"
+              entityLevel="trial"
+              [entityId]="t.id"
+            />
+          </div>
+        }
+      </section>
 
       <!-- Referenced in -->
       <section
@@ -462,42 +490,6 @@
           </p>
         }
       </app-section-card>
-
-      <!-- Timeline + events panel -->
-      <section id="timeline" class="mb-4 bg-white border border-slate-200">
-        <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
-            Timeline
-          </h2>
-          <button
-            type="button"
-            class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
-            (click)="legendVisible.set(!legendVisible())"
-          >
-            {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-          </button>
-        </header>
-        <div>
-          <app-timeline-view
-            [hideCompanyColumn]="true"
-            [hideAssetColumn]="true"
-            [hideTrialColumn]="true"
-            [hideLegend]="true"
-            [legendVisible]="legendVisible()"
-            [columnsOnly]="true"
-          />
-        </div>
-        @if (trial(); as t) {
-          <div class="border-t border-slate-200">
-            <app-entity-events-panel
-              [spaceId]="spaceIdSig()"
-              [tenantId]="tenantIdSig() ?? ''"
-              entityLevel="trial"
-              [entityId]="t.id"
-            />
-          </div>
-        }
-      </section>
 
       <div id="markers">
         <app-section-card title="Markers">
