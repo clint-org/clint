@@ -26,9 +26,9 @@
       >
         <ng-template #header>
           <tr>
-            <th pSortableColumn="event_date" class="col-date">
-              Date <p-sortIcon field="event_date" />
-              <p-column-filter type="date" field="event_date" display="menu" />
+            <th pSortableColumn="feed_ts" class="col-date">
+              Logged <p-sortIcon field="feed_ts" />
+              <p-column-filter type="date" field="feed_ts" display="menu" />
             </th>
             <th pSortableColumn="source_type" class="col-source">
               Source <p-sortIcon field="source_type" />
@@ -119,7 +119,10 @@
             [attr.aria-pressed]="selectedItem()?.id === item.id"
           >
             <td class="col-date text-xs tabular-nums text-slate-500">
-              {{ item.event_date | date: 'MMM d, y' }}
+              <div>{{ item.feed_ts | date: 'MMM d, y' }}</div>
+              <div class="text-[10px] uppercase tracking-wider text-slate-400">
+                {{ item.feed_ts | date: 'h:mm a' }}
+              </div>
             </td>
             <td class="col-source">
               <span

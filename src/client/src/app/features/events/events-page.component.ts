@@ -131,8 +131,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly grid = createGridState<FeedItem>({
     columns: [
       {
-        field: 'event_date',
-        header: 'Date',
+        field: 'feed_ts',
+        header: 'Logged',
         filter: { kind: 'date' },
       },
       {
@@ -182,7 +182,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       'company_name',
       'change_event_type',
     ],
-    defaultSort: { field: 'event_date', order: -1 },
+    defaultSort: { field: 'feed_ts', order: -1 },
     defaultPageSize: 25,
     persistenceKey: 'events',
   });
@@ -229,7 +229,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       source: item.change_source ?? 'ctgov',
       payload: item.change_payload ?? {},
       occurred_at: item.event_date,
-      observed_at: item.observed_at ?? item.event_date,
+      observed_at: item.feed_ts ?? item.observed_at ?? item.event_date,
       marker_id: null,
       trial_name: item.entity_name,
       trial_identifier: null,
@@ -464,10 +464,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     if (item.source_type === 'marker') {
       const trialId = this.selectedCatalystDetail()?.catalyst.trial_id;
       if (!trialId) return;
-      this.router.navigate(
-        ['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trialId],
-        { queryParams: { marker: item.id } }
-      );
+      this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trialId], {
+        queryParams: { marker: item.id },
+      });
       return;
     }
     this.openEditModal(item.id);
