@@ -58,10 +58,12 @@ import { LandscapeStateService } from './landscape-state.service';
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span
-                class="font-mono text-xs font-semibold px-1.5 rounded"
+                class="font-mono text-sm font-semibold"
                 [class.text-amber-800]="stats().catalystCount90d > 0"
                 [class.bg-amber-50]="stats().catalystCount90d > 0"
-                [class.text-slate-500]="stats().catalystCount90d === 0"
+                [class.px-1.5]="stats().catalystCount90d > 0"
+                [class.rounded]="stats().catalystCount90d > 0"
+                [class.text-slate-800]="stats().catalystCount90d === 0"
                 >{{ stats().catalystCount90d }}</span
               >
               <span class="text-[11px] text-slate-400">cat/90d</span>
