@@ -26,6 +26,7 @@ function buildSystemPrompt(inventory: InventorySnapshot): string {
 Rules:
 - Extract ONLY facts explicitly stated in the source text. Never infer or hallucinate.
 - Prefer matching existing inventory items by id over creating new entities.
+- For MOA and ROA, prefer matching existing inventory mechanisms_of_action and routes_of_administration by exact name string. Use those exact names when they match.
 - Never infer regulatory dates that are not explicitly stated.
 - For every entity, quote the relevant evidence verbatim from the source.
 - Use ONLY the marker_type and category values listed in the schema. Pick the closest match.

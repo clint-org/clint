@@ -16,6 +16,8 @@ import { Tooltip } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
 
 import { ChangeEventService } from '../../core/services/change-event.service';
+import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
+import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
 import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import {
@@ -297,19 +299,49 @@ interface HierarchicalTree {
                     @if (erMoas.length > 0) {
                       @for (m of erMoas; track m) {
                         <span
-                          class="inline-block rounded bg-violet-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-violet-700 border border-violet-200"
-                          pTooltip="Mechanism of action"
+                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
+                          [class.bg-violet-50]="isMoaExisting(m)"
+                          [class.text-violet-700]="isMoaExisting(m)"
+                          [class.border-violet-200]="isMoaExisting(m)"
+                          [class.bg-brand-50]="!isMoaExisting(m)"
+                          [class.text-brand-700]="!isMoaExisting(m)"
+                          [class.border-brand-200]="!isMoaExisting(m)"
+                          [pTooltip]="
+                            isMoaExisting(m) ? 'MOA (existing)' : 'MOA (new, will be created)'
+                          "
                           tooltipPosition="top"
-                        >{{ m }}</span>
+                          >{{ m
+                          }}<span
+                            class="rounded px-0.5 text-[8px]"
+                            [class.bg-violet-100]="isMoaExisting(m)"
+                            [class.bg-brand-100]="!isMoaExisting(m)"
+                            >{{ isMoaExisting(m) ? 'Existing' : 'New' }}</span
+                          ></span
+                        >
                       }
                     }
                     @if (erRoas.length > 0) {
                       @for (r of erRoas; track r) {
                         <span
-                          class="inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-cyan-700 border border-cyan-200"
-                          pTooltip="Route of administration"
+                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
+                          [class.bg-cyan-50]="isRoaExisting(r)"
+                          [class.text-cyan-700]="isRoaExisting(r)"
+                          [class.border-cyan-200]="isRoaExisting(r)"
+                          [class.bg-brand-50]="!isRoaExisting(r)"
+                          [class.text-brand-700]="!isRoaExisting(r)"
+                          [class.border-brand-200]="!isRoaExisting(r)"
+                          [pTooltip]="
+                            isRoaExisting(r) ? 'ROA (existing)' : 'ROA (new, will be created)'
+                          "
                           tooltipPosition="top"
-                        >{{ r }}</span>
+                          >{{ r
+                          }}<span
+                            class="rounded px-0.5 text-[8px]"
+                            [class.bg-cyan-100]="isRoaExisting(r)"
+                            [class.bg-brand-100]="!isRoaExisting(r)"
+                            >{{ isRoaExisting(r) ? 'Existing' : 'New' }}</span
+                          ></span
+                        >
                       }
                     }
                     @if (erMoas.length === 0 && erRoas.length === 0) {
@@ -317,7 +349,8 @@ interface HierarchicalTree {
                         class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-600 border border-amber-200"
                         pTooltip="MOA and ROA were not detected from the source. Add them manually after import."
                         tooltipPosition="top"
-                      >No MOA/ROA</span>
+                        >No MOA/ROA</span
+                      >
                     }
                   }
 
@@ -739,6 +772,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
+  private readonly moaService = inject(MechanismOfActionService);
+  private readonly roaService = inject(RouteOfAdministrationService);
+  private readonly existingMoaNames = signal<Set<string>>(new Set());
+  private readonly existingRoaNames = signal<Set<string>>(new Set());
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -974,6 +1011,22 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
+    void this.loadExistingMoaRoa();
+  }
+
+  private async loadExistingMoaRoa(): Promise<void> {
+    const sid = this.spaceId();
+    if (!sid) return;
+    try {
+      const [moas, roas] = await Promise.all([
+        this.moaService.list(sid),
+        this.roaService.list(sid),
+      ]);
+      this.existingMoaNames.set(new Set(moas.map((m) => m.name)));
+      this.existingRoaNames.set(new Set(roas.map((r) => r.name)));
+    } catch {
+      // Non-critical; pills will default to showing as new
+    }
   }
 
   hasUnsavedChanges(): boolean {
@@ -1071,6 +1124,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected assetRoas(index: number): string[] {
     const entity = this.entitiesOf('assets')[index];
     return (entity?.['roa'] as string[]) ?? [];
+  }
+
+  protected isMoaExisting(name: string): boolean {
+    return this.existingMoaNames().has(name);
+  }
+
+  protected isRoaExisting(name: string): boolean {
+    return this.existingRoaNames().has(name);
   }
 
   protected entityEvidence(type: EntityType, index: number): string | null {
@@ -1273,7 +1334,9 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       const createdTrialIds = result?.created?.trials ?? [];
       for (const trialId of createdTrialIds) {
         // fire-and-forget: sync runs in the background via the worker
-        this.changeEventService.triggerSingleTrialSync(trialId).catch(Function.prototype as () => void);
+        this.changeEventService
+          .triggerSingleTrialSync(trialId)
+          .catch(Function.prototype as () => void);
       }
     }
 

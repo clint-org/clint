@@ -127,6 +127,8 @@ export interface InventorySnapshot {
   indications: { id: string; name: string }[];
   marker_types: { id: string; name: string }[];
   event_categories: { id: string; name: string }[];
+  mechanisms_of_action: { id: string; name: string }[];
+  routes_of_administration: { id: string; name: string; abbreviation?: string }[];
   hash: string;
 }
 
