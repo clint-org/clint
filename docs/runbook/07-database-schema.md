@@ -879,4 +879,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260528050000_feed_rpcs_prefer_trial_acronym.sql`
 - `20260528060000_commit_source_import_redelegate_and_backfill.sql`
 - `20260528100000_update_marker_assignments_rpc.sql`
+- `20260528120000_marker_change_payload_event_date.sql`
+- `20260528120100_events_feed_sort_by_feed_ts.sql`
+- `20260528120200_idx_events_markers_created_at.sql`
+- `20260528130000_dashboard_rpcs_emit_trial_acronym.sql`
 <!-- /AUTO-GEN:DRIFT -->
