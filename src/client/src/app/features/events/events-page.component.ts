@@ -40,6 +40,7 @@ import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
+import { formatEventDateSuffix } from './format-event-date-suffix';
 
 @Component({
   selector: 'app-events-page',
@@ -243,6 +244,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       to_marker_type_name: null,
     };
     return summarySegmentsFor(stub);
+  }
+
+  protected formatEventDateSuffix(item: FeedItem): string {
+    return formatEventDateSuffix(item);
   }
 
   getEntityDisplay(item: FeedItem): string {
