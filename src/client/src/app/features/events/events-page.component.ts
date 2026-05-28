@@ -222,6 +222,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   protected getDetectedSummary(item: FeedItem): RichSummary {
+    const p = (item.change_payload ?? {}) as Record<string, unknown>;
     const stub: ChangeEvent = {
       id: item.id,
       trial_id: item.entity_id ?? '',
@@ -237,11 +238,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       asset_name: null,
       company_name: item.company_name,
       company_logo_url: item.company_logo_url,
-      marker_title: null,
-      marker_color: null,
-      marker_type_name: null,
-      from_marker_type_name: null,
-      to_marker_type_name: null,
+      marker_title: (p['marker_title'] as string | undefined) ?? null,
+      marker_color: (p['marker_color'] as string | undefined) ?? null,
+      marker_type_name: (p['marker_type_name'] as string | undefined) ?? null,
+      from_marker_type_name: (p['from_marker_type_name'] as string | undefined) ?? null,
+      to_marker_type_name: (p['to_marker_type_name'] as string | undefined) ?? null,
     };
     return summarySegmentsFor(stub);
   }
