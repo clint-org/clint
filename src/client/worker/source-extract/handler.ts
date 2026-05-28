@@ -392,6 +392,14 @@ export async function handleSourceExtract(
     }
   }
 
+  console.log('[source-extract] proposal companies', JSON.stringify(
+    proposals.companies.map((c) => ({
+      kind: c.match.kind,
+      name: c.match.kind === 'new' ? c.match.name : (inventory.companies.find((ic) => ic.id === (c.match as { id: string }).id)?.name ?? '?'),
+      logo_url: c.match.kind === 'new' ? (c.match as Record<string, unknown>)['logo_url'] ?? null : null,
+    }))
+  ));
+
   warnings.push(...ctgovResult.warnings);
 
   const resolvedNames: Record<string, string> = {};
