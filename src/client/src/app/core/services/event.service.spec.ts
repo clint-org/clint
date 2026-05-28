@@ -223,34 +223,77 @@ describe('EventService.update', () => {
 });
 
 describe('EventService.updateSources', () => {
-  it('invalidates only event detail tag', async () => {
-    const qb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValue(qb);
+  it('delegates to update_event_sources RPC with paired url/label arrays and invalidates event detail', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.updateSources('event-1', [
+      { url: 'https://a.example', label: 'A' },
+      { url: 'https://b.example', label: '' },
+    ]);
+
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'event-1',
+      p_urls: ['https://a.example', 'https://b.example'],
+      p_labels: ['A', ''],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+  });
+
+  it('passes empty arrays through (clear-all)', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.updateSources('event-1', []);
 
-    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'event-1',
+      p_urls: [],
+      p_labels: [],
+    });
   });
 });
 
 describe('EventService.updateLinks', () => {
-  it('invalidates only event detail tag', async () => {
-    const qb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValue(qb);
+  it('delegates to update_event_links RPC and invalidates event detail', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.updateLinks('event-1', ['event-2', 'event-3']);
+
+    expect(rpc).toHaveBeenCalledWith('update_event_links', {
+      p_event_id: 'event-1',
+      p_linked_event_ids: ['event-2', 'event-3'],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+  });
+
+  it('passes empty array through (clear-all outgoing)', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.updateLinks('event-1', []);
 
-    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+    expect(rpc).toHaveBeenCalledWith('update_event_links', {
+      p_event_id: 'event-1',
+      p_linked_event_ids: [],
+    });
   });
 });
 

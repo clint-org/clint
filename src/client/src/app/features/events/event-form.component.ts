@@ -475,6 +475,7 @@ export class EventFormComponent implements OnInit {
       if (id) {
         await this.eventService.update(id, payload);
         await this.eventService.updateSources(id, validSources);
+        await this.eventService.updateLinks(id, this.linkedEventIds());
       } else {
         await this.eventService.create(spaceId, payload, validSources, this.linkedEventIds());
       }

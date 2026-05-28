@@ -151,10 +151,6 @@ export class AssetService {
     }
   }
 
-  /**
-   * Replace all MOA assignments for an asset with the given set.
-   * Two-call pattern: delete all existing join rows, then insert the new set.
-   */
   async setMechanisms(assetId: string, moaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
       .from('assets')
@@ -163,15 +159,8 @@ export class AssetService {
       .single();
 
     await this.supabase.client
-      .from('asset_mechanisms_of_action')
-      .delete()
-      .eq('asset_id', assetId)
+      .rpc('update_asset_mechanisms', { p_asset_id: assetId, p_moa_ids: moaIds })
       .throwOnError();
-
-    if (moaIds.length > 0) {
-      const rows = moaIds.map((moa_id) => ({ asset_id: assetId, moa_id }));
-      await this.supabase.client.from('asset_mechanisms_of_action').insert(rows).throwOnError();
-    }
 
     if (assetRow?.space_id) {
       this.cache.invalidateTags([
@@ -181,10 +170,6 @@ export class AssetService {
     }
   }
 
-  /**
-   * Replace all ROA assignments for an asset with the given set.
-   * Two-call pattern: delete all existing join rows, then insert the new set.
-   */
   async setRoutes(assetId: string, roaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
       .from('assets')
@@ -193,15 +178,8 @@ export class AssetService {
       .single();
 
     await this.supabase.client
-      .from('asset_routes_of_administration')
-      .delete()
-      .eq('asset_id', assetId)
+      .rpc('update_asset_routes', { p_asset_id: assetId, p_roa_ids: roaIds })
       .throwOnError();
-
-    if (roaIds.length > 0) {
-      const rows = roaIds.map((roa_id) => ({ asset_id: assetId, roa_id }));
-      await this.supabase.client.from('asset_routes_of_administration').insert(rows).throwOnError();
-    }
 
     if (assetRow?.space_id) {
       this.cache.invalidateTags([

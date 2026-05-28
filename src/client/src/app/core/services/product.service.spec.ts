@@ -185,42 +185,82 @@ describe('AssetService.list', () => {
 });
 
 describe('AssetService.setMechanisms', () => {
-  it('deletes existing rows then inserts new ones and invalidates cache tags', async () => {
-    // Three .from() calls: lookup, delete-old, insert-new.
+  it('delegates to update_asset_mechanisms RPC and invalidates cache tags from the asset space', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-1' });
-    const delQb = makeQueryBuilder(null);
-    const insQb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(delQb).mockReturnValueOnce(insQb);
+    const from = vi.fn().mockReturnValue(lookupQb);
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { from, rpc, auth: { getUser: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.setMechanisms('asset-1', ['moa-1', 'moa-2']);
 
-    expect(from).toHaveBeenNthCalledWith(1, 'assets');
-    expect(from).toHaveBeenNthCalledWith(2, 'asset_mechanisms_of_action');
-    expect(from).toHaveBeenNthCalledWith(3, 'asset_mechanisms_of_action');
-    expect(delQb.delete).toHaveBeenCalled();
-    expect(delQb.eq).toHaveBeenCalledWith('asset_id', 'asset-1');
-    expect(insQb.insert).toHaveBeenCalledWith([
-      { asset_id: 'asset-1', moa_id: 'moa-1' },
-      { asset_id: 'asset-1', moa_id: 'moa-2' },
+    expect(from).toHaveBeenCalledWith('assets');
+    expect(rpc).toHaveBeenCalledWith('update_asset_mechanisms', {
+      p_asset_id: 'asset-1',
+      p_moa_ids: ['moa-1', 'moa-2'],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'space:space-1:products',
+      'space:space-1:dashboard',
     ]);
-    expect(invalidateTags).toHaveBeenCalled();
   });
 
-  it('skips the insert when the new set is empty', async () => {
+  it('passes empty array through to the RPC (clear-all)', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-1' });
-    const delQb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(delQb);
+    const from = vi.fn().mockReturnValue(lookupQb);
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { from, rpc, auth: { getUser: vi.fn() } },
       { get: vi.fn(), invalidateTags: vi.fn() }
     );
 
     await service.setMechanisms('asset-1', []);
-    expect(from).toHaveBeenCalledTimes(2);
+    expect(rpc).toHaveBeenCalledWith('update_asset_mechanisms', {
+      p_asset_id: 'asset-1',
+      p_moa_ids: [],
+    });
+  });
+});
+
+describe('AssetService.setRoutes', () => {
+  it('delegates to update_asset_routes RPC and invalidates cache tags from the asset space', async () => {
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1' });
+    const from = vi.fn().mockReturnValue(lookupQb);
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.setRoutes('asset-1', ['roa-1', 'roa-2']);
+
+    expect(rpc).toHaveBeenCalledWith('update_asset_routes', {
+      p_asset_id: 'asset-1',
+      p_roa_ids: ['roa-1', 'roa-2'],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'space:space-1:products',
+      'space:space-1:dashboard',
+    ]);
+  });
+
+  it('passes empty array through to the RPC (clear-all)', async () => {
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1' });
+    const from = vi.fn().mockReturnValue(lookupQb);
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    await service.setRoutes('asset-1', []);
+    expect(rpc).toHaveBeenCalledWith('update_asset_routes', {
+      p_asset_id: 'asset-1',
+      p_roa_ids: [],
+    });
   });
 });

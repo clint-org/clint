@@ -883,4 +883,9 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260528120100_events_feed_sort_by_feed_ts.sql`
 - `20260528120200_idx_events_markers_created_at.sql`
 - `20260528130000_dashboard_rpcs_emit_trial_acronym.sql`
+- `20260528130001_update_event_sources_rpc.sql`
+- `20260528130100_update_event_links_rpc.sql`
+- `20260528130200_update_asset_mechanisms_rpc.sql`
+- `20260528130300_update_asset_routes_rpc.sql`
+- `20260528130400_marker_change_payload_full_context.sql`
 <!-- /AUTO-GEN:DRIFT -->

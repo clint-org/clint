@@ -156,45 +156,23 @@ export class EventService {
 
   async updateSources(eventId: string, sources: { url: string; label: string }[]): Promise<void> {
     await this.supabase.client
-      .from('event_sources')
-      .delete()
-      .eq('event_id', eventId)
+      .rpc('update_event_sources', {
+        p_event_id: eventId,
+        p_urls: sources.map((s) => s.url),
+        p_labels: sources.map((s) => s.label ?? ''),
+      })
       .throwOnError();
-
-    if (sources.length > 0) {
-      const rows = sources.map((s) => ({
-        event_id: eventId,
-        url: s.url,
-        label: s.label || null,
-      }));
-      await this.supabase.client.from('event_sources').insert(rows).throwOnError();
-    }
 
     this.cache.invalidateTags([`event:${eventId}:detail`]);
   }
 
   async updateLinks(eventId: string, linkedEventIds: string[]): Promise<void> {
-    // Delete existing links where this event is the source
     await this.supabase.client
-      .from('event_links')
-      .delete()
-      .eq('source_event_id', eventId)
+      .rpc('update_event_links', {
+        p_event_id: eventId,
+        p_linked_event_ids: linkedEventIds,
+      })
       .throwOnError();
-
-    // Also delete links where this event is the target
-    await this.supabase.client
-      .from('event_links')
-      .delete()
-      .eq('target_event_id', eventId)
-      .throwOnError();
-
-    if (linkedEventIds.length > 0) {
-      const rows = linkedEventIds.map((targetId) => ({
-        source_event_id: eventId,
-        target_event_id: targetId,
-      }));
-      await this.supabase.client.from('event_links').insert(rows).throwOnError();
-    }
 
     this.cache.invalidateTags([`event:${eventId}:detail`]);
   }

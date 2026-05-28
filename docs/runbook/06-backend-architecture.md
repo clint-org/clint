@@ -67,10 +67,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `ai_import_status` | - | ai_calls, ai_config |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
-| `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -179,6 +178,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
 | `update_agency_branding` | agencies | - |
+| `update_asset_mechanisms` | asset_mechanisms_of_action | assets |
+| `update_asset_routes` | asset_routes_of_administration | assets |
+| `update_event_links` | event_links | events |
+| `update_event_sources` | event_sources | events |
 | `update_marker_assignments` | marker_assignments | markers |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
@@ -642,7 +645,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `ai_import_status`
 - `archive_space`
 - `assign_primary_intelligence_version`
-- `auto_join_demo_tenant_local`
 - `backfill_marker_history`
 - `build_intelligence_payload`
 - `build_intelligence_payload`
@@ -715,6 +717,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `restore_space`
 - `search_palette`
 - `tenant_owner_update_ai_config`
+- `update_asset_mechanisms`
+- `update_asset_routes`
+- `update_event_links`
+- `update_event_sources`
 - `update_marker_assignments`
 - `update_material`
 - `upsert_change_event_annotation`
