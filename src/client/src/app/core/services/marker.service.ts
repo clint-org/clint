@@ -86,19 +86,19 @@ export class MarkerService {
       .eq('marker_id', markerId);
     const previousTrialIds = (oldRows ?? []).map((r) => r.trial_id as string);
 
+    // Delegate to the SECURITY DEFINER RPC. A client-side DELETE+INSERT pair
+    // splits into two PostgREST transactions; the AFTER DELETE
+    // _cleanup_orphan_marker trigger fires the moment the last assignment is
+    // deleted and drops the parent marker, so the subsequent INSERT then
+    // fails RLS WITH CHECK ("violates RLS for marker_assignments"). The RPC
+    // inserts first then prunes inside one transaction, so the marker always
+    // has at least one live assignment.
     await this.supabase.client
-      .from('marker_assignments')
-      .delete()
-      .eq('marker_id', markerId)
+      .rpc('update_marker_assignments', {
+        p_marker_id: markerId,
+        p_trial_ids: trialIds,
+      })
       .throwOnError();
-
-    if (trialIds.length > 0) {
-      const assignments = trialIds.map((trialId) => ({
-        marker_id: markerId,
-        trial_id: trialId,
-      }));
-      await this.supabase.client.from('marker_assignments').insert(assignments).throwOnError();
-    }
 
     const affectedTrialIds = Array.from(new Set([...previousTrialIds, ...trialIds]));
     const tags: string[] = trialDetailTags(affectedTrialIds);

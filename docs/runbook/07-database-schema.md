@@ -878,4 +878,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260528040000_fix_commit_source_import_trial_name.sql`
 - `20260528050000_feed_rpcs_prefer_trial_acronym.sql`
 - `20260528060000_commit_source_import_redelegate_and_backfill.sql`
+- `20260528100000_update_marker_assignments_rpc.sql`
 <!-- /AUTO-GEN:DRIFT -->
