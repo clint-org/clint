@@ -11,7 +11,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
 
 ```yaml
 - id: source-extract-worker
-  summary: Cloudflare Worker route that fetches/cleans a source, calls Claude Sonnet 4.6, validates the response, enriches with CT.gov lookups, probes the Brandfetch Brand API for each new company to pick the best available logo type (symbol > icon > logo), and returns structured proposals.
+  summary: Cloudflare Worker route that fetches/cleans a source, calls Claude Sonnet 4.6, validates the response, enriches with CT.gov lookups, probes Brandfetch's Logo Link CDN with a 1-byte Range GET per new company to pick the best non-placeholder asset type (symbol > icon > logo by ETag), and returns structured proposals.
   routes:
     - /api/source/extract (POST)
   rpcs:
@@ -62,7 +62,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   user_facing: true
 
 - id: nct-resolve-worker
-  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, probes the Brandfetch Brand API per new company to pick the best available logo type (symbol > icon > logo), and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor). Extracts MOA and ROA from intervention type/description when determinable; leaves empty otherwise.
+  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, probes Brandfetch's Logo Link CDN per new company to pick the best non-placeholder asset type, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor). Extracts MOA and ROA from intervention type/description when determinable; leaves empty otherwise.
   routes:
     - /api/source/nct-resolve (POST)
   rpcs:

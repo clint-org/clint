@@ -14,6 +14,10 @@ const NCT_REGEX = /^NCT\d{8}$/i;
 const MAX_NCTS = 50;
 const CTGOV_FETCH_TIMEOUT_MS = 8_000;
 const LLM_TIMEOUT_MS = 60_000;
+// Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
+// frontend renders and worker enrichment present the same Referer/Origin
+// to the CDN hotlink check.
+const BRANDFETCH_CLIENT_ID = '1idkTE42LH-0X2u_ymo';
 
 export async function handleNctResolve(
   request: Request,
@@ -265,7 +269,8 @@ export async function handleNctResolve(
   const dropped = validation.dropped;
   warnings.push(...validation.warnings);
 
-  await applyLogoEnrichment(proposals, 'nct-resolve', env.BRANDFETCH_API_KEY);
+  const apex = env.ALLOWED_APEXES.split(',')[0].trim();
+  await applyLogoEnrichment(proposals, 'nct-resolve', BRANDFETCH_CLIENT_ID, `https://${apex}/`);
   const { resolvedNames } = resolveProposalNames(proposals, inventory);
 
   // NCT trials are identified by NCT ID rather than name, so fuzzy

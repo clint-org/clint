@@ -9,12 +9,13 @@ interface NewCompanyForEnrichment {
 
 // Mutates: sets logo_url on every new-company match in proposals using
 // Brandfetch Logo Link URLs typed to whichever asset (symbol/icon/logo)
-// the Brand API confirms exists. Logs the outcome under the given label
-// so wrangler tail shows which import path produced which URL.
+// HEAD-probes back a non-placeholder response. Logs the outcome under the
+// given label so wrangler tail shows which import path produced which URL.
 export async function applyLogoEnrichment(
   proposals: ExtractionResult,
   label: string,
-  brandfetchApiKey: string
+  brandfetchClientId: string,
+  brandfetchReferer: string
 ): Promise<void> {
   const newCompanies: NewCompanyForEnrichment[] = proposals.companies
     .map((c, i) =>
@@ -22,7 +23,11 @@ export async function applyLogoEnrichment(
     )
     .filter((x): x is NewCompanyForEnrichment => x !== null);
 
-  const companyLogos = await enrichCompanyLogos(newCompanies, brandfetchApiKey);
+  const companyLogos = await enrichCompanyLogos(
+    newCompanies,
+    brandfetchClientId,
+    brandfetchReferer
+  );
   for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
     const idx = Number(idxStr);
     const company = proposals.companies[idx];

@@ -1,49 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { enrichCompanyLogos, pickAvailableType } from '../../source-extract/logo-enrichment';
+import { enrichCompanyLogos } from '../../source-extract/logo-enrichment';
 
-const API_KEY = 'test-key';
+const CLIENT_ID = '1idkTE42LH-0X2u_ymo';
+const REFERER = 'https://dev.clintapp.com/';
+const PLACEHOLDER_ETAG = '"50d0-2qeW7LHRdpFgBCxSKMv6Q0bjCeY"';
 
-function brandResponse(logos: { type: string; theme?: string }[]): Response {
-  return new Response(JSON.stringify({ logos }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+function probeResponse(opts: { ok: boolean; etag?: string | null }): Response {
+  const headers = new Headers();
+  if (opts.etag) headers.set('etag', opts.etag);
+  return new Response(null, { status: opts.ok ? 206 : 404, headers });
 }
-
-describe('pickAvailableType', () => {
-  it('prefers symbol over icon and logo', () => {
-    expect(
-      pickAvailableType([
-        { type: 'logo', theme: 'light' },
-        { type: 'symbol', theme: 'light' },
-        { type: 'icon', theme: 'light' },
-      ])
-    ).toBe('symbol');
-  });
-
-  it('falls back to icon when symbol is missing', () => {
-    expect(
-      pickAvailableType([
-        { type: 'icon', theme: 'light' },
-        { type: 'logo', theme: 'light' },
-      ])
-    ).toBe('icon');
-  });
-
-  it('ignores dark-theme assets', () => {
-    expect(
-      pickAvailableType([
-        { type: 'symbol', theme: 'dark' },
-        { type: 'icon', theme: 'light' },
-      ])
-    ).toBe('icon');
-  });
-
-  it('returns null when none of symbol/icon/logo are present', () => {
-    expect(pickAvailableType([{ type: 'other', theme: 'light' }])).toBeNull();
-    expect(pickAvailableType([])).toBeNull();
-  });
-});
 
 describe('enrichCompanyLogos', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -58,117 +24,172 @@ describe('enrichCompanyLogos', () => {
   });
 
   it('returns empty when companies list is empty', async () => {
-    const result = await enrichCompanyLogos([], API_KEY);
+    const result = await enrichCompanyLogos([], CLIENT_ID, REFERER);
     expect(result).toEqual({});
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('returns empty when api key is missing', async () => {
-    const result = await enrichCompanyLogos([{ index: 0, name: 'Acme', website: 'acme.com' }], '');
+  it('returns empty when client id is missing', async () => {
+    const result = await enrichCompanyLogos(
+      [{ index: 0, name: 'Acme', website: 'acme.com' }],
+      '',
+      REFERER
+    );
     expect(result).toEqual({});
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('stores typed URL with the best available type per company', async () => {
+  it('returns empty when referer is missing', async () => {
+    const result = await enrichCompanyLogos(
+      [{ index: 0, name: 'Acme', website: 'acme.com' }],
+      CLIENT_ID,
+      ''
+    );
+    expect(result).toEqual({});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('picks symbol when its etag is not the placeholder', async () => {
     fetchMock.mockImplementation((url: string) => {
-      if (url.includes('lilly.com')) {
-        return Promise.resolve(
-          brandResponse([
-            { type: 'icon', theme: 'light' },
-            { type: 'logo', theme: 'light' },
-          ])
-        );
+      if (url.includes('/symbol')) {
+        return Promise.resolve(probeResponse({ ok: true, etag: '"abc-real-symbol"' }));
       }
-      if (url.includes('boehringer-ingelheim.com')) {
-        return Promise.resolve(
-          brandResponse([
-            { type: 'symbol', theme: 'light' },
-            { type: 'logo', theme: 'light' },
-          ])
-        );
-      }
-      return Promise.resolve(new Response('not found', { status: 404 }));
+      return Promise.resolve(probeResponse({ ok: true, etag: '"def-real-other"' }));
     });
 
     const result = await enrichCompanyLogos(
-      [
-        { index: 0, name: 'Lilly', website: 'lilly.com' },
-        { index: 1, name: 'Boehringer Ingelheim', website: 'boehringer-ingelheim.com' },
-      ],
-      API_KEY
+      [{ index: 0, name: 'Boehringer Ingelheim', website: 'boehringer-ingelheim.com' }],
+      CLIENT_ID,
+      REFERER
+    );
+
+    expect(result[0]).toBe('https://cdn.brandfetch.io/boehringer-ingelheim.com/symbol');
+  });
+
+  it('falls through to icon when symbol etag matches the placeholder', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/symbol')) {
+        return Promise.resolve(probeResponse({ ok: true, etag: PLACEHOLDER_ETAG }));
+      }
+      if (url.includes('/icon')) {
+        return Promise.resolve(probeResponse({ ok: true, etag: '"abc-real-icon"' }));
+      }
+      return Promise.resolve(probeResponse({ ok: true, etag: '"def-real-logo"' }));
+    });
+
+    const result = await enrichCompanyLogos(
+      [{ index: 0, name: 'Lilly', website: 'lilly.com' }],
+      CLIENT_ID,
+      REFERER
     );
 
     expect(result[0]).toBe('https://cdn.brandfetch.io/lilly.com/icon');
-    expect(result[1]).toBe('https://cdn.brandfetch.io/boehringer-ingelheim.com/symbol');
   });
 
-  it('omits companies whose Brand API call returns non-OK', async () => {
-    fetchMock.mockResolvedValue(new Response('not found', { status: 404 }));
+  it('falls all the way through to logo when symbol and icon are placeholders', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/logo')) {
+        return Promise.resolve(probeResponse({ ok: true, etag: '"abc-real-logo"' }));
+      }
+      return Promise.resolve(probeResponse({ ok: true, etag: PLACEHOLDER_ETAG }));
+    });
 
     const result = await enrichCompanyLogos(
-      [{ index: 0, name: 'Unknown Co', website: 'unknown-co.com' }],
-      API_KEY
+      [{ index: 0, name: 'Acme', website: 'acme.com' }],
+      CLIENT_ID,
+      REFERER
+    );
+
+    expect(result[0]).toBe('https://cdn.brandfetch.io/acme.com/logo');
+  });
+
+  it('omits companies where every type is the placeholder', async () => {
+    fetchMock.mockResolvedValue(probeResponse({ ok: true, etag: PLACEHOLDER_ETAG }));
+
+    const result = await enrichCompanyLogos(
+      [{ index: 0, name: 'Unknown Co', website: 'unknown.com' }],
+      CLIENT_ID,
+      REFERER
     );
 
     expect(result).toEqual({});
   });
 
-  it('omits companies whose Brand API call rejects', async () => {
+  it('omits companies where every type returns non-OK', async () => {
+    fetchMock.mockResolvedValue(probeResponse({ ok: false }));
+
+    const result = await enrichCompanyLogos(
+      [{ index: 0, name: 'Unknown Co', website: 'unknown.com' }],
+      CLIENT_ID,
+      REFERER
+    );
+
+    expect(result).toEqual({});
+  });
+
+  it('omits companies whose CDN probe rejects on network', async () => {
     fetchMock.mockRejectedValue(new Error('network down'));
 
     const result = await enrichCompanyLogos(
       [{ index: 0, name: 'Acme', website: 'acme.com' }],
-      API_KEY
+      CLIENT_ID,
+      REFERER
     );
 
     expect(result).toEqual({});
   });
 
-  it('omits companies that report only dark-theme or unsupported assets', async () => {
-    fetchMock.mockResolvedValue(
-      brandResponse([
-        { type: 'symbol', theme: 'dark' },
-        { type: 'other', theme: 'light' },
-      ])
-    );
-
-    const result = await enrichCompanyLogos(
-      [{ index: 0, name: 'Acme', website: 'acme.com' }],
-      API_KEY
-    );
-
-    expect(result).toEqual({});
-  });
-
-  it('strips www. before calling the Brand API', async () => {
+  it('strips www. before probing the CDN', async () => {
+    let receivedUrl = '';
     fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/novonordisk.com')) {
-        return Promise.resolve(brandResponse([{ type: 'icon', theme: 'light' }]));
-      }
-      return Promise.resolve(new Response('not found', { status: 404 }));
+      receivedUrl = url;
+      return Promise.resolve(probeResponse({ ok: true, etag: PLACEHOLDER_ETAG }));
     });
 
-    const result = await enrichCompanyLogos(
+    await enrichCompanyLogos(
       [{ index: 0, name: 'Novo Nordisk', website: 'https://www.novonordisk.com' }],
-      API_KEY
+      CLIENT_ID,
+      REFERER
     );
 
-    expect(result[0]).toBe('https://cdn.brandfetch.io/novonordisk.com/icon');
+    expect(receivedUrl).toContain('/novonordisk.com/');
+    expect(receivedUrl).not.toContain('www.');
+  });
+
+  it('sends browser-like headers so the CDN hotlink check passes', async () => {
+    let receivedInit: RequestInit | undefined;
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => {
+      receivedInit = init;
+      return Promise.resolve(probeResponse({ ok: true, etag: '"abc-real"' }));
+    });
+
+    await enrichCompanyLogos(
+      [{ index: 0, name: 'Boehringer Ingelheim', website: 'boehringer-ingelheim.com' }],
+      CLIENT_ID,
+      REFERER
+    );
+
+    expect(receivedInit?.method).toBe('GET');
+    const headers = receivedInit?.headers as Record<string, string>;
+    expect(headers['Referer']).toBe(REFERER);
+    expect(headers['Origin']).toBe('https://dev.clintapp.com');
+    expect(headers['Range']).toBe('bytes=0-0');
   });
 
   it('derives domain from name when website is missing', async () => {
+    let receivedUrl = '';
     fetchMock.mockImplementation((url: string) => {
-      if (url.includes('acme.com')) {
-        return Promise.resolve(brandResponse([{ type: 'logo', theme: 'light' }]));
-      }
-      return Promise.resolve(new Response('not found', { status: 404 }));
+      receivedUrl = url;
+      return Promise.resolve(probeResponse({ ok: true, etag: '"abc-real"' }));
     });
 
     const result = await enrichCompanyLogos(
       [{ index: 0, name: 'Acme Pharma', website: null }],
-      API_KEY
+      CLIENT_ID,
+      REFERER
     );
 
-    expect(result[0]).toBe('https://cdn.brandfetch.io/acme.com/logo');
+    expect(receivedUrl).toContain('/acme.com/');
+    expect(result[0]).toBe('https://cdn.brandfetch.io/acme.com/symbol');
   });
 });

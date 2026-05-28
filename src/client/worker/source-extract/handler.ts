@@ -13,6 +13,10 @@ import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity 
 const MAX_SOURCE_BYTES = 500_000;
 const LLM_TIMEOUT_MS = 60_000;
 const FETCH_TIMEOUT_MS = 10_000;
+// Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
+// frontend renders and worker enrichment present the same Referer/Origin
+// to the CDN hotlink check.
+const BRANDFETCH_CLIENT_ID = '1idkTE42LH-0X2u_ymo';
 
 export async function handleSourceExtract(
   request: Request,
@@ -341,7 +345,8 @@ export async function handleSourceExtract(
     );
   }
 
-  await applyLogoEnrichment(proposals, 'source-extract', env.BRANDFETCH_API_KEY);
+  const apex = env.ALLOWED_APEXES.split(',')[0].trim();
+  await applyLogoEnrichment(proposals, 'source-extract', BRANDFETCH_CLIENT_ID, `https://${apex}/`);
   const { companyNames, assetNames, resolvedNames } = resolveProposalNames(proposals, inventory);
 
   const [ctgovResult, fuzzyAlternates] = await Promise.all([
