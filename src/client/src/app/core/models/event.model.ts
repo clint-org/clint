@@ -64,6 +64,7 @@ export interface FeedItem {
   source_type: 'event' | 'marker' | 'detected';
   id: string;
   title: string;
+  feed_ts: string;
   event_date: string;
   category_name: string;
   category_id: string | null;
