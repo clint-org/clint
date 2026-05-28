@@ -31,6 +31,7 @@ export interface ChangeEvent {
   marker_id: string | null;
   // joined for display
   trial_name: string;
+  trial_acronym?: string | null;
   trial_identifier: string | null;
   asset_name: string | null;
   company_name: string | null;

@@ -44,7 +44,7 @@ export class WhatChangedWidgetComponent {
   protected readonly uniqueAssetCount = computed(() => {
     const names = new Set(
       this.events()
-        .map((e) => e.asset_name ?? e.trial_name)
+        .map((e) => e.asset_name ?? e.trial_acronym ?? e.trial_name)
         .filter(Boolean)
     );
     return names.size;

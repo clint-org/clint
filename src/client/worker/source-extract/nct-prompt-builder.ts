@@ -4,6 +4,7 @@ import type { PromptParts } from './prompt-builder';
 export interface NctStudyRecord {
   nct_id: string;
   brief_title: string;
+  acronym: string | null;
   overall_status: string;
   phase: string | null;
   study_type: string;
@@ -70,7 +71,7 @@ company_ref, sponsor_ref, and asset_ref are zero-based indices into their respec
 
 export function buildNctPrompt(
   studies: NctStudyRecord[],
-  inventory: InventorySnapshot,
+  inventory: InventorySnapshot
 ): PromptParts {
   const system = buildNctSystemPrompt();
   const user = `<ctgov_studies>

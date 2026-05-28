@@ -37,17 +37,27 @@ export async function handleNctResolve(
   if (!body.space_id) return jsonError(400, 'space_id_required', cors);
   if (!Array.isArray(body.nct_ids)) return jsonError(400, 'no_valid_ncts', cors);
 
-  const validIds = [...new Set(
-    body.nct_ids
-      .map((id) => id.trim().toUpperCase())
-      .filter((id) => NCT_REGEX.test(id))
-  )];
+  const validIds = [
+    ...new Set(
+      body.nct_ids.map((id) => id.trim().toUpperCase()).filter((id) => NCT_REGEX.test(id))
+    ),
+  ];
 
   if (validIds.length === 0) {
-    return jsonErrorWithCode(400, 'no_valid_ncts', 'No valid NCT IDs found. IDs should look like NCT01234567.', cors);
+    return jsonErrorWithCode(
+      400,
+      'no_valid_ncts',
+      'No valid NCT IDs found. IDs should look like NCT01234567.',
+      cors
+    );
   }
   if (validIds.length > MAX_NCTS) {
-    return jsonErrorWithCode(400, 'too_many_ncts', 'Maximum 50 NCT IDs per import. Please split into batches.', cors);
+    return jsonErrorWithCode(
+      400,
+      'too_many_ncts',
+      'Maximum 50 NCT IDs per import. Please split into batches.',
+      cors
+    );
   }
 
   let hasAccess: boolean;
@@ -88,9 +98,10 @@ export async function handleNctResolve(
       }
     } else {
       const rejection = result.reason as { nctId: string; error: unknown };
-      const reason = rejection.error instanceof Error && rejection.error.name === 'AbortError'
-        ? 'timeout'
-        : 'http_error';
+      const reason =
+        rejection.error instanceof Error && rejection.error.name === 'AbortError'
+          ? 'timeout'
+          : 'http_error';
       warnings.push(`nct_fetch_failed:${rejection.nctId}:${reason}`);
     }
   }
@@ -104,9 +115,7 @@ export async function handleNctResolve(
     );
   }
 
-  const studyRecords: NctStudyRecord[] = successfulStudies.map(({ study }) =>
-    toStudyRecord(study)
-  );
+  const studyRecords: NctStudyRecord[] = successfulStudies.map(({ study }) => toStudyRecord(study));
 
   const tenantId = await fetchTenantId(cfg, auth, body.space_id);
   if (!tenantId) return jsonError(403, 'forbidden', cors);
@@ -258,9 +267,7 @@ export async function handleNctResolve(
   const fuzzyAlternates = computeFuzzyAlternates(
     [
       ...proposals.companies.flatMap((c, i) =>
-        c.match.kind === 'new'
-          ? [{ type: 'company' as const, index: i, name: c.match.name }]
-          : []
+        c.match.kind === 'new' ? [{ type: 'company' as const, index: i, name: c.match.name }] : []
       ),
       ...proposals.assets.flatMap((a, i) =>
         a.match.kind === 'new' ? [{ type: 'asset' as const, index: i, name: a.match.name }] : []
@@ -389,12 +396,13 @@ function toStudyRecord(study: unknown): NctStudyRecord {
   const collaborators = (sponsors.collaborators ?? []).map((c: any) => c.name as string);
   const interventions = (arms.interventions ?? []).map((iv: any) => ({
     name: (iv.name ?? '') as string,
-    other_names: ((iv.otherNames ?? []) as string[]),
+    other_names: (iv.otherNames ?? []) as string[],
   }));
 
   return {
     nct_id: ident.nctId ?? '',
     brief_title: ident.briefTitle ?? '',
+    acronym: ident.acronym?.trim() || null,
     overall_status: status.overallStatus ?? '',
     phase: mappedPhase,
     study_type: design.studyType ?? 'INTERVENTIONAL',
@@ -427,9 +435,18 @@ function normalizeCtgovDate(raw: string | null): string | null {
 }
 
 const MONTH_MAP: Record<string, string> = {
-  january: '01', february: '02', march: '03', april: '04',
-  may: '05', june: '06', july: '07', august: '08',
-  september: '09', october: '10', november: '11', december: '12',
+  january: '01',
+  february: '02',
+  march: '03',
+  april: '04',
+  may: '05',
+  june: '06',
+  july: '07',
+  august: '08',
+  september: '09',
+  october: '10',
+  november: '11',
+  december: '12',
 };
 
 function parseYearMonthDay(parts: string[]): [string | null, string | null, string | null] {

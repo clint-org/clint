@@ -125,7 +125,11 @@
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
             (click)="openDetail(row.trial)"
           >
-            <span [innerHTML]="row.trial.name | highlight: grid.debouncedGlobalSearch()"></span>
+            <span
+              [innerHTML]="
+                row.trial.acronym ?? row.trial.name | highlight: grid.debouncedGlobalSearch()
+              "
+            ></span>
           </button>
         </td>
         <td class="col-identifier">
@@ -178,7 +182,10 @@
           <td class="col-secondary">{{ extraValue(row.trial.id, col.path) || '--' }}</td>
         }
         <td class="col-actions">
-          <app-row-actions [items]="rowMenu(row)" [ariaLabel]="'Actions for ' + row.trial.name" />
+          <app-row-actions
+            [items]="rowMenu(row)"
+            [ariaLabel]="'Actions for ' + (row.trial.acronym ?? row.trial.name)"
+          />
         </td>
       </tr>
     </ng-template>

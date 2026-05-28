@@ -70,8 +70,11 @@
           </div>
         }
         <h1 class="mt-0.5 text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
-          {{ t.name }}
+          {{ t.acronym ?? t.name }}
         </h1>
+        @if (t.acronym) {
+          <p class="mt-0.5 text-xs text-slate-500">{{ t.name }}</p>
+        }
         <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           @if (t.identifier) {
             <a

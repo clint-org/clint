@@ -56,6 +56,7 @@ export interface UpcomingCatalyst {
   company_name: string | null;
   asset_name: string | null;
   trial_name: string | null;
+  trial_acronym: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -65,29 +66,33 @@ export class EngagementLandingService {
   private readonly cache = inject(RpcCache);
 
   async getStats(spaceId: string): Promise<SpaceLandingStats | null> {
-    return this.cache.get('get_space_landing_stats', { spaceId }, {
-      ttl: HEAVY_TTL,
-      tags: [`space:${spaceId}:landing-stats`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('get_space_landing_stats', {
-          p_space_id: spaceId,
-        });
-        if (error) throw error;
-        const raw = data as RawSpaceLandingStats | null;
-        if (!raw) return null;
-        return {
-          active_trials: raw.active_trials,
-          companies: raw.companies,
-          assets: raw.programs,
-          catalysts_90d: raw.catalysts_90d,
-          intelligence_total: raw.intelligence_total,
-          p3_readouts_90d: raw.p3_readouts_90d,
-          new_intel_7d: raw.new_intel_7d,
-          trial_moves_30d: raw.trial_moves_30d,
-          loe_365d: raw.loe_365d,
-        };
-      },
-    });
+    return this.cache.get(
+      'get_space_landing_stats',
+      { spaceId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:landing-stats`],
+        fetch: async () => {
+          const { data, error } = await this.supabase.client.rpc('get_space_landing_stats', {
+            p_space_id: spaceId,
+          });
+          if (error) throw error;
+          const raw = data as RawSpaceLandingStats | null;
+          if (!raw) return null;
+          return {
+            active_trials: raw.active_trials,
+            companies: raw.companies,
+            assets: raw.programs,
+            catalysts_90d: raw.catalysts_90d,
+            intelligence_total: raw.intelligence_total,
+            p3_readouts_90d: raw.p3_readouts_90d,
+            new_intel_7d: raw.new_intel_7d,
+            trial_moves_30d: raw.trial_moves_30d,
+            loe_365d: raw.loe_365d,
+          };
+        },
+      }
+    );
   }
 
   /**

@@ -29,7 +29,7 @@ export class ChangeEventRowComponent {
     const parts: string[] = [];
     if (e.company_name) parts.push(e.company_name);
     if (e.asset_name) parts.push(e.asset_name);
-    else if (e.trial_name) parts.push(e.trial_name);
+    else if (e.trial_acronym ?? e.trial_name) parts.push(e.trial_acronym ?? e.trial_name);
     return parts.join(' / ').toUpperCase();
   });
 

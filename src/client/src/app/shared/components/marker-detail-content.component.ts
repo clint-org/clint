@@ -173,7 +173,7 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      @if (d.catalyst.trial_name) {
+      @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as _trialLabel) {
         <app-detail-panel-section [first]="!d.catalyst.company_name" label="Trial">
           @if (d.catalyst.trial_id; as trialId) {
             <button
@@ -184,7 +184,7 @@ interface CtgovProvenanceBlock {
               <span
                 class="inline-flex items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
               >
-                {{ d.catalyst.trial_name }}
+                {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
                 <i
                   class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
                   aria-hidden="true"
@@ -198,7 +198,9 @@ interface CtgovProvenanceBlock {
               </span>
             </button>
           } @else {
-            <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
+            <p class="text-[13px] font-medium text-slate-900">
+              {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
+            </p>
             <p class="text-[11px] text-slate-500">
               {{ phaseLabel(d.catalyst.trial_phase) }}
               @if (d.catalyst.recruitment_status) {

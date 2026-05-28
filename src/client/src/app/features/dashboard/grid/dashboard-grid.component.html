@@ -218,14 +218,20 @@
             @if (!hideTrialColumn()) {
               <div
                 class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
-                [title]="row.companyName + ' / ' + row.assetName + ' / ' + row.trial.name"
+                [title]="
+                  row.companyName +
+                  ' / ' +
+                  row.assetName +
+                  ' / ' +
+                  (row.trial.acronym ?? row.trial.name)
+                "
                 role="button"
                 tabindex="0"
                 (click)="onTrialClick(row.trial)"
                 (keydown.enter)="onTrialClick(row.trial)"
                 (keydown.space)="onTrialClick(row.trial)"
               >
-                {{ row.trial.name }}
+                {{ row.trial.acronym ?? row.trial.name }}
                 <app-change-badge
                   class="ml-1 inline-flex items-center"
                   [count]="row.trial.recent_changes_count ?? 0"
@@ -305,7 +311,7 @@
                       [startYear]="startYear()"
                       [endYear]="endYear()"
                       [totalWidth]="totalWidth()"
-                      [trialName]="row.trial.name"
+                      [trialName]="row.trial.acronym ?? row.trial.name"
                       [trialPhase]="row.trial.phase_type ?? ''"
                       [recruitmentStatus]="row.trial.recruitment_status ?? ''"
                       [companyName]="row.companyName"

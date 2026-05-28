@@ -384,6 +384,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             asset_name: asset.name,
             asset_id: asset.id,
             trial_name: trial.name,
+            trial_acronym: trial.acronym ?? null,
             trial_id: trial.id,
             trial_phase: trial.phase_type ?? trial.phase ?? null,
             description: marker.description ?? null,

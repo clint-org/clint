@@ -79,6 +79,7 @@ export interface BullseyeScope {
 export interface BullseyeTrial {
   id: string;
   name: string;
+  acronym: string | null;
   identifier: string | null;
   status: string | null;
   recruitment_status: string | null;

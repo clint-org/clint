@@ -389,6 +389,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
               ? 'company'
               : 'space',
         entity_name:
+          detail.catalyst.trial_acronym ??
           detail.catalyst.trial_name ??
           detail.catalyst.asset_name ??
           detail.catalyst.company_name ??

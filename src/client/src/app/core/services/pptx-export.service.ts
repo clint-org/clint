@@ -200,7 +200,7 @@ export class PptxExportService {
           rows.push({
             companyName: company.name,
             assetName: product.name,
-            trialName: trial.name,
+            trialName: trial.acronym ?? trial.name,
             trial,
             isFirstInCompany,
             isFirstInAsset,

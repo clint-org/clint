@@ -7,6 +7,7 @@ export interface Trial {
   created_by: string;
   asset_id: string;
   name: string;
+  acronym: string | null;
   identifier: string | null;
   status: string | null;
   notes: string | null;

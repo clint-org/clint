@@ -19,6 +19,7 @@ export interface Catalyst {
   asset_name: string | null;
   asset_id: string | null;
   trial_name: string | null;
+  trial_acronym: string | null;
   trial_id: string | null;
   trial_phase: string | null;
   description: string | null;

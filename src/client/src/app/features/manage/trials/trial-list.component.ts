@@ -308,8 +308,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
 
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete trial',
-      entityLabel: trial.name,
-      message: `Delete "${trial.name}"? This will permanently remove:`,
+      entityLabel: trial.acronym ?? trial.name,
+      message: `Delete "${trial.acronym ?? trial.name}"? This will permanently remove:`,
       counts,
       requireTypedConfirmation: true,
     });

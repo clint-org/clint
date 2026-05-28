@@ -48,26 +48,16 @@ const NCT_STEP_SEQUENCE: Exclude<NctPhase, 'idle' | 'error'>[] = [
 ];
 
 const ERROR_MESSAGES: Record<string, string> = {
-  all_ncts_failed:
-    'Could not reach ClinicalTrials.gov. Check your connection and try again.',
-  ai_resolution_failed:
-    'We fetched your trial data but could not resolve companies and assets.',
-  preflight_rejected:
-    'Daily AI usage limit reached. Try again tomorrow or contact your admin.',
-  no_valid_ncts:
-    'No valid NCT IDs found. IDs should look like NCT01234567.',
-  too_many_ncts:
-    'Maximum 50 NCT IDs per import. Please split into batches.',
+  all_ncts_failed: 'Could not reach ClinicalTrials.gov. Check your connection and try again.',
+  ai_resolution_failed: 'We fetched your trial data but could not resolve companies and assets.',
+  preflight_rejected: 'Daily AI usage limit reached. Try again tomorrow or contact your admin.',
+  no_valid_ncts: 'No valid NCT IDs found. IDs should look like NCT01234567.',
+  too_many_ncts: 'Maximum 50 NCT IDs per import. Please split into batches.',
 };
 
 @Component({
   selector: 'app-nct-input',
-  imports: [
-    FormsModule,
-    ButtonModule,
-    Textarea,
-    MessageModule,
-  ],
+  imports: [FormsModule, ButtonModule, Textarea, MessageModule],
   template: `
     @if (phase() === 'idle' || phase() === 'error') {
       <div class="flex flex-col gap-4 py-4">
@@ -85,12 +75,14 @@ const ERROR_MESSAGES: Record<string, string> = {
           <div class="flex items-center gap-3 text-[12px]">
             @if (parsed().valid.length > 0) {
               <span class="font-medium text-slate-700">
-                {{ parsed().valid.length }} valid NCT {{ parsed().valid.length === 1 ? 'ID' : 'IDs' }}
+                {{ parsed().valid.length }} valid NCT
+                {{ parsed().valid.length === 1 ? 'ID' : 'IDs' }}
               </span>
             }
             @if (parsed().malformed.length > 0) {
               <span class="text-amber-700">
-                {{ parsed().malformed.length }} malformed {{ parsed().malformed.length === 1 ? 'entry' : 'entries' }}:
+                {{ parsed().malformed.length }} malformed
+                {{ parsed().malformed.length === 1 ? 'entry' : 'entries' }}:
                 {{ parsed().malformed.join(', ') }}
               </span>
             }
@@ -109,17 +101,14 @@ const ERROR_MESSAGES: Record<string, string> = {
         @if (errorMessage()) {
           <p-message severity="error" [closable]="false">{{ errorMessage() }}</p-message>
           <div class="flex gap-2">
-            <p-button
-              label="Retry"
-              size="small"
-              [outlined]="true"
-              (onClick)="submit()"
-            />
+            <p-button label="Retry" size="small" [outlined]="true" (onClick)="submit()" />
           </div>
         }
 
         @if (duplicates().length > 0 && !dupeConfirmed()) {
-          <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div
+            class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
             <p class="font-medium">
               {{ duplicates().length }} of {{ parsed().valid.length }} NCTs already in this space
             </p>
@@ -137,12 +126,7 @@ const ERROR_MESSAGES: Record<string, string> = {
               [disabled]="newNctCount() === 0"
               (onClick)="confirmDuplicates()"
             />
-            <p-button
-              label="Cancel"
-              size="small"
-              [text]="true"
-              (onClick)="resetDuplicates()"
-            />
+            <p-button label="Cancel" size="small" [text]="true" (onClick)="resetDuplicates()" />
           </div>
         }
 
@@ -169,12 +153,16 @@ const ERROR_MESSAGES: Record<string, string> = {
                   <span class="text-xs text-slate-500">{{ stepLabel(s) }}</span>
                 } @else if (stepIndex() === $index) {
                   <span class="relative flex h-4 w-4">
-                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"></span>
+                    <span
+                      class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"
+                    ></span>
                     <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
                   </span>
                   <span class="text-xs font-medium text-slate-700">{{ stepLabel(s) }}</span>
                 } @else {
-                  <span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
+                  <span
+                    class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"
+                  ></span>
                   <span class="text-xs text-slate-400">{{ stepLabel(s) }}</span>
                 }
               </div>
@@ -215,14 +203,14 @@ export class NctInputComponent implements OnDestroy {
   protected readonly tooManyError = computed(() => this.parsed().valid.length > 50);
 
   protected readonly newNctCount = computed(() => {
-    const dupeIds = new Set(this.duplicates().map(d => d.nct_id));
-    return this.parsed().valid.filter(id => !dupeIds.has(id)).length;
+    const dupeIds = new Set(this.duplicates().map((d) => d.nct_id));
+    return this.parsed().valid.filter((id) => !dupeIds.has(id)).length;
   });
 
   protected readonly nctIdsToSubmit = computed(() => {
     if (this.dupeConfirmed() && this.duplicates().length > 0) {
-      const dupeIds = new Set(this.duplicates().map(d => d.nct_id));
-      return this.parsed().valid.filter(id => !dupeIds.has(id));
+      const dupeIds = new Set(this.duplicates().map((d) => d.nct_id));
+      return this.parsed().valid.filter((id) => !dupeIds.has(id));
     }
     return this.parsed().valid;
   });
@@ -356,10 +344,12 @@ export class NctInputComponent implements OnDestroy {
         return;
       }
 
-      const dupes: DuplicateNct[] = data.map((row: { identifier: string; name: string }) => ({
-        nct_id: row.identifier,
-        trial_name: row.name ?? row.identifier,
-      }));
+      const dupes: DuplicateNct[] = data.map(
+        (row: { identifier: string; name: string; acronym?: string | null }) => ({
+          nct_id: row.identifier,
+          trial_name: row.acronym ?? row.name ?? row.identifier,
+        })
+      );
 
       this.duplicates.set(dupes);
       this.phase.set('idle');

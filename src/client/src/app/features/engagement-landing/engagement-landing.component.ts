@@ -614,6 +614,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
             company_name: company.name,
             asset_name: asset.name,
             trial_name: trial.name ?? null,
+            trial_acronym: trial.acronym ?? null,
           });
         }
       }

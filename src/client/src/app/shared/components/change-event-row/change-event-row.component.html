@@ -53,7 +53,7 @@
         }
         @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
-        } @else if (event().trial_name; as trial) {
+        } @else if (event().trial_acronym ?? event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>
         }
         <span class="text-slate-300" aria-hidden="true">&middot;</span>
@@ -124,7 +124,7 @@
         }
         @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
-        } @else if (event().trial_name; as trial) {
+        } @else if (event().trial_acronym ?? event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>
         }
         <span class="text-slate-300" aria-hidden="true">&middot;</span>

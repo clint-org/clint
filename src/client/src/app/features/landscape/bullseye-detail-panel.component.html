@@ -130,7 +130,7 @@
                   <span
                     class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900"
                   >
-                    <span class="truncate">{{ trial.name }}</span>
+                    <span class="truncate">{{ trial.acronym ?? trial.name }}</span>
                     <app-change-badge
                       [count]="trial.recent_changes_count ?? 0"
                       [type]="trial.most_recent_change_type ?? null"
