@@ -24,6 +24,7 @@ import { MarkerCategoryService } from '../../../core/services/marker-category.se
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { TrialService } from '../../../core/services/trial.service';
 import { extractConstraintMessage } from '../../../core/util/db-error';
+import { toTrialOption, type TrialOption } from '../../../core/utils/to-trial-option';
 
 const MARKER_FIELD_LABELS: Record<string, string> = {
   marker_type_id: 'Marker type',
@@ -219,19 +220,39 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           </label>
           <p-multiselect
             inputId="marker-trials"
-            [options]="trials()"
+            [options]="trialOptions()"
             [ngModel]="selectedTrialIds()"
             (ngModelChange)="selectedTrialIds.set($event ?? [])"
             name="selectedTrialIds"
-            optionLabel="name"
+            optionLabel="label"
             optionValue="id"
             placeholder="Select trials"
+            [filter]="true"
+            filterBy="label,identifier,companyName,assetName,briefTitle"
             styleClass="w-full"
             class="mt-1"
             aria-required="true"
+            appendTo="body"
             [maxSelectedLabels]="0"
             [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
-          />
+          >
+            <ng-template let-opt pTemplate="item">
+              <div class="flex flex-col py-0.5">
+                <span class="text-sm text-slate-900">{{ opt.label }}</span>
+                <span class="text-xs text-slate-500 truncate">
+                  {{ opt.companyName }}
+                  @if (opt.companyName && opt.assetName) {
+                    <span class="mx-1">&middot;</span>
+                  }
+                  {{ opt.assetName }}
+                  @if ((opt.companyName || opt.assetName) && opt.identifier) {
+                    <span class="mx-1">&middot;</span>
+                  }
+                  <span class="font-mono">{{ opt.identifier }}</span>
+                </span>
+              </div>
+            </ng-template>
+          </p-multiselect>
           @if (selectedTrialIds().length === 0) {
             <p class="mt-1 text-xs text-slate-500">
               At least one trial. Markers always belong to a trial timeline.
@@ -287,6 +308,9 @@ export class MarkerFormComponent implements OnInit {
   readonly categories = signal<MarkerCategory[]>([]);
   readonly markerTypes = signal<MarkerType[]>([]);
   readonly trials = signal<Trial[]>([]);
+  protected readonly trialOptions = computed<TrialOption[]>(() =>
+    this.trials().map(toTrialOption),
+  );
   readonly showRegulatoryPathway = signal(false);
 
   // Form fields
