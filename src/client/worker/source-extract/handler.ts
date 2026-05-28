@@ -341,7 +341,7 @@ export async function handleSourceExtract(
     );
   }
 
-  applyLogoEnrichment(proposals, 'source-extract');
+  await applyLogoEnrichment(proposals, 'source-extract', env.BRANDFETCH_API_KEY);
   const { companyNames, assetNames, resolvedNames } = resolveProposalNames(proposals, inventory);
 
   const [ctgovResult, fuzzyAlternates] = await Promise.all([

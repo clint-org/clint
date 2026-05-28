@@ -265,7 +265,7 @@ export async function handleNctResolve(
   const dropped = validation.dropped;
   warnings.push(...validation.warnings);
 
-  applyLogoEnrichment(proposals, 'nct-resolve');
+  await applyLogoEnrichment(proposals, 'nct-resolve', env.BRANDFETCH_API_KEY);
   const { resolvedNames } = resolveProposalNames(proposals, inventory);
 
   // NCT trials are identified by NCT ID rather than name, so fuzzy

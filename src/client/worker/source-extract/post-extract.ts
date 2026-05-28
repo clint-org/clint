@@ -8,19 +8,21 @@ interface NewCompanyForEnrichment {
 }
 
 // Mutates: sets logo_url on every new-company match in proposals using
-// Brandfetch Logo Link URLs derived from the company name. Logs the
-// outcome under the given label so wrangler tail shows which import
-// path produced which URL.
-export function applyLogoEnrichment(proposals: ExtractionResult, label: string): void {
+// Brandfetch Logo Link URLs typed to whichever asset (symbol/icon/logo)
+// the Brand API confirms exists. Logs the outcome under the given label
+// so wrangler tail shows which import path produced which URL.
+export async function applyLogoEnrichment(
+  proposals: ExtractionResult,
+  label: string,
+  brandfetchApiKey: string
+): Promise<void> {
   const newCompanies: NewCompanyForEnrichment[] = proposals.companies
     .map((c, i) =>
-      c.match.kind === 'new'
-        ? { index: i, name: c.match.name, website: c.match.website }
-        : null,
+      c.match.kind === 'new' ? { index: i, name: c.match.name, website: c.match.website } : null
     )
     .filter((x): x is NewCompanyForEnrichment => x !== null);
 
-  const companyLogos = enrichCompanyLogos(newCompanies);
+  const companyLogos = await enrichCompanyLogos(newCompanies, brandfetchApiKey);
   for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
     const idx = Number(idxStr);
     const company = proposals.companies[idx];
@@ -40,8 +42,8 @@ export function applyLogoEnrichment(proposals: ExtractionResult, label: string):
           c.match.kind === 'new'
             ? ((c.match as Record<string, unknown>)['logo_url'] ?? null)
             : null,
-      })),
-    ),
+      }))
+    )
   );
 }
 
@@ -51,7 +53,7 @@ export function applyLogoEnrichment(proposals: ExtractionResult, label: string):
 // also pass them to enrichWithCtgov / prompt-builders.
 export function resolveProposalNames(
   proposals: ExtractionResult,
-  inventory: InventorySnapshot,
+  inventory: InventorySnapshot
 ): {
   companyNames: string[];
   assetNames: string[];
@@ -66,9 +68,7 @@ export function resolveProposalNames(
 
   const assetNames = proposals.assets.map((a) => {
     const m = a.match;
-    return m.kind === 'new'
-      ? m.name
-      : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
+    return m.kind === 'new' ? m.name : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
   });
 
   const resolvedNames: Record<string, string> = {};
