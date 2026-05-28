@@ -74,8 +74,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
-| `commit_source_import` | ai_calls, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, conditions, events, indications, marker_assignments, markers, mechanisms_of_action, routes_of_administration, source_documents, trial_conditions, trials | event_categories, marker_types, spaces |
-| `create_asset` | asset_mechanisms_of_action, asset_routes_of_administration, assets | mechanisms_of_action, routes_of_administration |
+| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_categories, events, marker_types, markers, spaces, trials |
+| `create_asset` | assets | - |
 | `create_company` | companies | - |
 | `create_event` | events | - |
 | `create_marker` | marker_assignments, markers | marker_changes |
@@ -137,6 +137,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_platform_admin` | - | platform_admins |
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
 | `is_tenant_owner_strict` | - | tenant_members |
+| `link_asset_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration | mechanisms_of_action, routes_of_administration |
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
@@ -683,6 +684,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `guard_primary_intelligence_state`
 - `is_tenant_owner_strict`
 - `jsonb_strip_pii_keys`
+- `link_asset_moa_roa`
 - `list_audit_events`
 - `list_draft_intelligence_for_space`
 - `list_latest_snapshots_for_space`
