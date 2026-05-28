@@ -335,7 +335,7 @@ export class NctInputComponent implements OnDestroy {
     try {
       const { data, error } = await this.supabase.client
         .from('trials')
-        .select('identifier, name')
+        .select('identifier, name, acronym')
         .eq('space_id', this.spaceId())
         .in('identifier', nctIds);
 
@@ -347,7 +347,8 @@ export class NctInputComponent implements OnDestroy {
       const dupes: DuplicateNct[] = data.map(
         (row: { identifier: string; name: string; acronym?: string | null }) => ({
           nct_id: row.identifier,
-          trial_name: row.acronym ?? row.name ?? row.identifier,
+          trial_name:
+            row.acronym ?? (row.name && row.name !== row.identifier ? row.name : row.identifier),
         })
       );
 
