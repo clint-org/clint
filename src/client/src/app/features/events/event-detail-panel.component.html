@@ -246,7 +246,7 @@
       <div class="flex items-center gap-2">
         @if (item.company_logo_url) {
           <img
-            [ngSrc]="item.company_logo_url"
+            [ngSrc]="(item.company_logo_url | brandfetchUrl)!"
             [alt]="item.company_name ?? ''"
             width="16"
             height="16"

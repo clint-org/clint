@@ -360,7 +360,9 @@ export async function handleSourceExtract(
     )
     .filter((x): x is { index: number; name: string; website: string | null | undefined } => x !== null);
 
-  const [ctgovResult, fuzzyAlternates, companyLogos] = await Promise.all([
+  const companyLogos = enrichCompanyLogos(newCompanies);
+
+  const [ctgovResult, fuzzyAlternates] = await Promise.all([
     enrichWithCtgov(proposals, companyNames, assetNames, { timeout: 8000 }),
     Promise.resolve(
       computeFuzzyAlternates(
@@ -380,7 +382,6 @@ export async function handleSourceExtract(
         inventory
       )
     ),
-    enrichCompanyLogos(newCompanies, env.BRANDFETCH_API_KEY),
   ]);
 
   for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {

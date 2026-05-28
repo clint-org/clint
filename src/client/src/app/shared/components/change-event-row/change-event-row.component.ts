@@ -4,13 +4,14 @@ import { RouterLink } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
 import { BrandContextService } from '../../../core/services/brand-context.service';
+import { BrandfetchUrlPipe } from '../../pipes/brandfetch-url.pipe';
 import { summarySegmentsFor } from '../../utils/change-event-summary';
 
 const DEFAULT_ROW_COLOR = '#334155'; // slate-700
 
 @Component({
   selector: 'app-change-event-row',
-  imports: [DatePipe, NgOptimizedImage, RouterLink, TooltipModule],
+  imports: [DatePipe, NgOptimizedImage, BrandfetchUrlPipe, RouterLink, TooltipModule],
   templateUrl: './change-event-row.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

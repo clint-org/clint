@@ -41,7 +41,7 @@
         <td>
           @if (company.logo_url && !brokenLogos().has(company.id)) {
             <img
-              [ngSrc]="company.logo_url"
+              [ngSrc]="(company.logo_url | brandfetchUrl)!"
               [alt]="company.name + ' logo'"
               width="128"
               height="20"

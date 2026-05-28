@@ -35,7 +35,7 @@
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
         @if (event().company_logo_url; as logo) {
           <img
-            [ngSrc]="logo"
+            [ngSrc]="(logo | brandfetchUrl)!"
             [alt]="event().company_name ?? ''"
             width="16"
             height="16"
@@ -106,7 +106,7 @@
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
         @if (event().company_logo_url; as logo) {
           <img
-            [ngSrc]="logo"
+            [ngSrc]="(logo | brandfetchUrl)!"
             [alt]="event().company_name ?? ''"
             width="16"
             height="16"

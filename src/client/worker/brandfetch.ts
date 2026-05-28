@@ -121,8 +121,8 @@ export async function handleBrandfetchLookup(
   const result: BrandResult = {
     name: data.name ?? null,
     domain,
-    logo_url: pickLogoUrl(logos, 'logo') ?? pickLogoUrl(logos, 'symbol'),
-    favicon_url: pickLogoUrl(logos, 'icon') ?? pickLogoUrl(logos, 'symbol'),
+    logo_url: `https://cdn.brandfetch.io/${domain}/logo`,
+    favicon_url: `https://cdn.brandfetch.io/${domain}/icon`,
     primary_color: pickColor(colors, 'brand') ?? pickColor(colors, 'dark'),
     accent_color: pickColor(colors, 'accent') ?? pickColor(colors, 'vibrant'),
   };

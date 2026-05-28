@@ -24,6 +24,7 @@ import { DetailPanelEntityRowComponent } from '../../shared/components/detail-pa
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { BrandfetchUrlPipe } from '../../shared/pipes/brandfetch-url.pipe';
 import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 
@@ -56,6 +57,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     DatePipe,
     FormsModule,
     NgOptimizedImage,
+    BrandfetchUrlPipe,
     RouterLink,
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,

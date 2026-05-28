@@ -6,4 +6,5 @@ export interface Environment {
   supabaseUrl: string;
   supabaseAnonKey: string;
   apexDomain: string;
+  brandfetchClientId: string;
 }
