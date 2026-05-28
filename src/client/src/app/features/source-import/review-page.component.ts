@@ -1354,6 +1354,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       `space:${sid}:activity`,
       `space:${sid}:events`,
       `space:${sid}:tags`,
+      `space:${sid}:moa`,
+      `space:${sid}:roa`,
     ]);
 
     const title = this.proposal()?.source_title ?? 'source';

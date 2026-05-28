@@ -27,6 +27,7 @@ Rules:
 - Extract ONLY facts explicitly stated in the source text. Never infer or hallucinate.
 - Prefer matching existing inventory items by id over creating new entities.
 - For MOA and ROA, prefer matching existing inventory mechanisms_of_action and routes_of_administration by exact name string. Use those exact names when they match.
+- For MOA and ROA on well-known approved or late-stage investigational drugs, populate the standard pharmacological class and route even if the source document does not explicitly restate them (e.g., semaglutide -> "GLP-1 receptor agonist" / "Subcutaneous", pembrolizumab -> "PD-1 inhibitor" / "Intravenous"). Leave empty only when the drug is genuinely novel and the source provides no signal.
 - Never infer regulatory dates that are not explicitly stated.
 - For every entity, quote the relevant evidence verbatim from the source.
 - Use ONLY the marker_type and category values listed in the schema. Pick the closest match.
