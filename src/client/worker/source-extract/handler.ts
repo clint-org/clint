@@ -7,6 +7,7 @@ import { buildPrompt, estimateTokens } from './prompt-builder';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
+import { enrichCompanyLogos } from './logo-enrichment';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
@@ -351,7 +352,15 @@ export async function handleSourceExtract(
     return m.kind === 'new' ? m.name : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
   });
 
-  const [ctgovResult, fuzzyAlternates] = await Promise.all([
+  const newCompanies = proposals.companies
+    .map((c, i) =>
+      c.match.kind === 'new'
+        ? { index: i, name: c.match.name, website: c.match.website }
+        : null
+    )
+    .filter((x): x is { index: number; name: string; website: string | null | undefined } => x !== null);
+
+  const [ctgovResult, fuzzyAlternates, companyLogos] = await Promise.all([
     enrichWithCtgov(proposals, companyNames, assetNames, { timeout: 8000 }),
     Promise.resolve(
       computeFuzzyAlternates(
@@ -371,7 +380,16 @@ export async function handleSourceExtract(
         inventory
       )
     ),
+    enrichCompanyLogos(newCompanies, env.BRANDFETCH_API_KEY),
   ]);
+
+  for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
+    const idx = Number(idxStr);
+    const company = proposals.companies[idx];
+    if (company?.match.kind === 'new') {
+      (company.match as Record<string, unknown>)['logo_url'] = logoUrl;
+    }
+  }
 
   warnings.push(...ctgovResult.warnings);
 
