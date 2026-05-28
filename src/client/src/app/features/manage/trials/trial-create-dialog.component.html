@@ -71,6 +71,7 @@
         (ngModelChange)="onNameChanged($event)"
         name="name"
         required
+        aria-required="true"
       />
     </div>
     <div class="flex flex-col gap-1">
@@ -88,12 +89,11 @@
         placeholder="Select product"
         [filter]="true"
         appendTo="body"
+        [attr.aria-required]="true"
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label for="trial-indication" class="text-sm font-medium text-slate-700">
-        Indication
-      </label>
+      <label for="trial-indication" class="text-sm font-medium text-slate-700"> Indication </label>
       <p-select
         inputId="trial-indication"
         [options]="indications()"
@@ -159,7 +159,9 @@
           [value]="phaseStart() ?? ''"
           (input)="setPhaseStart($event)"
           [disabled]="phaseStartFromCtgov()"
-          [pTooltip]="phaseStartFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''"
+          [pTooltip]="
+            phaseStartFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
+          "
           tooltipPosition="top"
         />
       </div>
@@ -183,7 +185,9 @@
           [value]="phaseEnd() ?? ''"
           (input)="setPhaseEnd($event)"
           [disabled]="phaseEndFromCtgov()"
-          [pTooltip]="phaseEndFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''"
+          [pTooltip]="
+            phaseEndFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
+          "
           tooltipPosition="top"
         />
       </div>

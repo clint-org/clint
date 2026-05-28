@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -36,6 +37,7 @@ import { CompanyService } from '../../core/services/company.service';
 import { AssetService } from '../../core/services/asset.service';
 import { TrialService } from '../../core/services/trial.service';
 import { toTrialOption, type TrialOption } from '../../core/utils/to-trial-option';
+import { isEventFormComplete } from './event-form-validity';
 
 interface SourceRow {
   url: string;
@@ -140,9 +142,9 @@ type EntityOption =
       <!-- Title + Date -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="event-title" class="mb-1 block text-xs font-medium text-slate-600"
-            >Title</label
-          >
+          <label for="event-title" class="mb-1 block text-xs font-medium text-slate-600">
+            Title <span aria-hidden="true" class="text-red-600">*</span>
+          </label>
           <input
             pInputText
             id="event-title"
@@ -151,10 +153,13 @@ type EntityOption =
             name="title"
             class="w-full"
             required
+            aria-required="true"
           />
         </div>
         <div>
-          <label for="event-date" class="mb-1 block text-xs font-medium text-slate-600">Date</label>
+          <label for="event-date" class="mb-1 block text-xs font-medium text-slate-600">
+            Date <span aria-hidden="true" class="text-red-600">*</span>
+          </label>
           <p-datepicker
             inputId="event-date"
             [ngModel]="eventDateValue()"
@@ -163,6 +168,7 @@ type EntityOption =
             dateFormat="yy-mm-dd"
             styleClass="w-full"
             appendTo="body"
+            [attr.aria-required]="true"
           />
         </div>
       </div>
@@ -170,9 +176,9 @@ type EntityOption =
       <!-- Category + Priority -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label for="event-category" class="mb-1 block text-xs font-medium text-slate-600"
-            >Category</label
-          >
+          <label for="event-category" class="mb-1 block text-xs font-medium text-slate-600">
+            Category <span aria-hidden="true" class="text-red-600">*</span>
+          </label>
           <p-select
             inputId="event-category"
             [options]="categories()"
@@ -183,6 +189,7 @@ type EntityOption =
             optionValue="id"
             placeholder="Select category"
             styleClass="w-full"
+            [attr.aria-required]="true"
           />
         </div>
         <div>
@@ -315,7 +322,12 @@ type EntityOption =
           (onClick)="cancelled.emit()"
           type="button"
         />
-        <p-button [label]="eventId() ? 'Update' : 'Create'" type="submit" [loading]="saving()" />
+        <p-button
+          [label]="eventId() ? 'Update' : 'Create'"
+          type="submit"
+          [loading]="saving()"
+          [disabled]="!canSubmit()"
+        />
       </div>
     </form>
   `,
@@ -374,6 +386,10 @@ export class EventFormComponent implements OnInit {
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+
+  readonly canSubmit = computed(() =>
+    isEventFormComplete(this.title(), this.eventDateValue(), this.categoryId())
+  );
 
   constructor() {
     // React to eventId changes: each time the parent passes a different id
@@ -437,7 +453,7 @@ export class EventFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.title() || !this.eventDateValue() || !this.categoryId()) return;
+    if (!this.canSubmit()) return;
 
     this.saving.set(true);
     this.error.set(null);

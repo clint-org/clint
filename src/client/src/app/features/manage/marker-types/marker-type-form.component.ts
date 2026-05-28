@@ -75,8 +75,10 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameBlurred = signal(false);
+  readonly categoryBlurred = signal(false);
 
   readonly nameInvalid = computed(() => this.nameBlurred() && !this.name().trim());
+  readonly categoryInvalid = computed(() => this.categoryBlurred() && !this.categoryId());
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
@@ -99,6 +101,8 @@ export class MarkerTypeFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    this.nameBlurred.set(true);
+    this.categoryBlurred.set(true);
     const name = this.name().trim();
     if (!name) return;
     const categoryId = this.categoryId();
