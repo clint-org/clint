@@ -252,7 +252,7 @@
           [feedItems]="feedItems()"
           [spaceId]="spaceId"
           [tenantId]="tenantId"
-          (edit)="openEditModal(selectedItem()!.id)"
+          (edit)="onEditSelected()"
           (panelClose)="closePanel()"
           (recentClick)="onRecentClick($event)"
           (relatedEventClick)="openByEventId($event)"

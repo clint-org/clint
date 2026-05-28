@@ -453,6 +453,24 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.modalOpen.set(true);
   }
 
+  // Edit icon on the detail panel branches by selection kind: events open the
+  // inline form here, markers route to the trial page where the marker editor
+  // lives (markers no longer have their own detail page).
+  onEditSelected(): void {
+    const item = this.selectedItem();
+    if (!item) return;
+    if (item.source_type === 'marker') {
+      const trialId = this.selectedCatalystDetail()?.catalyst.trial_id;
+      if (!trialId) return;
+      this.router.navigate(
+        ['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trialId],
+        { queryParams: { marker: item.id } }
+      );
+      return;
+    }
+    this.openEditModal(item.id);
+  }
+
   closeModal(): void {
     this.modalOpen.set(false);
     this.editingEventId.set(null);

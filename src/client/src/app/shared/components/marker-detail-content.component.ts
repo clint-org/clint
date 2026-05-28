@@ -99,26 +99,6 @@ interface CtgovProvenanceBlock {
         }
       </div>
 
-      @if (d.catalyst.marker_id && d.catalyst.trial_id && tenantIdSig() && spaceId()) {
-        <div class="mt-2 flex justify-end">
-          <a
-            [routerLink]="[
-              '/t',
-              tenantIdSig(),
-              's',
-              spaceId(),
-              'manage',
-              'trials',
-              d.catalyst.trial_id,
-            ]"
-            [queryParams]="{ marker: d.catalyst.marker_id }"
-            class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
-          >
-            Edit marker
-          </a>
-        </div>
-      }
-
       @if (d.catalyst.company_name) {
         <app-detail-panel-section [first]="true" label="Asset">
           <div class="flex items-center gap-2 text-[13px] text-slate-900">
