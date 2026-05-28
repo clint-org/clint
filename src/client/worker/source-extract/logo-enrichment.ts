@@ -35,15 +35,13 @@ export function enrichCompanyLogos(
   if (companies.length === 0) return {};
 
   const results: Record<number, string> = {};
-  const log: Array<{ name: string; website: string | null | undefined; domain: string | null; logo_url: string | null }> = [];
   for (const c of companies) {
     const domain = deriveDomain(c.name, c.website);
-    const logoUrl = domain ? `https://cdn.brandfetch.io/${domain}/logo` : null;
-    if (logoUrl) {
-      results[c.index] = logoUrl;
+    if (domain) {
+      // Store the base Logo Link URL. The frontend appends the type
+      // (symbol → icon → logo cascade) and ?c=<client_id> at render time.
+      results[c.index] = `https://cdn.brandfetch.io/${domain}`;
     }
-    log.push({ name: c.name, website: c.website, domain, logo_url: logoUrl });
   }
-  console.log('[enrichCompanyLogos]', JSON.stringify(log));
   return results;
 }

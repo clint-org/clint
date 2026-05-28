@@ -7,7 +7,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -22,7 +21,7 @@ import { ManagePageShellComponent } from '../../../shared/components/manage-page
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
-import { BrandfetchUrlPipe } from '../../../shared/pipes/brandfetch-url.pipe';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
@@ -33,7 +32,6 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
   selector: 'app-company-list',
   standalone: true,
   imports: [
-    NgOptimizedImage,
     RouterLink,
     TableModule,
     ButtonModule,
@@ -44,7 +42,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     RowActionsComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
-    BrandfetchUrlPipe,
+    BrandLogoComponent,
     HighlightPipe,
   ],
   templateUrl: './company-list.component.html',
@@ -81,10 +79,6 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   });
   spaceId = '';
   tenantId = '';
-
-  // Track company ids whose logo_url failed to load so we can fall back to a
-  // muted placeholder instead of rendering a broken image icon.
-  readonly brokenLogos = signal<ReadonlySet<string>>(new Set());
 
   readonly grid = createGridState<Company>({
     columns: [
@@ -140,15 +134,6 @@ export class CompanyListComponent implements OnInit, OnDestroy {
       queryParams: buildFilterQueryParams({
         'asset.company_id': { kind: 'select', values: [companyId] },
       }),
-    });
-  }
-
-  onLogoError(companyId: string): void {
-    this.brokenLogos.update((set) => {
-      if (set.has(companyId)) return set;
-      const next = new Set(set);
-      next.add(companyId);
-      return next;
     });
   }
 
@@ -253,7 +238,6 @@ export class CompanyListComponent implements OnInit, OnDestroy {
       const data = await this.companyService.list(this.spaceId);
       this.companies.set(data);
       this.menuCache.clear();
-      this.brokenLogos.set(new Set());
     } catch {
       // Silently handle - empty list shown
     } finally {

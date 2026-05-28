@@ -7,7 +7,7 @@ import { buildPrompt, estimateTokens } from './prompt-builder';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
-import { enrichCompanyLogos } from './logo-enrichment';
+import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
@@ -341,26 +341,8 @@ export async function handleSourceExtract(
     );
   }
 
-  const companyNames = proposals.companies.map((c) => {
-    const m = c.match;
-    return m.kind === 'new'
-      ? m.name
-      : (inventory.companies.find((ic) => ic.id === m.id)?.name ?? '');
-  });
-  const assetNames = proposals.assets.map((a) => {
-    const m = a.match;
-    return m.kind === 'new' ? m.name : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
-  });
-
-  const newCompanies = proposals.companies
-    .map((c, i) =>
-      c.match.kind === 'new'
-        ? { index: i, name: c.match.name, website: c.match.website }
-        : null
-    )
-    .filter((x): x is { index: number; name: string; website: string | null | undefined } => x !== null);
-
-  const companyLogos = enrichCompanyLogos(newCompanies);
+  applyLogoEnrichment(proposals, 'source-extract');
+  const { companyNames, assetNames, resolvedNames } = resolveProposalNames(proposals, inventory);
 
   const [ctgovResult, fuzzyAlternates] = await Promise.all([
     enrichWithCtgov(proposals, companyNames, assetNames, { timeout: 8000 }),
@@ -384,36 +366,7 @@ export async function handleSourceExtract(
     ),
   ]);
 
-  for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
-    const idx = Number(idxStr);
-    const company = proposals.companies[idx];
-    if (company?.match.kind === 'new') {
-      (company.match as Record<string, unknown>)['logo_url'] = logoUrl;
-    }
-  }
-
-  console.log('[source-extract] proposal companies', JSON.stringify(
-    proposals.companies.map((c) => ({
-      kind: c.match.kind,
-      name: c.match.kind === 'new' ? c.match.name : (inventory.companies.find((ic) => ic.id === (c.match as { id: string }).id)?.name ?? '?'),
-      logo_url: c.match.kind === 'new' ? (c.match as Record<string, unknown>)['logo_url'] ?? null : null,
-    }))
-  ));
-
   warnings.push(...ctgovResult.warnings);
-
-  const resolvedNames: Record<string, string> = {};
-  companyNames.forEach((n, i) => {
-    resolvedNames[`companies_${i}`] = n;
-  });
-  assetNames.forEach((n, i) => {
-    resolvedNames[`assets_${i}`] = n;
-  });
-  proposals.trials.forEach((t, i) => {
-    const m = t.match;
-    resolvedNames[`trials_${i}`] =
-      m.kind === 'new' ? m.name : (inventory.trials.find((it) => it.id === m.id)?.name ?? t.name);
-  });
 
   const resolvedIdentifiers: Record<string, string> = {};
   proposals.trials.forEach((t, i) => {

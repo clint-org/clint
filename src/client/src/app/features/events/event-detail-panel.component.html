@@ -245,12 +245,12 @@
       <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">Trial</p>
       <div class="flex items-center gap-2">
         @if (item.company_logo_url) {
-          <img
-            [ngSrc]="(item.company_logo_url | brandfetchUrl)!"
+          <app-brand-logo
+            [url]="item.company_logo_url"
             [alt]="item.company_name ?? ''"
-            width="16"
-            height="16"
-            class="rounded-sm border border-slate-200 bg-white object-contain"
+            [width]="16"
+            [height]="16"
+            imgClass="rounded-sm border border-slate-200 bg-white object-contain"
           />
         }
         <span class="text-[13px] text-slate-700"

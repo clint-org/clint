@@ -33,15 +33,13 @@
         }
       </div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
-        @if (event().company_logo_url; as logo) {
-          <img
-            [ngSrc]="(logo | brandfetchUrl)!"
-            [alt]="event().company_name ?? ''"
-            width="16"
-            height="16"
-            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
-          />
-        } @else {
+        <app-brand-logo
+          [url]="event().company_logo_url"
+          [alt]="event().company_name ?? ''"
+          [width]="16"
+          [height]="16"
+          imgClass="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+        >
           <span
             class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
             [style.background]="monogramTint().bg"
@@ -50,7 +48,7 @@
             aria-hidden="true"
             >{{ monogram() }}</span
           >
-        }
+        </app-brand-logo>
         @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
         } @else if (event().trial_acronym ?? event().trial_name; as trial) {
@@ -104,15 +102,13 @@
         }
       </div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
-        @if (event().company_logo_url; as logo) {
-          <img
-            [ngSrc]="(logo | brandfetchUrl)!"
-            [alt]="event().company_name ?? ''"
-            width="16"
-            height="16"
-            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
-          />
-        } @else {
+        <app-brand-logo
+          [url]="event().company_logo_url"
+          [alt]="event().company_name ?? ''"
+          [width]="16"
+          [height]="16"
+          imgClass="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+        >
           <span
             class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
             [style.background]="monogramTint().bg"
@@ -121,7 +117,7 @@
             aria-hidden="true"
             >{{ monogram() }}</span
           >
-        }
+        </app-brand-logo>
         @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
         } @else if (event().trial_acronym ?? event().trial_name; as trial) {

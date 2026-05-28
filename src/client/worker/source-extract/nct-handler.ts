@@ -7,7 +7,7 @@ import { mapCtgovPhase } from './nct-phase-map';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
-import { enrichCompanyLogos } from './logo-enrichment';
+import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
 import type { NctResolveRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const NCT_REGEX = /^NCT\d{8}$/i;
@@ -265,29 +265,11 @@ export async function handleNctResolve(
   const dropped = validation.dropped;
   warnings.push(...validation.warnings);
 
-  const newCompanies = proposals.companies
-    .map((c, i) =>
-      c.match.kind === 'new'
-        ? { index: i, name: c.match.name, website: (c.match as { website?: string }).website }
-        : null
-    )
-    .filter((x): x is { index: number; name: string; website: string | null | undefined } => x !== null);
-  const companyLogos = enrichCompanyLogos(newCompanies);
-  for (const [idxStr, logoUrl] of Object.entries(companyLogos)) {
-    const idx = Number(idxStr);
-    const company = proposals.companies[idx];
-    if (company?.match.kind === 'new') {
-      (company.match as Record<string, unknown>)['logo_url'] = logoUrl;
-    }
-  }
-  console.log('[nct-resolve] proposal companies', JSON.stringify(
-    proposals.companies.map((c) => ({
-      kind: c.match.kind,
-      name: c.match.kind === 'new' ? c.match.name : (inventory.companies.find((ic) => ic.id === (c.match as { id: string }).id)?.name ?? '?'),
-      logo_url: c.match.kind === 'new' ? (c.match as Record<string, unknown>)['logo_url'] ?? null : null,
-    }))
-  ));
+  applyLogoEnrichment(proposals, 'nct-resolve');
+  const { resolvedNames } = resolveProposalNames(proposals, inventory);
 
+  // NCT trials are identified by NCT ID rather than name, so fuzzy
+  // matching only applies to companies and assets here.
   const fuzzyAlternates = computeFuzzyAlternates(
     [
       ...proposals.companies.flatMap((c, i) =>
@@ -299,30 +281,6 @@ export async function handleNctResolve(
     ],
     inventory
   );
-
-  const companyNames = proposals.companies.map((c) => {
-    const m = c.match;
-    return m.kind === 'new'
-      ? m.name
-      : (inventory.companies.find((ic) => ic.id === m.id)?.name ?? '');
-  });
-  const assetNames = proposals.assets.map((a) => {
-    const m = a.match;
-    return m.kind === 'new' ? m.name : (inventory.assets.find((ia) => ia.id === m.id)?.name ?? '');
-  });
-
-  const resolvedNames: Record<string, string> = {};
-  companyNames.forEach((n, i) => {
-    resolvedNames[`companies_${i}`] = n;
-  });
-  assetNames.forEach((n, i) => {
-    resolvedNames[`assets_${i}`] = n;
-  });
-  proposals.trials.forEach((t, i) => {
-    const m = t.match;
-    resolvedNames[`trials_${i}`] =
-      m.kind === 'new' ? m.name : (inventory.trials.find((it) => it.id === m.id)?.name ?? t.name);
-  });
 
   const resolvedIdentifiers: Record<string, string> = {};
   proposals.trials.forEach((t, i) => {
