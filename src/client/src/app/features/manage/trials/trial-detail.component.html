@@ -69,32 +69,39 @@
             </a>
           </div>
         }
-        <h1 class="mt-0.5 text-sm font-semibold uppercase tracking-[0.08em] text-slate-900">
-          {{ t.acronym ?? t.name }}
-        </h1>
-        @if (t.acronym && t.name !== t.identifier) {
-          <p class="mt-0.5 text-xs text-slate-500">{{ t.name }}</p>
-        }
-        <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          @if (t.identifier) {
-            <a
-              [href]="'https://clinicaltrials.gov/study/' + t.identifier"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
-            >
-              {{ t.identifier }}
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-            </a>
-          }
-          @if (t.phase_type || t.phase) {
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-700">
-              {{ phaseLabel(t.phase_type || t.phase) }}
-            </span>
-          }
-          @if (t.status) {
-            <app-status-tag [label]="t.status" />
-          }
+        <div class="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <div class="flex items-baseline gap-x-3">
+            <h1 class="text-sm font-semibold uppercase tracking-[0.08em] text-slate-900">
+              {{ t.acronym ?? t.name }}
+            </h1>
+            @if (t.acronym && t.name !== t.identifier) {
+              <span class="text-xs text-slate-500">{{ t.name }}</span>
+            }
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            @if (t.identifier) {
+              <a
+                [href]="'https://clinicaltrials.gov/study/' + t.identifier"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
+              >
+                {{ t.identifier }}
+                <i
+                  class="fa-solid fa-arrow-up-right-from-square text-[9px]"
+                  aria-hidden="true"
+                ></i>
+              </a>
+            }
+            @if (t.phase_type || t.phase) {
+              <span class="font-mono text-[10px] uppercase tracking-wider text-slate-700">
+                {{ phaseLabel(t.phase_type || t.phase) }}
+              </span>
+            }
+            @if (t.status) {
+              <app-status-tag [label]="t.status" />
+            }
+          </div>
         </div>
       </header>
 
