@@ -124,7 +124,7 @@ function buildComputeds(
       },
       {
         key: 'newIntel',
-        label: 'New intel',
+        label: 'New reads',
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
