@@ -211,11 +211,7 @@ function phaseColorFor(toRaw: unknown): string | null {
   if (!Array.isArray(toRaw) || toRaw.length === 0) return null;
   const last = toRaw[toRaw.length - 1];
   if (typeof last !== 'string') return null;
-  return (
-    PHASE_COLORS[last] ??
-    DEVELOPMENT_STATUS_COLORS[last as DevelopmentStatus] ??
-    null
-  );
+  return PHASE_COLORS[last] ?? DEVELOPMENT_STATUS_COLORS[last as DevelopmentStatus] ?? null;
 }
 
 function markerContextSegments(
@@ -457,31 +453,29 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
         .map((f) => MARKER_FIELD_LABELS[f] ?? f.replace(/_/g, ' '))
         .map((label) => label.charAt(0).toLowerCase() + label.slice(1))
         .join(', ');
-      return {
-        color,
-        segments: fields
-          ? [
-              { kind: 'plain', text: 'Marker edited: ' },
-              { kind: 'plain', text: fields },
-            ]
-          : [{ kind: 'plain', text: 'Marker edited' }],
-      };
+      const segments: SummarySegment[] = fields
+        ? [
+            { kind: 'plain', text: 'Marker edited: ' },
+            { kind: 'plain', text: fields },
+          ]
+        : [{ kind: 'plain', text: 'Marker edited' }];
+      segments.push(...markerContextSegments(e, p));
+      return { color, segments };
     }
     case 'marker_reclassified': {
       const from = e.from_marker_type_name;
       const to = e.to_marker_type_name;
-      if (from && to) {
-        return {
-          color,
-          segments: [
-            { kind: 'plain', text: 'Reclassified: ' },
-            { kind: 'old', text: from },
-            { kind: 'arrow' },
-            { kind: 'new', text: to },
-          ],
-        };
-      }
-      return { color, segments: [{ kind: 'plain', text: 'Reclassified' }] };
+      const segments: SummarySegment[] =
+        from && to
+          ? [
+              { kind: 'plain', text: 'Reclassified: ' },
+              { kind: 'old', text: from },
+              { kind: 'arrow' },
+              { kind: 'new', text: to },
+            ]
+          : [{ kind: 'plain', text: 'Reclassified' }];
+      segments.push(...markerContextSegments(e, p));
+      return { color, segments };
     }
     case 'projection_finalized': {
       const segments: SummarySegment[] = [
