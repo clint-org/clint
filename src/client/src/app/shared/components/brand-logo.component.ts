@@ -49,7 +49,11 @@ export class BrandLogoComponent {
     if (!domain) return raw;
     const type: LogoType = TYPES[idx];
     const c = environment.brandfetchClientId;
-    return `https://cdn.brandfetch.io/${domain}/${type}${c ? `?c=${c}` : ''}`;
+    // fallback=404 forces the CDN to return HTTP 404 when an asset type
+    // doesn't exist; without it, Brandfetch returns its own generic
+    // placeholder with HTTP 200 and the (error)-driven cascade never fires.
+    const query = c ? `?c=${c}&fallback=404` : '?fallback=404';
+    return `https://cdn.brandfetch.io/${domain}/${type}${query}`;
   });
 
   protected onError(): void {
