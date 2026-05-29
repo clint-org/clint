@@ -1,5 +1,10 @@
 import { Company } from '../../../core/models/company.model';
-import { RING_DEV_RANK, RingPhase, BullseyeSpoke } from '../../../core/models/landscape.model';
+import {
+  RING_DEV_RANK,
+  RingPhase,
+  BullseyeSpoke,
+  DensityBubble,
+} from '../../../core/models/landscape.model';
 
 const PHASE_RANK: Record<string, number> = {
   PRECLIN: 1,
@@ -63,7 +68,11 @@ export function fromCompanies(companies: Company[], today?: string): ReadStats[]
             const daysOut = Math.round(
               (Date.parse(marker.event_date) - Date.parse(todayStr)) / 86_400_000
             );
-            upcomingCatalysts.push({ daysOut, trialName: trial.name, eventDate: marker.event_date });
+            upcomingCatalysts.push({
+              daysOut,
+              trialName: trial.name,
+              eventDate: marker.event_date,
+            });
           }
         }
       }
@@ -79,6 +88,29 @@ export function fromCompanies(companies: Company[], today?: string): ReadStats[]
       highestPhase,
       highestPhaseRank,
       upcomingCatalysts: upcomingCatalysts.length > 0 ? upcomingCatalysts : undefined,
+    };
+  });
+}
+
+export function fromBubbles(bubbles: DensityBubble[]): ReadStats[] {
+  return bubbles.map((bubble) => {
+    const p3Count = bubble.phase_counts['P3'] ?? 0;
+    let lateStageCount = 0;
+    for (const [phase, count] of Object.entries(bubble.phase_counts)) {
+      if ((RING_DEV_RANK[phase as RingPhase] ?? 0) >= RING_DEV_RANK['P3']) {
+        lateStageCount += count ?? 0;
+      }
+    }
+    const trialCount = bubble.products.reduce((sum, a) => sum + (a.trial_count ?? 0), 0);
+    return {
+      name: bubble.label,
+      assetCount: bubble.products.length,
+      trialCount,
+      p3Count,
+      lateStageCount,
+      recentChanges: 0,
+      highestPhase: bubble.highest_phase as string,
+      highestPhaseRank: bubble.highest_phase_rank,
     };
   });
 }

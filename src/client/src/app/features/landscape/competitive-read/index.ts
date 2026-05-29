@@ -13,7 +13,13 @@ import {
 import { momentumClause } from './momentum-clause';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
-export type LandscapeGroupBy = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
+export type LandscapeGroupBy =
+  | 'company'
+  | 'indication'
+  | 'moa'
+  | 'moa+indication'
+  | 'roa'
+  | 'asset';
 
 export interface BuildReadInput {
   view: LandscapeView;
@@ -32,7 +38,7 @@ export interface LandscapeRead {
   segments: ReadSegment[];
 }
 
-export { ReadStats, ReadCatalyst, fromCompanies, fromSpokes } from './read-stats';
+export { ReadStats, ReadCatalyst, fromCompanies, fromSpokes, fromBubbles } from './read-stats';
 
 export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   if (input.stats.length === 0) {
@@ -44,7 +50,10 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   }
 
   const isDistributional =
-    input.groupBy === 'indication' || input.groupBy === 'moa' || input.groupBy === 'roa';
+    input.groupBy === 'indication' ||
+    input.groupBy === 'moa' ||
+    input.groupBy === 'moa+indication' ||
+    input.groupBy === 'roa';
 
   const headline = isDistributional
     ? classifyDistributional(input.stats, input.groupBy)
@@ -57,7 +66,8 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   if (isDistributional) {
     if (input.view === 'radial') viewClause = distributionalRadialClause(headline);
     else if (input.view === 'density') viewClause = distributionalDensityClause(headline);
-    else if (input.view === 'timeline') viewClause = distributionalTimelineClause(headline, input.stats);
+    else if (input.view === 'timeline')
+      viewClause = distributionalTimelineClause(headline, input.stats);
   } else {
     if (input.view === 'radial') viewClause = radialViewClause(headline, input.stats);
     else if (input.view === 'density') viewClause = densityViewClause(headline, input.stats);

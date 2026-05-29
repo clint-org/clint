@@ -12,6 +12,7 @@ import {
   RingPhase,
   groupingToSegment,
 } from '../../core/models/landscape.model';
+import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
@@ -328,28 +329,12 @@ export class DensityControlsPanelComponent {
   );
 
   protected readonly readText = computed<string>(() => {
-    const list = this.bubbles();
-    if (list.length < 2) return '';
-
-    const parts: string[] = [];
-    const unit = this.countUnit();
-
-    const mostCrowded = list.reduce((best, b) => (b.unit_count > best.unit_count ? b : best));
-    parts.push(
-      `<strong class="leader-name">${this.escapeName(mostCrowded.label)}</strong> most crowded (${mostCrowded.unit_count} ${unit})`
-    );
-
-    const sparseCandidate = list
-      .filter((b) => b.unit_count > 0 && b.highest_phase_rank >= 2)
-      .sort((a, b) => a.unit_count - b.unit_count)[0];
-
-    if (sparseCandidate) {
-      parts.push(
-        `<strong>${this.escapeName(sparseCandidate.label)}</strong> sparse at ${this.formatPhase(sparseCandidate.highest_phase)}`
-      );
-    }
-
-    return parts.join(' | ');
+    const result = buildLandscapeRead({
+      view: 'density',
+      groupBy: this.grouping(),
+      stats: fromBubbles(this.bubbles()),
+    });
+    return result.text;
   });
 
   protected navigateToGrouping(grouping: DensityGrouping): void {
@@ -368,9 +353,5 @@ export class DensityControlsPanelComponent {
       LAUNCHED: 'Launched',
     };
     return labels[phase];
-  }
-
-  private escapeName(name: string): string {
-    return name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }
