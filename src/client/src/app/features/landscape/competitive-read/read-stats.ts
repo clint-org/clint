@@ -1,5 +1,5 @@
 import { Company } from '../../../core/models/company.model';
-import { BullseyeSpoke } from '../../../core/models/landscape.model';
+import { RING_DEV_RANK, RingPhase, BullseyeSpoke } from '../../../core/models/landscape.model';
 
 const PHASE_RANK: Record<string, number> = {
   PRECLIN: 1,
@@ -12,6 +12,8 @@ const PHASE_RANK: Record<string, number> = {
 };
 
 const LATE_STAGE_THRESHOLD = PHASE_RANK['P3'];
+
+const SPOKE_LATE_STAGE_THRESHOLD = RING_DEV_RANK['P3'];
 
 export interface ReadStats {
   name: string;
@@ -81,6 +83,35 @@ export function fromCompanies(companies: Company[], today?: string): ReadStats[]
   });
 }
 
-export function fromSpokes(_spokes: BullseyeSpoke[]): ReadStats[] {
-  throw new Error('not implemented');
+export function fromSpokes(spokes: BullseyeSpoke[]): ReadStats[] {
+  return spokes.map((spoke) => {
+    let p3Count = 0;
+    let lateStageCount = 0;
+    let recentChanges = 0;
+    let highestPhaseRank = 0;
+    let highestPhase: RingPhase = 'PRECLIN';
+
+    for (const asset of spoke.products) {
+      if (asset.highest_phase === 'P3') p3Count++;
+      if ((RING_DEV_RANK[asset.highest_phase] ?? 0) >= SPOKE_LATE_STAGE_THRESHOLD) {
+        lateStageCount++;
+      }
+      if (asset.has_recent_activity) recentChanges++;
+      if (asset.highest_phase_rank > highestPhaseRank) {
+        highestPhaseRank = asset.highest_phase_rank;
+        highestPhase = asset.highest_phase;
+      }
+    }
+
+    return {
+      name: spoke.name,
+      assetCount: spoke.products.length,
+      trialCount: 0,
+      p3Count,
+      lateStageCount,
+      recentChanges,
+      highestPhase: highestPhase as string,
+      highestPhaseRank,
+    };
+  });
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLandscapeRead, fromCompanies, ReadStats } from './index';
+import { buildLandscapeRead, fromCompanies, fromSpokes, ReadStats } from './index';
 
 function makeStats(input: (Partial<ReadStats> & { name: string })[]): ReadStats[] {
   return input.map((s) => ({
@@ -604,6 +604,36 @@ describe('buildLandscapeRead', () => {
   });
 
   describe('adapters', () => {
+    it('fromSpokes produces expected ReadStats', () => {
+      const spokes = [
+        {
+          id: 'sp1',
+          name: 'Lilly',
+          display_order: 0,
+          highest_phase_rank: 4,
+          products: [
+            {
+              id: 'a1', name: 'Tirzepatide', generic_name: null, logo_url: null,
+              company_id: 'c1', company_name: 'Lilly',
+              highest_phase: 'P3', highest_phase_rank: 4,
+              trials: [], recent_markers: [], moas: [], roas: [], indications: [],
+              intelligence_count: 0, has_recent_activity: true,
+              latest_event_date: null, latest_event_type: null,
+            },
+          ],
+        },
+      ];
+      const stats = fromSpokes(spokes as never);
+      expect(stats).toHaveLength(1);
+      expect(stats[0].name).toBe('Lilly');
+      expect(stats[0].assetCount).toBe(1);
+      expect(stats[0].p3Count).toBe(1);
+      expect(stats[0].lateStageCount).toBe(1);
+      expect(stats[0].recentChanges).toBe(1);
+      expect(stats[0].highestPhase).toBe('P3');
+      expect(stats[0].upcomingCatalysts).toBeUndefined();
+    });
+
     it('fromCompanies produces expected ReadStats', () => {
       const companies = [
         {
