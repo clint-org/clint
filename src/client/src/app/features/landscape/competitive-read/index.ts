@@ -1,6 +1,7 @@
 import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
 import { classifyDistributional } from './distributional-headlines';
+import { radialViewClause, ViewClauseResult } from './view-clauses';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
 export type LandscapeGroupBy = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
@@ -32,14 +33,26 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   const isDistributional =
     input.groupBy === 'indication' || input.groupBy === 'moa' || input.groupBy === 'roa';
 
-  const headline =
-    input.groupBy === 'company'
-      ? classifyCompetitive(input.stats)
-      : isDistributional
-        ? classifyDistributional(input.stats, input.groupBy)
-        : classifyCompetitive(input.stats); // 'asset' falls through; handled later
+  const headline = input.groupBy === 'company'
+    ? classifyCompetitive(input.stats)
+    : isDistributional
+    ? classifyDistributional(input.stats, input.groupBy)
+    : classifyCompetitive(input.stats);
 
-  return { text: headline.text, segments: [headline.segment] };
+  const segments: ReadSegment[] = [headline.segment];
+  const parts: string[] = [headline.text];
+
+  let viewClause: ViewClauseResult | null = null;
+  if (input.view === 'radial') {
+    viewClause = radialViewClause(headline, input.stats);
+  }
+
+  if (viewClause) {
+    segments.push(viewClause.segment);
+    parts.push(viewClause.text);
+  }
+
+  return { text: parts.join(' | '), segments };
 }
 
 export function escapeName(name: string): string {

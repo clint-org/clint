@@ -255,6 +255,53 @@ describe('buildLandscapeRead', () => {
         expect(result.text).toContain('2 sponsors, 4 assets total');
       });
     });
+
+    describe('radial Clause 2', () => {
+      it('only-credible-challenger after clear-leader', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('only-credible-challenger');
+        expect(result.text).toContain('Novo');
+        expect(result.text).toContain('only credible challenger');
+      });
+
+      it('no-credible-challengers after sweep', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, lateStageCount: 0, highestPhase: 'P2', highestPhaseRank: 3 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('no-credible-challengers');
+        expect(result.text).toContain('closest is');
+        expect(result.text).toContain('Novo');
+        expect(result.text).toContain('Phase 2');
+      });
+
+      it('broader-portfolio after tied', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 4, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('broader-portfolio');
+        expect(result.text).toContain('Lilly');
+        expect(result.text).toContain('broader portfolio (4 assets vs 3)');
+      });
+
+      it('suppressed after sole-entrant', () => {
+        const stats = makeStats([
+          { name: 'Pfizer', assetCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments.find((s) => s.clause === 'view')).toBeUndefined();
+      });
+    });
   });
 
   describe('distributional mode (group-by: indication / moa / roa)', () => {
