@@ -36,7 +36,7 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
     input.groupBy === 'company'
       ? classifyCompetitive(input.stats)
       : isDistributional
-        ? classifyDistributional(input.stats)
+        ? classifyDistributional(input.stats, input.groupBy)
         : classifyCompetitive(input.stats); // 'asset' falls through; handled later
 
   return { text: headline.text, segments: [headline.segment] };

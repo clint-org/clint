@@ -295,15 +295,42 @@ describe('buildLandscapeRead', () => {
         expect(result.text).toContain(': 5 of 6 assets');
       });
 
-      it('dominant-bucket: boundary at exactly 50%', () => {
+      it('dominant-bucket: boundary strictly above 50% fires dominant', () => {
         const stats = makeStats([
-          { name: 'A', assetCount: 3 },
+          { name: 'A', assetCount: 4 },
           { name: 'B', assetCount: 3 },
         ]);
         const result = buildLandscapeRead({ view: 'radial', groupBy: 'indication', stats });
         expect(result.segments[0].shape).toBe('dominant-bucket');
         expect(result.text).toContain('Concentrated in');
-        expect(result.text).toContain(': 3 of 6 assets');
+        expect(result.text).toContain(': 4 of 7 assets');
+      });
+
+      it('two-bucket-split: top 2 buckets sum to >=80%', () => {
+        const stats = makeStats([
+          { name: 'Diabetes', assetCount: 3 },
+          { name: 'Obesity', assetCount: 2 },
+          { name: 'NASH', assetCount: 1 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'indication', stats });
+        expect(result.segments[0]).toMatchObject({ shape: 'two-bucket-split' });
+        expect(result.text).toContain('Split between');
+        expect(result.text).toContain('Diabetes');
+        expect(result.text).toContain('Obesity');
+        expect(result.text).toContain(': 3 + 2 of 6 assets');
+      });
+
+      it('spread: floor case fires when no other shape qualifies', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 2 },
+          { name: 'B', assetCount: 2 },
+          { name: 'C', assetCount: 2 },
+          { name: 'D', assetCount: 2 },
+          { name: 'E', assetCount: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'indication', stats });
+        expect(result.segments[0]).toMatchObject({ shape: 'spread' });
+        expect(result.text).toContain('Spread across 5 indications, no single focus');
       });
     });
   });
