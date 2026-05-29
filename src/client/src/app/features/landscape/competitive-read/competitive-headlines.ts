@@ -58,8 +58,49 @@ function clearLeaderHeadline(leader: ReadStats): HeadlineResult {
   };
 }
 
+function sweepHeadline(leader: ReadStats): HeadlineResult {
+  const detail = `all ${leader.lateStageCount} Phase 3 assets in view`;
+  const text = `<strong class="leader-name">${escapeName(leader.name)}</strong> sweep: ${detail}`;
+  return {
+    segment: { clause: 'headline', shape: 'sweep', detail },
+    text,
+    leader,
+  };
+}
+
+function tiedHeadline(tied: ReadStats[], rest: ReadStats[]): HeadlineResult {
+  const names = tied.map((s) => `<strong class="leader-name">${escapeName(s.name)}</strong>`).join(' and ');
+  const tiedCount = tied[0].lateStageCount;
+  let detail = `${tiedCount} P3 each`;
+  let text = `${names} tied: ${detail}`;
+
+  if (rest.length > 0 && rest[0].lateStageCount <= tiedCount / 2) {
+    const trail = rest[0];
+    text += ` (<strong>${escapeName(trail.name)}</strong> trailing at ${trail.lateStageCount})`;
+    detail += ` (${trail.name} trailing at ${trail.lateStageCount})`;
+  }
+
+  return {
+    segment: { clause: 'headline', shape: 'tied', detail },
+    text,
+    leader: tied[0],
+  };
+}
+
 export function classifyCompetitive(stats: ReadStats[]): HeadlineResult {
   if (stats.length === 1) return soleEntrantHeadline(stats[0]);
+
   const sorted = sortForLeadership(stats);
+  const totalLateStage = sorted.reduce((sum, s) => sum + s.lateStageCount, 0);
+
+  if (sorted[0].lateStageCount === totalLateStage && totalLateStage >= 2) {
+    return sweepHeadline(sorted[0]);
+  }
+
+  const tied = sorted.filter((s) => s.lateStageCount === sorted[0].lateStageCount);
+  if (tied.length >= 2 && sorted[0].lateStageCount >= 1) {
+    return tiedHeadline(tied, sorted.slice(tied.length));
+  }
+
   return clearLeaderHeadline(sorted[0]);
 }
