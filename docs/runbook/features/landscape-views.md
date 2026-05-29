@@ -64,13 +64,14 @@ The Density Matrix view renders a competitive density heatmap: rows are the grou
   role: viewer
   status: active
 - id: competitive-read-bar
-  summary: Auto-generated one-line competitive summary. Bullseye version analyzes spoke data in BullseyeControlsPanelComponent; timeline version uses pure functions in competitive-read.ts rendered by TimelineInsightStripComponent. Both identify leader, deepest pipeline, and most active entity.
+  summary: Auto-generated one-line competitive summary shared across radial, density, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, density = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
   routes: []
   rpcs: []
   tables: []
   related:
     - bullseye-chart
     - timeline-insight-strip
+    - density-matrix
   user_facing: true
   role: viewer
   status: active
