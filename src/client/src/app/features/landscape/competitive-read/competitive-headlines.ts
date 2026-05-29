@@ -35,7 +35,7 @@ function soleEntrantHeadline(s: ReadStats): HeadlineResult {
   const phase = phaseLabel(s.highestPhase);
   const asset = s.assetCount === 1 ? '1 asset' : `${s.assetCount} assets`;
   const detail = `only entrant (${asset} at ${phase})`;
-  const text = `${escapeName(s.name)}: ${detail}`;
+  const text = `<strong class="leader-name">${escapeName(s.name)}</strong>: ${detail}`;
   return {
     segment: { clause: 'headline', shape: 'sole-entrant', detail },
     text,
@@ -50,7 +50,7 @@ function clearLeaderHeadline(leader: ReadStats): HeadlineResult {
   } else {
     detail = `${leader.assetCount} assets, furthest at ${phaseLabel(leader.highestPhase)}`;
   }
-  const text = `${escapeName(leader.name)} leads: ${detail}`;
+  const text = `<strong class="leader-name">${escapeName(leader.name)}</strong> leads: ${detail}`;
   return {
     segment: { clause: 'headline', shape: 'clear-leader', detail },
     text,

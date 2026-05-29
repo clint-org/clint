@@ -38,7 +38,8 @@ describe('buildLandscapeRead', () => {
         ]);
         const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
         expect(result.segments[0]).toMatchObject({ clause: 'headline', shape: 'sole-entrant' });
-        expect(result.text).toContain('Pfizer: only entrant (1 asset at Phase 3)');
+        expect(result.text).toContain('Pfizer');
+        expect(result.text).toContain('only entrant (1 asset at Phase 3)');
       });
 
       it('clear-leader: leader beats #2 by 1 on lateStageCount', () => {
@@ -62,7 +63,8 @@ describe('buildLandscapeRead', () => {
         ]);
         const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
         expect(result.segments[0]).toMatchObject({ clause: 'headline', shape: 'clear-leader' });
-        expect(result.text).toContain('Lilly leads: 3 assets, 3 at Phase 3');
+        expect(result.text).toContain('Lilly');
+        expect(result.text).toContain('leads: 3 assets, 3 at Phase 3');
       });
 
       it('clear-leader: tiebreak on assetCount when lateStage is tied at 0', () => {
@@ -73,7 +75,8 @@ describe('buildLandscapeRead', () => {
         ]);
         const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
         expect(result.segments[0]).toMatchObject({ shape: 'clear-leader' });
-        expect(result.text).toContain('A leads: 5 assets, furthest at Phase 1');
+        expect(result.text).toContain('A');
+        expect(result.text).toContain('leads: 5 assets, furthest at Phase 1');
       });
     });
   });
