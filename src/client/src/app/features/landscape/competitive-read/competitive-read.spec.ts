@@ -339,6 +339,72 @@ describe('buildLandscapeRead', () => {
         expect(result.segments.find((s) => s.clause === 'view')).toBeUndefined();
       });
     });
+
+    describe('timeline Clause 2', () => {
+      it('catalyst-window with breakdown by entity', () => {
+        const stats = makeStats([
+          {
+            name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4,
+            upcomingCatalysts: [
+              { daysOut: 21, trialName: 'SURMOUNT', eventDate: '2026-06-18' },
+              { daysOut: 47, trialName: 'STEP-Future', eventDate: '2026-07-14' },
+            ],
+          },
+          {
+            name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4,
+            upcomingCatalysts: [
+              { daysOut: 60, trialName: 'STEP-OSA', eventDate: '2026-07-27' },
+            ],
+          },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('catalyst-window');
+        expect(result.text).toContain('3 catalysts in next 90 days (2 Lilly, 1 Novo)');
+      });
+
+      it('all-from-one-entity after sweep', () => {
+        const stats = makeStats([
+          {
+            name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4,
+            upcomingCatalysts: [
+              { daysOut: 21, trialName: 'A', eventDate: '2026-06-18' },
+              { daysOut: 47, trialName: 'B', eventDate: '2026-07-14' },
+              { daysOut: 70, trialName: 'C', eventDate: '2026-08-06' },
+            ],
+          },
+          { name: 'Novo', assetCount: 1, lateStageCount: 0, highestPhase: 'P2', highestPhaseRank: 3 },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('all-from-one-entity');
+        expect(result.text).toContain('3 readouts in next 90 days, all Lilly');
+      });
+
+      it('no-near-term-catalysts when no markers in next 90 days', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('no-near-term-catalysts');
+        expect(result.text).toContain('no near-term catalysts');
+      });
+
+      it('next-catalyst after sole-entrant when within 90 days', () => {
+        const stats = makeStats([
+          {
+            name: 'Pfizer', assetCount: 1, highestPhase: 'P3', highestPhaseRank: 4,
+            upcomingCatalysts: [{ daysOut: 47, trialName: 'PFIZER-101', eventDate: '2026-07-14' }],
+          },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('next-catalyst');
+        expect(result.text).toContain('next catalyst in 47 days: PFIZER-101 readout');
+      });
+    });
   });
 
   describe('distributional mode (group-by: indication / moa / roa)', () => {

@@ -113,3 +113,58 @@ export function densityViewClause(
 
   return null;
 }
+
+function catalystsInWindow(stats: ReadStats[]): { entity: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const s of stats) {
+    const c = (s.upcomingCatalysts ?? []).filter((x) => x.daysOut >= 0 && x.daysOut <= 90).length;
+    if (c > 0) map.set(s.name, c);
+  }
+  return Array.from(map.entries())
+    .map(([entity, count]) => ({ entity, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function timelineViewClause(
+  headline: HeadlineResult,
+  allStats: ReadStats[]
+): ViewClauseResult | null {
+  const breakdown = catalystsInWindow(allStats);
+  const totalInWindow = breakdown.reduce((sum, b) => sum + b.count, 0);
+
+  if (headline.segment.shape === 'sole-entrant') {
+    const cats = allStats[0].upcomingCatalysts ?? [];
+    const next = cats.filter((c) => c.daysOut >= 0).sort((a, b) => a.daysOut - b.daysOut)[0];
+    if (next && next.daysOut <= 90) {
+      const detail = `next catalyst in ${next.daysOut} days: ${next.trialName} readout`;
+      return {
+        segment: { clause: 'view', shape: 'next-catalyst', detail },
+        text: detail,
+      };
+    }
+    return null;
+  }
+
+  if (totalInWindow === 0) {
+    const detail = 'no near-term catalysts (next readout > 12 months)';
+    return {
+      segment: { clause: 'view', shape: 'no-near-term-catalysts', detail },
+      text: detail,
+    };
+  }
+
+  if (breakdown.length === 1) {
+    const detail = `${totalInWindow} ${totalInWindow === 1 ? 'readout' : 'readouts'} in next 90 days, all ${breakdown[0].entity}`;
+    return {
+      segment: { clause: 'view', shape: 'all-from-one-entity', detail },
+      text: detail,
+    };
+  }
+
+  const breakdownText = breakdown.map((b) => `${b.count} ${b.entity}`).join(', ');
+  const detail = `${totalInWindow} ${totalInWindow === 1 ? 'catalyst' : 'catalysts'} in next 90 days (${breakdownText})`;
+  return {
+    segment: { clause: 'view', shape: 'catalyst-window', detail },
+    text: detail,
+  };
+}

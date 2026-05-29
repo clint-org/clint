@@ -1,7 +1,7 @@
 import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
 import { classifyDistributional } from './distributional-headlines';
-import { densityViewClause, radialViewClause, ViewClauseResult } from './view-clauses';
+import { densityViewClause, radialViewClause, timelineViewClause, ViewClauseResult } from './view-clauses';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
 export type LandscapeGroupBy = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
@@ -47,6 +47,8 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
     viewClause = radialViewClause(headline, input.stats);
   } else if (input.view === 'density') {
     viewClause = densityViewClause(headline, input.stats);
+  } else if (input.view === 'timeline') {
+    viewClause = timelineViewClause(headline, input.stats);
   }
 
   if (viewClause) {
