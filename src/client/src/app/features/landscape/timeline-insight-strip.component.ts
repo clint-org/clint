@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { Checkbox } from 'primeng/checkbox';
 
 import { Company } from '../../core/models/company.model';
-import { buildCompetitiveRead, computeTimelineStats } from './competitive-read';
+import { buildLandscapeRead, fromCompanies } from './competitive-read/index';
+import { computeTimelineStats } from './timeline-stats';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
@@ -135,6 +136,12 @@ export class TimelineInsightStripComponent {
   readonly companies = input.required<Company[]>();
   readonly columnsOnly = input<boolean>(false);
 
-  protected readonly read = computed(() => buildCompetitiveRead(this.companies()));
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
+      view: 'timeline',
+      groupBy: 'company',
+      stats: fromCompanies(this.companies()),
+    }),
+  );
   protected readonly stats = computed(() => computeTimelineStats(this.companies()));
 }
