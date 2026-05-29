@@ -137,6 +137,39 @@ describe('buildLandscapeRead', () => {
         expect(result.segments[0].shape).toBe('tied');
         expect(result.text).not.toContain('trailing');
       });
+
+      it('fragmented: 3+ entities, all at 0 lateStage, tied on assetCount', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'B', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'D', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'E', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments[0]).toMatchObject({ shape: 'fragmented' });
+        expect(result.text).toContain('5 sponsors at Phase 1, no late-stage activity');
+      });
+
+      it('fragmented: does NOT fire if entities differ on assetCount (clear-leader fires)', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 3, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'B', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments[0].shape).toBe('clear-leader');
+      });
+
+      it('count-floor: 2 entities tied at 0 lateStage with equal assets', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 2, trialCount: 3, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'B', assetCount: 2, trialCount: 3, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments[0]).toMatchObject({ shape: 'count-floor' });
+        expect(result.text).toContain('2 sponsors, 4 assets total');
+      });
     });
   });
 });

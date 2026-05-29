@@ -87,6 +87,24 @@ function tiedHeadline(tied: ReadStats[], rest: ReadStats[]): HeadlineResult {
   };
 }
 
+function fragmentedHeadline(stats: ReadStats[]): HeadlineResult {
+  const phase = phaseLabel(stats[0].highestPhase);
+  const detail = `${stats.length} sponsors at ${phase}, no late-stage activity`;
+  return {
+    segment: { clause: 'headline', shape: 'fragmented', detail },
+    text: detail,
+  };
+}
+
+function countFloorHeadline(stats: ReadStats[]): HeadlineResult {
+  const totalAssets = stats.reduce((sum, s) => sum + s.assetCount, 0);
+  const detail = `${stats.length} sponsors, ${totalAssets} assets total`;
+  return {
+    segment: { clause: 'headline', shape: 'count-floor', detail },
+    text: detail,
+  };
+}
+
 export function classifyCompetitive(stats: ReadStats[]): HeadlineResult {
   if (stats.length === 1) return soleEntrantHeadline(stats[0]);
 
@@ -100,6 +118,15 @@ export function classifyCompetitive(stats: ReadStats[]): HeadlineResult {
   const tied = sorted.filter((s) => s.lateStageCount === sorted[0].lateStageCount);
   if (tied.length >= 2 && sorted[0].lateStageCount >= 1) {
     return tiedHeadline(tied, sorted.slice(tied.length));
+  }
+
+  const allTiedAtAssetCount = sorted.every((s) => s.assetCount === sorted[0].assetCount);
+  if (sorted.length >= 3 && totalLateStage === 0 && allTiedAtAssetCount) {
+    return fragmentedHeadline(sorted);
+  }
+
+  if (sorted[0].lateStageCount === 0 && sorted[0].assetCount === sorted[1].assetCount) {
+    return countFloorHeadline(sorted);
   }
 
   return clearLeaderHeadline(sorted[0]);
