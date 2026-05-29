@@ -302,6 +302,43 @@ describe('buildLandscapeRead', () => {
         expect(result.segments.find((s) => s.clause === 'view')).toBeUndefined();
       });
     });
+
+    describe('density Clause 2', () => {
+      it('clustered-at-phase when >=60% of assets in one phase', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 4, p3Count: 4, lateStageCount: 4, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'B', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('clustered-at-phase');
+        expect(result.text).toContain('4 of 6 assets clustered at Phase 3');
+      });
+
+      it('evenly-spread when no phase has >40%', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+          { name: 'B', assetCount: 1, highestPhase: 'P2', highestPhaseRank: 3 },
+          { name: 'C', assetCount: 1, highestPhase: 'P3', highestPhaseRank: 4, p3Count: 1, lateStageCount: 1 },
+          { name: 'D', assetCount: 1, highestPhase: 'PRECLIN', highestPhaseRank: 1 },
+        ]);
+        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('evenly-spread');
+        expect(result.text).toContain('evenly spread across phases');
+      });
+
+      it('silent when no clustering and not evenly spread (40-60% middle band)', () => {
+        const stats = makeStats([
+          { name: 'A', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'B', assetCount: 2, highestPhase: 'P2', highestPhaseRank: 3 },
+          { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        expect(result.segments.find((s) => s.clause === 'view')).toBeUndefined();
+      });
+    });
   });
 
   describe('distributional mode (group-by: indication / moa / roa)', () => {

@@ -72,3 +72,44 @@ export function radialViewClause(
 
   return null;
 }
+
+function phaseCountFromHighest(stats: ReadStats[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const s of stats) {
+    counts[s.highestPhase] = (counts[s.highestPhase] ?? 0) + s.assetCount;
+  }
+  return counts;
+}
+
+export function densityViewClause(
+  _headline: HeadlineResult,
+  allStats: ReadStats[]
+): ViewClauseResult | null {
+  const totalAssets = allStats.reduce((sum, s) => sum + s.assetCount, 0);
+  if (totalAssets === 0) return null;
+
+  const phaseCounts = phaseCountFromHighest(allStats);
+  const entries = Object.entries(phaseCounts).sort((a, b) => b[1] - a[1]);
+  const [topPhase, topCount] = entries[0];
+  const topFraction = topCount / totalAssets;
+
+  if (topFraction >= 0.6) {
+    const phaseLabel = PHASE_LABEL[topPhase] ?? topPhase;
+    const detail = `${topCount} of ${totalAssets} assets clustered at ${phaseLabel}`;
+    return {
+      segment: { clause: 'view', shape: 'clustered-at-phase', detail },
+      text: detail,
+    };
+  }
+
+  const maxFraction = entries[0][1] / totalAssets;
+  if (maxFraction < 0.4) {
+    const detail = 'evenly spread across phases';
+    return {
+      segment: { clause: 'view', shape: 'evenly-spread', detail },
+      text: detail,
+    };
+  }
+
+  return null;
+}
