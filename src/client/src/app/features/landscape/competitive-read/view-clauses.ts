@@ -15,6 +15,7 @@ const PHASE_LABEL: Record<string, string> = {
 export interface ViewClauseResult {
   segment: ReadSegment;
   text: string;
+  entityName?: string;
 }
 
 export function radialViewClause(
@@ -36,6 +37,7 @@ export function radialViewClause(
       return {
         segment: { clause: 'view', shape: 'only-credible-challenger', detail },
         text: `<strong>${escapeName(challenger.name)}</strong> only credible challenger (${challenger.p3Count === 1 ? '1 asset' : `${challenger.p3Count} assets`} at Phase 3)`,
+        entityName: challenger.name,
       };
     }
   }
@@ -50,13 +52,14 @@ export function radialViewClause(
       return {
         segment: { clause: 'view', shape: 'no-credible-challengers', detail },
         text: `no credible challengers, closest is <strong>${escapeName(closest.name)}</strong> at ${phase}`,
+        entityName: closest.name,
       };
     }
   }
 
   if (shape === 'tied' && headline.leader) {
     const tiedNames = new Set(
-      allStats.filter((s) => s.lateStageCount === headline.leader!.lateStageCount).map((s) => s.name)
+      allStats.filter((s) => s.p3Count === headline.leader!.p3Count).map((s) => s.name)
     );
     const tiedStats = allStats.filter((s) => tiedNames.has(s.name));
     const broadest = [...tiedStats].sort((a, b) => b.assetCount - a.assetCount)[0];
@@ -66,6 +69,7 @@ export function radialViewClause(
       return {
         segment: { clause: 'view', shape: 'broader-portfolio', detail },
         text: `<strong>${escapeName(broadest.name)}</strong> broader portfolio (${broadest.assetCount} assets vs ${others[0].assetCount})`,
+        entityName: broadest.name,
       };
     }
   }
@@ -137,17 +141,26 @@ export function distributionalRadialClause(headline: HeadlineResult): ViewClause
   return {
     segment: { clause: 'view', shape: 'deepest-bucket', detail },
     text: detail,
+    entityName: leader.name,
   };
 }
 
 export function distributionalDensityClause(headline: HeadlineResult): ViewClauseResult | null {
   const leader = distributionalLeader(headline);
   if (!leader) return null;
-  if (leader.lateStageCount === 0) return null;
+  if (leader.lateStageCount === 0) {
+    const detail = `${leader.name} early-stage only, no Phase 3 assets`;
+    return {
+      segment: { clause: 'view', shape: 'early-stage-only', detail },
+      text: detail,
+      entityName: leader.name,
+    };
+  }
   const detail = `Late-stage activity concentrated in ${leader.name}`;
   return {
     segment: { clause: 'view', shape: 'late-stage-concentrated-in', detail },
     text: detail,
+    entityName: leader.name,
   };
 }
 
@@ -167,6 +180,7 @@ export function distributionalTimelineClause(
     return {
       segment: { clause: 'view', shape: 'readouts-cluster-in', detail },
       text: detail,
+      entityName: leader.name,
     };
   }
 
@@ -174,6 +188,7 @@ export function distributionalTimelineClause(
   return {
     segment: { clause: 'view', shape: 'bucket-quiet', detail },
     text: detail,
+    entityName: leader.name,
   };
 }
 
@@ -210,6 +225,7 @@ export function timelineViewClause(
     return {
       segment: { clause: 'view', shape: 'all-from-one-entity', detail },
       text: detail,
+      entityName: breakdown[0].entity,
     };
   }
 

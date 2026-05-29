@@ -18,8 +18,7 @@ export function momentumClause(
 ): MomentumResult | null {
   if (headline.segment.shape === 'sole-entrant') return null;
 
-  const viewClauseEntity =
-    viewClause?.segment.detail.match(/^(\S+)/)?.[1] ?? null;
+  const viewClauseEntity = viewClause?.entityName ?? null;
 
   const candidates = allStats
     .filter((s) => s !== headline.leader)

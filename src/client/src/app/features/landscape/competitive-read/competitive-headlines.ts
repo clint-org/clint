@@ -59,7 +59,7 @@ function clearLeaderHeadline(leader: ReadStats): HeadlineResult {
 }
 
 function sweepHeadline(leader: ReadStats): HeadlineResult {
-  const detail = `all ${leader.lateStageCount} Phase 3 assets in view`;
+  const detail = `all ${leader.p3Count} Phase 3 assets in view`;
   const text = `<strong class="leader-name">${escapeName(leader.name)}</strong> sweep: ${detail}`;
   return {
     segment: { clause: 'headline', shape: 'sweep', detail },
@@ -70,14 +70,14 @@ function sweepHeadline(leader: ReadStats): HeadlineResult {
 
 function tiedHeadline(tied: ReadStats[], rest: ReadStats[]): HeadlineResult {
   const names = tied.map((s) => `<strong class="leader-name">${escapeName(s.name)}</strong>`).join(' and ');
-  const tiedCount = tied[0].lateStageCount;
+  const tiedCount = tied[0].p3Count;
   let detail = `${tiedCount} P3 each`;
   let text = `${names} tied: ${detail}`;
 
-  if (rest.length > 0 && rest[0].lateStageCount <= tiedCount / 2) {
+  if (rest.length > 0 && rest[0].p3Count <= tiedCount / 2) {
     const trail = rest[0];
-    text += ` (<strong>${escapeName(trail.name)}</strong> trailing at ${trail.lateStageCount})`;
-    detail += ` (${trail.name} trailing at ${trail.lateStageCount})`;
+    text += ` (<strong>${escapeName(trail.name)}</strong> trailing at ${trail.p3Count})`;
+    detail += ` (${trail.name} trailing at ${trail.p3Count})`;
   }
 
   return {
@@ -110,13 +110,14 @@ export function classifyCompetitive(stats: ReadStats[]): HeadlineResult {
 
   const sorted = sortForLeadership(stats);
   const totalLateStage = sorted.reduce((sum, s) => sum + s.lateStageCount, 0);
+  const totalP3 = sorted.reduce((sum, s) => sum + s.p3Count, 0);
 
-  if (sorted[0].lateStageCount === totalLateStage && totalLateStage >= 2) {
+  if (sorted[0].p3Count === totalP3 && totalP3 >= 2) {
     return sweepHeadline(sorted[0]);
   }
 
-  const tied = sorted.filter((s) => s.lateStageCount === sorted[0].lateStageCount);
-  if (tied.length >= 2 && sorted[0].lateStageCount >= 1) {
+  const tied = sorted.filter((s) => s.p3Count === sorted[0].p3Count);
+  if (tied.length >= 2 && sorted[0].p3Count >= 1) {
     return tiedHeadline(tied, sorted.slice(tied.length));
   }
 

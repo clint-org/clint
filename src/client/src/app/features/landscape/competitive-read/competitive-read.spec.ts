@@ -47,6 +47,37 @@ describe('buildLandscapeRead', () => {
       const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
       expect(result.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
     });
+
+    it('regression: never claims "deepest pipeline" for a runner-up with fewer P3s than the leader (the original bug)', () => {
+      // The original screenshots showed Lilly with 3 P3 and Novo with 1 P3; the old code
+      // claimed Novo had the "deepest pipeline" anyway. The new code must never do this.
+      const stats = makeStats([
+        { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Novo Nordisk', assetCount: 2, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Boehringer', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+      ]);
+      const radial = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+      const timeline = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+      const density = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+
+      // No view should claim "deepest" for any runner-up here -- Lilly is leader on every dimension.
+      expect(radial.text.toLowerCase()).not.toContain('deepest');
+      expect(timeline.text.toLowerCase()).not.toContain('deepest');
+      expect(density.text.toLowerCase()).not.toContain('deepest');
+
+      // And the multi-word name "Novo Nordisk" should NOT cause momentum-suppression to leak
+      // (this also exercises the C3 fix from the review).
+      const noisyStats = makeStats([
+        { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Novo Nordisk', assetCount: 1, p3Count: 1, lateStageCount: 1, recentChanges: 5, highestPhase: 'P3', highestPhaseRank: 4 },
+      ]);
+      const noisy = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats: noisyStats });
+      const viewSeg = noisy.segments.find((s) => s.clause === 'view');
+      // Novo Nordisk should be named in the view clause (only-credible-challenger)
+      expect(viewSeg?.detail).toContain('Novo Nordisk');
+      // Momentum should be suppressed because the view clause already names Novo Nordisk.
+      expect(noisy.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
+    });
   });
 
   describe('competitive mode (group-by: company)', () => {
@@ -439,12 +470,16 @@ describe('buildLandscapeRead', () => {
       });
 
       it('uses "recent events" wording for spoke views', () => {
+        // Use clear-leader (not sweep) so momentum is not suppressed by the view clause.
+        // Lilly leads on lateStageCount; Novo has 1 P3 so it can be a credible challenger,
+        // and BI has recentChanges >= threshold but is not named in the view clause.
         const stats = makeStats([
           { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
-          { name: 'Novo', assetCount: 1, lateStageCount: 0, recentChanges: 5, highestPhase: 'P2', highestPhaseRank: 3 },
+          { name: 'Novo', assetCount: 2, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'BI', assetCount: 1, lateStageCount: 0, recentChanges: 5, highestPhase: 'P2', highestPhaseRank: 3 },
         ]);
         const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
-        expect(result.text).toContain('Novo');
+        expect(result.text).toContain('BI');
         expect(result.text).toContain('most active (5 recent events)');
       });
 
@@ -586,6 +621,17 @@ describe('buildLandscapeRead', () => {
         const result = buildLandscapeRead({ view: 'timeline', groupBy: 'indication', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('bucket-quiet');
+      });
+
+      it('density distributional: early-stage-only when leader has no late-stage', () => {
+        const stats = makeStats([
+          { name: 'Diabetes', assetCount: 5, highestPhase: 'P2', highestPhaseRank: 3 },
+          { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'density', groupBy: 'indication', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('early-stage-only');
+        expect(result.text).toContain('Diabetes early-stage only, no Phase 3 assets');
       });
     });
   });
