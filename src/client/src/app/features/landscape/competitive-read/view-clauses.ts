@@ -125,6 +125,58 @@ function catalystsInWindow(stats: ReadStats[]): { entity: string; count: number 
     .sort((a, b) => b.count - a.count);
 }
 
+function distributionalLeader(headline: HeadlineResult): ReadStats | null {
+  return headline.leader ?? null;
+}
+
+export function distributionalRadialClause(headline: HeadlineResult): ViewClauseResult | null {
+  const leader = distributionalLeader(headline);
+  if (!leader) return null;
+  if (leader.p3Count === 0) return null;
+  const detail = `${leader.name} bucket has the deepest pipeline (${leader.p3Count} at Phase 3)`;
+  return {
+    segment: { clause: 'view', shape: 'deepest-bucket', detail },
+    text: detail,
+  };
+}
+
+export function distributionalDensityClause(headline: HeadlineResult): ViewClauseResult | null {
+  const leader = distributionalLeader(headline);
+  if (!leader) return null;
+  if (leader.lateStageCount === 0) return null;
+  const detail = `Late-stage activity concentrated in ${leader.name}`;
+  return {
+    segment: { clause: 'view', shape: 'late-stage-concentrated-in', detail },
+    text: detail,
+  };
+}
+
+export function distributionalTimelineClause(
+  headline: HeadlineResult,
+  _allStats: ReadStats[]
+): ViewClauseResult | null {
+  const leader = distributionalLeader(headline);
+  if (!leader) return null;
+
+  const leaderCatalysts = (leader.upcomingCatalysts ?? []).filter(
+    (c) => c.daysOut >= 0 && c.daysOut <= 90
+  );
+
+  if (leaderCatalysts.length > 0) {
+    const detail = `Next ${leaderCatalysts.length} readouts cluster in ${leader.name}`;
+    return {
+      segment: { clause: 'view', shape: 'readouts-cluster-in', detail },
+      text: detail,
+    };
+  }
+
+  const detail = `${leader.name} bucket quiet, no catalysts in next 90 days`;
+  return {
+    segment: { clause: 'view', shape: 'bucket-quiet', detail },
+    text: detail,
+  };
+}
+
 export function timelineViewClause(
   headline: HeadlineResult,
   allStats: ReadStats[]

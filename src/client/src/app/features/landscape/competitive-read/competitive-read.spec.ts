@@ -28,6 +28,25 @@ describe('buildLandscapeRead', () => {
       expect(stats).toHaveLength(1);
       expect(stats[0].assetCount).toBe(0);
     });
+
+    it('escapes HTML in entity names', () => {
+      const stats = makeStats([
+        { name: '<Bio & Tech>', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+      ]);
+      const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+      expect(result.text).toContain('&lt;Bio &amp; Tech&gt;');
+      expect(result.text).not.toContain('<Bio');
+    });
+
+    it('returns empty when all recentChanges are zero (momentum suppressed)', () => {
+      const stats = makeStats([
+        { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+      ]);
+      const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+      expect(result.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
+    });
   });
 
   describe('competitive mode (group-by: company)', () => {
@@ -534,6 +553,53 @@ describe('buildLandscapeRead', () => {
         expect(result.segments[0]).toMatchObject({ shape: 'spread' });
         expect(result.text).toContain('Spread across 5 indications, no single focus');
       });
+    });
+
+    describe('distributional view clauses', () => {
+      it('radial: deepest-bucket after dominant-bucket', () => {
+        const stats = makeStats([
+          { name: 'Obesity', assetCount: 5, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'indication', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('deepest-bucket');
+        expect(result.text).toContain('Obesity bucket has the deepest pipeline (3 at Phase 3)');
+      });
+
+      it('density: late-stage-concentrated-in', () => {
+        const stats = makeStats([
+          { name: 'Obesity', assetCount: 5, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'density', groupBy: 'indication', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('late-stage-concentrated-in');
+        expect(result.text).toContain('Late-stage activity concentrated in Obesity');
+      });
+
+      it('timeline: bucket-quiet when no catalysts', () => {
+        const stats = makeStats([
+          { name: 'Obesity', assetCount: 5, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'indication', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.shape).toBe('bucket-quiet');
+      });
+    });
+  });
+
+  describe('asset group-by', () => {
+    it('emits count-summary headline with cluster observation', () => {
+      const stats = makeStats([
+        { name: 'Tirzepatide', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Orforglipron', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+        { name: 'Retatrutide', assetCount: 1, p3Count: 1, lateStageCount: 1, highestPhase: 'P3', highestPhaseRank: 4 },
+      ]);
+      const result = buildLandscapeRead({ view: 'radial', groupBy: 'asset', stats });
+      expect(result.segments[0].shape).toBe('asset-count-summary');
+      expect(result.text).toContain('Showing 3 assets');
     });
   });
 });

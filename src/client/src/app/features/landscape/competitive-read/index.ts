@@ -1,7 +1,15 @@
 import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
 import { classifyDistributional } from './distributional-headlines';
-import { densityViewClause, radialViewClause, timelineViewClause, ViewClauseResult } from './view-clauses';
+import {
+  densityViewClause,
+  distributionalDensityClause,
+  distributionalRadialClause,
+  distributionalTimelineClause,
+  radialViewClause,
+  timelineViewClause,
+  ViewClauseResult,
+} from './view-clauses';
 import { momentumClause } from './momentum-clause';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
@@ -31,12 +39,14 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
     return { text: '', segments: [] };
   }
 
+  if (input.groupBy === 'asset') {
+    return buildAssetGroupRead(input);
+  }
+
   const isDistributional =
     input.groupBy === 'indication' || input.groupBy === 'moa' || input.groupBy === 'roa';
 
-  const headline = input.groupBy === 'company'
-    ? classifyCompetitive(input.stats)
-    : isDistributional
+  const headline = isDistributional
     ? classifyDistributional(input.stats, input.groupBy)
     : classifyCompetitive(input.stats);
 
@@ -44,12 +54,14 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   const parts: string[] = [headline.text];
 
   let viewClause: ViewClauseResult | null = null;
-  if (input.view === 'radial') {
-    viewClause = radialViewClause(headline, input.stats);
-  } else if (input.view === 'density') {
-    viewClause = densityViewClause(headline, input.stats);
-  } else if (input.view === 'timeline') {
-    viewClause = timelineViewClause(headline, input.stats);
+  if (isDistributional) {
+    if (input.view === 'radial') viewClause = distributionalRadialClause(headline);
+    else if (input.view === 'density') viewClause = distributionalDensityClause(headline);
+    else if (input.view === 'timeline') viewClause = distributionalTimelineClause(headline, input.stats);
+  } else {
+    if (input.view === 'radial') viewClause = radialViewClause(headline, input.stats);
+    else if (input.view === 'density') viewClause = densityViewClause(headline, input.stats);
+    else if (input.view === 'timeline') viewClause = timelineViewClause(headline, input.stats);
   }
 
   if (viewClause) {
@@ -64,6 +76,17 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   }
 
   return { text: parts.join(' | '), segments };
+}
+
+function buildAssetGroupRead(input: BuildReadInput): LandscapeRead {
+  const total = input.stats.length;
+  const sponsors = new Set<string>();
+  for (const s of input.stats) sponsors.add(s.name);
+  const detail = `Showing ${total} assets across ${sponsors.size} sponsors`;
+  return {
+    text: detail,
+    segments: [{ clause: 'headline', shape: 'asset-count-summary', detail }],
+  };
 }
 
 export function escapeName(name: string): string {
