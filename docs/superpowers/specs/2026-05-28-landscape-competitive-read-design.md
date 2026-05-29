@@ -95,7 +95,7 @@ Evaluation order: `sole-bucket` → `dominant-bucket` → `two-bucket-split` →
 | Shape | Trigger | Template | Example (Indication group-by) |
 |---|---|---|---|
 | `sole-bucket` | All assets in 1 group | `All N assets in <X>` | `All 6 assets in Diabetes` |
-| `dominant-bucket` | One group has ≥50% of assets | `Concentrated in <X>: N of M assets` | `Concentrated in Diabetes: 5 of 6 assets` |
+| `dominant-bucket` | One group has >50% of assets (strict) | `Concentrated in <X>: N of M assets` | `Concentrated in Diabetes: 5 of 6 assets` |
 | `two-bucket-split` | Top 2 groups together hold ≥80% of assets | `Split between <X> and <Y>: N + M of P assets` | `Split between Diabetes and Obesity: 3 + 2 of 6 assets` |
 | `spread` | Otherwise (floor case) — fires whenever none of the above qualifies | `Spread across N buckets, no single focus` | `Spread across 5 indications, no single focus` |
 
@@ -271,7 +271,7 @@ The `escapeName()` helper currently duplicated in three files becomes a private 
 | Tied at 0 P3 | Falls through to `fragmented` (no late-stage anywhere), not `tied` (which requires late-stage ≥ 1). |
 | Asset group-by | Headline is the count summary; mode classifier short-circuits before reaching competitive/distributional logic. |
 | Density clustering threshold edge (exactly 60% or 40%) | `≥60%` triggers clustered claim; `<40%` triggers evenly-spread claim. Between 40% and 60%: no claim (silent). |
-| Distributional dominant-bucket exactly at 50% | Triggers `dominant-bucket`. Boundary is `≥50%`. |
+| Distributional dominant-bucket exactly at 50% | Does NOT trigger `dominant-bucket`. Falls through to `two-bucket-split` (if top 2 sum ≥80%) or `spread`. The threshold is strict `>50%` so an even 3-3 split is not called "concentrated." |
 
 ### Testing strategy
 
