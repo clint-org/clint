@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildLandscapeRead, ReadStats } from './index';
 
-function makeStats(input: Array<Partial<ReadStats> & { name: string }>): ReadStats[] {
+function makeStats(input: (Partial<ReadStats> & { name: string })[]): ReadStats[] {
   return input.map((s) => ({
     name: s.name,
     assetCount: s.assetCount ?? 0,
@@ -21,6 +21,12 @@ describe('buildLandscapeRead', () => {
       const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats: [] });
       expect(result.segments).toHaveLength(0);
       expect(result.text).toBe('');
+    });
+
+    it('makeStats factory produces well-formed ReadStats', () => {
+      const stats = makeStats([{ name: 'Acme' }]);
+      expect(stats).toHaveLength(1);
+      expect(stats[0].assetCount).toBe(0);
     });
   });
 });
