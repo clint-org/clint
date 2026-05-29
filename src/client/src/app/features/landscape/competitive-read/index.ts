@@ -1,5 +1,6 @@
 import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
+import { classifyDistributional } from './distributional-headlines';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
 export type LandscapeGroupBy = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
@@ -28,12 +29,17 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
     return { text: '', segments: [] };
   }
 
-  if (input.groupBy === 'company') {
-    const headline = classifyCompetitive(input.stats);
-    return { text: headline.text, segments: [headline.segment] };
-  }
+  const isDistributional =
+    input.groupBy === 'indication' || input.groupBy === 'moa' || input.groupBy === 'roa';
 
-  throw new Error('not implemented');
+  const headline =
+    input.groupBy === 'company'
+      ? classifyCompetitive(input.stats)
+      : isDistributional
+        ? classifyDistributional(input.stats)
+        : classifyCompetitive(input.stats); // 'asset' falls through; handled later
+
+  return { text: headline.text, segments: [headline.segment] };
 }
 
 export function escapeName(name: string): string {
