@@ -405,6 +405,58 @@ describe('buildLandscapeRead', () => {
         expect(result.text).toContain('next catalyst in 47 days: PFIZER-101 readout');
       });
     });
+
+    describe('momentum Clause 3', () => {
+      it('emits when non-leader has >= 3 recent changes (timeline view)', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, lateStageCount: 0, recentChanges: 5, highestPhase: 'P2', highestPhaseRank: 3 },
+        ]);
+        const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
+        const momentum = result.segments.find((s) => s.clause === 'momentum');
+        expect(momentum?.shape).toBe('most-active');
+        expect(result.text).toContain('Novo');
+        expect(result.text).toContain('most active (5 recent changes)');
+      });
+
+      it('uses "recent events" wording for spoke views', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, lateStageCount: 0, recentChanges: 5, highestPhase: 'P2', highestPhaseRank: 3 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.text).toContain('Novo');
+        expect(result.text).toContain('most active (5 recent events)');
+      });
+
+      it('suppressed when below threshold (recentChanges == 2)', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, recentChanges: 2, highestPhase: 'P2', highestPhaseRank: 3 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
+      });
+
+      it('suppressed when same entity as view-clause target', () => {
+        const stats = makeStats([
+          { name: 'Lilly', assetCount: 3, p3Count: 3, lateStageCount: 3, highestPhase: 'P3', highestPhaseRank: 4 },
+          { name: 'Novo', assetCount: 1, p3Count: 1, lateStageCount: 1, recentChanges: 5, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        const viewSeg = result.segments.find((s) => s.clause === 'view');
+        expect(viewSeg?.detail).toContain('Novo');
+        expect(result.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
+      });
+
+      it('suppressed for sole-entrant', () => {
+        const stats = makeStats([
+          { name: 'Pfizer', assetCount: 1, recentChanges: 10, highestPhase: 'P3', highestPhaseRank: 4 },
+        ]);
+        const result = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
+        expect(result.segments.find((s) => s.clause === 'momentum')).toBeUndefined();
+      });
+    });
   });
 
   describe('distributional mode (group-by: indication / moa / roa)', () => {

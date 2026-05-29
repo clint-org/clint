@@ -2,6 +2,7 @@ import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
 import { classifyDistributional } from './distributional-headlines';
 import { densityViewClause, radialViewClause, timelineViewClause, ViewClauseResult } from './view-clauses';
+import { momentumClause } from './momentum-clause';
 
 export type LandscapeView = 'radial' | 'density' | 'timeline';
 export type LandscapeGroupBy = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
@@ -54,6 +55,12 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   if (viewClause) {
     segments.push(viewClause.segment);
     parts.push(viewClause.text);
+  }
+
+  const momentum = momentumClause(input.view, headline, viewClause, input.stats);
+  if (momentum) {
+    segments.push(momentum.segment);
+    parts.push(momentum.text);
   }
 
   return { text: parts.join(' | '), segments };
