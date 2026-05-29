@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLandscapeRead, ReadStats } from './index';
+import { buildLandscapeRead, fromCompanies, ReadStats } from './index';
 
 function makeStats(input: (Partial<ReadStats> & { name: string })[]): ReadStats[] {
   return input.map((s) => ({
@@ -600,6 +600,49 @@ describe('buildLandscapeRead', () => {
       const result = buildLandscapeRead({ view: 'radial', groupBy: 'asset', stats });
       expect(result.segments[0].shape).toBe('asset-count-summary');
       expect(result.text).toContain('Showing 3 assets');
+    });
+  });
+
+  describe('adapters', () => {
+    it('fromCompanies produces expected ReadStats', () => {
+      const companies = [
+        {
+          id: 'c1',
+          space_id: 'sp',
+          created_by: 'u',
+          name: 'Lilly',
+          logo_url: null,
+          display_order: 0,
+          created_at: '',
+          updated_at: '',
+          updated_by: null,
+          assets: [
+            {
+              id: 'a1', space_id: 'sp', created_by: 'u', company_id: 'c1',
+              name: 'Tirzepatide', generic_name: null, logo_url: null, display_order: 0,
+              created_at: '', updated_at: '', updated_by: null,
+              trials: [
+                {
+                  id: 't1', space_id: 'sp', created_by: 'u', asset_id: 'a1',
+                  name: 'SURMOUNT', identifier: null, status: null, notes: null,
+                  display_order: 0, created_at: '', updated_at: '', updated_by: null,
+                  phase_type: 'P3', phase_start_date: null, phase_end_date: null,
+                  markers: [], recent_changes_count: 4, most_recent_change_type: null,
+                },
+              ],
+            },
+          ],
+        },
+      ];
+      const stats = fromCompanies(companies as never);
+      expect(stats).toHaveLength(1);
+      expect(stats[0].name).toBe('Lilly');
+      expect(stats[0].assetCount).toBe(1);
+      expect(stats[0].trialCount).toBe(1);
+      expect(stats[0].p3Count).toBe(1);
+      expect(stats[0].lateStageCount).toBe(1);
+      expect(stats[0].recentChanges).toBe(4);
+      expect(stats[0].highestPhase).toBe('P3');
     });
   });
 });
