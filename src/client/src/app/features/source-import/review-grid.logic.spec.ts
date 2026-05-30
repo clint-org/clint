@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when the entity has a match', () => {
@@ -48,5 +48,41 @@ describe('deriveAssetFlags', () => {
   it('does not flag when moa is present', () => {
     const flags = deriveAssetFlags({ name: 'Foo', moa: 'GLP-1' });
     expect(flags.some((f) => f.id === 'no-moa-roa')).toBe(false);
+  });
+});
+
+describe('duplicateTrialIndexes', () => {
+  it('returns indexes of trials sharing the same identifier', () => {
+    const trials = [
+      { identifier: 'NCT1' }, { identifier: 'NCT2' }, { identifier: 'NCT1' },
+    ];
+    expect(duplicateTrialIndexes(trials)).toEqual(new Set([0, 2]));
+  });
+  it('ignores blank identifiers', () => {
+    const trials = [{ identifier: '' }, { identifier: '' }];
+    expect(duplicateTrialIndexes(trials)).toEqual(new Set());
+  });
+  it('returns empty when all identifiers are unique', () => {
+    const trials = [{ identifier: 'NCT1' }, { identifier: 'NCT2' }];
+    expect(duplicateTrialIndexes(trials)).toEqual(new Set());
+  });
+});
+
+describe('deriveCtgovFlag', () => {
+  it('flags when more than one ctgov candidate needs a pick', () => {
+    expect(deriveCtgovFlag(2)).toEqual({ id: 'ctgov-pick', tier: 'attention', label: 'CT.gov: pick match' });
+  });
+  it('returns null for one or zero candidates', () => {
+    expect(deriveCtgovFlag(1)).toBeNull();
+    expect(deriveCtgovFlag(0)).toBeNull();
+  });
+});
+
+describe('deriveFuzzyFlag', () => {
+  it('flags when fuzzy alternates exist', () => {
+    expect(deriveFuzzyFlag(3)).toEqual({ id: 'fuzzy', tier: 'attention', label: 'Uncertain match' });
+  });
+  it('returns null when no alternates', () => {
+    expect(deriveFuzzyFlag(0)).toBeNull();
   });
 });

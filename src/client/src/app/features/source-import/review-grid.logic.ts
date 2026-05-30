@@ -52,3 +52,31 @@ export function deriveAssetFlags(asset: Entity): ReviewFlag[] {
   }
   return flags;
 }
+
+export function duplicateTrialIndexes(trials: Entity[]): Set<number> {
+  const seen = new Map<string, number[]>();
+  trials.forEach((t, idx) => {
+    const id = String(t['identifier'] ?? '').trim();
+    if (!id) return;
+    const arr = seen.get(id) ?? [];
+    arr.push(idx);
+    seen.set(id, arr);
+  });
+  const dupes = new Set<number>();
+  for (const arr of seen.values()) {
+    if (arr.length > 1) arr.forEach((i) => dupes.add(i));
+  }
+  return dupes;
+}
+
+export function deriveCtgovFlag(candidateCount: number): ReviewFlag | null {
+  return candidateCount > 1
+    ? { id: 'ctgov-pick', tier: 'attention', label: 'CT.gov: pick match' }
+    : null;
+}
+
+export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
+  return alternateCount > 0
+    ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' }
+    : null;
+}
