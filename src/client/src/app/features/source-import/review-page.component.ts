@@ -735,7 +735,23 @@ interface GridRow {
           <!-- Hierarchical tree view -->
           @let tree = hierarchicalTree();
 
-          <p-treeTable [value]="gridNodes()" dataKey="key" [scrollable]="true">
+          <div class="mb-3 inline-flex overflow-hidden rounded border border-slate-200 bg-white text-xs">
+            @for (opt of filterOptions; track opt.value) {
+              <button
+                type="button"
+                class="border-r border-slate-200 px-3 py-1.5 last:border-r-0"
+                [class.bg-brand-50]="gridFilter() === opt.value"
+                [class.text-brand-800]="gridFilter() === opt.value"
+                [class.font-semibold]="gridFilter() === opt.value"
+                [class.text-slate-500]="gridFilter() !== opt.value"
+                (click)="gridFilter.set(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+
+          <p-treeTable [value]="filteredNodes()" dataKey="key" [scrollable]="true">
             <ng-template pTemplate="header">
               <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                 <th class="w-10"></th>
@@ -1250,6 +1266,33 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
     });
   });
+
+  protected readonly gridFilter = signal<'all' | 'flagged' | 'new'>('all');
+
+  protected readonly filteredNodes = computed<TreeNode[]>(() => {
+    const f = this.gridFilter();
+    if (f === 'all') return this.gridNodes();
+    const keep = (row: GridRow) =>
+      f === 'flagged' ? row.flags.length > 0 : row.state === 'new';
+    // Keep a parent if it or any descendant matches, so linkage context is preserved.
+    const filterNode = (node: TreeNode): TreeNode | null => {
+      const children = (node.children ?? [])
+        .map(filterNode)
+        .filter((n): n is TreeNode => n !== null);
+      const selfKeep = keep(node.data as GridRow);
+      if (!selfKeep && children.length === 0) return null;
+      return { ...node, children, expanded: true };
+    };
+    return this.gridNodes()
+      .map(filterNode)
+      .filter((n): n is TreeNode => n !== null);
+  });
+
+  protected readonly filterOptions = [
+    { value: 'all' as const, label: 'All' },
+    { value: 'flagged' as const, label: 'Needs review' },
+    { value: 'new' as const, label: 'New' },
+  ];
 
   readonly highlightedSourceText = computed(() => {
     const p = this.proposal();
