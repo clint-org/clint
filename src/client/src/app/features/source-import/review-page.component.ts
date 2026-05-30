@@ -33,6 +33,8 @@ import {
   duplicateTrialIndexes,
   deriveCtgovFlag,
   deriveFuzzyFlag,
+  readableSummary,
+  blockingReason,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
@@ -877,8 +879,11 @@ interface GridRow {
         class="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-3"
       >
         <span class="text-xs text-slate-500">
-          {{ selectedCount() }} of {{ totalCount() }} selected ({{ selectionSummary() }})
+          {{ selectedCount() }} of {{ totalCount() }} selected: {{ footerSummary() }}
         </span>
+        @if (blockingMessage(); as msg) {
+          <span class="text-xs text-amber-700">{{ msg }}</span>
+        }
 
         @if (commitError()) {
           <span class="text-xs text-red-600">{{ commitError() }}</span>
@@ -1024,11 +1029,44 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     if (!p) return false;
     const sel = this.selections();
     const trials = p.trials ?? [];
+    const dupes = duplicateTrialIndexes(trials);
     for (let i = 0; i < trials.length; i++) {
       if (sel[`trials_${i}`] === false) continue;
       if (this.trialMissingAsset(trials[i])) return false;
+      if (dupes.has(i)) return false;
     }
     return true;
+  });
+
+  protected readonly footerSummary = computed(() => {
+    const p = this.proposal()?.proposals;
+    const sel = this.selections();
+    const count = (type: EntityType) =>
+      (p?.[type] ?? []).filter((_, i) => sel[`${type}_${i}`] !== false).length;
+    return readableSummary({
+      companies: count('companies'),
+      assets: count('assets'),
+      trials: count('trials'),
+      markers: count('markers'),
+      events: count('events'),
+    });
+  });
+
+  protected readonly blockingMessage = computed(() => {
+    const p = this.proposal()?.proposals;
+    if (!p) return null;
+    const trials = p.trials ?? [];
+    const sel = this.selections();
+    const dupes = duplicateTrialIndexes(trials);
+    let noAsset = 0;
+    trials.forEach((t, idx) => {
+      if (sel[`trials_${idx}`] !== false && this.trialMissingAsset(t)) noAsset++;
+    });
+    let duplicates = 0;
+    dupes.forEach((idx) => {
+      if (sel[`trials_${idx}`] !== false) duplicates++;
+    });
+    return blockingReason({ noAsset, duplicates });
   });
 
   readonly hierarchicalTree = computed<HierarchicalTree>(() => {
