@@ -154,11 +154,12 @@ detail (CT.gov picker, fuzzy override, generic_name edit, missing-asset notice)
 renders in the TreeTable row-expansion slot, toggled by the chevron that appears
 only on rows with detail.
 
-Risk to validate in the plan with a short spike: TreeTable couples tree nesting
-and row expansion, and we want nesting for hierarchy plus a separate detail
-expansion. If those fight, fall back to PrimeNG `Table` with self-managed
-grouping rows and `rowexpansion`, keeping the same visual result. Decide during
-the plan, not now.
+Decision: TreeTable. The first implementation task is a thin spike confirming
+TreeTable can carry both the company/asset/trial nesting and a per-row detail
+expansion at once. The fallback, used only if that spike hits a hard blocker, is
+PrimeNG `Table` with self-managed grouping rows and `rowexpansion`, producing the
+same visual result. The spike resolves the mechanism before the bulk of the work,
+not the direction.
 
 Reuse: the existing helper methods (`assetMoas`, `assetRoas`, `trialPhase`,
 `trialStatus`, `isObservationalTrial`, `trialMissingAsset`, `trialCtgovStatus`,
