@@ -1,15 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { badgeTooltip } from './change-badge.logic';
 
 /**
- * Small neutral dot rendered next to a trial or asset that has had any
- * change-feed activity in the unified recent window (14 days, computed
- * server-side). count === 0 renders nothing. Purely presentational: count and
- * type are inputs, no data fetching of its own. Callers bind the
- * recent_changes_count and most_recent_change_type fields surfaced by
- * get_dashboard_data / get_bullseye_assets.
+ * Small neutral dot next to a trial/asset with change-feed activity in the
+ * unified 14-day window. count === 0 renders nothing. When an `eventId`
+ * (a trial_change_events id) is provided, the dot becomes a button that
+ * navigates to that event in the feed; otherwise it is a non-interactive dot.
+ * Callers bind recent_changes_count / most_recent_change_type /
+ * most_recent_change_event_id from get_dashboard_data / get_bullseye_assets.
  *
  * See docs/superpowers/specs/2026-05-29-unified-recent-change-indicator-design.md.
  */
@@ -21,10 +22,37 @@ import { badgeTooltip } from './change-badge.logic';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeBadgeComponent {
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
   readonly count = input.required<number>();
   readonly type = input<string | null>(null);
+  readonly eventId = input<string | null>(null);
 
   readonly dotClass = 'inline-block w-2 h-2 rounded-full bg-slate-400';
-
   readonly tooltip = computed(() => badgeTooltip(this.count(), this.type()));
+  readonly clickable = computed(() => !!this.eventId());
+
+  protected openEvent(event: MouseEvent): void {
+    event.stopPropagation();
+    const eid = this.eventId();
+    if (!eid) return;
+    const { tenantId, spaceId } = this.resolveScope();
+    if (!tenantId || !spaceId) return;
+    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
+      queryParams: { detectedId: eid },
+    });
+  }
+
+  private resolveScope(): { tenantId: string | null; spaceId: string | null } {
+    let snap: ActivatedRouteSnapshot | null = this.route.snapshot;
+    let tenantId: string | null = null;
+    let spaceId: string | null = null;
+    while (snap) {
+      if (!tenantId && snap.paramMap.has('tenantId')) tenantId = snap.paramMap.get('tenantId');
+      if (!spaceId && snap.paramMap.has('spaceId')) spaceId = snap.paramMap.get('spaceId');
+      snap = snap.parent;
+    }
+    return { tenantId, spaceId };
+  }
 }

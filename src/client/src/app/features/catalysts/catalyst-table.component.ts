@@ -148,6 +148,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
               <app-change-badge
                 [count]="catalyst.trial_recent_changes_count ?? 0"
                 [type]="catalyst.trial_most_recent_change_type ?? null"
+                [eventId]="catalyst.trial_most_recent_change_event_id ?? null"
               />
             </span>
           </td>

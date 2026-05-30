@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import {
   BullseyeData,
@@ -81,6 +81,23 @@ export class BullseyeDetailPanelComponent {
   }
 
   protected readonly recentChangeLabel = recentChangeLabel;
+
+  private readonly router = inject(Router);
+
+  protected openChangeEvent(changeEventId: string): void {
+    let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
+    let tenantId: string | null = null;
+    let spaceId: string | null = null;
+    while (snap) {
+      if (!tenantId && snap.paramMap.has('tenantId')) tenantId = snap.paramMap.get('tenantId');
+      if (!spaceId && snap.paramMap.has('spaceId')) spaceId = snap.paramMap.get('spaceId');
+      snap = snap.parent;
+    }
+    if (!tenantId || !spaceId) return;
+    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
+      queryParams: { detectedId: changeEventId },
+    });
+  }
 
   private readonly showAllTrials = signal(false);
 

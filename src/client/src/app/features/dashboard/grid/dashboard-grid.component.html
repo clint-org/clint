@@ -236,6 +236,7 @@
                   class="ml-1 inline-flex items-center"
                   [count]="row.trial.recent_changes_count ?? 0"
                   [type]="row.trial.most_recent_change_type ?? null"
+                  [eventId]="row.trial.most_recent_change_event_id ?? null"
                 />
                 @if (row.trial.identifier) {
                   <span class="text-[10px] text-slate-400 font-mono ml-1">{{

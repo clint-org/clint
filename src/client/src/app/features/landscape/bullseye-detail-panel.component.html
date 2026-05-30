@@ -23,14 +23,28 @@
       </div>
 
       @if (asset.has_recent_activity) {
-        <div
-          class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700"
-        >
-          <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
-          <span>{{
-            recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
-          }}</span>
-        </div>
+        @if (asset.most_recent_change_event_id; as aeid) {
+          <button
+            type="button"
+            class="mt-2 flex w-full items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 text-left font-mono text-[12px] font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            (click)="openChangeEvent(aeid)"
+          >
+            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
+            <span>{{
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+            }}</span>
+            <i class="fa-solid fa-arrow-right ml-auto text-[10px] text-amber-400" aria-hidden="true"></i>
+          </button>
+        } @else {
+          <div
+            class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700"
+          >
+            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
+            <span>{{
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+            }}</span>
+          </div>
+        }
       }
 
       @if (dimension() !== 'company') {
@@ -131,6 +145,7 @@
                     <app-change-badge
                       [count]="trial.recent_changes_count ?? 0"
                       [type]="trial.most_recent_change_type ?? null"
+                      [eventId]="trial.most_recent_change_event_id ?? null"
                     />
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
