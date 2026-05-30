@@ -3,8 +3,8 @@ import type { Env } from '../index';
 import { callRpc, type SupabaseConfig } from '../supabase';
 import { jwtSubject } from '../auth';
 import { createCtgovClient } from '../ctgov-sync/ctgov-client';
-import { mapCtgovPhase } from './nct-phase-map';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
+import { toStudyRecord } from './nct-study-record';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
@@ -362,91 +362,6 @@ async function fetchStudyWithAbort(
         reject(err);
       });
   });
-}
-
-function toStudyRecord(study: unknown): NctStudyRecord {
-  const s = study as Record<string, any>;
-  const proto = s['protocolSection'] ?? s;
-  const ident = proto['identificationModule'] ?? {};
-  const status = proto['statusModule'] ?? {};
-  const design = proto['designModule'] ?? {};
-  const sponsors = proto['sponsorCollaboratorsModule'] ?? {};
-  const arms = proto['armsInterventionsModule'] ?? {};
-  const conditions = proto['conditionsModule'] ?? {};
-
-  const startDate = status.startDateStruct?.date ?? null;
-  const completionDate = status.primaryCompletionDateStruct?.date ?? null;
-
-  const phases: string[] | undefined = design.phases;
-  const mappedPhase = mapCtgovPhase(phases);
-
-  const collaborators = (sponsors.collaborators ?? []).map((c: any) => c.name as string);
-  const interventions = (arms.interventions ?? []).map((iv: any) => ({
-    name: (iv.name ?? '') as string,
-    type: (iv.type as string) ?? null,
-    description: (iv.description as string) ?? null,
-    other_names: (iv.otherNames ?? []) as string[],
-  }));
-
-  return {
-    nct_id: ident.nctId ?? '',
-    brief_title: ident.briefTitle ?? '',
-    acronym: ident.acronym?.trim() || null,
-    overall_status: status.overallStatus ?? '',
-    phase: mappedPhase,
-    study_type: design.studyType ?? 'INTERVENTIONAL',
-    enrollment_count: design.enrollmentInfo?.count ?? null,
-    start_date: normalizeCtgovDate(startDate),
-    primary_completion_date: normalizeCtgovDate(completionDate),
-    lead_sponsor: sponsors.leadSponsor?.name ?? '',
-    collaborators,
-    interventions,
-    conditions: conditions.conditions ?? [],
-  };
-}
-
-function normalizeCtgovDate(raw: string | null): string | null {
-  if (!raw) return null;
-  const parts = raw.split(/[\s-]+/);
-  if (parts.length === 3) {
-    const [year, month, day] = parseYearMonthDay(parts);
-    if (year && month && day) return `${year}-${month}-${day}`;
-  }
-  if (parts.length === 2) {
-    const month = MONTH_MAP[parts[0]?.toLowerCase()] ?? parts[0];
-    const year = parts[1];
-    if (year && month) return `${year}-${month}-01`;
-  }
-  if (/^\d{4}$/.test(raw)) return `${raw}-01-01`;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  if (/^\d{4}-\d{2}$/.test(raw)) return `${raw}-01`;
-  return null;
-}
-
-const MONTH_MAP: Record<string, string> = {
-  january: '01',
-  february: '02',
-  march: '03',
-  april: '04',
-  may: '05',
-  june: '06',
-  july: '07',
-  august: '08',
-  september: '09',
-  october: '10',
-  november: '11',
-  december: '12',
-};
-
-function parseYearMonthDay(parts: string[]): [string | null, string | null, string | null] {
-  const monthStr = parts[0]?.toLowerCase();
-  const month = MONTH_MAP[monthStr];
-  if (month) {
-    const day = parts[1]?.replace(',', '').padStart(2, '0');
-    const year = parts[2];
-    return [year ?? null, month, day ?? null];
-  }
-  return [parts[0] ?? null, parts[1] ?? null, parts[2] ?? null];
 }
 
 async function closeAiCall(
