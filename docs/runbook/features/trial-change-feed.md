@@ -38,7 +38,7 @@ flowchart LR
 
 - **Unified Events page** at `/t/:tenantId/s/:spaceId/events?source=detected`: detected change events appear as a third source type alongside analyst events and markers. The standalone `/activity` route has been retired and redirects to `/events?source=detected` via `activityRedirectGuard`.
 - **What-changed widget** on the engagement landing: top recent events at a glance, with entity context labels per row and an asset count summary. The widget links to `/events?source=detected` (previously linked to `/activity`).
-- **Trial row badges** on the timeline and tables: small change-count chips per trial.
+- **Trial row badges** on the timeline and tables: small change-count dots per trial. When the most-recent change is a detected/analyst event (not an intel note), the dot is a button that deep-links to that exact event in the Events page via `?detectedId=<changeEventId>`; the dashboard and bullseye RPCs surface `most_recent_change_event_id` for this, and `get_events_page_data` resolves a single detected row via `p_change_event_id`. Intel-only dots are non-interactive.
 - **Marker history panel** on the marker detail panel: analyst-side audit trail per marker.
 - **Intel feed mixing** in the existing intelligence feed: change events interleave with primary intelligence rows.
 - **Trial-detail Activity section**: per-trial change log on the trial detail page.
@@ -76,7 +76,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   role: viewer
   status: active
 - id: trial-change-feed-unified-events
-  summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The standalone /activity route redirects to /events?source=detected.
+  summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The detail panel deep-links via ?detectedId=<changeEventId> (recent-change dot click-through) and renders company/asset as links to their manage pages. The standalone /activity route redirects to /events?source=detected.
   routes:
     - /t/:tenantId/s/:spaceId/events?source=detected
   rpcs:
