@@ -547,7 +547,7 @@ TrialPhase    { id, trial_id, space_id, phase_type, start_date, end_date, color,
 TrialMarker   { id, trial_id, space_id, marker_type_id, event_date, end_date, tooltip_text,
                 tooltip_image_url, is_projected, created_by, ... }
 TrialNote     { id, trial_id, space_id, content, created_by, ... }
-MarkerType    { id, space_id, name, icon, shape, fill_style, color, is_system, display_order }
+MarkerType    { id, space_id, name, shape, fill_style, color, is_system, display_order }
 Space         { id, tenant_id, name, description, created_by, ... }
 SpaceMember   { space_id, user_id, role }  // 'owner' | 'editor' | 'viewer'
 Tenant        { id, name, slug }

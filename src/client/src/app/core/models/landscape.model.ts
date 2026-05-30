@@ -99,7 +99,6 @@ export interface BullseyeMarker {
   id: string;
   event_date: string;
   marker_type_name: string;
-  icon: string | null;
   shape: MarkerShape;
   color: string;
   projection: string;

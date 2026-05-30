@@ -19,7 +19,6 @@ export interface MarkerType {
   created_by: string | null;
   category_id: string;
   name: string;
-  icon: string | null;
   shape: MarkerShape;
   fill_style: FillStyle;
   color: string;

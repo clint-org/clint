@@ -89,18 +89,6 @@
       />
     </app-form-field>
 
-    <app-form-field label="Icon" fieldId="mt-icon" spacing="">
-      <input
-        pInputText
-        id="mt-icon"
-        class="w-full mt-1"
-        [ngModel]="icon()"
-        (ngModelChange)="icon.set($event)"
-        name="icon"
-        placeholder="e.g. fa-solid fa-check"
-      />
-    </app-form-field>
-
     <app-form-field label="Display Order" fieldId="mt-display-order" spacing="">
       <p-inputnumber
         inputId="mt-display-order"

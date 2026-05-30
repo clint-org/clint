@@ -373,7 +373,6 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             category_name: mt?.marker_categories?.name ?? '',
             category_id: mt?.category_id ?? '',
             marker_type_name: mt?.name ?? '',
-            marker_type_icon: mt?.icon ?? null,
             marker_type_color: mt?.color ?? '',
             marker_type_shape: mt?.shape ?? 'circle',
             marker_type_inner_mark: mt?.inner_mark ?? 'none',

@@ -8,7 +8,6 @@ export interface Catalyst {
   category_name: string;
   category_id: string;
   marker_type_name: string;
-  marker_type_icon: string | null;
   marker_type_color: string;
   marker_type_shape: MarkerShape;
   marker_type_inner_mark: InnerMark;
