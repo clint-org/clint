@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, TreeNode } from 'primeng/api';
+import { TreeTableModule } from 'primeng/treetable';
 import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -79,13 +80,34 @@ interface HierarchicalTree {
 
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule],
+  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
   },
   template: `
     <div class="flex h-full flex-col">
+      <!-- SPIKE: remove in Task 5/6 -->
+      <p-treeTable [value]="spikeNodes" [scrollable]="true" dataKey="key">
+        <ng-template pTemplate="header">
+          <tr><th>Entity</th><th>Phase</th></tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+          <tr>
+            <td>
+              <p-treeTableToggler [rowNode]="rowNode" />
+              {{ rowData.name }}
+              @if (rowData.hasDetail) {
+                <button type="button" (click)="spikeToggle(rowData.key)">detail</button>
+              }
+            </td>
+            <td>{{ rowData.phase }}</td>
+          </tr>
+          @if (spikeExpanded[rowData.key]) {
+            <tr><td colspan="2">DETAIL for {{ rowData.name }}</td></tr>
+          }
+        </ng-template>
+      </p-treeTable>
       <!-- Header -->
       <header class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
         <div class="min-w-0 flex-1">
@@ -778,6 +800,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly existingRoaNames = signal<Set<string>>(new Set());
 
   protected readonly entityOrder = ENTITY_ORDER;
+
+  // SPIKE: remove in Task 5/6
+  protected spikeExpanded: Record<string, boolean> = {};
+  protected spikeToggle(k: string): void { this.spikeExpanded[k] = !this.spikeExpanded[k]; }
+  protected spikeNodes: TreeNode[] = [
+    { key: 'a', data: { key: 'a', name: 'Semaglutide', phase: '', hasDetail: true },
+      expanded: true,
+      children: [{ key: 'a-t', data: { key: 'a-t', name: 'NCT03548935', phase: 'P3', hasDetail: true } }] },
+  ];
 
   private static readonly WARNING_LABELS: Record<string, string> = {
     empty_extraction:
