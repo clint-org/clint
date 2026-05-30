@@ -105,18 +105,28 @@ Flag taxonomy (amber chip, plus an amber left rail on the row):
 | Attention | CT.gov needs pick | more than one `ctgov_candidates` entry | No |
 | Attention | Fuzzy name uncertain | `fuzzy_alternates` present for the entity | No |
 | Attention | No MOA/ROA | both `moa` and `roa` empty on an asset | No |
-| Attention | Observational trial | `study_type` / `design` / `trial_type` indicates observational | No |
+| Attention | Observational trial | trial `study_type` indicates observational (replace the current `asset_ref == null` proxy in `isObservationalTrial`) | No |
 | Attention | Missing phase/status | `phase` or `status` empty on a trial | No |
 | Info | CT.gov lookup failed | `trialCtgovStatus === 'failed'` | No |
 
 Blocking flags disable Confirm and are summarized in the footer. Attention and
 info flags never block; they draw the eye and expand to the relevant affordance.
 
-Out of scope, parked for the future: a "missing indication" flag. The data model
-has no `indication` / `disease` / `therapeutic_area` / `condition` column on
-`assets` or `trials`, and the importer does not propose one. CT.gov enrichment
-carries a `conditions` payload that is not persisted. Once an indication field
-exists, it can join the Attention tier with no layout change.
+Indication, open decision: Indication is a first-class concept in this product
+(the `indications`, `asset_indications`, `trial_conditions`, and
+`condition_indication_map` tables, and the per-indication bullseye), but it is
+not part of an import proposal. For a new asset the analyst assigns
+`asset_indications` after import; trial-level indication derives from CT.gov
+conditions through `condition_indication_map`. So at review time there is no
+indication value on a proposal to validate. Two options:
+
+- (a) Leave indication off the flag set. Recommended for v1: nothing to flag yet.
+- (b) Add an Attention flag on new assets meaning "no indication will be set,
+  assign one after import" as a forward reminder, since indication drives the
+  bullseye and an asset with none is invisible there.
+
+Extending the importer to actually propose an indication per asset is a larger,
+separate change and is out of scope here.
 
 Already handled elsewhere, kept off the per-row flag system: proposal-level
 `warnings[]` (banner at top), and `dropped` items (the collapsible "Dropped"
