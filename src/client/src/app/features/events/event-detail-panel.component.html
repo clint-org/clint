@@ -253,9 +253,29 @@
             imgClass="rounded-sm border border-slate-200 bg-white object-contain"
           />
         }
-        <span class="text-[13px] text-slate-700"
-          >{{ item.company_name ? item.company_name + ' / ' : '' }}{{ item.entity_name }}</span
-        >
+        <span class="text-[13px] text-slate-700">
+          @if (item.company_name) {
+            @if (item.company_id && tenantId() && spaceId()) {
+              <a
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', item.company_id]"
+                class="text-slate-700 hover:text-brand-700 hover:underline"
+                >{{ item.company_name }}</a
+              >
+            } @else {
+              {{ item.company_name }}
+            }
+            <span class="text-slate-300"> / </span>
+          }
+          @if (item.asset_id && tenantId() && spaceId()) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', item.asset_id]"
+              class="text-slate-700 hover:text-brand-700 hover:underline"
+              >{{ item.entity_name }}</a
+            >
+          } @else {
+            {{ item.entity_name }}
+          }
+        </span>
       </div>
     </div>
 
