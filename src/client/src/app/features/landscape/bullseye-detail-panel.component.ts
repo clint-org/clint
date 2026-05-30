@@ -26,6 +26,7 @@ import {
   IntelligenceEntityType,
 } from '../../core/models/primary-intelligence.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { resolveScopeFromRoute } from '../../core/utils/route-scope';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
@@ -85,14 +86,7 @@ export class BullseyeDetailPanelComponent {
   private readonly router = inject(Router);
 
   protected openChangeEvent(changeEventId: string): void {
-    let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
-    let tenantId: string | null = null;
-    let spaceId: string | null = null;
-    while (snap) {
-      if (!tenantId && snap.paramMap.has('tenantId')) tenantId = snap.paramMap.get('tenantId');
-      if (!spaceId && snap.paramMap.has('spaceId')) spaceId = snap.paramMap.get('spaceId');
-      snap = snap.parent;
-    }
+    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
     if (!tenantId || !spaceId) return;
     void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
       queryParams: { detectedId: changeEventId },

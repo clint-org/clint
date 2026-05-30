@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { resolveScopeFromRoute } from '../../../core/utils/route-scope';
 import { badgeTooltip } from './change-badge.logic';
 
 /**
@@ -37,22 +38,10 @@ export class ChangeBadgeComponent {
     event.stopPropagation();
     const eid = this.eventId();
     if (!eid) return;
-    const { tenantId, spaceId } = this.resolveScope();
+    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
     if (!tenantId || !spaceId) return;
     void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
       queryParams: { detectedId: eid },
     });
-  }
-
-  private resolveScope(): { tenantId: string | null; spaceId: string | null } {
-    let snap: ActivatedRouteSnapshot | null = this.route.snapshot;
-    let tenantId: string | null = null;
-    let spaceId: string | null = null;
-    while (snap) {
-      if (!tenantId && snap.paramMap.has('tenantId')) tenantId = snap.paramMap.get('tenantId');
-      if (!spaceId && snap.paramMap.has('spaceId')) spaceId = snap.paramMap.get('spaceId');
-      snap = snap.parent;
-    }
-    return { tenantId, spaceId };
   }
 }

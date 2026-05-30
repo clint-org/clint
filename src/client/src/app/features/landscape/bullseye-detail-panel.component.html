@@ -27,6 +27,10 @@
           <button
             type="button"
             class="mt-2 flex w-full items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 text-left font-mono text-[12px] font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            [attr.aria-label]="
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type) +
+              ' (open in feed)'
+            "
             (click)="openChangeEvent(aeid)"
           >
             <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
