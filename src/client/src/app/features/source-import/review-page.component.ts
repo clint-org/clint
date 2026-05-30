@@ -26,6 +26,15 @@ import {
   type FuzzyAlternate,
   SourceImportService,
 } from './source-import.service';
+import {
+  entityState,
+  deriveTrialFlags,
+  deriveAssetFlags,
+  duplicateTrialIndexes,
+  deriveCtgovFlag,
+  deriveFuzzyFlag,
+  type ReviewFlag,
+} from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 
 type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
@@ -78,6 +87,21 @@ interface HierarchicalTree {
   orphanEvents: number[];
 }
 
+interface GridRow {
+  key: string;
+  type: EntityType;
+  idx: number;
+  kind: 'company' | 'asset' | 'trial';
+  name: string;
+  state: 'new' | 'existing';
+  phase: string | null;
+  status: string | null;
+  moaRoa: string;
+  indication: string | null;
+  flags: ReviewFlag[];
+  hasDetail: boolean;
+}
+
 @Component({
   selector: 'app-review-page',
   imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule],
@@ -87,27 +111,6 @@ interface HierarchicalTree {
   },
   template: `
     <div class="flex h-full flex-col">
-      <!-- SPIKE: remove in Task 5/6 -->
-      <p-treeTable [value]="spikeNodes" [scrollable]="true" dataKey="key">
-        <ng-template pTemplate="header">
-          <tr><th>Entity</th><th>Phase</th></tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-          <tr>
-            <td>
-              <p-treeTableToggler [rowNode]="rowNode" />
-              {{ rowData.name }}
-              @if (rowData.hasDetail) {
-                <button type="button" (click)="spikeToggle(rowData.key)">detail</button>
-              }
-            </td>
-            <td>{{ rowData.phase }}</td>
-          </tr>
-          @if (spikeExpanded[rowData.key]) {
-            <tr><td colspan="2">DETAIL for {{ rowData.name }}</td></tr>
-          }
-        </ng-template>
-      </p-treeTable>
       <!-- Header -->
       <header class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
         <div class="min-w-0 flex-1">
@@ -801,15 +804,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   protected readonly entityOrder = ENTITY_ORDER;
 
-  // SPIKE: remove in Task 5/6
-  protected spikeExpanded: Record<string, boolean> = {};
-  protected spikeToggle(k: string): void { this.spikeExpanded[k] = !this.spikeExpanded[k]; }
-  protected spikeNodes: TreeNode[] = [
-    { key: 'a', data: { key: 'a', name: 'Semaglutide', phase: '', hasDetail: true },
-      expanded: true,
-      children: [{ key: 'a-t', data: { key: 'a-t', name: 'NCT03548935', phase: 'P3', hasDetail: true } }] },
-  ];
-
   private static readonly WARNING_LABELS: Record<string, string> = {
     empty_extraction:
       'No companies, assets, or trials could be extracted from this source. The text may be too short, off-topic, or in a format the model did not recognize.',
@@ -1009,6 +1003,81 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     }
 
     return { companies: companyNodes, orphanMarkers, orphanEvents };
+  });
+
+  protected readonly gridNodes = computed<TreeNode[]>(() => {
+    const tree = this.hierarchicalTree();
+    const trials = this.entitiesOf('trials');
+    const dupes = duplicateTrialIndexes(trials);
+
+    const trialRow = (idx: number): TreeNode => {
+      const t = trials[idx];
+      const flags = [
+        ...deriveTrialFlags(t),
+        deriveCtgovFlag(this.ctgovCandidatesFor(idx).length),
+        deriveFuzzyFlag(this.fuzzyAlternatesFor('trials', idx).length),
+      ].filter((f): f is ReviewFlag => f !== null);
+      if (dupes.has(idx)) {
+        flags.unshift({ id: 'duplicate', tier: 'blocking', label: 'Duplicate in batch' });
+      }
+      const row: GridRow = {
+        key: this.entityKey('trials', idx),
+        type: 'trials',
+        idx,
+        kind: 'trial',
+        name: this.entityName('trials', idx),
+        state: entityState(t),
+        phase: this.trialPhase(idx),
+        status: this.trialStatus(idx),
+        moaRoa: '',
+        indication: (t['indication'] as string) ?? null,
+        flags,
+        hasDetail: flags.length > 0 || this.editableFields('trials', idx).length > 0,
+      };
+      return { key: row.key, data: row };
+    };
+
+    const assetRow = (an: { assetIdx: number; trials: { trialIdx: number }[] }): TreeNode => {
+      const idx = an.assetIdx;
+      const a = this.entitiesOf('assets')[idx];
+      const flags = [
+        ...deriveAssetFlags(a),
+        deriveFuzzyFlag(this.fuzzyAlternatesFor('assets', idx).length),
+      ].filter((f): f is ReviewFlag => f !== null);
+      const row: GridRow = {
+        key: this.entityKey('assets', idx),
+        type: 'assets',
+        idx,
+        kind: 'asset',
+        name: this.entityName('assets', idx),
+        state: entityState(a),
+        phase: null,
+        status: null,
+        moaRoa: [...this.assetMoas(idx), ...this.assetRoas(idx)].join(' / '),
+        indication: null,
+        flags,
+        hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
+      };
+      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx)) };
+    };
+
+    return tree.companies.map((cn) => {
+      const row: GridRow = {
+        key: this.entityKey('companies', cn.companyIdx),
+        type: 'companies',
+        idx: cn.companyIdx,
+        kind: 'company',
+        name: this.entityName('companies', cn.companyIdx),
+        state: entityState(this.entitiesOf('companies')[cn.companyIdx]),
+        phase: null,
+        status: null,
+        moaRoa: '',
+        indication: null,
+        flags: [],
+        hasDetail: false,
+      };
+      return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
+    });
   });
 
   readonly highlightedSourceText = computed(() => {
