@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when the entity has a match', () => {
@@ -84,5 +84,32 @@ describe('deriveFuzzyFlag', () => {
   });
   it('returns null when no alternates', () => {
     expect(deriveFuzzyFlag(0)).toBeNull();
+  });
+});
+
+describe('readableSummary', () => {
+  it('formats selected counts in domain words, omitting zero buckets', () => {
+    expect(readableSummary({ companies: 3, assets: 6, trials: 6, markers: 0, events: 0 }))
+      .toBe('3 companies, 6 assets, 6 trials');
+  });
+  it('singularises counts of one', () => {
+    expect(readableSummary({ companies: 1, assets: 1, trials: 0, markers: 0, events: 0 }))
+      .toBe('1 company, 1 asset');
+  });
+  it('returns "nothing selected" when all zero', () => {
+    expect(readableSummary({ companies: 0, assets: 0, trials: 0, markers: 0, events: 0 }))
+      .toBe('nothing selected');
+  });
+});
+
+describe('blockingReason', () => {
+  it('reports the count of trials missing an asset', () => {
+    expect(blockingReason({ noAsset: 2, duplicates: 0 })).toBe('2 trials need an asset');
+  });
+  it('reports duplicates', () => {
+    expect(blockingReason({ noAsset: 0, duplicates: 3 })).toBe('3 duplicate trials in this batch');
+  });
+  it('returns null when nothing blocks', () => {
+    expect(blockingReason({ noAsset: 0, duplicates: 0 })).toBeNull();
   });
 });

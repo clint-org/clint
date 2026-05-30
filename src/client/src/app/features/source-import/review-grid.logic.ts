@@ -80,3 +80,34 @@ export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
     ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' }
     : null;
 }
+
+export interface SelectionCounts {
+  companies: number; assets: number; trials: number; markers: number; events: number;
+}
+
+const LABELS: Record<keyof SelectionCounts, [string, string]> = {
+  companies: ['company', 'companies'],
+  assets: ['asset', 'assets'],
+  trials: ['trial', 'trials'],
+  markers: ['marker', 'markers'],
+  events: ['event', 'events'],
+};
+
+export function readableSummary(counts: SelectionCounts): string {
+  const parts: string[] = [];
+  (Object.keys(LABELS) as (keyof SelectionCounts)[]).forEach((k) => {
+    const n = counts[k];
+    if (n > 0) parts.push(`${n} ${n === 1 ? LABELS[k][0] : LABELS[k][1]}`);
+  });
+  return parts.length ? parts.join(', ') : 'nothing selected';
+}
+
+export function blockingReason(b: { noAsset: number; duplicates: number }): string | null {
+  if (b.noAsset > 0) {
+    return `${b.noAsset} ${b.noAsset === 1 ? 'trial needs' : 'trials need'} an asset`;
+  }
+  if (b.duplicates > 0) {
+    return `${b.duplicates} duplicate ${b.duplicates === 1 ? 'trial' : 'trials'} in this batch`;
+  }
+  return null;
+}
