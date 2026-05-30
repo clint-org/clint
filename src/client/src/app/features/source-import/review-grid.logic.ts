@@ -26,10 +26,11 @@ export function entityState(entity: Entity): EntityState {
   return isExistingMatch(entity) ? 'existing' : 'new';
 }
 
-// Mirrors ReviewPageComponent.trialMissingAsset: a trial that resolved to an
-// existing record is never "missing an asset"; otherwise it must carry an
-// asset_ref.
-function trialMissingAsset(trial: Entity): boolean {
+// A trial that resolved to an existing record is never "missing an asset";
+// otherwise it must carry an asset_ref. This is the single source of truth:
+// ReviewPageComponent.trialMissingAsset delegates here so the grid's no-asset
+// flag and the commit gate cannot disagree.
+export function trialMissingAsset(trial: Entity): boolean {
   if (isExistingMatch(trial)) return false;
   return trial['asset_ref'] == null;
 }

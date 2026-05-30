@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -122,5 +122,20 @@ describe('blockingReason', () => {
   });
   it('returns null when nothing blocks', () => {
     expect(blockingReason({ noAsset: 0, duplicates: 0 })).toBeNull();
+  });
+});
+
+describe('trialMissingAsset (exported, shared with the component gate)', () => {
+  it('is missing when new and no asset_ref', () => {
+    expect(trialMissingAsset({ match: { kind: 'new' } })).toBe(true);
+  });
+  it('is not missing when asset_ref is present (including 0)', () => {
+    expect(trialMissingAsset({ asset_ref: 0 })).toBe(false);
+  });
+  it('is not missing when matched to an existing record', () => {
+    expect(trialMissingAsset({ match: { kind: 'existing', id: 'x' } })).toBe(false);
+  });
+  it('is not missing when existing_id is set even without asset_ref', () => {
+    expect(trialMissingAsset({ existing_id: 'id-1' })).toBe(false);
   });
 });

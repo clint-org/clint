@@ -1495,9 +1495,9 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   }
 
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
-    const match = entity['match'] as { kind: string } | undefined;
-    if (match?.kind === 'existing') return false;
-    return entity['asset_ref'] == null;
+    // Delegate to the pure logic module so the grid's no-asset flag and the
+    // commit gate share one definition (an existing_id match also counts).
+    return trialMissingAssetLogic(entity);
   }
 
   protected toggleSelection(key: string, value: boolean): void {
