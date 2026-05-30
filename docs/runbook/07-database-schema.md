@@ -888,4 +888,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260528130200_update_asset_mechanisms_rpc.sql`
 - `20260528130300_update_asset_routes_rpc.sql`
 - `20260528130400_marker_change_payload_full_context.sql`
+- `20260530131948_unified_recent_change_indicator.sql`
 <!-- /AUTO-GEN:DRIFT -->
