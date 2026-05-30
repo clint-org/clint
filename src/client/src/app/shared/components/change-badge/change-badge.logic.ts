@@ -39,3 +39,16 @@ export function badgeTooltip(count: number, type: string | null): string {
   const noun = count === 2 ? 'other change' : 'other changes';
   return `${head} (+${count - 1} ${noun})`;
 }
+
+/**
+ * Compact recent-change line for the bullseye tooltip and detail panel. Prefers
+ * the most-recent change type as the label; falls back to a plain count. Shared
+ * so both surfaces read identically.
+ */
+export function recentChangeLabel(count: number, type: string | null): string {
+  const n = count ?? 0;
+  const label = badgeTypeLabel(type);
+  if (label && n > 1) return `${label} (+${n - 1} more)`;
+  if (label) return label;
+  return `${n} recent ${n === 1 ? 'change' : 'changes'}`;
+}

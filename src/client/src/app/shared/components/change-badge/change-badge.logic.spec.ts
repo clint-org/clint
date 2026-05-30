@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { badgeTooltip, badgeTypeLabel } from './change-badge.logic';
+import { badgeTooltip, badgeTypeLabel, recentChangeLabel } from './change-badge.logic';
 
 describe('badgeTypeLabel', () => {
   it('returns null for a null type', () => {
@@ -31,6 +31,23 @@ describe('badgeTooltip', () => {
     expect(badgeTooltip(2, 'date_moved')).toBe('Recent change: Date moved (+1 other change)');
   });
   it('counts multiple additional changes (plural)', () => {
-    expect(badgeTooltip(3, 'status_changed')).toBe('Recent change: Status changed (+2 other changes)');
+    expect(badgeTooltip(3, 'status_changed')).toBe(
+      'Recent change: Status changed (+2 other changes)'
+    );
+  });
+});
+
+describe('recentChangeLabel', () => {
+  it('prefers the type label when there is a single change', () => {
+    expect(recentChangeLabel(1, 'date_moved')).toBe('Date moved');
+  });
+  it('appends a "+N more" suffix when there are several changes of a known type', () => {
+    expect(recentChangeLabel(3, 'date_moved')).toBe('Date moved (+2 more)');
+  });
+  it('falls back to a plain count when type is null (singular)', () => {
+    expect(recentChangeLabel(1, null)).toBe('1 recent change');
+  });
+  it('falls back to a plain count when type is null (plural)', () => {
+    expect(recentChangeLabel(4, null)).toBe('4 recent changes');
   });
 });

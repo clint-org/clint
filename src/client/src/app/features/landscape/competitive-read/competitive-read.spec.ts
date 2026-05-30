@@ -947,7 +947,7 @@ describe('buildLandscapeRead', () => {
               indications: [],
               intelligence_count: 0,
               has_recent_activity: true,
-              recent_changes_count: 0,
+              recent_changes_count: 1,
               most_recent_change_type: null,
             },
           ],
