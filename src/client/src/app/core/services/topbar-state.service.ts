@@ -24,13 +24,6 @@ export interface TopbarAction {
   callback: () => void;
 }
 
-export interface TopbarSubTab {
-  label: string;
-  value: string;
-  active: boolean;
-  tooltip?: string;
-}
-
 @Injectable({ providedIn: 'root' })
 export class TopbarStateService {
   /** Page title shown in topbar for list pages (e.g., "Events", "Companies"). */
@@ -48,12 +41,6 @@ export class TopbarStateService {
   /** Action buttons rendered in the topbar-actions area. */
   readonly actions = signal<TopbarAction[]>([]);
 
-  /** Dimension sub-tabs rendered after the main section tabs (e.g., Bullseye dimensions, Density Matrix groupings). */
-  readonly subTabs = signal<TopbarSubTab[]>([]);
-
-  /** Callback invoked when a sub-tab is clicked. Set by the feature that owns the sub-tabs. */
-  readonly onSubTabClick = signal<((value: string) => void) | null>(null);
-
   /** Reset all page-specific state (call from page OnDestroy). */
   clear(): void {
     this.title.set('');
@@ -61,7 +48,5 @@ export class TopbarStateService {
     this.entityTitle.set('');
     this.recordCount.set('');
     this.actions.set([]);
-    this.subTabs.set([]);
-    this.onSubTabClick.set(null);
   }
 }

@@ -260,23 +260,6 @@ export interface TopbarTab {
                 </div>
               }
             </div>
-            @if (subTabs().length) {
-              <div class="topbar-divider" aria-hidden="true"></div>
-              <div role="tablist" class="flex items-center" aria-label="View dimension">
-                @for (sub of subTabs(); track sub.value) {
-                  <button
-                    role="tab"
-                    [attr.aria-selected]="sub.active"
-                    [class]="sub.active ? 'topbar-subtab active' : 'topbar-subtab'"
-                    [pTooltip]="sub.tooltip ?? ''"
-                    tooltipPosition="bottom"
-                    (click)="onSubTabClick(sub.value)"
-                  >
-                    {{ sub.label }}
-                  </button>
-                }
-              </div>
-            }
           }
           @case ('list') {
             <div class="topbar-divider" aria-hidden="true"></div>
@@ -693,38 +676,6 @@ export interface TopbarTab {
         border-radius: 2px;
       }
 
-      .topbar-subtab {
-        font-size: 10px;
-        padding: 3px 8px;
-        cursor: pointer;
-        border-radius: 4px;
-        color: #64748b;
-        background: none;
-        border: 1px solid transparent;
-        transition:
-          color 120ms ease-out,
-          background 120ms ease-out;
-        white-space: nowrap;
-        margin-right: 2px;
-      }
-
-      .topbar-subtab:hover {
-        color: #0f172a;
-        background: #f1f5f9;
-      }
-
-      .topbar-subtab.active {
-        color: var(--brand-600);
-        background: rgb(from var(--brand-600) r g b / 0.08);
-        border-color: rgb(from var(--brand-600) r g b / 0.2);
-        font-weight: 500;
-      }
-
-      .topbar-subtab:focus-visible {
-        outline: 2px solid var(--brand-600);
-        outline-offset: 2px;
-      }
-
       .topbar-list-icon {
         font-size: 11px;
         color: #94a3b8;
@@ -880,7 +831,6 @@ export class ContextualTopbarComponent {
   // ---- Tabbed section mode ----
   readonly sectionLabel = input<string>('');
   readonly tabs = input<TopbarTab[]>([]);
-  readonly subTabs = input<TopbarTab[]>([]);
 
   // ---- List mode ----
   readonly listTitle = input<string>('');
@@ -899,7 +849,6 @@ export class ContextualTopbarComponent {
 
   // ---- Outputs ----
   readonly tabClick = output<string>();
-  readonly subTabClick = output<string>();
   readonly backClick = output<void>();
   readonly tenantChange = output<string>();
   readonly spaceChange = output<string>();
@@ -985,10 +934,6 @@ export class ContextualTopbarComponent {
 
   onTimelineHintDismiss(): void {
     this.timelineHintDismiss.emit();
-  }
-
-  onSubTabClick(value: string): void {
-    this.subTabClick.emit(value);
   }
 
   onBackClick(): void {

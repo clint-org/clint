@@ -89,7 +89,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [hasSpace]="!!spaceId()"
           [sectionLabel]="sectionLabel()"
           [tabs]="sectionTabs()"
-          [subTabs]="featureSubTabs()"
           [listTitle]="topbarListTitle()"
           [recordCount]="topbarState.recordCount()"
           [backLabel]="topbarBackLabel()"
@@ -99,7 +98,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [tenantLogoUrl]="currentTenantLogoUrl()"
           [timelineHintVisible]="onboardingTooltip.visible()"
           (tabClick)="onSectionTabClick($event)"
-          (subTabClick)="onSubTabClick($event)"
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
@@ -531,9 +529,6 @@ export class AppShellComponent implements OnInit {
     }
   });
 
-  // Sub-tabs pushed by feature pages (e.g., Bullseye dimensions, Density Matrix groupings)
-  readonly featureSubTabs = this.topbarState.subTabs;
-
   // Topbar metadata for list pages
   readonly topbarListTitle = computed(() => {
     const route = this.activeSpaceRoute();
@@ -670,10 +665,6 @@ export class AppShellComponent implements OnInit {
         this.navigateToSpaceRoute(`manage/${tab}`);
         break;
     }
-  }
-
-  onSubTabClick(value: string): void {
-    this.topbarState.onSubTabClick()?.call(null, value);
   }
 
   onBackClick(): void {

@@ -97,50 +97,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     }
   });
 
-  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Density Matrix views. */
-  private readonly subTabEffect = effect(() => {
-    const mode = this.viewMode();
-    if (mode === 'bullseye') {
-      const grouping = this.state.spokeGrouping();
-      this.topbarState.subTabs.set([
-        {
-          label: 'Company',
-          value: 'company',
-          active: grouping === 'company',
-          tooltip: 'Spokes grouped by company',
-        },
-        {
-          label: 'Indication',
-          value: 'indication',
-          active: grouping === 'indication',
-          tooltip: 'Spokes grouped by indication',
-        },
-        {
-          label: 'MOA',
-          value: 'moa',
-          active: grouping === 'moa',
-          tooltip: 'Spokes grouped by mechanism of action',
-        },
-        {
-          label: 'ROA',
-          value: 'roa',
-          active: grouping === 'roa',
-          tooltip: 'Spokes grouped by route of administration',
-        },
-        {
-          label: 'Asset',
-          value: 'asset',
-          active: grouping === 'asset',
-          tooltip: 'Each asset as its own spoke',
-        },
-      ]);
-    } else {
-      // Density Matrix sub-tabs removed: sidebar GROUP BY in
-      // DensityControlsPanelComponent replaces the top-bar tabs.
-      this.topbarState.subTabs.set([]);
-    }
-  });
-
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('indication');
   readonly entityId = signal<string | null>(null);
@@ -180,15 +136,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // Deep-link query params override restored session state
     // (e.g. bullseye "Open in Timeline" links).
     this.applyQueryParamFilters();
-
-    // Sub-tab click handler: bullseye updates spokeGrouping signal directly
-    // (no navigation). Density Matrix sub-tabs removed (sidebar GROUP BY
-    // handles navigation now).
-    this.topbarState.onSubTabClick.set((value: string) => {
-      if (this.viewMode() === 'bullseye') {
-        this.state.spokeGrouping.set(value as SpokeGrouping);
-      }
-    });
 
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
       this.extractRouteParams();
