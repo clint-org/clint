@@ -17,7 +17,7 @@ import { MessageModule } from 'primeng/message';
 import { MarkerType } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerTypeFormComponent } from './marker-type-form.component';
-import { ColorSwatchComponent } from '../../../shared/components/color-swatch.component';
+import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
@@ -39,7 +39,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     MessageModule,
     RouterLink,
     MarkerTypeFormComponent,
-    ColorSwatchComponent,
+    MarkerIconComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
