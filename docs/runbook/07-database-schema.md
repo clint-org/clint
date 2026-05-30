@@ -890,4 +890,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260528130400_marker_change_payload_full_context.sql`
 - `20260530131948_unified_recent_change_indicator.sql`
 - `20260530140000_drop_marker_type_icon.sql`
+- `20260530210311_add_change_event_navigation.sql`
 <!-- /AUTO-GEN:DRIFT -->
