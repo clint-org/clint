@@ -30,6 +30,7 @@ export interface Catalyst {
    */
   trial_recent_changes_count?: number;
   trial_most_recent_change_type?: string | null;
+  trial_most_recent_change_event_id?: string | null;
 }
 
 /**

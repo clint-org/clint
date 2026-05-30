@@ -214,6 +214,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       if (eventId && this.selectedItem()?.id !== eventId) {
         await this.openByEventId(eventId);
       }
+      const detectedId = params.get('detectedId');
+      if (detectedId && this.selectedItem()?.id !== detectedId) {
+        await this.openByDetectedId(detectedId);
+      }
     });
   }
 
@@ -342,6 +346,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         entity_name: detail.entity_name,
         entity_id: detail.entity_id,
         company_name: detail.company_name,
+        company_id: detail.company_id,
+        asset_id: detail.asset_id,
         tags: detail.tags,
         has_thread: !!detail.thread,
         thread_id: detail.thread_id,
@@ -355,6 +361,32 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         company_logo_url: null,
       });
       this.selectedDetail.set(detail);
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Could not load event.');
+    } finally {
+      this.detailLoading.set(false);
+    }
+  }
+
+  /**
+   * Open the detail pane for a detected change event by its trial_change_events
+   * id. Unlike openByEventId (analyst events via get_event_detail), detected
+   * rows render entirely from the FeedItem payload, so we fetch the single
+   * feed row and select it. Used by the ?detectedId deep-link from the
+   * recent-change dot.
+   */
+  async openByDetectedId(changeEventId: string): Promise<void> {
+    if (this.selectedItem()?.id === changeEventId) return;
+    this.detailLoading.set(true);
+    this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
+    try {
+      const item = await this.eventService.getDetectedEvent(this.spaceId, changeEventId);
+      if (item) {
+        this.selectedItem.set(item);
+      } else {
+        this.error.set('Could not find that change event.');
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not load event.');
     } finally {
@@ -407,6 +439,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         entity_id:
           detail.catalyst.trial_id ?? detail.catalyst.asset_id ?? detail.catalyst.company_id,
         company_name: detail.catalyst.company_name,
+        company_id: detail.catalyst.company_id,
+        asset_id: detail.catalyst.asset_id,
         tags: [],
         has_thread: false,
         thread_id: null,

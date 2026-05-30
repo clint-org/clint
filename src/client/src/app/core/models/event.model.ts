@@ -73,6 +73,8 @@ export interface FeedItem {
   entity_name: string;
   entity_id: string | null;
   company_name: string | null;
+  company_id: string | null;
+  asset_id: string | null;
   tags: string[];
   has_thread: boolean;
   thread_id: string | null;

@@ -65,6 +65,18 @@ export class EventService {
     );
   }
 
+  async getDetectedEvent(spaceId: string, changeEventId: string): Promise<FeedItem | null> {
+    const { data } = await this.supabase.client
+      .rpc('get_events_page_data', {
+        p_space_id: spaceId,
+        p_change_event_id: changeEventId,
+        p_limit: 1,
+      })
+      .throwOnError();
+    const result = data as { items: FeedItem[]; total: number } | null;
+    return result?.items?.[0] ?? null;
+  }
+
   async getSpaceTags(spaceId: string): Promise<string[]> {
     return this.cache.get(
       'get_space_tags',

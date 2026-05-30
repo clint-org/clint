@@ -47,6 +47,7 @@ export interface Trial {
   // Change-feed badge fields (from get_dashboard_data)
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
+  most_recent_change_event_id?: string | null;
 }
 
 export interface TrialNote {

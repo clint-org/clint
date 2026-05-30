@@ -93,6 +93,7 @@ export interface BullseyeTrial {
    */
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
+  most_recent_change_event_id?: string | null;
 }
 
 export interface BullseyeMarker {
@@ -123,6 +124,7 @@ export interface BullseyeAsset {
   has_recent_activity: boolean;
   recent_changes_count: number;
   most_recent_change_type: string | null;
+  most_recent_change_event_id: string | null;
 }
 
 export interface BullseyeSpoke {
