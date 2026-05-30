@@ -22,17 +22,12 @@
         }
       </div>
 
-      @if (asset.has_recent_activity && asset.latest_event_type) {
+      @if (asset.has_recent_activity) {
         <div
           class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700"
         >
           <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
-          <span>{{ asset.latest_event_type }}</span>
-          @if (asset.latest_event_date) {
-            <span class="font-normal text-slate-500">{{
-              asset.latest_event_date | date: 'mediumDate'
-            }}</span>
-          }
+          <span>{{ recentChangeLabel(asset) }}</span>
         </div>
       }
 

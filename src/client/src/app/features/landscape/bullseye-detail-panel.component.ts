@@ -26,6 +26,7 @@ import {
   IntelligenceEntityType,
 } from '../../core/models/primary-intelligence.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { badgeTypeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
@@ -75,6 +76,14 @@ export class BullseyeDetailPanelComponent {
 
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
+  }
+
+  protected recentChangeLabel(a: BullseyeAsset): string {
+    const n = a.recent_changes_count ?? 0;
+    const label = badgeTypeLabel(a.most_recent_change_type ?? null);
+    if (label && n > 1) return `${label} (+${n - 1} more)`;
+    if (label) return label;
+    return `${n} recent ${n === 1 ? 'change' : 'changes'}`;
   }
   readonly ringHighlightToggle = output<RingPhase | null>();
   readonly clearSelection = output<void>();

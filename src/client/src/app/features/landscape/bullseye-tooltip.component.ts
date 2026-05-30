@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { DatePipe } from '@angular/common';
 
 import { BullseyeAsset } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { badgeTypeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 @Component({
   selector: 'app-bullseye-tooltip',
-  imports: [DatePipe],
+  imports: [],
   animations: [fadeTooltipAnimation],
   template: `
     @if (product()) {
@@ -30,12 +30,9 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
         <div class="text-slate-300">
           {{ p.trials.length }} {{ p.trials.length === 1 ? 'trial' : 'trials' }}
         </div>
-        @if (p.has_recent_activity && p.latest_event_type) {
+        @if (p.has_recent_activity) {
           <div class="text-amber-300 font-mono mt-1">
-            {{ p.latest_event_type }}
-            @if (p.latest_event_date) {
-              -- {{ p.latest_event_date | date: 'mediumDate' }}
-            }
+            {{ recentChangeLabel(p) }}
           </div>
         }
         @if (p.intelligence_count > 0) {
@@ -72,5 +69,13 @@ export class BullseyeTooltipComponent {
 
   protected phaseLabel(p: string): string {
     return phaseShortLabel(p);
+  }
+
+  protected recentChangeLabel(p: BullseyeAsset): string {
+    const n = p.recent_changes_count ?? 0;
+    const label = badgeTypeLabel(p.most_recent_change_type ?? null);
+    if (label && n > 1) return `${label} (+${n - 1} more)`;
+    if (label) return label;
+    return `${n} recent ${n === 1 ? 'change' : 'changes'}`;
   }
 }

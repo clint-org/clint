@@ -122,8 +122,8 @@ export interface BullseyeAsset {
   indications: { id: string; name: string; abbreviation: string | null }[];
   intelligence_count: number;
   has_recent_activity: boolean;
-  latest_event_date: string | null;
-  latest_event_type: string | null;
+  recent_changes_count: number;
+  most_recent_change_type: string | null;
 }
 
 export interface BullseyeSpoke {
