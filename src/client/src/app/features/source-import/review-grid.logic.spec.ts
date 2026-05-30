@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason } from './review-grid.logic';
 
 describe('entityState', () => {
-  it('is existing when the entity has a match', () => {
-    expect(entityState({ match: 'abc' })).toBe('existing');
+  it('is existing when match.kind is existing', () => {
+    expect(entityState({ match: { kind: 'existing', id: 'id-1' } })).toBe('existing');
   });
   it('is existing when the entity has an existing_id', () => {
     expect(entityState({ existing_id: 'id-1' })).toBe('existing');
+  });
+  it('is new when match.kind is new (the match object is always present)', () => {
+    expect(entityState({ match: { kind: 'new', name: 'Foo' } })).toBe('new');
   });
   it('is new when neither match nor existing_id is present', () => {
     expect(entityState({ name: 'Foo' })).toBe('new');
@@ -21,6 +24,14 @@ describe('deriveTrialFlags', () => {
   it('does not flag a trial that has asset_ref', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0 });
     expect(flags.some((f) => f.id === 'no-asset')).toBe(false);
+  });
+  it('does not flag no-asset when the trial matched an existing record', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', match: { kind: 'existing', id: 'x' } });
+    expect(flags.some((f) => f.id === 'no-asset')).toBe(false);
+  });
+  it('flags no-asset when match.kind is new and there is no asset_ref', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', match: { kind: 'new' } });
+    expect(flags).toContainEqual({ id: 'no-asset', tier: 'blocking', label: 'No asset' });
   });
   it('flags missing indication as attention', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0 });

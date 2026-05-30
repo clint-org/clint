@@ -12,12 +12,26 @@ export interface ReviewFlag {
 
 type Entity = Record<string, unknown>;
 
-export function entityState(entity: Entity): EntityState {
-  return entity['match'] || entity['existing_id'] ? 'existing' : 'new';
+// The AI parser stamps every entity with a `match` object whose `kind` is
+// 'new' or 'existing' (see ReviewPageComponent.isNew). An entity counts as
+// existing only when match.kind === 'existing'; a bare existing_id is treated
+// the same way. Note: `match` is ALWAYS a truthy object, so never test it for
+// truthiness.
+function isExistingMatch(entity: Entity): boolean {
+  const match = entity['match'] as { kind?: string } | undefined;
+  return match?.kind === 'existing' || entity['existing_id'] != null;
 }
 
+export function entityState(entity: Entity): EntityState {
+  return isExistingMatch(entity) ? 'existing' : 'new';
+}
+
+// Mirrors ReviewPageComponent.trialMissingAsset: a trial that resolved to an
+// existing record is never "missing an asset"; otherwise it must carry an
+// asset_ref.
 function trialMissingAsset(trial: Entity): boolean {
-  return trial['asset_ref'] == null && trial['existing_id'] == null && trial['asset_match'] == null;
+  if (isExistingMatch(trial)) return false;
+  return trial['asset_ref'] == null;
 }
 
 function isObservational(trial: Entity): boolean {
