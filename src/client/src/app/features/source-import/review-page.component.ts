@@ -49,14 +49,6 @@ const ENTITY_LABELS: Record<EntityType, string> = {
   events: 'Events',
 };
 
-const ENTITY_SHORT: Record<EntityType, string> = {
-  companies: 'C',
-  assets: 'A',
-  trials: 'T',
-  markers: 'M',
-  events: 'E',
-};
-
 const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'markers', 'events'];
 
 interface FieldEdit {
@@ -1024,17 +1016,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const p = this.proposal()?.proposals;
     if (!p) return 0;
     return ENTITY_ORDER.reduce((sum, t) => sum + (p[t]?.length ?? 0), 0);
-  });
-
-  readonly selectionSummary = computed(() => {
-    const p = this.proposal()?.proposals;
-    const sel = this.selections();
-    if (!p) return '';
-    return ENTITY_ORDER.map((type) => {
-      const items = p[type] ?? [];
-      const count = items.filter((_, i) => sel[`${type}_${i}`] !== false).length;
-      return `${count}${ENTITY_SHORT[type]}`;
-    }).join('/');
   });
 
   readonly canConfirm = computed(() => {
