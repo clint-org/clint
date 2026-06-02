@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { MessageService, TreeNode } from 'primeng/api';
+import { TreeTableModule } from 'primeng/treetable';
 import { Checkbox } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -25,6 +26,17 @@ import {
   type FuzzyAlternate,
   SourceImportService,
 } from './source-import.service';
+import {
+  entityState,
+  deriveTrialFlags,
+  deriveAssetFlags,
+  duplicateTrialIndexes,
+  deriveCtgovFlag,
+  deriveFuzzyFlag,
+  readableSummary,
+  blockingReason,
+  type ReviewFlag,
+} from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 
 type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
@@ -35,14 +47,6 @@ const ENTITY_LABELS: Record<EntityType, string> = {
   trials: 'Trials',
   markers: 'Markers',
   events: 'Events',
-};
-
-const ENTITY_SHORT: Record<EntityType, string> = {
-  companies: 'C',
-  assets: 'A',
-  trials: 'T',
-  markers: 'M',
-  events: 'E',
 };
 
 const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'markers', 'events'];
@@ -77,9 +81,24 @@ interface HierarchicalTree {
   orphanEvents: number[];
 }
 
+interface GridRow {
+  key: string;
+  type: EntityType;
+  idx: number;
+  kind: 'company' | 'asset' | 'trial';
+  name: string;
+  state: 'new' | 'existing';
+  phase: string | null;
+  status: string | null;
+  moaRoa: string;
+  indication: string | null;
+  flags: ReviewFlag[];
+  hasDetail: boolean;
+}
+
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule],
+  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -552,6 +571,140 @@ interface HierarchicalTree {
             </div>
           </ng-template>
 
+          <!-- Per-row review detail for the grouped grid -->
+          <ng-template #rowDetail let-type="type" let-idx="idx" let-erk="key">
+            @let rdAlts = fuzzyAlternatesFor(type, idx);
+            @if (rdAlts.length > 0) {
+              <div class="mt-1 flex flex-wrap gap-1">
+                @let rdOverride = getMatchOverride(erk);
+                <button
+                  class="rounded px-1.5 py-0.5 text-[10px]"
+                  [class.bg-brand-100]="!rdOverride"
+                  [class.text-brand-700]="!rdOverride"
+                  [class.bg-slate-100]="!!rdOverride"
+                  [class.text-slate-500]="!!rdOverride"
+                  (click)="clearMatchOverride(erk)"
+                >
+                  LLM pick
+                </button>
+                @for (alt of rdAlts; track alt.id) {
+                  <button
+                    class="rounded px-1.5 py-0.5 text-[10px]"
+                    [class.bg-brand-100]="rdOverride === alt.id"
+                    [class.text-brand-700]="rdOverride === alt.id"
+                    [class.bg-slate-100]="rdOverride !== alt.id"
+                    [class.text-slate-500]="rdOverride !== alt.id"
+                    (click)="setMatchOverride(erk, alt.id)"
+                    [pTooltip]="'Score: ' + alt.score.toFixed(2)"
+                    tooltipPosition="top"
+                  >
+                    {{ alt.name }}
+                  </button>
+                }
+                <button
+                  class="rounded px-1.5 py-0.5 text-[10px]"
+                  [class.bg-brand-100]="rdOverride === '__new__'"
+                  [class.text-brand-700]="rdOverride === '__new__'"
+                  [class.bg-slate-100]="rdOverride !== '__new__'"
+                  [class.text-slate-500]="rdOverride !== '__new__'"
+                  (click)="setMatchOverride(erk, '__new__')"
+                >
+                  Create new
+                </button>
+              </div>
+            }
+
+            @if (type === 'trials') {
+              @let rdCtgovStatus = trialCtgovStatus(idx);
+              @if (rdCtgovStatus !== 'skipped') {
+                <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                      >ClinicalTrials.gov</span
+                    >
+                    @if (rdCtgovStatus === 'matched') {
+                      @let rdCandidates = ctgovCandidatesFor(idx);
+                      <span
+                        class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
+                        >{{ rdCandidates.length }}
+                        {{ rdCandidates.length === 1 ? 'match' : 'matches' }}</span
+                      >
+                    } @else if (rdCtgovStatus === 'no_matches') {
+                      <span
+                        class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
+                        >No matches</span
+                      >
+                    } @else if (rdCtgovStatus === 'failed') {
+                      <span
+                        class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
+                        >Lookup failed</span
+                      >
+                    }
+                  </div>
+
+                  @let rdCands = ctgovCandidatesFor(idx);
+                  @if (rdCands.length > 0) {
+                    <div class="mt-1.5 flex flex-col gap-1">
+                      @let rdCurrentNct = getTrialNctOverride(idx);
+                      @for (c of rdCands; track c.nct_id) {
+                        <label
+                          class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
+                          [class.bg-white]="rdCurrentNct === c.nct_id"
+                          [class.ring-1]="rdCurrentNct === c.nct_id"
+                          [class.ring-brand-300]="rdCurrentNct === c.nct_id"
+                        >
+                          <input
+                            type="radio"
+                            [name]="'nct_' + idx"
+                            [value]="c.nct_id"
+                            [checked]="rdCurrentNct === c.nct_id"
+                            (change)="setTrialNctOverride(idx, c.nct_id)"
+                            class="accent-brand-600"
+                          />
+                          <a
+                            [href]="ctgovUrl(c.nct_id)"
+                            target="_blank"
+                            rel="noopener"
+                            class="font-mono text-brand-600 hover:underline"
+                            (click)="$event.stopPropagation()"
+                            >{{ c.nct_id }}</a
+                          >
+                          <span class="truncate text-slate-500">{{ c.brief_title }}</span>
+                          <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
+                            >{{ c.phase }} / {{ c.status }}</span
+                          >
+                        </label>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (trialMissingAsset(entitiesOf('trials')[idx])) {
+                <p-message severity="warn" [closable]="false" styleClass="mt-1.5 w-full text-xs">
+                  Asset required: link this trial to an asset above.
+                </p-message>
+              }
+            }
+
+            @let rdFields = editableFields(type, idx);
+            @if (rdFields.length > 0) {
+              <div class="mt-1.5 flex flex-wrap gap-2">
+                @for (f of rdFields; track f.field) {
+                  <label class="flex items-center gap-1 text-[11px] text-slate-500">
+                    <span class="font-mono uppercase">{{ f.field }}:</span>
+                    <input
+                      type="text"
+                      class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
+                      [value]="getFieldEdit(erk, f.field) ?? f.value"
+                      (input)="onFieldEdit(erk, f.field, $event)"
+                    />
+                  </label>
+                }
+              </div>
+            }
+          </ng-template>
+
           <!-- CT.gov enrichment summary -->
           @let ctgovSummaryVal = ctgovSummary();
           @if (ctgovSummaryVal.status === 'matched') {
@@ -574,124 +727,124 @@ interface HierarchicalTree {
           <!-- Hierarchical tree view -->
           @let tree = hierarchicalTree();
 
-          @for (cn of tree.companies; track cn.companyIdx) {
-            <div class="mb-4 overflow-hidden rounded border border-slate-200 bg-white">
-              <!-- Company header -->
-              <div class="border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-                <ng-container
-                  [ngTemplateOutlet]="entityRow"
-                  [ngTemplateOutletContext]="{ type: 'companies', idx: cn.companyIdx }"
-                />
-              </div>
+          <div class="mb-3 inline-flex overflow-hidden rounded border border-slate-200 bg-white text-xs">
+            @for (opt of filterOptions; track opt.value) {
+              <button
+                type="button"
+                class="border-r border-slate-200 px-3 py-1.5 last:border-r-0"
+                [class.bg-brand-50]="gridFilter() === opt.value"
+                [class.text-brand-800]="gridFilter() === opt.value"
+                [class.font-semibold]="gridFilter() === opt.value"
+                [class.text-slate-500]="gridFilter() !== opt.value"
+                (click)="gridFilter.set(opt.value)"
+              >
+                {{ opt.label }}
+              </button>
+            }
+          </div>
 
-              <!-- Company body -->
-              @for (an of cn.assets; track an.assetIdx) {
-                <div class="border-b border-slate-100 last:border-b-0">
-                  <!-- Asset header -->
-                  <div class="py-2 pl-8 pr-4">
-                    <ng-container
-                      [ngTemplateOutlet]="entityRow"
-                      [ngTemplateOutletContext]="{ type: 'assets', idx: an.assetIdx }"
-                    />
-                  </div>
-
-                  <!-- Trials under this asset -->
-                  @for (tn of an.trials; track tn.trialIdx) {
-                    <div class="border-t border-slate-100">
-                      <div class="py-2 pl-14 pr-4">
-                        <ng-container
-                          [ngTemplateOutlet]="entityRow"
-                          [ngTemplateOutletContext]="{ type: 'trials', idx: tn.trialIdx }"
-                        />
-                      </div>
-
-                      @if (tn.markers.length > 0 || tn.events.length > 0) {
-                        <div class="pb-3 pl-14 pr-4">
-                          @if (tn.markers.length > 0) {
-                            <div
-                              class="pb-1 pt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                            >
-                              Markers
-                            </div>
-                            @for (mi of tn.markers; track mi) {
-                              <ng-container
-                                [ngTemplateOutlet]="entityRow"
-                                [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
-                              />
-                            }
-                          }
-                          @if (tn.events.length > 0) {
-                            <div
-                              class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                            >
-                              Events
-                            </div>
-                            @for (ei of tn.events; track ei) {
-                              <ng-container
-                                [ngTemplateOutlet]="entityRow"
-                                [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
-                              />
-                            }
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-
-                  <!-- Asset-level markers (not linked to any trial) -->
-                  @if (an.markers.length > 0) {
-                    <div class="border-t border-slate-100 pb-3 pl-8 pr-4">
-                      <div
-                        class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+          <p-treeTable [value]="filteredNodes()" dataKey="key" [scrollable]="true">
+            <ng-template pTemplate="header">
+              <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
+                <th class="w-10"></th>
+                <th>Entity</th>
+                <th>Type</th>
+                <th>Phase</th>
+                <th>Status</th>
+                <th>MOA / ROA</th>
+                <th>Indication</th>
+                <th>Source</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+              @let row = asGridRow(rowData);
+              <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
+                <td>
+                  <p-checkbox
+                    [ngModel]="isSelected(row.key)"
+                    (ngModelChange)="toggleSelection(row.key, $event)"
+                    [binary]="true"
+                    size="small"
+                  />
+                </td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <p-treeTableToggler [rowNode]="rowNode" />
+                    <span
+                      class="truncate"
+                      [class.font-mono]="row.kind === 'company'"
+                      [class.font-bold]="row.kind === 'company'"
+                      [class.uppercase]="row.kind === 'company'"
+                      [class.font-semibold]="row.kind === 'asset'"
+                      [class.text-brand-600]="row.kind === 'trial'"
+                      >{{ row.name }}</span
+                    >
+                    @if (row.state === 'existing') {
+                      <span
+                        class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                        >existing</span
                       >
-                        Asset-level markers
-                      </div>
-                      @for (mi of an.markers; track mi) {
-                        <ng-container
-                          [ngTemplateOutlet]="entityRow"
-                          [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
-                        />
-                      }
-                    </div>
-                  }
-
-                  <!-- Asset-level events -->
-                  @if (an.events.length > 0) {
-                    <div class="border-t border-slate-100 pb-3 pl-8 pr-4">
-                      <div
-                        class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
+                    }
+                    @for (f of row.flags; track f.id) {
+                      <span
+                        class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
+                        >{{ f.label }}</span
                       >
-                        Asset-level events
-                      </div>
-                      @for (ei of an.events; track ei) {
-                        <ng-container
-                          [ngTemplateOutlet]="entityRow"
-                          [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
-                        />
-                      }
-                    </div>
-                  }
-                </div>
-              }
-
-              <!-- Company-level events -->
-              @if (cn.events.length > 0) {
-                <div class="border-t border-slate-100 px-4 pb-3">
-                  <div
-                    class="pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                  >
-                    Company-level events
+                    }
+                    @if (row.hasDetail) {
+                      <button
+                        type="button"
+                        class="ml-auto text-slate-400 hover:text-brand-600"
+                        [attr.aria-expanded]="isDetailOpen(row.key)"
+                        (click)="toggleDetail(row.key)"
+                        pTooltip="Show review detail"
+                        tooltipPosition="top"
+                      >
+                        <i
+                          class="pi text-[10px]"
+                          [class.pi-chevron-down]="isDetailOpen(row.key)"
+                          [class.pi-chevron-right]="!isDetailOpen(row.key)"
+                        ></i>
+                      </button>
+                    }
                   </div>
-                  @for (ei of cn.events; track ei) {
-                    <ng-container
-                      [ngTemplateOutlet]="entityRow"
-                      [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
-                    />
+                </td>
+                <td class="font-mono text-[10px] uppercase text-slate-400">
+                  {{ row.kind === 'company' ? '' : row.kind }}
+                </td>
+                <td>
+                  @if (row.phase) {
+                    <span
+                      class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
+                      >{{ row.phase }}</span
+                    >
                   }
-                </div>
+                </td>
+                <td class="text-slate-500">{{ row.status }}</td>
+                <td class="text-slate-500">{{ row.moaRoa }}</td>
+                <td class="text-slate-500">{{ row.indication }}</td>
+                <td>
+                  @if (row.kind === 'trial') {
+                    <span
+                      class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                      >ct.gov</span
+                    >
+                  }
+                </td>
+              </tr>
+              @if (isDetailOpen(row.key)) {
+                <tr>
+                  <td></td>
+                  <td [attr.colspan]="7">
+                    <ng-container
+                      [ngTemplateOutlet]="rowDetail"
+                      [ngTemplateOutletContext]="{ type: row.type, idx: row.idx, key: row.key }"
+                    />
+                  </td>
+                </tr>
               }
-            </div>
-          }
+            </ng-template>
+          </p-treeTable>
 
           <!-- Orphaned markers (no trial_refs) -->
           @if (tree.orphanMarkers.length > 0) {
@@ -734,8 +887,11 @@ interface HierarchicalTree {
         class="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-3"
       >
         <span class="text-xs text-slate-500">
-          {{ selectedCount() }} of {{ totalCount() }} selected ({{ selectionSummary() }})
+          {{ selectedCount() }} of {{ totalCount() }} selected: {{ footerSummary() }}
         </span>
+        @if (blockingMessage(); as msg) {
+          <span class="text-xs text-amber-700">{{ msg }}</span>
+        }
 
         @if (commitError()) {
           <span class="text-xs text-red-600">{{ commitError() }}</span>
@@ -862,17 +1018,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return ENTITY_ORDER.reduce((sum, t) => sum + (p[t]?.length ?? 0), 0);
   });
 
-  readonly selectionSummary = computed(() => {
-    const p = this.proposal()?.proposals;
-    const sel = this.selections();
-    if (!p) return '';
-    return ENTITY_ORDER.map((type) => {
-      const items = p[type] ?? [];
-      const count = items.filter((_, i) => sel[`${type}_${i}`] !== false).length;
-      return `${count}${ENTITY_SHORT[type]}`;
-    }).join('/');
-  });
-
   readonly canConfirm = computed(() => {
     if (this.committing()) return false;
     if (this.selectedCount() === 0) return false;
@@ -881,11 +1026,44 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     if (!p) return false;
     const sel = this.selections();
     const trials = p.trials ?? [];
+    const dupes = duplicateTrialIndexes(trials);
     for (let i = 0; i < trials.length; i++) {
       if (sel[`trials_${i}`] === false) continue;
       if (this.trialMissingAsset(trials[i])) return false;
+      if (dupes.has(i)) return false;
     }
     return true;
+  });
+
+  protected readonly footerSummary = computed(() => {
+    const p = this.proposal()?.proposals;
+    const sel = this.selections();
+    const count = (type: EntityType) =>
+      (p?.[type] ?? []).filter((_, i) => sel[`${type}_${i}`] !== false).length;
+    return readableSummary({
+      companies: count('companies'),
+      assets: count('assets'),
+      trials: count('trials'),
+      markers: count('markers'),
+      events: count('events'),
+    });
+  });
+
+  protected readonly blockingMessage = computed(() => {
+    const p = this.proposal()?.proposals;
+    if (!p) return null;
+    const trials = p.trials ?? [];
+    const sel = this.selections();
+    const dupes = duplicateTrialIndexes(trials);
+    let noAsset = 0;
+    trials.forEach((t, idx) => {
+      if (sel[`trials_${idx}`] !== false && this.trialMissingAsset(t)) noAsset++;
+    });
+    let duplicates = 0;
+    dupes.forEach((idx) => {
+      if (sel[`trials_${idx}`] !== false) duplicates++;
+    });
+    return blockingReason({ noAsset, duplicates });
   });
 
   readonly hierarchicalTree = computed<HierarchicalTree>(() => {
@@ -979,6 +1157,123 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
     return { companies: companyNodes, orphanMarkers, orphanEvents };
   });
+
+  protected readonly openDetails = signal<Record<string, boolean>>({});
+  protected isDetailOpen(key: string): boolean {
+    return this.openDetails()[key] ?? false;
+  }
+  protected toggleDetail(key: string): void {
+    this.openDetails.update((o) => ({ ...o, [key]: !o[key] }));
+  }
+  protected hasBlockingFlag(row: GridRow): boolean {
+    return row.flags.some((f) => f.tier === 'blocking');
+  }
+  // PrimeNG TreeTable rowData is untyped; cast once so the template is type-checked.
+  protected asGridRow(rowData: unknown): GridRow {
+    return rowData as GridRow;
+  }
+
+  protected readonly gridNodes = computed<TreeNode[]>(() => {
+    const tree = this.hierarchicalTree();
+    const trials = this.entitiesOf('trials');
+    const dupes = duplicateTrialIndexes(trials);
+
+    const trialRow = (idx: number): TreeNode => {
+      const t = trials[idx];
+      const flags = [
+        ...deriveTrialFlags(t),
+        deriveCtgovFlag(this.ctgovCandidatesFor(idx).length),
+        deriveFuzzyFlag(this.fuzzyAlternatesFor('trials', idx).length),
+      ].filter((f): f is ReviewFlag => f !== null);
+      if (dupes.has(idx)) {
+        flags.unshift({ id: 'duplicate', tier: 'blocking', label: 'Duplicate in batch' });
+      }
+      const row: GridRow = {
+        key: this.entityKey('trials', idx),
+        type: 'trials',
+        idx,
+        kind: 'trial',
+        name: this.entityName('trials', idx),
+        state: entityState(t),
+        phase: this.trialPhase(idx),
+        status: this.trialStatus(idx),
+        moaRoa: '',
+        indication: (t['indication'] as string) ?? null,
+        flags,
+        hasDetail: flags.length > 0 || this.editableFields('trials', idx).length > 0,
+      };
+      return { key: row.key, data: row };
+    };
+
+    const assetRow = (an: { assetIdx: number; trials: { trialIdx: number }[] }): TreeNode => {
+      const idx = an.assetIdx;
+      const a = this.entitiesOf('assets')[idx];
+      const flags = [
+        ...deriveAssetFlags(a),
+        deriveFuzzyFlag(this.fuzzyAlternatesFor('assets', idx).length),
+      ].filter((f): f is ReviewFlag => f !== null);
+      const row: GridRow = {
+        key: this.entityKey('assets', idx),
+        type: 'assets',
+        idx,
+        kind: 'asset',
+        name: this.entityName('assets', idx),
+        state: entityState(a),
+        phase: null,
+        status: null,
+        moaRoa: [...this.assetMoas(idx), ...this.assetRoas(idx)].join(' / '),
+        indication: null,
+        flags,
+        hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
+      };
+      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx)) };
+    };
+
+    return tree.companies.map((cn) => {
+      const row: GridRow = {
+        key: this.entityKey('companies', cn.companyIdx),
+        type: 'companies',
+        idx: cn.companyIdx,
+        kind: 'company',
+        name: this.entityName('companies', cn.companyIdx),
+        state: entityState(this.entitiesOf('companies')[cn.companyIdx]),
+        phase: null,
+        status: null,
+        moaRoa: '',
+        indication: null,
+        flags: [],
+        hasDetail: false,
+      };
+      return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
+    });
+  });
+
+  protected readonly gridFilter = signal<'all' | 'flagged' | 'new'>('all');
+
+  protected readonly filteredNodes = computed<TreeNode[]>(() => {
+    const f = this.gridFilter();
+    if (f === 'all') return this.gridNodes();
+    const keep = (row: GridRow) =>
+      f === 'flagged' ? row.flags.length > 0 : row.state === 'new';
+    // Keep a parent if it or any descendant matches, so linkage context is preserved.
+    const filterNode = (node: TreeNode): TreeNode | null => {
+      const children = (node.children ?? [])
+        .map(filterNode)
+        .filter((n): n is TreeNode => n !== null);
+      const selfKeep = keep(node.data as GridRow);
+      if (!selfKeep && children.length === 0) return null;
+      return { ...node, children, expanded: true };
+    };
+    return this.gridNodes()
+      .map(filterNode)
+      .filter((n): n is TreeNode => n !== null);
+  });
+
+  protected readonly filterOptions = [
+    { value: 'all' as const, label: 'All' },
+    { value: 'flagged' as const, label: 'Needs review' },
+    { value: 'new' as const, label: 'New' },
+  ];
 
   readonly highlightedSourceText = computed(() => {
     const p = this.proposal();
@@ -1200,9 +1495,9 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   }
 
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
-    const match = entity['match'] as { kind: string } | undefined;
-    if (match?.kind === 'existing') return false;
-    return entity['asset_ref'] == null;
+    // Delegate to the pure logic module so the grid's no-asset flag and the
+    // commit gate share one definition (an existing_id match also counts).
+    return trialMissingAssetLogic(entity);
   }
 
   protected toggleSelection(key: string, value: boolean): void {
@@ -1273,8 +1568,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   protected isObservationalTrial(index: number): boolean {
     const entity = this.entitiesOf('trials')[index];
-    if (!entity) return false;
-    return entity['asset_ref'] == null;
+    return String(entity?.['study_type'] ?? '').toLowerCase().includes('observational');
   }
 
   protected nctIdFromEvidence(type: EntityType, index: number): string | null {

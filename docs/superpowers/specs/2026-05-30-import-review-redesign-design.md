@@ -105,6 +105,7 @@ Flag taxonomy (amber chip, plus an amber left rail on the row):
 | Attention | CT.gov needs pick | more than one `ctgov_candidates` entry | No |
 | Attention | Fuzzy name uncertain | `fuzzy_alternates` present for the entity | No |
 | Attention | No MOA/ROA | both `moa` and `roa` empty on an asset | No |
+| Attention | No indication | trial proposal has no `indication` value | No |
 | Attention | Observational trial | trial `study_type` indicates observational (replace the current `asset_ref == null` proxy in `isObservationalTrial`) | No |
 | Attention | Missing phase/status | `phase` or `status` empty on a trial | No |
 | Info | CT.gov lookup failed | `trialCtgovStatus === 'failed'` | No |
@@ -112,21 +113,33 @@ Flag taxonomy (amber chip, plus an amber left rail on the row):
 Blocking flags disable Confirm and are summarized in the footer. Attention and
 info flags never block; they draw the eye and expand to the relevant affordance.
 
-Indication, open decision: Indication is a first-class concept in this product
-(the `indications`, `asset_indications`, `trial_conditions`, and
-`condition_indication_map` tables, and the per-indication bullseye), but it is
-not part of an import proposal. For a new asset the analyst assigns
-`asset_indications` after import; trial-level indication derives from CT.gov
-conditions through `condition_indication_map`. So at review time there is no
-indication value on a proposal to validate. Two options:
+### Indication (in scope, already wired)
 
-- (a) Leave indication off the flag set. Recommended for v1: nothing to flag yet.
-- (b) Add an Attention flag on new assets meaning "no indication will be set,
-  assign one after import" as a forward reminder, since indication drives the
-  bullseye and an asset with none is invisible there.
+Indication is already part of the import pipeline, not a new capability. Each
+trial proposal object may carry an `indication` string. `commit_source_import`
+passes it through to `create_trial` (migration `20260528060000`, the
+`v_item->>'indication'` argument), and `create_trial` writes the full graph:
+`indications`, `conditions`, `condition_indication_map`, `trial_conditions`, and
+the program-level `asset_indications` row the bullseye joins on. The proposal
+also supports a top-level `new_indications[]` array. The review component's
+`editableFields()` skip list does not include `indication`, so today it already
+renders as an unlabeled generic text input buried in the always-open edit row,
+which is exactly the legibility problem this redesign fixes.
 
-Extending the importer to actually propose an indication per asset is a larger,
-separate change and is out of scope here.
+So indication is in scope here, as presentation, with no backend change:
+
+1. Surface indication as a first-class attribute on the trial (and the derived
+   asset program), read plus inline edit in the row-expand detail, the same
+   treatment as MOA/ROA. It reads from the value already in the proposal.
+2. Raise the "No indication" Attention flag above when a trial proposal has no
+   indication, because an asset with no indication does not appear in the
+   bullseye. This is a forward warning, not a blocker.
+
+Out of scope, Out of scope, the genuinely larger follow-up: suggesting an indication from
+CT.gov conditions at review time. `CtgovCandidate` currently carries only
+`nct_id`, `brief_title`, `score`, `status`, `phase`, no conditions payload, so
+suggestion would require the enrichment step to fetch and pass conditions. That
+is a separate change and does not block this redesign.
 
 Already handled elsewhere, kept off the per-row flag system: proposal-level
 `warnings[]` (banner at top), and `dropped` items (the collapsible "Dropped"
@@ -154,11 +167,12 @@ detail (CT.gov picker, fuzzy override, generic_name edit, missing-asset notice)
 renders in the TreeTable row-expansion slot, toggled by the chevron that appears
 only on rows with detail.
 
-Risk to validate in the plan with a short spike: TreeTable couples tree nesting
-and row expansion, and we want nesting for hierarchy plus a separate detail
-expansion. If those fight, fall back to PrimeNG `Table` with self-managed
-grouping rows and `rowexpansion`, keeping the same visual result. Decide during
-the plan, not now.
+Decision: TreeTable. The first implementation task is a thin spike confirming
+TreeTable can carry both the company/asset/trial nesting and a per-row detail
+expansion at once. The fallback, used only if that spike hits a hard blocker, is
+PrimeNG `Table` with self-managed grouping rows and `rowexpansion`, producing the
+same visual result. The spike resolves the mechanism before the bulk of the work,
+not the direction.
 
 Reuse: the existing helper methods (`assetMoas`, `assetRoas`, `trialPhase`,
 `trialStatus`, `isObservationalTrial`, `trialMissingAsset`, `trialCtgovStatus`,
