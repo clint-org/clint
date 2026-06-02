@@ -135,7 +135,7 @@ So indication is in scope here, as presentation, with no backend change:
    indication, because an asset with no indication does not appear in the
    bullseye. This is a forward warning, not a blocker.
 
-Out of scope, Out of scope, the genuinely larger follow-up: suggesting an indication from
+Out of scope, the genuinely larger follow-up: suggesting an indication from
 CT.gov conditions at review time. `CtgovCandidate` currently carries only
 `nct_id`, `brief_title`, `score`, `status`, `phase`, no conditions payload, so
 suggestion would require the enrichment step to fetch and pass conditions. That
