@@ -35,6 +35,7 @@ import {
   deriveFuzzyFlag,
   readableSummary,
   blockingReason,
+  trialMissingAsset as trialMissingAssetLogic,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
