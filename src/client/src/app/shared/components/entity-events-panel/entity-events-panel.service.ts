@@ -48,7 +48,8 @@ export class EntityEventsPanelService {
           p_offset: 0,
         });
         if (error) throw new Error(error.message);
-        return (data as EntityEventRow[]) ?? [];
+        const result = data as { items: EntityEventRow[]; total: number } | null;
+        return result?.items ?? [];
       },
     });
   }
