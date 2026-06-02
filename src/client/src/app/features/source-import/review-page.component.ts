@@ -744,7 +744,7 @@ interface GridRow {
             }
           </div>
 
-          <p-treeTable [value]="filteredNodes()" dataKey="key" [scrollable]="true">
+          <p-treeTable [value]="filteredNodes()" dataKey="key">
             <ng-template pTemplate="header">
               <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                 <th class="w-10"></th>
