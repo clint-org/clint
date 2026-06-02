@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   OnInit,
@@ -76,17 +77,19 @@ import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel
                 (sortChange)="onSortChange($event)"
               />
             </div>
-            <div class="landscape-panel-wrap">
-              <app-density-matrix-detail-panel
-                [bubble]="selectedBubble()"
-                [countUnit]="state.countUnit()"
-                [totalBubbles]="data.bubbles.length"
-                [grouping]="state.densityGrouping()"
-                (clearSelection)="selectedBubble.set(null)"
-                (openAsset)="onOpenAsset($event)"
-                (openInBullseye)="onOpenInBullseye()"
-              />
-            </div>
+            @if (showPanel()) {
+              <div class="landscape-panel-wrap" @slidePanel>
+                <app-density-matrix-detail-panel
+                  [bubble]="selectedBubble()"
+                  [countUnit]="state.countUnit()"
+                  [totalBubbles]="data.bubbles.length"
+                  [grouping]="state.densityGrouping()"
+                  (clearSelection)="selectedBubble.set(null)"
+                  (openAsset)="onOpenAsset($event)"
+                  (openInBullseye)="onOpenInBullseye()"
+                />
+              </div>
+            }
           </div>
         </div>
       } @else if (data) {
@@ -111,6 +114,14 @@ export class DensityMatrixViewComponent implements OnInit {
   readonly selectedBubble = signal<DensityBubble | null>(null);
   readonly sortField = signal<SortField>('total');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  /**
+   * The detail panel is an absolute-positioned overlay that covers the
+   * right ~340px of the matrix (including the APP/LAUNCHED columns). Only
+   * mount it once a row is selected so the full phase span — Launched
+   * included — is visible on first visit and whenever the panel is closed.
+   */
+  protected readonly showPanel = computed(() => this.selectedBubble() !== null);
 
   constructor() {
     // Clear selection when grouping, count unit, or filters change
