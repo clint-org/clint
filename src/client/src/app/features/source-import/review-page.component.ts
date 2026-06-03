@@ -36,6 +36,8 @@ import {
   readableSummary,
   blockingReason,
   trialMissingAsset as trialMissingAssetLogic,
+  resolveTrialAssetIndex,
+  orphanTrialIndexes,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
@@ -78,6 +80,7 @@ interface TrialNode {
 
 interface HierarchicalTree {
   companies: CompanyNode[];
+  orphanTrials: number[];
   orphanMarkers: number[];
   orphanEvents: number[];
 }
@@ -847,6 +850,23 @@ interface GridRow {
             </ng-template>
           </p-treeTable>
 
+          <!-- Orphaned trials (asset_ref does not resolve to an asset) -->
+          @if (tree.orphanTrials.length > 0) {
+            <section class="mb-4">
+              <h2 class="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                Unlinked trials ({{ tree.orphanTrials.length }})
+              </h2>
+              <div class="rounded border border-amber-200 bg-white px-4 py-2">
+                @for (ti of tree.orphanTrials; track ti) {
+                  <ng-container
+                    [ngTemplateOutlet]="entityRow"
+                    [ngTemplateOutletContext]="{ type: 'trials', idx: ti }"
+                  />
+                }
+              </div>
+            </section>
+          }
+
           <!-- Orphaned markers (no trial_refs) -->
           @if (tree.orphanMarkers.length > 0) {
             <section class="mb-4">
@@ -1069,7 +1089,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   readonly hierarchicalTree = computed<HierarchicalTree>(() => {
     const p = this.proposal();
-    if (!p) return { companies: [], orphanMarkers: [], orphanEvents: [] };
+    if (!p) return { companies: [], orphanTrials: [], orphanMarkers: [], orphanEvents: [] };
 
     const companies = p.proposals.companies ?? [];
     const assets = p.proposals.assets ?? [];
@@ -1115,8 +1135,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
     const assetTrialsMap = new Map<number, number[]>();
     for (let ti = 0; ti < trials.length; ti++) {
-      const ar = trials[ti]['asset_ref'] as number | null | undefined;
-      if (ar != null && ar < assets.length) {
+      const ar = resolveTrialAssetIndex(trials[ti], assets.length);
+      if (ar !== null) {
         if (!assetTrialsMap.has(ar)) assetTrialsMap.set(ar, []);
         assetTrialsMap.get(ar)!.push(ti);
       }
@@ -1156,7 +1176,12 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       if (!assignedEvents.has(ei)) orphanEvents.push(ei);
     }
 
-    return { companies: companyNodes, orphanMarkers, orphanEvents };
+    // Trials whose asset_ref does not resolve to an asset have no place in the
+    // company -> asset -> trial tree. Surface them so they cannot vanish while
+    // still counting toward the "(N trials)" header (the master-protocol case).
+    const orphanTrials = orphanTrialIndexes(trials, assets.length);
+
+    return { companies: companyNodes, orphanTrials, orphanMarkers, orphanEvents };
   });
 
   protected readonly openDetails = signal<Record<string, boolean>>({});

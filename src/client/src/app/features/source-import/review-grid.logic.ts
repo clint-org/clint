@@ -35,6 +35,32 @@ export function trialMissingAsset(trial: Entity): boolean {
   return trial['asset_ref'] == null;
 }
 
+// Resolves a trial's `asset_ref` to a valid parent-asset index, or null when
+// the trial cannot be nested (no ref, non-integer, negative, or out of range).
+// The grouped grid nests trials under assets by this index; trials that resolve
+// to null have no place in the company -> asset -> trial tree and are surfaced
+// in the "Unlinked trials" section instead of silently disappearing. This is
+// the single source of truth: the tree builder and orphanTrialIndexes both
+// delegate here so nesting and orphan-detection cannot disagree.
+export function resolveTrialAssetIndex(trial: Entity, assetCount: number): number | null {
+  const ar = trial['asset_ref'];
+  if (typeof ar !== 'number' || !Number.isInteger(ar) || ar < 0 || ar >= assetCount) {
+    return null;
+  }
+  return ar;
+}
+
+// Indices of trials that do not nest under any asset (the complement of the
+// nesting predicate above). Existing-match trials with no asset_ref still count
+// as orphans for display, but deriveTrialFlags only blocks the new ones.
+export function orphanTrialIndexes(trials: Entity[], assetCount: number): number[] {
+  const out: number[] = [];
+  trials.forEach((t, i) => {
+    if (resolveTrialAssetIndex(t, assetCount) === null) out.push(i);
+  });
+  return out;
+}
+
 function isObservational(trial: Entity): boolean {
   const t = String(trial['study_type'] ?? '').toLowerCase();
   return t.includes('observational');
