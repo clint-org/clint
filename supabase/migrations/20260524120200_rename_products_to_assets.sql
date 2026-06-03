@@ -148,10 +148,11 @@ update public.material_links set entity_type = 'asset' where entity_type = 'prod
 -- =============================================================================
 -- 8. update palette kind 'product' -> 'asset'
 -- =============================================================================
-update public.palette_pinned set kind = 'asset' where kind = 'product';
-update public.palette_recents set kind = 'asset' where kind = 'product';
-
--- update CHECK constraints on palette tables
+-- Widen the CHECK constraints BEFORE migrating the data. The original
+-- constraints did not permit 'asset', so updating rows first fails with a
+-- palette_*_kind_check violation on any environment that holds real 'product'
+-- rows (prod did; empty dev/local did not). This mirrors the constraint-first
+-- ordering already used for primary_intelligence and material_links above.
 alter table public.palette_pinned drop constraint if exists palette_pinned_kind_check;
 alter table public.palette_pinned add constraint palette_pinned_kind_check
   check (kind in ('company','asset','product','trial','catalyst','event'));
@@ -159,6 +160,9 @@ alter table public.palette_pinned add constraint palette_pinned_kind_check
 alter table public.palette_recents drop constraint if exists palette_recents_kind_check;
 alter table public.palette_recents add constraint palette_recents_kind_check
   check (kind in ('company','asset','product','trial','catalyst','event'));
+
+update public.palette_pinned set kind = 'asset' where kind = 'product';
+update public.palette_recents set kind = 'asset' where kind = 'product';
 
 -- =============================================================================
 -- 9. update events polymorphic constraint
