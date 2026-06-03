@@ -149,9 +149,9 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     .group-buttons button.active {
-      border-color: #0d9488;
-      background: #f0fdfa;
-      color: #0f766e;
+      border-color: var(--brand-600, #0d9488);
+      background: var(--brand-50, #f0fdfa);
+      color: var(--brand-700, #0f766e);
       font-weight: 600;
     }
 
@@ -184,9 +184,9 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     .count-toggle button.active {
-      border-color: #0d9488;
-      background: #f0fdfa;
-      color: #0f766e;
+      border-color: var(--brand-600, #0d9488);
+      background: var(--brand-50, #f0fdfa);
+      color: var(--brand-700, #0f766e);
       font-weight: 600;
       z-index: 1;
     }
@@ -203,7 +203,7 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     :host ::ng-deep .read-content strong.leader-name {
-      color: var(--teal-600, #0d9488);
+      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {

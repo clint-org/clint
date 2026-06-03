@@ -131,14 +131,14 @@
         />
       }
 
-      <!-- Intelligence halo ring (teal, static) -->
+      <!-- Intelligence halo ring (brand accent, static) -->
       @if (dot.product.intelligence_count > 0) {
         <circle
           [attr.cx]="dot.x"
           [attr.cy]="dot.y"
           r="12"
           fill="none"
-          stroke="#0d9488"
+          stroke="var(--brand-600, #0d9488)"
           stroke-width="2"
           opacity="0.8"
           class="halo-ring"

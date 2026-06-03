@@ -137,9 +137,9 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
     }
 
     .group-buttons button.active {
-      border-color: #2dd4bf;
-      background: #f0fdfa;
-      color: #0d9488;
+      border-color: var(--brand-400, #2dd4bf);
+      background: var(--brand-50, #f0fdfa);
+      color: var(--brand-600, #0d9488);
       font-weight: 600;
     }
 
@@ -155,7 +155,7 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
     }
 
     :host ::ng-deep .read-content strong.leader-name {
-      color: var(--teal-600, #0d9488);
+      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {
@@ -219,7 +219,7 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
     }
 
     .legend-intel {
-      border: 2px solid #0d9488;
+      border: 2px solid var(--brand-600, #0d9488);
       background: transparent;
     }
 
@@ -274,5 +274,4 @@ export class BullseyeControlsPanelComponent {
     };
     return labels[phase];
   }
-
 }
