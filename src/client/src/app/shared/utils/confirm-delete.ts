@@ -168,6 +168,9 @@ export function humanizeCountKey(key: string): string {
       return 'Marker assignments';
     case 'marker_notifications':
       return 'Marker notifications';
+    case 'products':
+      // The data-model key stays 'products'; the user-facing noun is 'asset'.
+      return 'Assets';
     default: {
       const spaced = key.replace(/_/g, ' ').trim();
       if (spaced.length === 0) return key;

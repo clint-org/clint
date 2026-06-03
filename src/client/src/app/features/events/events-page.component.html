@@ -5,6 +5,23 @@
 
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search events..." />
 
+  @if (scope(); as s) {
+    <div
+      class="mb-3 flex items-center justify-between gap-3 border border-brand-200 bg-brand-50 px-3 py-2"
+    >
+      <span class="text-xs text-slate-600">
+        Scoped to this {{ s.entityLevel | entityNoun }} and everything beneath it.
+      </span>
+      <button
+        type="button"
+        class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800"
+        (click)="clearScope()"
+      >
+        View all events
+      </button>
+    </div>
+  }
+
   <div class="flex gap-0" [class.divide-x]="selectedItem()">
     <!-- Table area -->
     <div class="min-w-0 flex-1 overflow-x-auto">

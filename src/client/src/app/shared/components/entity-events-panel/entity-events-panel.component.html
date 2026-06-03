@@ -5,7 +5,7 @@
         Events
       </h3>
       <p class="mt-0.5 text-xs text-slate-500 leading-snug">
-        External intelligence scoped to this {{ entityLevel() }}.
+        External intelligence scoped to this {{ entityLevel() | entityNoun }}.
       </p>
     </div>
     @if (!loading() && rows().length > 0) {
@@ -25,7 +25,7 @@
     <div class="px-4 py-6 text-sm text-red-600">{{ error() }}</div>
   } @else if (rows().length === 0) {
     <div class="px-4 py-6 text-sm text-slate-500">
-      No external events recorded for this {{ entityLevel() }}.
+      No external events recorded for this {{ entityLevel() | entityNoun }}.
     </div>
   } @else {
     <ul class="divide-y divide-slate-100">
@@ -42,7 +42,7 @@
           <div class="mt-1 text-sm text-slate-800 leading-snug">{{ row.title }}</div>
           @if (row.entity_name && row.entity_level !== entityLevel()) {
             <div class="mt-0.5 text-xs text-slate-500">
-              <span class="uppercase tracking-wider">{{ row.entity_level }}</span>
+              <span class="uppercase tracking-wider">{{ row.entity_level | entityNoun }}</span>
               {{ ' . ' }}{{ row.entity_name }}
             </div>
           }

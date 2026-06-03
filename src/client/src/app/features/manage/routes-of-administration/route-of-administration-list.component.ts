@@ -157,7 +157,7 @@ export class RouteOfAdministrationListComponent implements OnInit, OnDestroy {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete route of administration. It may be assigned to products.'
+          : 'Could not delete route of administration. It may be assigned to assets.'
       );
     }
   }

@@ -22,7 +22,12 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { ChangeEvent } from '../../core/models/change-event.model';
-import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
+import {
+  EventCategory,
+  EventDetail,
+  EventsPageFilters,
+  FeedItem,
+} from '../../core/models/event.model';
 import { MarkerCategory } from '../../core/models/marker.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { EventService } from '../../core/services/event.service';
@@ -40,7 +45,9 @@ import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
+import { EntityNounPipe } from '../../shared/pipes/entity-noun.pipe';
 import { formatEventDateSuffix } from './format-event-date-suffix';
+import { EntityScope, parseEntityScope } from './entity-scope';
 
 @Component({
   selector: 'app-events-page',
@@ -61,6 +68,7 @@ import { formatEventDateSuffix } from './format-event-date-suffix';
     EventDetailPanelComponent,
     EventFormComponent,
     HighlightPipe,
+    EntityNounPipe,
   ],
   templateUrl: './events-page.component.html',
   animations: [slidePanelAnimation],
@@ -100,6 +108,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly feedItems = signal<FeedItem[]>([]);
   readonly eventCategories = signal<EventCategory[]>([]);
   readonly markerCategories = signal<MarkerCategory[]>([]);
+
+  // Server-side entity scope carried by the "See all" link from a detail page.
+  readonly scope = signal<EntityScope | null>(null);
 
   // UI state
   readonly loading = signal(false);
@@ -206,6 +217,16 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         source_type: { kind: 'select', values: [sourceParam] },
       }));
     }
+
+    // "See all" from an entity detail page deep-links here with the entity
+    // scope as query params; apply it so the feed matches the panel it came
+    // from rather than dumping the user into the unscoped, global list.
+    this.scope.set(
+      parseEntityScope(
+        this.route.snapshot.queryParamMap.get('entityLevel'),
+        this.route.snapshot.queryParamMap.get('entityId'),
+      ),
+    );
 
     await this.loadInitialData();
 
@@ -545,25 +566,37 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Clear the entity scope and reload the full, unscoped feed. */
+  async clearScope(): Promise<void> {
+    if (!this.scope()) return;
+    this.scope.set(null);
+    await this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { entityLevel: null, entityId: null },
+      queryParamsHandling: 'merge',
+    });
+    await this.loadFeed();
+  }
+
+  private buildFilters(): EventsPageFilters {
+    const scope = this.scope();
+    return {
+      dateFrom: null,
+      dateTo: null,
+      entityLevel: scope?.entityLevel ?? null,
+      entityId: scope?.entityId ?? null,
+      categoryIds: [],
+      tags: [],
+      priority: null,
+      sourceType: null,
+    };
+  }
+
   private async loadInitialData(): Promise<void> {
     this.loading.set(true);
     try {
       const [feed, eCats, mCats] = await Promise.all([
-        this.eventService.getEventsPageData(
-          this.spaceId,
-          {
-            dateFrom: null,
-            dateTo: null,
-            entityLevel: null,
-            entityId: null,
-            categoryIds: [],
-            tags: [],
-            priority: null,
-            sourceType: null,
-          },
-          this.PAGE_SIZE,
-          0
-        ),
+        this.eventService.getEventsPageData(this.spaceId, this.buildFilters(), this.PAGE_SIZE, 0),
         this.eventCategoryService.list(this.spaceId),
         this.markerCategoryService.list(this.spaceId),
       ]);
@@ -583,16 +616,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     try {
       const feed = await this.eventService.getEventsPageData(
         this.spaceId,
-        {
-          dateFrom: null,
-          dateTo: null,
-          entityLevel: null,
-          entityId: null,
-          categoryIds: [],
-          tags: [],
-          priority: null,
-          sourceType: null,
-        },
+        this.buildFilters(),
         this.PAGE_SIZE,
         0
       );

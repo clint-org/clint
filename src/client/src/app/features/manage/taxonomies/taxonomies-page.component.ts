@@ -347,7 +347,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   pageSubtitle(): string {
     switch (this.activeTab()) {
       case 'indications':
-        return 'Disease areas used to tag trials and products.';
+        return 'Disease areas used to tag trials and assets.';
       case 'moa':
         return 'Ways a drug produces its therapeutic effect; used to classify assets and filter the landscape.';
       case 'roa':
@@ -600,7 +600,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete mechanism of action. It may be assigned to products.'
+          : 'Could not delete mechanism of action. It may be assigned to assets.'
       );
     }
   }
@@ -629,7 +629,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete route of administration. It may be assigned to products.'
+          : 'Could not delete route of administration. It may be assigned to assets.'
       );
     }
   }
