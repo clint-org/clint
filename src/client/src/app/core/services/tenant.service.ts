@@ -8,57 +8,56 @@ export class TenantService {
   private supabase = inject(SupabaseService);
 
   async listMyTenants(): Promise<Tenant[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenants')
       .select('*')
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
   async getTenant(id: string): Promise<Tenant> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenants')
       .select('*')
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
   async updateTenant(id: string, updates: Partial<Tenant>): Promise<Tenant> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenants')
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return data;
   }
 
   async deleteTenant(id: string): Promise<void> {
-    const { error } = await this.supabase.client.from('tenants').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('tenants').delete().eq('id', id).throwOnError();
   }
 
   async listMembers(tenantId: string): Promise<TenantMember[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenant_members_view')
       .select('*')
       .eq('tenant_id', tenantId)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
   async removeMember(tenantId: string, userId: string): Promise<void> {
-    const { error } = await this.supabase.client
+    await this.supabase.client
       .from('tenant_members')
       .delete()
       .eq('tenant_id', tenantId)
-      .eq('user_id', userId);
-    if (error) throw error;
+      .eq('user_id', userId)
+      .throwOnError();
   }
 
   /**
@@ -77,11 +76,12 @@ export class TenantService {
     invite_code?: string;
     email?: string;
   }> {
-    const { data, error } = await this.supabase.client.rpc('add_tenant_owner', {
-      p_tenant_id: tenantId,
-      p_email: email,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('add_tenant_owner', {
+        p_tenant_id: tenantId,
+        p_email: email,
+      })
+      .throwOnError();
     return data as {
       owner_invited: boolean;
       user_id?: string;
@@ -92,21 +92,22 @@ export class TenantService {
   }
 
   async listInvites(tenantId: string): Promise<TenantInvite[]> {
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('tenant_invites')
       .select('*')
       .eq('tenant_id', tenantId)
       .is('accepted_at', null)
-      .order('created_at');
-    if (error) throw error;
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 
   async joinByCode(code: string): Promise<Tenant> {
-    const { data, error } = await this.supabase.client.rpc('accept_invite', {
-      p_code: code,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('accept_invite', {
+        p_code: code,
+      })
+      .throwOnError();
     return data as Tenant;
   }
 
@@ -119,17 +120,13 @@ export class TenantService {
       .upload(path, file, { upsert: true, contentType: file.type });
     if (uploadError) throw uploadError;
 
-    const { data } = this.supabase.client.storage
-      .from('tenant-logos')
-      .getPublicUrl(path);
+    const { data } = this.supabase.client.storage.from('tenant-logos').getPublicUrl(path);
 
     return data.publicUrl;
   }
 
   async deleteLogo(tenantId: string): Promise<void> {
-    const { data: files } = await this.supabase.client.storage
-      .from('tenant-logos')
-      .list(tenantId);
+    const { data: files } = await this.supabase.client.storage.from('tenant-logos').list(tenantId);
 
     if (files && files.length > 0) {
       const paths = files.map((f) => `${tenantId}/${f.name}`);
@@ -140,10 +137,11 @@ export class TenantService {
   async getTenantAccessSettings(
     tenantId: string
   ): Promise<{ email_domain_allowlist: string[]; email_self_join_enabled: boolean }> {
-    const { data, error } = await this.supabase.client.rpc('get_tenant_access_settings', {
-      p_tenant_id: tenantId,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('get_tenant_access_settings', {
+        p_tenant_id: tenantId,
+      })
+      .throwOnError();
     return data as { email_domain_allowlist: string[]; email_self_join_enabled: boolean };
   }
 
@@ -151,20 +149,20 @@ export class TenantService {
     tenantId: string,
     settings: { email_domain_allowlist?: string[]; email_self_join_enabled?: boolean }
   ): Promise<void> {
-    const { error } = await this.supabase.client.rpc('update_tenant_access', {
-      p_tenant_id: tenantId,
-      p_settings: settings,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('update_tenant_access', {
+        p_tenant_id: tenantId,
+        p_settings: settings,
+      })
+      .throwOnError();
   }
 
-  async selfJoinTenant(
-    subdomain: string
-  ): Promise<{ id: string; name: string; role: string }> {
-    const { data, error } = await this.supabase.client.rpc('self_join_tenant', {
-      p_subdomain: subdomain,
-    });
-    if (error) throw error;
+  async selfJoinTenant(subdomain: string): Promise<{ id: string; name: string; role: string }> {
+    const { data } = await this.supabase.client
+      .rpc('self_join_tenant', {
+        p_subdomain: subdomain,
+      })
+      .throwOnError();
     return data as { id: string; name: string; role: string };
   }
 
@@ -183,5 +181,4 @@ export class TenantService {
     if (error) return false;
     return (data ?? []).length > 0;
   }
-
 }

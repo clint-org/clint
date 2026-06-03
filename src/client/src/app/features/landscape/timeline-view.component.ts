@@ -19,6 +19,7 @@ import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.compone
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
+import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -29,6 +30,7 @@ import { LandscapeStateService } from './landscape-state.service';
     LegendComponent,
     MessageModule,
     SkeletonComponent,
+    TimelineInsightStripComponent,
   ],
   templateUrl: './timeline-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +55,7 @@ export class TimelineViewComponent {
   readonly hideNotesColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
   readonly legendVisible = input<boolean>(false);
+  readonly columnsOnly = input<boolean>(false);
 
   private readonly autoStartYear = signal(2016);
   private readonly autoEndYear = signal(2026);
@@ -92,7 +95,7 @@ export class TimelineViewComponent {
       let maxYear = -Infinity;
 
       for (const company of companies) {
-        for (const product of company.products ?? []) {
+        for (const product of company.assets ?? []) {
           for (const trial of product.trials ?? []) {
             if (trial.phase_start_date) {
               const sy = new Date(trial.phase_start_date).getFullYear();

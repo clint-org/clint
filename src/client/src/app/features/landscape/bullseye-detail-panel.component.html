@@ -22,6 +22,35 @@
         }
       </div>
 
+      @if (asset.has_recent_activity) {
+        @if (asset.most_recent_change_event_id; as aeid) {
+          <button
+            type="button"
+            class="mt-2 flex w-full items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 text-left font-mono text-[12px] font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            [attr.aria-label]="
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type) +
+              ' (open in feed)'
+            "
+            (click)="openChangeEvent(aeid)"
+          >
+            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
+            <span>{{
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+            }}</span>
+            <i class="fa-solid fa-arrow-right ml-auto text-[10px] text-amber-400" aria-hidden="true"></i>
+          </button>
+        } @else {
+          <div
+            class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700"
+          >
+            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
+            <span>{{
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+            }}</span>
+          </div>
+        }
+      }
+
       @if (dimension() !== 'company') {
         <app-detail-panel-section [first]="true" label="Company">
           <button
@@ -75,6 +104,36 @@
         </app-detail-panel-section>
       }
 
+      @if (asset.intelligence_count > 0) {
+        <app-detail-panel-section [label]="'Intelligence (' + asset.intelligence_count + ')'">
+          @if (intelligenceNotes().length > 0) {
+            <app-detail-panel-entity-list>
+              @for (note of intelligenceNotes(); track note.id) {
+                <app-detail-panel-entity-row (rowClick)="onIntelligenceClick(note)">
+                  <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span class="truncate text-[12px] font-medium text-slate-800">{{
+                      note.headline
+                    }}</span>
+                    <span class="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span
+                        class="shrink-0 rounded-sm bg-cyan-50 px-1 py-px text-[10px] font-medium text-cyan-700"
+                        >{{ entityTypeLabel(note.entity_type) }}</span
+                      >
+                      <span class="truncate">{{ note.entity_name }}</span>
+                    </span>
+                  </span>
+                </app-detail-panel-entity-row>
+              }
+            </app-detail-panel-entity-list>
+          } @else {
+            <div class="flex flex-col gap-1.5">
+              <div class="h-3 w-4/5 animate-pulse rounded bg-slate-100"></div>
+              <div class="h-3 w-3/5 animate-pulse rounded bg-slate-100"></div>
+            </div>
+          }
+        </app-detail-panel-section>
+      }
+
       <app-detail-panel-section [label]="'Trials (' + asset.trials.length + ')'">
         @if (asset.trials.length === 0) {
           <p class="text-[12px] text-slate-500">No trials tracked.</p>
@@ -86,10 +145,11 @@
                   <span
                     class="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-900"
                   >
-                    <span class="truncate">{{ trial.name }}</span>
+                    <span class="truncate">{{ trial.acronym ?? trial.name }}</span>
                     <app-change-badge
                       [count]="trial.recent_changes_count ?? 0"
                       [type]="trial.most_recent_change_type ?? null"
+                      [eventId]="trial.most_recent_change_event_id ?? null"
                     />
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">

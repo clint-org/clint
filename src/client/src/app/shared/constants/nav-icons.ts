@@ -10,7 +10,7 @@ export const NAV_ICONS: Record<string, string> = {
   home: 'fa-solid fa-house',
   timeline: 'fa-solid fa-timeline',
   bullseye: 'fa-solid fa-bullseye',
-  positioning: 'fa-solid fa-crosshairs',
+  'density-matrix': 'fa-solid fa-table-cells',
 
   // Intelligence pages
   engagement: 'fa-solid fa-handshake',

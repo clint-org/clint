@@ -196,7 +196,7 @@ export class RolesHelpComponent {
     },
     {
       group: 'Engagement data',
-      capability: 'Add or edit therapy areas, mechanisms, routes of administration',
+      capability: 'Add or edit indications, mechanisms, routes of administration',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
@@ -238,7 +238,7 @@ export class RolesHelpComponent {
     },
     {
       group: 'Read-only views',
-      capability: 'Timeline, bullseye landscape, positioning views',
+      capability: 'Timeline, bullseye landscape, density matrix views',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',

@@ -9,17 +9,19 @@ import {
   signal,
 } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 
 import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
-import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
+import { IndicationService } from '../../../core/services/indication.service';
 import { Trial } from '../../../core/models/trial.model';
+import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 
 interface SelectOption {
   id: string;
@@ -40,15 +42,23 @@ interface SelectOption {
  */
 @Component({
   selector: 'app-trial-edit-dialog',
-  standalone: true,
-  imports: [Dialog, ButtonModule, InputTextModule, Select, Tooltip, FormsModule],
+  imports: [
+    Dialog,
+    InputTextModule,
+    Select,
+    DatePicker,
+    Tooltip,
+    FormsModule,
+    FormFieldComponent,
+    FormActionsComponent,
+  ],
   templateUrl: './trial-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrialEditDialogComponent {
   private trialService = inject(TrialService);
   private assetService = inject(AssetService);
-  private taService = inject(TherapeuticAreaService);
+  private indicationService = inject(IndicationService);
   private messageService = inject(MessageService);
 
   readonly visible = input<boolean>(false);
@@ -59,18 +69,20 @@ export class TrialEditDialogComponent {
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);
   readonly assetId = signal<string | null>(null);
-  readonly therapeuticAreaId = signal<string | null>(null);
   readonly phaseType = signal<string | null>(null);
   readonly phaseStart = signal<string | null>(null);
   readonly phaseEnd = signal<string | null>(null);
 
   readonly products = signal<SelectOption[]>([]);
-  readonly therapeuticAreas = signal<SelectOption[]>([]);
+  readonly indications = signal<SelectOption[]>([]);
   readonly saving = signal(false);
 
   readonly phaseTypeLocked = computed(() => this.trial().phase_type_source === 'ctgov');
   readonly phaseStartLocked = computed(() => this.trial().phase_start_date_source === 'ctgov');
   readonly phaseEndLocked = computed(() => this.trial().phase_end_date_source === 'ctgov');
+
+  readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
+  readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
 
   protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
@@ -78,8 +90,6 @@ export class TrialEditDialogComponent {
     { id: 'P2', name: 'Phase 2' },
     { id: 'P3', name: 'Phase 3' },
     { id: 'P4', name: 'Phase 4' },
-    { id: 'APPROVED', name: 'Approved' },
-    { id: 'LAUNCHED', name: 'Launched' },
     { id: 'OBS', name: 'Observational' },
   ];
 
@@ -87,7 +97,7 @@ export class TrialEditDialogComponent {
     const id = this.identifier();
     const idValid = !id || id.trim() === '' || /^NCT\d{8}$/i.test(id.trim());
     return (
-      this.name().trim().length > 0 && !!this.assetId() && !!this.therapeuticAreaId() && idValid
+      this.name().trim().length > 0 && !!this.assetId() && idValid
     );
   });
 
@@ -99,8 +109,7 @@ export class TrialEditDialogComponent {
         const t = this.trial();
         this.name.set(t.name ?? '');
         this.identifier.set(t.identifier ?? null);
-        this.assetId.set(t.product_id ?? null);
-        this.therapeuticAreaId.set(t.therapeutic_area_id ?? null);
+        this.assetId.set(t.asset_id ?? null);
         this.phaseType.set(t.phase_type ?? null);
         this.phaseStart.set(t.phase_start_date ?? null);
         this.phaseEnd.set(t.phase_end_date ?? null);
@@ -110,26 +119,37 @@ export class TrialEditDialogComponent {
   }
 
   private async loadOptions(spaceId: string): Promise<void> {
-    const [products, tas] = await Promise.all([
+    const [products, indicationList] = await Promise.all([
       this.assetService.list(spaceId),
-      this.taService.list(spaceId),
+      this.indicationService.list(spaceId),
     ]);
     this.products.set(products.map((p) => ({ id: p.id, name: p.name })));
-    this.therapeuticAreas.set(tas.map((t) => ({ id: t.id, name: t.name })));
+    this.indications.set(indicationList.map((i) => ({ id: i.id, name: i.name })));
   }
 
   close(): void {
     this.visibleChange.emit(false);
   }
 
-  protected setPhaseStart(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseStart.set(value || null);
+  protected setPhaseStartDate(date: Date | null): void {
+    this.phaseStart.set(date ? this.formatDate(date) : null);
   }
 
-  protected setPhaseEnd(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.phaseEnd.set(value || null);
+  protected setPhaseEndDate(date: Date | null): void {
+    this.phaseEnd.set(date ? this.formatDate(date) : null);
+  }
+
+  private parseDate(value: string | null): Date | null {
+    if (!value) return null;
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  private formatDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   async save(): Promise<void> {
@@ -139,8 +159,7 @@ export class TrialEditDialogComponent {
       const updates: Partial<Trial> = {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,
-        product_id: this.assetId()!,
-        therapeutic_area_id: this.therapeuticAreaId()!,
+        asset_id: this.assetId()!,
       };
       // Only send phase fields the user is allowed to edit. The server-side
       // trigger also enforces this; the UI lock is the user-facing constraint.

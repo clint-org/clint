@@ -4,7 +4,7 @@ title: Source-document ingestion (AI-extracted multi-entity proposals)
 slug: source-ingestion
 status: draft
 created: 2026-05-21
-updated: 2026-05-23
+updated: 2026-05-24
 parent: 2026-04-28-ai-inventory-design.md
 supersedes: 2026-04-28-press-release-to-event-design.md
 ---
@@ -13,7 +13,7 @@ supersedes: 2026-04-28-press-release-to-event-design.md
 
 ## Summary
 
-An agency analyst pastes a press release URL or text into an engagement. Claude Sonnet 4.6 reads the source, proposes structured rows across companies, products, trials, markers (past + projected), and events, with CT.gov registry lookups attached to every proposed trial. The analyst reviews all proposals on a dedicated routed review page with per-row reassign / unlink / override affordances, then confirms. Confirmed rows write atomically via one RPC, with source provenance on every row and a durable AI-call audit trail.
+An agency analyst pastes a press release URL or text into an engagement. Claude Sonnet 4.6 reads the source, proposes structured rows across companies, assets, trials, markers (past + projected), and events, with CT.gov registry lookups attached to every proposed trial. The analyst reviews all proposals on a dedicated routed review page with per-row reassign / unlink / override affordances, then confirms. Confirmed rows write atomically via one RPC, with source provenance on every row and a durable AI-call audit trail.
 
 This is the first AI feature in Clint. It targets the highest-leverage producer workflow (turning raw source documents into structured intelligence rows) and establishes the infrastructure (ai_calls audit, worker secret, cost caps, Vault) that subsequent AI features will reuse. It supersedes the earlier press-release-to-event draft, which targeted a single event extraction; this expands to multi-entity ingestion with explicit review and atomic commit.
 
@@ -32,7 +32,7 @@ This spec inherits the operating constraints from `2026-04-28-ai-inventory-desig
 ## Goals
 
 1. Cut the time to log a press-release-derived set of events, catalysts, and trial updates from minutes to under 60 seconds.
-2. Build the entity graph automatically: companies, products, trials, markers, events, with correct cross-references and CT.gov registry linkage where available.
+2. Build the entity graph automatically: companies, assets, trials, markers, events, with correct cross-references and CT.gov registry linkage where available.
 3. Ground every proposal in the source via the analyst-reviewable evidence pill, and gate every "create new" entity behind a name-substring rule so fabricated entities never reach the review screen unmarked.
 4. Establish the AI infrastructure backbone (ai_calls, ai_config, source_documents, worker secret, cost cap, rate limit) that the rest of the AI roadmap will reuse.
 5. Be invisible to tenant-side users (clients): all AI scaffolding is agency-only; clients see only the resulting clean rows on the timeline with their existing source_url citations.
@@ -47,6 +47,7 @@ This spec inherits the operating constraints from `2026-04-28-ai-inventory-desig
 - Async or queued imports. Sync flow only.
 - BYO providers (Anthropic, Bedrock, Azure routing). `ai_calls.provider` defaults to `anthropic`; no provider switch surfaced.
 - Embeddings for entity matching. LLM-with-inventory plus `pg_trgm` fuzzy fallback is enough at our inventory sizes.
+- Indication hierarchy management via this flow. The commit RPC creates flat indication rows; hierarchical nesting is a separate analyst workflow.
 - Cross-space inventory matching. Each space sees only its own inventory.
 - Refreshing CT.gov data for existing trials via this flow. The CT.gov worker handles ongoing sync.
 - Semantic search or MCP server. Those are subsequent waves.
@@ -65,11 +66,18 @@ Inherited from `2026-04-28-ai-inventory-design.md`:
 
 ## Prerequisite specs
 
-Two schema standardization specs must land before the source-ingestion migration. Each is a separate spec with its own migration and tests:
+Two schema standardization specs landed before this spec. Each is a separate spec with its own migration and tests:
 
-1. **`2026-05-23-entity-audit-columns-design.md`** -- Renames `user_id` to `created_by` on the five legacy entity tables (`companies`, `products`, `trials`, `trial_phases`, `marker_types`) and adds `updated_by` on all tables that have `updated_at`. This spec's commit RPC uses `created_by` consistently.
+1. **`2026-05-23-entity-audit-columns-design.md`** (landed) -- Renames `user_id` to `created_by` on the five legacy entity tables (`companies`, `assets`, `trials`, `trial_phases`, `marker_types`) and adds `updated_by` on all tables that have `updated_at`. This spec's commit RPC uses `created_by` consistently.
 
-2. **`2026-05-23-entity-name-uniqueness-design.md`** -- Adds `unique(space_id, name)` constraints to `therapeutic_areas`, `marker_types`, and `event_categories` (plus a partial unique index on system event categories). This enables the commit RPC to resolve LLM-proposed names deterministically via exact match and use `ON CONFLICT (space_id, name) DO NOTHING` for idempotent upserts.
+2. **`2026-05-23-entity-name-uniqueness-design.md`** (landed) -- Adds `unique(space_id, name)` constraints to `marker_types` and `event_categories` (plus a partial unique index on system event categories). This enables the commit RPC to resolve LLM-proposed names deterministically via exact match and use `ON CONFLICT (space_id, name) DO NOTHING` for idempotent upserts.
+
+### Schema changes since first draft
+
+The following migrations landed after this spec was first drafted. This revision updates all references:
+
+- **`20260524120200_rename_products_to_assets`** -- `products` table renamed to `assets`; `product_id` FK columns renamed to `asset_id` on `trials`, `events`, and junction tables. All spec references now use `assets` / `asset_id` / `asset_ref`.
+- **`20260524120000` through `20260524120800`** (indication model) -- `therapeutic_areas` table dropped and replaced by `indications` + `conditions` + `trial_conditions` + `asset_indications`. Trial-to-disease linkage is now: trials -> trial_conditions -> conditions, with conditions mapped to analyst-created indications via `condition_indication_map`. The `asset_indications` table tracks per-asset-per-indication development status (auto-derived from trial phases). All spec references now use the indication model.
 
 ## User flow (happy path)
 
@@ -92,11 +100,11 @@ Two schema standardization specs must land before the source-ingestion migration
    - Toggles checkbox to include / exclude.
    - Reassigns the LLM's entity match (LLM pick, fuzzy alternate, pick-from-inventory, or create-new with editable name).
    - For trials, picks one of the top three CT.gov NCT candidates, or selects "unlink (keep untracked)".
-   - For trials, must assign a product (existing or new). The Confirm button is disabled until every included trial has a product.
+   - For trials, must assign an asset (existing or new). The Confirm button is disabled until every included trial has an asset.
    - Edits any field inline. NCT-linked trials have CT.gov-locked fields rendered read-only.
    - Hovers the "as quoted" pill to highlight the evidence substring in the left source pane.
 7. Analyst clicks **Confirm N items**. Angular calls `commit_source_import(p_space_id, p_ai_call_id, p_source_document, p_proposal, p_inventory_snapshot_hash)`.
-8. RPC writes everything in dependency order (companies, products, trials, markers, events) inside one transaction. Returns the `source_doc_id` plus arrays of newly-created ids.
+8. RPC writes everything in dependency order (companies, assets, trials, trial_conditions, markers, events) inside one transaction. Auto-derives `asset_indications` via existing triggers. Returns the `source_doc_id` plus arrays of newly-created ids.
 9. Toast: `Committed N items from {source_title}. View in timeline.` Review page navigates back to the engagement dashboard.
 
 Latency target: 3 to 7 seconds for URL flow, 2 to 5 seconds for paste-text flow. Worker route timeout: 25 seconds. Angular HTTP timeout: 30 seconds.
@@ -115,7 +123,7 @@ flowchart LR
   W -->|close| AC[ai_call_close RPC]
   M -->|navigate with proposal| R[ReviewPage<br/>/spaces/:id/import/:aiCallId/review]
   R -->|confirm N items| RPC[commit_source_import RPC]
-  RPC --> DB[(companies, products, trials,<br/>markers, events,<br/>source_documents, ai_calls)]
+  RPC --> DB[(companies, assets, trials,<br/>markers, events,<br/>source_documents, ai_calls)]
 ```
 
 Pieces:
@@ -144,7 +152,7 @@ Key invariants:
 The Worker route builds the prompt from:
 
 - The cleaned source text (URL fetch result or paste body). Maximum 500KB; larger inputs are rejected before the LLM is called.
-- The full space inventory snapshot: `{ companies: [{id, name}], products: [{id, name, company_id, moa?, roa?}], trials: [{id, nct_id?, name, sponsor_company_id?, phase?}] }`. No per-type cap. Each entity is represented as `{id, name}` only to minimize tokens. At typical pharma CI scales (under 500 entities per type), the inventory adds roughly 10-30K tokens, well within Sonnet 4.6's 200K context.
+- The full space inventory snapshot: `{ companies: [{id, name}], assets: [{id, name, company_id, moa?, roa?}], trials: [{id, nct_id?, name, sponsor_company_id?, phase?}], indications: [{id, name}] }`. No per-type cap. Each entity is represented as `{id, name}` only to minimize tokens. At typical pharma CI scales (under 500 entities per type), the inventory adds roughly 10-30K tokens, well within Sonnet 4.6's 200K context.
 - A strict JSON schema describing the expected output shape.
 - A system prompt that enforces: extract only what is in the source, quote evidence verbatim where possible, do not infer regulatory dates that are not stated, prefer matching existing inventory ids over creating new entities.
 
@@ -164,7 +172,7 @@ If a space's inventory grows past 1000 entities per type, the super-admin AI Usa
       "evidence": "string"
     }
   ],
-  "products": [
+  "assets": [
     {
       "match":         { "kind": "existing"|"new", ... },
       "name":          "string",
@@ -185,7 +193,7 @@ If a space's inventory grows past 1000 entities per type, the super-admin AI Usa
       "status":        "Planned | Active | Completed | Terminated | Withdrawn | null",
       "sample_size":   "int | null",
       "sponsor_ref":   "<index into companies[]>",
-      "product_ref":   "<index into products[]> | null",
+      "asset_ref":     "<index into assets[]> | null",
       "indication":    "string | null",
       "evidence":      "string"
     }
@@ -211,8 +219,8 @@ If a space's inventory grows past 1000 entities per type, the super-admin AI Usa
       "priority":      "high | low",
       "tags":          ["string", ...],
       "anchor": {
-        "level":       "space | company | product | trial",
-        "ref":         "<index into companies[]|products[]|trials[]> | null when level=space"
+        "level":       "space | company | asset | trial",
+        "ref":         "<index into companies[]|assets[]|trials[]> | null when level=space"
       },
       "evidence":      "string"
     }
@@ -220,7 +228,7 @@ If a space's inventory grows past 1000 entities per type, the super-admin AI Usa
 }
 ```
 
-`product_ref` is nullable in the LLM output because the LLM may extract a trial without identifying its product. However, `trials.product_id` is NOT NULL in the database. The review page must require the analyst to assign a product (existing or new) to every included trial before Confirm is enabled. Trials without a product assignment show a red validation indicator.
+`asset_ref` is nullable in the LLM output because the LLM may extract a trial without identifying its asset. However, `trials.asset_id` is NOT NULL in the database. The review page must require the analyst to assign an asset (existing or new) to every included trial before Confirm is enabled. Trials without an asset assignment show a red validation indicator.
 
 Marker `projection` value `stout` is reserved for internal Stout sources and is not extracted by the LLM. Press release projections default to `company`.
 
@@ -229,18 +237,18 @@ Marker `projection` value `stout` is reserved for internal Stout sources and is 
 Hard guarantees enforced before the proposal reaches the review page:
 
 1. **Schema conformance.** Output parsed against a Zod schema mirroring the above. Parse failure raises `parse_failed`.
-2. **Cross-ref bounds.** Every `company_ref`, `product_ref`, `sponsor_ref`, `trial_ref`, `anchor.ref` index is in range for its target array. Out-of-bounds refs cause the offending entity to be dropped with a warning.
+2. **Cross-ref bounds.** Every `company_ref`, `asset_ref`, `sponsor_ref`, `trial_ref`, `anchor.ref` index is in range for its target array. Out-of-bounds refs cause the offending entity to be dropped with a warning.
 3. **Existing-id existence.** Any `match.kind = "existing"` id is verified against the space's inventory snapshot. Dangling ids demote to `"new"` and are flagged in the review UI.
-4. **Name-substring rule** (the trust floor). For every `match.kind = "new"` company / product / trial proposal:
+4. **Name-substring rule** (the trust floor). For every `match.kind = "new"` company / asset / trial proposal:
    - Company: `name` must substring-match the normalized source text.
-   - Product: `name` OR `generic_name` must substring-match.
+   - Asset: `name` OR `generic_name` must substring-match.
    - Trial: `name` (acronyms count) must substring-match.
 
    For every marker and event: at least one anchor must be "grounded" (existing id, or new entity that passed the name check above).
 
    Match rule: case-insensitive, punctuation-stripped, whitespace-normalized substring. Failing entities are dropped server-side and surfaced in a collapsible "Dropped (N)" section at the top of the review page with reason and an "Add manually" link to the existing creation form.
 
-5. **Fuzzy alternates.** For every "new" company / product / trial proposal that passed the name check, `extensions.similarity()` (from the `pg_trgm` extension, already installed in the `extensions` schema per migration `20260509120300_advisor_sweep_pg_trgm_to_extensions`) against the inventory attaches up to three alternate candidates (`{id, name, score}`) for the review page's match picker.
+5. **Fuzzy alternates.** For every "new" company / asset / trial proposal that passed the name check, `extensions.similarity()` (from the `pg_trgm` extension, already installed in the `extensions` schema per migration `20260509120300_advisor_sweep_pg_trgm_to_extensions`) against the inventory attaches up to three alternate candidates (`{id, name, score}`) for the review page's match picker.
 
 ### CT.gov enrichment
 
@@ -251,7 +259,7 @@ For every proposed trial (new, or existing without `nct_id`), the Worker route c
 | `companies[trials[].sponsor_ref].name` | `query.spons` | Sponsor name |
 | `trials[].name` | `query.titles` | Acronym or short name |
 | `trials[].indication` | `query.cond` | Disease |
-| `products[trials[].product_ref].name` | `query.intr` | Intervention / drug name |
+| `assets[trials[].asset_ref].name` | `query.intr` | Intervention / drug name |
 | `trials[].phase` | `filter.advanced=AREA[Phase]PHASE{n}` | Phase as Essie expression |
 
 Request `pageSize=10&format=json`. Returned studies are ranked by Jaro-Winkler similarity on `briefTitle` against `trials[].name`. Jaro-Winkler runs in the Worker (JS implementation or `jaro-winkler` npm package; both work in Cloudflare Workers). Top three surface to the review page. Empty result is valid (no CT.gov match): the review page shows only the "unlink, keep untracked" option, pre-selected. CT.gov 5xx or timeout marks the trial proposal `ctgov_partial`; the row continues with "unlink" pre-selected and the analyst can re-run CT.gov match later via the existing trial detail page.
@@ -285,7 +293,7 @@ Route setup:
 |  evidence substring highlighted | Companies (2 new, 1 existing)         |
 |  when hovered on the right}     |  [x] PFIZER       Match: Pfizer v     |
 |                                 |                                       |
-|                                 | Products (1 new, 2 existing)          |
+|                                 | Assets (1 new, 2 existing)            |
 |                                 |  [x] PAXLOVID     Match: Paxlovid v   |
 |                                 |  [x] (new) ETX-101                    |
 |                                 |       Generic: [blank]   MOA: [GLP-1] |
@@ -298,8 +306,8 @@ Route setup:
 |                                 |       ( ) NCT05612340 brief title ...  |
 |                                 |       ( ) NCT05789012 brief title ...  |
 |                                 |       (*) unlink, keep untracked       |
-|                                 |       Product: ETX-101  TA: [Obesity]  |
-|                                 |       !! Product required              |
+|                                 |       Asset: ETX-101  Ind: [Obesity]   |
+|                                 |       !! Asset required                |
 |                                 |                                       |
 |                                 | Markers (3 past, 1 projected)         |
 |                                 |  [x] PALOMA-3 primary endpoint met    |
@@ -312,7 +320,7 @@ Route setup:
 |                                 |       financing -- 2026-04-30         |
 |                                 |       Anchor: Company > Pfizer         |
 +---------------------------------+---------------------------------------+
-| 11 of 13 selected (3C/3P/2T/3M/2E)         [Cancel]  [Confirm 11 items] |
+| 11 of 13 selected (3C/3A/2T/3M/2E)         [Cancel]  [Confirm 11 items] |
 +-------------------------------------------------------------------------+
 ```
 
@@ -321,10 +329,10 @@ Route setup:
 For every proposal across every entity type:
 
 - **Checkbox** to include or exclude. Default checked.
-- **Match picker** (companies, products, trials): dropdown with LLM pick (selected by default), fuzzy alternates with hover-score, "Pick from inventory" typeahead against the full inventory, "Create new" with editable name.
+- **Match picker** (companies, assets, trials): dropdown with LLM pick (selected by default), fuzzy alternates with hover-score, "Pick from inventory" typeahead against the full inventory, "Create new" with editable name.
 - **Evidence pill** ("as quoted"): hover highlights the matching substring in the left source pane; click pins the highlight.
 - **Field editors** appropriate to the entity type (see below).
-- **Dependency cascade**: unchecking a proposed-new company shows a yellow flag on every dependent product / trial ("Depends on X, unchecked"). Confirm button disables until resolved (re-check, or reassign dependent to a different company).
+- **Dependency cascade**: unchecking a proposed-new company shows a yellow flag on every dependent asset / trial ("Depends on X, unchecked"). Confirm button disables until resolved (re-check, or reassign dependent to a different company).
 
 ### Field editors by entity type
 
@@ -332,7 +340,7 @@ For every proposal across every entity type:
 - `name` (text, required)
 - `logo_url` (auto-fetched via `https://cdn.brandfetch.io/{domain}` if `website` was extracted, editable)
 
-**Products (new)**
+**Assets (new)**
 - `name` (text, required)
 - `generic_name` (text, optional)
 - MOA multi-select against `mechanisms_of_action`, with "Create new MOA" affordance.
@@ -340,9 +348,10 @@ For every proposal across every entity type:
 - Company link inherited from the parent company match.
 
 **Trials**
-- **Mode A: NCT-linked** (analyst picked one of the top three NCTs). CT.gov-sourced fields rendered read-only with a "from CT.gov" pill: `name`, `identifier`, `recruitment_status`, `status`, `study_type`, `phase_type`, `phase_start_date`, `phase_end_date`. Today's migration `20260521200200_trial_phase_ctgov_truth` enforces CT.gov-wins. Analyst-editable: `product_id` (parent product, required), `therapeutic_area_id` (typeahead with "Create new" affordance), `notes` (optional).
-- **Mode B: Untracked** (unlink, or CT.gov empty). All fields editable: `name`, `status` (dropdown), `sample_size`, `therapeutic_area_id`, `product_id` (required), plus a generated `trial_phases` row on commit (`phase_type`, `phase_start_date`, `phase_end_date`).
-- **Product required.** Both modes require a product assignment. If the LLM did not resolve a `product_ref`, the field shows a red validation border and "Product required" hint. The Confirm button is disabled while any included trial lacks a product.
+- **Mode A: NCT-linked** (analyst picked one of the top three NCTs). CT.gov-sourced fields rendered read-only with a "from CT.gov" pill: `name`, `identifier`, `recruitment_status`, `status`, `study_type`, `phase_type`, `phase_start_date`, `phase_end_date`. Today's migration `20260521200200_trial_phase_ctgov_truth` enforces CT.gov-wins. Analyst-editable: `asset_id` (parent asset, required), `indication` (typeahead against `indications` table with "Create new" affordance), `notes` (optional).
+- **Mode B: Untracked** (unlink, or CT.gov empty). All fields editable: `name`, `status` (dropdown), `sample_size`, `indication` (typeahead against `indications`), `asset_id` (required), plus a generated `trial_phases` row on commit (`phase_type`, `phase_start_date`, `phase_end_date`).
+- **Asset required.** Both modes require an asset assignment. If the LLM did not resolve an `asset_ref`, the field shows a red validation border and "Asset required" hint. The Confirm button is disabled while any included trial lacks an asset.
+- **Indication handling.** When the analyst selects or creates an indication for a trial, the commit RPC: (1) upserts the indication by `(space_id, name)`, (2) creates a `condition` from the indication name with `source='analyst'`, (3) inserts a `trial_conditions` row linking the trial to the condition. The `asset_indications` row (asset + indication with development status) is auto-derived by the existing `trg_auto_derive_asset_indication` trigger when the trial is inserted.
 
 **Markers**
 - `title` (text)
@@ -352,7 +361,7 @@ For every proposal across every entity type:
 - `end_date` (date, optional)
 - `description` (textarea, optional)
 - `source_url` (auto-filled from the import URL when source_kind = url; editable)
-- **Anchor**: multi-select trials only (markers anchor to trials via `marker_assignments`; companies / products derive through the trial).
+- **Anchor**: multi-select trials only (markers anchor to trials via `marker_assignments`; companies / assets derive through the trial).
 
 **Events**
 - `title` (text)
@@ -361,7 +370,7 @@ For every proposal across every entity type:
 - `priority` (`high | low`)
 - `tags` (chip input, free-text array)
 - `description` (textarea, optional)
-- **Anchor**: radio (`Space | Company | Product | Trial`) + typeahead for the chosen level. Enforces the `events_entity_level_check` constraint (at most one of company / product / trial).
+- **Anchor**: radio (`Space | Company | Asset | Trial`) + typeahead for the chosen level. Enforces the `events_entity_level_check` constraint (at most one of company / asset / trial).
 
 ### Bulk affordances
 
@@ -463,7 +472,7 @@ create table public.ai_config (
 
 ```sql
 alter table public.companies add column source_doc_id uuid references public.source_documents(id) on delete set null;
-alter table public.products  add column source_doc_id uuid references public.source_documents(id) on delete set null;
+alter table public.assets    add column source_doc_id uuid references public.source_documents(id) on delete set null;
 alter table public.trials    add column source_doc_id uuid references public.source_documents(id) on delete set null;
 alter table public.markers   add column source_doc_id uuid references public.source_documents(id) on delete set null;
 alter table public.events    add column source_doc_id uuid references public.source_documents(id) on delete set null;
@@ -508,15 +517,20 @@ as $$
 --    p_source_document.allow_duplicate=true bypasses on retry.
 -- 4. Insert source_documents row, capture source_doc_id.
 -- 5. Dependency-ordered inserts in one transaction:
---    a. Upsert any new mechanisms_of_action, routes_of_administration, therapeutic_areas
+--    a. Upsert any new mechanisms_of_action, routes_of_administration, indications
 --       using ON CONFLICT (space_id, name) DO NOTHING (all three have this constraint).
+--       For each indication, also upsert a matching condition with source='analyst'
+--       and insert a condition_indication_map row.
 --    b. Insert new companies (with source_doc_id, created_by = auth.uid()).
---    c. Insert new products (resolve company_ref to existing or just-created id,
---       created_by = auth.uid()), plus product_moa and product_roa join rows.
---    d. Insert new trials (resolve product_ref, created_by = auth.uid()). Insert
+--    c. Insert new assets (resolve company_ref to existing or just-created id,
+--       created_by = auth.uid()), plus asset_mechanisms_of_action and
+--       asset_routes_of_administration join rows.
+--    d. Insert new trials (resolve asset_ref, created_by = auth.uid()). Insert
 --       trial_phases rows for Mode B. For NCT-linked trials, set
 --       trials.identifier=NCT and let the existing ct.gov worker watermark
---       pick it up on next poll.
+--       pick it up on next poll. For each trial with an indication, insert
+--       a trial_conditions row (the trg_auto_derive_asset_indication trigger
+--       on trials auto-creates asset_indications rows).
 --    e. Insert new markers (with source_doc_id, created_by = auth.uid()) and
 --       marker_assignments (resolve trial_ref). Marker type resolved by exact
 --       match on (space_id, name) via the unique constraint.
@@ -527,7 +541,7 @@ as $$
 -- 7. Return {
 --      source_doc_id,
 --      warnings: ['inventory_drift'] | [],
---      created: { companies:[...], products:[...], trials:[...], markers:[...], events:[...] }
+--      created: { companies:[...], assets:[...], trials:[...], markers:[...], events:[...] }
 --    }
 $$;
 ```
@@ -738,9 +752,9 @@ All commit failures (except `inventory_drift`, which is a warning) surface a `[R
 
 | Layer | What it validates |
 |---|---|
-| Client (Angular) | Required fields per entity (including product on trials), dependency cascade, single-anchor for events, Confirm disabled while errors exist |
+| Client (Angular) | Required fields per entity (including asset on trials), dependency cascade, single-anchor for events, Confirm disabled while errors exist |
 | Worker route | LLM schema, cross-ref bounds, existing-id existence, name-substring rule, fuzzy alternates, cost cap, rate limit, source text size limit (500KB) |
-| Commit RPC | `has_space_access`, FK integrity, CHECK constraints (events single-anchor, marker projection enum, source text length, etc.), MOA/ROA/TA uniqueness within space (via ON CONFLICT) |
+| Commit RPC | `has_space_access`, FK integrity, CHECK constraints (events single-anchor, marker projection enum, source text length, etc.), MOA/ROA/indication uniqueness within space (via ON CONFLICT) |
 
 Each layer catches what is cheapest to catch there; none assumes the others ran.
 
@@ -752,9 +766,9 @@ Tests pair with each task per project convention.
 |---|---|---|
 | Worker route | Vitest (`@cloudflare/vitest-pool-workers`, `test:worker`) | HTML cleaning fixtures, schema validation, name-substring rule, fuzzy alternates attachment, CT.gov query construction, Jaro-Winkler ranking, cost-cap and rate-limit gates, every `ai_calls.outcome` path, Anthropic API mock via Miniflare `fetchMock` |
 | LLM goldens | Vitest with snapshot fixtures in `src/client/worker/source-extract/__fixtures__/` | Real press releases + earnings transcripts with hand-curated expected proposals; catches prompt regressions on model bumps |
-| Database / RPC | Vitest integration (`test:integration`, real local Supabase) | `commit_source_import` dependency order, atomic rollback, RLS enforcement, MOA/ROA/TA upsert idempotency, `source_documents` dedup probe, `source_documents` text length constraint, `platform_admin_set_ai_enabled` audit row, `ai_call_open` / `_preflight` / `_close` worker-secret gate, unique constraint enforcement on marker_types / event_categories / therapeutic_areas |
+| Database / RPC | Vitest integration (`test:integration`, real local Supabase) | `commit_source_import` dependency order, atomic rollback, RLS enforcement, MOA/ROA/indication upsert idempotency, `source_documents` dedup probe, `source_documents` text length constraint, `platform_admin_set_ai_enabled` audit row, `ai_call_open` / `_preflight` / `_close` worker-secret gate, unique constraint enforcement on marker_types / event_categories / indications, trial_conditions + asset_indications auto-derivation |
 | Pure-TS units | Vitest (`test:units`) | Name-substring validator, dependency cascade logic, JSON proposal serializer for export |
-| E2E | Playwright (`test:e2e`) | Paste-text happy path, URL fetch happy path, fetch failure to paste-mode recovery, commit failure to download fallback, rate-limit countdown, NCT picker unlink, dropped section render, product-required validation on trials, route guard redirect on missing proposal |
+| E2E | Playwright (`test:e2e`) | Paste-text happy path, URL fetch happy path, fetch failure to paste-mode recovery, commit failure to download fallback, rate-limit countdown, NCT picker unlink, dropped section render, asset-required validation on trials, route guard redirect on missing proposal |
 
 The project does not use `ng test`. No Angular Karma tests in v1.
 
@@ -768,7 +782,7 @@ Three stages gated by `ai_config.ai_enabled`:
 
 Stage gates:
 - Stage 1 to stage 2: `parse_failed` rate <2% across 50+ imports.
-- Stage 2 to stage 3: accept rate >=80% on companies/products/trials, >=70% on markers/events; time-to-commit p50 <90s.
+- Stage 2 to stage 3: accept rate >=80% on companies/assets/trials, >=70% on markers/events; time-to-commit p50 <90s.
 
 ## Operational notes
 
@@ -793,8 +807,10 @@ Stage gates:
 - Parent: `2026-04-28-ai-inventory-design.md` (AI capabilities inventory)
 - Supersedes: `2026-04-28-press-release-to-event-design.md` (single-event extraction; expanded here to multi-entity)
 - Prerequisite: `2026-05-23-entity-audit-columns-design.md` (rename user_id to created_by, add updated_by)
-- Prerequisite: `2026-05-23-entity-name-uniqueness-design.md` (unique constraints on therapeutic_areas, marker_types, event_categories)
+- Prerequisite: `2026-05-23-entity-name-uniqueness-design.md` (unique constraints on marker_types, event_categories; indications has `(space_id, name)` unique from its creation migration)
 - Related: `2026-04-27-whitelabel-design.md` (tenant + space isolation, agency/super-admin helpers)
 - Related: `2026-05-10-audit-log-design.md` (Tier 1 audit pattern for `platform_admin_set_ai_enabled`)
+- Related: Indication model migrations: `20260524120000_create_indication_condition_tables`, `20260524120100_migrate_ta_to_indications`, `20260524120400_asset_indication_auto_derive`, `20260524120800_drop_therapeutic_areas`
+- Related: Rename migration: `20260524120200_rename_products_to_assets`
 - Related: CT.gov ingestion migrations: `20260502120300_ctgov_worker_secret`, `20260502120500_ctgov_ingest_rpc`, `20260521200200_trial_phase_ctgov_truth`
 - Worker patterns: `src/client/worker/index.ts` (route handler), `src/client/worker/ctgov-sync/` (CT.gov sync), `src/client/worker/supabase.ts` (`callRpc` helper)

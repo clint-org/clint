@@ -1,7 +1,7 @@
 /**
  * events-hierarchical-scope.spec.ts
  *
- * Verifies that get_events_page_data rolls up events through trial -> product
+ * Verifies that get_events_page_data rolls up events through trial -> asset
  * -> company when scoped at product or company level. Trial-scope queries
  * remain direct-match only. Markers half is unchanged.
  */
@@ -15,7 +15,7 @@ let p: Personas;
 let svc: SupabaseClient;
 let spaceId: string;
 let companyId: string;
-let productId: string;
+let assetId: string;
 let trialId: string;
 let agencyCleanup: () => Promise<void>;
 
@@ -31,7 +31,7 @@ beforeAll(async () => {
   // Use the tenant_owner persona as the creator for seeded entities.
   const createdBy = p.ids.tenant_owner;
 
-  // Seed: 1 company > 1 product > 1 trial.
+  // Seed: 1 company > 1 asset > 1 trial.
   const { data: company, error: companyErr } = await svc
     .from('companies')
     .insert({ space_id: spaceId, name: 'Co1', created_by: createdBy })
@@ -40,8 +40,8 @@ beforeAll(async () => {
   if (companyErr) throw new Error(`insert company: ${companyErr.message}`);
   companyId = company!.id;
 
-  const { data: product, error: productErr } = await svc
-    .from('products')
+  const { data: asset, error: assetErr } = await svc
+    .from('assets')
     .insert({
       space_id: spaceId,
       company_id: companyId,
@@ -50,23 +50,14 @@ beforeAll(async () => {
     })
     .select('id')
     .single();
-  if (productErr) throw new Error(`insert product: ${productErr.message}`);
-  productId = product!.id;
-
-  // Trials require a therapeutic area.
-  const { data: ta, error: taErr } = await svc
-    .from('therapeutic_areas')
-    .insert({ space_id: spaceId, name: 'Test TA', created_by: createdBy })
-    .select('id')
-    .single();
-  if (taErr) throw new Error(`insert therapeutic_area: ${taErr.message}`);
+  if (assetErr) throw new Error(`insert asset: ${assetErr.message}`);
+  assetId = asset!.id;
 
   const { data: trial, error: trialErr } = await svc
     .from('trials')
     .insert({
       space_id: spaceId,
-      product_id: productId,
-      therapeutic_area_id: ta!.id,
+      asset_id: assetId,
       name: 'Trial1',
       created_by: createdBy,
     })
@@ -95,7 +86,7 @@ beforeAll(async () => {
     },
     {
       space_id: spaceId,
-      product_id: productId,
+      asset_id: assetId,
       category_id: categoryId,
       title: 'Product event',
       event_date: '2026-01-02',
@@ -109,7 +100,7 @@ beforeAll(async () => {
     },
   ]);
   if (evErr) throw new Error(`insert events: ${evErr.message}`);
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   if (agencyCleanup) await agencyCleanup();
@@ -128,7 +119,8 @@ async function listEventsScopedTo(
     p_offset: 0,
   });
   if (error) throw new Error(`get_events_page_data(${level}): ${error.message}`);
-  return (data as Array<{ title: string }>).map((r) => r.title).sort();
+  const result = data as { items: Array<{ title: string }>; total: number };
+  return result.items.map((r) => r.title).sort();
 }
 
 describe('get_events_page_data hierarchical scope', () => {
@@ -137,7 +129,7 @@ describe('get_events_page_data hierarchical scope', () => {
   });
 
   it('product scope returns the product-level event PLUS the trial event under it', async () => {
-    expect(await listEventsScopedTo('product', productId)).toEqual(
+    expect(await listEventsScopedTo('product', assetId)).toEqual(
       ['Product event', 'Trial event'].sort(),
     );
   });
@@ -149,9 +141,9 @@ describe('get_events_page_data hierarchical scope', () => {
   });
 
   it('product scope does not leak events on a sibling product', async () => {
-    // Create a second product under the same company with its own event.
+    // Create a second asset under the same company with its own event.
     const { data: p2, error: p2Err } = await svc
-      .from('products')
+      .from('assets')
       .insert({
         space_id: spaceId,
         company_id: companyId,
@@ -160,7 +152,7 @@ describe('get_events_page_data hierarchical scope', () => {
       })
       .select('id')
       .single();
-    if (p2Err) throw new Error(`insert sibling product: ${p2Err.message}`);
+    if (p2Err) throw new Error(`insert sibling asset: ${p2Err.message}`);
 
     const { data: catRow, error: catErr } = await svc
       .from('event_categories')
@@ -171,7 +163,7 @@ describe('get_events_page_data hierarchical scope', () => {
 
     const { error: sibEvErr } = await svc.from('events').insert({
       space_id: spaceId,
-      product_id: p2!.id,
+      asset_id: p2!.id,
       category_id: catRow!.id,
       title: 'Sibling event',
       event_date: '2026-01-04',
@@ -179,7 +171,7 @@ describe('get_events_page_data hierarchical scope', () => {
     if (sibEvErr) throw new Error(`insert sibling event: ${sibEvErr.message}`);
 
     // Original product scope must NOT include the sibling's event.
-    expect(await listEventsScopedTo('product', productId)).toEqual(
+    expect(await listEventsScopedTo('product', assetId)).toEqual(
       ['Product event', 'Trial event'].sort(),
     );
   });

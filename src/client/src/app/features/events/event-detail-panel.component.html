@@ -1,0 +1,434 @@
+<app-detail-panel-shell
+  [label]="headerLabel()"
+  [labelTone]="hasSelection() ? 'brand' : 'muted'"
+  [showClose]="hasSelection()"
+  (closed)="panelClose.emit()"
+>
+  @if (hasSelection() && canEdit() && !isDetected()) {
+    <button
+      headerActions
+      type="button"
+      class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      (click)="edit.emit()"
+      aria-label="Edit event"
+    >
+      <i class="fa-solid fa-pen text-xs"></i>
+    </button>
+  }
+
+  <!-- Event detail branch -->
+  @if (detail(); as d) {
+    <h2 class="text-base font-semibold leading-snug text-slate-900">{{ d.title }}</h2>
+
+    <div class="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-slate-500">
+      <span class="font-mono tabular-nums">{{ d.event_date | date: 'mediumDate' }}</span>
+      @if (d.priority === 'high') {
+        <app-detail-panel-pill tone="red">High priority</app-detail-panel-pill>
+      }
+      @if (d.entity_level === 'space') {
+        <span class="text-slate-400">Industry</span>
+      } @else if (d.company_name) {
+        <span class="text-slate-400">
+          @if (d.company_id && tenantId() && spaceId()) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', d.company_id]"
+              class="text-slate-500 hover:text-brand-700 hover:underline"
+              >{{ d.company_name }}</a
+            >
+          } @else {
+            {{ d.company_name }}
+          }
+          @if (d.entity_level !== 'company' && d.entity_name) {
+            <span class="text-slate-300"> / </span>
+            @if (d.asset_id && tenantId() && spaceId()) {
+              <a
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', d.asset_id]"
+                class="text-slate-500 hover:text-brand-700 hover:underline"
+                >{{ d.entity_name }}</a
+              >
+            } @else {
+              {{ d.entity_name }}
+            }
+          }
+        </span>
+      }
+    </div>
+
+    @if (d.description) {
+      <app-detail-panel-section [first]="true" label="Description">
+        <p class="text-[13px] leading-relaxed text-slate-700">{{ d.description }}</p>
+      </app-detail-panel-section>
+    }
+
+    @if (d.sources.length > 0) {
+      <app-detail-panel-section [first]="!d.description" label="Sources">
+        <ul class="space-y-1">
+          @for (src of d.sources; track src.id) {
+            <li>
+              <a
+                [href]="src.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
+              >
+                {{ src.label || src.url }}
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+              </a>
+            </li>
+          }
+        </ul>
+      </app-detail-panel-section>
+    }
+
+    @if (d.tags.length > 0) {
+      <app-detail-panel-section label="Tags">
+        <div class="flex flex-wrap gap-1">
+          @for (tag of d.tags; track tag) {
+            <span class="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{{
+              tag
+            }}</span>
+          }
+        </div>
+      </app-detail-panel-section>
+    }
+
+    @if (d.thread; as thread) {
+      <app-detail-panel-section [label]="'Thread · ' + thread.title">
+        <ol class="space-y-px border-l border-slate-200 pl-3">
+          @for (te of thread.events; track te.id) {
+            <li>
+              @if (te.id === d.id) {
+                <div
+                  class="flex items-center justify-between gap-2 rounded-sm bg-brand-50 px-2 py-1"
+                >
+                  <span class="flex min-w-0 items-center gap-2 text-[11px] leading-snug">
+                    <span class="font-mono tabular-nums text-brand-700">{{
+                      te.event_date | date: 'mediumDate'
+                    }}</span>
+                    <span class="truncate font-semibold text-brand-800">{{ te.title }}</span>
+                  </span>
+                  <span class="text-[9px] font-semibold uppercase tracking-wider text-brand-600"
+                    >current</span
+                  >
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="group flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  (click)="threadEventClick.emit(te.id)"
+                >
+                  <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                    te.event_date | date: 'mediumDate'
+                  }}</span>
+                  <span class="min-w-0 flex-1 truncate text-[11px] text-slate-600">{{
+                    te.title
+                  }}</span>
+                  <i
+                    class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              }
+            </li>
+          }
+        </ol>
+      </app-detail-panel-section>
+    }
+
+    @if (d.linked_events.length > 0) {
+      <app-detail-panel-section label="Related events">
+        <app-detail-panel-entity-list>
+          @for (le of d.linked_events; track le.id) {
+            <app-detail-panel-entity-row (rowClick)="relatedEventClick.emit(le.id)">
+              <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                le.event_date | date: 'mediumDate'
+              }}</span>
+              <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{ le.title }}</span>
+              <span class="shrink-0 text-[10px] text-slate-400">({{ le.category_name }})</span>
+            </app-detail-panel-entity-row>
+          }
+        </app-detail-panel-entity-list>
+      </app-detail-panel-section>
+    }
+
+    <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
+
+    <!-- Detected event detail branch -->
+  } @else if (isDetected() && selectedFeedItem(); as item) {
+    <!-- Title: rich summary segments -->
+    @if (detectedSummary(); as summary) {
+      <h2 class="text-[15px] font-semibold leading-snug text-slate-900">
+        @for (seg of summary.segments; track $index) {
+          @switch (seg.kind) {
+            @case ('old') {
+              <span class="line-through text-slate-400">{{ seg.text }}</span>
+            }
+            @case ('new') {
+              <span class="font-semibold text-slate-900">{{ seg.text }}</span>
+            }
+            @case ('arrow') {
+              <span class="mx-1 text-slate-300">&rarr;</span>
+            }
+            @case ('plain') {
+              <span>{{ seg.text }}</span>
+            }
+            @case ('muted') {
+              <span class="text-slate-400">{{ seg.text }}</span>
+            }
+          }
+        }
+      </h2>
+    } @else {
+      <h2 class="text-[15px] font-semibold leading-snug text-slate-900">{{ item.title }}</h2>
+    }
+
+    <!-- Signal row: date + priority -->
+    <div class="mt-2 flex items-center gap-2 text-[12px] text-slate-500">
+      <span class="font-mono tabular-nums">{{ item.event_date | date: 'MMM d, y' }}</span>
+      @if (item.priority === 'high') {
+        <span class="inline-block h-[7px] w-[7px] rounded-full bg-red-500"></span>
+        <span class="text-[11px] font-semibold text-red-600">High signal</span>
+      }
+    </div>
+
+    <!-- Change detail card -->
+    @if (getChangeDetailRows(item).length > 0) {
+      <div class="mt-4 rounded border border-slate-200 bg-slate-50 p-3">
+        <p class="mb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">
+          Change detail
+        </p>
+        @for (row of getChangeDetailRows(item); track row.label) {
+          <div class="mb-1.5 last:mb-0">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+              {{ row.label }}
+            </p>
+            <div class="flex items-center gap-1.5 text-[12px]">
+              @if (row.previous) {
+                <span class="text-slate-400 line-through">{{ row.previous }}</span>
+                <span class="text-slate-300">&rarr;</span>
+              }
+              <span class="font-medium text-slate-800">{{ row.current }}</span>
+            </div>
+          </div>
+        }
+        @if (item.observed_at) {
+          <div class="mt-2 border-t border-slate-200 pt-2">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-slate-400">Detected</p>
+            <p class="text-[12px] text-slate-600">
+              {{ item.observed_at | date: 'MMM d, y, h:mm a' }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Source provenance -->
+    <div class="mt-4">
+      <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">Source</p>
+      @if (item.source_url) {
+        <a
+          [href]="item.source_url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:underline"
+        >
+          ClinicalTrials.gov
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+        </a>
+      } @else {
+        <span class="text-[12px] text-slate-500">Analyst</span>
+      }
+    </div>
+
+    <!-- Trial entity context -->
+    <div class="mt-4">
+      <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">Trial</p>
+      <div class="flex items-center gap-2">
+        @if (item.company_logo_url) {
+          <app-brand-logo
+            [url]="item.company_logo_url"
+            [alt]="item.company_name ?? ''"
+            [width]="16"
+            [height]="16"
+            imgClass="rounded-sm border border-slate-200 bg-white object-contain"
+          />
+        }
+        <span class="text-[13px] text-slate-700">
+          @if (item.company_name) {
+            @if (item.company_id && tenantId() && spaceId()) {
+              <a
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', item.company_id]"
+                class="text-slate-700 hover:text-brand-700 hover:underline"
+                >{{ item.company_name }}</a
+              >
+            } @else {
+              {{ item.company_name }}
+            }
+            <span class="text-slate-300"> / </span>
+          }
+          @if (item.asset_id && tenantId() && spaceId()) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', item.asset_id]"
+              class="text-slate-700 hover:text-brand-700 hover:underline"
+              >{{ item.entity_name }}</a
+            >
+          } @else {
+            {{ item.entity_name }}
+          }
+        </span>
+      </div>
+    </div>
+
+    <!-- Analyst note block -->
+    <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">
+      <div class="mb-1.5 flex items-center gap-1.5">
+        <i class="fa-solid fa-message text-[9px] text-brand-600" aria-hidden="true"></i>
+        <p class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+          Analyst note
+        </p>
+        @if (canEdit() && !annotationEditing() && annotationData()) {
+          <button
+            type="button"
+            class="ml-auto text-slate-400 hover:text-slate-600"
+            (click)="startAnnotationEdit(annotationData()!.body)"
+            aria-label="Edit analyst note"
+          >
+            <i class="fa-solid fa-pen text-[9px]"></i>
+          </button>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-red-500"
+            (click)="deleteAnnotation(item.id)"
+            aria-label="Delete analyst note"
+          >
+            <i class="fa-solid fa-trash text-[9px]"></i>
+          </button>
+        }
+      </div>
+
+      @if (annotationEditing()) {
+        <textarea
+          [ngModel]="annotationBody()"
+          (ngModelChange)="annotationBody.set($event)"
+          class="w-full rounded border border-slate-200 bg-white p-2 text-[12px] text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
+          rows="3"
+          placeholder="Why does this matter?"
+          aria-label="Analyst note text"
+        ></textarea>
+        <div class="mt-2 flex gap-2">
+          <button
+            type="button"
+            (click)="saveAnnotation(item.id)"
+            [disabled]="annotationSaving()"
+            class="text-[11px] font-medium text-brand-700 hover:text-brand-800 disabled:opacity-50"
+          >
+            {{ annotationSaving() ? 'Saving...' : 'Save' }}
+          </button>
+          <button
+            type="button"
+            (click)="cancelAnnotationEdit()"
+            class="text-[11px] text-slate-500 hover:text-slate-700"
+          >
+            Cancel
+          </button>
+        </div>
+      } @else if (annotationData(); as ann) {
+        <p class="text-[12px] leading-relaxed text-slate-700">{{ ann.body }}</p>
+        <p class="mt-1.5 text-[10px] text-slate-400">
+          Updated {{ ann.updated_at | date: 'MMM d, y' }}
+        </p>
+      } @else if (annotationLoading()) {
+        <p class="text-[12px] italic text-slate-400">Loading...</p>
+      } @else if (canEdit()) {
+        <button
+          type="button"
+          (click)="startAnnotationEdit()"
+          class="text-[12px] italic text-slate-400 hover:text-slate-600"
+        >
+          Add a note on why this matters.
+        </button>
+      } @else {
+        <p class="text-[12px] italic text-slate-400">No analyst note yet.</p>
+      }
+    </div>
+
+    <!-- Marker detail branch -->
+  } @else if (catalystDetail()) {
+    <app-marker-detail-content
+      [detail]="catalystDetail()"
+      [spaceId]="spaceId()"
+      (markerClick)="markerSelect.emit($event)"
+      (eventClick)="relatedEventClick.emit($event)"
+      (trialClick)="trialClick.emit($event)"
+    />
+
+    <!-- Empty state / overview branch -->
+  } @else {
+    <app-detail-panel-empty-state prompt="Click an event to see details">
+      <p class="mt-2 text-[13px] text-slate-700">
+        <span class="text-base font-semibold tabular-nums text-slate-900">{{
+          feedItems().length
+        }}</span>
+        in window
+        @if (highPriorityCount() > 0) {
+          <span class="text-slate-500"
+            >&middot; <span class="font-medium text-slate-900">{{ highPriorityCount() }}</span> high
+            priority</span
+          >
+        }
+      </p>
+
+      @if (categoryHistogram().length > 0) {
+        <app-detail-panel-section [first]="true" label="By category">
+          <app-detail-panel-entity-list>
+            @for (entry of categoryHistogram(); track entry.name) {
+              <app-detail-panel-entity-row (rowClick)="categoryFilter.emit(entry.name)">
+                <span
+                  class="inline-block h-2 w-2 shrink-0 rounded-full"
+                  [style.background-color]="entry.color"
+                  aria-hidden="true"
+                ></span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  entry.name
+                }}</span>
+                <span class="shrink-0 font-mono text-[12px] tabular-nums text-slate-900">{{
+                  entry.count
+                }}</span>
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+
+      @if (mostRecent().length > 0) {
+        <app-detail-panel-section label="Most recent">
+          <app-detail-panel-entity-list>
+            @for (item of mostRecent(); track item.id) {
+              <app-detail-panel-entity-row (rowClick)="recentClick.emit(item.id)">
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  item.event_date | date: 'MMM d'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  item.title
+                }}</span>
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+    </app-detail-panel-empty-state>
+  }
+
+  @if (detail()?.thread) {
+    <div footer class="border-t border-slate-100 px-5 py-3">
+      <button
+        type="button"
+        class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        (click)="openThread.emit()"
+      >
+        Open thread
+        <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
+</app-detail-panel-shell>

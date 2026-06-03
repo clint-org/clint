@@ -19,6 +19,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MessageModule } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { Tenant, TenantMember, TenantInvite } from '../../core/models/tenant.model';
 import { MATERIAL_DEFAULT_ALLOWED_MIME } from '../../core/models/material.model';
@@ -49,6 +50,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
     MultiSelectModule,
     MessageModule,
     Tooltip,
+    ToggleSwitch,
     ManagePageShellComponent,
     RowActionsComponent,
     RouterLink,
@@ -179,7 +181,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
       </div>
       <p class="mb-3 text-[11px] text-slate-500 max-w-xl">
         Tenant owners can rename the tenant, manage other owners, and provision spaces. Data access
-        is granted per-space &mdash; owners must add themselves to a space to see its data.
+        is granted per-space. Owners must add themselves to a space to see its data.
       </p>
       <p-table
         styleClass="data-table"
@@ -334,6 +336,110 @@ import { extractErrorMessage } from '../../core/util/error-message';
         </div>
       }
 
+      <!-- AI / source import (owner-only) -->
+      @if (currentUserIsOwner()) {
+        <div class="mt-12 max-w-xl border-t border-slate-200 pt-6">
+          <h3 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            AI / Source import
+          </h3>
+          <p class="mt-1 text-[11px] text-slate-500">
+            When enabled, space editors can import structured data from press releases and articles
+            using AI extraction. Usage is metered per tenant.
+          </p>
+
+          <div class="mt-4 space-y-4">
+            <div class="flex items-center gap-3">
+              <p-toggleSwitch
+                [ngModel]="aiEnabled()"
+                (ngModelChange)="onAiEnabledToggle($event)"
+              />
+              <span class="text-sm text-slate-700">{{ aiEnabled() ? 'Enabled' : 'Disabled' }}</span>
+              @if (aiToggleError()) {
+                <span class="text-xs text-red-600">{{ aiToggleError() }}</span>
+              }
+            </div>
+
+            @if (aiEnabled()) {
+              <div>
+                <label
+                  for="ai-daily-cap"
+                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Daily cost cap (cents)
+                </label>
+                <p-inputnumber
+                  inputId="ai-daily-cap"
+                  [ngModel]="aiDailyCostCapCents()"
+                  (ngModelChange)="aiDailyCostCapCents.set($event)"
+                  [min]="0"
+                  [max]="100000"
+                  [showButtons]="true"
+                  buttonLayout="horizontal"
+                  inputStyleClass="w-32 text-right"
+                  styleClass="w-44"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="ai-rate-min"
+                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Per-user rate limit (per minute)
+                </label>
+                <p-inputnumber
+                  inputId="ai-rate-min"
+                  [ngModel]="aiRatePerMin()"
+                  (ngModelChange)="aiRatePerMin.set($event)"
+                  [min]="1"
+                  [max]="120"
+                  [showButtons]="true"
+                  buttonLayout="horizontal"
+                  inputStyleClass="w-32 text-right"
+                  styleClass="w-44"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="ai-rate-hour"
+                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Per-user rate limit (per hour)
+                </label>
+                <p-inputnumber
+                  inputId="ai-rate-hour"
+                  [ngModel]="aiRatePerHour()"
+                  (ngModelChange)="aiRatePerHour.set($event)"
+                  [min]="1"
+                  [max]="1000"
+                  [showButtons]="true"
+                  buttonLayout="horizontal"
+                  inputStyleClass="w-32 text-right"
+                  styleClass="w-44"
+                />
+              </div>
+
+              @if (aiSettingsError()) {
+                <p-message severity="error" [closable]="false">
+                  {{ aiSettingsError() }}
+                </p-message>
+              }
+
+              <div class="flex items-center gap-3">
+                <p-button
+                  label="Save limits"
+                  size="small"
+                  [loading]="savingAiSettings()"
+                  [disabled]="!aiSettingsChanged()"
+                  (onClick)="saveAiSettings()"
+                />
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <!-- Audit log link (owner-only) -->
       @if (currentUserIsOwner()) {
         <div class="mt-8 max-w-xl border-t border-slate-200 pt-6">
@@ -482,6 +588,29 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     },
   ];
 
+  // AI config drafts (owner-only UI)
+  readonly aiEnabled = signal(false);
+  readonly aiDailyCostCapCents = signal(500);
+  readonly aiRatePerMin = signal(6);
+  readonly aiRatePerHour = signal(60);
+  readonly savingAiSettings = signal(false);
+  readonly aiSettingsError = signal<string | null>(null);
+  readonly aiToggleError = signal<string | null>(null);
+
+  private aiConfigSnapshot = {
+    dailyCostCapCents: 500,
+    ratePerMin: 6,
+    ratePerHour: 60,
+  };
+
+  readonly aiSettingsChanged = computed(() => {
+    return (
+      this.aiDailyCostCapCents() !== this.aiConfigSnapshot.dailyCostCapCents ||
+      this.aiRatePerMin() !== this.aiConfigSnapshot.ratePerMin ||
+      this.aiRatePerHour() !== this.aiConfigSnapshot.ratePerHour
+    );
+  });
+
   readonly materialSettingsChanged = computed(() => {
     const t = this.tenant();
     if (!t) return false;
@@ -537,6 +666,7 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     await this.loadData();
     this.tenantNameDraft.set(this.tenant()?.name ?? '');
     this.seedMaterialSettingDrafts();
+    this.loadAiConfig();
 
     // If the tenant has a parent agency AND the current user is a member of
     // that agency, surface a cross-host link to the agency portal in the
@@ -728,6 +858,83 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     } finally {
       this.savingMaterialSettings.set(false);
     }
+  }
+
+  async onAiEnabledToggle(enabled: boolean): Promise<void> {
+    this.aiToggleError.set(null);
+    this.aiEnabled.set(enabled);
+    try {
+      const { error } = await this.supabase.client.rpc('tenant_owner_update_ai_config', {
+        p_tenant_id: this.tenantId,
+        p_ai_enabled: enabled,
+      });
+      if (error) {
+        this.aiEnabled.set(!enabled);
+        this.aiToggleError.set(error.message);
+        return;
+      }
+      this.messageService.add({
+        severity: 'success',
+        summary: `Source import ${enabled ? 'enabled' : 'disabled'}.`,
+        life: 3000,
+      });
+    } catch (e) {
+      this.aiEnabled.set(!enabled);
+      this.aiToggleError.set(extractErrorMessage(e, 'Failed to update AI config'));
+    }
+  }
+
+  async saveAiSettings(): Promise<void> {
+    if (!this.aiSettingsChanged()) return;
+    this.savingAiSettings.set(true);
+    this.aiSettingsError.set(null);
+    try {
+      const { data, error } = await this.supabase.client.rpc('tenant_owner_update_ai_config', {
+        p_tenant_id: this.tenantId,
+        p_daily_cost_cap_cents: this.aiDailyCostCapCents(),
+        p_per_user_rate_per_min: this.aiRatePerMin(),
+        p_per_user_rate_per_hour: this.aiRatePerHour(),
+      });
+      if (error) {
+        this.aiSettingsError.set(error.message);
+        return;
+      }
+      this.seedAiConfigDrafts(data as Record<string, unknown>);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'AI rate limits saved.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.aiSettingsError.set(extractErrorMessage(e, 'Failed to save AI config'));
+    } finally {
+      this.savingAiSettings.set(false);
+    }
+  }
+
+  private seedAiConfigDrafts(row: Record<string, unknown> | null): void {
+    if (!row) return;
+    this.aiEnabled.set(row['ai_enabled'] === true);
+    const daily = (row['daily_cost_cap_cents'] as number) ?? 500;
+    const rateMin = (row['per_user_rate_per_min'] as number) ?? 6;
+    const rateHour = (row['per_user_rate_per_hour'] as number) ?? 60;
+    this.aiDailyCostCapCents.set(daily);
+    this.aiRatePerMin.set(rateMin);
+    this.aiRatePerHour.set(rateHour);
+    this.aiConfigSnapshot = {
+      dailyCostCapCents: daily,
+      ratePerMin: rateMin,
+      ratePerHour: rateHour,
+    };
+  }
+
+  private async loadAiConfig(): Promise<void> {
+    const { data } = await this.supabase.client
+      .from('ai_config')
+      .select('ai_enabled, daily_cost_cap_cents, per_user_rate_per_min, per_user_rate_per_hour')
+      .eq('tenant_id', this.tenantId)
+      .maybeSingle();
+    this.seedAiConfigDrafts(data);
   }
 
   async removeMember(member: TenantMember): Promise<void> {

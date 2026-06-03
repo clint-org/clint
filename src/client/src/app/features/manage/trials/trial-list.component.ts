@@ -163,7 +163,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
     const productMap = new Map(this.products().map((p) => [p.id, p]));
     const companyMap = new Map(this.companies().map((c) => [c.id, c]));
     return this.trials().map((trial) => {
-      const product = productMap.get(trial.product_id);
+      const product = productMap.get(trial.asset_id);
       const company = product ? companyMap.get(product.company_id) : undefined;
       return {
         trial,
@@ -182,7 +182,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       { field: 'trial.name', header: 'Trial', filter: { kind: 'text' } },
       { field: 'trial.identifier', header: 'NCT ID', filter: { kind: 'text' } },
       {
-        field: 'trial.product_id',
+        field: 'trial.asset_id',
         header: 'Asset',
         filter: {
           kind: 'select',
@@ -308,8 +308,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
 
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete trial',
-      entityLabel: trial.name,
-      message: `Delete "${trial.name}"? This will permanently remove:`,
+      entityLabel: trial.acronym ?? trial.name,
+      message: `Delete "${trial.acronym ?? trial.name}"? This will permanently remove:`,
       counts,
       requireTypedConfirmation: true,
     });

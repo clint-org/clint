@@ -12,6 +12,7 @@ interface QueryBuilderStub {
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
+  throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
   _error: unknown;
 }
@@ -24,19 +25,37 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     delete: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
+    throwOnError: vi.fn(),
     _data: data,
     _error: error,
   };
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
-    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null
-  ) => Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null
+  ) => {
+    if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+    return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+  };
   qb.select.mockReturnValue(qb);
   qb.insert.mockReturnValue(qb);
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
-  qb.single.mockResolvedValue({ data: qb._data, error: qb._error });
+  qb.throwOnError.mockReturnValue(qb);
+  qb.single.mockImplementation(() => {
+    const s = { throwOnError: vi.fn() } as Record<string, unknown>;
+    const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+    (sp as { then: PromiseLike<unknown>['then'] }).then = (
+      onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null
+    ) => {
+      if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+      return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    };
+    s['throwOnError'] = vi.fn().mockReturnValue(sp);
+    return sp;
+  });
   return qb;
 }
 
@@ -67,9 +86,7 @@ describe('MarkerService.update', () => {
   it('invalidates the catalyst detail tag for the updated marker', async () => {
     const updateQb = makeQueryBuilder({ id: 'marker-1', space_id: 'space-1' });
     const assignmentsQb = makeQueryBuilder([{ trial_id: 'trial-1' }]);
-    const from = vi.fn()
-      .mockReturnValueOnce(assignmentsQb)
-      .mockReturnValueOnce(updateQb);
+    const from = vi.fn().mockReturnValueOnce(assignmentsQb).mockReturnValueOnce(updateQb);
     const invalidateTags = vi.fn();
     const service = makeService(
       { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
@@ -84,26 +101,31 @@ describe('MarkerService.update', () => {
 });
 
 describe('MarkerService.updateAssignments', () => {
-  it('invalidates the catalyst detail tag for the marker whose assignments changed', async () => {
+  it('delegates to update_marker_assignments RPC and invalidates affected tags', async () => {
     const markerQb = makeQueryBuilder({ space_id: 'space-1' });
     const oldRowsQb = makeQueryBuilder([{ trial_id: 'trial-old' }]);
-    const deleteQb = makeQueryBuilder(null);
-    const insertQb = makeQueryBuilder(null);
-    const from = vi.fn()
-      .mockReturnValueOnce(markerQb)
-      .mockReturnValueOnce(oldRowsQb)
-      .mockReturnValueOnce(deleteQb)
-      .mockReturnValueOnce(insertQb);
+    const from = vi.fn().mockReturnValueOnce(markerQb).mockReturnValueOnce(oldRowsQb);
+    const rpc = vi.fn().mockReturnValue({
+      throwOnError: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.updateAssignments('marker-1', ['trial-new']);
 
+    expect(rpc).toHaveBeenCalledWith('update_marker_assignments', {
+      p_marker_id: 'marker-1',
+      p_trial_ids: ['trial-new'],
+    });
     expect(invalidateTags).toHaveBeenCalledTimes(1);
-    expect(invalidateTags.mock.calls[0][0]).toContain('catalyst:marker-1:detail');
+    const tags = invalidateTags.mock.calls[0][0] as string[];
+    expect(tags).toContain('catalyst:marker-1:detail');
+    // Both previous and new trial caches get invalidated.
+    expect(tags).toContain('trial:trial-old:detail');
+    expect(tags).toContain('trial:trial-new:detail');
   });
 });
 
@@ -112,7 +134,8 @@ describe('MarkerService.delete', () => {
     const markerQb = makeQueryBuilder({ space_id: 'space-1' });
     const assignmentsQb = makeQueryBuilder([{ trial_id: 'trial-1' }]);
     const deleteQb = makeQueryBuilder(null);
-    const from = vi.fn()
+    const from = vi
+      .fn()
       .mockReturnValueOnce(markerQb)
       .mockReturnValueOnce(assignmentsQb)
       .mockReturnValueOnce(deleteQb);

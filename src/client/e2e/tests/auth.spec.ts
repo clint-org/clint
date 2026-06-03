@@ -9,7 +9,7 @@ test.describe('Authentication', () => {
     // The marketing landing now serves "/" on the default host, so "/" no
     // longer redirects unauth users. Visit a route gated by authGuard
     // (/onboarding) to assert the auth-required redirect still fires.
-    await page.goto('/onboarding', { waitUntil: 'networkidle' });
+    await page.goto('/onboarding', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -34,7 +34,7 @@ test.describe('Authentication', () => {
 
     const page = await authenticatedPage(browser);
     try {
-      await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
+      await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'domcontentloaded' });
       await page.locator('button:text("Sign out")').waitFor({ timeout: 10000 });
       await page.locator('button:text("Sign out")').click();
       await expect(page).toHaveURL(/\/login/, { timeout: 15000 });

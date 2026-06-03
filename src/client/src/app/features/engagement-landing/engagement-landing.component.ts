@@ -8,12 +8,15 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SpaceService } from '../../core/services/space.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -46,7 +49,7 @@ interface FeedFilter {
 }
 
 interface MotionCell {
-  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves' | 'loe';
+  key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves';
   label: string;
   windowLabel: string;
   value: number | null;
@@ -88,6 +91,7 @@ interface InventoryTotals {
     DatePipe,
     LowerCasePipe,
     RouterLink,
+    ButtonModule,
     MessageModule,
     MarkerIconComponent,
     SkeletonComponent,
@@ -107,6 +111,8 @@ export class EngagementLandingComponent implements OnInit {
   private readonly tenantService = inject(TenantService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
   private readonly brand = inject(BrandContextService);
+  private readonly supabase = inject(SupabaseService);
+  protected readonly spaceRole = inject(SpaceRoleService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -120,7 +126,15 @@ export class EngagementLandingComponent implements OnInit {
   readonly latestIntelligence = signal<IntelligenceFeedRow[]>([]);
   readonly latestLoading = signal(true);
   readonly feedFilter = signal<'all' | IntelligenceEntityType>('all');
+  readonly aiEnabled = signal(false);
+  readonly isAgencyBrand = computed(() => this.brand.kind() === 'agency');
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
+
+  readonly isEmptySpace = computed(() => {
+    const s = this.stats();
+    if (!s) return false;
+    return s.active_trials === 0 && s.companies === 0;
+  });
 
   readonly hasFeedItems = computed(() => this.latestIntelligence().length > 0);
   readonly spaceName = computed(() => this.space()?.name ?? '');
@@ -201,7 +215,7 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'newIntel',
-        label: 'New intel',
+        label: 'New reads',
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
@@ -220,16 +234,6 @@ export class EngagementLandingComponent implements OnInit {
           ? { eventTypes: 'phase_transitioned,status_changed', within: '30d' }
           : null,
         warn: false,
-      },
-      {
-        key: 'loe',
-        label: 'Loss of excl.',
-        windowLabel: 'next 365d',
-        value: v(s?.loe_365d),
-        display: s?.loe_365d == null ? '' : String(s.loe_365d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
-        queryParams: hasRoute ? { markerKind: 'loe', within: '365d' } : null,
-        warn: (s?.loe_365d ?? 0) > 0,
       },
     ];
     return cells;
@@ -306,7 +310,7 @@ export class EngagementLandingComponent implements OnInit {
         monthLabel: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
         isToday: c.event_date === todayIso(),
         title: c.title || c.category_name || 'Catalyst',
-        who: [c.company_name?.toUpperCase(), c.product_name, c.is_projected ? 'PROJECTED' : null]
+        who: [c.company_name?.toUpperCase(), c.asset_name, c.is_projected ? 'PROJECTED' : null]
           .filter((p): p is string => !!p)
           .join(' · '),
         color: c.marker_type_color || '#16a34a',
@@ -338,7 +342,7 @@ export class EngagementLandingComponent implements OnInit {
     for (const r of rows) {
       counts.set(r.entity_type, (counts.get(r.entity_type) ?? 0) + 1);
     }
-    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'marker', 'space'];
+    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'space'];
     const out: FeedFilter[] = [{ key: 'all', label: 'All', count: rows.length }];
     for (const type of order) {
       const n = counts.get(type) ?? 0;
@@ -367,6 +371,10 @@ export class EngagementLandingComponent implements OnInit {
   ngOnInit(): void {
     this.extractRouteParams();
     void this.loadAll();
+  }
+
+  navigateToImport(): void {
+    void this.router.navigate(['import'], { relativeTo: this.route });
   }
 
   setFeedFilter(key: FeedFilter['key']): void {
@@ -404,8 +412,6 @@ export class EngagementLandingComponent implements OnInit {
         return 'text-slate-600';
       case 'product':
         return 'text-brand-700';
-      case 'marker':
-        return 'text-orange-800';
       case 'space':
         return 'text-slate-600';
       default:
@@ -451,11 +457,32 @@ export class EngagementLandingComponent implements OnInit {
     ]);
 
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
-    if (tenantRes.status === 'fulfilled') this.tenant.set(tenantRes.value);
+    if (tenantRes.status === 'fulfilled') {
+      this.tenant.set(tenantRes.value);
+      const { data } = await this.supabase.client
+        .from('ai_config')
+        .select('ai_enabled')
+        .eq('tenant_id', tid)
+        .maybeSingle();
+      this.aiEnabled.set(data?.ai_enabled === true);
+    }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);
     } else {
       this.loadError.set(formatError(statsRes.reason, 'Failed to load engagement stats.'));
+    }
+
+    // Redirect editors on empty spaces to the import page
+    const statsVal = this.stats();
+    if (
+      statsVal &&
+      statsVal.active_trials === 0 &&
+      statsVal.companies === 0 &&
+      this.spaceRole.canEdit() &&
+      this.aiEnabled()
+    ) {
+      void this.router.navigate(['/t', tid, 's', sid, 'import']);
+      return;
     }
     if (dashRes.status === 'fulfilled') {
       this.upcoming.set(extractUpcoming(dashRes.value.companies, 90));
@@ -516,7 +543,7 @@ function emptyFilters() {
   return {
     companyIds: null,
     assetIds: null,
-    therapeuticAreaIds: null,
+    indicationIds: null,
     startYear: null,
     endYear: null,
     recruitmentStatuses: null,
@@ -555,7 +582,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
   const out: UpcomingCatalyst[] = [];
 
   for (const company of companies) {
-    for (const asset of company.products ?? ([] as Asset[])) {
+    for (const asset of company.assets ?? ([] as Asset[])) {
       for (const trial of asset.trials ?? ([] as Trial[])) {
         for (const marker of trial.markers ?? ([] as Marker[])) {
           if (!marker.event_date) continue;
@@ -573,8 +600,9 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
             marker_type_fill_style: mt?.fill_style ?? 'filled',
             marker_type_inner_mark: mt?.inner_mark ?? 'none',
             company_name: company.name,
-            product_name: asset.name,
+            asset_name: asset.name,
             trial_name: trial.name ?? null,
+            trial_acronym: trial.acronym ?? null,
           });
         }
       }

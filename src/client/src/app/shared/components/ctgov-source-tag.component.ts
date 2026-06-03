@@ -19,7 +19,7 @@ import { CtgovMarkerMetadata } from '../../core/models/catalyst.model';
   template: `
     @if (isCtgov()) {
       <span
-        class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[9px] font-medium uppercase tracking-wider text-slate-500"
+        class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[9px] font-medium uppercase tracking-wider text-slate-500"
         [attr.title]="tooltip()"
         [attr.aria-label]="tooltip()"
       >

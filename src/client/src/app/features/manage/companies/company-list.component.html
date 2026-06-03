@@ -39,19 +39,15 @@
           </a>
         </td>
         <td>
-          @if (company.logo_url && !brokenLogos().has(company.id)) {
-            <img
-              [ngSrc]="company.logo_url"
-              [alt]="company.name + ' logo'"
-              width="128"
-              height="20"
-              class="h-5 w-auto max-w-[8rem] object-contain"
-              loading="lazy"
-              (error)="onLogoError(company.id)"
-            />
-          } @else {
+          <app-brand-logo
+            [url]="company.logo_url"
+            [alt]="company.name + ' logo'"
+            [width]="128"
+            [height]="20"
+            imgClass="h-5 w-auto max-w-[8rem] object-contain"
+          >
             <span class="text-slate-300">--</span>
-          }
+          </app-brand-logo>
         </td>
         <td class="col-num">{{ company.display_order }}</td>
         <td class="col-actions">

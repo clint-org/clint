@@ -5,9 +5,9 @@
  *   or missing entirely (deleted before redaction landed). Authorship rows
  *   survive user removal via redaction (#6 in the cascade-safety design),
  *   so the UI must render a placeholder rather than blanking out.
- * - resolveTherapeuticAreaLabel: trials.therapeutic_area_id flips to
- *   nullable SET NULL when the parent therapeutic area is deleted (#2 in
- *   the design), so any list row joining through trials.therapeutic_area
+ * - resolveTherapeuticAreaLabel: trials.indication_id flips to
+ *   nullable SET NULL when the parent indication is deleted (#2 in
+ *   the design), so any list row joining through trials.indication
  *   must tolerate a null result.
  * - resolveSpaceBadge: spaces.archived_at is the soft-delete tier (#1 in
  *   the design); archived spaces still appear in some lists and need a
@@ -55,9 +55,9 @@ export function resolveUserDisplay(user: UserRefInput): string {
 }
 
 /**
- * Resolve a therapeutic area label, falling back to the abbreviation if
+ * Resolve an indication label, falling back to the abbreviation if
  * the name is empty, and to "(uncategorized)" if both are empty or the
- * reference is missing. Trials whose therapeutic_area_id was set to null
+ * reference is missing. Trials whose indication_id was set to null
  * by FK cascade land in the missing branch.
  */
 export function resolveTherapeuticAreaLabel(ta: TherapeuticAreaRefInput): string {

@@ -15,17 +15,6 @@
       >
         <!-- Header row -->
         <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
-          @if (!isScrolled() && hasAnyToggleableColumn()) {
-            <button
-              type="button"
-              class="flex-none w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 border-r border-slate-700 transition-colors"
-              aria-label="Column settings"
-              [attr.aria-expanded]="columnSettingsOpen()"
-              (click)="columnSettingsPanel.toggle($event)"
-            >
-              <i class="fa-solid fa-gear text-xs"></i>
-            </button>
-          }
           @if (!hideCompanyColumn()) {
             <div
               class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
@@ -66,59 +55,8 @@
             </div>
           }
         </div>
-        <p-popover
-          #columnSettingsPanel
-          ariaLabel="Column visibility settings"
-          (onShow)="columnSettingsOpen.set(true)"
-          (onHide)="columnSettingsOpen.set(false)"
-        >
-          <div class="flex flex-col gap-2 p-1">
-            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
-              >Columns</span
-            >
-            @if (!hideMoaColumn()) {
-              <div class="flex items-center gap-2">
-                <p-checkbox
-                  [ngModel]="showMoaColumn()"
-                  (ngModelChange)="showMoaColumn.set($event)"
-                  [binary]="true"
-                  inputId="col-moa"
-                  size="small"
-                />
-                <label for="col-moa" class="text-sm text-slate-700 cursor-pointer">MOA</label>
-              </div>
-            }
-            @if (!hideRoaColumn()) {
-              <div class="flex items-center gap-2">
-                <p-checkbox
-                  [ngModel]="showRoaColumn()"
-                  (ngModelChange)="showRoaColumn.set($event)"
-                  [binary]="true"
-                  inputId="col-roa"
-                  size="small"
-                />
-                <label for="col-roa" class="text-sm text-slate-700 cursor-pointer">ROA</label>
-              </div>
-            }
-            @if (!hideNotesColumn()) {
-              <div class="flex items-center gap-2">
-                <p-checkbox
-                  [ngModel]="showNotesColumn()"
-                  (ngModelChange)="showNotesColumn.set($event)"
-                  [binary]="true"
-                  inputId="col-notes"
-                  size="small"
-                />
-                <label for="col-notes" class="text-sm text-slate-700 cursor-pointer">Notes</label>
-              </div>
-            }
-          </div>
-        </p-popover>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-100">
-            @if (!isScrolled() && hasAnyToggleableColumn()) {
-              <div class="w-8 flex-none" aria-hidden="true">&nbsp;</div>
-            }
             @if (!hideCompanyColumn()) {
               <div
                 class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
@@ -146,7 +84,9 @@
               </div>
             }
             @if (!hideTrialColumn()) {
-              <div class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+              <div
+                class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200"
+              >
                 &nbsp;
               </div>
             }
@@ -166,9 +106,6 @@
             [class.border-l-transparent]="!row.isFirstInCompany"
             [style.height.px]="36"
           >
-            @if (!isScrolled() && hasAnyToggleableColumn()) {
-              <div class="w-8 flex-none" aria-hidden="true"></div>
-            }
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             @if (!hideCompanyColumn()) {
               <div
@@ -217,7 +154,9 @@
                 (keydown.space)="onAssetClick(row.assetId)"
               >
                 @if (row.isFirstInAsset) {
-                  <span class="text-sm text-slate-600 font-medium truncate">{{ row.assetName }}</span>
+                  <span class="text-sm text-slate-600 font-medium truncate">{{
+                    row.assetName
+                  }}</span>
                 }
               </div>
             }
@@ -279,18 +218,25 @@
             @if (!hideTrialColumn()) {
               <div
                 class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
-                [title]="row.companyName + ' / ' + row.assetName + ' / ' + row.trial.name"
+                [title]="
+                  row.companyName +
+                  ' / ' +
+                  row.assetName +
+                  ' / ' +
+                  (row.trial.acronym ?? row.trial.name)
+                "
                 role="button"
                 tabindex="0"
                 (click)="onTrialClick(row.trial)"
                 (keydown.enter)="onTrialClick(row.trial)"
                 (keydown.space)="onTrialClick(row.trial)"
               >
-                {{ row.trial.name }}
+                {{ row.trial.acronym ?? row.trial.name }}
                 <app-change-badge
                   class="ml-1 inline-flex items-center"
                   [count]="row.trial.recent_changes_count ?? 0"
                   [type]="row.trial.most_recent_change_type ?? null"
+                  [eventId]="row.trial.most_recent_change_event_id ?? null"
                 />
                 @if (row.trial.identifier) {
                   <span class="text-[10px] text-slate-400 font-mono ml-1">{{
@@ -366,7 +312,7 @@
                       [startYear]="startYear()"
                       [endYear]="endYear()"
                       [totalWidth]="totalWidth()"
-                      [trialName]="row.trial.name"
+                      [trialName]="row.trial.acronym ?? row.trial.name"
                       [trialPhase]="row.trial.phase_type ?? ''"
                       [recruitmentStatus]="row.trial.recruitment_status ?? ''"
                       [companyName]="row.companyName"

@@ -15,15 +15,8 @@ import { errorMessage } from '../../../core/utils/error-message';
 import { ChangeEventRowComponent } from '../change-event-row/change-event-row.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
-/**
- * "What changed" widget for the engagement landing. Calls
- * get_activity_feed with a high-signal whitelist over the last 7 days
- * and renders the top 3 events. Surface 2 of the trial change feed
- * design (docs/superpowers/specs/2026-05-02-trial-change-feed-design.md).
- */
 @Component({
   selector: 'app-what-changed-widget',
-  standalone: true,
   imports: [RouterLink, ChangeEventRowComponent, SkeletonComponent],
   templateUrl: './what-changed-widget.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +36,18 @@ export class WhatChangedWidgetComponent {
     const t = this.tenantId();
     const s = this.spaceId();
     if (!t || !s) return '';
-    return `/t/${t}/s/${s}/activity`;
+    return `/t/${t}/s/${s}/events`;
+  });
+
+  protected readonly activityQueryParams = { source: 'detected' };
+
+  protected readonly uniqueAssetCount = computed(() => {
+    const names = new Set(
+      this.events()
+        .map((e) => e.asset_name ?? e.trial_acronym ?? e.trial_name)
+        .filter(Boolean)
+    );
+    return names.size;
   });
 
   private readonly loadEffect = effect(() => {

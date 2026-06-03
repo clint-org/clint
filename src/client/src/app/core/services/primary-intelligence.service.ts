@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 import {
+  AssetIntelligenceNote,
   IntelligenceDetailBundle,
   IntelligenceEntityType,
   IntelligenceFeedResult,
@@ -31,30 +32,9 @@ export class PrimaryIntelligenceService {
         ttl: HEAVY_TTL,
         tags: [`trial:${trialId}:detail`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'get_trial_detail_with_intelligence',
-            { p_trial_id: trialId }
-          );
-          if (error) throw error;
-          return (data as IntelligenceDetailBundle | null) ?? null;
-        },
-      }
-    );
-  }
-
-  async getMarkerDetail(markerId: string): Promise<IntelligenceDetailBundle | null> {
-    return this.cache.get(
-      'get_marker_detail_with_intelligence',
-      { markerId },
-      {
-        ttl: HEAVY_TTL,
-        tags: [`marker:${markerId}:detail`],
-        fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'get_marker_detail_with_intelligence',
-            { p_marker_id: markerId }
-          );
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_trial_detail_with_intelligence', { p_trial_id: trialId })
+            .throwOnError();
           return (data as IntelligenceDetailBundle | null) ?? null;
         },
       }
@@ -69,11 +49,9 @@ export class PrimaryIntelligenceService {
         ttl: HEAVY_TTL,
         tags: [`company:${companyId}:detail`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'get_company_detail_with_intelligence',
-            { p_company_id: companyId }
-          );
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_company_detail_with_intelligence', { p_company_id: companyId })
+            .throwOnError();
           return (data as IntelligenceDetailBundle | null) ?? null;
         },
       }
@@ -82,17 +60,15 @@ export class PrimaryIntelligenceService {
 
   async getAssetDetail(assetId: string): Promise<IntelligenceDetailBundle | null> {
     return this.cache.get(
-      'get_product_detail_with_intelligence',
+      'get_asset_detail_with_intelligence',
       { assetId },
       {
         ttl: HEAVY_TTL,
         tags: [`asset:${assetId}:detail`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'get_product_detail_with_intelligence',
-            { p_product_id: assetId }
-          );
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_asset_detail_with_intelligence', { p_asset_id: assetId })
+            .throwOnError();
           return (data as IntelligenceDetailBundle | null) ?? null;
         },
       }
@@ -107,10 +83,11 @@ export class PrimaryIntelligenceService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:primary-intelligence`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc('get_space_intelligence', {
-            p_space_id: spaceId,
-          });
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_space_intelligence', {
+              p_space_id: spaceId,
+            })
+            .throwOnError();
           return (data as IntelligenceDetailBundle | null) ?? null;
         },
       }
@@ -125,11 +102,9 @@ export class PrimaryIntelligenceService {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:drafts`, `space:${spaceId}:primary-intelligence`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'list_draft_intelligence_for_space',
-            { p_space_id: spaceId, p_limit: limit }
-          );
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('list_draft_intelligence_for_space', { p_space_id: spaceId, p_limit: limit })
+            .throwOnError();
           return (data as IntelligenceFeedRow[]) ?? [];
         },
       }
@@ -147,14 +122,12 @@ export class PrimaryIntelligenceService {
     limit?: number;
     offset?: number;
   }): Promise<IntelligenceFeedResult> {
-    return this.cache.get(
-      'list_primary_intelligence',
-      opts,
-      {
-        ttl: HEAVY_TTL,
-        tags: [`space:${opts.spaceId}:primary-intelligence`],
-        fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc('list_primary_intelligence', {
+    return this.cache.get('list_primary_intelligence', opts, {
+      ttl: HEAVY_TTL,
+      tags: [`space:${opts.spaceId}:primary-intelligence`],
+      fetch: async () => {
+        const { data } = await this.supabase.client
+          .rpc('list_primary_intelligence', {
             p_space_id: opts.spaceId,
             p_entity_types: opts.entityTypes ?? null,
             p_author_id: opts.authorId ?? null,
@@ -164,9 +137,28 @@ export class PrimaryIntelligenceService {
             p_referencing_entity_id: opts.referencingEntityId ?? null,
             p_limit: opts.limit ?? 50,
             p_offset: opts.offset ?? 0,
-          });
-          if (error) throw error;
-          return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
+          })
+          .throwOnError();
+        return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
+      },
+    });
+  }
+
+  async getIntelligenceNotesForAsset(
+    spaceId: string,
+    assetId: string
+  ): Promise<AssetIntelligenceNote[]> {
+    return this.cache.get(
+      'get_intelligence_notes_for_asset',
+      { spaceId, assetId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:primary-intelligence`, `asset:${assetId}:detail`],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .rpc('get_intelligence_notes_for_asset', { p_space_id: spaceId, p_asset_id: assetId })
+            .throwOnError();
+          return (data as AssetIntelligenceNote[]) ?? [];
         },
       }
     );
@@ -184,11 +176,13 @@ export class PrimaryIntelligenceService {
         ttl: HEAVY_TTL,
         tags: [`${entityType}:${entityId}:history-intelligence`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client.rpc(
-            'get_primary_intelligence_history',
-            { p_space_id: spaceId, p_entity_type: entityType, p_entity_id: entityId }
-          );
-          if (error) throw error;
+          const { data } = await this.supabase.client
+            .rpc('get_primary_intelligence_history', {
+              p_space_id: spaceId,
+              p_entity_type: entityType,
+              p_entity_id: entityId,
+            })
+            .throwOnError();
           return (
             (data as IntelligenceHistoryPayload) ?? {
               current: null,
@@ -203,25 +197,26 @@ export class PrimaryIntelligenceService {
   }
 
   async upsert(input: UpsertIntelligenceInput): Promise<string> {
-    const { data, error } = await this.supabase.client.rpc('upsert_primary_intelligence', {
-      p_id: input.id,
-      p_space_id: input.space_id,
-      p_entity_type: input.entity_type,
-      p_entity_id: input.entity_id,
-      p_headline: input.headline,
-      p_summary_md: input.summary_md,
-      p_implications_md: input.implications_md,
-      p_state: input.state,
-      p_change_note: input.change_note,
-      p_links: input.links.map((l, i) => ({
-        entity_type: l.entity_type,
-        entity_id: l.entity_id,
-        relationship_type: l.relationship_type,
-        gloss: l.gloss ?? null,
-        display_order: l.display_order ?? i,
-      })),
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('upsert_primary_intelligence', {
+        p_id: input.id,
+        p_space_id: input.space_id,
+        p_entity_type: input.entity_type,
+        p_entity_id: input.entity_id,
+        p_headline: input.headline,
+        p_summary_md: input.summary_md,
+        p_implications_md: input.implications_md,
+        p_state: input.state,
+        p_change_note: input.change_note,
+        p_links: input.links.map((l, i) => ({
+          entity_type: l.entity_type,
+          entity_id: l.entity_id,
+          relationship_type: l.relationship_type,
+          gloss: l.gloss ?? null,
+          display_order: l.display_order ?? i,
+        })),
+      })
+      .throwOnError();
     this.cache.invalidateTags([
       `space:${input.space_id}:primary-intelligence`,
       `space:${input.space_id}:drafts`,
@@ -240,10 +235,11 @@ export class PrimaryIntelligenceService {
       .select('space_id, entity_type, entity_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.rpc('delete_primary_intelligence', {
-      p_id: id,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('delete_primary_intelligence', {
+        p_id: id,
+      })
+      .throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:primary-intelligence`,
@@ -263,11 +259,12 @@ export class PrimaryIntelligenceService {
       .select('space_id, entity_type, entity_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.rpc('withdraw_primary_intelligence', {
-      p_id: id,
-      p_change_note: changeNote,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('withdraw_primary_intelligence', {
+        p_id: id,
+        p_change_note: changeNote,
+      })
+      .throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:primary-intelligence`,
@@ -287,12 +284,13 @@ export class PrimaryIntelligenceService {
       .select('space_id, entity_type, entity_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.rpc('purge_primary_intelligence', {
-      p_id: id,
-      p_confirmation: confirmation,
-      p_purge_anchor: purgeAnchor,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('purge_primary_intelligence', {
+        p_id: id,
+        p_confirmation: confirmation,
+        p_purge_anchor: purgeAnchor,
+      })
+      .throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:primary-intelligence`,

@@ -71,6 +71,17 @@ echo "  Resetting Supabase DB (shared by integration + e2e)"
 echo "=========================================="
 phase "db reset" supabase db reset
 
+# GoTrue restarts during db reset. Wait for it to accept requests before
+# running integration tests that create auth users.
+echo "Waiting for GoTrue health..."
+for i in $(seq 1 30); do
+  if curl -sf "http://127.0.0.1:54721/auth/v1/health" > /dev/null 2>&1; then
+    echo "GoTrue ready after ${i}s"
+    break
+  fi
+  sleep 1
+done
+
 KEYS=$(supabase status 2>&1)
 ANON_KEY=$(echo "$KEYS" | grep "Publishable" | sed 's/.*│ *\([^ ]*\) *│ *$/\1/')
 SERVICE_KEY=$(echo "$KEYS" | grep "│ Secret " | grep -v "Key" | sed 's/.*│ *\([^ ]*\) *│ *$/\1/')

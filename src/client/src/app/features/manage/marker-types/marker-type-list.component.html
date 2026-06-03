@@ -36,7 +36,7 @@
           Fill <p-sortIcon field="fill_style" />
           <p-column-filter type="text" field="fill_style" display="menu" />
         </th>
-        <th>Color</th>
+        <th>Marker</th>
         <th pSortableColumn="is_system">
           Origin <p-sortIcon field="is_system" />
           <p-column-filter type="text" field="is_system" display="menu" />
@@ -54,7 +54,19 @@
           <span [innerHTML]="mt.fill_style | highlight: grid.debouncedGlobalSearch()"></span>
         </td>
         <td>
-          <app-color-swatch [color]="mt.color" />
+          <span
+            class="inline-flex items-center"
+            role="img"
+            [attr.aria-label]="mt.fill_style + ' ' + mt.shape + ' marker'"
+          >
+            <app-marker-icon
+              [shape]="mt.shape"
+              [color]="mt.color"
+              [fillStyle]="mt.fill_style"
+              [innerMark]="mt.inner_mark"
+              [size]="18"
+            />
+          </span>
         </td>
         <td>
           @if (mt.is_system) {
@@ -76,7 +88,7 @@
           { w: '48%' },
           { w: '56px' },
           { w: '56px' },
-          { w: '14px', h: '14px' },
+          { w: '18px', h: '18px' },
           { w: '56px', h: '14px' },
           { w: '14px', class: 'col-actions' },
         ]"

@@ -4,8 +4,13 @@
     [queryParams]="queryParams()"
     class="group flex items-start gap-3 border-b border-slate-200 py-3 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
   >
-    <i [class]="iconClass() + ' mt-1 w-5 text-slate-400'" aria-hidden="true"></i>
+    <i [class]="iconClass() + ' mt-0.5 w-5 text-slate-400'" aria-hidden="true"></i>
     <div class="min-w-0 flex-1">
+      @if (entityLabel()) {
+        <span class="text-[10px] font-mono uppercase tracking-wide text-slate-400">{{
+          entityLabel()
+        }}</span>
+      }
       <div class="mb-1.5 text-sm leading-snug text-slate-900">
         @for (seg of rich().segments; track $index) {
           @switch (seg.kind) {
@@ -28,15 +33,13 @@
         }
       </div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
-        @if (event().company_logo_url; as logo) {
-          <img
-            [ngSrc]="logo"
-            [alt]="event().company_name ?? ''"
-            width="16"
-            height="16"
-            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
-          />
-        } @else {
+        <app-brand-logo
+          [url]="event().company_logo_url"
+          [alt]="event().company_name ?? ''"
+          [width]="16"
+          [height]="16"
+          imgClass="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+        >
           <span
             class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
             [style.background]="monogramTint().bg"
@@ -45,10 +48,10 @@
             aria-hidden="true"
             >{{ monogram() }}</span
           >
-        }
-        @if (event().product_name; as asset) {
+        </app-brand-logo>
+        @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
-        } @else if (event().trial_name; as trial) {
+        } @else if (event().trial_acronym ?? event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>
         }
         <span class="text-slate-300" aria-hidden="true">&middot;</span>
@@ -70,8 +73,13 @@
   </a>
 } @else {
   <div class="flex items-start gap-3 border-b border-slate-200 py-3">
-    <i [class]="iconClass() + ' mt-1 w-5 text-slate-400'" aria-hidden="true"></i>
+    <i [class]="iconClass() + ' mt-0.5 w-5 text-slate-400'" aria-hidden="true"></i>
     <div class="min-w-0 flex-1">
+      @if (entityLabel()) {
+        <span class="text-[10px] font-mono uppercase tracking-wide text-slate-400">{{
+          entityLabel()
+        }}</span>
+      }
       <div class="mb-1.5 text-sm leading-snug text-slate-900">
         @for (seg of rich().segments; track $index) {
           @switch (seg.kind) {
@@ -94,15 +102,13 @@
         }
       </div>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
-        @if (event().company_logo_url; as logo) {
-          <img
-            [ngSrc]="logo"
-            [alt]="event().company_name ?? ''"
-            width="16"
-            height="16"
-            class="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
-          />
-        } @else {
+        <app-brand-logo
+          [url]="event().company_logo_url"
+          [alt]="event().company_name ?? ''"
+          [width]="16"
+          [height]="16"
+          imgClass="h-4 w-4 flex-none rounded-sm border border-slate-200 bg-white object-contain"
+        >
           <span
             class="inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm border font-mono text-[7.5px] font-bold tracking-tight"
             [style.background]="monogramTint().bg"
@@ -111,10 +117,10 @@
             aria-hidden="true"
             >{{ monogram() }}</span
           >
-        }
-        @if (event().product_name; as asset) {
+        </app-brand-logo>
+        @if (event().asset_name; as asset) {
           <span class="font-mono text-slate-600">{{ asset }}</span>
-        } @else if (event().trial_name; as trial) {
+        } @else if (event().trial_acronym ?? event().trial_name; as trial) {
           <span class="font-mono text-slate-600">{{ trial }}</span>
         }
         <span class="text-slate-300" aria-hidden="true">&middot;</span>

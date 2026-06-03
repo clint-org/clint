@@ -160,7 +160,7 @@ test.describe('intelligence version history', () => {
   test('history panel renders "No prior versions" for a brand-new company', async () => {
     await ensureClean(spaceId, 'company', companyId);
 
-    await page.goto(companyUrl, { waitUntil: 'networkidle' });
+    await page.goto(companyUrl, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Acme Bio', level: 1 })).toBeVisible({
       timeout: 10000,
     });
@@ -193,7 +193,7 @@ test.describe('intelligence version history', () => {
       userId,
     });
 
-    await page.goto(companyUrl, { waitUntil: 'networkidle' });
+    await page.goto(companyUrl, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Acme thesis v2', level: 3 })).toBeVisible({
       timeout: 10000,
     });
@@ -221,7 +221,7 @@ test.describe('intelligence version history', () => {
     await withdrawDialog.getByLabel(/reason/i).fill('superseded by external press release');
     await Promise.all([
       page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/withdraw_primary_intelligence') && r.ok(),
+        (r) => r.url().includes('/rest/v1/rpc/withdraw_primary_intelligence') && r.ok()
       ),
       withdrawDialog.getByRole('button', { name: 'Withdraw' }).click(),
     ]);
@@ -231,7 +231,7 @@ test.describe('intelligence version history', () => {
     });
     await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
 
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     const historyAfter = page.getByRole('region', { name: 'History' });
     await expect(historyAfter.getByText('2 versions')).toBeVisible();
     await historyAfter.locator('button[aria-expanded]').first().click();
@@ -276,7 +276,7 @@ test.describe('intelligence version history', () => {
       userId,
     });
 
-    await page.goto(companyUrl, { waitUntil: 'networkidle' });
+    await page.goto(companyUrl, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Acme v3 headline', level: 3 })).toBeVisible({
       timeout: 10000,
     });
@@ -307,7 +307,7 @@ test.describe('intelligence version history', () => {
       userId,
     });
 
-    await page.goto(companyUrl, { waitUntil: 'networkidle' });
+    await page.goto(companyUrl, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: headline, level: 3 })).toBeVisible({
       timeout: 10000,
     });
@@ -329,7 +329,7 @@ test.describe('intelligence version history', () => {
     await expect(purgeConfirm).toBeEnabled();
     await Promise.all([
       page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/purge_primary_intelligence') && r.ok(),
+        (r) => r.url().includes('/rest/v1/rpc/purge_primary_intelligence') && r.ok()
       ),
       purgeConfirm.click(),
     ]);
@@ -392,10 +392,7 @@ test.describe('intelligence version history', () => {
 
     // Delete the parent company. The polymorphic cleanup trigger removes
     // every primary_intelligence row keyed to this (entity_type, entity_id).
-    const { error: delErr } = await admin
-      .from('companies')
-      .delete()
-      .eq('id', companyId);
+    const { error: delErr } = await admin.from('companies').delete().eq('id', companyId);
     if (delErr) throw new Error(`Could not delete company: ${delErr.message}`);
 
     const { count: after } = await admin

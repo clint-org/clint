@@ -10,7 +10,7 @@ test.describe('Onboarding', () => {
   test('invalid invite code shows error message', async ({ browser }) => {
     const page = await authenticatedPage(browser);
     try {
-      await page.goto('/onboarding', { waitUntil: 'networkidle' });
+      await page.goto('/onboarding', { waitUntil: 'domcontentloaded' });
 
       await fillInput(page, '#invite-code', 'INVALID-CODE-123');
       await page.getByRole('button', { name: 'Join' }).click();

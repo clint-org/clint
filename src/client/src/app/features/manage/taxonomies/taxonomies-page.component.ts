@@ -16,13 +16,13 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 
-import { TherapeuticArea } from '../../../core/models/trial.model';
+import { Indication } from '../../../core/models/indication.model';
 import { MechanismOfAction } from '../../../core/models/mechanism-of-action.model';
 import { RouteOfAdministration } from '../../../core/models/route-of-administration.model';
-import { TherapeuticAreaService } from '../../../core/services/therapeutic-area.service';
+import { IndicationService } from '../../../core/services/indication.service';
 import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
-import { TherapeuticAreaFormComponent } from '../therapeutic-areas/therapeutic-area-form.component';
+import { IndicationFormComponent } from '../therapeutic-areas/therapeutic-area-form.component';
 import { MechanismOfActionFormComponent } from '../mechanisms-of-action/mechanism-of-action-form.component';
 import { RouteOfAdministrationFormComponent } from '../routes-of-administration/route-of-administration-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
@@ -32,7 +32,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 
-type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
+type TabValue = 'indications' | 'moa' | 'roa';
 
 @Component({
   selector: 'app-taxonomies-page',
@@ -44,7 +44,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
     SelectButton,
     Dialog,
     MessageModule,
-    TherapeuticAreaFormComponent,
+    IndicationFormComponent,
     MechanismOfActionFormComponent,
     RouteOfAdministrationFormComponent,
     ManagePageShellComponent,
@@ -67,7 +67,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
       </div>
 
       <!-- Therapeutic Areas table -->
-      @if (activeTab() === 'therapeutic-areas') {
+      @if (activeTab() === 'indications') {
         <p-table
           styleClass="data-table"
           [value]="areas()"
@@ -104,7 +104,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="3">No therapeutic areas yet. Add one to get started.</td>
+              <td colspan="3">No indications yet. Add one to get started.</td>
             </tr>
           </ng-template>
         </p-table>
@@ -203,7 +203,7 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
 
     <!-- Therapeutic Area dialog -->
     <p-dialog
-      [header]="editingArea() ? 'Edit therapeutic area' : 'Add therapeutic area'"
+      [header]="editingArea() ? 'Edit indication' : 'Add indication'"
       [(visible)]="taModalOpen"
       [modal]="true"
       styleClass="!w-[32rem]"
@@ -257,21 +257,21 @@ type TabValue = 'therapeutic-areas' | 'moa' | 'roa';
 export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   // Tab state
   readonly tabOptions: { label: string; value: TabValue }[] = [
-    { label: 'Therapeutic Areas', value: 'therapeutic-areas' },
+    { label: 'Indications', value: 'indications' },
     { label: 'MOA', value: 'moa' },
     { label: 'ROA', value: 'roa' },
   ];
 
-  readonly activeTab = signal<TabValue>('therapeutic-areas');
+  readonly activeTab = signal<TabValue>('indications');
 
   // Shared state
   readonly loading = signal(false);
   readonly deleteError = signal<string | null>(null);
 
   // Therapeutic area state
-  readonly areas = signal<TherapeuticArea[]>([]);
+  readonly areas = signal<Indication[]>([]);
   readonly taModalOpen = signal(false);
-  readonly editingArea = signal<TherapeuticArea | null>(null);
+  readonly editingArea = signal<Indication | null>(null);
   private readonly areaMenuCache = new Map<string, MenuItem[]>();
 
   // MOA state
@@ -287,7 +287,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   private readonly roaMenuCache = new Map<string, MenuItem[]>();
 
   // Services
-  private readonly areaService = inject(TherapeuticAreaService);
+  private readonly areaService = inject(IndicationService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
   private readonly route = inject(ActivatedRoute);
@@ -317,7 +317,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   constructor() {
     const tabParam = this.route.snapshot.queryParamMap.get('tab') as TabValue | null;
-    if (tabParam && ['therapeutic-areas', 'moa', 'roa'].includes(tabParam)) {
+    if (tabParam && ['indications', 'moa', 'roa'].includes(tabParam)) {
       this.activeTab.set(tabParam);
     }
   }
@@ -335,7 +335,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   pageTitle(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
+      case 'indications':
         return 'Therapeutic areas';
       case 'moa':
         return 'Mechanisms of action';
@@ -346,7 +346,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   pageSubtitle(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
+      case 'indications':
         return 'Disease areas used to tag trials and products.';
       case 'moa':
         return 'Ways a drug produces its therapeutic effect; used to classify assets and filter the landscape.';
@@ -357,8 +357,8 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   addButtonLabel(): string {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
-        return 'Add therapeutic area';
+      case 'indications':
+        return 'Add indication';
       case 'moa':
         return 'Add mechanism';
       case 'roa':
@@ -368,7 +368,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   activeCount(): number {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
+      case 'indications':
         return this.areas().length;
       case 'moa':
         return this.moas().length;
@@ -393,7 +393,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   // --- Row menus ---
 
-  areaRowMenu(area: TherapeuticArea): MenuItem[] {
+  areaRowMenu(area: Indication): MenuItem[] {
     const cached = this.areaMenuCache.get(area.id);
     if (cached && cached.length > 0) return cached;
     const items: MenuItem[] = [];
@@ -471,7 +471,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   openCreateModal(): void {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
+      case 'indications':
         this.editingArea.set(null);
         this.taModalOpen.set(true);
         break;
@@ -486,7 +486,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  openEditAreaModal(area: TherapeuticArea): void {
+  openEditAreaModal(area: Indication): void {
     this.editingArea.set(area);
     this.taModalOpen.set(true);
   }
@@ -547,13 +547,13 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   // --- Delete handlers ---
 
-  async confirmDeleteArea(area: TherapeuticArea): Promise<void> {
-    // Cascade-safety T6 makes trials.therapeutic_area_id ON DELETE SET NULL;
+  async confirmDeleteArea(area: Indication): Promise<void> {
+    // Cascade-safety T6 makes trials.indication_id ON DELETE SET NULL;
     // trials survive and render (uncategorized). Friction-only confirmation.
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete therapeutic area',
+      header: 'Delete indication',
       entityLabel: area.name,
-      message: `Delete "${area.name}"? Trials in this area survive with no therapeutic area; they will render as (uncategorized).`,
+      message: `Delete "${area.name}"? Trials in this indication survive with no indication; they will render as (uncategorized).`,
       requireTypedConfirmation: true,
     });
     if (!ok) return;
@@ -564,14 +564,14 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
       await this.loadAreas();
       this.messageService.add({
         severity: 'success',
-        summary: 'Therapeutic area deleted.',
+        summary: 'Indication deleted.',
         life: 3000,
       });
     } catch (err) {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete therapeutic area. It may have associated trials.'
+          : 'Could not delete indication. It may have associated trials.'
       );
     }
   }
@@ -638,7 +638,7 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
 
   private async loadActiveTab(): Promise<void> {
     switch (this.activeTab()) {
-      case 'therapeutic-areas':
+      case 'indications':
         await this.loadAreas();
         break;
       case 'moa':

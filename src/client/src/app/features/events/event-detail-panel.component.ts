@@ -1,8 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { ConfirmationService } from 'primeng/api';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
+import type { ChangeEvent } from '../../core/models/change-event.model';
 import { EventDetail, FeedItem } from '../../core/models/event.model';
+import { AnnotationService, Annotation } from '../../core/services/annotation.service';
+import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -10,6 +25,9 @@ import { DetailPanelEntityRowComponent } from '../../shared/components/detail-pa
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
+import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
+import { confirmDelete } from '../../shared/utils/confirm-delete';
 
 interface CategoryHistogramEntry {
   name: string;
@@ -36,9 +54,11 @@ const CATEGORY_COLOR: Record<string, string> = {
 
 @Component({
   selector: 'app-event-detail-panel',
-  standalone: true,
   imports: [
     DatePipe,
+    FormsModule,
+    BrandLogoComponent,
+    RouterLink,
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
@@ -47,232 +67,22 @@ const CATEGORY_COLOR: Record<string, string> = {
     DetailPanelShellComponent,
     MarkerDetailContentComponent,
   ],
-  template: `
-    <app-detail-panel-shell
-      [label]="headerLabel()"
-      [labelTone]="hasSelection() ? 'brand' : 'muted'"
-      [showClose]="hasSelection()"
-      (closed)="panelClose.emit()"
-    >
-      @if (hasSelection() && canEdit()) {
-        <button
-          headerActions
-          type="button"
-          class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          (click)="edit.emit()"
-          aria-label="Edit event"
-        >
-          <i class="fa-solid fa-pen text-xs"></i>
-        </button>
-      }
-
-      @if (detail(); as d) {
-        <h2 class="text-base font-semibold leading-snug text-slate-900">{{ d.title }}</h2>
-
-        <div class="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-slate-500">
-          <span class="font-mono tabular-nums">{{ d.event_date | date: 'mediumDate' }}</span>
-          @if (d.priority === 'high') {
-            <app-detail-panel-pill tone="red">High priority</app-detail-panel-pill>
-          }
-          @if (d.entity_level === 'space') {
-            <span class="text-slate-400">Industry</span>
-          } @else if (d.company_name) {
-            <span class="text-slate-400">
-              {{ d.company_name }}
-              @if (d.entity_level !== 'company' && d.entity_name) {
-                <span class="text-slate-300"> / </span>{{ d.entity_name }}
-              }
-            </span>
-          }
-        </div>
-
-        @if (d.description) {
-          <app-detail-panel-section [first]="true" label="Description">
-            <p class="text-[13px] leading-relaxed text-slate-700">{{ d.description }}</p>
-          </app-detail-panel-section>
-        }
-
-        @if (d.sources.length > 0) {
-          <app-detail-panel-section [first]="!d.description" label="Sources">
-            <ul class="space-y-1">
-              @for (src of d.sources; track src.id) {
-                <li>
-                  <a
-                    [href]="src.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
-                  >
-                    {{ src.label || src.url }}
-                    <i
-                      class="fa-solid fa-arrow-up-right-from-square text-[9px]"
-                      aria-hidden="true"
-                    ></i>
-                  </a>
-                </li>
-              }
-            </ul>
-          </app-detail-panel-section>
-        }
-
-        @if (d.tags.length > 0) {
-          <app-detail-panel-section label="Tags">
-            <div class="flex flex-wrap gap-1">
-              @for (tag of d.tags; track tag) {
-                <span class="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{{
-                  tag
-                }}</span>
-              }
-            </div>
-          </app-detail-panel-section>
-        }
-
-        @if (d.thread; as thread) {
-          <app-detail-panel-section [label]="'Thread · ' + thread.title">
-            <ol class="space-y-px border-l border-slate-200 pl-3">
-              @for (te of thread.events; track te.id) {
-                <li>
-                  @if (te.id === d.id) {
-                    <div
-                      class="flex items-center justify-between gap-2 rounded-sm bg-brand-50 px-2 py-1"
-                    >
-                      <span class="flex min-w-0 items-center gap-2 text-[11px] leading-snug">
-                        <span class="font-mono tabular-nums text-brand-700">{{
-                          te.event_date | date: 'mediumDate'
-                        }}</span>
-                        <span class="truncate font-semibold text-brand-800">{{ te.title }}</span>
-                      </span>
-                      <span class="text-[9px] font-semibold uppercase tracking-wider text-brand-600"
-                        >current</span
-                      >
-                    </div>
-                  } @else {
-                    <button
-                      type="button"
-                      class="group flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                      (click)="threadEventClick.emit(te.id)"
-                    >
-                      <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
-                        te.event_date | date: 'mediumDate'
-                      }}</span>
-                      <span class="min-w-0 flex-1 truncate text-[11px] text-slate-600">{{
-                        te.title
-                      }}</span>
-                      <i
-                        class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
-                        aria-hidden="true"
-                      ></i>
-                    </button>
-                  }
-                </li>
-              }
-            </ol>
-          </app-detail-panel-section>
-        }
-
-        @if (d.linked_events.length > 0) {
-          <app-detail-panel-section label="Related events">
-            <app-detail-panel-entity-list>
-              @for (le of d.linked_events; track le.id) {
-                <app-detail-panel-entity-row (rowClick)="relatedEventClick.emit(le.id)">
-                  <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
-                    le.event_date | date: 'mediumDate'
-                  }}</span>
-                  <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
-                    le.title
-                  }}</span>
-                  <span class="shrink-0 text-[10px] text-slate-400">({{ le.category_name }})</span>
-                </app-detail-panel-entity-row>
-              }
-            </app-detail-panel-entity-list>
-          </app-detail-panel-section>
-        }
-
-        <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
-      } @else if (catalystDetail()) {
-        <app-marker-detail-content
-          [detail]="catalystDetail()"
-          (markerClick)="markerSelect.emit($event)"
-          (eventClick)="relatedEventClick.emit($event)"
-          (trialClick)="trialClick.emit($event)"
-        />
-      } @else {
-        <app-detail-panel-empty-state prompt="Click an event to see details">
-          <p class="mt-2 text-[13px] text-slate-700">
-            <span class="text-base font-semibold tabular-nums text-slate-900">{{
-              feedItems().length
-            }}</span>
-            in window
-            @if (highPriorityCount() > 0) {
-              <span class="text-slate-500"
-                >&middot;
-                <span class="font-medium text-slate-900">{{ highPriorityCount() }}</span> high
-                priority</span
-              >
-            }
-          </p>
-
-          @if (categoryHistogram().length > 0) {
-            <app-detail-panel-section [first]="true" label="By category">
-              <app-detail-panel-entity-list>
-                @for (entry of categoryHistogram(); track entry.name) {
-                  <app-detail-panel-entity-row (rowClick)="categoryFilter.emit(entry.name)">
-                    <span
-                      class="inline-block h-2 w-2 shrink-0 rounded-full"
-                      [style.background-color]="entry.color"
-                      aria-hidden="true"
-                    ></span>
-                    <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
-                      entry.name
-                    }}</span>
-                    <span class="shrink-0 font-mono text-[12px] tabular-nums text-slate-900">{{
-                      entry.count
-                    }}</span>
-                  </app-detail-panel-entity-row>
-                }
-              </app-detail-panel-entity-list>
-            </app-detail-panel-section>
-          }
-
-          @if (mostRecent().length > 0) {
-            <app-detail-panel-section label="Most recent">
-              <app-detail-panel-entity-list>
-                @for (item of mostRecent(); track item.id) {
-                  <app-detail-panel-entity-row (rowClick)="recentClick.emit(item.id)">
-                    <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
-                      item.event_date | date: 'MMM d'
-                    }}</span>
-                    <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
-                      item.title
-                    }}</span>
-                  </app-detail-panel-entity-row>
-                }
-              </app-detail-panel-entity-list>
-            </app-detail-panel-section>
-          }
-        </app-detail-panel-empty-state>
-      }
-
-      @if (detail()?.thread) {
-        <div footer class="border-t border-slate-100 px-5 py-3">
-          <button
-            type="button"
-            class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            (click)="openThread.emit()"
-          >
-            Open thread
-            <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-          </button>
-        </div>
-      }
-    </app-detail-panel-shell>
-  `,
+  templateUrl: './event-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EventDetailPanelComponent {
+  private readonly annotationService = inject(AnnotationService);
+  private readonly supabase = inject(SupabaseService);
+  private readonly confirmation = inject(ConfirmationService);
+
   readonly detail = input<EventDetail | null>(null);
   readonly catalystDetail = input<CatalystDetail | null>(null);
   readonly canEdit = input<boolean>(true);
+  readonly spaceId = input<string>('');
+  readonly tenantId = input<string>('');
+
+  /** The currently selected FeedItem (used for detected branch). */
+  readonly selectedFeedItem = input<FeedItem | null>(null);
 
   /** Feed snapshot used to render the empty-state overview. */
   readonly feedItems = input<FeedItem[]>([]);
@@ -287,14 +97,75 @@ export class EventDetailPanelComponent {
   readonly markerSelect = output<string>();
   readonly trialClick = output<string>();
 
-  readonly hasSelection = computed(() => !!this.detail() || !!this.catalystDetail());
+  /** Emitted when an annotation is created, updated, or deleted so the parent can refresh. */
+  readonly annotationChanged = output<void>();
+
+  // Annotation editing state
+  protected readonly annotationEditing = signal(false);
+  protected readonly annotationBody = signal('');
+  protected readonly annotationSaving = signal(false);
+  protected readonly annotationData = signal<Annotation | null>(null);
+  protected readonly annotationLoading = signal(false);
+
+  constructor() {
+    effect(() => {
+      const item = this.selectedFeedItem();
+      this.annotationEditing.set(false);
+      this.annotationBody.set('');
+      this.annotationData.set(null);
+      if (item?.source_type === 'detected' && item.has_annotation) {
+        void this.loadAnnotation(item.id);
+      }
+    });
+  }
+
+  protected readonly isDetected = computed(
+    () => this.selectedFeedItem()?.source_type === 'detected'
+  );
+
+  readonly hasSelection = computed(
+    () => !!this.detail() || !!this.catalystDetail() || this.isDetected()
+  );
 
   readonly headerLabel = computed(() => {
     const d = this.detail();
     if (d) return d.category.name;
     const cd = this.catalystDetail();
     if (cd) return `${cd.catalyst.category_name} · ${cd.catalyst.marker_type_name}`;
+    const fi = this.selectedFeedItem();
+    if (fi?.source_type === 'detected') return fi.category_name;
     return 'Events · overview';
+  });
+
+  /** Compute rich summary segments from a detected FeedItem. */
+  protected readonly detectedSummary = computed<RichSummary | null>(() => {
+    const fi = this.selectedFeedItem();
+    if (!fi || fi.source_type !== 'detected' || !fi.change_event_type || !fi.change_payload) {
+      return null;
+    }
+    // Build a minimal ChangeEvent to feed summarySegmentsFor
+    const syntheticEvent: ChangeEvent = {
+      id: fi.id,
+      trial_id: fi.entity_id ?? '',
+      space_id: '',
+      event_type: fi.change_event_type,
+      source: fi.change_source ?? 'ctgov',
+      payload: fi.change_payload,
+      occurred_at: fi.event_date,
+      observed_at: fi.observed_at ?? fi.event_date,
+      marker_id: null,
+      trial_name: fi.entity_name,
+      trial_identifier: null,
+      asset_name: null,
+      company_name: fi.company_name,
+      company_logo_url: fi.company_logo_url,
+      marker_title: null,
+      marker_color: null,
+      marker_type_name: null,
+      from_marker_type_name: null,
+      to_marker_type_name: null,
+    };
+    return summarySegmentsFor(syntheticEvent);
   });
 
   readonly highPriorityCount = computed(
@@ -322,4 +193,151 @@ export class EventDetailPanelComponent {
       .slice(0, 3)
       .map((i) => ({ id: i.id, title: i.title, event_date: i.event_date }))
   );
+
+  /**
+   * Fetch the annotation body for a detected item. Called when a detected
+   * FeedItem with has_annotation=true is selected. The body is not part of
+   * the FeedItem (only a boolean flag is), so we query it separately.
+   */
+  protected async loadAnnotation(changeEventId: string): Promise<void> {
+    this.annotationLoading.set(true);
+    try {
+      const { data, error } = await this.supabase.client
+        .from('change_event_annotations')
+        .select('id, body, change_event_id, created_at, updated_at')
+        .eq('change_event_id', changeEventId)
+        .maybeSingle();
+      if (this.selectedFeedItem()?.id !== changeEventId) return;
+      if (error) throw error;
+      this.annotationData.set(data as Annotation | null);
+    } catch {
+      if (this.selectedFeedItem()?.id !== changeEventId) return;
+      this.annotationData.set(null);
+    } finally {
+      if (this.selectedFeedItem()?.id === changeEventId) {
+        this.annotationLoading.set(false);
+      }
+    }
+  }
+
+  protected startAnnotationEdit(currentBody?: string): void {
+    this.annotationEditing.set(true);
+    this.annotationBody.set(currentBody ?? '');
+  }
+
+  protected cancelAnnotationEdit(): void {
+    this.annotationEditing.set(false);
+    this.annotationBody.set('');
+  }
+
+  protected async saveAnnotation(changeEventId: string): Promise<void> {
+    const body = this.annotationBody().trim();
+    if (!body) return;
+    this.annotationSaving.set(true);
+    try {
+      const result = await this.annotationService.upsert(changeEventId, body);
+      this.annotationData.set(result);
+      this.annotationEditing.set(false);
+      this.annotationBody.set('');
+      this.annotationChanged.emit();
+    } finally {
+      this.annotationSaving.set(false);
+    }
+  }
+
+  protected async deleteAnnotation(changeEventId: string): Promise<void> {
+    const ok = await confirmDelete(this.confirmation, {
+      header: 'Delete analyst note',
+      message: 'Delete this analyst note? This cannot be undone.',
+      requireTypedConfirmation: false,
+    });
+    if (!ok) return;
+    try {
+      await this.annotationService.delete(changeEventId);
+      this.annotationData.set(null);
+      this.annotationChanged.emit();
+    } catch {
+      // Error handled by service
+    }
+  }
+
+  /**
+   * Extract change detail rows from the payload for the structured
+   * before/after card. Returns key/value pairs appropriate to the event type.
+   */
+  protected getChangeDetailRows(
+    item: FeedItem
+  ): { label: string; previous: string; current: string }[] {
+    const payload = item.change_payload;
+    if (!payload) return [];
+
+    const rows: { label: string; previous: string; current: string }[] = [];
+
+    switch (item.change_event_type) {
+      case 'date_moved':
+        rows.push({
+          label: 'Date',
+          previous: String(payload['from'] ?? ''),
+          current: String(payload['to'] ?? ''),
+        });
+        if (payload['days_shifted'] != null || payload['days_diff'] != null) {
+          const days = payload['days_shifted'] ?? payload['days_diff'];
+          rows.push({
+            label: 'Shift',
+            previous: '',
+            current: `${Math.abs(Number(days))} days ${Number(days) > 0 ? 'later' : 'earlier'}`,
+          });
+        }
+        break;
+      case 'status_changed':
+        rows.push({
+          label: 'Status',
+          previous: String(payload['from'] ?? ''),
+          current: String(payload['to'] ?? ''),
+        });
+        break;
+      case 'phase_transitioned': {
+        const from = Array.isArray(payload['from'])
+          ? payload['from'].join('/')
+          : String(payload['from'] ?? '');
+        const to = Array.isArray(payload['to'])
+          ? payload['to'].join('/')
+          : String(payload['to'] ?? '');
+        rows.push({ label: 'Phase', previous: from, current: to });
+        break;
+      }
+      case 'enrollment_target_changed':
+        rows.push({
+          label: 'Enrollment target',
+          previous: String(payload['from'] ?? ''),
+          current: String(payload['to'] ?? ''),
+        });
+        break;
+      case 'sponsor_changed':
+        rows.push({
+          label: 'Sponsor',
+          previous: String(payload['from'] ?? ''),
+          current: String(payload['to'] ?? ''),
+        });
+        break;
+      case 'eligibility_changed':
+        rows.push({
+          label: String(payload['which_field'] ?? 'Eligibility'),
+          previous: String(payload['from'] ?? ''),
+          current: String(payload['to'] ?? ''),
+        });
+        break;
+      default:
+        // Generic: show any from/to values present in the payload
+        if (payload['from'] != null || payload['to'] != null) {
+          rows.push({
+            label: 'Value',
+            previous: String(payload['from'] ?? ''),
+            current: String(payload['to'] ?? ''),
+          });
+        }
+        break;
+    }
+    return rows;
+  }
 }

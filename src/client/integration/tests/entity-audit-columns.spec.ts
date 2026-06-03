@@ -3,7 +3,7 @@
  * populate created_by from auth.uid() on INSERT and updated_by + updated_at
  * on UPDATE. The client never sends these fields.
  *
- * Covers: companies, products, trials, markers, events, trial_notes.
+ * Covers: companies, assets, trials, markers, events, trial_notes.
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -42,7 +42,7 @@ describe('entity audit columns (server-side triggers)', () => {
     expect(updated!.updated_by).toBe(userId);
   });
 
-  it('products: trigger sets created_by and updated_by from JWT', async () => {
+  it('assets: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
@@ -53,7 +53,7 @@ describe('entity audit columns (server-side triggers)', () => {
       .single();
 
     const { data: inserted } = await client
-      .from('products')
+      .from('assets')
       .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'TestAsset' })
       .select('id, created_by, updated_by')
       .single();
@@ -62,7 +62,7 @@ describe('entity audit columns (server-side triggers)', () => {
     expect(inserted!.updated_by).toBeNull();
 
     const { data: updated } = await client
-      .from('products')
+      .from('assets')
       .update({ name: 'TestAsset Renamed' })
       .eq('id', inserted!.id)
       .select('updated_by')
@@ -81,13 +81,8 @@ describe('entity audit columns (server-side triggers)', () => {
       .select('id')
       .single();
     const { data: prod } = await admin
-      .from('products')
+      .from('assets')
       .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'TrialAsset', created_by: userId })
-      .select('id')
-      .single();
-    const { data: ta } = await admin
-      .from('therapeutic_areas')
-      .insert({ space_id: p.org.spaceId, name: 'Cardiology', created_by: userId })
       .select('id')
       .single();
 
@@ -95,8 +90,7 @@ describe('entity audit columns (server-side triggers)', () => {
       .from('trials')
       .insert({
         space_id: p.org.spaceId,
-        product_id: prod!.id,
-        therapeutic_area_id: ta!.id,
+        asset_id: prod!.id,
         name: 'Trial Audit',
         identifier: 'NCT99999999',
       })
@@ -193,21 +187,15 @@ describe('entity audit columns (server-side triggers)', () => {
       .select('id')
       .single();
     const { data: prod } = await admin
-      .from('products')
+      .from('assets')
       .insert({ space_id: p.org.spaceId, company_id: co!.id, name: 'NoteAsset', created_by: userId })
-      .select('id')
-      .single();
-    const { data: ta } = await admin
-      .from('therapeutic_areas')
-      .insert({ space_id: p.org.spaceId, name: 'Neuro', created_by: userId })
       .select('id')
       .single();
     const { data: trial } = await admin
       .from('trials')
       .insert({
         space_id: p.org.spaceId,
-        product_id: prod!.id,
-        therapeutic_area_id: ta!.id,
+        asset_id: prod!.id,
         name: 'Note Trial',
         identifier: 'NCT88888888',
         created_by: userId,

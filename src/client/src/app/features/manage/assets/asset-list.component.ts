@@ -36,7 +36,10 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
 interface AssetRow {
   readonly asset: Asset;
   readonly companyName: string;
+  readonly companyLogoUrl: string | null;
   readonly trialCount: number;
+  readonly moaNames: string;
+  readonly roaNames: string;
 }
 
 @Component({
@@ -102,11 +105,17 @@ export class AssetListComponent implements OnInit, OnDestroy {
   readonly rows = computed<AssetRow[]>(() => {
     const companyMap = new Map(this.companies().map((c) => [c.id, c]));
     const counts = this.trialCounts();
-    return this.assets().map((asset) => ({
-      asset,
-      companyName: companyMap.get(asset.company_id)?.name ?? '--',
-      trialCount: counts[asset.id] ?? 0,
-    }));
+    return this.assets().map((asset) => {
+      const co = companyMap.get(asset.company_id);
+      return {
+        asset,
+        companyName: co?.name ?? '--',
+        companyLogoUrl: co?.logo_url ?? null,
+        trialCount: counts[asset.id] ?? 0,
+        moaNames: (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', '),
+        roaNames: (asset.routes_of_administration ?? []).map((r) => r.name).join(', '),
+      };
+    });
   });
 
   readonly grid = createGridState<AssetRow>({
@@ -121,10 +130,12 @@ export class AssetListComponent implements OnInit, OnDestroy {
           options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
         },
       },
+      { field: 'moaNames', header: 'MOA', filter: { kind: 'text' } },
+      { field: 'roaNames', header: 'ROA', filter: { kind: 'text' } },
       { field: 'trialCount', header: 'Trials', filter: { kind: 'numeric' } },
       { field: 'asset.display_order', header: 'Order' },
     ],
-    globalSearchFields: ['asset.name', 'asset.generic_name', 'companyName'],
+    globalSearchFields: ['asset.name', 'asset.generic_name', 'companyName', 'moaNames', 'roaNames'],
     defaultSort: { field: 'asset.display_order', order: 1 },
     persistenceKey: 'manage-assets',
   });
@@ -216,7 +227,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
   openTrials(assetId: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
       queryParams: buildFilterQueryParams({
-        'trial.product_id': { kind: 'select', values: [assetId] },
+        'trial.asset_id': { kind: 'select', values: [assetId] },
       }),
     });
   }
@@ -271,7 +282,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
       this.companies.set(companies);
       const counts: Record<string, number> = {};
       for (const trial of trials) {
-        counts[trial.product_id] = (counts[trial.product_id] ?? 0) + 1;
+        counts[trial.asset_id] = (counts[trial.asset_id] ?? 0) + 1;
       }
       this.trialCounts.set(counts);
       this.menuCache.clear();

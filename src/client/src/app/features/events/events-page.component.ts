@@ -21,6 +21,7 @@ import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
+import { ChangeEvent } from '../../core/models/change-event.model';
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
 import { MarkerCategory } from '../../core/models/marker.model';
 import { CatalystService } from '../../core/services/catalyst.service';
@@ -33,11 +34,13 @@ import { GridToolbarComponent } from '../../shared/components/grid-toolbar.compo
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../shared/grids';
+import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
+import { formatEventDateSuffix } from './format-event-date-suffix';
 
 @Component({
   selector: 'app-events-page',
@@ -91,6 +94,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   });
 
   spaceId = '';
+  tenantId = '';
 
   // Data
   readonly feedItems = signal<FeedItem[]>([]);
@@ -128,8 +132,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly grid = createGridState<FeedItem>({
     columns: [
       {
-        field: 'event_date',
-        header: 'Date',
+        field: 'feed_ts',
+        header: 'Logged',
         filter: { kind: 'date' },
       },
       {
@@ -140,6 +144,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
           options: () => [
             { label: 'Event', value: 'event' },
             { label: 'Marker', value: 'marker' },
+            { label: 'Detected', value: 'detected' },
           ],
         },
       },
@@ -171,28 +176,47 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         },
       },
     ],
-    globalSearchFields: ['title', 'category_name', 'entity_name', 'company_name'],
-    defaultSort: { field: 'event_date', order: -1 },
+    globalSearchFields: [
+      'title',
+      'category_name',
+      'entity_name',
+      'company_name',
+      'change_event_type',
+    ],
+    defaultSort: { field: 'feed_ts', order: -1 },
     defaultPageSize: 25,
     persistenceKey: 'events',
   });
 
   readonly visibleRows = this.grid.filteredRows(this.feedItems);
+  protected readonly serverTotal = signal(0);
 
   private readonly countEffect = effect(() => {
-    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
+    this.topbarState.recordCount.set(String(this.serverTotal() || ''));
   });
 
   async ngOnInit(): Promise<void> {
     this.spaceId = this.getSpaceId();
+    this.tenantId = this.getTenantId();
+
+    const sourceParam = this.route.snapshot.queryParamMap.get('source');
+    if (sourceParam === 'detected' || sourceParam === 'event' || sourceParam === 'marker') {
+      this.grid.filters.update((f) => ({
+        ...f,
+        source_type: { kind: 'select', values: [sourceParam] },
+      }));
+    }
+
     await this.loadInitialData();
 
-    // Subscribe so deep-links keep working when navigating *to* this page
-    // from another route (component is reused, ngOnInit only fires once).
     this.route.queryParamMap.subscribe(async (params) => {
       const eventId = params.get('eventId');
       if (eventId && this.selectedItem()?.id !== eventId) {
         await this.openByEventId(eventId);
+      }
+      const detectedId = params.get('detectedId');
+      if (detectedId && this.selectedItem()?.id !== detectedId) {
+        await this.openByDetectedId(detectedId);
       }
     });
   }
@@ -201,7 +225,36 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  /** Compute entity display string for a feed item. */
+  protected getDetectedSummary(item: FeedItem): RichSummary {
+    const p = (item.change_payload ?? {}) as Record<string, unknown>;
+    const stub: ChangeEvent = {
+      id: item.id,
+      trial_id: item.entity_id ?? '',
+      space_id: this.spaceId,
+      event_type: item.change_event_type!,
+      source: item.change_source ?? 'ctgov',
+      payload: item.change_payload ?? {},
+      occurred_at: item.event_date,
+      observed_at: item.feed_ts ?? item.observed_at ?? item.event_date,
+      marker_id: null,
+      trial_name: item.entity_name,
+      trial_identifier: null,
+      asset_name: null,
+      company_name: item.company_name,
+      company_logo_url: item.company_logo_url,
+      marker_title: (p['marker_title'] as string | undefined) ?? null,
+      marker_color: (p['marker_color'] as string | undefined) ?? null,
+      marker_type_name: (p['marker_type_name'] as string | undefined) ?? null,
+      from_marker_type_name: (p['from_marker_type_name'] as string | undefined) ?? null,
+      to_marker_type_name: (p['to_marker_type_name'] as string | undefined) ?? null,
+    };
+    return summarySegmentsFor(stub);
+  }
+
+  protected formatEventDateSuffix(item: FeedItem): string {
+    return formatEventDateSuffix(item);
+  }
+
   getEntityDisplay(item: FeedItem): string {
     if (item.entity_level === 'space') return 'Industry';
     if (item.entity_level === 'company' && item.company_name) return item.company_name;
@@ -211,7 +264,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   async onRowClick(item: FeedItem): Promise<void> {
-    // Toggle: clicking the same row closes the panel
     if (this.selectedItem()?.id === item.id) {
       this.selectedItem.set(null);
       this.selectedDetail.set(null);
@@ -222,6 +274,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.selectedItem.set(item);
     this.selectedDetail.set(null);
     this.selectedCatalystDetail.set(null);
+
+    if (item.source_type === 'detected') {
+      return;
+    }
+
     this.detailLoading.set(true);
 
     try {
@@ -247,6 +304,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.selectedItem.set(null);
     this.selectedDetail.set(null);
     this.selectedCatalystDetail.set(null);
+  }
+
+  async onAnnotationChanged(): Promise<void> {
+    await this.loadFeed();
   }
 
   /**
@@ -276,6 +337,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         source_type: 'event',
         id: detail.id,
         title: detail.title,
+        feed_ts: detail.created_at, // feed_ts mirrors get_events_page_data: events use created_at
         event_date: detail.event_date,
         category_name: detail.category.name,
         category_id: detail.category.id,
@@ -284,13 +346,47 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         entity_name: detail.entity_name,
         entity_id: detail.entity_id,
         company_name: detail.company_name,
+        company_id: detail.company_id,
+        asset_id: detail.asset_id,
         tags: detail.tags,
         has_thread: !!detail.thread,
         thread_id: detail.thread_id,
         description: detail.description,
         source_url: null,
+        change_event_type: null,
+        change_payload: null,
+        change_source: null,
+        has_annotation: false,
+        observed_at: null,
+        company_logo_url: null,
       });
       this.selectedDetail.set(detail);
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Could not load event.');
+    } finally {
+      this.detailLoading.set(false);
+    }
+  }
+
+  /**
+   * Open the detail pane for a detected change event by its trial_change_events
+   * id. Unlike openByEventId (analyst events via get_event_detail), detected
+   * rows render entirely from the FeedItem payload, so we fetch the single
+   * feed row and select it. Used by the ?detectedId deep-link from the
+   * recent-change dot.
+   */
+  async openByDetectedId(changeEventId: string): Promise<void> {
+    if (this.selectedItem()?.id === changeEventId) return;
+    this.detailLoading.set(true);
+    this.selectedDetail.set(null);
+    this.selectedCatalystDetail.set(null);
+    try {
+      const item = await this.eventService.getDetectedEvent(this.spaceId, changeEventId);
+      if (item) {
+        this.selectedItem.set(item);
+      } else {
+        this.error.set('Could not find that change event.');
+      }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not load event.');
     } finally {
@@ -322,30 +418,40 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         source_type: 'marker',
         id: detail.catalyst.marker_id,
         title: detail.catalyst.title,
+        feed_ts: detail.catalyst.event_date, // Catalyst lacks created_at; event_date is the best available approximation
         event_date: detail.catalyst.event_date,
         category_name: detail.catalyst.category_name,
         category_id: detail.catalyst.category_id,
         priority: null,
         entity_level: detail.catalyst.trial_id
           ? 'trial'
-          : detail.catalyst.product_id
+          : detail.catalyst.asset_id
             ? 'product'
             : detail.catalyst.company_id
               ? 'company'
               : 'space',
         entity_name:
+          detail.catalyst.trial_acronym ??
           detail.catalyst.trial_name ??
-          detail.catalyst.product_name ??
+          detail.catalyst.asset_name ??
           detail.catalyst.company_name ??
           '',
         entity_id:
-          detail.catalyst.trial_id ?? detail.catalyst.product_id ?? detail.catalyst.company_id,
+          detail.catalyst.trial_id ?? detail.catalyst.asset_id ?? detail.catalyst.company_id,
         company_name: detail.catalyst.company_name,
+        company_id: detail.catalyst.company_id,
+        asset_id: detail.catalyst.asset_id,
         tags: [],
         has_thread: false,
         thread_id: null,
         description: detail.catalyst.description,
         source_url: detail.catalyst.source_url,
+        change_event_type: null,
+        change_payload: null,
+        change_source: null,
+        has_annotation: false,
+        observed_at: null,
+        company_logo_url: null,
       });
       this.selectedCatalystDetail.set(detail);
     } catch (err) {
@@ -389,6 +495,23 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.modalOpen.set(true);
   }
 
+  // Edit icon on the detail panel branches by selection kind: events open the
+  // inline form here, markers route to the trial page where the marker editor
+  // lives (markers no longer have their own detail page).
+  onEditSelected(): void {
+    const item = this.selectedItem();
+    if (!item) return;
+    if (item.source_type === 'marker') {
+      const trialId = this.selectedCatalystDetail()?.catalyst.trial_id;
+      if (!trialId) return;
+      this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', trialId], {
+        queryParams: { marker: item.id },
+      });
+      return;
+    }
+    this.openEditModal(item.id);
+  }
+
   closeModal(): void {
     this.modalOpen.set(false);
     this.editingEventId.set(null);
@@ -402,8 +525,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   async onDeleteEvent(eventId: string): Promise<void> {
-    // Unnamed-item path: require the literal word 'delete' to gate the
-    // destructive action per cascade-safety T12 friction parity.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete event',
       message: 'Delete this event?',
@@ -414,7 +535,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.error.set(null);
     try {
       await this.eventService.delete(eventId);
-      // Close detail panel if the deleted event was selected
       if (this.selectedItem()?.id === eventId) {
         this.closePanel();
       }
@@ -447,7 +567,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.eventCategoryService.list(this.spaceId),
         this.markerCategoryService.list(this.spaceId),
       ]);
-      this.feedItems.set(feed);
+      this.feedItems.set(feed.items);
+      this.serverTotal.set(feed.total);
       this.eventCategories.set(eCats);
       this.markerCategories.set(mCats);
     } catch (err) {
@@ -475,7 +596,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.PAGE_SIZE,
         0
       );
-      this.feedItems.set(feed);
+      this.feedItems.set(feed.items);
+      this.serverTotal.set(feed.total);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
     } finally {

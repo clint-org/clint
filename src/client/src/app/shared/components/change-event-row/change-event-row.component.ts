@@ -1,55 +1,54 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import type { ChangeEvent, ChangeEventType } from '../../../core/models/change-event.model';
 import { BrandContextService } from '../../../core/services/brand-context.service';
+import { BrandLogoComponent } from '../brand-logo.component';
 import { summarySegmentsFor } from '../../utils/change-event-summary';
 
 const DEFAULT_ROW_COLOR = '#334155'; // slate-700
 
 @Component({
   selector: 'app-change-event-row',
-  standalone: true,
-  imports: [DatePipe, NgOptimizedImage, RouterLink, TooltipModule],
+  imports: [DatePipe, BrandLogoComponent, RouterLink, TooltipModule],
   templateUrl: './change-event-row.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeEventRowComponent {
   readonly event = input.required<ChangeEvent>();
-  /**
-   * Optional. When both tenantId and spaceId are provided the row becomes a
-   * link to the marker drawer (when the event has a marker_id) or the trial
-   * detail page. When omitted (e.g. on the trial-detail Activity card where
-   * the row would link back to itself), the row renders as plain text.
-   */
   readonly tenantId = input<string | null>(null);
   readonly spaceId = input<string | null>(null);
 
   private readonly brand = inject(BrandContextService);
 
   readonly iconClass = computed(() => iconFor(this.event().event_type));
-  /**
-   * Structured segments + a color hint. Color is the destination phase color
-   * for phase_transitioned, the marker's category color for marker_* events,
-   * and null otherwise (template falls back to slate-700). Pulls from
-   * established taxonomies so a teal "3" in a row is the same teal as the
-   * P3 phase bar on the timeline.
-   */
   readonly rich = computed(() => summarySegmentsFor(this.event()));
+
+  protected readonly entityLabel = computed(() => {
+    const e = this.event();
+    const parts: string[] = [];
+    if (e.company_name) parts.push(e.company_name);
+    if (e.asset_name) parts.push(e.asset_name);
+    else if (e.trial_acronym ?? e.trial_name) parts.push(e.trial_acronym ?? e.trial_name);
+    return parts.join(' / ').toUpperCase();
+  });
+
   readonly accentColor = computed(() => this.rich().color ?? DEFAULT_ROW_COLOR);
   readonly sourceLabel = computed(() => {
-    if (this.event().source === 'ctgov') return 'CT.gov';
+    const src = this.event().source;
+    if (src === 'ctgov') return 'CT.gov';
+    if (src === 'source_import') return 'Source Import';
     return this.brand.agency()?.name ?? this.brand.appDisplayName();
   });
-  readonly sourceTooltip = computed(() =>
-    this.event().source === 'ctgov'
-      ? 'Automated polling of ClinicalTrials.gov'
-      : 'Manual entry by a team member'
-  );
+  readonly sourceTooltip = computed(() => {
+    const src = this.event().source;
+    if (src === 'ctgov') return 'Automated polling of ClinicalTrials.gov';
+    if (src === 'source_import') return 'Extracted from an imported source document';
+    return 'Manual entry by a team member';
+  });
 
   readonly monogram = computed(() => monogramFor(this.event().company_name));
-  /** Stable per-company tint for the monogram fallback (when no logo URL). */
   readonly monogramTint = computed(() => tintFor(this.event().company_name));
   readonly relativeTime = computed(() => formatRelative(this.event().observed_at));
 

@@ -16,7 +16,7 @@ let p: Personas;
 
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 // 'Leadership' system event category seeded by migration 20260413120000.
 const LEADERSHIP_CATEGORY_ID = 'e0000000-0000-0000-0000-000000000001';

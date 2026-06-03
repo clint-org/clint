@@ -39,7 +39,7 @@ test.describe('Trial Management CRUD', () => {
   });
 
   test('trial detail page loads with sections', async () => {
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // Section cards use uppercase h2 headings: "Basic info", "Markers", "Notes"
     // "Phase" section only shows if trial has phase_type set
     await expect(page.getByRole('heading', { name: 'Basic info' })).toBeVisible();
@@ -57,7 +57,7 @@ test.describe('Trial Management CRUD', () => {
     await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'Updated Trial' })).toBeVisible({
       timeout: 10000,
     });
@@ -87,7 +87,7 @@ test.describe('Trial Management CRUD', () => {
     await page.locator('form').getByRole('button', { name: 'Add Marker' }).click();
     await page.waitForTimeout(3000);
 
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // The marker table renders dates via `| date: 'mediumDate'` (e.g. "Mar 15, 2025"),
     // so assert against the marker title instead -- it's unique and format-stable.
     await expect(page.getByText('Test marker title')).toBeVisible({ timeout: 5000 });
@@ -108,7 +108,7 @@ test.describe('Trial Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // Scope the assertion to the markers table -- the activity feed still
     // shows "Marker removed: Test marker title" after the deletion.
     await expect(page.locator('p-table tbody').getByText('Test marker title')).not.toBeVisible({
@@ -124,7 +124,7 @@ test.describe('Trial Management CRUD', () => {
     await page.locator('form').getByRole('button', { name: 'Add Note' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // Scope to the Notes section -- the activity feed also surfaces note text.
     const notesSection = page.locator('app-section-card', {
       has: page.getByRole('heading', { name: 'Notes' }),
@@ -150,7 +150,7 @@ test.describe('Trial Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // Scope to the Notes section -- the activity feed retains "Note removed" text.
     const notesSection = page.locator('app-section-card', {
       has: page.getByRole('heading', { name: 'Notes' }),
@@ -161,7 +161,7 @@ test.describe('Trial Management CRUD', () => {
   });
 
   test('back button navigates away from trial detail', async () => {
-    await page.goto(trialUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialUrl(), { waitUntil: 'domcontentloaded' });
     // The back button is now in the contextual topbar
     await page.locator('.topbar-back').click();
     await expect(page).not.toHaveURL(/\/trials\//);
@@ -191,7 +191,7 @@ test.describe('Trial List CRUD', () => {
   });
 
   test('trial list loads', async () => {
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'Add trial' })).toBeVisible();
   });
 
@@ -200,7 +200,7 @@ test.describe('Trial List CRUD', () => {
     // difficult to set reliably via Playwright. Create via DB helper instead
     // and verify it renders in the list.
     await createTestTrial(spaceId, assetId, taId, 'KEYNOTE-001');
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('KEYNOTE-001')).toBeVisible({ timeout: 10000 });
   });
 
@@ -219,7 +219,7 @@ test.describe('Trial List CRUD', () => {
     await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('KEYNOTE-002')).toBeVisible({ timeout: 10000 });
   });
 
@@ -282,15 +282,14 @@ test.describe('Trial List CRUD', () => {
       .single();
     if (nErr) throw new Error(`Could not seed note: ${nErr.message}`);
 
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: cascadeTrialName });
     await expect(row).toBeVisible({ timeout: 10000 });
 
     await Promise.all([
-      page.waitForResponse(
-        (r) => r.url().includes('/rest/v1/rpc/preview_trial_delete') && r.ok(),
-        { timeout: 10000 },
-      ),
+      page.waitForResponse((r) => r.url().includes('/rest/v1/rpc/preview_trial_delete') && r.ok(), {
+        timeout: 10000,
+      }),
       clickRowAction(page, row, 'Delete'),
     ]);
 
@@ -302,13 +301,13 @@ test.describe('Trial List CRUD', () => {
     await Promise.all([
       page.waitForResponse(
         (r) => r.url().includes('/rest/v1/trials') && r.request().method() === 'DELETE',
-        { timeout: 10000 },
+        { timeout: 10000 }
       ),
       dialog.getByRole('button', { name: 'Delete', exact: true }).click(),
     ]);
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(cascadeTrialName)).not.toBeVisible({ timeout: 5000 });
 
     // Cascade assertions: assignment and note rows are gone with the trial.
@@ -327,7 +326,7 @@ test.describe('Trial List CRUD', () => {
   });
 
   test('delete the original KEYNOTE-002 trial via typed confirm', async () => {
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     const row = page.locator('tr', { hasText: 'KEYNOTE-002' });
     await clickRowAction(page, row, 'Delete');
 
@@ -339,7 +338,7 @@ test.describe('Trial List CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(trialsUrl(), { waitUntil: 'networkidle' });
+    await page.goto(trialsUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('KEYNOTE-002')).not.toBeVisible({ timeout: 5000 });
   });
 });
@@ -402,7 +401,7 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
   });
 
   test('ct.gov-managed trial locks phase fields in edit dialog', async () => {
-    await page.goto(trialDetailUrl(ctgovTrialId), { waitUntil: 'networkidle' });
+    await page.goto(trialDetailUrl(ctgovTrialId), { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Edit details' }).click();
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
@@ -428,7 +427,7 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
   });
 
   test('analyst-managed trial leaves phase fields editable', async () => {
-    await page.goto(trialDetailUrl(analystTrialId), { waitUntil: 'networkidle' });
+    await page.goto(trialDetailUrl(analystTrialId), { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Edit details' }).click();
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });

@@ -105,6 +105,7 @@
   <!-- dots -->
   @for (dot of dots(); track dot.product.id) {
     <g class="bullseye-dot-group">
+      <!-- Selection ring (existing) -->
       @if (selectedAssetId() === dot.product.id) {
         <circle
           [attr.cx]="dot.x"
@@ -116,24 +117,73 @@
           pointer-events="none"
         />
       }
+
+      <!-- Activity pulse ring (amber, animated) -->
+      @if (dot.product.has_recent_activity) {
+        <circle
+          [attr.cx]="dot.x"
+          [attr.cy]="dot.y"
+          r="10"
+          fill="none"
+          stroke="#f59e0b"
+          stroke-width="2"
+          class="activity-pulse"
+        />
+      }
+
+      <!-- Intelligence halo ring (teal, static) -->
+      @if (dot.product.intelligence_count > 0) {
+        <circle
+          [attr.cx]="dot.x"
+          [attr.cy]="dot.y"
+          r="12"
+          fill="none"
+          stroke="#0d9488"
+          stroke-width="2"
+          opacity="0.8"
+          class="halo-ring"
+        />
+      }
+
+      <!-- Duplicate (multi-spoke) dashed ring -->
+      @if (isDuplicate(dot.product.id)) {
+        <circle
+          [attr.cx]="dot.x"
+          [attr.cy]="dot.y"
+          [attr.r]="dot.product.intelligence_count > 0 ? 17 : 12"
+          fill="none"
+          stroke="#475569"
+          stroke-dasharray="3 2"
+          stroke-width="1.5"
+          class="dup-ring"
+        />
+      }
+
+      <!-- Main dot -->
       <circle
         [attr.cx]="dot.x"
         [attr.cy]="dot.y"
         [attr.r]="dotRadius(dot)"
         [attr.fill]="dotFill(dot)"
         [attr.opacity]="dotOpacity(dot)"
-        [attr.stroke]="isAssetMatched(dot.product.id) ? 'white' : '#cbd5e1'"
-        stroke-width="1.5"
+        [attr.stroke]="
+          isHighlighted(dot.product.id)
+            ? '#0f172a'
+            : isAssetMatched(dot.product.id)
+              ? 'white'
+              : '#cbd5e1'
+        "
+        [attr.stroke-width]="isHighlighted(dot.product.id) ? 2 : 1.5"
         [attr.tabindex]="isAssetMatched(dot.product.id) ? 0 : -1"
         role="button"
         class="bullseye-dot"
         [class.bullseye-dot-faded]="!isAssetMatched(dot.product.id)"
         [attr.aria-label]="dotAriaLabel(dot)"
         (click)="isAssetMatched(dot.product.id) && onDotClick($event, dot.product.id)"
-        (mouseenter)="isAssetMatched(dot.product.id) && onHoverStart(dot.product.id)"
-        (mouseleave)="isAssetMatched(dot.product.id) && onHoverEnd()"
-        (focus)="isAssetMatched(dot.product.id) && onHoverStart(dot.product.id)"
-        (blur)="isAssetMatched(dot.product.id) && onHoverEnd()"
+        (mouseenter)="isAssetMatched(dot.product.id) && onDotMouseEnter(dot.product.id)"
+        (mouseleave)="isAssetMatched(dot.product.id) && onDotMouseLeave()"
+        (focus)="isAssetMatched(dot.product.id) && onDotMouseEnter(dot.product.id)"
+        (blur)="isAssetMatched(dot.product.id) && onDotMouseLeave()"
         (keydown)="isAssetMatched(dot.product.id) && onDotKeydown($event, dot.product.id)"
       />
     </g>

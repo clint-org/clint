@@ -1,9 +1,9 @@
 /**
  * Shared types for the landscape bullseye feature.
  *
- * The bullseye shows a per-therapeutic-area competitive landscape. Each dot
+ * The bullseye shows a per-indication competitive landscape. Each dot
  * is a product, positioned at the development phase it has reached within
- * the selected TA. Companies sit on spokes around the perimeter.
+ * the selected indication. Companies sit on spokes around the perimeter.
  */
 
 import type { MarkerShape } from './marker.model';
@@ -56,9 +56,19 @@ export const PHASE_COLOR: Record<RingPhase, string> = {
   LAUNCHED: '#059669', // emerald-600 (distinct hue for "the goal")
 };
 
-export type BullseyeDimension = 'therapeutic-area' | 'company' | 'moa' | 'roa';
+export type BullseyeDimension = 'indication' | 'company' | 'moa' | 'roa';
 
 export type SpokeMode = 'grouped' | 'assets';
+
+export type SpokeGrouping = 'company' | 'indication' | 'moa' | 'roa' | 'asset';
+
+export const SPOKE_GROUPING_OPTIONS: { label: string; value: SpokeGrouping }[] = [
+  { label: 'Company', value: 'company' },
+  { label: 'Indication', value: 'indication' },
+  { label: 'Mechanism of Action', value: 'moa' },
+  { label: 'Route of Administration', value: 'roa' },
+  { label: 'Asset', value: 'asset' },
+];
 
 export interface BullseyeScope {
   id: string;
@@ -66,15 +76,10 @@ export interface BullseyeScope {
   abbreviation?: string | null;
 }
 
-export interface BullseyeTherapeuticArea {
-  id: string;
-  name: string;
-  abbreviation: string | null;
-}
-
 export interface BullseyeTrial {
   id: string;
   name: string;
+  acronym: string | null;
   identifier: string | null;
   status: string | null;
   recruitment_status: string | null;
@@ -88,13 +93,13 @@ export interface BullseyeTrial {
    */
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
+  most_recent_change_event_id?: string | null;
 }
 
 export interface BullseyeMarker {
   id: string;
   event_date: string;
   marker_type_name: string;
-  icon: string | null;
   shape: MarkerShape;
   color: string;
   projection: string;
@@ -114,6 +119,12 @@ export interface BullseyeAsset {
   recent_markers: BullseyeMarker[];
   moas: { id: string; name: string }[];
   roas: { id: string; name: string; abbreviation: string | null }[];
+  indications: { id: string; name: string; abbreviation: string | null }[];
+  intelligence_count: number;
+  has_recent_activity: boolean;
+  recent_changes_count: number;
+  most_recent_change_type: string | null;
+  most_recent_change_event_id: string | null;
 }
 
 export interface BullseyeSpoke {
@@ -136,7 +147,7 @@ export interface LandscapeFilters {
   companyIds: string[];
   assetIds: string[];
   trialIds: string[];
-  therapeuticAreaIds: string[];
+  indicationIds: string[];
   mechanismOfActionIds: string[];
   routeOfAdministrationIds: string[];
   phases: RingPhase[];
@@ -149,7 +160,7 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   companyIds: [],
   assetIds: [],
   trialIds: [],
-  therapeuticAreaIds: [],
+  indicationIds: [],
   mechanismOfActionIds: [],
   routeOfAdministrationIds: [],
   phases: [],
@@ -167,17 +178,17 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye' | 'positioning' | 'catalysts';
+export type ViewMode = 'timeline' | 'bullseye' | 'density-matrix' | 'catalysts';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
-  { label: 'Positioning', value: 'positioning' },
+  { label: 'Density Matrix', value: 'density-matrix' },
   { label: 'Future Catalysts', value: 'catalysts' },
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [
-  { label: 'Therapy Area', value: 'therapeutic-area' },
+  { label: 'Indication', value: 'indication' },
   { label: 'Company', value: 'company' },
   { label: 'Mechanism of Action', value: 'moa' },
   { label: 'Route of Administration', value: 'roa' },
@@ -185,7 +196,7 @@ export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = 
 
 export function dimensionToSegment(dim: BullseyeDimension): string {
   const map: Record<BullseyeDimension, string> = {
-    'therapeutic-area': 'by-therapy-area',
+    indication: 'by-indication',
     company: 'by-company',
     moa: 'by-moa',
     roa: 'by-roa',
@@ -195,26 +206,95 @@ export function dimensionToSegment(dim: BullseyeDimension): string {
 
 export function segmentToDimension(segment: string): BullseyeDimension {
   const map: Record<string, BullseyeDimension> = {
-    'by-therapy-area': 'therapeutic-area',
+    'by-indication': 'indication',
     'by-company': 'company',
     'by-moa': 'moa',
     'by-roa': 'roa',
   };
-  return map[segment] ?? 'therapeutic-area';
+  return map[segment] ?? 'indication';
 }
 
-// --- Competitive Positioning types ---
+// --- Spoke grouping utility ---
 
-export type PositioningGrouping =
-  | 'moa'
-  | 'therapeutic-area'
-  | 'moa+therapeutic-area'
-  | 'company'
-  | 'roa';
+export interface GroupedSpokesResult {
+  spokes: BullseyeSpoke[];
+  duplicatedAssetIds: Set<string>;
+}
+
+/**
+ * Groups a flat list of assets into spokes by the selected dimension.
+ * For multi-valued dimensions (indication, moa, roa), an asset may appear
+ * in multiple spokes. The returned `duplicatedAssetIds` tracks those assets.
+ */
+export function groupAssetsIntoSpokes(
+  assets: BullseyeAsset[],
+  grouping: SpokeGrouping
+): GroupedSpokesResult {
+  const groups = new Map<string, { name: string; assets: BullseyeAsset[] }>();
+  const assetSpokeCount = new Map<string, number>();
+
+  for (const asset of assets) {
+    const keys = getSpokeKeys(asset, grouping);
+    for (const key of keys) {
+      const existing = groups.get(key.id);
+      if (existing) {
+        existing.assets.push(asset);
+      } else {
+        groups.set(key.id, { name: key.name, assets: [asset] });
+      }
+      assetSpokeCount.set(asset.id, (assetSpokeCount.get(asset.id) ?? 0) + 1);
+    }
+  }
+
+  const duplicatedAssetIds = new Set<string>();
+  for (const [id, count] of assetSpokeCount) {
+    if (count > 1) {
+      duplicatedAssetIds.add(id);
+    }
+  }
+
+  const spokes: BullseyeSpoke[] = [...groups.entries()].map(([id, group]) => ({
+    id,
+    name: group.name,
+    display_order: 0,
+    highest_phase_rank: Math.max(...group.assets.map((a) => a.highest_phase_rank)),
+    products: group.assets,
+  }));
+
+  spokes.sort((a, b) => {
+    const phaseCompare = b.highest_phase_rank - a.highest_phase_rank;
+    if (phaseCompare !== 0) return phaseCompare;
+    return b.products.length - a.products.length;
+  });
+
+  return { spokes, duplicatedAssetIds };
+}
+
+function getSpokeKeys(
+  asset: BullseyeAsset,
+  grouping: SpokeGrouping
+): { id: string; name: string }[] {
+  switch (grouping) {
+    case 'company':
+      return [{ id: asset.company_id, name: asset.company_name }];
+    case 'indication':
+      return asset.indications.map((ind) => ({ id: ind.id, name: ind.name }));
+    case 'moa':
+      return asset.moas.map((m) => ({ id: m.id, name: m.name }));
+    case 'roa':
+      return asset.roas.map((r) => ({ id: r.id, name: r.name }));
+    case 'asset':
+      return [{ id: asset.id, name: asset.name }];
+  }
+}
+
+// --- Density Matrix types ---
+
+export type DensityGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
 
 export type CountUnit = 'assets' | 'trials' | 'companies';
 
-export interface PositioningAsset {
+export interface DensityAsset {
   id: string;
   name: string;
   generic_name: string | null;
@@ -225,56 +305,58 @@ export interface PositioningAsset {
   trial_count: number;
 }
 
-export interface PositioningBubble {
+export interface DensityBubble {
   label: string;
   group_keys: Record<string, string>;
   competitor_count: number;
   highest_phase: RingPhase;
   highest_phase_rank: number;
   unit_count: number;
-  products: PositioningAsset[];
+  phase_counts: Partial<Record<RingPhase, number>>;
+  products: DensityAsset[];
 }
 
-export interface PositioningData {
-  grouping: PositioningGrouping;
+export interface DensityData {
+  grouping: DensityGrouping;
   count_unit: CountUnit;
-  bubbles: PositioningBubble[];
+  latest_event_date: string | null;
+  bubbles: DensityBubble[];
 }
 
-export const POSITIONING_GROUPING_OPTIONS: { label: string; value: PositioningGrouping }[] = [
+export const DENSITY_GROUPING_OPTIONS: { label: string; value: DensityGrouping }[] = [
   { label: 'Mechanism of Action', value: 'moa' },
-  { label: 'Therapy Area', value: 'therapeutic-area' },
-  { label: 'MOA + Therapy Area', value: 'moa+therapeutic-area' },
+  { label: 'Indication', value: 'indication' },
+  { label: 'MOA + Indication', value: 'moa+indication' },
   { label: 'Company', value: 'company' },
   { label: 'Route of Administration', value: 'roa' },
 ];
 
-export function groupingToSegment(g: PositioningGrouping): string {
-  const map: Record<PositioningGrouping, string> = {
+export function groupingToSegment(g: DensityGrouping): string {
+  const map: Record<DensityGrouping, string> = {
     moa: 'by-moa',
-    'therapeutic-area': 'by-therapy-area',
-    'moa+therapeutic-area': 'by-moa-therapy-area',
+    indication: 'by-indication',
+    'moa+indication': 'by-moa-indication',
     company: 'by-company',
     roa: 'by-roa',
   };
   return map[g];
 }
 
-export function segmentToGrouping(segment: string): PositioningGrouping {
-  const map: Record<string, PositioningGrouping> = {
+export function segmentToGrouping(segment: string): DensityGrouping {
+  const map: Record<string, DensityGrouping> = {
     'by-moa': 'moa',
-    'by-therapy-area': 'therapeutic-area',
-    'by-moa-therapy-area': 'moa+therapeutic-area',
+    'by-indication': 'indication',
+    'by-moa-indication': 'moa+indication',
     'by-company': 'company',
     'by-roa': 'roa',
   };
   return map[segment] ?? 'moa';
 }
 
-export const POSITIONING_SEGMENTS = [
+export const DENSITY_SEGMENTS = [
   'by-moa',
-  'by-therapy-area',
-  'by-moa-therapy-area',
+  'by-indication',
+  'by-moa-indication',
   'by-company',
   'by-roa',
 ] as const;

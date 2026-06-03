@@ -40,25 +40,18 @@ beforeAll(async () => {
   companyId = company!.id;
 
   const { data: asset } = await admin
-    .from('products')
+    .from('assets')
     .insert({ space_id: p.org.spaceId, company_id: companyId, name: 'AcmeMab', created_by: userId })
     .select('id')
     .single();
   assetId = asset!.id;
-
-  const { data: ta } = await admin
-    .from('therapeutic_areas')
-    .insert({ space_id: p.org.spaceId, name: 'Oncology', created_by: userId })
-    .select('id')
-    .single();
 
   const { data: trials } = await admin
     .from('trials')
     .insert([
       {
         space_id: p.org.spaceId,
-        product_id: assetId,
-        therapeutic_area_id: ta!.id,
+        asset_id: assetId,
         name: 'Trial Alpha',
         identifier: 'NCT00000001',
         phase: 'P3',
@@ -66,8 +59,7 @@ beforeAll(async () => {
       },
       {
         space_id: p.org.spaceId,
-        product_id: assetId,
-        therapeutic_area_id: ta!.id,
+        asset_id: assetId,
         name: 'Trial Beta',
         identifier: 'NCT00000002',
         phase: 'P3',

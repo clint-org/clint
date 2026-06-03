@@ -1,4 +1,4 @@
-export type ChangeEventSource = 'ctgov' | 'analyst';
+export type ChangeEventSource = 'ctgov' | 'analyst' | 'source_import';
 
 export type ChangeEventType =
   | 'status_changed'
@@ -31,8 +31,9 @@ export interface ChangeEvent {
   marker_id: string | null;
   // joined for display
   trial_name: string;
+  trial_acronym?: string | null;
   trial_identifier: string | null;
-  product_name: string | null;
+  asset_name: string | null;
   company_name: string | null;
   company_logo_url: string | null;
   marker_title: string | null;

@@ -8,7 +8,6 @@ export interface Catalyst {
   category_name: string;
   category_id: string;
   marker_type_name: string;
-  marker_type_icon: string | null;
   marker_type_color: string;
   marker_type_shape: MarkerShape;
   marker_type_inner_mark: InnerMark;
@@ -16,9 +15,10 @@ export interface Catalyst {
   no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
-  product_name: string | null;
-  product_id: string | null;
+  asset_name: string | null;
+  asset_id: string | null;
   trial_name: string | null;
+  trial_acronym: string | null;
   trial_id: string | null;
   trial_phase: string | null;
   description: string | null;
@@ -30,6 +30,7 @@ export interface Catalyst {
    */
   trial_recent_changes_count?: number;
   trial_most_recent_change_type?: string | null;
+  trial_most_recent_change_event_id?: string | null;
 }
 
 /**

@@ -46,11 +46,13 @@ test.describe('Navigation', () => {
   test('navigating to companies then back to space root works', async () => {
     await navigateToSpace(page, tenantId, spaceId);
     // Navigate to companies via URL
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page).toHaveURL(/\/manage\/companies/);
 
     // Navigate back to space root
-    await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(new RegExp(`/t/${tenantId}/s/${spaceId}`), { timeout: 10000 });
   });
 });

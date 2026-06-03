@@ -1,6 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 
-import { AuditEvent, AuditEventFilter, AuditEventPage, AuditScopeKind } from '../models/audit-event.model';
+import {
+  AuditEvent,
+  AuditEventFilter,
+  AuditEventPage,
+  AuditScopeKind,
+} from '../models/audit-event.model';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
@@ -11,36 +16,38 @@ export class AuditEventService {
     scopeKind: AuditScopeKind,
     scopeId: string | null,
     filter: AuditEventFilter,
-    page: AuditEventPage,
+    page: AuditEventPage
   ): Promise<AuditEvent[]> {
-    const { data, error } = await this.supabase.client.rpc('list_audit_events', {
-      p_scope_kind: scopeKind,
-      p_scope_id: scopeId,
-      p_actor_user_id: filter.actor_user_id ?? null,
-      p_action: filter.action ?? null,
-      p_from: filter.from ?? null,
-      p_to: filter.to ?? null,
-      p_limit: page.limit,
-      p_offset: page.offset,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('list_audit_events', {
+        p_scope_kind: scopeKind,
+        p_scope_id: scopeId,
+        p_actor_user_id: filter.actor_user_id ?? null,
+        p_action: filter.action ?? null,
+        p_from: filter.from ?? null,
+        p_to: filter.to ?? null,
+        p_limit: page.limit,
+        p_offset: page.offset,
+      })
+      .throwOnError();
     return (data ?? []) as AuditEvent[];
   }
 
   async exportCsv(
     scopeKind: AuditScopeKind,
     scopeId: string | null,
-    filter: AuditEventFilter,
+    filter: AuditEventFilter
   ): Promise<string> {
-    const { data, error } = await this.supabase.client.rpc('export_audit_events_csv', {
-      p_scope_kind: scopeKind,
-      p_scope_id: scopeId,
-      p_actor_user_id: filter.actor_user_id ?? null,
-      p_action: filter.action ?? null,
-      p_from: filter.from ?? null,
-      p_to: filter.to ?? null,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('export_audit_events_csv', {
+        p_scope_kind: scopeKind,
+        p_scope_id: scopeId,
+        p_actor_user_id: filter.actor_user_id ?? null,
+        p_action: filter.action ?? null,
+        p_from: filter.from ?? null,
+        p_to: filter.to ?? null,
+      })
+      .throwOnError();
     return (data as string) ?? '';
   }
 

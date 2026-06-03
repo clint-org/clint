@@ -1,75 +1,83 @@
 import { inject, Injectable } from '@angular/core';
 
-import { TherapeuticArea } from '../models/trial.model';
+import { Indication } from '../models/indication.model';
 import { SupabaseService } from './supabase.service';
 import { RpcCache } from './rpc-cache.service';
 
 const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
 
+/**
+ * @deprecated Use IndicationService instead. This service is kept as a thin
+ * wrapper so downstream files that still import TherapeuticAreaService compile
+ * while they are migrated to IndicationService.
+ */
 @Injectable({ providedIn: 'root' })
 export class TherapeuticAreaService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
 
-  async list(spaceId: string): Promise<TherapeuticArea[]> {
-    return this.cache.get('list_therapeutic_areas', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: [`space:${spaceId}:therapeutic-areas`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client
-          .from('therapeutic_areas')
-          .select('*')
-          .eq('space_id', spaceId)
-          .order('name');
-        if (error) throw error;
-        return (data ?? []) as TherapeuticArea[];
-      },
-    });
+  async list(spaceId: string): Promise<Indication[]> {
+    return this.cache.get(
+      'list_indications',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: [`space:${spaceId}:indications`],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .from('indications')
+            .select('*')
+            .eq('space_id', spaceId)
+            .order('name')
+            .throwOnError();
+          return (data ?? []) as Indication[];
+        },
+      }
+    );
   }
 
-  async create(spaceId: string, area: Partial<TherapeuticArea>): Promise<TherapeuticArea> {
-    const { data, error } = await this.supabase.client
-      .from('therapeutic_areas')
-      .insert({ ...area, space_id: spaceId })
+  async create(spaceId: string, indication: Partial<Indication>): Promise<Indication> {
+    const { data } = await this.supabase.client
+      .from('indications')
+      .insert({ ...indication, space_id: spaceId })
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     this.cache.invalidateTags([
-      `space:${spaceId}:therapeutic-areas`,
+      `space:${spaceId}:indications`,
       `space:${spaceId}:dashboard`,
       `space:${spaceId}:landing-stats`,
     ]);
-    return data as TherapeuticArea;
+    return data as Indication;
   }
 
-  async update(id: string, changes: Partial<TherapeuticArea>): Promise<TherapeuticArea> {
-    const { data, error } = await this.supabase.client
-      .from('therapeutic_areas')
+  async update(id: string, changes: Partial<Indication>): Promise<Indication> {
+    const { data } = await this.supabase.client
+      .from('indications')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
-    const spaceId = (data as TherapeuticArea).space_id;
+      .single()
+      .throwOnError();
+    const spaceId = (data as Indication).space_id;
     this.cache.invalidateTags([
-      `space:${spaceId}:therapeutic-areas`,
+      `space:${spaceId}:indications`,
       `space:${spaceId}:dashboard`,
       `space:${spaceId}:landing-stats`,
     ]);
-    return data as TherapeuticArea;
+    return data as Indication;
   }
 
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
-      .from('therapeutic_areas')
+      .from('indications')
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('therapeutic_areas').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('indications').delete().eq('id', id).throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
-        `space:${existing.space_id}:therapeutic-areas`,
+        `space:${existing.space_id}:indications`,
         `space:${existing.space_id}:dashboard`,
         `space:${existing.space_id}:landing-stats`,
       ]);

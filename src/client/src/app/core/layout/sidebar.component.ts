@@ -37,24 +37,11 @@ const NAV_SECTIONS: NavSection[] = [
         label: 'Bullseye',
         route: 'bullseye',
         icon: NAV_ICONS['bullseye'],
-        children: [
-          { label: 'Therapy Area', route: 'bullseye/by-therapy-area' },
-          { label: 'Company', route: 'bullseye/by-company' },
-          { label: 'MOA', route: 'bullseye/by-moa' },
-          { label: 'ROA', route: 'bullseye/by-roa' },
-        ],
       },
       {
-        label: 'Positioning',
-        route: 'positioning',
-        icon: NAV_ICONS['positioning'],
-        children: [
-          { label: 'MOA', route: 'positioning/by-moa' },
-          { label: 'Therapy Area', route: 'positioning/by-therapy-area' },
-          { label: 'MOA + TA', route: 'positioning/by-moa-therapy-area' },
-          { label: 'Company', route: 'positioning/by-company' },
-          { label: 'ROA', route: 'positioning/by-roa' },
-        ],
+        label: 'Density Matrix',
+        route: 'density-matrix',
+        icon: NAV_ICONS['density-matrix'],
       },
       { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
     ],
@@ -214,7 +201,8 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
                 }
               }
             } @else {
-              <!-- Collapsed: individual item icons with section dividers -->
+              <!-- Collapsed: section label + individual item icons -->
+              <span class="collapsed-label" aria-hidden="true">{{ section.label }}</span>
               @for (item of section.items; track item.route) {
                 <button
                   type="button"
@@ -247,7 +235,11 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       <div class="sidebar__footer">
         <button
           type="button"
-          [class]="userAvatarUrl() ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent' : 'avatar-btn'"
+          [class]="
+            userAvatarUrl()
+              ? 'avatar-btn overflow-hidden border-transparent bg-transparent p-0 hover:bg-transparent'
+              : 'avatar-btn'
+          "
           [attr.aria-label]="'User account: ' + userInitials()"
           [pTooltip]="isExpanded() ? '' : 'Account'"
           tooltipPosition="right"
@@ -459,6 +451,10 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         user-select: none;
       }
 
+      .collapsed-label {
+        display: none;
+      }
+
       /* Nav items (expanded) */
       .nav-item {
         display: flex;
@@ -628,6 +624,7 @@ export class SidebarComponent {
   readonly pinned = input<boolean>(false);
   readonly activeRoute = input<string>('');
   readonly hasSpace = input<boolean>(false);
+  readonly canEdit = input<boolean>(true);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
   readonly userAvatarUrl = input<string | null>(null);
@@ -659,7 +656,10 @@ export class SidebarComponent {
 
   readonly isExpanded = computed(() => this.expanded() || this.pinned());
 
-  readonly visibleSections = computed(() => (this.hasSpace() ? NAV_SECTIONS : ORG_ONLY_SECTIONS));
+  readonly visibleSections = computed(() => {
+    if (!this.hasSpace()) return ORG_ONLY_SECTIONS;
+    return this.canEdit() ? NAV_SECTIONS : NAV_SECTIONS.filter((s) => s.id !== 'manage');
+  });
 
   isParentExpanded(route: string): boolean {
     return this.activeRoute().startsWith(route);

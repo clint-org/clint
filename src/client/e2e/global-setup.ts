@@ -24,13 +24,17 @@ async function globalSetup() {
   const email = `e2e-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@clint.local`;
   const password = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  const { data: createData, error: createError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-
-  if (createError) throw createError;
+  let createData: Awaited<ReturnType<typeof supabase.auth.admin.createUser>>['data'] = { user: null };
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
+    const result = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (!result.error) { createData = result.data; break; }
+    if (attempt === 4) throw result.error;
+  }
 
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] || 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
@@ -38,12 +42,13 @@ async function globalSetup() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (signInError) throw signInError;
+  let signInData: Awaited<ReturnType<typeof anonClient.auth.signInWithPassword>>['data'] = { user: null as never, session: null };
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000 * attempt));
+    const result = await anonClient.auth.signInWithPassword({ email, password });
+    if (!result.error) { signInData = result.data; break; }
+    if (attempt === 4) throw result.error;
+  }
 
   const storage = {
     userId: signInData.user.id,

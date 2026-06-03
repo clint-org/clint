@@ -1,0 +1,1904 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Clint -- source import review layout options</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-200: #99f6e4;
+        --brand-300: #5eead4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --brand-800: #115e59;
+        --green-50: #f0fdf4;
+        --green-600: #16a34a;
+        --green-700: #15803d;
+        --amber-50: #fffbeb;
+        --amber-600: #d97706;
+        --amber-700: #b45309;
+        --orange-50: #fff7ed;
+        --orange-600: #ea580c;
+        --violet-50: #f5f3ff;
+        --violet-600: #7c3aed;
+        --blue-50: #eff6ff;
+        --blue-600: #2563eb;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-50);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .accent-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--brand-600);
+        z-index: 100;
+      }
+      .deck {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 56px 48px 96px;
+      }
+      .deck-head {
+        margin-bottom: 44px;
+      }
+      .deck-head .label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--brand-700);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .deck-head h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.01em;
+        margin-bottom: 8px;
+      }
+      .deck-head p {
+        font-size: 14px;
+        color: var(--slate-500);
+        max-width: 680px;
+      }
+
+      /* Option separator */
+      .option-divider {
+        border: none;
+        border-top: 2px solid var(--brand-600);
+        margin: 64px 0 48px;
+      }
+      .option-label {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--brand-700);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .option-desc {
+        font-size: 14px;
+        color: var(--slate-500);
+        margin-bottom: 28px;
+        max-width: 800px;
+      }
+
+      /* Shared pieces */
+      .badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 2px 6px;
+        border-radius: 2px;
+      }
+      .badge-new {
+        background: var(--brand-100);
+        color: var(--brand-700);
+      }
+      .badge-existing {
+        background: var(--slate-100);
+        color: var(--slate-500);
+      }
+      .badge-phase {
+        background: var(--slate-100);
+        color: var(--slate-600);
+        font-size: 10px;
+        padding: 1px 5px;
+      }
+
+      .entity-link {
+        color: var(--brand-600);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .entity-link:hover {
+        text-decoration: underline;
+      }
+
+      .evidence-link {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--slate-400);
+        text-decoration: none;
+        border-bottom: 1px dotted var(--slate-300);
+      }
+      .evidence-link:hover {
+        color: var(--brand-600);
+        border-color: var(--brand-300);
+      }
+
+      .nct-link {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--brand-600);
+        text-decoration: none;
+      }
+      .nct-link:hover {
+        text-decoration: underline;
+      }
+
+      .field-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--slate-400);
+      }
+      .field-value {
+        font-size: 13px;
+        color: var(--slate-700);
+      }
+
+      .checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--brand-600);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .section-header {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--slate-500);
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--slate-200);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .section-header .count {
+        color: var(--slate-400);
+        font-size: 10px;
+      }
+      .section-header .deselect {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: var(--slate-400);
+        text-decoration: none;
+        cursor: pointer;
+        text-transform: none;
+        letter-spacing: 0;
+        margin-left: auto;
+      }
+      .section-header .deselect:hover {
+        color: var(--brand-600);
+      }
+
+      /* ======================================================================
+         LAYOUT: TWO-PANE (source text + proposals)
+         ====================================================================== */
+      .layout-two-pane {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 32px;
+        align-items: start;
+      }
+      .source-pane {
+        position: sticky;
+        top: 24px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        padding: 24px;
+      }
+      .source-pane .source-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--slate-400);
+        margin-bottom: 12px;
+      }
+      .source-pane .source-text {
+        font-size: 13px;
+        color: var(--slate-600);
+        line-height: 1.7;
+      }
+
+      /* ======================================================================
+         OPTION A: FLAT LIST (improved current)
+         ====================================================================== */
+      .flat-list .entity-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        margin-bottom: 2px;
+      }
+      .flat-list .entity-row:hover {
+        background: var(--slate-50);
+        border-color: var(--slate-200);
+      }
+      .flat-list .entity-content {
+        flex: 1;
+        min-width: 0;
+      }
+      .flat-list .entity-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .flat-list .entity-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--slate-900);
+      }
+      .flat-list .entity-fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .flat-list .entity-field {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .flat-list .section-group {
+        margin-bottom: 28px;
+      }
+
+      /* ======================================================================
+         OPTION B: HIERARCHICAL TREE
+         ====================================================================== */
+      .tree-view .company-block {
+        margin-bottom: 24px;
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        background: white;
+      }
+      .tree-view .company-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--slate-200);
+        background: var(--slate-50);
+      }
+      .tree-view .company-name {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--slate-900);
+      }
+      .tree-view .company-body {
+        padding: 0;
+      }
+
+      .tree-view .asset-block {
+        border-bottom: 1px solid var(--slate-100);
+      }
+      .tree-view .asset-block:last-child {
+        border-bottom: none;
+      }
+      .tree-view .asset-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px 10px 32px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--slate-800);
+      }
+      .tree-view .asset-detail {
+        font-size: 12px;
+        color: var(--slate-400);
+        font-weight: 400;
+      }
+
+      .tree-view .trial-block {
+        border-top: 1px solid var(--slate-100);
+      }
+      .tree-view .trial-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px 8px 52px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--slate-700);
+      }
+      .tree-view .trial-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--slate-400);
+        font-weight: 400;
+      }
+
+      .tree-view .child-items {
+        padding: 0 16px 12px 52px;
+      }
+      .tree-view .child-section-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--slate-400);
+        padding: 8px 0 4px;
+      }
+
+      .tree-view .child-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 13px;
+      }
+      .tree-view .child-row .item-name {
+        font-weight: 600;
+        color: var(--slate-800);
+      }
+      .tree-view .child-fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 2px;
+      }
+      .tree-view .child-field {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+
+      /* Orphan section in tree (markers/events not under a trial) */
+      .tree-view .orphan-items {
+        padding: 0 16px 12px 32px;
+      }
+
+      /* ======================================================================
+         OPTION C: COMPACT CARDS
+         ====================================================================== */
+      .card-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .card-grid .card-section {
+        margin-bottom: 0;
+      }
+      .card-grid .card-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .card-grid .card-row.single {
+        grid-template-columns: 1fr;
+      }
+
+      .card-grid .entity-card {
+        border: 1px solid var(--slate-200);
+        border-radius: 2px;
+        padding: 12px 14px;
+        background: white;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .card-grid .entity-card:hover {
+        border-color: var(--brand-300);
+      }
+      .card-grid .entity-card.is-new {
+        border-left: 3px solid var(--brand-600);
+      }
+      .card-grid .card-content {
+        flex: 1;
+        min-width: 0;
+      }
+      .card-grid .card-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .card-grid .card-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--slate-900);
+      }
+      .card-grid .card-fields {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .card-grid .card-field {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+
+      /* Type icon chip */
+      .type-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 2px 6px;
+        border-radius: 2px;
+      }
+      .type-chip.marker-data {
+        background: var(--green-50);
+        color: var(--green-700);
+      }
+      .type-chip.marker-regulatory {
+        background: var(--orange-50);
+        color: var(--orange-600);
+      }
+      .type-chip.marker-approval {
+        background: var(--blue-50);
+        color: var(--blue-600);
+      }
+      .type-chip.marker-trial {
+        background: var(--slate-100);
+        color: var(--slate-600);
+      }
+      .type-chip.event-clinical {
+        background: var(--brand-50);
+        color: var(--brand-700);
+      }
+      .type-chip.event-regulatory {
+        background: var(--orange-50);
+        color: var(--orange-600);
+      }
+      .type-chip.event-strategic {
+        background: var(--violet-50);
+        color: var(--violet-600);
+      }
+
+      /* Summary bar */
+      .summary-bar {
+        display: flex;
+        gap: 24px;
+        padding: 14px 16px;
+        background: white;
+        border: 1px solid var(--slate-200);
+        border-radius: 2px;
+        margin-bottom: 24px;
+      }
+      .summary-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .summary-stat .stat-value {
+        font-family: var(--font-mono);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--slate-900);
+      }
+      .summary-stat .stat-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--slate-400);
+      }
+      .summary-stat .stat-new {
+        color: var(--brand-600);
+      }
+
+      /* Toggle tabs */
+      .view-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 24px;
+        border: 1px solid var(--slate-200);
+        border-radius: 2px;
+        overflow: hidden;
+        width: fit-content;
+      }
+      .view-tab {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 8px 16px;
+        background: white;
+        border: none;
+        border-right: 1px solid var(--slate-200);
+        cursor: pointer;
+        color: var(--slate-500);
+      }
+      .view-tab:last-child {
+        border-right: none;
+      }
+      .view-tab.active {
+        background: var(--brand-600);
+        color: white;
+      }
+
+      /* CTA bar */
+      .cta-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 0;
+        border-top: 1px solid var(--slate-200);
+        margin-top: 32px;
+      }
+      .cta-bar .item-count {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--slate-500);
+      }
+      .cta-bar .btn-group {
+        display: flex;
+        gap: 8px;
+      }
+      .btn {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 8px 20px;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--brand-600);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: var(--brand-700);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--slate-500);
+        border: 1px solid var(--slate-200);
+      }
+      .btn-ghost:hover {
+        border-color: var(--slate-300);
+        color: var(--slate-700);
+      }
+
+      /* all-trials note */
+      .all-matched-note {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--green-600);
+        background: var(--green-50);
+        padding: 6px 10px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="accent-bar"></div>
+    <div class="deck">
+      <!-- ============================================================= -->
+      <div class="deck-head">
+        <div class="label">SOURCE IMPORT REVIEW</div>
+        <h1>Layout options for the review page</h1>
+        <p>
+          Three proposals for presenting extracted entities before import. All use the same sample
+          data: two existing companies, two existing assets, two existing trials, five new markers,
+          four new events.
+        </p>
+      </div>
+
+      <!-- ============================================================= -->
+      <!-- OPTION A: FLAT LIST (improved current) -->
+      <!-- ============================================================= -->
+      <div class="option-label">Option A: Improved flat list</div>
+      <p class="option-desc">
+        Same structure as the current page, but with clickable links on existing entities (open in
+        new tab), better field alignment, and a summary bar at the top. Sections remain grouped by
+        type (companies, assets, trials, markers, events).
+      </p>
+
+      <div class="layout-two-pane">
+        <div class="source-pane">
+          <div class="source-label">Source text</div>
+          <div class="source-text">
+            Eli Lilly and Company (NYSE: LLY) today announced positive topline results from the
+            ATTAIN-1 Phase 3 clinical trial evaluating orforglipron, an oral GLP-1 receptor agonist,
+            for the treatment of obesity in adults without type 2 diabetes. The trial met its
+            primary endpoint with 14.7% mean body weight reduction versus 2.2% for placebo at 72
+            weeks.
+            <br /><br />
+            Separately, Novo Nordisk announced that its Phase 2 trial of amycretin (NNC0487-0111), a
+            novel amylin-GLP-1 dual agonist, achieved 22% mean weight loss at 36 weeks in patients
+            with obesity. The AMBROSIA trial enrolled 450 patients across 40 sites. Novo Nordisk
+            plans to initiate Phase 3 studies of amycretin in Q4 2026.
+            <br /><br />
+            Eli Lilly plans to submit a New Drug Application to the U.S. FDA in Q3 2026, with a
+            target PDUFA date in Q1 2027.
+          </div>
+        </div>
+
+        <div class="flat-list">
+          <!-- Summary -->
+          <div class="summary-bar">
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Companies</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Assets</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Trials</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">5</span>
+              <span class="stat-label stat-new">New markers</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">4</span>
+              <span class="stat-label stat-new">New events</span>
+            </div>
+          </div>
+
+          <!-- Companies -->
+          <div class="section-group">
+            <div class="section-header">
+              Companies <span class="count">2</span>
+              <a class="deselect">Deselect all</a>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">Eli Lilly</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">Novo Nordisk</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Assets -->
+          <div class="section-group">
+            <div class="section-header">
+              Assets <span class="count">2</span>
+              <a class="deselect">Deselect all</a>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">orforglipron</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">amycretin</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Generic:</span>
+                    <span class="field-value">NNC0487-0111</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trials -->
+          <div class="section-group">
+            <div class="section-header">
+              Trials <span class="count">2</span>
+              <span class="all-matched-note" style="margin-left: auto; margin-right: 8px"
+                >All trials already in inventory</span
+              >
+              <a class="deselect">Deselect all</a>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">ATTAIN-1</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a
+                    class="nct-link"
+                    href="https://clinicaltrials.gov/study/NCT03169081"
+                    target="_blank"
+                    >NCT03169081</a
+                  >
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Phase:</span>
+                    <span class="badge badge-phase">P3</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Status:</span>
+                    <span class="field-value">Completed</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Indication:</span>
+                    <span class="field-value">obesity in adults without type 2 diabetes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <a class="entity-link entity-name" href="#" target="_blank">AMBROSIA</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Phase:</span>
+                    <span class="badge badge-phase">P2</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Status:</span>
+                    <span class="field-value">Completed</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Indication:</span>
+                    <span class="field-value">obesity</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Markers -->
+          <div class="section-group">
+            <div class="section-header">
+              Markers <span class="count">5</span>
+              <a class="deselect">Deselect all</a>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">ATTAIN-1 Positive Topline Results</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip marker-data">Topline Data</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Projection:</span>
+                    <span class="field-value">actual</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Description:</span>
+                    <span class="field-value">14.7% mean body weight reduction</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">AMBROSIA Phase 2 Topline Results</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip marker-data">Topline Data</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Projection:</span>
+                    <span class="field-value">actual</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Description:</span>
+                    <span class="field-value">22% mean weight loss</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">Orforglipron NDA Submission to FDA</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip marker-regulatory">Regulatory Filing</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Date:</span>
+                    <span class="field-value">2026-07-01</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">End:</span>
+                    <span class="field-value">2026-09-30</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Projection:</span>
+                    <span class="field-value">company</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">Orforglipron Target PDUFA Date</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip marker-approval">Approval</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Date:</span>
+                    <span class="field-value">2027-01-01</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">End:</span>
+                    <span class="field-value">2027-03-31</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Projection:</span>
+                    <span class="field-value">company</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">Amycretin Phase 3 Initiation</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip marker-trial">Trial Start</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Date:</span>
+                    <span class="field-value">2026-10-01</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">End:</span>
+                    <span class="field-value">2026-12-31</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Projection:</span>
+                    <span class="field-value">company</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Events -->
+          <div class="section-group">
+            <div class="section-header">
+              Events <span class="count">4</span>
+              <a class="deselect">Deselect all</a>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">ATTAIN-1 Phase 3 Primary Endpoint Met</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip event-clinical">Clinical</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Priority:</span>
+                    <span class="field-value">high</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Description:</span>
+                    <span class="field-value"
+                      >Orforglipron achieved 14.7% weight reduction in ATTAIN-1</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">AMBROSIA Phase 2 Achieves 22% Weight Loss</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip event-clinical">Clinical</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Priority:</span>
+                    <span class="field-value">high</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name"
+                    >Eli Lilly Plans NDA Submission for Orforglipron in Q3 2026</span
+                  >
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip event-regulatory">Regulatory</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Date:</span>
+                    <span class="field-value">2026-07-01</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Priority:</span>
+                    <span class="field-value">high</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="entity-row">
+              <input type="checkbox" class="checkbox" checked />
+              <div class="entity-content">
+                <div class="entity-name-row">
+                  <span class="entity-name">Novo Nordisk Plans Amycretin Phase 3 in Q4 2026</span>
+                  <span class="badge badge-new">New</span>
+                  <span class="type-chip event-strategic">Strategic</span>
+                  <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                </div>
+                <div class="entity-fields">
+                  <div class="entity-field">
+                    <span class="field-label">Date:</span>
+                    <span class="field-value">2026-10-01</span>
+                  </div>
+                  <div class="entity-field">
+                    <span class="field-label">Priority:</span>
+                    <span class="field-value">high</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cta-bar">
+            <span class="item-count">15 items selected</span>
+            <div class="btn-group">
+              <button class="btn btn-ghost">Download JSON</button>
+              <button class="btn btn-primary">Import selected</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================= -->
+      <!-- OPTION B: HIERARCHICAL TREE -->
+      <!-- ============================================================= -->
+      <hr class="option-divider" />
+      <div class="option-label">Option B: Hierarchical tree</div>
+      <p class="option-desc">
+        Entities are nested under their parent: company, then asset, then trial, then
+        markers/events. New items appear indented under the existing entity they attach to, making
+        it immediately clear what is being added where. Existing entities serve as structural
+        context rather than standalone rows.
+      </p>
+
+      <div class="layout-two-pane">
+        <div class="source-pane">
+          <div class="source-label">Source text</div>
+          <div class="source-text">
+            Eli Lilly and Company (NYSE: LLY) today announced positive topline results from the
+            ATTAIN-1 Phase 3 clinical trial evaluating orforglipron, an oral GLP-1 receptor agonist,
+            for the treatment of obesity in adults without type 2 diabetes. The trial met its
+            primary endpoint with 14.7% mean body weight reduction versus 2.2% for placebo at 72
+            weeks.
+            <br /><br />
+            Separately, Novo Nordisk announced that its Phase 2 trial of amycretin (NNC0487-0111), a
+            novel amylin-GLP-1 dual agonist, achieved 22% mean weight loss at 36 weeks in patients
+            with obesity. The AMBROSIA trial enrolled 450 patients across 40 sites. Novo Nordisk
+            plans to initiate Phase 3 studies of amycretin in Q4 2026.
+            <br /><br />
+            Eli Lilly plans to submit a New Drug Application to the U.S. FDA in Q3 2026, with a
+            target PDUFA date in Q1 2027.
+          </div>
+        </div>
+
+        <div class="tree-view">
+          <!-- Summary -->
+          <div class="summary-bar">
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Companies</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Assets</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Trials</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">5</span>
+              <span class="stat-label stat-new">New markers</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">4</span>
+              <span class="stat-label stat-new">New events</span>
+            </div>
+          </div>
+
+          <!-- Eli Lilly block -->
+          <div class="company-block">
+            <div class="company-header">
+              <input type="checkbox" class="checkbox" checked />
+              <a class="entity-link company-name" href="#" target="_blank">ELI LILLY</a>
+              <span class="badge badge-existing">Existing</span>
+            </div>
+            <div class="company-body">
+              <!-- orforglipron -->
+              <div class="asset-block">
+                <div class="asset-header">
+                  <input type="checkbox" class="checkbox" checked />
+                  <a class="entity-link" href="#" target="_blank">orforglipron</a>
+                  <span class="badge badge-existing">Existing</span>
+                </div>
+
+                <!-- ATTAIN-1 -->
+                <div class="trial-block">
+                  <div class="trial-header">
+                    <input type="checkbox" class="checkbox" checked />
+                    <a class="entity-link" href="#" target="_blank">ATTAIN-1</a>
+                    <span class="badge badge-existing">Existing</span>
+                    <span class="badge badge-phase">P3</span>
+                    <a
+                      class="nct-link"
+                      href="https://clinicaltrials.gov/study/NCT03169081"
+                      target="_blank"
+                      >NCT03169081</a
+                    >
+                    <span class="trial-meta">
+                      <span>Completed</span>
+                    </span>
+                  </div>
+                  <div class="child-items">
+                    <div class="child-section-label">Markers</div>
+                    <div class="child-row">
+                      <input type="checkbox" class="checkbox" checked />
+                      <div>
+                        <div class="entity-name-row">
+                          <span class="item-name">ATTAIN-1 Positive Topline Results</span>
+                          <span class="badge badge-new">New</span>
+                          <span class="type-chip marker-data">Topline Data</span>
+                          <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                        </div>
+                        <div class="child-fields">
+                          <div class="child-field">
+                            <span class="field-label">Projection:</span>
+                            <span class="field-value">actual</span>
+                          </div>
+                          <div class="child-field">
+                            <span class="field-label">Description:</span>
+                            <span class="field-value">14.7% mean body weight reduction</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="child-section-label">Events</div>
+                    <div class="child-row">
+                      <input type="checkbox" class="checkbox" checked />
+                      <div>
+                        <div class="entity-name-row">
+                          <span class="item-name">ATTAIN-1 Phase 3 Primary Endpoint Met</span>
+                          <span class="badge badge-new">New</span>
+                          <span class="type-chip event-clinical">Clinical</span>
+                          <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                        </div>
+                        <div class="child-fields">
+                          <div class="child-field">
+                            <span class="field-label">Priority:</span>
+                            <span class="field-value">high</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Orforglipron-level markers (not trial-specific) -->
+                <div class="orphan-items">
+                  <div class="child-section-label">Asset-level markers</div>
+                  <div class="child-row">
+                    <input type="checkbox" class="checkbox" checked />
+                    <div>
+                      <div class="entity-name-row">
+                        <span class="item-name">Orforglipron NDA Submission to FDA</span>
+                        <span class="badge badge-new">New</span>
+                        <span class="type-chip marker-regulatory">Regulatory Filing</span>
+                        <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                      </div>
+                      <div class="child-fields">
+                        <div class="child-field">
+                          <span class="field-label">Date:</span>
+                          <span class="field-value">2026-07-01 to 2026-09-30</span>
+                        </div>
+                        <div class="child-field">
+                          <span class="field-label">Projection:</span>
+                          <span class="field-value">company</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="child-row">
+                    <input type="checkbox" class="checkbox" checked />
+                    <div>
+                      <div class="entity-name-row">
+                        <span class="item-name">Orforglipron Target PDUFA Date</span>
+                        <span class="badge badge-new">New</span>
+                        <span class="type-chip marker-approval">Approval</span>
+                        <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                      </div>
+                      <div class="child-fields">
+                        <div class="child-field">
+                          <span class="field-label">Date:</span>
+                          <span class="field-value">2027-01-01 to 2027-03-31</span>
+                        </div>
+                        <div class="child-field">
+                          <span class="field-label">Projection:</span>
+                          <span class="field-value">company</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="child-section-label">Asset-level events</div>
+                  <div class="child-row">
+                    <input type="checkbox" class="checkbox" checked />
+                    <div>
+                      <div class="entity-name-row">
+                        <span class="item-name"
+                          >Eli Lilly Plans NDA Submission for Orforglipron in Q3 2026</span
+                        >
+                        <span class="badge badge-new">New</span>
+                        <span class="type-chip event-regulatory">Regulatory</span>
+                        <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                      </div>
+                      <div class="child-fields">
+                        <div class="child-field">
+                          <span class="field-label">Date:</span>
+                          <span class="field-value">2026-07-01</span>
+                        </div>
+                        <div class="child-field">
+                          <span class="field-label">Priority:</span>
+                          <span class="field-value">high</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Novo Nordisk block -->
+          <div class="company-block">
+            <div class="company-header">
+              <input type="checkbox" class="checkbox" checked />
+              <a class="entity-link company-name" href="#" target="_blank">NOVO NORDISK</a>
+              <span class="badge badge-existing">Existing</span>
+            </div>
+            <div class="company-body">
+              <!-- amycretin -->
+              <div class="asset-block">
+                <div class="asset-header">
+                  <input type="checkbox" class="checkbox" checked />
+                  <a class="entity-link" href="#" target="_blank">amycretin</a>
+                  <span class="badge badge-existing">Existing</span>
+                  <span class="asset-detail">NNC0487-0111</span>
+                </div>
+
+                <!-- AMBROSIA -->
+                <div class="trial-block">
+                  <div class="trial-header">
+                    <input type="checkbox" class="checkbox" checked />
+                    <a class="entity-link" href="#" target="_blank">AMBROSIA</a>
+                    <span class="badge badge-existing">Existing</span>
+                    <span class="badge badge-phase">P2</span>
+                    <span class="trial-meta">
+                      <span>Completed</span>
+                    </span>
+                  </div>
+                  <div class="child-items">
+                    <div class="child-section-label">Markers</div>
+                    <div class="child-row">
+                      <input type="checkbox" class="checkbox" checked />
+                      <div>
+                        <div class="entity-name-row">
+                          <span class="item-name">AMBROSIA Phase 2 Topline Results</span>
+                          <span class="badge badge-new">New</span>
+                          <span class="type-chip marker-data">Topline Data</span>
+                          <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                        </div>
+                        <div class="child-fields">
+                          <div class="child-field">
+                            <span class="field-label">Projection:</span>
+                            <span class="field-value">actual</span>
+                          </div>
+                          <div class="child-field">
+                            <span class="field-label">Description:</span>
+                            <span class="field-value">22% mean weight loss</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="child-section-label">Events</div>
+                    <div class="child-row">
+                      <input type="checkbox" class="checkbox" checked />
+                      <div>
+                        <div class="entity-name-row">
+                          <span class="item-name">AMBROSIA Phase 2 Achieves 22% Weight Loss</span>
+                          <span class="badge badge-new">New</span>
+                          <span class="type-chip event-clinical">Clinical</span>
+                          <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                        </div>
+                        <div class="child-fields">
+                          <div class="child-field">
+                            <span class="field-label">Priority:</span>
+                            <span class="field-value">high</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Amycretin-level markers -->
+                <div class="orphan-items">
+                  <div class="child-section-label">Asset-level markers</div>
+                  <div class="child-row">
+                    <input type="checkbox" class="checkbox" checked />
+                    <div>
+                      <div class="entity-name-row">
+                        <span class="item-name">Amycretin Phase 3 Initiation</span>
+                        <span class="badge badge-new">New</span>
+                        <span class="type-chip marker-trial">Trial Start</span>
+                        <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                      </div>
+                      <div class="child-fields">
+                        <div class="child-field">
+                          <span class="field-label">Date:</span>
+                          <span class="field-value">2026-10-01 to 2026-12-31</span>
+                        </div>
+                        <div class="child-field">
+                          <span class="field-label">Projection:</span>
+                          <span class="field-value">company</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="child-section-label">Asset-level events</div>
+                  <div class="child-row">
+                    <input type="checkbox" class="checkbox" checked />
+                    <div>
+                      <div class="entity-name-row">
+                        <span class="item-name"
+                          >Novo Nordisk Plans Amycretin Phase 3 in Q4 2026</span
+                        >
+                        <span class="badge badge-new">New</span>
+                        <span class="type-chip event-strategic">Strategic</span>
+                        <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                      </div>
+                      <div class="child-fields">
+                        <div class="child-field">
+                          <span class="field-label">Date:</span>
+                          <span class="field-value">2026-10-01</span>
+                        </div>
+                        <div class="child-field">
+                          <span class="field-label">Priority:</span>
+                          <span class="field-value">high</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cta-bar">
+            <span class="item-count">15 items selected</span>
+            <div class="btn-group">
+              <button class="btn btn-ghost">Download JSON</button>
+              <button class="btn btn-primary">Import selected</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================= -->
+      <!-- OPTION C: HYBRID (tree for new, collapsed existing) -->
+      <!-- ============================================================= -->
+      <hr class="option-divider" />
+      <div class="option-label">Option C: New-item focused with collapsed context</div>
+      <p class="option-desc">
+        Existing entities are compressed into a single context line per company. New markers and
+        events are the visual foreground, grouped under their parent asset/trial. This optimizes for
+        the primary task: reviewing what is new.
+      </p>
+
+      <div class="layout-two-pane">
+        <div class="source-pane">
+          <div class="source-label">Source text</div>
+          <div class="source-text">
+            Eli Lilly and Company (NYSE: LLY) today announced positive topline results from the
+            ATTAIN-1 Phase 3 clinical trial evaluating orforglipron, an oral GLP-1 receptor agonist,
+            for the treatment of obesity in adults without type 2 diabetes. The trial met its
+            primary endpoint with 14.7% mean body weight reduction versus 2.2% for placebo at 72
+            weeks.
+            <br /><br />
+            Separately, Novo Nordisk announced that its Phase 2 trial of amycretin (NNC0487-0111), a
+            novel amylin-GLP-1 dual agonist, achieved 22% mean weight loss at 36 weeks in patients
+            with obesity. The AMBROSIA trial enrolled 450 patients across 40 sites. Novo Nordisk
+            plans to initiate Phase 3 studies of amycretin in Q4 2026.
+            <br /><br />
+            Eli Lilly plans to submit a New Drug Application to the U.S. FDA in Q3 2026, with a
+            target PDUFA date in Q1 2027.
+          </div>
+        </div>
+
+        <div style="flex: 1">
+          <!-- Summary -->
+          <div class="summary-bar">
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Companies</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Assets</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Trials</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">5</span>
+              <span class="stat-label stat-new">New markers</span>
+            </div>
+            <div class="summary-stat">
+              <span class="stat-value stat-new">4</span>
+              <span class="stat-label stat-new">New events</span>
+            </div>
+          </div>
+
+          <!-- Eli Lilly group -->
+          <div style="margin-bottom: 28px">
+            <!-- Context breadcrumb -->
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 10px 14px;
+                background: var(--slate-50);
+                border: 1px solid var(--slate-200);
+                border-radius: 2px 2px 0 0;
+                font-size: 12px;
+                color: var(--slate-500);
+              "
+            >
+              <a
+                class="entity-link"
+                href="#"
+                target="_blank"
+                style="
+                  font-weight: 700;
+                  font-size: 12px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.06em;
+                "
+                >Eli Lilly</a
+              >
+              <span style="color: var(--slate-300)">/</span>
+              <a class="entity-link" href="#" target="_blank" style="font-size: 12px"
+                >orforglipron</a
+              >
+              <span style="color: var(--slate-300)">/</span>
+              <a class="entity-link" href="#" target="_blank" style="font-size: 12px">ATTAIN-1</a>
+              <span class="badge badge-phase" style="margin-left: 2px">P3</span>
+              <a
+                class="nct-link"
+                href="https://clinicaltrials.gov/study/NCT03169081"
+                target="_blank"
+                style="margin-left: 4px"
+                >NCT03169081</a
+              >
+              <span
+                style="
+                  margin-left: auto;
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  letter-spacing: 0.06em;
+                  color: var(--slate-400);
+                "
+                >ALL EXISTING</span
+              >
+            </div>
+
+            <!-- New items under this context -->
+            <div
+              style="
+                border: 1px solid var(--slate-200);
+                border-top: none;
+                border-radius: 0 0 2px 2px;
+                background: white;
+              "
+            >
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  New markers
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >ATTAIN-1 Positive Topline Results</span
+                      >
+                      <span class="type-chip marker-data">Topline Data</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Projection:</span>
+                        <span class="field-value">actual</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Description:</span>
+                        <span class="field-value">14.7% mean body weight reduction</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  New events
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >ATTAIN-1 Phase 3 Primary Endpoint Met</span
+                      >
+                      <span class="type-chip event-clinical">Clinical</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Priority:</span>
+                        <span class="field-value">high</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Asset-level markers (orforglipron)
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >Orforglipron NDA Submission to FDA</span
+                      >
+                      <span class="type-chip marker-regulatory">Regulatory Filing</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Date:</span>
+                        <span class="field-value">2026-07-01 to 2026-09-30</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Projection:</span>
+                        <span class="field-value">company</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >Orforglipron Target PDUFA Date</span
+                      >
+                      <span class="type-chip marker-approval">Approval</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Date:</span>
+                        <span class="field-value">2027-01-01 to 2027-03-31</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Projection:</span>
+                        <span class="field-value">company</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Asset-level events (orforglipron)
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >Eli Lilly Plans NDA Submission for Orforglipron in Q3 2026</span
+                      >
+                      <span class="type-chip event-regulatory">Regulatory</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Date:</span>
+                        <span class="field-value">2026-07-01</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Priority:</span>
+                        <span class="field-value">high</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Novo Nordisk group -->
+          <div style="margin-bottom: 28px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 10px 14px;
+                background: var(--slate-50);
+                border: 1px solid var(--slate-200);
+                border-radius: 2px 2px 0 0;
+                font-size: 12px;
+                color: var(--slate-500);
+              "
+            >
+              <a
+                class="entity-link"
+                href="#"
+                target="_blank"
+                style="
+                  font-weight: 700;
+                  font-size: 12px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.06em;
+                "
+                >Novo Nordisk</a
+              >
+              <span style="color: var(--slate-300)">/</span>
+              <a class="entity-link" href="#" target="_blank" style="font-size: 12px">amycretin</a>
+              <span style="color: var(--slate-300)">/</span>
+              <a class="entity-link" href="#" target="_blank" style="font-size: 12px">AMBROSIA</a>
+              <span class="badge badge-phase" style="margin-left: 2px">P2</span>
+              <span
+                style="
+                  margin-left: auto;
+                  font-family: var(--font-mono);
+                  font-size: 10px;
+                  letter-spacing: 0.06em;
+                  color: var(--slate-400);
+                "
+                >ALL EXISTING</span
+              >
+            </div>
+
+            <div
+              style="
+                border: 1px solid var(--slate-200);
+                border-top: none;
+                border-radius: 0 0 2px 2px;
+                background: white;
+              "
+            >
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  New markers
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >AMBROSIA Phase 2 Topline Results</span
+                      >
+                      <span class="type-chip marker-data">Topline Data</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Projection:</span>
+                        <span class="field-value">actual</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Description:</span>
+                        <span class="field-value">22% mean weight loss</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  New events
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >AMBROSIA Phase 2 Achieves 22% Weight Loss</span
+                      >
+                      <span class="type-chip event-clinical">Clinical</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Priority:</span>
+                        <span class="field-value">high</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; border-bottom: 1px solid var(--slate-100)">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Asset-level markers (amycretin)
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >Amycretin Phase 3 Initiation</span
+                      >
+                      <span class="type-chip marker-trial">Trial Start</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Date:</span>
+                        <span class="field-value">2026-10-01 to 2026-12-31</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Projection:</span>
+                        <span class="field-value">company</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px">
+                <div
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: var(--slate-400);
+                    margin-bottom: 8px;
+                  "
+                >
+                  Asset-level events (amycretin)
+                </div>
+                <div class="entity-row" style="padding: 6px 0; margin: 0; border: none">
+                  <input type="checkbox" class="checkbox" checked />
+                  <div class="entity-content">
+                    <div class="entity-name-row">
+                      <span class="entity-name" style="font-size: 13px"
+                        >Novo Nordisk Plans Amycretin Phase 3 in Q4 2026</span
+                      >
+                      <span class="type-chip event-strategic">Strategic</span>
+                      <a class="evidence-link" href="#" target="_blank">Evidence</a>
+                    </div>
+                    <div class="entity-fields" style="margin-top: 2px">
+                      <div class="entity-field">
+                        <span class="field-label">Date:</span>
+                        <span class="field-value">2026-10-01</span>
+                      </div>
+                      <div class="entity-field">
+                        <span class="field-label">Priority:</span>
+                        <span class="field-value">high</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cta-bar">
+            <span class="item-count">9 new items selected</span>
+            <div class="btn-group">
+              <button class="btn btn-ghost">Download JSON</button>
+              <button class="btn btn-primary">Import selected</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

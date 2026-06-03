@@ -70,13 +70,14 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly shape = signal<MarkerType['shape']>('circle');
   readonly fillStyle = signal<MarkerType['fill_style']>('filled');
   readonly color = signal('#14b8a6');
-  readonly icon = signal('');
   readonly displayOrder = signal<number | null>(0);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameBlurred = signal(false);
+  readonly categoryBlurred = signal(false);
 
   readonly nameInvalid = computed(() => this.nameBlurred() && !this.name().trim());
+  readonly categoryInvalid = computed(() => this.categoryBlurred() && !this.categoryId());
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
@@ -92,13 +93,14 @@ export class MarkerTypeFormComponent implements OnInit {
       this.shape.set(existing.shape);
       this.fillStyle.set(existing.fill_style);
       this.color.set(existing.color);
-      this.icon.set(existing.icon ?? '');
       this.displayOrder.set(existing.display_order);
       this.categoryId.set(existing.category_id);
     }
   }
 
   async onSubmit(): Promise<void> {
+    this.nameBlurred.set(true);
+    this.categoryBlurred.set(true);
     const name = this.name().trim();
     if (!name) return;
     const categoryId = this.categoryId();
@@ -113,7 +115,6 @@ export class MarkerTypeFormComponent implements OnInit {
         shape: this.shape(),
         fill_style: this.fillStyle(),
         color: this.color(),
-        icon: this.icon() || null,
         display_order: this.displayOrder() ?? 0,
         category_id: categoryId,
       };

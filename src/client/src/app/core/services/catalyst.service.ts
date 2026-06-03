@@ -12,16 +12,21 @@ export class CatalystService {
   private cache = inject(RpcCache);
 
   async getCatalystDetail(markerId: string): Promise<CatalystDetail> {
-    return this.cache.get('get_catalyst_detail', { markerId }, {
-      ttl: HEAVY_TTL,
-      tags: [`catalyst:${markerId}:detail`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('get_catalyst_detail', {
-          p_marker_id: markerId,
-        });
-        if (error) throw error;
-        return data as CatalystDetail;
-      },
-    });
+    return this.cache.get(
+      'get_catalyst_detail',
+      { markerId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`catalyst:${markerId}:detail`],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .rpc('get_catalyst_detail', {
+              p_marker_id: markerId,
+            })
+            .throwOnError();
+          return data as CatalystDetail;
+        },
+      }
+    );
   }
 }

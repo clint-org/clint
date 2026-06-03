@@ -7,14 +7,12 @@ import { SupabaseService } from './supabase.service';
 
 /**
  * Shape returned by the nested asset fetch. The Supabase join expands
- * `product_mechanisms_of_action.moa` and `product_routes_of_administration.roa`
+ * `asset_mechanisms_of_action.moa` and `asset_routes_of_administration.roa`
  * as nested arrays; we flatten them into the Asset interface shape.
- * Note: DB table names retain the `product_*` prefix. Only the frontend
- * vocabulary has moved to "asset".
  */
 interface RawAssetRow extends Asset {
-  product_mechanisms_of_action?: { moa: { id: string; name: string } | null }[];
-  product_routes_of_administration?: {
+  asset_mechanisms_of_action?: { moa: { id: string; name: string } | null }[];
+  asset_routes_of_administration?: {
     roa: { id: string; name: string; abbreviation: string | null } | null;
   }[];
 }
@@ -22,10 +20,10 @@ interface RawAssetRow extends Asset {
 const ASSET_WITH_MOA_ROA_SELECT = `
   *,
   companies ( id, name, logo_url ),
-  product_mechanisms_of_action (
+  asset_mechanisms_of_action (
     moa:mechanisms_of_action ( id, name )
   ),
-  product_routes_of_administration (
+  asset_routes_of_administration (
     roa:routes_of_administration ( id, name, abbreviation )
   )
 `;
@@ -33,19 +31,15 @@ const ASSET_WITH_MOA_ROA_SELECT = `
 const REFERENCE_TTL = { fresh: 30 * 60 * 1000, stale: Infinity };
 
 function flattenAsset(row: RawAssetRow): Asset {
-  const mechanisms_of_action = (row.product_mechanisms_of_action ?? [])
+  const mechanisms_of_action = (row.asset_mechanisms_of_action ?? [])
     .map((j) => j.moa)
     .filter((m): m is { id: string; name: string } => m !== null);
-  const routes_of_administration = (row.product_routes_of_administration ?? [])
+  const routes_of_administration = (row.asset_routes_of_administration ?? [])
     .map((j) => j.roa)
     .filter((r): r is { id: string; name: string; abbreviation: string | null } => r !== null);
-  const {
-    product_mechanisms_of_action: _pmoa,
-    product_routes_of_administration: _proa,
-    ...rest
-  } = row;
-  void _pmoa;
-  void _proa;
+  const { asset_mechanisms_of_action: _amoa, asset_routes_of_administration: _aroa, ...rest } = row;
+  void _amoa;
+  void _aroa;
   return {
     ...rest,
     mechanisms_of_action,
@@ -66,12 +60,12 @@ export class AssetService {
         ttl: REFERENCE_TTL,
         tags: [`space:${spaceId}:products`],
         fetch: async () => {
-          const { data, error } = await this.supabase.client
-            .from('products')
+          const { data } = await this.supabase.client
+            .from('assets')
             .select(ASSET_WITH_MOA_ROA_SELECT)
             .eq('space_id', spaceId)
-            .order('display_order');
-          if (error) throw error;
+            .order('display_order')
+            .throwOnError();
           return (data ?? []).map((row) => flattenAsset(row as unknown as RawAssetRow));
         },
       }
@@ -79,46 +73,48 @@ export class AssetService {
   }
 
   async getById(id: string): Promise<Asset> {
-    const { data, error } = await this.supabase.client
-      .from('products')
+    const { data } = await this.supabase.client
+      .from('assets')
       .select(ASSET_WITH_MOA_ROA_SELECT)
       .eq('id', id)
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     return flattenAsset(data as unknown as RawAssetRow);
   }
 
   async create(spaceId: string, asset: Partial<Asset>): Promise<Asset> {
-    // Strip virtual join fields before insert
-    const { mechanisms_of_action: _m, routes_of_administration: _r, ...insertable } = asset;
-    void _m;
-    void _r;
-    const { data, error } = await this.supabase.client
-      .from('products')
-      .insert({ ...insertable, space_id: spaceId })
-      .select()
-      .single();
-    if (error) throw error;
+    const moaNames = (asset.mechanisms_of_action ?? []).map((m) => m.name);
+    const roaNames = (asset.routes_of_administration ?? []).map((r) => r.name);
+    const { data: newId } = await this.supabase.client
+      .rpc('create_asset', {
+        p_space_id: spaceId,
+        p_company_id: asset.company_id!,
+        p_name: asset.name!,
+        p_generic_name: asset.generic_name ?? null,
+        p_moa_names: moaNames.length > 0 ? moaNames : null,
+        p_roa_names: roaNames.length > 0 ? roaNames : null,
+      })
+      .throwOnError();
     this.cache.invalidateTags([
       `space:${spaceId}:products`,
       `space:${spaceId}:companies`,
       `space:${spaceId}:dashboard`,
       `space:${spaceId}:landing-stats`,
     ]);
-    return data as Asset;
+    return this.getById(newId as string);
   }
 
   async update(id: string, changes: Partial<Asset>): Promise<Asset> {
     const { mechanisms_of_action: _m, routes_of_administration: _r, ...updatable } = changes;
     void _m;
     void _r;
-    const { data, error } = await this.supabase.client
-      .from('products')
+    const { data } = await this.supabase.client
+      .from('assets')
       .update(updatable)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
     const spaceId = (data as Asset).space_id;
     this.cache.invalidateTags([
       `space:${spaceId}:products`,
@@ -129,28 +125,22 @@ export class AssetService {
     return data as Asset;
   }
 
-  /**
-   * Read-only preview of the cascade footprint of deleting this product
-   * (asset in UI vocabulary). Returns a jsonb count breakdown matching
-   * what the FK cascade + T3 / T4 triggers will remove. Backed by
-   * public.preview_product_delete (cascade-safety T7).
-   */
   async previewDelete(id: string): Promise<DeleteCountBreakdown> {
-    const { data, error } = await this.supabase.client.rpc('preview_product_delete', {
-      p_product_id: id,
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('preview_asset_delete', {
+        p_asset_id: id,
+      })
+      .throwOnError();
     return (data ?? {}) as DeleteCountBreakdown;
   }
 
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.from('products').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('assets').delete().eq('id', id).throwOnError();
     if (existing?.space_id) {
       this.cache.invalidateTags([
         `space:${existing.space_id}:products`,
@@ -161,30 +151,16 @@ export class AssetService {
     }
   }
 
-  /**
-   * Replace all MOA assignments for an asset with the given set.
-   * Two-call pattern: delete all existing join rows, then insert the new set.
-   */
   async setMechanisms(assetId: string, moaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', assetId)
       .single();
 
-    const { error: deleteError } = await this.supabase.client
-      .from('product_mechanisms_of_action')
-      .delete()
-      .eq('product_id', assetId);
-    if (deleteError) throw deleteError;
-
-    if (moaIds.length > 0) {
-      const rows = moaIds.map((moa_id) => ({ product_id: assetId, moa_id }));
-      const { error: insertError } = await this.supabase.client
-        .from('product_mechanisms_of_action')
-        .insert(rows);
-      if (insertError) throw insertError;
-    }
+    await this.supabase.client
+      .rpc('update_asset_mechanisms', { p_asset_id: assetId, p_moa_ids: moaIds })
+      .throwOnError();
 
     if (assetRow?.space_id) {
       this.cache.invalidateTags([
@@ -194,30 +170,16 @@ export class AssetService {
     }
   }
 
-  /**
-   * Replace all ROA assignments for an asset with the given set.
-   * Two-call pattern: delete all existing join rows, then insert the new set.
-   */
   async setRoutes(assetId: string, roaIds: string[]): Promise<void> {
     const { data: assetRow } = await this.supabase.client
-      .from('products')
+      .from('assets')
       .select('space_id')
       .eq('id', assetId)
       .single();
 
-    const { error: deleteError } = await this.supabase.client
-      .from('product_routes_of_administration')
-      .delete()
-      .eq('product_id', assetId);
-    if (deleteError) throw deleteError;
-
-    if (roaIds.length > 0) {
-      const rows = roaIds.map((roa_id) => ({ product_id: assetId, roa_id }));
-      const { error: insertError } = await this.supabase.client
-        .from('product_routes_of_administration')
-        .insert(rows);
-      if (insertError) throw insertError;
-    }
+    await this.supabase.client
+      .rpc('update_asset_routes', { p_asset_id: assetId, p_roa_ids: roaIds })
+      .throwOnError();
 
     if (assetRow?.space_id) {
       this.cache.invalidateTags([

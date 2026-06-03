@@ -87,7 +87,7 @@ export function adminClient(): SupabaseClient {
 
 /** Sign an HS256 JWT in the shape Supabase Auth issues. */
 function mintJwt(userId: string, email: string): string {
-  const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000) - 30;
   return jwt.sign(
     {
       sub: userId,
@@ -204,9 +204,13 @@ async function wipe(admin: SupabaseClient): Promise<void> {
     // fires against a layer the SQL delete didn't reach. deleteUser handles
     // the full teardown.
     for (const id of personaIds) {
-      const { error } = await admin.auth.admin.deleteUser(id);
-      if (error && !/not.found/i.test(error.message)) {
-        throw new Error(`deleteUser ${id} failed: ${error.message}`);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+        const { error } = await admin.auth.admin.deleteUser(id);
+        if (!error || /not.found/i.test(error.message ?? '')) break;
+        // Transient GoTrue errors (e.g. empty `{}` body after restart) are
+        // tolerable during wipe -- createUser has its own retry logic.
+        if (attempt === 2) console.warn(`deleteUser ${id} failed, proceeding: ${error.message}`);
       }
     }
   } catch (err) {
@@ -217,20 +221,35 @@ async function wipe(admin: SupabaseClient): Promise<void> {
   }
 }
 
-/** Create one auth.users row via the admin API. */
+/** Create an auth.users row with retry. Exported so integration tests
+ *  that create one-off users outside the persona graph can reuse it. */
+export async function createAuthUser(
+  client: SupabaseClient,
+  opts: { email: string; password?: string; email_confirm?: boolean; user_metadata?: Record<string, unknown> },
+): Promise<{ id: string; email: string }> {
+  let lastError: string | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+    const { data, error } = await client.auth.admin.createUser({
+      email: opts.email,
+      password: opts.password,
+      email_confirm: opts.email_confirm ?? true,
+      user_metadata: opts.user_metadata,
+    });
+    if (!error && data.user) return { id: data.user.id, email: opts.email };
+    lastError = error?.message || JSON.stringify(error);
+  }
+  throw new Error(`createUser ${opts.email} failed after 3 attempts: ${lastError}`);
+}
+
 async function createUser(
   admin: SupabaseClient,
   name: PersonaName
 ): Promise<{ id: string; email: string }> {
-  const email = `${name}@${EMAIL_SUFFIX}`;
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    email_confirm: true,
+  return createAuthUser(admin, {
+    email: `${name}@${EMAIL_SUFFIX}`,
     user_metadata: { full_name: name },
   });
-  if (error) throw new Error(`createUser ${email} failed: ${error.message}`);
-  if (!data.user) throw new Error(`createUser ${email} returned no user`);
-  return { id: data.user.id, email };
 }
 
 /** Create the persona graph in idempotency-safe order. */

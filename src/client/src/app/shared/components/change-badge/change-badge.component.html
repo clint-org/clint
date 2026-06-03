@@ -1,8 +1,21 @@
 @if (count() > 0) {
-  <span
-    [class]="dotClass()"
-    [attr.aria-label]="tooltip()"
-    [pTooltip]="tooltip()"
-    tooltipPosition="top"
-  ></span>
+  @if (clickable()) {
+    <button
+      type="button"
+      class="inline-flex items-center rounded-full p-0.5 -m-0.5 align-middle cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500"
+      [attr.aria-label]="tooltip() + ' (open in feed)'"
+      [pTooltip]="tooltip()"
+      tooltipPosition="top"
+      (click)="openEvent($event)"
+    >
+      <span [class]="dotClass"></span>
+    </button>
+  } @else {
+    <span
+      [class]="dotClass"
+      [attr.aria-label]="tooltip()"
+      [pTooltip]="tooltip()"
+      tooltipPosition="top"
+    ></span>
+  }
 }

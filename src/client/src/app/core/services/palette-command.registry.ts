@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { PaletteCommand } from '../models/palette.model';
 import { SupabaseService } from './supabase.service';
+import { SpaceRoleService } from './space-role.service';
 import { filterCommands } from '../util/filter-commands';
 
 export { filterCommands } from '../util/filter-commands';
@@ -10,6 +11,7 @@ export { filterCommands } from '../util/filter-commands';
 export class PaletteCommandRegistry {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
+  private readonly spaceRole = inject(SpaceRoleService);
 
   list(currentTenantId: string, currentSpaceId: string): PaletteCommand[] {
     const cmds: PaletteCommand[] = [
@@ -30,25 +32,33 @@ export class PaletteCommandRegistry {
         id: 'go-bullseye',
         label: 'Go to Bullseye',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/bullseye/by-therapy-area`),
+        run: () =>
+          void this.router.navigateByUrl(
+            `/t/${currentTenantId}/s/${currentSpaceId}/bullseye/by-indication`
+          ),
       },
       {
-        id: 'go-positioning',
-        label: 'Go to Positioning',
+        id: 'go-density-matrix',
+        label: 'Go to Density Matrix',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/positioning/by-moa`),
+        run: () =>
+          void this.router.navigateByUrl(
+            `/t/${currentTenantId}/s/${currentSpaceId}/density-matrix/by-moa`
+          ),
       },
       {
         id: 'go-catalysts',
         label: 'Go to Future Catalysts',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/catalysts`),
+        run: () =>
+          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/catalysts`),
       },
       {
         id: 'go-events',
         label: 'Go to Events',
         hint: 'Navigation',
-        run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/events`),
+        run: () =>
+          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/events`),
       },
       {
         id: 'go-spaces',
@@ -61,6 +71,14 @@ export class PaletteCommandRegistry {
         label: 'Tenant settings',
         hint: 'Navigation',
         run: () => void this.router.navigateByUrl(`/t/${currentTenantId}/settings`),
+      },
+      {
+        id: 'import-source',
+        label: 'Import from source',
+        hint: 'Action',
+        when: () => this.spaceRole.canEdit(),
+        run: () =>
+          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/import`),
       },
       {
         id: 'sign-out',

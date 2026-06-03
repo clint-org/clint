@@ -2,8 +2,10 @@
 // help/phases page (live-render reference). When phase semantics change, edit
 // this file and the help page reflects the change automatically.
 //
-// Order matches the clinical progression analysts expect to scan:
-// preclinical → trial phases → approval → launch → observational.
+// PHASE_DESCRIPTORS covers clinical trial phases only (PRECLIN through OBS).
+// APPROVED and LAUNCHED are development statuses that live on asset_indications,
+// not on trials. Use DEVELOPMENT_STATUS_COLORS for badge rendering that spans
+// both trial phases and commercial milestones.
 
 export interface PhaseDescriptor {
   key: string;
@@ -15,6 +17,11 @@ export interface PhaseDescriptor {
   description: string;
 }
 
+/**
+ * Trial phase descriptors. These describe the actual clinical phase of a trial.
+ * APPROVED and LAUNCHED are not trial phases -- they are development statuses
+ * that live on asset_indications (the "program" level).
+ */
 export const PHASE_DESCRIPTORS: PhaseDescriptor[] = [
   {
     key: 'PRECLIN',
@@ -57,22 +64,6 @@ export const PHASE_DESCRIPTORS: PhaseDescriptor[] = [
       'Post-approval / post-marketing. Real-world evidence and label expansion. Violet shifts off the trial palette to mark the regulatory transition.',
   },
   {
-    key: 'APPROVED',
-    label: 'Approved',
-    shortLabel: 'APPROVED',
-    color: '#8b5cf6',
-    description:
-      'Regulatory clearance achieved. Darker violet differentiates from PH 4 while staying in the same family.',
-  },
-  {
-    key: 'LAUNCHED',
-    label: 'Launched',
-    shortLabel: 'LAUNCHED',
-    color: '#0d9488',
-    description:
-      'On the market. Hero teal -- the strongest commercial state and the most prominent phase color.',
-  },
-  {
     key: 'OBS',
     label: 'Observational',
     shortLabel: 'OBS',
@@ -83,6 +74,7 @@ export const PHASE_DESCRIPTORS: PhaseDescriptor[] = [
 ];
 
 // Map form for fast lookup by phase key (used by phase-bar.component).
+// Covers trial phases only (PRECLIN, P1-P4, OBS).
 export const PHASE_COLORS: Record<string, string> = Object.fromEntries(
   PHASE_DESCRIPTORS.map((d) => [d.key, d.color])
 );
@@ -96,3 +88,50 @@ export function phaseShortLabel(key: string): string {
 }
 
 export const PHASE_FALLBACK_COLOR = '#64748b';
+
+// ---------------------------------------------------------------------------
+// Development status colors (used for asset_indication badges, activity feed,
+// and any UI that renders the full PRECLIN-through-LAUNCHED spectrum).
+// ---------------------------------------------------------------------------
+
+export type DevelopmentStatus = 'PRECLIN' | 'P1' | 'P2' | 'P3' | 'P4' | 'APPROVED' | 'LAUNCHED';
+
+/**
+ * Color palette for development status badges. Covers all 7 values that
+ * asset_indications.development_status can hold. Trial phases (PRECLIN-P4)
+ * reuse the same colors as PHASE_COLORS; APPROVED and LAUNCHED get their
+ * own distinct colors for badge rendering.
+ */
+export const DEVELOPMENT_STATUS_COLORS: Record<DevelopmentStatus, string> = {
+  PRECLIN: '#cbd5e1',
+  P1: '#94a3b8',
+  P2: '#67e8f9',
+  P3: '#2dd4bf',
+  P4: '#a78bfa',
+  APPROVED: '#8b5cf6',
+  LAUNCHED: '#0d9488',
+};
+
+export const DEVELOPMENT_STATUS_LABELS: Record<DevelopmentStatus, string> = {
+  PRECLIN: 'Preclinical',
+  P1: 'Phase 1',
+  P2: 'Phase 2',
+  P3: 'Phase 3',
+  P4: 'Phase 4',
+  APPROVED: 'Approved',
+  LAUNCHED: 'Launched',
+};
+
+/**
+ * Options for the development status dropdown in the asset-indication edit UI.
+ * Ordered by clinical progression.
+ */
+export const DEVELOPMENT_STATUS_OPTIONS: { label: string; value: DevelopmentStatus }[] = [
+  { label: 'Preclinical', value: 'PRECLIN' },
+  { label: 'Phase 1', value: 'P1' },
+  { label: 'Phase 2', value: 'P2' },
+  { label: 'Phase 3', value: 'P3' },
+  { label: 'Phase 4', value: 'P4' },
+  { label: 'Approved', value: 'APPROVED' },
+  { label: 'Launched', value: 'LAUNCHED' },
+];

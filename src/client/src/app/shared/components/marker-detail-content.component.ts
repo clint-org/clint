@@ -15,6 +15,7 @@ import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.
 import { MarkerChangeRow } from '../../core/models/change-event.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
+  CTGOV_FIELD_CATALOGUE,
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
   CTGOV_TIMELINE_DEFAULT_PATHS,
 } from '../../core/models/ctgov-field.model';
@@ -48,6 +49,7 @@ interface ProjectionPill {
 
 interface CtgovProvenanceBlock {
   field: string;
+  fieldLabel: string;
   dateType: 'ACTUAL' | 'ANTICIPATED';
   dateTypeLabel: string;
 }
@@ -78,7 +80,7 @@ interface CtgovProvenanceBlock {
         <h2 class="text-base font-semibold leading-snug text-slate-900">
           {{ d.catalyst.title }}
         </h2>
-        <app-ctgov-source-tag [metadata]="d.catalyst.metadata" variant="detailed" />
+        <app-ctgov-source-tag [metadata]="d.catalyst.metadata" />
       </div>
 
       <!-- Meta strip: status pill + date + optional "no longer expected".
@@ -96,25 +98,6 @@ interface CtgovProvenanceBlock {
           <app-detail-panel-pill tone="slate">No longer expected</app-detail-panel-pill>
         }
       </div>
-
-      @if (d.catalyst.marker_id && tenantIdSig() && spaceId()) {
-        <div class="mt-2 flex justify-end">
-          <a
-            [routerLink]="[
-              '/t',
-              tenantIdSig(),
-              's',
-              spaceId(),
-              'manage',
-              'markers',
-              d.catalyst.marker_id,
-            ]"
-            class="font-mono text-[10px] uppercase tracking-wider text-brand-700 hover:underline"
-          >
-            View detail
-          </a>
-        </div>
-      }
 
       @if (d.catalyst.company_name) {
         <app-detail-panel-section [first]="true" label="Asset">
@@ -147,9 +130,9 @@ interface CtgovProvenanceBlock {
               } @else {
                 <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
               }
-              @if (d.catalyst.product_name) {
+              @if (d.catalyst.asset_name) {
                 &middot;
-                @if (d.catalyst.product_id && tenantIdSig() && spaceId()) {
+                @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
                   <a
                     [routerLink]="[
                       '/t',
@@ -158,14 +141,14 @@ interface CtgovProvenanceBlock {
                       spaceId(),
                       'manage',
                       'assets',
-                      d.catalyst.product_id,
+                      d.catalyst.asset_id,
                     ]"
                     class="text-brand-700 hover:underline"
                   >
-                    {{ d.catalyst.product_name }}
+                    {{ d.catalyst.asset_name }}
                   </a>
                 } @else {
-                  {{ d.catalyst.product_name }}
+                  {{ d.catalyst.asset_name }}
                 }
               }
             </p>
@@ -173,7 +156,7 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      @if (d.catalyst.trial_name) {
+      @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as _trialLabel) {
         <app-detail-panel-section [first]="!d.catalyst.company_name" label="Trial">
           @if (d.catalyst.trial_id; as trialId) {
             <button
@@ -184,7 +167,7 @@ interface CtgovProvenanceBlock {
               <span
                 class="inline-flex items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
               >
-                {{ d.catalyst.trial_name }}
+                {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
                 <i
                   class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
                   aria-hidden="true"
@@ -198,7 +181,9 @@ interface CtgovProvenanceBlock {
               </span>
             </button>
           } @else {
-            <p class="text-[13px] font-medium text-slate-900">{{ d.catalyst.trial_name }}</p>
+            <p class="text-[13px] font-medium text-slate-900">
+              {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
+            </p>
             <p class="text-[11px] text-slate-500">
               {{ phaseLabel(d.catalyst.trial_phase) }}
               @if (d.catalyst.recruitment_status) {
@@ -214,19 +199,18 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      @if (d.catalyst.description) {
+      @if (d.catalyst.description && !isAutoDescription(d.catalyst.description)) {
         <app-detail-panel-section label="Description">
           <p class="text-[13px] leading-relaxed text-slate-700">{{ d.catalyst.description }}</p>
         </app-detail-panel-section>
       }
 
-      <!-- Source: unified treatment regardless of provenance shape -->
+      <!-- Source provenance -->
       @if (ctgovProvenance(); as prov) {
         <app-detail-panel-section label="Source">
-          <p class="mb-1.5 text-[12px] text-slate-700">Auto-synced from clinicaltrials.gov</p>
-          <dl class="mb-2 grid grid-cols-[auto,1fr] gap-x-3 gap-y-0.5 text-[11px]">
+          <dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-0.5 text-[11px]">
             <dt class="text-slate-500">Field</dt>
-            <dd class="font-mono text-slate-700">{{ prov.field }}</dd>
+            <dd class="text-slate-700">{{ prov.fieldLabel }}</dd>
             <dt class="text-slate-500">Date type</dt>
             <dd
               [class.text-amber-700]="prov.dateType === 'ANTICIPATED'"
@@ -246,9 +230,9 @@ interface CtgovProvenanceBlock {
               [href]="d.catalyst.source_url"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
+              class="mt-2 inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
             >
-              View on clinicaltrials.gov
+              View on ClinicalTrials.gov
               <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
             </a>
           }
@@ -457,12 +441,19 @@ export class MarkerDetailContentComponent {
     if (meta.source !== 'ctgov') return null;
     const dateType: 'ACTUAL' | 'ANTICIPATED' =
       meta.ctgov_date_type === 'ACTUAL' ? 'ACTUAL' : 'ANTICIPATED';
+    const rawField = meta.field ?? '';
+    const catalogueEntry = CTGOV_FIELD_CATALOGUE.find((f) => f.path === rawField);
     return {
-      field: meta.field ?? '(unknown field)',
+      field: rawField,
+      fieldLabel: catalogueEntry?.label ?? rawField,
       dateType,
       dateTypeLabel: dateType === 'ACTUAL' ? 'Actual' : 'Anticipated by sponsor',
     };
   });
+
+  protected isAutoDescription(desc: string): boolean {
+    return desc.toLowerCase().startsWith('auto-derived from');
+  }
 
   protected extractDomain(url: string): string {
     try {

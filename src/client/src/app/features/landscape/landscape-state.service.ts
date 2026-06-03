@@ -7,9 +7,10 @@ import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import {
   CountUnit,
+  DensityGrouping,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
-  PositioningGrouping,
+  SpokeGrouping,
   SpokeMode,
 } from '../../core/models/landscape.model';
 import { CatalystService } from '../../core/services/catalyst.service';
@@ -20,8 +21,12 @@ interface PersistedLandscapeState {
   filters: LandscapeFilters;
   zoomLevel: ZoomLevel;
   spokeMode: SpokeMode;
-  positioningGrouping: PositioningGrouping;
+  spokeGrouping: SpokeGrouping;
+  densityGrouping: DensityGrouping;
   countUnit: CountUnit;
+  showMoaColumn: boolean;
+  showRoaColumn: boolean;
+  showNotesColumn: boolean;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -35,7 +40,7 @@ const STORAGE_PREFIX = 'landscape-state:';
  * - Filter state (applied client-side)
  * - Filtered views (companies for timeline, flat catalysts for catalysts tab)
  * - Shared detail panel state (selected marker, detail, loading)
- * - View-specific settings (zoom, spoke mode, positioning grouping)
+ * - View-specific settings (zoom, spoke mode, density grouping)
  *
  * State is persisted to sessionStorage so it survives page refreshes.
  */
@@ -60,9 +65,16 @@ export class LandscapeStateService {
 
   // ─── View-specific settings ──────────────────────────────────────────
   readonly zoomLevel = signal<ZoomLevel>('yearly');
+  /** @deprecated Use spokeGrouping instead. Kept during migration. */
   readonly spokeMode = signal<SpokeMode>('grouped');
-  readonly positioningGrouping = signal<PositioningGrouping>('moa+therapeutic-area');
+  readonly spokeGrouping = signal<SpokeGrouping>('company');
+  readonly densityGrouping = signal<DensityGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
+
+  // ─── Column visibility (timeline grid) ──────────────────────────────
+  readonly showMoaColumn = signal(true);
+  readonly showRoaColumn = signal(true);
+  readonly showNotesColumn = signal(true);
 
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
@@ -70,6 +82,21 @@ export class LandscapeStateService {
   readonly detailLoading = signal(false);
 
   // ─── Filtered views (computed) ───────────────────────────────────────
+
+  readonly lastSyncedAt = computed<string | null>(() => {
+    const raw = this.rawData();
+    if (!raw) return null;
+    let latest: string | null = null;
+    for (const company of raw.companies) {
+      for (const asset of company.assets ?? []) {
+        for (const trial of asset.trials ?? []) {
+          const ts = trial.ctgov_last_synced_at;
+          if (ts && (!latest || ts > latest)) latest = ts;
+        }
+      }
+    }
+    return latest;
+  });
 
   /** Filtered company hierarchy for the timeline view. */
   readonly filteredCompanies = computed<Company[]>(() => {
@@ -95,8 +122,12 @@ export class LandscapeStateService {
       filters: this.filters(),
       zoomLevel: this.zoomLevel(),
       spokeMode: this.spokeMode(),
-      positioningGrouping: this.positioningGrouping(),
+      spokeGrouping: this.spokeGrouping(),
+      densityGrouping: this.densityGrouping(),
       countUnit: this.countUnit(),
+      showMoaColumn: this.showMoaColumn(),
+      showRoaColumn: this.showRoaColumn(),
+      showNotesColumn: this.showNotesColumn(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -112,11 +143,29 @@ export class LandscapeStateService {
    * Bind this service instance to a space, restore persisted state,
    * and fetch the full unfiltered dataset.
    */
-  async init(spaceId: string, opts?: { disablePersistence?: boolean }): Promise<void> {
+  async init(
+    spaceId: string,
+    opts?: {
+      disablePersistence?: boolean;
+      columnDefaults?: {
+        showMoaColumn?: boolean;
+        showRoaColumn?: boolean;
+        showNotesColumn?: boolean;
+      };
+    }
+  ): Promise<void> {
     this.spaceId = spaceId;
     this.spaceIdSig.set(spaceId);
     this.disablePersistence = opts?.disablePersistence ?? false;
     this.storageKey = STORAGE_PREFIX + spaceId;
+    if (opts?.columnDefaults) {
+      if (opts.columnDefaults.showMoaColumn !== undefined)
+        this.showMoaColumn.set(opts.columnDefaults.showMoaColumn);
+      if (opts.columnDefaults.showRoaColumn !== undefined)
+        this.showRoaColumn.set(opts.columnDefaults.showRoaColumn);
+      if (opts.columnDefaults.showNotesColumn !== undefined)
+        this.showNotesColumn.set(opts.columnDefaults.showNotesColumn);
+    }
     if (!this.disablePersistence) {
       this.restorePersistedState();
     }
@@ -187,7 +236,7 @@ export class LandscapeStateService {
       const nullFilters = {
         companyIds: null,
         assetIds: null,
-        therapeuticAreaIds: null,
+        indicationIds: null,
         startYear: null,
         endYear: null,
         recruitmentStatuses: null,
@@ -213,8 +262,13 @@ export class LandscapeStateService {
       if (saved.filters) this.filters.set(saved.filters);
       if (saved.zoomLevel) this.zoomLevel.set(saved.zoomLevel);
       if (saved.spokeMode) this.spokeMode.set(saved.spokeMode);
-      if (saved.positioningGrouping) this.positioningGrouping.set(saved.positioningGrouping);
+      if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
+      if (saved.densityGrouping) this.densityGrouping.set(saved.densityGrouping);
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
+      if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
+      if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
+      if (typeof saved.showNotesColumn === 'boolean')
+        this.showNotesColumn.set(saved.showNotesColumn);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }
@@ -232,25 +286,25 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
 
   return result
     .map((c) => {
-      let products = c.products ?? [];
+      let assets = c.assets ?? [];
 
       if (filters.assetIds.length > 0) {
-        products = products.filter((p) => filters.assetIds.includes(p.id));
+        assets = assets.filter((p) => filters.assetIds.includes(p.id));
       }
       if (filters.mechanismOfActionIds.length > 0) {
-        products = products.filter((p) =>
+        assets = assets.filter((p) =>
           (p.mechanisms_of_action ?? []).some((m) => filters.mechanismOfActionIds.includes(m.id))
         );
       }
       if (filters.routeOfAdministrationIds.length > 0) {
-        products = products.filter((p) =>
+        assets = assets.filter((p) =>
           (p.routes_of_administration ?? []).some((r) =>
             filters.routeOfAdministrationIds.includes(r.id)
           )
         );
       }
 
-      products = products
+      assets = assets
         .map((p) => {
           let trials = p.trials ?? [];
 
@@ -258,12 +312,6 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             trials = trials.filter((t) => filters.trialIds.includes(t.id));
           }
 
-          if (filters.therapeuticAreaIds.length > 0) {
-            trials = trials.filter(
-              (t) =>
-                t.therapeutic_area_id && filters.therapeuticAreaIds.includes(t.therapeutic_area_id)
-            );
-          }
           if (filters.phases.length > 0) {
             trials = trials.filter(
               (t) => t.phase_type && (filters.phases as string[]).includes(t.phase_type)
@@ -297,8 +345,8 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
         })
         .filter((p): p is Asset => p !== null);
 
-      if (products.length === 0) return null;
-      return { ...c, products } as Company;
+      if (assets.length === 0) return null;
+      return { ...c, assets } as Company;
     })
     .filter((c): c is Company => c !== null);
 }
@@ -311,7 +359,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
   const catalysts: Catalyst[] = [];
 
   for (const company of companies) {
-    for (const asset of company.products ?? []) {
+    for (const asset of company.assets ?? []) {
       for (const trial of asset.trials ?? []) {
         for (const marker of trial.markers ?? []) {
           if (marker.event_date < today) continue;
@@ -325,7 +373,6 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             category_name: mt?.marker_categories?.name ?? '',
             category_id: mt?.category_id ?? '',
             marker_type_name: mt?.name ?? '',
-            marker_type_icon: mt?.icon ?? null,
             marker_type_color: mt?.color ?? '',
             marker_type_shape: mt?.shape ?? 'circle',
             marker_type_inner_mark: mt?.inner_mark ?? 'none',
@@ -333,15 +380,17 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             no_longer_expected: marker.no_longer_expected ?? false,
             company_name: company.name,
             company_id: company.id,
-            product_name: asset.name,
-            product_id: asset.id,
+            asset_name: asset.name,
+            asset_id: asset.id,
             trial_name: trial.name,
+            trial_acronym: trial.acronym ?? null,
             trial_id: trial.id,
             trial_phase: trial.phase_type ?? trial.phase ?? null,
             description: marker.description ?? null,
             source_url: marker.source_url ?? null,
             trial_recent_changes_count: trial.recent_changes_count ?? 0,
             trial_most_recent_change_type: trial.most_recent_change_type ?? null,
+            trial_most_recent_change_event_id: trial.most_recent_change_event_id ?? null,
           });
         }
       }

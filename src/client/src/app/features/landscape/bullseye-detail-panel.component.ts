@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import {
   BullseyeData,
@@ -20,7 +20,15 @@ import {
   RingPhase,
 } from '../../core/models/landscape.model';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
+import {
+  AssetIntelligenceNote,
+  ENTITY_TYPE_LABEL,
+  IntelligenceEntityType,
+} from '../../core/models/primary-intelligence.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { resolveScopeFromRoute } from '../../core/utils/route-scope';
+import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
@@ -59,18 +67,31 @@ export class BullseyeDetailPanelComponent {
   readonly selectedAsset = input<BullseyeAsset | null>(null);
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
-  readonly dimension = input<BullseyeDimension>('therapeutic-area');
+  readonly dimension = input<BullseyeDimension>('indication');
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
   readonly openInTimeline = output<{ assetId: string; therapeuticAreaId: string }>();
   readonly openMarker = output<string>();
+  readonly openIntelligence = output<{ entityType: IntelligenceEntityType; entityId: string }>();
+  readonly ringHighlightToggle = output<RingPhase | null>();
+  readonly clearSelection = output<void>();
 
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
-  readonly ringHighlightToggle = output<RingPhase | null>();
-  readonly clearSelection = output<void>();
+
+  protected readonly recentChangeLabel = recentChangeLabel;
+
+  private readonly router = inject(Router);
+
+  protected openChangeEvent(changeEventId: string): void {
+    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
+    if (!tenantId || !spaceId) return;
+    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
+      queryParams: { detectedId: changeEventId },
+    });
+  }
 
   private readonly showAllTrials = signal(false);
 
@@ -81,9 +102,12 @@ export class BullseyeDetailPanelComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly fieldVisibility = inject(SpaceFieldVisibilityService);
   private readonly trialService = inject(TrialService);
+  private readonly intelligenceService = inject(PrimaryIntelligenceService);
   private readonly perSpacePaths = signal<string[] | null>(null);
   private readonly snapshotByTrial = signal<Map<string, unknown>>(new Map());
+  readonly intelligenceNotes = signal<AssetIntelligenceNote[]>([]);
   private lastVisibilitySpaceId: string | null = null;
+  private resolvedSpaceId: string | null = null;
 
   readonly bullseyePaths = computed(() => this.perSpacePaths() ?? CTGOV_BULLSEYE_DEFAULT_PATHS);
 
@@ -108,7 +132,9 @@ export class BullseyeDetailPanelComponent {
         }
         snap = snap.parent;
       }
-      if (!spaceId || spaceId === this.lastVisibilitySpaceId) return;
+      if (!spaceId) return;
+      this.resolvedSpaceId = spaceId;
+      if (spaceId === this.lastVisibilitySpaceId) return;
       this.lastVisibilitySpaceId = spaceId;
       void (async () => {
         try {
@@ -146,6 +172,25 @@ export class BullseyeDetailPanelComponent {
           for (const [id, payload] of results) next.set(id, payload);
           return next;
         });
+      })();
+    });
+
+    effect(() => {
+      const asset = this.selectedAsset();
+      this.intelligenceNotes.set([]);
+      if (!asset || asset.intelligence_count === 0) return;
+      const spaceId = this.resolvedSpaceId;
+      if (!spaceId) return;
+      void (async () => {
+        try {
+          const notes = await this.intelligenceService.getIntelligenceNotesForAsset(
+            spaceId,
+            asset.id
+          );
+          this.intelligenceNotes.set(notes);
+        } catch {
+          this.intelligenceNotes.set([]);
+        }
       })();
     });
   }
@@ -214,6 +259,14 @@ export class BullseyeDetailPanelComponent {
 
   protected onMarkerRowClick(markerId: string): void {
     this.openMarker.emit(markerId);
+  }
+
+  protected onIntelligenceClick(note: AssetIntelligenceNote): void {
+    this.openIntelligence.emit({ entityType: note.entity_type, entityId: note.entity_id });
+  }
+
+  protected entityTypeLabel(entityType: IntelligenceEntityType): string {
+    return ENTITY_TYPE_LABEL[entityType];
   }
 
   protected onCompanyClick(): void {

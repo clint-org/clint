@@ -18,6 +18,9 @@ type Env = {
   CTGOV_BATCH_SIZE: string;
   CTGOV_PARALLEL_FETCHES: string;
   CTGOV_WORKER_SECRET: string;
+  ANTHROPIC_API_KEY: string;
+  EXTRACT_SOURCE_WORKER_SECRET: string;
+  MATERIALS_BUCKET: { delete: (key: string) => Promise<void> };
 };
 
 function makeEnv(over: Partial<Env> = {}): Env {
@@ -36,6 +39,9 @@ function makeEnv(over: Partial<Env> = {}): Env {
     CTGOV_BATCH_SIZE: '100',
     CTGOV_PARALLEL_FETCHES: '10',
     CTGOV_WORKER_SECRET: 'shh',
+    ANTHROPIC_API_KEY: 'sk-test',
+    EXTRACT_SOURCE_WORKER_SECRET: 'local-dev-extract-source-secret',
+    MATERIALS_BUCKET: { delete: async () => {} },
     ...over,
   };
 }

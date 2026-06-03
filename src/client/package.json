@@ -20,7 +20,10 @@
     "features:stub": "node scripts/features-drift.mjs stub",
     "features:near": "node scripts/features-drift.mjs near",
     "features:surfaces-index": "node scripts/features-drift.mjs surfaces-index",
-    "test:scripts": "node --test scripts/features/__tests__/*.test.mjs"
+    "test:scripts": "node --test scripts/features/__tests__/*.test.mjs",
+    "test:persona:auth": "npx tsx e2e/persona/save-auth.ts",
+    "test:persona": "./e2e/persona/run.sh",
+    "test:persona:ui": "./e2e/persona/run.sh --ui"
   },
   "dependencies": {
     "@angular/animations": "^21.2.12",
@@ -31,6 +34,7 @@
     "@angular/forms": "^21.2.12",
     "@angular/platform-browser": "^21.2.12",
     "@angular/router": "^21.2.12",
+    "@anthropic-ai/sdk": "^0.98.0",
     "@aws-sdk/client-s3": "^3.1041.0",
     "@aws-sdk/s3-request-presigner": "^3.1041.0",
     "@fortawesome/fontawesome-free": "^7.2.0",
@@ -38,6 +42,7 @@
     "@supabase/supabase-js": "^2.49.0",
     "@types/diff": "^7.0.2",
     "diff": "^9.0.0",
+    "jaro-winkler": "^0.2.8",
     "pptxgenjs": "^4.0.1",
     "primeng": "^21.1.6",
     "prosemirror-commands": "^1.7.1",
@@ -53,6 +58,7 @@
     "rxjs": "~7.8.0",
     "tailwindcss-primeui": "^0.6.1",
     "tslib": "^2.6.0",
+    "zod": "^4.4.3",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {

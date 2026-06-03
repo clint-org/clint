@@ -243,7 +243,10 @@ export class TrialDetailComponent implements OnDestroy {
   });
 
   private async initLandscape(spaceId: string, trialId: string): Promise<void> {
-    await this.landscape.init(spaceId, { disablePersistence: true });
+    await this.landscape.init(spaceId, {
+      disablePersistence: true,
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+    });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, trialIds: [trialId] });
   }
 
@@ -406,6 +409,28 @@ export class TrialDetailComponent implements OnDestroy {
     } finally {
       this.loading.set(false);
     }
+    // Run after loading flips false so the #markers div is in the DOM.
+    this.applyMarkerQueryParam();
+  }
+
+  // When the page is reached via ?marker=<id> (e.g. "Edit marker" on a
+  // catalyst panel), open that marker in the inline editor and scroll to
+  // the markers section. Markers no longer have their own detail page.
+  // Double-rAF defers the scroll until after Angular has committed the
+  // newly-loaded trial AND the editingMarker form expansion to the DOM,
+  // so #markers exists and is at its final post-expansion height.
+  private applyMarkerQueryParam(): void {
+    const markerId = this.route.snapshot.queryParamMap.get('marker');
+    if (!markerId) return;
+    const target = this.trial()?.markers?.find((m) => m.id === markerId);
+    if (!target) return;
+    this.editingMarker.set(target);
+    this.addingMarker.set(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
   }
 
   async loadIntelligence(): Promise<void> {

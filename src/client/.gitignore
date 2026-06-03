@@ -4,3 +4,7 @@ e2e/.auth-storage.json
 worker-configuration.d.ts
 .wrangler/
 .dev.vars
+
+# Persona test artifacts
+e2e/persona/.auth-session.json
+e2e/persona/reports/

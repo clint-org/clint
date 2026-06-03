@@ -1,10 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { authenticatedPage } from '../helpers/auth.helper';
-import {
-  createTestTenant,
-  createTestSpace,
-  getAdminClient,
-} from '../helpers/test-data.helper';
+import { createTestTenant, createTestSpace, getAdminClient } from '../helpers/test-data.helper';
 import { fillInput } from '../helpers/form.helper';
 
 test.describe.configure({ mode: 'serial' });
@@ -24,7 +20,7 @@ test.describe('Space Management', () => {
   });
 
   test('spaces page loads', async () => {
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('button', { name: 'New space' })).toBeVisible();
   });
 
@@ -41,7 +37,7 @@ test.describe('Space Management', () => {
   });
 
   test('created space appears in list', async () => {
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('E2E Test Space')).toBeVisible({ timeout: 10000 });
   });
 
@@ -59,7 +55,7 @@ test.describe('Space Management', () => {
   test('space list shows pre-seeded space if any', async () => {
     // Create a second space via DB helper
     await createTestSpace(tenantId, 'DB Seeded Space');
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('DB Seeded Space')).toBeVisible({ timeout: 10000 });
   });
 
@@ -77,13 +73,13 @@ test.describe('Space Management', () => {
       .eq('id', archivedSpaceId);
     if (error) throw new Error(`Could not archive space: ${error.message}`);
 
-    await page.goto(spacesUrl(), { waitUntil: 'networkidle' });
+    await page.goto(spacesUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: archivedName, level: 3 })).toHaveCount(0, {
       timeout: 10000,
     });
 
     // The archived list should still surface it.
-    await page.goto(`/t/${tenantId}/spaces/archived`, { waitUntil: 'networkidle' });
+    await page.goto(`/t/${tenantId}/spaces/archived`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: archivedName })).toBeVisible({
       timeout: 10000,
     });

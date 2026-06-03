@@ -9,6 +9,11 @@ import { auditTenantGuard } from './core/guards/audit-tenant.guard';
 import { auditAgencyGuard } from './core/guards/audit-agency.guard';
 import { auditSpaceGuard } from './core/guards/audit-space.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
+import { sourceImportGuard } from './core/guards/source-import.guard';
+import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
+import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
+import { importGuard } from './core/guards/import.guard';
+import { editGuard } from './core/guards/edit.guard';
 
 export const routes: Routes = [
   {
@@ -109,6 +114,13 @@ export const routes: Routes = [
             (m) => m.SuperAdminAuditLogComponent
           ),
       },
+      {
+        path: 'ai-usage',
+        loadComponent: () =>
+          import('./features/super-admin/super-admin-ai-usage.component').then(
+            (m) => m.SuperAdminAiUsageComponent
+          ),
+      },
     ],
   },
   {
@@ -179,6 +191,23 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'import',
+            canActivate: [importGuard],
+            loadComponent: () =>
+              import('./features/source-import/import-page.component').then(
+                (m) => m.ImportPageComponent
+              ),
+          },
+          {
+            path: 'import/:aiCallId/review',
+            canActivate: [sourceImportGuard],
+            canDeactivate: [sourceImportDeactivateGuard],
+            loadComponent: () =>
+              import('./features/source-import/review-page.component').then(
+                (m) => m.ReviewPageComponent
+              ),
+          },
+          {
             path: 'help/markers',
             loadComponent: () =>
               import('./features/help/markers-help.component').then((m) => m.MarkersHelpComponent),
@@ -203,107 +232,73 @@ export const routes: Routes = [
                   {
                     path: '',
                     pathMatch: 'full',
-                    redirectTo: 'by-therapy-area',
-                  },
-                  {
-                    path: 'by-therapy-area',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-therapy-area/:entityId',
                     loadComponent: () =>
                       import('./features/landscape/landscape.component').then(
                         (m) => m.LandscapeComponent
                       ),
                   },
-                  {
-                    path: 'by-company',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-company/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
-                  {
-                    path: 'by-moa',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-moa/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
-                  {
-                    path: 'by-roa',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape-index.component').then(
-                        (m) => m.LandscapeIndexComponent
-                      ),
-                  },
-                  {
-                    path: 'by-roa/:entityId',
-                    loadComponent: () =>
-                      import('./features/landscape/landscape.component').then(
-                        (m) => m.LandscapeComponent
-                      ),
-                  },
+                  // Legacy redirects: old dimension routes -> /bullseye (query-param model)
+                  { path: 'by-indication', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-indication/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-company', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-company/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-moa', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-moa/:entityId', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-roa', redirectTo: '', pathMatch: 'full' },
+                  { path: 'by-roa/:entityId', redirectTo: '', pathMatch: 'full' },
                 ],
               },
               {
-                path: 'positioning',
+                path: 'density-matrix',
                 children: [
                   { path: '', redirectTo: 'by-moa', pathMatch: 'full' as const },
                   {
                     path: 'by-moa',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
-                    path: 'by-therapy-area',
+                    path: 'by-indication',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
-                    path: 'by-moa-therapy-area',
+                    path: 'by-moa-indication',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-company',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                   {
                     path: 'by-roa',
                     loadComponent: () =>
-                      import('./features/landscape/positioning-view.component').then(
-                        (m) => m.PositioningViewComponent
+                      import('./features/landscape/density-matrix-view.component').then(
+                        (m) => m.DensityMatrixViewComponent
                       ),
                   },
                 ],
               },
+              // Legacy redirects: old /positioning/* paths -> /density-matrix/*
+              { path: 'positioning', redirectTo: 'density-matrix', pathMatch: 'full' },
+              { path: 'positioning/by-moa', redirectTo: 'density-matrix/by-moa' },
+              { path: 'positioning/by-indication', redirectTo: 'density-matrix/by-indication' },
+              {
+                path: 'positioning/by-moa-indication',
+                redirectTo: 'density-matrix/by-moa-indication',
+              },
+              { path: 'positioning/by-company', redirectTo: 'density-matrix/by-company' },
+              { path: 'positioning/by-roa', redirectTo: 'density-matrix/by-roa' },
               {
                 path: 'catalysts',
                 loadComponent: () =>
@@ -329,56 +324,25 @@ export const routes: Routes = [
           },
           {
             path: 'activity',
-            loadComponent: () =>
-              import('./features/engagement-activity/engagement-activity-page.component').then(
-                (m) => m.EngagementActivityPageComponent
-              ),
+            canActivate: [activityRedirectGuard],
+            // Guard always redirects; component is never rendered.
+            children: [],
           },
-          // Redirects: old /landscape/* paths -> /bullseye/*
-          {
-            path: 'landscape',
-            pathMatch: 'full',
-            redirectTo: 'bullseye/by-therapy-area',
-          },
-          {
-            path: 'landscape/by-therapy-area',
-            redirectTo: 'bullseye/by-therapy-area',
-          },
-          {
-            path: 'landscape/by-therapy-area/:entityId',
-            redirectTo: 'bullseye/by-therapy-area/:entityId',
-          },
-          {
-            path: 'landscape/by-company',
-            redirectTo: 'bullseye/by-company',
-          },
-          {
-            path: 'landscape/by-company/:entityId',
-            redirectTo: 'bullseye/by-company/:entityId',
-          },
-          {
-            path: 'landscape/by-moa',
-            redirectTo: 'bullseye/by-moa',
-          },
-          {
-            path: 'landscape/by-moa/:entityId',
-            redirectTo: 'bullseye/by-moa/:entityId',
-          },
-          {
-            path: 'landscape/by-roa',
-            redirectTo: 'bullseye/by-roa',
-          },
-          {
-            path: 'landscape/by-roa/:entityId',
-            redirectTo: 'bullseye/by-roa/:entityId',
-          },
-          {
-            path: 'landscape/:therapeuticAreaId',
-            redirectTo: 'bullseye/by-therapy-area/:therapeuticAreaId',
-          },
+          // Redirects: old /landscape/* paths -> /bullseye
+          { path: 'landscape', pathMatch: 'full', redirectTo: 'bullseye' },
+          { path: 'landscape/by-therapy-area', redirectTo: 'bullseye' },
+          { path: 'landscape/by-therapy-area/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-company', redirectTo: 'bullseye' },
+          { path: 'landscape/by-company/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-moa', redirectTo: 'bullseye' },
+          { path: 'landscape/by-moa/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/by-roa', redirectTo: 'bullseye' },
+          { path: 'landscape/by-roa/:entityId', redirectTo: 'bullseye' },
+          { path: 'landscape/:therapeuticAreaId', redirectTo: 'bullseye' },
           // Manage routes (unchanged)
           {
             path: 'manage/companies',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/companies/company-list.component').then(
                 (m) => m.CompanyListComponent
@@ -386,6 +350,7 @@ export const routes: Routes = [
           },
           {
             path: 'manage/assets',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/assets/asset-list.component').then(
                 (m) => m.AssetListComponent
@@ -393,6 +358,7 @@ export const routes: Routes = [
           },
           {
             path: 'manage/trials',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/trials/trial-list.component').then(
                 (m) => m.TrialListComponent
@@ -417,13 +383,6 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/manage/assets/asset-detail.component').then(
                 (m) => m.AssetDetailComponent
-              ),
-          },
-          {
-            path: 'manage/markers/:id',
-            loadComponent: () =>
-              import('./features/manage/markers/marker-detail.component').then(
-                (m) => m.MarkerDetailComponent
               ),
           },
           {

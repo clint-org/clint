@@ -237,6 +237,12 @@ export class SuperAdminShellComponent implements OnInit {
       routerLink: '/super-admin/audit-log',
       match: (url) => url.startsWith('/super-admin/audit-log'),
     },
+    {
+      label: 'AI Usage',
+      icon: 'fa-solid fa-microchip',
+      routerLink: '/super-admin/ai-usage',
+      match: (url) => url.startsWith('/super-admin/ai-usage'),
+    },
   ];
 
   ngOnInit(): void {

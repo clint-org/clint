@@ -38,7 +38,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
 
   test('company detail page renders the empty intelligence state', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await expect(page.getByRole('heading', { name: 'Smoke Co', level: 1 })).toBeVisible({
       timeout: 5000,
@@ -48,7 +48,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
 
   test('engagement detail page renders the empty intelligence state', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/manage/engagement`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await expect(page.getByRole('heading', { name: 'Engagement', level: 1 })).toBeVisible({
       timeout: 5000,
@@ -58,7 +58,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
 
   test('company list links navigate to the detail page', async () => {
     await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
-      waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
     });
     await page.getByRole('link', { name: 'Smoke Co' }).click();
     await page.waitForURL(/\/manage\/companies\/[0-9a-f-]+$/, { timeout: 5000 });
@@ -66,7 +66,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
   });
 
   test('deleting a company also clears its primary_intelligence rows (polymorphic cleanup)', async () => {
-    // Cascade-safety T3: AFTER DELETE trigger on companies/products/trials/
+    // Cascade-safety T3: AFTER DELETE trigger on companies/assets/trials/
     // markers removes the polymorphic primary_intelligence and
     // primary_intelligence_links rows that reference the deleted parent by
     // (entity_type, entity_id). Seed rows directly via the admin client so
@@ -98,12 +98,9 @@ test.describe('Intelligence detail pages: route smoke', () => {
     if (piErr) throw new Error(`Could not seed PI: ${piErr.message}`);
 
     // Delete via PostgREST (the route the UI uses for company delete). The
-    // delete cascades products/trials AND fires the polymorphic-cleanup
+    // delete cascades assets/trials AND fires the polymorphic-cleanup
     // trigger that removes the PI row.
-    const { error: delErr } = await admin
-      .from('companies')
-      .delete()
-      .eq('id', polyCompanyId);
+    const { error: delErr } = await admin.from('companies').delete().eq('id', polyCompanyId);
     if (delErr) throw new Error(`Could not delete company: ${delErr.message}`);
 
     const { data: piAfter } = await admin

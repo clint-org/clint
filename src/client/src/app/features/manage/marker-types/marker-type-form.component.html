@@ -8,6 +8,7 @@
       label="Category"
       fieldId="mt-category"
       [required]="true"
+      [error]="categoryInvalid() ? 'Category is required.' : null"
       spacing="sm:col-span-2"
     >
       <p-select
@@ -21,6 +22,10 @@
         placeholder="Select a category"
         styleClass="w-full"
         class="mt-1"
+        (onBlur)="categoryBlurred.set(true)"
+        [attr.aria-required]="true"
+        [attr.aria-invalid]="categoryInvalid()"
+        [attr.aria-describedby]="categoryInvalid() ? 'mt-category-error' : null"
       />
     </app-form-field>
 
@@ -41,7 +46,9 @@
         required
         placeholder="e.g. FDA Approval, Data Readout"
         (blur)="nameBlurred.set(true)"
+        [attr.aria-required]="true"
         [attr.aria-invalid]="nameInvalid()"
+        [attr.aria-describedby]="nameInvalid() ? 'mt-name-error' : null"
       />
     </app-form-field>
 
@@ -79,18 +86,6 @@
         (ngModelChange)="color.set($event)"
         name="color"
         inputId="mt-color"
-      />
-    </app-form-field>
-
-    <app-form-field label="Icon" fieldId="mt-icon" spacing="">
-      <input
-        pInputText
-        id="mt-icon"
-        class="w-full mt-1"
-        [ngModel]="icon()"
-        (ngModelChange)="icon.set($event)"
-        name="icon"
-        placeholder="e.g. fa-solid fa-check"
       />
     </app-form-field>
 

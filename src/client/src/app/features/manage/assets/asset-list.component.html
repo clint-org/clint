@@ -51,6 +51,14 @@
             </ng-template>
           </p-column-filter>
         </th>
+        <th pSortableColumn="moaNames">
+          MOA <p-sortIcon field="moaNames" />
+          <p-column-filter type="text" field="moaNames" display="menu" />
+        </th>
+        <th pSortableColumn="roaNames">
+          ROA <p-sortIcon field="roaNames" />
+          <p-column-filter type="text" field="roaNames" display="menu" />
+        </th>
         <th class="col-num" pSortableColumn="trialCount">
           Trials <p-sortIcon field="trialCount" />
           <p-column-filter type="numeric" field="trialCount" display="menu" />
@@ -100,6 +108,32 @@
             <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
           }
         </td>
+        <td class="col-secondary">
+          @if (row.asset.mechanisms_of_action?.length) {
+            <div class="flex flex-wrap gap-1">
+              @for (moa of row.asset.mechanisms_of_action; track moa.id) {
+                <span
+                  class="inline-block rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-600"
+                >{{ moa.name }}</span>
+              }
+            </div>
+          } @else {
+            <span class="text-slate-300">--</span>
+          }
+        </td>
+        <td class="col-secondary">
+          @if (row.asset.routes_of_administration?.length) {
+            <div class="flex flex-wrap gap-1">
+              @for (roa of row.asset.routes_of_administration; track roa.id) {
+                <span
+                  class="inline-block rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-600"
+                >{{ roa.name }}</span>
+              }
+            </div>
+          } @else {
+            <span class="text-slate-300">--</span>
+          }
+        </td>
         <td class="col-num">
           @if (row.trialCount > 0) {
             <button
@@ -126,6 +160,8 @@
           { w: '62%' },
           { w: '44%', h: '11px' },
           { w: '58%' },
+          { w: '50%' },
+          { w: '40%' },
           { w: '22px', class: 'col-num' },
           { w: '22px', class: 'col-num' },
           { w: '14px', class: 'col-actions' },
@@ -134,7 +170,7 @@
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6">
+        <td colspan="8">
           @if (grid.isFiltered()) {
             No assets match your filters.
           } @else {

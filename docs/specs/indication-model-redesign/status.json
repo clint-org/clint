@@ -1,0 +1,28 @@
+{
+  "specId": "spec-2026-indication-model",
+  "status": "completed",
+  "branch": "indication-model-redesign",
+  "tasks": {
+    "T1": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T2": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T3": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T4": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T5": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6a": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6b": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6c": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T7": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T8": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T9": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T10": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T11": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T12": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T13": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T14": { "status": "skipped", "agent": null, "attempts": 0, "error": "indication/condition management pages deferred to follow-up" },
+    "T15": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T15b": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T16": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T17": { "status": "skipped", "agent": null, "attempts": 0, "error": "runbook regen requires manual docs:arch run" }
+  },
+  "updatedAt": "2026-05-24T14:00:00Z"
+}

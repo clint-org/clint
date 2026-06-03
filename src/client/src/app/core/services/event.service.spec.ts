@@ -12,6 +12,7 @@ interface QueryBuilderStub {
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
+  throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
   _error: unknown;
 }
@@ -24,16 +25,52 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     delete: vi.fn(),
     eq: vi.fn(),
     single: vi.fn(),
+    throwOnError: vi.fn(),
     _data: data,
     _error: error,
+  };
+  const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (chain as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null,
+  ) => {
+    if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+    return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
   };
   qb.select.mockReturnValue(qb);
   qb.insert.mockReturnValue(qb);
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
-  qb.single.mockResolvedValue({ data: qb._data, error: qb._error });
+  qb.throwOnError.mockReturnValue(qb);
+  qb.single.mockImplementation(() => {
+    const s = { throwOnError: vi.fn() } as Record<string, unknown>;
+    const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+    (sp as { then: PromiseLike<unknown>['then'] }).then = (
+      onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null,
+    ) => {
+      if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+      return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    };
+    s['throwOnError'] = vi.fn().mockReturnValue(sp);
+    return sp;
+  });
   return qb;
+}
+
+function makeRpcResult(data: unknown, error: unknown = null) {
+  const obj = { throwOnError: vi.fn() };
+  obj.throwOnError.mockReturnValue(obj);
+  const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (t as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null,
+  ) => {
+    if (error) return Promise.reject(error).then(null, onRejected);
+    return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
+  };
+  return obj;
 }
 
 interface ClientStub {
@@ -123,6 +160,7 @@ describe('EventService.getSpaceTags', () => {
 
 describe('EventService.create', () => {
   let from: ReturnType<typeof vi.fn>;
+  let rpc: ReturnType<typeof vi.fn>;
   let invalidateTags: ReturnType<typeof vi.fn>;
   let service: EventService;
 
@@ -133,11 +171,12 @@ describe('EventService.create', () => {
       if (table === 'events') return eventQb;
       return insertQb;
     });
+    rpc = vi.fn().mockReturnValue(makeRpcResult('event-1'));
     invalidateTags = vi.fn();
     service = makeService(
       {
         from,
-        rpc: vi.fn(),
+        rpc,
         auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }), getSession: vi.fn() },
       },
       { get: vi.fn(), invalidateTags }
@@ -145,8 +184,17 @@ describe('EventService.create', () => {
   });
 
   it('invalidates space events and tags after create', async () => {
-    await service.create('space-1', { title: 'New Event' }, [], []);
+    await service.create(
+      'space-1',
+      { title: 'New Event', category_id: 'cat-1', event_date: '2026-01-01' },
+      [],
+      []
+    );
 
+    expect(rpc).toHaveBeenCalledWith('create_event', expect.objectContaining({
+      p_space_id: 'space-1',
+      p_title: 'New Event',
+    }));
     expect(invalidateTags).toHaveBeenCalledWith([
       'space:space-1:events',
       'space:space-1:tags',
@@ -175,34 +223,77 @@ describe('EventService.update', () => {
 });
 
 describe('EventService.updateSources', () => {
-  it('invalidates only event detail tag', async () => {
-    const qb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValue(qb);
+  it('delegates to update_event_sources RPC with paired url/label arrays and invalidates event detail', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.updateSources('event-1', [
+      { url: 'https://a.example', label: 'A' },
+      { url: 'https://b.example', label: '' },
+    ]);
+
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'event-1',
+      p_urls: ['https://a.example', 'https://b.example'],
+      p_labels: ['A', ''],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+  });
+
+  it('passes empty arrays through (clear-all)', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.updateSources('event-1', []);
 
-    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'event-1',
+      p_urls: [],
+      p_labels: [],
+    });
   });
 });
 
 describe('EventService.updateLinks', () => {
-  it('invalidates only event detail tag', async () => {
-    const qb = makeQueryBuilder(null);
-    const from = vi.fn().mockReturnValue(qb);
+  it('delegates to update_event_links RPC and invalidates event detail', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
     const invalidateTags = vi.fn();
     const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.updateLinks('event-1', ['event-2', 'event-3']);
+
+    expect(rpc).toHaveBeenCalledWith('update_event_links', {
+      p_event_id: 'event-1',
+      p_linked_event_ids: ['event-2', 'event-3'],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+  });
+
+  it('passes empty array through (clear-all outgoing)', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
       { get: vi.fn(), invalidateTags }
     );
 
     await service.updateLinks('event-1', []);
 
-    expect(invalidateTags).toHaveBeenCalledWith(['event:event-1:detail']);
+    expect(rpc).toHaveBeenCalledWith('update_event_links', {
+      p_event_id: 'event-1',
+      p_linked_event_ids: [],
+    });
   });
 });
 

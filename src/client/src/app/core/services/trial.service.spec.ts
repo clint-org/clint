@@ -19,6 +19,7 @@ interface QueryBuilderStub {
   limit: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
   maybeSingle: ReturnType<typeof vi.fn>;
+  throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
   _error: unknown;
 }
@@ -34,13 +35,18 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     limit: vi.fn(),
     single: vi.fn(),
     maybeSingle: vi.fn(),
+    throwOnError: vi.fn(),
     _data: data,
     _error: error,
   };
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
-    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null
-  ) => Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null,
+  ) => {
+    if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+    return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+  };
   qb.select.mockReturnValue(qb);
   qb.insert.mockReturnValue(qb);
   qb.update.mockReturnValue(qb);
@@ -48,9 +54,48 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   qb.eq.mockReturnValue(qb);
   qb.order.mockReturnValue(qb);
   qb.limit.mockReturnValue(qb);
-  qb.single.mockResolvedValue({ data: qb._data, error: qb._error });
-  qb.maybeSingle.mockResolvedValue({ data: qb._data, error: qb._error });
+  qb.throwOnError.mockReturnValue(qb);
+  qb.single.mockImplementation(() => {
+    const s = { throwOnError: vi.fn() } as Record<string, unknown>;
+    const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+    (sp as { then: PromiseLike<unknown>['then'] }).then = (
+      onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null,
+    ) => {
+      if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+      return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    };
+    s['throwOnError'] = vi.fn().mockReturnValue(sp);
+    return sp;
+  });
+  qb.maybeSingle.mockImplementation(() => {
+    const s = { throwOnError: vi.fn() } as Record<string, unknown>;
+    const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+    (sp as { then: PromiseLike<unknown>['then'] }).then = (
+      onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null,
+    ) => {
+      if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
+      return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
+    };
+    s['throwOnError'] = vi.fn().mockReturnValue(sp);
+    return sp;
+  });
   return qb;
+}
+
+function makeRpcResult(data: unknown, error: unknown = null) {
+  const obj = { throwOnError: vi.fn() };
+  obj.throwOnError.mockReturnValue(obj);
+  const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
+  (t as { then: PromiseLike<unknown>['then'] }).then = (
+    onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null,
+  ) => {
+    if (error) return Promise.reject(error).then(null, onRejected);
+    return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
+  };
+  return obj;
 }
 
 interface ClientStub {
@@ -96,7 +141,7 @@ describe('TrialService.previewDelete', () => {
       markers_removed_entirely: 1,
       markers_unlinked_only: 1,
     };
-    rpc.mockResolvedValueOnce({ data: breakdown, error: null });
+    rpc.mockReturnValueOnce(makeRpcResult(breakdown));
 
     const result = await service.previewDelete('trial-1');
 
@@ -106,20 +151,20 @@ describe('TrialService.previewDelete', () => {
   });
 
   it('returns an empty object when data is null', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: null });
+    rpc.mockReturnValueOnce(makeRpcResult(null));
     const result = await service.previewDelete('trial-1');
     expect(result).toEqual({});
   });
 
   it('throws when the RPC returns an error', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { message: '42501' } });
+    rpc.mockReturnValueOnce(makeRpcResult(null, { message: '42501' }));
     await expect(service.previewDelete('trial-1')).rejects.toMatchObject({ message: '42501' });
   });
 });
 
 describe('TrialService.delete', () => {
   it('queries the existing row, deletes from trials, and invalidates trial + asset cache tags', async () => {
-    const lookupQb = makeQueryBuilder({ space_id: 'space-1', product_id: 'asset-1' });
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1', asset_id: 'asset-1' });
     const deleteQb = makeQueryBuilder(null);
     const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(deleteQb);
     const invalidateTags = vi.fn();
@@ -146,7 +191,7 @@ describe('TrialService.delete', () => {
   });
 
   it('throws when the delete query yields an error', async () => {
-    const lookupQb = makeQueryBuilder({ space_id: 'space-1', product_id: 'asset-1' });
+    const lookupQb = makeQueryBuilder({ space_id: 'space-1', asset_id: 'asset-1' });
     const deleteQb = makeQueryBuilder(null, { message: 'rls' });
     const from = vi.fn().mockReturnValueOnce(lookupQb).mockReturnValueOnce(deleteQb);
     const service = makeService(
@@ -229,13 +274,10 @@ describe('TrialService.update with phase fields', () => {
 
 describe('TrialService.getLatestSnapshotsForSpace', () => {
   it('calls list_latest_snapshots_for_space RPC and returns a Map keyed by trial_id', async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [
+    const rpc = vi.fn().mockReturnValue(makeRpcResult([
         { trial_id: 't-1', payload: { x: 1 } },
         { trial_id: 't-2', payload: { x: 2 } },
-      ],
-      error: null,
-    });
+      ]));
     // The RpcCache shim delegates straight to the fetch callback so we
     // exercise the real RPC call path.
     const cacheGet = vi.fn().mockImplementation((_name, _params, opts) => opts.fetch());

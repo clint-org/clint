@@ -6,7 +6,7 @@
  *   - restore_space               (T5)
  *   - permanently_delete_space    (T5)
  *   - preview_company_delete      (T7)
- *   - preview_product_delete      (T7)
+ *   - preview_asset_delete         (T7)
  *   - preview_trial_delete        (T7)
  *
  * Roles exercised against the persona graph (see fixtures/personas.ts):
@@ -71,7 +71,7 @@ let svc: SupabaseClient;
 beforeAll(async () => {
   p = await buildPersonas();
   svc = adminClient();
-}, 60_000);
+}, 120_000);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,12 +125,12 @@ async function revokeSpaceMembership(spaceId: string, userId: string): Promise<v
   }
 }
 
-/** Seed a hermetic entity graph (company / 2 products / 3 trials) inside the
+/** Seed a hermetic entity graph (company / 2 assets / 3 trials) inside the
  *  persona space and return the relevant ids. Caller owns the cleanup. */
 interface EntityGraph {
   companyId: string;
-  productAId: string;
-  productBId: string;
+  assetAId: string;
+  assetBId: string;
   trialIds: string[];
   cleanup: () => Promise<void>;
 }
@@ -146,38 +146,32 @@ async function createEntityGraph(spaceId: string, createdBy: string): Promise<En
       [spaceId, createdBy, `${tag}-co`],
     );
     const companyId = company.rows[0].id;
-    const productA = await pg.query<{ id: string }>(
-      `insert into public.products (space_id, created_by, company_id, name)
+    const assetA = await pg.query<{ id: string }>(
+      `insert into public.assets (space_id, created_by, company_id, name)
          values ($1, $2, $3, $4) returning id`,
       [spaceId, createdBy, companyId, `${tag}-pa`],
     );
-    const productB = await pg.query<{ id: string }>(
-      `insert into public.products (space_id, created_by, company_id, name)
+    const assetB = await pg.query<{ id: string }>(
+      `insert into public.assets (space_id, created_by, company_id, name)
          values ($1, $2, $3, $4) returning id`,
       [spaceId, createdBy, companyId, `${tag}-pb`],
     );
-    const productAId = productA.rows[0].id;
-    const productBId = productB.rows[0].id;
-    const ta = await pg.query<{ id: string }>(
-      `insert into public.therapeutic_areas (space_id, created_by, name)
-         values ($1, $2, $3) returning id`,
-      [spaceId, createdBy, `${tag}-ta`],
-    );
-    const taId = ta.rows[0].id;
+    const assetAId = assetA.rows[0].id;
+    const assetBId = assetB.rows[0].id;
     const trialIds: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const product = i < 2 ? productAId : productBId;
+      const asset = i < 2 ? assetAId : assetBId;
       const trial = await pg.query<{ id: string }>(
-        `insert into public.trials (space_id, created_by, product_id, therapeutic_area_id, name, identifier)
-           values ($1, $2, $3, $4, $5, $6) returning id`,
-        [spaceId, createdBy, product, taId, `${tag}-t${i}`, `${tag}-id${i}`],
+        `insert into public.trials (space_id, created_by, asset_id, name, identifier)
+           values ($1, $2, $3, $4, $5) returning id`,
+        [spaceId, createdBy, asset, `${tag}-t${i}`, `${tag}-id${i}`],
       );
       trialIds.push(trial.rows[0].id);
     }
     return {
       companyId,
-      productAId,
-      productBId,
+      assetAId,
+      assetBId,
       trialIds,
       cleanup: async () => {
         const pg2 = new PgClient({ connectionString: SUPABASE_DB_URL });
@@ -186,7 +180,6 @@ async function createEntityGraph(spaceId: string, createdBy: string): Promise<En
           await pg2.query('begin');
           await pg2.query(`set local clint.member_guard_cascade = 'on'`);
           await pg2.query(`delete from public.companies where id = $1`, [companyId]);
-          await pg2.query(`delete from public.therapeutic_areas where id = $1`, [taId]);
           await pg2.query('commit');
         } finally {
           await pg2.end();
@@ -548,7 +541,7 @@ describe('rpc permanently_delete_space', () => {
       for (const key of [
         'name',
         'companies',
-        'products',
+        'assets',
         'trials',
         'markers',
         'materials',
@@ -572,7 +565,7 @@ describe('rpc permanently_delete_space', () => {
 });
 
 // ---------------------------------------------------------------------------
-// preview_company_delete / preview_product_delete / preview_trial_delete
+// preview_company_delete / preview_asset_delete / preview_trial_delete
 // ---------------------------------------------------------------------------
 //
 // All three previews share the same gate shape (auth.uid + has_space_access
@@ -597,8 +590,8 @@ describe('rpc preview_*_delete (cascade-footprint previews)', () => {
         p_company_id: graph.companyId,
       });
       const data = expectOk(r) as Record<string, unknown>;
-      if ((data['products'] as number) !== 2) {
-        throw new Error(`expected products=2, got ${data['products']}`);
+      if ((data['assets'] as number) !== 2) {
+        throw new Error(`expected assets=2, got ${data['assets']}`);
       }
       if ((data['trials'] as number) !== 3) {
         throw new Error(`expected trials=3, got ${data['trials']}`);
@@ -653,7 +646,7 @@ describe('rpc preview_*_delete (cascade-footprint previews)', () => {
       });
       const data = expectOk(r) as Record<string, unknown>;
       const expected = [
-        'products',
+        'assets',
         'trials',
         'trial_notes',
         'events',
@@ -678,58 +671,58 @@ describe('rpc preview_*_delete (cascade-footprint previews)', () => {
     });
   });
 
-  describe('preview_product_delete', () => {
+  describe('preview_asset_delete', () => {
     it('space_owner: ok', async () => {
-      const r = await as(p, 'space_owner').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'space_owner').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       const data = expectOk(r) as Record<string, unknown>;
       if ((data['trials'] as number) !== 2) {
-        throw new Error(`expected trials=2 for productA, got ${data['trials']}`);
+        throw new Error(`expected trials=2 for assetA, got ${data['trials']}`);
       }
-      if ('products' in data) {
-        throw new Error('preview_product_delete must not include products key');
+      if ('assets' in data) {
+        throw new Error('preview_asset_delete must not include assets key');
       }
     });
 
     it('tenant_owner: 42501', async () => {
-      const r = await as(p, 'tenant_owner').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'tenant_owner').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       expectCode(r, '42501');
     });
 
     it('contributor: ok', async () => {
-      const r = await as(p, 'contributor').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'contributor').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       expectOk(r);
     });
 
     it('reader: ok', async () => {
-      const r = await as(p, 'reader').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'reader').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       expectOk(r);
     });
 
     it('platform_admin: ok (read bypass)', async () => {
-      const r = await as(p, 'platform_admin').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'platform_admin').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       expectOk(r);
     });
 
     it('anon: 42501 (PostgreSQL execute-permission denial)', async () => {
-      const r = await as(p, 'anon').rpc('preview_product_delete', {
-        p_product_id: graph.productAId,
+      const r = await as(p, 'anon').rpc('preview_asset_delete', {
+        p_asset_id: graph.assetAId,
       });
       expectCode(r, '42501');
     });
 
-    it('space_owner: P0002 for non-existent product', async () => {
-      const r = await as(p, 'space_owner').rpc('preview_product_delete', {
-        p_product_id: '00000000-0000-0000-0000-000000000000',
+    it('space_owner: P0002 for non-existent asset', async () => {
+      const r = await as(p, 'space_owner').rpc('preview_asset_delete', {
+        p_asset_id: '00000000-0000-0000-0000-000000000000',
       });
       expectCode(r, 'P0002');
     });

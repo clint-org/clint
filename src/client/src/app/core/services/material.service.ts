@@ -73,10 +73,11 @@ export class MaterialService {
       .select('space_id, material_links(entity_type, entity_id)')
       .eq('id', materialId)
       .single();
-    const { error } = await this.supabase.client.rpc('finalize_material', {
-      p_material_id: materialId,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('finalize_material', {
+        p_material_id: materialId,
+      })
+      .throwOnError();
     if (existing?.space_id) {
       const tags: string[] = [
         `space:${existing.space_id}:materials`,
@@ -116,21 +117,22 @@ export class MaterialService {
   }
 
   async registerMaterial(input: RegisterMaterialInput): Promise<string> {
-    const { data, error } = await this.supabase.client.rpc('register_material', {
-      p_space_id: input.space_id,
-      p_file_path: input.file_path,
-      p_file_name: input.file_name,
-      p_file_size_bytes: input.file_size_bytes,
-      p_mime_type: input.mime_type,
-      p_material_type: input.material_type,
-      p_title: input.title,
-      p_links: input.links.map((l, i) => ({
-        entity_type: l.entity_type,
-        entity_id: l.entity_id,
-        display_order: l.display_order ?? i,
-      })),
-    });
-    if (error) throw error;
+    const { data } = await this.supabase.client
+      .rpc('register_material', {
+        p_space_id: input.space_id,
+        p_file_path: input.file_path,
+        p_file_name: input.file_name,
+        p_file_size_bytes: input.file_size_bytes,
+        p_mime_type: input.mime_type,
+        p_material_type: input.material_type,
+        p_title: input.title,
+        p_links: input.links.map((l, i) => ({
+          entity_type: l.entity_type,
+          entity_id: l.entity_id,
+          display_order: l.display_order ?? i,
+        })),
+      })
+      .throwOnError();
     const tags: string[] = [
       `space:${input.space_id}:materials`,
       `space:${input.space_id}:activity`,
@@ -149,11 +151,11 @@ export class MaterialService {
    * surfaces.
    */
   async updateFilePathDirect(materialId: string, newPath: string): Promise<void> {
-    const { error } = await this.supabase.client
+    await this.supabase.client
       .from('materials')
       .update({ file_path: newPath })
-      .eq('id', materialId);
-    if (error) throw error;
+      .eq('id', materialId)
+      .throwOnError();
   }
 
   async listForEntity(opts: {
@@ -167,33 +169,39 @@ export class MaterialService {
       ttl: HEAVY_TTL,
       tags: [`entity:${opts.entityType}:${opts.entityId}:materials`],
       fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('list_materials_for_entity', {
-          p_entity_type: opts.entityType,
-          p_entity_id: opts.entityId,
-          p_material_types: opts.materialTypes ?? null,
-          p_limit: opts.limit ?? 50,
-          p_offset: opts.offset ?? 0,
-        });
-        if (error) throw error;
+        const { data } = await this.supabase.client
+          .rpc('list_materials_for_entity', {
+            p_entity_type: opts.entityType,
+            p_entity_id: opts.entityId,
+            p_material_types: opts.materialTypes ?? null,
+            p_limit: opts.limit ?? 50,
+            p_offset: opts.offset ?? 0,
+          })
+          .throwOnError();
         return (data as MaterialListResult) ?? { rows: [] };
       },
     });
   }
 
   async listRecentForSpace(spaceId: string, limit = 5): Promise<Material[]> {
-    return this.cache.get('list_recent_materials_for_space', { spaceId, limit }, {
-      ttl: HEAVY_TTL,
-      tags: [`space:${spaceId}:materials`],
-      fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('list_recent_materials_for_space', {
-          p_space_id: spaceId,
-          p_limit: limit,
-        });
-        if (error) throw error;
-        const result = (data as { rows: Material[] } | null) ?? { rows: [] };
-        return result.rows ?? [];
-      },
-    });
+    return this.cache.get(
+      'list_recent_materials_for_space',
+      { spaceId, limit },
+      {
+        ttl: HEAVY_TTL,
+        tags: [`space:${spaceId}:materials`],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .rpc('list_recent_materials_for_space', {
+              p_space_id: spaceId,
+              p_limit: limit,
+            })
+            .throwOnError();
+          const result = (data as { rows: Material[] } | null) ?? { rows: [] };
+          return result.rows ?? [];
+        },
+      }
+    );
   }
 
   async listForSpace(opts: {
@@ -208,15 +216,16 @@ export class MaterialService {
       ttl: HEAVY_TTL,
       tags: [`space:${opts.spaceId}:materials`],
       fetch: async () => {
-        const { data, error } = await this.supabase.client.rpc('list_materials_for_space', {
-          p_space_id: opts.spaceId,
-          p_material_types: opts.materialTypes ?? null,
-          p_entity_type: opts.entityType ?? null,
-          p_entity_id: opts.entityId ?? null,
-          p_limit: opts.limit ?? 100,
-          p_offset: opts.offset ?? 0,
-        });
-        if (error) throw error;
+        const { data } = await this.supabase.client
+          .rpc('list_materials_for_space', {
+            p_space_id: opts.spaceId,
+            p_material_types: opts.materialTypes ?? null,
+            p_entity_type: opts.entityType ?? null,
+            p_entity_id: opts.entityId ?? null,
+            p_limit: opts.limit ?? 100,
+            p_offset: opts.offset ?? 0,
+          })
+          .throwOnError();
         return (data as MaterialListResult) ?? { rows: [] };
       },
     });
@@ -228,20 +237,21 @@ export class MaterialService {
       .select('space_id, material_links(entity_type, entity_id)')
       .eq('id', input.id)
       .single();
-    const { error } = await this.supabase.client.rpc('update_material', {
-      p_id: input.id,
-      p_title: input.title ?? null,
-      p_material_type: input.material_type ?? null,
-      p_links:
-        input.links === null || input.links === undefined
-          ? null
-          : input.links.map((l, i) => ({
-              entity_type: l.entity_type,
-              entity_id: l.entity_id,
-              display_order: l.display_order ?? i,
-            })),
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('update_material', {
+        p_id: input.id,
+        p_title: input.title ?? null,
+        p_material_type: input.material_type ?? null,
+        p_links:
+          input.links === null || input.links === undefined
+            ? null
+            : input.links.map((l, i) => ({
+                entity_type: l.entity_type,
+                entity_id: l.entity_id,
+                display_order: l.display_order ?? i,
+              })),
+      })
+      .throwOnError();
     if (existing?.space_id) {
       const tags: string[] = [
         `space:${existing.space_id}:materials`,
@@ -259,10 +269,11 @@ export class MaterialService {
       .select('space_id, material_links(entity_type, entity_id)')
       .eq('id', id)
       .single();
-    const { error } = await this.supabase.client.rpc('delete_material', {
-      p_id: id,
-    });
-    if (error) throw error;
+    await this.supabase.client
+      .rpc('delete_material', {
+        p_id: id,
+      })
+      .throwOnError();
     if (existing?.space_id) {
       const tags: string[] = [
         `space:${existing.space_id}:materials`,

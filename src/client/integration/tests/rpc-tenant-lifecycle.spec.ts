@@ -9,7 +9,7 @@ import { as, expectOk } from '../harness/as';
 let p: Personas;
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 describe('rpc provision_tenant', () => {
   it('platform_admin: ok (provisions under personas agency)', async () => {

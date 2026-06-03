@@ -54,19 +54,22 @@ describe('EntityEventsPanelService.fetch', () => {
     expect(result).toEqual(rows);
   });
 
-  it('calls the underlying rpc when fetch callback is invoked', async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+  it('unwraps items from the rpc payload when the fetch callback is invoked', async () => {
+    const rows = [{ id: 'ev-1', title: 'Event 1' }];
+    const rpc = vi.fn().mockResolvedValue({ data: { items: rows, total: 1 }, error: null });
     const get = vi.fn().mockImplementation(async (_name: string, _params: unknown, opts: { fetch: () => Promise<unknown> }) => {
       return opts.fetch();
     });
     const service = makeService(rpc, get);
 
-    await service.fetch({ spaceId: 'space-1', entityLevel: 'trial', entityId: 'trial-1' });
+    const result = await service.fetch({ spaceId: 'space-1', entityLevel: 'trial', entityId: 'trial-1' });
 
     expect(rpc).toHaveBeenCalledWith('get_events_page_data', expect.objectContaining({
       p_space_id: 'space-1',
       p_entity_level: 'trial',
       p_entity_id: 'trial-1',
     }));
+    // The RPC returns { items, total }; the service must unwrap to the items array.
+    expect(result).toEqual(rows);
   });
 });

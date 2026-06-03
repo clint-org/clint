@@ -22,48 +22,12 @@
           {{ c.name }}
         </h1>
       </div>
-      @if ((c.products?.length ?? 0) > 0) {
+      @if ((c.assets?.length ?? 0) > 0) {
         <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500 tabular-nums">
-          {{ c.products?.length }} {{ c.products?.length === 1 ? 'asset' : 'assets' }}
+          {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
         </p>
       }
     </header>
-
-    <!-- Timeline + events panel -->
-    <section id="timeline" class="mb-4 bg-white border border-slate-200">
-      <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
-          Timeline
-        </h2>
-        <button
-          type="button"
-          class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
-          (click)="legendVisible.set(!legendVisible())"
-        >
-          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-        </button>
-      </header>
-      <div>
-        <app-timeline-view
-          [hideCompanyColumn]="true"
-          [hideMoaColumn]="true"
-          [hideRoaColumn]="true"
-          [hideNotesColumn]="true"
-          [hideLegend]="true"
-          [legendVisible]="legendVisible()"
-        />
-      </div>
-      @if (company(); as c) {
-        <div class="border-t border-slate-200">
-          <app-entity-events-panel
-            [spaceId]="spaceIdSig()"
-            [tenantId]="tenantIdSig()"
-            entityLevel="company"
-            [entityId]="c.id"
-          />
-        </div>
-      }
-    </section>
 
     @if (hasIntelligence()) {
       <app-intelligence-block
@@ -96,12 +60,8 @@
       [payload]="historyHost.payload()"
       [currentUserCanEdit]="spaceRole.canEdit()"
       (withdraw)="withdrawDialogOpen.set(true)"
-      (purgeVersion)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-      "
-      (purgeAnchor)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-      "
+      (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+      (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
     />
     <app-withdraw-intelligence-dialog
       [visible]="withdrawDialogOpen()"
@@ -115,6 +75,39 @@
       (cancelled)="purgeDialogOpen.set(false)"
       (confirmed)="onPurgeConfirmed($event)"
     />
+
+    <!-- Timeline + events panel -->
+    <section id="timeline" class="mb-4 bg-white border border-slate-200">
+      <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+          Timeline
+        </h2>
+        <button
+          type="button"
+          class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
+          (click)="legendVisible.set(!legendVisible())"
+        >
+          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
+        </button>
+      </header>
+      <div>
+        <app-timeline-view
+          [hideCompanyColumn]="true"
+          [hideLegend]="true"
+          [legendVisible]="legendVisible()"
+        />
+      </div>
+      @if (company(); as c) {
+        <div class="border-t border-slate-200">
+          <app-entity-events-panel
+            [spaceId]="spaceIdSig()"
+            [tenantId]="tenantIdSig()"
+            entityLevel="company"
+            [entityId]="c.id"
+          />
+        </div>
+      }
+    </section>
 
     <section
       class="mb-4 border border-slate-200 bg-white"

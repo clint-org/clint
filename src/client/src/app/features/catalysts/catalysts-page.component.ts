@@ -32,7 +32,7 @@ import { LandscapeStateService } from '../landscape/landscape-state.service';
       /*
        * The catalysts page is a tall, naturally-flowing list inside
        * landscape-shell's bounded "overflow-hidden" container (which exists
-       * to clip the bullseye/positioning/timeline visualizations). Make the
+       * to clip the bullseye/density-matrix/timeline visualizations). Make the
        * page host itself the desktop scroll container so list rows below
        * the fold are reachable. On mobile the whole height chain in
        * AppShell collapses to natural body scroll, so opt out there.
@@ -64,9 +64,9 @@ export class CatalystsPageComponent {
       { field: 'category_name', header: 'Category', filter: { kind: 'text' } },
       { field: 'company_name', header: 'Company', filter: { kind: 'text' } },
       { field: 'title', header: 'Catalyst', filter: { kind: 'text' } },
-      { field: 'product_name', header: 'Asset', filter: { kind: 'text' } },
+      { field: 'asset_name', header: 'Asset', filter: { kind: 'text' } },
     ],
-    globalSearchFields: ['title', 'company_name', 'product_name', 'category_name'],
+    globalSearchFields: ['title', 'company_name', 'asset_name', 'category_name'],
     defaultSort: { field: 'event_date', order: 1 },
     defaultPageSize: 10000,
     persistenceKey: 'catalysts',

@@ -14,6 +14,15 @@ module.exports = tseslint.config(
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // Allow _-prefixed identifiers as intentional unused stubs / ignored params.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_",
+        },
+      ],
       "@angular-eslint/directive-selector": [
         "error",
         {

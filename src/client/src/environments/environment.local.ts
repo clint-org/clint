@@ -6,4 +6,5 @@ export const environment: Environment = {
   supabaseUrl: 'http://127.0.0.1:54321',
   supabaseAnonKey: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
   apexDomain: '',
+  brandfetchClientId: '1idkTE42LH-0X2u_ymo',
 };

@@ -15,11 +15,9 @@ import { filter } from 'rxjs';
 import {
   BullseyeDimension,
   LandscapeIndexEntry,
-  dimensionToSegment,
-  segmentToDimension,
-  groupingToSegment,
+  SpokeGrouping,
   segmentToGrouping,
-  POSITIONING_SEGMENTS,
+  DENSITY_SEGMENTS,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
@@ -99,78 +97,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     }
   });
 
-  /** Push dimension/grouping sub-tabs to the topbar for Bullseye and Positioning views. */
-  private readonly subTabEffect = effect(() => {
-    const mode = this.viewMode();
-    if (mode === 'bullseye') {
-      const seg = dimensionToSegment(this.dimension());
-      this.topbarState.subTabs.set([
-        {
-          label: 'Therapy Area',
-          value: 'by-therapy-area',
-          active: seg === 'by-therapy-area',
-          tooltip: 'Spokes grouped by therapy area',
-        },
-        {
-          label: 'Company',
-          value: 'by-company',
-          active: seg === 'by-company',
-          tooltip: 'Spokes grouped by company',
-        },
-        {
-          label: 'MOA',
-          value: 'by-moa',
-          active: seg === 'by-moa',
-          tooltip: 'Spokes grouped by mechanism of action',
-        },
-        {
-          label: 'ROA',
-          value: 'by-roa',
-          active: seg === 'by-roa',
-          tooltip: 'Spokes grouped by route of administration',
-        },
-      ]);
-    } else if (mode === 'positioning') {
-      const seg = groupingToSegment(this.state.positioningGrouping());
-      this.topbarState.subTabs.set([
-        {
-          label: 'MOA',
-          value: 'by-moa',
-          active: seg === 'by-moa',
-          tooltip: 'Assets grouped by mechanism of action',
-        },
-        {
-          label: 'Therapy Area',
-          value: 'by-therapy-area',
-          active: seg === 'by-therapy-area',
-          tooltip: 'Assets grouped by therapy area',
-        },
-        {
-          label: 'MOA + TA',
-          value: 'by-moa-therapy-area',
-          active: seg === 'by-moa-therapy-area',
-          tooltip: 'Assets grouped by mechanism of action, broken out by therapy area',
-        },
-        {
-          label: 'Company',
-          value: 'by-company',
-          active: seg === 'by-company',
-          tooltip: 'Assets grouped by company',
-        },
-        {
-          label: 'ROA',
-          value: 'by-roa',
-          active: seg === 'by-roa',
-          tooltip: 'Assets grouped by route of administration',
-        },
-      ]);
-    } else {
-      this.topbarState.subTabs.set([]);
-    }
-  });
-
   readonly viewMode = signal<ViewMode>('timeline');
-  readonly dimension = signal<BullseyeDimension>('therapeutic-area');
+  readonly dimension = signal<BullseyeDimension>('indication');
   readonly entityId = signal<string | null>(null);
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -199,8 +127,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.extractRouteParams();
 
     // Restore persisted landscape state before reading the URL. restorePersistedState()
-    // writes positioningGrouping, so syncStateFromUrl() must run after it to ensure
-    // the URL wins — otherwise a fresh load of /positioning/by-X shows whichever
+    // writes densityGrouping, so syncStateFromUrl() must run after it to ensure
+    // the URL wins -- otherwise a fresh load of /density-matrix/by-X shows whichever
     // grouping was in sessionStorage as active, and clicking the URL's tab no-ops.
     this.state.init(this.spaceId());
     this.syncStateFromUrl();
@@ -209,27 +137,18 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     // (e.g. bullseye "Open in Timeline" links).
     this.applyQueryParamFilters();
 
-    // Sub-tab click handler: navigates for both Bullseye and Positioning.
-    this.topbarState.onSubTabClick.set((value: string) => {
-      if (this.viewMode() === 'bullseye') {
-        this.router.navigate([...this.spaceBase(), 'bullseye', value]);
-      } else if (this.viewMode() === 'positioning') {
-        this.router.navigate([...this.spaceBase(), 'positioning', value]);
-      }
-    });
-
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe(() => {
       this.extractRouteParams();
       this.syncStateFromUrl();
       this.applyQueryParamFilters();
       // Marker selection only makes sense in marker-bearing views
       // (timeline, catalysts). Clear it when entering bullseye /
-      // positioning so a previously-opened drawer doesn't trail along
+      // density-matrix so a previously-opened drawer doesn't trail along
       // into a view where it has no referent. Selection is preserved
       // between timeline <-> catalysts (same markers, different
       // layout) and across same-mode dimension switches.
       const mode = this.viewMode();
-      if (mode === 'bullseye' || mode === 'positioning') {
+      if (mode === 'bullseye' || mode === 'density-matrix') {
         this.state.clearSelection();
       }
     });
@@ -240,16 +159,23 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   }
 
   onEntityChange(entityId: string | null): void {
-    if (entityId) {
-      this.router.navigate([
-        ...this.spaceBase(),
-        'bullseye',
-        dimensionToSegment(this.dimension()),
-        entityId,
-      ]);
-    } else {
-      this.router.navigate([...this.spaceBase(), 'bullseye', dimensionToSegment(this.dimension())]);
-    }
+    // In the new query-param model, entity selection sets a scope filter
+    // on the current dimension and navigates to /bullseye with query params.
+    const dim = this.dimension();
+    const paramKey =
+      dim === 'indication'
+        ? 'indications'
+        : dim === 'company'
+          ? 'companies'
+          : dim === 'moa'
+            ? 'moas'
+            : 'roas';
+    const queryParams: Record<string, string | null> = { [paramKey]: entityId };
+    this.router.navigate([...this.spaceBase(), 'bullseye'], {
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   onExportClick(): void {
@@ -291,27 +217,24 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const parentSegments = child.snapshot.parent?.url.map((s) => s.path) ?? [];
     const allSegments = [...parentSegments, ...segments];
 
-    const dimSegment = allSegments.find((s) =>
-      ['by-therapy-area', 'by-company', 'by-moa', 'by-roa'].includes(s)
+    const densitySegment = allSegments.find((s) =>
+      (DENSITY_SEGMENTS as readonly string[]).includes(s)
     );
 
-    const posSegment = allSegments.find((s) =>
-      (POSITIONING_SEGMENTS as readonly string[]).includes(s)
-    );
-
-    if (allSegments.includes('positioning')) {
-      this.viewMode.set('positioning');
+    if (allSegments.includes('density-matrix')) {
+      this.viewMode.set('density-matrix');
       this.entityId.set(null);
-      if (posSegment) {
-        this.state.positioningGrouping.set(segmentToGrouping(posSegment));
+      if (densitySegment) {
+        this.state.densityGrouping.set(segmentToGrouping(densitySegment));
       }
-    } else if (dimSegment) {
-      this.viewMode.set('bullseye');
-      this.dimension.set(segmentToDimension(dimSegment));
-      this.entityId.set(child.snapshot.paramMap.get('entityId'));
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');
       this.entityId.set(null);
+      // Sync spokeGrouping from the ?group= query param if present
+      const groupParam = this.route.snapshot.queryParamMap.get('group');
+      if (groupParam && ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)) {
+        this.state.spokeGrouping.set(groupParam as SpokeGrouping);
+      }
     } else if (allSegments.includes('catalysts')) {
       this.viewMode.set('catalysts');
       this.entityId.set(null);
@@ -328,19 +251,28 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private applyQueryParamFilters(): void {
     const qp = this.route.snapshot.queryParamMap;
+    // Legacy deep-link params (camelCase)
     const assetIds = this.parseIdList(qp.get('assetIds'));
-    const therapeuticAreaIds = this.parseIdList(qp.get('therapeuticAreaIds'));
+    const indicationIds = this.parseIdList(qp.get('indicationIds'));
+    // Bullseye scope params (short names per spec)
+    const indications = this.parseIdList(qp.get('indications'));
+    const companies = this.parseIdList(qp.get('companies'));
+    const moas = this.parseIdList(qp.get('moas'));
+    const roas = this.parseIdList(qp.get('roas'));
     // motion-strip deep-link: phase=P3 (or any RingPhase) scopes the
     // catalysts view to trials in that phase. Parsed from comma-separated
     // values so a single param suffices for the common single-phase case.
     const phases = this.parseIdList(qp.get('phase')) as
       | import('../../core/models/landscape.model').RingPhase[]
       | null;
-    if (assetIds || therapeuticAreaIds || phases) {
+    if (assetIds || indicationIds || indications || companies || moas || roas || phases) {
       this.state.filters.update((f) => ({
         ...f,
         assetIds: assetIds ?? f.assetIds,
-        therapeuticAreaIds: therapeuticAreaIds ?? f.therapeuticAreaIds,
+        indicationIds: indications ?? indicationIds ?? f.indicationIds,
+        companyIds: companies ?? f.companyIds,
+        mechanismOfActionIds: moas ?? f.mechanismOfActionIds,
+        routeOfAdministrationIds: roas ?? f.routeOfAdministrationIds,
         phases: phases ?? f.phases,
       }));
     }

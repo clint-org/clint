@@ -22,6 +22,7 @@ import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
 import { TopbarStateService } from '../services/topbar-state.service';
 import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
+import { SpaceRoleService } from '../services/space-role.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -62,6 +63,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [pinned]="sidebarPinned()"
         [activeRoute]="activeSpaceRoute()"
         [hasSpace]="!!spaceId()"
+        [canEdit]="spaceRole.canEdit()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"
@@ -87,7 +89,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [hasSpace]="!!spaceId()"
           [sectionLabel]="sectionLabel()"
           [tabs]="sectionTabs()"
-          [subTabs]="featureSubTabs()"
           [listTitle]="topbarListTitle()"
           [recordCount]="topbarState.recordCount()"
           [backLabel]="topbarBackLabel()"
@@ -97,7 +98,6 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [tenantLogoUrl]="currentTenantLogoUrl()"
           [timelineHintVisible]="onboardingTooltip.visible()"
           (tabClick)="onSectionTabClick($event)"
-          (subTabClick)="onSubTabClick($event)"
           (backClick)="onBackClick()"
           (tenantChange)="switchTenant($event)"
           (spaceChange)="switchSpace($event)"
@@ -329,6 +329,7 @@ export class AppShellComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   readonly topbarState = inject(TopbarStateService);
   readonly onboardingTooltip = inject(OnboardingTooltipService);
+  protected readonly spaceRole = inject(SpaceRoleService);
   protected readonly appVersion = APP_VERSION;
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
@@ -349,7 +350,7 @@ export class AppShellComponent implements OnInit {
   readonly sidebarPinned = signal(false);
   private hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-therapy-area')
+  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-indication')
   readonly activeSpaceRoute = signal('');
 
   // Current URL segments after spaceId for determining page context
@@ -413,7 +414,7 @@ export class AppShellComponent implements OnInit {
       route === '' ||
       route === 'timeline' ||
       route.startsWith('bullseye') ||
-      route.startsWith('positioning') ||
+      route.startsWith('density-matrix') ||
       route === 'events' ||
       route === 'intelligence' ||
       route === 'materials' ||
@@ -468,10 +469,10 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['bullseye'],
           },
           {
-            label: 'Positioning',
-            value: 'positioning',
-            active: route.startsWith('positioning'),
-            icon: NAV_ICONS['positioning'],
+            label: 'Density Matrix',
+            value: 'density-matrix',
+            active: route.startsWith('density-matrix'),
+            icon: NAV_ICONS['density-matrix'],
           },
           {
             label: 'Future Catalysts',
@@ -502,6 +503,7 @@ export class AppShellComponent implements OnInit {
           },
         ];
       case 'manage':
+        if (!this.spaceRole.canEdit()) return [];
         return [
           {
             label: 'Companies',
@@ -526,9 +528,6 @@ export class AppShellComponent implements OnInit {
         return [];
     }
   });
-
-  // Sub-tabs pushed by feature pages (e.g., Bullseye dimensions, Positioning groupings)
-  readonly featureSubTabs = this.topbarState.subTabs;
 
   // Topbar metadata for list pages
   readonly topbarListTitle = computed(() => {
@@ -649,10 +648,10 @@ export class AppShellComponent implements OnInit {
             this.navigateToSpaceRoute('timeline');
             break;
           case 'bullseye':
-            this.navigateToSpaceRoute('bullseye/by-therapy-area');
+            this.navigateToSpaceRoute('bullseye/by-indication');
             break;
-          case 'positioning':
-            this.navigateToSpaceRoute('positioning/by-moa');
+          case 'density-matrix':
+            this.navigateToSpaceRoute('density-matrix/by-moa');
             break;
           case 'catalysts':
             this.navigateToSpaceRoute('catalysts');
@@ -666,10 +665,6 @@ export class AppShellComponent implements OnInit {
         this.navigateToSpaceRoute(`manage/${tab}`);
         break;
     }
-  }
-
-  onSubTabClick(value: string): void {
-    this.topbarState.onSubTabClick()?.call(null, value);
   }
 
   onBackClick(): void {

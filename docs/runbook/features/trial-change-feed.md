@@ -7,7 +7,7 @@ spec: docs/superpowers/specs/2026-05-02-trial-change-feed-design.md
 
 A unified, typed event stream that captures every meaningful update to a trial: both CT.gov-derived (overall recruitment status, primary completion date, design fields, etc.) and analyst-derived (marker added, edited, deleted). A daily Cloudflare Worker pulls fresh CT.gov payloads and a BEFORE trigger on `markers` writes audit rows; both feed a single `trial_change_events` table that the UI reads from in six places. See [docs/superpowers/specs/2026-05-02-trial-change-feed-design.md](../superpowers/specs/2026-05-02-trial-change-feed-design.md).
 
-Four-stage pipeline: observe, store, classify, surface.
+Four-stage pipeline: observe, store, classify, surface. Three sources feed the event stream: `ctgov` (automated CT.gov polling), `analyst` (manual marker edits via the UI), and `source_import` (AI-extracted markers committed via source import). The activity page exposes all three as filter chips.
 
 ```mermaid
 flowchart LR
@@ -28,19 +28,22 @@ flowchart LR
   RPC --> TRIALS
   RPC --> RAW
   RAW -->|classify| EVT
-  MK -->|AFTER trigger| MKC
+  MK -->|BEFORE trigger| MKC
   MKC -->|classify| EVT
+  SI[create_marker RPC<br/>source import] -->|re-emit after<br/>assignments| EVT
   EVT --> UI
 ```
 
 **Surfaces.** The same `trial_change_events` rows render in:
 
-- **Activity page** at `/t/:tenantId/s/:spaceId/activity`: full filterable feed across the engagement.
-- **What-changed widget** on the engagement landing: top recent events at a glance.
-- **Trial row badges** on the timeline and tables: small change-count chips per trial.
+- **Unified Events page** at `/t/:tenantId/s/:spaceId/events?source=detected`: detected change events appear as a third source type alongside analyst events and markers. The standalone `/activity` route has been retired and redirects to `/events?source=detected` via `activityRedirectGuard`.
+- **What-changed widget** on the engagement landing: top recent events at a glance, with entity context labels per row and an asset count summary. The widget links to `/events?source=detected` (previously linked to `/activity`).
+- **Trial row badges** on the timeline and tables: small change-count dots per trial. When the most-recent change is a detected/analyst event (not an intel note), the dot is a button that deep-links to that exact event in the Events page via `?detectedId=<changeEventId>`; the dashboard and bullseye RPCs surface `most_recent_change_event_id` for this, and `get_events_page_data` resolves a single detected row via `p_change_event_id`. Intel-only dots are non-interactive.
 - **Marker history panel** on the marker detail panel: analyst-side audit trail per marker.
 - **Intel feed mixing** in the existing intelligence feed: change events interleave with primary intelligence rows.
 - **Trial-detail Activity section**: per-trial change log on the trial detail page.
+
+**Annotations.** Analysts can attach notes to detected change events via `AnnotationService` (CRUD backed by `upsert_change_event_annotation` / `delete_change_event_annotation`). One annotation per change event (upsert semantics). The annotation body is the deliverable for the advisory use case: analysts attach context to detected CT.gov changes. The detail panel for detected events shows structured change detail plus annotation CRUD (create, edit, delete). Annotations are stored in the `change_event_annotations` table with a UNIQUE constraint on `change_event_id`.
 
 **Row treatment.** Every surface above renders rows through the shared `app-change-event-row` component. The row is **summary-led**: the structured change text reads first in slate-900, with a quieter identity sub-line beneath. The sub-line is a 16px company logo tile (real `companies.logo_url` joined into `get_activity_feed` and `get_trial_activity`, with a deterministic slate-tinted monogram fallback keyed off the company name hash so the same sponsor always renders the same tile), the product or trial name, a relative time (`Nm ago` / `Nh ago` / `Nd ago`, with the absolute timestamp surfaced on `pTooltip` hover), and the source chip pushed right. The event-type icon stays on the left for categorical recognition only -- it is painted slate-400 and no longer accent-coloured. NCT and the full timestamp are not shown in the row; the trial identifier lives on the link target and the timestamp lives on the tooltip.
 
@@ -59,6 +62,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - _classify_change
     - _compute_field_diffs
     - recompute_trial_change_events
+    - create_marker
   tables:
     - trial_change_events
     - trial_field_changes
@@ -71,24 +75,28 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   user_facing: false
   role: viewer
   status: active
-- id: trial-change-feed-activity-page
-  summary: Full filterable change-event feed across the engagement.
+- id: trial-change-feed-unified-events
+  summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The detail panel deep-links via ?detectedId=<changeEventId> (recent-change dot click-through) and renders company/asset as links to their manage pages. The standalone /activity route redirects to /events?source=detected.
   routes:
-    - /t/:tenantId/s/:spaceId/activity
+    - /t/:tenantId/s/:spaceId/events?source=detected
   rpcs:
-    - get_activity_feed
+    - get_events_page_data
+    - upsert_change_event_annotation
+    - delete_change_event_annotation
   tables:
     - trial_change_events
+    - change_event_annotations
     - companies
-    - products
+    - assets
     - trials
   related:
     - trial-change-feed-pipeline
+    - events-feed
   user_facing: true
   role: viewer
   status: active
 - id: trial-change-feed-what-changed-widget
-  summary: Engagement-landing widget showing top recent change events at a glance.
+  summary: Engagement-landing widget showing top recent change events at a glance, with entity context labels per row and asset count summary. Links to /events?source=detected.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:

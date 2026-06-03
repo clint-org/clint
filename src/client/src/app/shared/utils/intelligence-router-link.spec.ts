@@ -41,16 +41,8 @@ test.describe('buildEntityRouterLink', () => {
     ]);
   });
 
-  test('routes a marker to the marker detail page', () => {
-    expect(buildEntityRouterLink(T, S, 'marker', 'm-1')).toEqual([
-      '/t',
-      T,
-      's',
-      S,
-      'manage',
-      'markers',
-      'm-1',
-    ]);
+  test('returns null for marker link targets (no detail route; inline-edited on trial page)', () => {
+    expect(buildEntityRouterLink(T, S, 'marker', 'm-1')).toBeNull();
   });
 
   test('routes a space (engagement) to the engagement page (no id segment)', () => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import {
   BullseyeData,
@@ -74,6 +74,26 @@ const DIMMED_OPACITY = 0.55;
   imports: [],
   templateUrl: './bullseye-chart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    @keyframes pulse-ring {
+      0% {
+        r: 10;
+        opacity: 0.5;
+      }
+      100% {
+        r: 22;
+        opacity: 0;
+      }
+    }
+    .activity-pulse {
+      animation: pulse-ring 2.5s ease-out infinite;
+      pointer-events: none;
+    }
+    .halo-ring,
+    .dup-ring {
+      pointer-events: none;
+    }
+  `,
 })
 export class BullseyeChartComponent {
   readonly data = input.required<BullseyeData | null>();
@@ -81,10 +101,23 @@ export class BullseyeChartComponent {
   readonly hoveredAssetId = input<string | null>(null);
   readonly highlightedRing = input<RingPhase | null>(null);
   readonly matchedAssetIds = input<Set<string> | null>(null);
+  readonly duplicatedAssetIds = input<Set<string>>(new Set());
 
   readonly productHover = output<string | null>();
   readonly assetClick = output<string>();
   readonly backgroundClick = output<void>();
+
+  /** Internal hover signal for cross-spoke highlighting within this chart instance. */
+  protected readonly internalHoveredAssetId = signal<string | null>(null);
+
+  protected readonly isAnyHovered = computed(() => {
+    return this.hoveredAssetId() !== null || this.internalHoveredAssetId() !== null;
+  });
+
+  /** The effective hovered asset: parent input takes priority, then internal. */
+  protected readonly effectiveHoveredAssetId = computed(() => {
+    return this.hoveredAssetId() ?? this.internalHoveredAssetId();
+  });
 
   // Expose geometry constants to the template
   protected readonly cx = CX;
@@ -243,9 +276,30 @@ export class BullseyeChartComponent {
     if (!this.isAssetMatched(dot.product.id)) return 0.15;
     const selected = this.selectedAssetId();
     const highlightRing = this.highlightedRing();
+    const hovered = this.effectiveHoveredAssetId();
     if (selected && selected !== dot.product.id) return DIMMED_OPACITY;
     if (highlightRing && dot.product.highest_phase !== highlightRing) return DIMMED_OPACITY;
+    // Cross-spoke hover dimming: when any asset is hovered, dim all others to 15%
+    if (hovered && hovered !== dot.product.id) return 0.15;
     return 1;
+  }
+
+  protected isDuplicate(assetId: string): boolean {
+    return this.duplicatedAssetIds().has(assetId);
+  }
+
+  protected isHighlighted(assetId: string): boolean {
+    return this.effectiveHoveredAssetId() === assetId;
+  }
+
+  protected onDotMouseEnter(assetId: string): void {
+    this.internalHoveredAssetId.set(assetId);
+    this.productHover.emit(assetId);
+  }
+
+  protected onDotMouseLeave(): void {
+    this.internalHoveredAssetId.set(null);
+    this.productHover.emit(null);
   }
 
   protected dotAriaLabel(dot: DotSpec): string {

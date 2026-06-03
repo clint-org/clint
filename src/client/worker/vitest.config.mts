@@ -16,6 +16,6 @@ export default defineConfig({
     }),
   ],
   test: {
-    include: ['worker/test/**/*.spec.ts'],
+    include: ['worker/test/**/*.spec.ts', 'worker/source-extract/**/*.spec.ts'],
   },
 });

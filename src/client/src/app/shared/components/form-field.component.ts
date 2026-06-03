@@ -13,6 +13,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         @if (required()) {
           <span class="ml-0.5 text-red-600">*</span>
         }
+        <ng-content select="[labelSuffix]" />
       </label>
       <ng-content />
       @if (error()) {

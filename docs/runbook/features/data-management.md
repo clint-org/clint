@@ -10,13 +10,14 @@ A full CRUD interface for managing all data within a space:
 | Section | What You Manage |
 |---|---|
 | Companies | Pharma/biotech company records (name, logo_url, display_order, color) |
-| Products | Drug/therapy products linked to a company (name, generic_name, logo_url) |
+| Assets | Drug/therapy assets linked to a company (name, generic_name, logo_url) |
 | Trials | Clinical studies with all metadata + CT.gov dimensions |
 | Trial Phases | Phase records with phase_type, start_date, end_date, color, label |
 | Trial Markers | Event markers with event_date, end_date, tooltip_text, is_projected |
 | Trial Notes | Free-text annotations on trials |
 | Marker Types | Custom marker types beyond the 10 system defaults (each assigned to a category) |
-| Therapeutic Areas | Medical indication categories (name, abbreviation) |
+| Indications | Disease indications with optional hierarchy (name, abbreviation, parent) |
+| Conditions | Granular disease conditions mapped to indications |
 
 ## Capabilities
 
@@ -40,9 +41,9 @@ A full CRUD interface for managing all data within a space:
     - /t/:tenantId/s/:spaceId/manage/assets/:id
   rpcs: []
   tables:
-    - products
-    - product_mechanisms_of_action
-    - product_routes_of_administration
+    - assets
+    - asset_mechanisms_of_action
+    - asset_routes_of_administration
   related:
     - manage-companies
   user_facing: true
@@ -64,10 +65,11 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-markers
-  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials.
+  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. Edited inline on the trial detail page; "View detail" links on catalyst rows deep-link via ?marker=<id> which opens the inline editor. Markers no longer have their own detail page. Trial-assignment changes go through update_marker_assignments, an atomic RPC that keeps the AFTER DELETE orphan-cleanup trigger from dropping a single-assignment marker mid-edit.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/markers/:id
-  rpcs: []
+    - /t/:tenantId/s/:spaceId/manage/trials/:id
+  rpcs:
+    - update_marker_assignments
   tables:
     - markers
     - marker_assignments
@@ -90,13 +92,16 @@ A full CRUD interface for managing all data within a space:
   user_facing: true
   role: editor
   status: active
-- id: manage-therapeutic-areas
-  summary: Manage medical indication categories (name, abbreviation).
+- id: manage-indications
+  summary: Manage disease indications with optional hierarchy (name, abbreviation, parent).
   routes:
-    - /t/:tenantId/s/:spaceId/manage/therapeutic-areas
+    - /t/:tenantId/s/:spaceId/settings/taxonomies
   rpcs: []
   tables:
-    - therapeutic_areas
+    - indications
+    - conditions
+    - condition_indication_map
+    - asset_indications
   related: []
   user_facing: true
   role: editor
@@ -108,7 +113,7 @@ A full CRUD interface for managing all data within a space:
   rpcs: []
   tables:
     - mechanisms_of_action
-    - product_mechanisms_of_action
+    - asset_mechanisms_of_action
   related:
     - manage-assets
   user_facing: true
@@ -121,7 +126,7 @@ A full CRUD interface for managing all data within a space:
   rpcs: []
   tables:
     - routes_of_administration
-    - product_routes_of_administration
+    - asset_routes_of_administration
   related:
     - manage-assets
   user_facing: true
@@ -146,35 +151,36 @@ A full CRUD interface for managing all data within a space:
     - seed_demo_data
   tables:
     - companies
-    - products
+    - assets
     - trials
     - markers
     - marker_types
-    - therapeutic_areas
+    - indications
   related:
     - manage-seed-demo-internals
   user_facing: true
   role: owner
   status: active
 - id: manage-seed-demo-internals
-  summary: Internal seed helpers invoked by seed_demo_data to populate companies, products, trials, markers, materials, moa/roa, therapeutic areas, and activity variety.
+  summary: Internal seed helpers invoked by seed_demo_data to populate companies, assets, trials, markers, materials, moa/roa, indications, conditions, and activity variety.
   routes: []
   rpcs:
     - _seed_demo_companies
-    - _seed_demo_products
+    - _seed_demo_assets
     - _seed_demo_trials
     - _seed_demo_trial_notes
     - _seed_demo_markers
     - _seed_demo_events
     - _seed_demo_materials
     - _seed_demo_moa_roa
-    - _seed_demo_therapeutic_areas
+    - _seed_demo_indications
+    - _seed_demo_asset_indications
     - _seed_demo_recent_activity
     - _seed_demo_activity_variety
     - _seed_demo_primary_intelligence
   tables:
     - companies
-    - products
+    - assets
     - trials
     - trial_notes
     - markers
@@ -182,7 +188,11 @@ A full CRUD interface for managing all data within a space:
     - materials
     - mechanisms_of_action
     - routes_of_administration
-    - therapeutic_areas
+    - indications
+    - conditions
+    - condition_indication_map
+    - asset_indications
+    - trial_conditions
     - primary_intelligence
   related:
     - manage-seed-demo

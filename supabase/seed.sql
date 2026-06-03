@@ -24,29 +24,28 @@ on conflict (id) do update set
 -- migration (20260412130100). category UUIDs follow the c0000000-... pattern.
 -- =============================================================================
 
-insert into public.marker_types (id, space_id, created_by, name, icon, shape, fill_style, color, inner_mark, is_system, display_order, category_id)
+insert into public.marker_types (id, space_id, created_by, name, shape, fill_style, color, inner_mark, is_system, display_order, category_id)
 values
   -- Data category (c...0002)
-  ('a0000000-0000-0000-0000-000000000013', null, null, 'Topline Data',      'topline-data',  'circle',      'filled', '#4ade80', 'dot',  true,  1, 'c0000000-0000-0000-0000-000000000002'),
-  ('a0000000-0000-0000-0000-000000000030', null, null, 'Interim Data',      'interim-data',  'circle',      'filled', '#22c55e', 'dash', true,  2, 'c0000000-0000-0000-0000-000000000002'),
-  ('a0000000-0000-0000-0000-000000000031', null, null, 'Full Data',         'full-data',     'circle',      'filled', '#16a34a', 'none', true,  3, 'c0000000-0000-0000-0000-000000000002'),
+  ('a0000000-0000-0000-0000-000000000013', null, null, 'Topline Data',      'circle',      'filled', '#4ade80', 'dot',  true,  1, 'c0000000-0000-0000-0000-000000000002'),
+  ('a0000000-0000-0000-0000-000000000030', null, null, 'Interim Data',      'circle',      'filled', '#22c55e', 'dash', true,  2, 'c0000000-0000-0000-0000-000000000002'),
+  ('a0000000-0000-0000-0000-000000000031', null, null, 'Full Data',         'circle',      'filled', '#16a34a', 'none', true,  3, 'c0000000-0000-0000-0000-000000000002'),
   -- Regulatory category (c...0003)
-  ('a0000000-0000-0000-0000-000000000032', null, null, 'Regulatory Filing', 'reg-filing',    'diamond',     'filled', '#f97316', 'dot',  true,  4, 'c0000000-0000-0000-0000-000000000003'),
-  ('a0000000-0000-0000-0000-000000000033', null, null, 'Submission',        'submission',    'diamond',     'filled', '#f97316', 'none', true,  5, 'c0000000-0000-0000-0000-000000000003'),
-  ('a0000000-0000-0000-0000-000000000034', null, null, 'Acceptance',        'acceptance',    'diamond',     'filled', '#f97316', 'check',true,  6, 'c0000000-0000-0000-0000-000000000003'),
+  ('a0000000-0000-0000-0000-000000000032', null, null, 'Regulatory Filing', 'diamond',     'filled', '#f97316', 'dot',  true,  4, 'c0000000-0000-0000-0000-000000000003'),
+  ('a0000000-0000-0000-0000-000000000033', null, null, 'Submission',        'diamond',     'filled', '#f97316', 'none', true,  5, 'c0000000-0000-0000-0000-000000000003'),
+  ('a0000000-0000-0000-0000-000000000034', null, null, 'Acceptance',        'diamond',     'filled', '#f97316', 'check',true,  6, 'c0000000-0000-0000-0000-000000000003'),
   -- Clinical Trial category (c...0001)
-  ('a0000000-0000-0000-0000-000000000008', null, null, 'Primary Completion Date (PCD)', 'pcd', 'circle',   'filled', '#475569', 'none', true,  7, 'c0000000-0000-0000-0000-000000000001'),
-  ('a0000000-0000-0000-0000-000000000011', null, null, 'Trial Start',       'trial-start',   'dashed-line', 'filled', '#94a3b8', 'none', true,  8, 'c0000000-0000-0000-0000-000000000001'),
-  ('a0000000-0000-0000-0000-000000000012', null, null, 'Trial End',         'trial-end',     'dashed-line', 'filled', '#94a3b8', 'none', true,  9, 'c0000000-0000-0000-0000-000000000001'),
+  ('a0000000-0000-0000-0000-000000000008', null, null, 'Primary Completion Date (PCD)', 'circle',   'filled', '#475569', 'none', true,  7, 'c0000000-0000-0000-0000-000000000001'),
+  ('a0000000-0000-0000-0000-000000000011', null, null, 'Trial Start',       'dashed-line', 'filled', '#94a3b8', 'none', true,  8, 'c0000000-0000-0000-0000-000000000001'),
+  ('a0000000-0000-0000-0000-000000000012', null, null, 'Trial End',         'dashed-line', 'filled', '#94a3b8', 'none', true,  9, 'c0000000-0000-0000-0000-000000000001'),
   -- Approval category (c...0004)
-  ('a0000000-0000-0000-0000-000000000035', null, null, 'Approval',          'approval',      'flag',        'filled', '#3b82f6', 'none', true, 10, 'c0000000-0000-0000-0000-000000000004'),
-  ('a0000000-0000-0000-0000-000000000036', null, null, 'Launch',            'launch',        'triangle',    'filled', '#7c3aed', 'none', true, 11, 'c0000000-0000-0000-0000-000000000004'),
+  ('a0000000-0000-0000-0000-000000000035', null, null, 'Approval',          'flag',        'filled', '#3b82f6', 'none', true, 10, 'c0000000-0000-0000-0000-000000000004'),
+  ('a0000000-0000-0000-0000-000000000036', null, null, 'Launch',            'triangle',    'filled', '#7c3aed', 'none', true, 11, 'c0000000-0000-0000-0000-000000000004'),
   -- Loss of Exclusivity category (c...0005)
-  ('a0000000-0000-0000-0000-000000000020', null, null, 'LOE Date',          'loe-date',      'square',      'filled', '#78350f', 'x',    true, 12, 'c0000000-0000-0000-0000-000000000005'),
-  ('a0000000-0000-0000-0000-000000000021', null, null, 'Generic Entry Date','generic-entry-date','square',  'filled', '#d97706', 'none', true, 13, 'c0000000-0000-0000-0000-000000000005')
+  ('a0000000-0000-0000-0000-000000000020', null, null, 'LOE Date',          'square',      'filled', '#78350f', 'x',    true, 12, 'c0000000-0000-0000-0000-000000000005'),
+  ('a0000000-0000-0000-0000-000000000021', null, null, 'Generic Entry Date','square',      'filled', '#d97706', 'none', true, 13, 'c0000000-0000-0000-0000-000000000005')
 on conflict (id) do update set
   name          = excluded.name,
-  icon          = excluded.icon,
   shape         = excluded.shape,
   fill_style    = excluded.fill_style,
   color         = excluded.color,

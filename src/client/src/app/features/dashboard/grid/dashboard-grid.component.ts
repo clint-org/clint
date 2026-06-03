@@ -12,16 +12,13 @@ import {
   signal,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
-import { ButtonModule } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Popover } from 'primeng/popover';
+import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
@@ -45,29 +42,24 @@ export interface FlattenedTrial {
 
 @Component({
   selector: 'app-dashboard-grid',
-  standalone: true,
   imports: [
-    ButtonModule,
     ChangeBadgeComponent,
-    Checkbox,
-    FormsModule,
     GridHeaderComponent,
     MarkerComponent,
     NgOptimizedImage,
     PhaseBarComponent,
-    Popover,
     RowNotesComponent,
   ],
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardGridComponent implements AfterViewInit, OnDestroy {
-  private static readonly STORAGE_KEY = 'timeline-column-visibility';
-
-  private timeline = inject(TimelineService);
-  private elRef = inject(ElementRef);
+  private readonly timeline = inject(TimelineService);
+  private readonly elRef = inject(ElementRef);
+  private readonly landscapeState = inject(LandscapeStateService, { optional: true });
   private scrollListener: (() => void) | null = null;
   private scrollRafId: number | null = null;
+  private readonly scrollContainerEl = signal<HTMLElement | null>(null);
 
   readonly companies = input.required<Company[]>();
   readonly zoomLevel = input.required<ZoomLevel>();
@@ -88,41 +80,19 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly assetClick = output<string>();
 
   readonly isScrolled = signal(false);
-  readonly showMoaColumn = signal(true);
-  readonly showRoaColumn = signal(true);
-  readonly showNotesColumn = signal(true);
-  readonly columnSettingsOpen = signal(false);
-
-  protected readonly hasAnyToggleableColumn = computed(() =>
-    !this.hideMoaColumn() || !this.hideRoaColumn() || !this.hideNotesColumn()
-  );
+  readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
+  readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
+  readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
 
   constructor() {
-    try {
-      const stored = sessionStorage.getItem(DashboardGridComponent.STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { moa?: boolean; roa?: boolean; notes?: boolean };
-        if (typeof parsed.moa === 'boolean') this.showMoaColumn.set(parsed.moa);
-        if (typeof parsed.roa === 'boolean') this.showRoaColumn.set(parsed.roa);
-        if (typeof parsed.notes === 'boolean') this.showNotesColumn.set(parsed.notes);
-      }
-    } catch {
-      // ignore corrupt data
-    }
-
     effect(() => {
-      try {
-        sessionStorage.setItem(
-          DashboardGridComponent.STORAGE_KEY,
-          JSON.stringify({
-            moa: this.showMoaColumn(),
-            roa: this.showRoaColumn(),
-            notes: this.showNotesColumn(),
-          })
-        );
-      } catch {
-        // ignore full storage
-      }
+      const el = this.scrollContainerEl();
+      const x = this.earliestEventX();
+      if (!el || x === null) return;
+
+      requestAnimationFrame(() => {
+        el.scrollLeft = Math.max(0, x - 80);
+      });
     });
   }
 
@@ -134,11 +104,33 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     this.timeline.getTimelineWidth(this.startYear(), this.endYear(), this.zoomLevel())
   );
 
+  private readonly earliestEventX = computed<number | null>(() => {
+    const trials = this.flattenedTrials();
+    if (trials.length === 0) return null;
+
+    let earliestMs = Infinity;
+    for (const row of trials) {
+      if (row.trial.phase_start_date) {
+        const t = new Date(row.trial.phase_start_date).getTime();
+        if (t < earliestMs) earliestMs = t;
+      }
+      for (const marker of row.trial.markers ?? []) {
+        const t = new Date(marker.event_date).getTime();
+        if (t < earliestMs) earliestMs = t;
+      }
+    }
+
+    if (earliestMs === Infinity) return null;
+
+    const dateStr = new Date(earliestMs).toISOString().split('T')[0];
+    return this.timeline.dateToX(dateStr, this.startYear(), this.endYear(), this.totalWidth());
+  });
+
   readonly flattenedTrials = computed<FlattenedTrial[]>(() => {
     const rows: FlattenedTrial[] = [];
     for (const company of this.companies()) {
       let isFirstInCompany = true;
-      const assets = company.products ?? [];
+      const assets = company.assets ?? [];
       for (const asset of assets) {
         let isFirstInAsset = true;
         const trials = asset.trials ?? [];
@@ -169,8 +161,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   });
 
   ngAfterViewInit(): void {
-    const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
+    const scrollEl = this.elRef.nativeElement.querySelector(
+      '.overflow-x-auto'
+    ) as HTMLElement | null;
     if (scrollEl) {
+      this.scrollContainerEl.set(scrollEl);
       this.scrollListener = () => {
         if (this.scrollRafId !== null) return;
         this.scrollRafId = requestAnimationFrame(() => {

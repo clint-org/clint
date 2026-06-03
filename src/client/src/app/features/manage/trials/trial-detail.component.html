@@ -39,8 +39,8 @@
 } @else {
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
-      <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-        @if (t.products; as prod) {
+      <header class="mb-4 border border-slate-200 bg-white px-4 py-2">
+        @if (t.assets; as prod) {
           <div
             class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
           >
@@ -69,35 +69,36 @@
             </a>
           </div>
         }
-        <h1 class="mt-0.5 text-base font-semibold uppercase tracking-[0.08em] text-slate-900">
-          {{ t.name }}
-        </h1>
-        <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          @if (t.identifier) {
-            <a
-              [href]="'https://clinicaltrials.gov/study/' + t.identifier"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
-            >
-              {{ t.identifier }}
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-            </a>
-          }
-          @if (t.phase_type || t.phase) {
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-              <span class="text-slate-400">Phase</span>
-              <span class="ml-1 text-slate-700">{{ phaseLabel(t.phase_type || t.phase) }}</span>
-            </span>
-          }
-          @if (t.status) {
-            <app-status-tag [label]="t.status" />
-          }
-          @if (t.therapeutic_areas?.name) {
-            <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-              {{ t.therapeutic_areas?.name }}
-            </span>
-          }
+        <div class="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <div class="flex items-baseline gap-x-3">
+            <h1 class="text-sm font-semibold uppercase tracking-[0.08em] text-slate-900">
+              {{ t.acronym ?? t.name }}
+            </h1>
+            @if (t.acronym && t.name !== t.identifier) {
+              <span class="text-xs text-slate-500">{{ t.name }}</span>
+            }
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            @if (t.identifier) {
+              <a
+                [href]="'https://clinicaltrials.gov/study/' + t.identifier"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
+              >
+                {{ t.identifier }}
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+              </a>
+            }
+            @if (t.phase_type || t.phase) {
+              <span class="font-mono text-[10px] uppercase tracking-wider text-slate-700">
+                {{ phaseLabel(t.phase_type || t.phase) }}
+              </span>
+            }
+            @if (t.status) {
+              <app-status-tag [label]="t.status" />
+            }
+          </div>
         </div>
       </header>
 
@@ -115,19 +116,19 @@
         </a>
         <span class="text-slate-300">|</span>
         <a
+          href="#timeline"
+          (click)="scrollToSection($event, 'timeline')"
+          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
+        >
+          Timeline
+        </a>
+        <span class="text-slate-300">|</span>
+        <a
           href="#referenced-in"
           (click)="scrollToSection($event, 'referenced-in')"
           class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
         >
           Referenced in
-        </a>
-        <span class="text-slate-300">|</span>
-        <a
-          href="#recent-activity"
-          (click)="scrollToSection($event, 'recent-activity')"
-          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-        >
-          Recent activity
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -144,14 +145,6 @@
           class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
         >
           CT.gov
-        </a>
-        <span class="text-slate-300">|</span>
-        <a
-          href="#timeline"
-          (click)="scrollToSection($event, 'timeline')"
-          class="rounded-sm px-2 py-1 hover:bg-slate-100 hover:text-slate-700"
-        >
-          Timeline
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -221,6 +214,42 @@
         />
       </div>
 
+      <!-- Timeline + events panel -->
+      <section id="timeline" class="mb-4 bg-white border border-slate-200">
+        <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+            Timeline
+          </h2>
+          <button
+            type="button"
+            class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
+            (click)="legendVisible.set(!legendVisible())"
+          >
+            {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
+          </button>
+        </header>
+        <div>
+          <app-timeline-view
+            [hideCompanyColumn]="true"
+            [hideAssetColumn]="true"
+            [hideTrialColumn]="true"
+            [hideLegend]="true"
+            [legendVisible]="legendVisible()"
+            [columnsOnly]="true"
+          />
+        </div>
+        @if (trial(); as t) {
+          <div class="border-t border-slate-200">
+            <app-entity-events-panel
+              [spaceId]="spaceIdSig()"
+              [tenantId]="tenantIdSig() ?? ''"
+              entityLevel="trial"
+              [entityId]="t.id"
+            />
+          </div>
+        }
+      </section>
+
       <!-- Referenced in -->
       <section
         id="referenced-in"
@@ -286,7 +315,7 @@
       <!-- CT.gov data block -->
       <div id="ctgov">
         <app-section-card title="CT.gov data">
-          <ng-container actions>
+          <div actions class="flex items-center gap-1">
             @if (spaceRole.canEdit()) {
               <span
                 [pTooltip]="!t.identifier ? 'Add an NCT identifier to enable CT.gov sync.' : ''"
@@ -311,7 +340,7 @@
                 (onClick)="showAllCtgovModal.set(true)"
               />
             }
-          </ng-container>
+          </div>
 
           @if (t.identifier && nctValidity() === 'not_found') {
             <p-message severity="error" [closable]="false" styleClass="mb-3">
@@ -374,19 +403,19 @@
             </dd>
           </div>
           <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Therapeutic area
-            </dt>
-            <dd class="mt-1 text-sm text-slate-900">{{ t.therapeutic_areas?.name || '--' }}</dd>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Asset</dt>
+            <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
           </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Display order
-            </dt>
-            <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-              {{ t.display_order }}
-            </dd>
-          </div>
+          @if (spaceRole.canEdit()) {
+            <div>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Display order
+              </dt>
+              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
+                {{ t.display_order }}
+              </dd>
+            </div>
+          }
         </dl>
         @if (t.notes) {
           <div class="mt-4 border-t border-slate-100 pt-4">
@@ -401,33 +430,49 @@
         @if (t.phase_type || t.phase_start_date || t.phase_end_date) {
           <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Phase type</dt>
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Phase type
+              </dt>
               <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900">
                 <span>{{ t.phase_type ? phaseLabel(t.phase_type) : '--' }}</span>
                 @if (t.phase_type_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_type_source }}
                   </span>
                 }
               </dd>
             </div>
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Start date</dt>
-              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums">
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                Start date
+              </dt>
+              <dd
+                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
+              >
                 <span>{{ (t.phase_start_date | date: 'mediumDate') || '--' }}</span>
                 @if (t.phase_start_date_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_start_date_source }}
                   </span>
                 }
               </dd>
             </div>
             <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">End date</dt>
-              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums">
+              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                End date
+              </dt>
+              <dd
+                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
+              >
                 <span>{{ (t.phase_end_date | date: 'mediumDate') || '--' }}</span>
                 @if (t.phase_end_date_source) {
-                  <span class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500">
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
                     {{ t.phase_end_date_source }}
                   </span>
                 }
@@ -442,51 +487,15 @@
                 href="#"
                 class="text-brand-700 hover:underline"
                 (click)="$event.preventDefault(); editingTrial.set(true)"
-              >Edit this trial</a> to add phase, start, and end dates.
+                >Edit this trial</a
+              >
+              to add phase, start, and end dates.
             } @else {
               The trial owner can add phase, start, and end dates from the edit dialog.
             }
           </p>
         }
       </app-section-card>
-
-      <!-- Timeline + events panel -->
-      <section id="timeline" class="mb-4 bg-white border border-slate-200">
-        <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
-            Timeline
-          </h2>
-          <button
-            type="button"
-            class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
-            (click)="legendVisible.set(!legendVisible())"
-          >
-            {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-          </button>
-        </header>
-        <div>
-          <app-timeline-view
-            [hideCompanyColumn]="true"
-            [hideAssetColumn]="true"
-            [hideTrialColumn]="true"
-            [hideMoaColumn]="true"
-            [hideRoaColumn]="true"
-            [hideNotesColumn]="true"
-            [hideLegend]="true"
-            [legendVisible]="legendVisible()"
-          />
-        </div>
-        @if (trial(); as t) {
-          <div class="border-t border-slate-200">
-            <app-entity-events-panel
-              [spaceId]="spaceIdSig()"
-              [tenantId]="tenantIdSig() ?? ''"
-              entityLevel="trial"
-              [entityId]="t.id"
-            />
-          </div>
-        }
-      </section>
 
       <div id="markers">
         <app-section-card title="Markers">
@@ -558,20 +567,17 @@
                 <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
                 <td class="col-secondary max-w-xs">
                   <div class="flex items-center gap-1.5">
-                    <a
-                      [routerLink]="[
-                        '/t',
-                        tenantIdSig(),
-                        's',
-                        spaceIdSig(),
-                        'manage',
-                        'markers',
-                        marker.id,
-                      ]"
-                      class="truncate text-brand-700 hover:underline"
-                    >
-                      {{ marker.title }}
-                    </a>
+                    @if (spaceRole.canEdit()) {
+                      <button
+                        type="button"
+                        class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        (click)="editingMarker.set(marker); addingMarker.set(false)"
+                      >
+                        {{ marker.title }}
+                      </button>
+                    } @else {
+                      <span class="truncate text-slate-900">{{ marker.title }}</span>
+                    }
                     <app-ctgov-source-tag [metadata]="marker.metadata" />
                   </div>
                 </td>

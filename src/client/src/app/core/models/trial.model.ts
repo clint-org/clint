@@ -1,12 +1,13 @@
+import type { Condition } from './condition.model';
 import { Marker } from './marker.model';
 
 export interface Trial {
   id: string;
   space_id: string;
   created_by: string;
-  product_id: string;
-  therapeutic_area_id: string;
+  asset_id: string;
   name: string;
+  acronym: string | null;
   identifier: string | null;
   status: string | null;
   notes: string | null;
@@ -23,8 +24,8 @@ export interface Trial {
   phase_start_date_source?: 'ctgov' | 'analyst' | null;
   phase_end_date_source?: 'ctgov' | 'analyst' | null;
 
-  therapeutic_areas?: TherapeuticArea;
-  products?: {
+  conditions?: Condition[];
+  assets?: {
     id: string;
     name: string;
     companies?: { id: string; name: string } | null;
@@ -46,6 +47,7 @@ export interface Trial {
   // Change-feed badge fields (from get_dashboard_data)
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
+  most_recent_change_event_id?: string | null;
 }
 
 export interface TrialNote {
@@ -57,13 +59,4 @@ export interface TrialNote {
   created_at: string;
   updated_at: string;
   updated_by: string | null;
-}
-
-export interface TherapeuticArea {
-  id: string;
-  space_id: string;
-  created_by: string;
-  name: string;
-  abbreviation: string | null;
-  created_at: string;
 }

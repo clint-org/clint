@@ -1,0 +1,15 @@
+{
+  "specId": "spec-2026-001",
+  "status": "completed",
+  "branch": "activity-feed-clarity",
+  "tasks": {
+    "T1": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T2": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T3": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T4": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T5": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T6": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "T7": { "status": "completed", "agent": null, "attempts": 1, "error": null }
+  },
+  "updatedAt": "2026-05-27T01:00:00Z"
+}

@@ -12,23 +12,26 @@ export class MarkerCategoryService {
   private cache = inject(RpcCache);
 
   async list(spaceId?: string): Promise<MarkerCategory[]> {
-    return this.cache.get('marker_categories', { spaceId }, {
-      ttl: REFERENCE_TTL,
-      tags: ['markers:types'],
-      fetch: async () => {
-        let query = this.supabase.client
-          .from('marker_categories')
-          .select('*')
-          .order('display_order');
+    return this.cache.get(
+      'marker_categories',
+      { spaceId },
+      {
+        ttl: REFERENCE_TTL,
+        tags: ['markers:types'],
+        fetch: async () => {
+          let query = this.supabase.client
+            .from('marker_categories')
+            .select('*')
+            .order('display_order');
 
-        if (spaceId) {
-          query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
-        }
+          if (spaceId) {
+            query = query.or(`is_system.eq.true,space_id.eq.${spaceId}`);
+          }
 
-        const { data, error } = await query;
-        if (error) throw error;
-        return data as MarkerCategory[];
-      },
-    });
+          const { data } = await query.throwOnError();
+          return data as MarkerCategory[];
+        },
+      }
+    );
   }
 }

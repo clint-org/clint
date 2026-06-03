@@ -33,6 +33,8 @@ export interface EventLink {
   created_at: string;
 }
 
+import { ChangeEventSource, ChangeEventType } from './change-event.model';
+
 export type EventPriority = 'high' | 'low';
 
 export type EntityLevel = 'space' | 'company' | 'product' | 'trial';
@@ -41,7 +43,7 @@ export interface AppEvent {
   id: string;
   space_id: string;
   company_id: string | null;
-  product_id: string | null;
+  asset_id: string | null;
   trial_id: string | null;
   category_id: string;
   thread_id: string | null;
@@ -57,24 +59,33 @@ export interface AppEvent {
   updated_by: string | null;
 }
 
-/** A row returned by get_events_page_data RPC (event or marker). */
+/** A row returned by get_events_page_data RPC (event, marker, or detected change). */
 export interface FeedItem {
-  source_type: 'event' | 'marker';
+  source_type: 'event' | 'marker' | 'detected';
   id: string;
   title: string;
+  feed_ts: string;
   event_date: string;
   category_name: string;
-  category_id: string;
+  category_id: string | null;
   priority: EventPriority | null;
   entity_level: EntityLevel;
   entity_name: string;
   entity_id: string | null;
   company_name: string | null;
+  company_id: string | null;
+  asset_id: string | null;
   tags: string[];
   has_thread: boolean;
   thread_id: string | null;
   description: string | null;
   source_url: string | null;
+  change_event_type: ChangeEventType | null;
+  change_payload: Record<string, unknown> | null;
+  change_source: ChangeEventSource | null;
+  has_annotation: boolean;
+  observed_at: string | null;
+  company_logo_url: string | null;
 }
 
 /** Full event detail returned by get_event_detail RPC. */
@@ -97,6 +108,8 @@ export interface EventDetail {
   entity_name: string;
   entity_id: string | null;
   company_name: string | null;
+  company_id: string | null;
+  asset_id: string | null;
   sources: { id: string; url: string; label: string | null }[];
   thread: {
     id: string;
@@ -119,5 +132,5 @@ export interface EventsPageFilters {
   categoryIds: string[];
   tags: string[];
   priority: EventPriority | null;
-  sourceType: 'event' | 'marker' | null;
+  sourceType: 'event' | 'marker' | 'detected' | null;
 }

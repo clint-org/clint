@@ -3,23 +3,18 @@ import { authenticatedPage } from '../helpers/auth.helper';
 import {
   createTestTenant,
   createTestSpace,
-  createTestCompany,
-  createTestProduct,
-  createTestTherapeuticArea,
-  createTestTrial,
-  getAdminClient,
 } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
 import { clickRowAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
-test.describe('Therapeutic Area Management CRUD', () => {
+test.describe('Indication Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
   // The old /manage/therapeutic-areas now redirects to /settings/taxonomies
-  const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=therapeutic-areas`;
+  const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=indications`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('TA Org');
@@ -32,13 +27,13 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await page.close();
   });
 
-  test('therapeutic area list loads', async () => {
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
-    await expect(page.getByRole('button', { name: 'Add therapeutic area' })).toBeVisible();
+  test('indication list loads', async () => {
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Add indication' })).toBeVisible();
   });
 
-  test('create therapeutic area via modal', async () => {
-    await page.getByRole('button', { name: 'Add therapeutic area' }).click();
+  test('create indication via modal', async () => {
+    await page.getByRole('button', { name: 'Add indication' }).click();
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
 
     await fillInput(page, '#ta-name', 'Oncology');
@@ -48,11 +43,11 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await page.getByRole('button', { name: 'Create' }).click();
     await page.waitForTimeout(3000);
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Oncology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('edit therapeutic area via modal', async () => {
+  test('edit indication via modal', async () => {
     const row = page.locator('tr', { hasText: 'Oncology' });
     await clickRowAction(page, row, 'Edit');
     await expect(page.locator('#ta-name')).toBeVisible({ timeout: 5000 });
@@ -62,28 +57,14 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await page.getByRole('button', { name: 'Update' }).click();
     await page.waitForTimeout(2000);
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Immunology')).toBeVisible({ timeout: 10000 });
   });
 
-  test('delete therapeutic area via typed confirm leaves trials with null TA (set null cascade)', async () => {
-    // Cascade-safety T6 flipped trials.therapeutic_area_id from BLOCK to
-    // ON DELETE SET NULL. Trials in the deleted area survive with a null TA
-    // reference. Seed a trial bound to the TA, delete the TA, then assert:
-    //   (a) the TA is gone from the list
-    //   (b) the trial row still exists with therapeutic_area_id = null
-    const companyId = await createTestCompany(spaceId, 'TA Cascade Co ' + Date.now());
-    const productId = await createTestProduct(spaceId, companyId, 'TA Cascade Product');
-    // Read back the TA we are about to delete so we can target by id below.
-    const admin = getAdminClient();
-    const { data: ta } = await admin
-      .from('therapeutic_areas')
-      .select('id')
-      .eq('space_id', spaceId)
-      .eq('name', 'Immunology')
-      .single();
-    const trialId = await createTestTrial(spaceId, productId, ta!.id, 'TA Cascade Trial');
-
+  test('delete indication via typed confirm', async () => {
+    // Indications replaced therapeutic_areas. Trials no longer have a direct
+    // indication FK, so this test simply verifies the indication is removed
+    // from the list after the typed-confirm delete flow.
     const row = page.locator('tr', { hasText: 'Immunology' });
     await clickRowAction(page, row, 'Delete');
 
@@ -95,18 +76,7 @@ test.describe('Therapeutic Area Management CRUD', () => {
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(taUrl(), { waitUntil: 'networkidle' });
+    await page.goto(taUrl(), { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Immunology')).not.toBeVisible({ timeout: 5000 });
-
-    // Trial survives with null therapeutic_area_id. Query directly so this is
-    // robust to whether the trial list / detail surfaces the (uncategorized)
-    // label or simply hides the now-orphaned TA chip.
-    const { data: trialAfter } = await admin
-      .from('trials')
-      .select('id, therapeutic_area_id')
-      .eq('id', trialId)
-      .single();
-    expect(trialAfter).not.toBeNull();
-    expect(trialAfter!.therapeutic_area_id).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Entity name uniqueness constraints. Verifies the unique(space_id, name)
- * constraints on therapeutic_areas, marker_types, and event_categories, plus
+ * constraints on indications, marker_types, and event_categories, plus
  * the partial unique indexes that protect system rows (space_id IS NULL).
  *
  * Spec: docs/superpowers/specs/2026-05-23-entity-name-uniqueness-design.md
@@ -20,22 +20,22 @@ beforeAll(async () => {
 }, 90_000);
 
 // ---------------------------------------------------------------------------
-// therapeutic_areas
+// indications
 // ---------------------------------------------------------------------------
-describe('therapeutic_areas unique(space_id, name)', () => {
+describe('indications unique(space_id, name)', () => {
   it('rejects duplicate name within the same space', async () => {
     const userId = p.ids.tenant_owner;
-    const name = `TA-dup-${Date.now()}`;
+    const name = `IND-dup-${Date.now()}`;
 
     const first = await admin
-      .from('therapeutic_areas')
+      .from('indications')
       .insert({ space_id: p.org.spaceId, name, created_by: userId })
       .select('id')
       .single();
     expect(first.error).toBeNull();
 
     const second = await admin
-      .from('therapeutic_areas')
+      .from('indications')
       .insert({ space_id: p.org.spaceId, name, created_by: userId });
     expect(second.error).not.toBeNull();
     expect(second.error!.code).toBe('23505');
@@ -45,17 +45,17 @@ describe('therapeutic_areas unique(space_id, name)', () => {
     const scratch = await createScratchSpace(p);
     try {
       const userId = p.ids.tenant_owner;
-      const name = `TA-cross-${Date.now()}`;
+      const name = `IND-cross-${Date.now()}`;
 
       const inOriginal = await admin
-        .from('therapeutic_areas')
+        .from('indications')
         .insert({ space_id: p.org.spaceId, name, created_by: userId })
         .select('id')
         .single();
       expect(inOriginal.error).toBeNull();
 
       const inScratch = await admin
-        .from('therapeutic_areas')
+        .from('indications')
         .insert({ space_id: scratch.spaceId, name, created_by: userId })
         .select('id')
         .single();
@@ -67,14 +67,14 @@ describe('therapeutic_areas unique(space_id, name)', () => {
 
   it('upsert with on-conflict returns cleanly', async () => {
     const userId = p.ids.tenant_owner;
-    const name = `TA-upsert-${Date.now()}`;
+    const name = `IND-upsert-${Date.now()}`;
 
     await admin
-      .from('therapeutic_areas')
+      .from('indications')
       .insert({ space_id: p.org.spaceId, name, created_by: userId });
 
     const upsert = await admin
-      .from('therapeutic_areas')
+      .from('indications')
       .upsert(
         { space_id: p.org.spaceId, name, created_by: userId },
         { onConflict: 'space_id,name', ignoreDuplicates: true },

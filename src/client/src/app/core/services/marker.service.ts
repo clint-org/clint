@@ -23,27 +23,26 @@ export class MarkerService {
   private cache = inject(RpcCache);
 
   async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
-    const { data, error } = await this.supabase.client
-      .from('markers')
-      .insert({ ...marker, space_id: spaceId })
-      .select()
-      .single();
-    if (error) throw error;
-
-    if (trialIds.length > 0) {
-      const assignments = trialIds.map((trialId) => ({
-        marker_id: data.id,
-        trial_id: trialId,
-      }));
-      const { error: assignError } = await this.supabase.client
-        .from('marker_assignments')
-        .insert(assignments);
-      if (assignError) throw assignError;
-    }
+    const { data: newId } = await this.supabase.client
+      .rpc('create_marker', {
+        p_space_id: spaceId,
+        p_marker_type_id: marker.marker_type_id!,
+        p_title: marker.title!,
+        p_projection: marker.projection!,
+        p_event_date: marker.event_date!,
+        p_end_date: marker.end_date ?? null,
+        p_description: marker.description ?? null,
+        p_source_url: marker.source_url ?? null,
+        p_trial_ids: trialIds.length > 0 ? trialIds : null,
+        p_change_source: 'analyst',
+      })
+      .throwOnError();
 
     this.cache.invalidateTags([...spaceTagsFor(spaceId), ...trialDetailTags(trialIds)]);
 
-    return data as Marker;
+    const created = await this.getById(newId as string);
+    if (!created) throw new Error('Marker not found after creation');
+    return created;
   }
 
   async update(id: string, changes: Partial<Marker>): Promise<Marker> {
@@ -55,13 +54,13 @@ export class MarkerService {
       .eq('marker_id', id);
     const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
 
-    const { data, error } = await this.supabase.client
+    const { data } = await this.supabase.client
       .from('markers')
       .update(changes)
       .eq('id', id)
       .select()
-      .single();
-    if (error) throw error;
+      .single()
+      .throwOnError();
 
     const updated = data as Marker;
     this.cache.invalidateTags([
@@ -87,22 +86,19 @@ export class MarkerService {
       .eq('marker_id', markerId);
     const previousTrialIds = (oldRows ?? []).map((r) => r.trial_id as string);
 
-    const { error: deleteError } = await this.supabase.client
-      .from('marker_assignments')
-      .delete()
-      .eq('marker_id', markerId);
-    if (deleteError) throw deleteError;
-
-    if (trialIds.length > 0) {
-      const assignments = trialIds.map((trialId) => ({
-        marker_id: markerId,
-        trial_id: trialId,
-      }));
-      const { error: insertError } = await this.supabase.client
-        .from('marker_assignments')
-        .insert(assignments);
-      if (insertError) throw insertError;
-    }
+    // Delegate to the SECURITY DEFINER RPC. A client-side DELETE+INSERT pair
+    // splits into two PostgREST transactions; the AFTER DELETE
+    // _cleanup_orphan_marker trigger fires the moment the last assignment is
+    // deleted and drops the parent marker, so the subsequent INSERT then
+    // fails RLS WITH CHECK ("violates RLS for marker_assignments"). The RPC
+    // inserts first then prunes inside one transaction, so the marker always
+    // has at least one live assignment.
+    await this.supabase.client
+      .rpc('update_marker_assignments', {
+        p_marker_id: markerId,
+        p_trial_ids: trialIds,
+      })
+      .throwOnError();
 
     const affectedTrialIds = Array.from(new Set([...previousTrialIds, ...trialIds]));
     const tags: string[] = trialDetailTags(affectedTrialIds);
@@ -123,8 +119,7 @@ export class MarkerService {
       .eq('marker_id', id);
     const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
 
-    const { error } = await this.supabase.client.from('markers').delete().eq('id', id);
-    if (error) throw error;
+    await this.supabase.client.from('markers').delete().eq('id', id).throwOnError();
 
     const tags: string[] = trialDetailTags(trialIds);
     if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));

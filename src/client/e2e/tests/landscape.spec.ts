@@ -8,6 +8,7 @@ import {
   createTestTherapeuticArea,
   createTestTrial,
   createTestTrialPhase,
+  createTestAssetIndication,
 } from '../helpers/test-data.helper';
 
 test.describe('Landscape bullseye', () => {
@@ -25,8 +26,6 @@ test.describe('Landscape bullseye', () => {
 
     // HFpEF with three competing companies, one of which is Launched
     taHfpefId = await createTestTherapeuticArea(spaceId, 'Heart Failure HFpEF', 'HFpEF');
-    // An empty TA with no assets at all
-    await createTestTherapeuticArea(spaceId, 'Empty Space TA', 'EMPTY');
 
     const azId = await createTestCompany(spaceId, 'AstraZeneca');
     const merckId = await createTestCompany(spaceId, 'Merck');
@@ -41,13 +40,19 @@ test.describe('Landscape bullseye', () => {
     const keynoteHf = await createTestTrial(spaceId, keytrudaId, taHfpefId, 'KEYNOTE-HFpEF');
     const eliquisHf = await createTestTrial(spaceId, eliquisId, taHfpefId, 'ELIQUIS-HF');
 
-    // Phase data: Farxiga reaches LAUNCHED, others stop at P3
+    // Phase data: trial phases are clinical phases only (PRECLIN-OBS).
+    // Development status (LAUNCHED, APPROVED) lives on asset_indications.
     await createTestTrialPhase(spaceId, dapaHf, 'P3', '2018-01-01');
     await createTestTrialPhase(spaceId, deliver, 'P3', '2019-01-01');
-    await createTestTrialPhase(spaceId, deliver, 'LAUNCHED', '2023-05-05');
     await createTestTrialPhase(spaceId, keynoteHf, 'P3', '2021-01-01');
     await createTestTrialPhase(spaceId, eliquisHf, 'P2', '2020-01-01');
     await createTestTrialPhase(spaceId, eliquisHf, 'P3', '2022-01-01');
+
+    // Asset-indication rows set the bullseye ring position.
+    // Farxiga is LAUNCHED, Keytruda is P3, Eliquis is P3.
+    await createTestAssetIndication(spaceId, farxigaId, taHfpefId, 'LAUNCHED');
+    await createTestAssetIndication(spaceId, keytrudaId, taHfpefId, 'P3');
+    await createTestAssetIndication(spaceId, eliquisId, taHfpefId, 'P3');
 
     page = await authenticatedPage(browser);
   });
@@ -56,53 +61,41 @@ test.describe('Landscape bullseye', () => {
     await page.close();
   });
 
-  test('landscape index lists all therapeutic areas', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'networkidle' });
-    await page.waitForSelector('app-landscape-index', { timeout: 30000 });
-
-    // Both TAs should show up (including the empty one)
-    await expect(page.getByText('Heart Failure HFpEF')).toBeVisible();
-    await expect(page.getByText('Empty Space TA')).toBeVisible();
-
-    // HFpEF card shows the product and company counts
-    const hfpefCard = page
-      .locator('.landscape-index-card')
-      .filter({ hasText: 'Heart Failure HFpEF' });
-    await expect(hfpefCard).toContainText('3 assets');
-    await expect(hfpefCard).toContainText('3 companies');
-  });
-
-  test('clicking a TA card opens the bullseye for that TA', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape`, { waitUntil: 'networkidle' });
-    await page.locator('.landscape-index-card').filter({ hasText: 'Heart Failure HFpEF' }).click();
-
-    await expect(page).toHaveURL(new RegExp(`/bullseye/by-therapy-area/${taHfpefId}(\\?.*)?$`));
+  test('bullseye chart renders dots for all assets', async () => {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
 
-    // The chart should render one dot per qualifying product (3 total)
     const dots = page.locator('.bullseye-dot');
     await expect(dots).toHaveCount(3);
   });
 
+  test('bullseye chart shows spoke labels for default grouping', async () => {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('app-bullseye-chart svg.bullseye-svg', { timeout: 30000 });
+
+    // Default grouping is by company; spoke labels render uppercase
+    await expect(page.locator('app-bullseye-chart')).toContainText('ASTRAZENECA');
+    await expect(page.locator('app-bullseye-chart')).toContainText('MERCK');
+    await expect(page.locator('app-bullseye-chart')).toContainText('PFIZER');
+  });
+
   test('hovering a dot shows the product name in a tooltip', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}`, {
-      waitUntil: 'networkidle',
+    await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye`, {
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
 
     const farxigaDot = page.locator('.bullseye-dot', { hasText: '' }).first();
     await farxigaDot.hover();
-    // PrimeNG tooltip renders as .p-tooltip in the DOM
     await page.waitForTimeout(300);
   });
 
   test('clicking a dot populates the detail panel and updates the URL', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}`, {
-      waitUntil: 'networkidle',
+    await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye`, {
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
 
-    // Find the Farxiga dot by its aria-label (product name embedded)
     const farxigaDot = page.locator('[aria-label*="Farxiga"]').first();
     await expect(farxigaDot).toBeVisible();
     await farxigaDot.click();
@@ -110,34 +103,28 @@ test.describe('Landscape bullseye', () => {
     // URL should gain a ?product= query param
     await expect(page).toHaveURL(new RegExp(`product=${farxigaId}`));
 
-    // The detail panel should show the product and list its trials
+    // The detail panel should show the asset and list its trials
     const panel = page.locator('app-bullseye-detail-panel');
     await expect(panel).toContainText('Farxiga');
-    await expect(panel).toContainText('AstraZeneca');
-    await expect(panel).toContainText('LAUNCHED');
     await expect(panel).toContainText('DAPA-HF');
     await expect(panel).toContainText('DELIVER');
   });
 
   test('Escape key clears the selection', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${taHfpefId}?product=${farxigaId}`, {
-      waitUntil: 'networkidle',
+    await page.goto(`/t/${tenantId}/s/${spaceId}/bullseye?product=${farxigaId}`, {
+      waitUntil: 'domcontentloaded',
     });
     await page.waitForSelector('.bullseye-dot', { timeout: 30000 });
     await page.keyboard.press('Escape');
     await expect(page).not.toHaveURL(/product=/);
   });
 
-  test('empty TA shows the empty state and manage assets link', async () => {
-    // Create a new product-less TA on the fly for this test
-    const emptyId = await createTestTherapeuticArea(
-      spaceId,
-      'Bulls-Eye Empty ' + Date.now(),
-      'BE-EMPTY'
-    );
-    await page.goto(`/t/${tenantId}/s/${spaceId}/landscape/${emptyId}`, {
-      waitUntil: 'networkidle',
+  test('empty space shows the empty state and manage assets link', async () => {
+    const emptySpaceId = await createTestSpace(tenantId, 'Empty Bullseye Space');
+    await page.goto(`/t/${tenantId}/s/${emptySpaceId}/bullseye`, {
+      waitUntil: 'domcontentloaded',
     });
-    await expect(page.getByText(/No assets tracked/)).toBeVisible();
+    await expect(page.getByText(/No assets match the current filters/)).toBeVisible();
+    await expect(page.getByText('Manage assets')).toBeVisible();
   });
 });

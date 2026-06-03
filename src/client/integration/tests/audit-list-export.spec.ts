@@ -10,7 +10,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildPersonas, Personas, adminClient } from '../fixtures/personas';
+import { buildPersonas, Personas, adminClient, createAuthUser } from '../fixtures/personas';
 import { createScratchTenant } from '../fixtures/scratch';
 import { as, expectOk } from '../harness/as';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -38,12 +38,8 @@ beforeAll(async () => {
   svc = adminClient();
 
   // Create actor X via admin API.
-  const { data: axData, error: axErr } = await svc.auth.admin.createUser({
-    email: `actor-x-${Date.now()}@list-test.invalid`,
-    email_confirm: true,
-  });
-  if (axErr) throw new Error(`createUser actor-x: ${axErr.message}`);
-  actorXId = axData.user!.id;
+  const ax = await createAuthUser(svc, { email: `actor-x-${Date.now()}@list-test.invalid` });
+  actorXId = ax.id;
 
   // Scratch tenant B (under personas.org.agencyId).
   scratchTenantB = await createScratchTenant(p);
@@ -88,7 +84,7 @@ beforeAll(async () => {
   } finally {
     await pg.end();
   }
-}, 60_000);
+}, 120_000);
 
 afterAll(async () => {
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });

@@ -45,7 +45,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         <div class="border border-slate-200 bg-white px-8 py-16 text-center">
           <p class="text-base font-medium text-slate-700">No spaces yet</p>
           <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
-            Each space is a firewalled engagement scoped to a domain: a therapy area, an asset
+            Each space is a firewalled engagement scoped to a domain: an indication, an asset
             class, a client team. Pipelines, catalysts, and portfolio reads all live inside, with
             their own members and data.
           </p>
@@ -97,7 +97,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     >
       <form (ngSubmit)="createSpace()" class="space-y-4">
         <p class="text-xs text-slate-500">
-          A space is a firewalled engagement scoped to a domain: a therapy area, an asset class, a
+          A space is a firewalled engagement scoped to a domain: an indication, an asset class, a
           client team. Pipelines, catalysts, and portfolio reads all live inside, with their own
           members and data.
         </p>

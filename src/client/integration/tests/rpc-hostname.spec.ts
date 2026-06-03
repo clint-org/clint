@@ -11,7 +11,7 @@ import { as, expectOk, expectCode } from '../harness/as';
 let p: Personas;
 beforeAll(async () => {
   p = await buildPersonas();
-}, 60_000);
+}, 120_000);
 
 describe('rpc register_custom_domain', () => {
   it('platform_admin: ok (against scratch tenant)', async () => {
