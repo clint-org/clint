@@ -136,7 +136,7 @@
       }
 
       <p-multiselect
-        [options]="phaseOptions"
+        [options]="phaseOptions()"
         [ngModel]="state.filters().phases"
         (ngModelChange)="update('phases', $event ?? [])"
         placeholder="Phase"

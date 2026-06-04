@@ -143,6 +143,10 @@ export class PhasesHelpComponent {
         a: 'Preclinical assets are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
       },
       {
+        q: 'Why don\'t I see the preclinical phase in my space?',
+        a: 'Preclinical is hard to track and is hidden by default. It is a per-space setting: a space owner can enable "Track preclinical phase" in the space settings to surface preclinical trials and assets across the landscape, timeline, and trial list. While it is off, preclinical records are excluded everywhere and the phase is not offered when adding or editing a trial.',
+      },
+      {
         q: 'Can the colors change per tenant?',
         a: 'No. Phase colors are a global semantic and stay consistent across all tenants and engagements so anyone moving between spaces reads the same signal the same way.',
       },

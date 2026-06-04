@@ -27,6 +27,17 @@ export const RING_ORDER: readonly RingPhase[] = [
 ];
 
 /**
+ * Ring order narrowed for a space's preclinical setting. When a space does not
+ * track preclinical (the default), PRECLIN is dropped so the bullseye omits the
+ * outer preclinical ring and phase bars omit its segment. The server enforces
+ * exclusion of preclinical records regardless; this only controls what the UI
+ * renders. See SpaceSettingsService and core/models/phase-colors.ts.
+ */
+export function visibleRingOrder(showPreclinical: boolean): readonly RingPhase[] {
+  return showPreclinical ? RING_ORDER : RING_ORDER.filter((p) => p !== 'PRECLIN');
+}
+
+/**
  * Map of phase → development rank. Used when comparing "who has gone
  * furthest" and when projecting a phase onto a ring radius.
  */

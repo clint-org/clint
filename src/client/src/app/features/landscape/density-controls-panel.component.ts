@@ -8,7 +8,7 @@ import {
   DensityBubble,
   DensityGrouping,
   PHASE_COLOR,
-  RING_ORDER,
+  visibleRingOrder,
   RingPhase,
   groupingToSegment,
 } from '../../core/models/landscape.model';
@@ -74,7 +74,7 @@ import { LandscapeStateService } from './landscape-state.service';
       <div class="controls-section">
         <div class="section-label">LEGEND</div>
         <div class="legend-items">
-          @for (phase of phases; track phase.value) {
+          @for (phase of phases(); track phase.value) {
             <div class="legend-item">
               <span class="legend-dot" [style.background]="phase.color"></span>
               <span>{{ phase.label }}</span>
@@ -303,12 +303,14 @@ export class DensityControlsPanelComponent {
   protected readonly groupingOptions = DENSITY_GROUPING_OPTIONS;
   protected readonly countOptions = COUNT_UNIT_OPTIONS;
 
-  protected readonly phases: { value: RingPhase; label: string; color: string }[] = RING_ORDER.map(
-    (phase) => ({
+  // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
+  // the space does not track preclinical, matching the rings the server returns.
+  protected readonly phases = computed<{ value: RingPhase; label: string; color: string }[]>(() =>
+    visibleRingOrder(this.state.showPreclinical()).map((phase) => ({
       value: phase,
       label: this.formatPhase(phase),
       color: PHASE_COLOR[phase],
-    })
+    }))
   );
 
   protected readonly densitySwatches = [

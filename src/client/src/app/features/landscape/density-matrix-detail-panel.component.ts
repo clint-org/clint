@@ -80,7 +80,10 @@ const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
 
         @if (raceEntries().length > 0) {
           <app-detail-panel-section>
-            <app-detail-panel-phase-race [entries]="raceEntries()" />
+            <app-detail-panel-phase-race
+              [entries]="raceEntries()"
+              [showPreclinical]="showPreclinical()"
+            />
           </app-detail-panel-section>
         }
 
@@ -143,6 +146,8 @@ export class DensityMatrixDetailPanelComponent {
   readonly countUnit = input<string>('assets');
   readonly totalBubbles = input<number>(0);
   readonly grouping = input<DensityGrouping>('moa');
+  /** Whether the space tracks preclinical; forwarded to the phase-race scale. */
+  readonly showPreclinical = input(true);
 
   readonly clearSelection = output<void>();
   readonly openAsset = output<string>();

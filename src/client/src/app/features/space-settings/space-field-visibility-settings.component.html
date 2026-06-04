@@ -18,6 +18,27 @@
         <app-skeleton [block]="true" w="100%" h="20rem" />
       </div>
     } @else {
+      <section class="mb-6 rounded border border-slate-200 p-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-900">Track preclinical phase</h2>
+            <p class="mt-1 max-w-prose text-[13px] text-slate-500">
+              Preclinical activity is hard to track and is hidden by default. Turn this on to surface
+              preclinical trials and assets across the landscape, timeline, and trial list for this
+              space.
+            </p>
+          </div>
+          <span [pTooltip]="!canEdit() ? 'Only space owners can change this.' : ''" tooltipPosition="top">
+            <p-toggleswitch
+              [ngModel]="showPreclinical()"
+              (ngModelChange)="onTogglePreclinical($event)"
+              [disabled]="!canEdit() || preclinicalSaving()"
+              ariaLabel="Track preclinical phase"
+            />
+          </span>
+        </div>
+      </section>
+
       <p-tabs [value]="activeTab()" (valueChange)="onActiveTabChange($event)">
         <p-tablist>
           @for (s of surfaces; track s.key) {

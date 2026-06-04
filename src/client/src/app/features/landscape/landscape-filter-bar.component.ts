@@ -28,6 +28,7 @@ import {
   SPOKE_GROUPING_OPTIONS,
   SpokeGrouping,
   ViewMode,
+  visibleRingOrder,
 } from '../../core/models/landscape.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import { CompanyService } from '../../core/services/company.service';
@@ -113,7 +114,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
   readonly spokeGroupingOptions: { label: string; value: SpokeGrouping }[] = SPOKE_GROUPING_OPTIONS;
 
-  readonly phaseOptions: { label: string; value: RingPhase }[] = [
+  private readonly allPhaseOptions: { label: string; value: RingPhase }[] = [
     { label: 'Pre-clinical', value: 'PRECLIN' },
     { label: 'PH 1', value: 'P1' },
     { label: 'PH 2', value: 'P2' },
@@ -122,6 +123,16 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Approved', value: 'APPROVED' },
     { label: 'Launched', value: 'LAUNCHED' },
   ];
+
+  /**
+   * Phase filter options narrowed to the space's tracked phases. When the space
+   * does not track preclinical, the Pre-clinical option is hidden (the server
+   * returns no preclinical records, so offering the filter would be misleading).
+   */
+  readonly phaseOptions = computed(() => {
+    const visible = visibleRingOrder(this.state.showPreclinical());
+    return this.allPhaseOptions.filter((o) => visible.includes(o.value));
+  });
 
   readonly statusOptions: SelectOption[] = [
     { label: 'Not yet recruiting', value: 'Not yet recruiting' },
@@ -163,7 +174,7 @@ export class LandscapeFilterBarComponent implements OnInit {
     addChips(f.markerCategoryIds, this.markerCategoryOptions(), 'markerCategoryIds', 'Category');
 
     for (const phase of f.phases) {
-      const phaseLabel = this.phaseOptions.find((o) => o.value === phase)?.label ?? phase;
+      const phaseLabel = this.allPhaseOptions.find((o) => o.value === phase)?.label ?? phase;
       chips.push({ field: 'phases', header: 'Phase', value: phaseLabel, id: phase });
     }
     for (const status of f.recruitmentStatuses) {

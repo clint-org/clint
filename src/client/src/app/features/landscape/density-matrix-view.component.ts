@@ -84,6 +84,7 @@ import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel
                   [countUnit]="state.countUnit()"
                   [totalBubbles]="data.bubbles.length"
                   [grouping]="state.densityGrouping()"
+                  [showPreclinical]="state.showPreclinical()"
                   (clearSelection)="selectedBubble.set(null)"
                   (openAsset)="onOpenAsset($event)"
                   (openInBullseye)="onOpenInBullseye()"

@@ -19,6 +19,7 @@ import { FormsModule } from '@angular/forms';
 import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { IndicationService } from '../../../core/services/indication.service';
+import { SpaceSettingsService } from '../../../core/services/space-settings.service';
 import { Trial } from '../../../core/models/trial.model';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
@@ -60,6 +61,7 @@ export class TrialEditDialogComponent {
   private assetService = inject(AssetService);
   private indicationService = inject(IndicationService);
   private messageService = inject(MessageService);
+  private spaceSettings = inject(SpaceSettingsService);
 
   readonly visible = input<boolean>(false);
   readonly visibleChange = output<boolean>();
@@ -84,7 +86,7 @@ export class TrialEditDialogComponent {
   readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
   readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
 
-  protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
+  private readonly ALL_PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
     { id: 'P1', name: 'Phase 1' },
     { id: 'P2', name: 'Phase 2' },
@@ -92,6 +94,21 @@ export class TrialEditDialogComponent {
     { id: 'P4', name: 'Phase 4' },
     { id: 'OBS', name: 'Observational' },
   ];
+
+  /** True when the space tracks preclinical (default false: option hidden). */
+  protected readonly showPreclinical = signal(false);
+
+  /**
+   * Phase options for this trial. Drops Preclinical when the space does not track
+   * it, but keeps it if THIS trial is already preclinical so editing a legacy
+   * preclinical record does not silently blank out its phase.
+   */
+  protected readonly phaseOptions = computed(() => {
+    const keepPreclin = this.showPreclinical() || this.trial().phase_type === 'PRECLIN';
+    return keepPreclin
+      ? this.ALL_PHASE_OPTIONS
+      : this.ALL_PHASE_OPTIONS.filter((o) => o.id !== 'PRECLIN');
+  });
 
   readonly isValid = computed(() => {
     const id = this.identifier();
@@ -114,6 +131,10 @@ export class TrialEditDialogComponent {
         this.phaseStart.set(t.phase_start_date ?? null);
         this.phaseEnd.set(t.phase_end_date ?? null);
         void this.loadOptions(t.space_id);
+        void this.spaceSettings
+          .getShowPreclinical(t.space_id)
+          .then((show) => this.showPreclinical.set(show))
+          .catch(() => this.showPreclinical.set(false));
       }
     });
   }

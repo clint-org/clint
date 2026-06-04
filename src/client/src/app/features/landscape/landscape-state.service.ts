@@ -15,6 +15,7 @@ import {
 } from '../../core/models/landscape.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { SpaceSettingsService } from '../../core/services/space-settings.service';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
 
 interface PersistedLandscapeState {
@@ -48,12 +49,20 @@ const STORAGE_PREFIX = 'landscape-state:';
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
   private readonly catalyst = inject(CatalystService);
+  private readonly spaceSettings = inject(SpaceSettingsService);
   private storageKey = '';
   private spaceId = '';
   private disablePersistence = false;
 
   /** Read-only signal exposing the bound space id (empty string before init). */
   readonly spaceIdSig = signal('');
+
+  /**
+   * Whether this space tracks the preclinical phase (default false). Drives
+   * which phases the filter bar and ring legends show. Records are already
+   * excluded server-side; this only narrows the UI controls.
+   */
+  readonly showPreclinical = signal(false);
 
   // ─── Raw data ────────────────────────────────────────────────────────
   readonly rawData = signal<DashboardData | null>(null);
@@ -156,6 +165,11 @@ export class LandscapeStateService {
   ): Promise<void> {
     this.spaceId = spaceId;
     this.spaceIdSig.set(spaceId);
+    try {
+      this.showPreclinical.set(await this.spaceSettings.getShowPreclinical(spaceId));
+    } catch {
+      this.showPreclinical.set(false);
+    }
     this.disablePersistence = opts?.disablePersistence ?? false;
     this.storageKey = STORAGE_PREFIX + spaceId;
     if (opts?.columnDefaults) {

@@ -734,6 +734,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `RouteOfAdministrationService`
 - `RpcCacheService`
 - `SpaceFieldVisibilityService`
+- `SpaceSettingsService`
 
 **Models:**
 - `AuditEvent`
