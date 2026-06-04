@@ -5,7 +5,7 @@ spec: docs/superpowers/specs/2026-04-12-unified-landscape-design.md
 
 # Landscape Views
 
-The landscape area provides cross-cutting views of the same space dataset -- Timeline, Bullseye, Positioning, and Future Catalysts -- each rendered as a sibling under the shared landscape shell. The filter bar and detail panels are shared across views as described under [Timeline Dashboard](timeline-dashboard.md) and [Future Catalysts](catalysts.md).
+The landscape area provides cross-cutting views of the same space dataset -- Timeline, Bullseye, Heatmap, and Future Catalysts -- each rendered as a sibling under the shared landscape shell. The filter bar and detail panels are shared across views as described under [Timeline Dashboard](timeline-dashboard.md) and [Future Catalysts](catalysts.md).
 
 ## Bullseye
 
@@ -19,15 +19,15 @@ Key components:
 - **LandscapeFilterBar**: shared filter bar for cross-view scope filters. Group-by toggle lives in the controls panel, not the filter bar.
 - **LandscapeStateService**: persists `spokeGrouping` signal to sessionStorage alongside filters.
 
-## Density Matrix
+## Heatmap
 
-The Density Matrix view renders a competitive density heatmap: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the tracked development phases (7, or 6 when the space does not track preclinical -- see the per-space "Track preclinical phase" setting), and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/density-matrix` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render density sub-tabs). Legacy `/positioning/*` routes redirect to `/density-matrix/*`.
+The Heatmap view renders a competitive heatmap: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the tracked development phases (7, or 6 when the space does not track preclinical -- see the per-space "Track preclinical phase" setting), and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/heatmap` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render grouping sub-tabs). Legacy `/positioning/*` routes redirect to `/heatmap/*`.
 
 ## Capabilities
 
 ```yaml
 - id: landscape-shell
-  summary: Shared landscape shell hosting Timeline, Bullseye, Density Matrix, and Future Catalysts tabs with cross-tab filter and detail-panel continuity.
+  summary: Shared landscape shell hosting Timeline, Bullseye, Heatmap, and Future Catalysts tabs with cross-tab filter and detail-panel continuity.
   routes:
     - /t/:tenantId
   rpcs: []
@@ -64,14 +64,14 @@ The Density Matrix view renders a competitive density heatmap: rows are the grou
   role: viewer
   status: active
 - id: competitive-read-bar
-  summary: Auto-generated one-line competitive summary shared across radial, density, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, density = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
+  summary: Auto-generated one-line competitive summary shared across radial, heatmap, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, heatmap = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
   routes: []
   rpcs: []
   tables: []
   related:
     - bullseye-chart
     - timeline-insight-strip
-    - density-matrix
+    - heatmap
   user_facing: true
   role: viewer
   status: active
@@ -109,15 +109,15 @@ The Density Matrix view renders a competitive density heatmap: rows are the grou
   user_facing: true
   role: viewer
   status: active
-- id: density-matrix
-  summary: Competitive density heatmap at /density-matrix. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and density LEGEND. Legacy /positioning/* routes redirect here.
+- id: heatmap
+  summary: Competitive heatmap at /heatmap. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and shade LEGEND. Legacy /positioning/* routes redirect here.
   routes:
-    - /t/:tenantId/s/:spaceId/density-matrix
-    - /t/:tenantId/s/:spaceId/density-matrix/by-company
-    - /t/:tenantId/s/:spaceId/density-matrix/by-moa
-    - /t/:tenantId/s/:spaceId/density-matrix/by-roa
-    - /t/:tenantId/s/:spaceId/density-matrix/by-indication
-    - /t/:tenantId/s/:spaceId/density-matrix/by-moa-indication
+    - /t/:tenantId/s/:spaceId/heatmap
+    - /t/:tenantId/s/:spaceId/heatmap/by-company
+    - /t/:tenantId/s/:spaceId/heatmap/by-moa
+    - /t/:tenantId/s/:spaceId/heatmap/by-roa
+    - /t/:tenantId/s/:spaceId/heatmap/by-indication
+    - /t/:tenantId/s/:spaceId/heatmap/by-moa-indication
   rpcs:
     - get_positioning_data
   tables:

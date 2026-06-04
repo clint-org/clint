@@ -1,5 +1,5 @@
 /**
- * Unit tests for DensityMatrixViewComponent panel-visibility logic.
+ * Unit tests for HeatmapViewComponent panel-visibility logic.
  *
  * The unit-test runner uses a plain node environment (vitest.units.config.ts)
  * without the Angular compiler, so we don't mount the component via TestBed.
@@ -14,9 +14,9 @@
 import { signal, computed } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
-import type { DensityBubble } from '../../core/models/landscape.model';
+import type { HeatmapBubble } from '../../core/models/landscape.model';
 
-function makeBubble(label: string): DensityBubble {
+function makeBubble(label: string): HeatmapBubble {
   return {
     label,
     group_keys: {},
@@ -29,15 +29,15 @@ function makeBubble(label: string): DensityBubble {
   };
 }
 
-describe('DensityMatrixViewComponent showPanel', () => {
+describe('HeatmapViewComponent showPanel', () => {
   it('is closed when no bubble is selected (first visit)', () => {
-    const selectedBubble = signal<DensityBubble | null>(null);
+    const selectedBubble = signal<HeatmapBubble | null>(null);
     const showPanel = computed(() => selectedBubble() !== null);
     expect(showPanel()).toBe(false);
   });
 
   it('opens when a bubble is selected and closes again when cleared', () => {
-    const selectedBubble = signal<DensityBubble | null>(null);
+    const selectedBubble = signal<HeatmapBubble | null>(null);
     const showPanel = computed(() => selectedBubble() !== null);
 
     expect(showPanel()).toBe(false);

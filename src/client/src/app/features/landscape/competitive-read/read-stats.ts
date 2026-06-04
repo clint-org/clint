@@ -3,7 +3,7 @@ import {
   RING_DEV_RANK,
   RingPhase,
   BullseyeSpoke,
-  DensityBubble,
+  HeatmapBubble,
 } from '../../../core/models/landscape.model';
 
 const PHASE_RANK: Record<string, number> = {
@@ -92,7 +92,7 @@ export function fromCompanies(companies: Company[], today?: string): ReadStats[]
   });
 }
 
-export function fromBubbles(bubbles: DensityBubble[]): ReadStats[] {
+export function fromBubbles(bubbles: HeatmapBubble[]): ReadStats[] {
   return bubbles.map((bubble) => {
     const p3Count = bubble.phase_counts['P3'] ?? 0;
     let lateStageCount = 0;

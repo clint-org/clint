@@ -245,7 +245,7 @@ Space owners pick which CT.gov fields appear on each surface (trial detail, bull
 
 **Navigate:** `/t/:tenantId/s/:spaceId/settings/fields`
 
-Preclinical activity is hard to track and is not usually tracked, so the preclinical (PRECLIN) phase is **hidden by default**. A space owner can turn on **Track preclinical phase** to surface preclinical trials and assets across the landscape, timeline, density, and trial list for that space. While it is off, preclinical records are excluded from every analytic view and the phase is not offered when adding or editing a trial. Enforcement is server-side: each analytic RPC reads `spaces.show_preclinical` via `space_shows_preclinical()` and drops preclinical rows, so the setting cannot be bypassed from the client. Choices are per-space.
+Preclinical activity is hard to track and is not usually tracked, so the preclinical (PRECLIN) phase is **hidden by default**. A space owner can turn on **Track preclinical phase** to surface preclinical trials and assets across the landscape, timeline, heatmap, and trial list for that space. While it is off, preclinical records are excluded from every analytic view and the phase is not offered when adding or editing a trial. Enforcement is server-side: each analytic RPC reads `spaces.show_preclinical` via `space_shows_preclinical()` and drops preclinical rows, so the setting cannot be bypassed from the client. Choices are per-space.
 
 ---
 

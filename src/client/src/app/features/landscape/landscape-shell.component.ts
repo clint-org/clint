@@ -17,7 +17,7 @@ import {
   LandscapeIndexEntry,
   SpokeGrouping,
   segmentToGrouping,
-  DENSITY_SEGMENTS,
+  HEATMAP_SEGMENTS,
   ViewMode,
 } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
@@ -127,8 +127,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     this.extractRouteParams();
 
     // Restore persisted landscape state before reading the URL. restorePersistedState()
-    // writes densityGrouping, so syncStateFromUrl() must run after it to ensure
-    // the URL wins -- otherwise a fresh load of /density-matrix/by-X shows whichever
+    // writes heatmapGrouping, so syncStateFromUrl() must run after it to ensure
+    // the URL wins -- otherwise a fresh load of /heatmap/by-X shows whichever
     // grouping was in sessionStorage as active, and clicking the URL's tab no-ops.
     this.state.init(this.spaceId());
     this.syncStateFromUrl();
@@ -143,12 +143,12 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       this.applyQueryParamFilters();
       // Marker selection only makes sense in marker-bearing views
       // (timeline, catalysts). Clear it when entering bullseye /
-      // density-matrix so a previously-opened drawer doesn't trail along
+      // heatmap so a previously-opened drawer doesn't trail along
       // into a view where it has no referent. Selection is preserved
       // between timeline <-> catalysts (same markers, different
       // layout) and across same-mode dimension switches.
       const mode = this.viewMode();
-      if (mode === 'bullseye' || mode === 'density-matrix') {
+      if (mode === 'bullseye' || mode === 'heatmap') {
         this.state.clearSelection();
       }
     });
@@ -217,15 +217,15 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     const parentSegments = child.snapshot.parent?.url.map((s) => s.path) ?? [];
     const allSegments = [...parentSegments, ...segments];
 
-    const densitySegment = allSegments.find((s) =>
-      (DENSITY_SEGMENTS as readonly string[]).includes(s)
+    const heatmapSegment = allSegments.find((s) =>
+      (HEATMAP_SEGMENTS as readonly string[]).includes(s)
     );
 
-    if (allSegments.includes('density-matrix')) {
-      this.viewMode.set('density-matrix');
+    if (allSegments.includes('heatmap')) {
+      this.viewMode.set('heatmap');
       this.entityId.set(null);
-      if (densitySegment) {
-        this.state.densityGrouping.set(segmentToGrouping(densitySegment));
+      if (heatmapSegment) {
+        this.state.heatmapGrouping.set(segmentToGrouping(heatmapSegment));
       }
     } else if (allSegments.includes('bullseye')) {
       this.viewMode.set('bullseye');

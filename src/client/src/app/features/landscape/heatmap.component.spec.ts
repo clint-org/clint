@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import type { DensityBubble, RingPhase } from '../../core/models/landscape.model';
-import { cellTint, densityStep, formatFreshness } from './density-matrix.component';
+import type { HeatmapBubble, RingPhase } from '../../core/models/landscape.model';
+import { cellTint, heatmapStep, formatFreshness } from './heatmap.component';
 
 function makeBubble(
   label: string,
   phaseCounts: Partial<Record<RingPhase, number>>,
-  overrides: Partial<DensityBubble> = {}
-): DensityBubble {
+  overrides: Partial<HeatmapBubble> = {}
+): HeatmapBubble {
   const total = Object.values(phaseCounts).reduce((s, v) => s + (v ?? 0), 0);
   return {
     label,
@@ -22,37 +22,37 @@ function makeBubble(
   };
 }
 
-describe('densityStep', () => {
+describe('heatmapStep', () => {
   it('returns 0 for an empty cell', () => {
-    expect(densityStep(0)).toBe(0);
-    expect(densityStep(-3)).toBe(0);
+    expect(heatmapStep(0)).toBe(0);
+    expect(heatmapStep(-3)).toBe(0);
   });
 
   it('maps the low counts one-to-one', () => {
-    expect(densityStep(1)).toBe(1);
-    expect(densityStep(2)).toBe(2);
-    expect(densityStep(3)).toBe(3);
+    expect(heatmapStep(1)).toBe(1);
+    expect(heatmapStep(2)).toBe(2);
+    expect(heatmapStep(3)).toBe(3);
   });
 
   it('buckets 4-5 together as step 4', () => {
-    expect(densityStep(4)).toBe(4);
-    expect(densityStep(5)).toBe(4);
+    expect(heatmapStep(4)).toBe(4);
+    expect(heatmapStep(5)).toBe(4);
   });
 
   it('buckets 6-9 together as step 5', () => {
-    expect(densityStep(6)).toBe(5);
-    expect(densityStep(9)).toBe(5);
+    expect(heatmapStep(6)).toBe(5);
+    expect(heatmapStep(9)).toBe(5);
   });
 
   it('caps at step 6 for 10 or more', () => {
-    expect(densityStep(10)).toBe(6);
-    expect(densityStep(50)).toBe(6);
+    expect(heatmapStep(10)).toBe(6);
+    expect(heatmapStep(50)).toBe(6);
   });
 
   it('is absolute: a given count maps to the same step regardless of the rest of the matrix', () => {
     // No second argument: the step does not depend on other cells, so it is
     // stable across the Assets / Trials / Companies toggle.
-    expect(densityStep(3)).toBe(densityStep(3));
+    expect(heatmapStep(3)).toBe(heatmapStep(3));
   });
 });
 
@@ -114,7 +114,7 @@ describe('formatFreshness', () => {
   });
 });
 
-describe('DensityMatrixComponent row computation', () => {
+describe('HeatmapComponent row computation', () => {
   it('computes correct number of rows from bubbles', () => {
     const bubbles = [
       makeBubble('Alpha', { PRECLIN: 2, P1: 3 }),
@@ -164,7 +164,7 @@ describe('DensityMatrixComponent row computation', () => {
   });
 
   it('handles empty bubbles array', () => {
-    const bubbles: DensityBubble[] = [];
+    const bubbles: HeatmapBubble[] = [];
     expect(bubbles).toHaveLength(0);
   });
 

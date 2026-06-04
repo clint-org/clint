@@ -249,56 +249,56 @@ export const routes: Routes = [
                 ],
               },
               {
-                path: 'density-matrix',
+                path: 'heatmap',
                 children: [
                   { path: '', redirectTo: 'by-moa', pathMatch: 'full' as const },
                   {
                     path: 'by-moa',
                     loadComponent: () =>
-                      import('./features/landscape/density-matrix-view.component').then(
-                        (m) => m.DensityMatrixViewComponent
+                      import('./features/landscape/heatmap-view.component').then(
+                        (m) => m.HeatmapViewComponent
                       ),
                   },
                   {
                     path: 'by-indication',
                     loadComponent: () =>
-                      import('./features/landscape/density-matrix-view.component').then(
-                        (m) => m.DensityMatrixViewComponent
+                      import('./features/landscape/heatmap-view.component').then(
+                        (m) => m.HeatmapViewComponent
                       ),
                   },
                   {
                     path: 'by-moa-indication',
                     loadComponent: () =>
-                      import('./features/landscape/density-matrix-view.component').then(
-                        (m) => m.DensityMatrixViewComponent
+                      import('./features/landscape/heatmap-view.component').then(
+                        (m) => m.HeatmapViewComponent
                       ),
                   },
                   {
                     path: 'by-company',
                     loadComponent: () =>
-                      import('./features/landscape/density-matrix-view.component').then(
-                        (m) => m.DensityMatrixViewComponent
+                      import('./features/landscape/heatmap-view.component').then(
+                        (m) => m.HeatmapViewComponent
                       ),
                   },
                   {
                     path: 'by-roa',
                     loadComponent: () =>
-                      import('./features/landscape/density-matrix-view.component').then(
-                        (m) => m.DensityMatrixViewComponent
+                      import('./features/landscape/heatmap-view.component').then(
+                        (m) => m.HeatmapViewComponent
                       ),
                   },
                 ],
               },
-              // Legacy redirects: old /positioning/* paths -> /density-matrix/*
-              { path: 'positioning', redirectTo: 'density-matrix', pathMatch: 'full' },
-              { path: 'positioning/by-moa', redirectTo: 'density-matrix/by-moa' },
-              { path: 'positioning/by-indication', redirectTo: 'density-matrix/by-indication' },
+              // Legacy redirects: old /positioning/* paths -> /heatmap/*
+              { path: 'positioning', redirectTo: 'heatmap', pathMatch: 'full' },
+              { path: 'positioning/by-moa', redirectTo: 'heatmap/by-moa' },
+              { path: 'positioning/by-indication', redirectTo: 'heatmap/by-indication' },
               {
                 path: 'positioning/by-moa-indication',
-                redirectTo: 'density-matrix/by-moa-indication',
+                redirectTo: 'heatmap/by-moa-indication',
               },
-              { path: 'positioning/by-company', redirectTo: 'density-matrix/by-company' },
-              { path: 'positioning/by-roa', redirectTo: 'density-matrix/by-roa' },
+              { path: 'positioning/by-company', redirectTo: 'heatmap/by-company' },
+              { path: 'positioning/by-roa', redirectTo: 'heatmap/by-roa' },
               {
                 path: 'catalysts',
                 loadComponent: () =>

@@ -7,7 +7,7 @@ import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import {
   CountUnit,
-  DensityGrouping,
+  HeatmapGrouping,
   EMPTY_LANDSCAPE_FILTERS,
   LandscapeFilters,
   SpokeGrouping,
@@ -23,7 +23,7 @@ interface PersistedLandscapeState {
   zoomLevel: ZoomLevel;
   spokeMode: SpokeMode;
   spokeGrouping: SpokeGrouping;
-  densityGrouping: DensityGrouping;
+  heatmapGrouping: HeatmapGrouping;
   countUnit: CountUnit;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
@@ -41,7 +41,7 @@ const STORAGE_PREFIX = 'landscape-state:';
  * - Filter state (applied client-side)
  * - Filtered views (companies for timeline, flat catalysts for catalysts tab)
  * - Shared detail panel state (selected marker, detail, loading)
- * - View-specific settings (zoom, spoke mode, density grouping)
+ * - View-specific settings (zoom, spoke mode, heatmap grouping)
  *
  * State is persisted to sessionStorage so it survives page refreshes.
  */
@@ -77,7 +77,7 @@ export class LandscapeStateService {
   /** @deprecated Use spokeGrouping instead. Kept during migration. */
   readonly spokeMode = signal<SpokeMode>('grouped');
   readonly spokeGrouping = signal<SpokeGrouping>('company');
-  readonly densityGrouping = signal<DensityGrouping>('moa+indication');
+  readonly heatmapGrouping = signal<HeatmapGrouping>('moa+indication');
   readonly countUnit = signal<CountUnit>('assets');
 
   // ─── Column visibility (timeline grid) ──────────────────────────────
@@ -132,7 +132,7 @@ export class LandscapeStateService {
       zoomLevel: this.zoomLevel(),
       spokeMode: this.spokeMode(),
       spokeGrouping: this.spokeGrouping(),
-      densityGrouping: this.densityGrouping(),
+      heatmapGrouping: this.heatmapGrouping(),
       countUnit: this.countUnit(),
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
@@ -277,7 +277,7 @@ export class LandscapeStateService {
       if (saved.zoomLevel) this.zoomLevel.set(saved.zoomLevel);
       if (saved.spokeMode) this.spokeMode.set(saved.spokeMode);
       if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
-      if (saved.densityGrouping) this.densityGrouping.set(saved.densityGrouping);
+      if (saved.heatmapGrouping) this.heatmapGrouping.set(saved.heatmapGrouping);
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
       if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);

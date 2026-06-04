@@ -38,12 +38,12 @@ export class PaletteCommandRegistry {
           ),
       },
       {
-        id: 'go-density-matrix',
-        label: 'Go to Density Matrix',
+        id: 'go-heatmap',
+        label: 'Go to Heatmap',
         hint: 'Navigation',
         run: () =>
           void this.router.navigateByUrl(
-            `/t/${currentTenantId}/s/${currentSpaceId}/density-matrix/by-moa`
+            `/t/${currentTenantId}/s/${currentSpaceId}/heatmap/by-moa`
           ),
       },
       {

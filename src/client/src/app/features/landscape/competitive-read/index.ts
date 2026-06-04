@@ -2,8 +2,8 @@ import { ReadStats } from './read-stats';
 import { classifyCompetitive } from './competitive-headlines';
 import { classifyDistributional } from './distributional-headlines';
 import {
-  densityViewClause,
-  distributionalDensityClause,
+  heatmapViewClause,
+  distributionalHeatmapClause,
   distributionalRadialClause,
   distributionalTimelineClause,
   radialViewClause,
@@ -12,7 +12,7 @@ import {
 } from './view-clauses';
 import { momentumClause } from './momentum-clause';
 
-export type LandscapeView = 'radial' | 'density' | 'timeline';
+export type LandscapeView = 'radial' | 'heatmap' | 'timeline';
 export type LandscapeGroupBy =
   | 'company'
   | 'indication'
@@ -65,12 +65,12 @@ export function buildLandscapeRead(input: BuildReadInput): LandscapeRead {
   let viewClause: ViewClauseResult | null = null;
   if (isDistributional) {
     if (input.view === 'radial') viewClause = distributionalRadialClause(headline);
-    else if (input.view === 'density') viewClause = distributionalDensityClause(headline);
+    else if (input.view === 'heatmap') viewClause = distributionalHeatmapClause(headline);
     else if (input.view === 'timeline')
       viewClause = distributionalTimelineClause(headline, input.stats);
   } else {
     if (input.view === 'radial') viewClause = radialViewClause(headline, input.stats);
-    else if (input.view === 'density') viewClause = densityViewClause(headline, input.stats);
+    else if (input.view === 'heatmap') viewClause = heatmapViewClause(headline, input.stats);
     else if (input.view === 'timeline') viewClause = timelineViewClause(headline, input.stats);
   }
 

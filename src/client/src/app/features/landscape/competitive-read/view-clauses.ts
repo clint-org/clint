@@ -85,7 +85,7 @@ function phaseCountFromHighest(stats: ReadStats[]): Record<string, number> {
   return counts;
 }
 
-export function densityViewClause(
+export function heatmapViewClause(
   _headline: HeadlineResult,
   allStats: ReadStats[]
 ): ViewClauseResult | null {
@@ -145,7 +145,7 @@ export function distributionalRadialClause(headline: HeadlineResult): ViewClause
   };
 }
 
-export function distributionalDensityClause(headline: HeadlineResult): ViewClauseResult | null {
+export function distributionalHeatmapClause(headline: HeadlineResult): ViewClauseResult | null {
   const leader = distributionalLeader(headline);
   if (!leader) return null;
   if (leader.lateStageCount === 0) {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import {
   type CountUnit,
-  type DensityBubble,
+  type HeatmapBubble,
   PHASE_COLOR,
   type RingPhase,
   visibleRingOrder,
@@ -26,7 +26,7 @@ export interface SortEvent {
 }
 
 export interface MatrixRow {
-  bubble: DensityBubble;
+  bubble: HeatmapBubble;
   cells: MatrixCell[];
   total: number;
 }
@@ -39,11 +39,11 @@ export interface MatrixCell {
 }
 
 /**
- * Absolute density step (0-6) for a cell's count. Independent of the rest of
- * the matrix and of the active count unit, so a given count always renders at
+ * Absolute shade step (0-6) for a cell's count. Independent of the rest of
+ * the heatmap and of the active count unit, so a given count always renders at
  * the same shade across the Assets / Trials / Companies toggle.
  */
-export function densityStep(count: number): number {
+export function heatmapStep(count: number): number {
   if (count <= 0) return 0;
   if (count <= 3) return count; // 1, 2, 3 map one-to-one
   if (count <= 5) return 4;
@@ -61,7 +61,7 @@ const STEP_MIX_PCT = [0, 14, 22, 30, 38, 46, 54];
  * the fixed phase palette (data color), never the tenant brand color.
  */
 export function cellTint(phaseColor: string, count: number): string | null {
-  const step = densityStep(count);
+  const step = heatmapStep(count);
   if (step === 0) return null;
   return `color-mix(in srgb, ${phaseColor} ${STEP_MIX_PCT[step]}%, white)`;
 }
@@ -85,7 +85,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
 }
 
 @Component({
-  selector: 'app-density-matrix',
+  selector: 'app-heatmap',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(keydown.escape)': 'onEscape()',
@@ -305,7 +305,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
   `,
   template: `
     <div class="matrix-header">
-      <div class="matrix-title">Competitive Density</div>
+      <div class="matrix-title">Competitive Heatmap</div>
       <div class="matrix-subtitle">
         {{ rows().length }} {{ rows().length === 1 ? 'group' : 'groups' }} across
         {{ phases().length }} phases
@@ -319,7 +319,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       <table
         class="matrix"
         role="grid"
-        aria-label="Competitive density by development phase; cell color marks the phase, shade marks the count"
+        aria-label="Competitive heatmap by development phase; cell color marks the phase, shade marks the count"
       >
         <colgroup>
           <col class="row-label-col" />
@@ -408,17 +408,17 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
     </div>
   `,
 })
-export class DensityMatrixComponent {
-  readonly bubbles = input.required<DensityBubble[]>();
+export class HeatmapComponent {
+  readonly bubbles = input.required<HeatmapBubble[]>();
   readonly countUnit = input<CountUnit>('assets');
-  readonly selectedBubble = input<DensityBubble | null>(null);
+  readonly selectedBubble = input<HeatmapBubble | null>(null);
   readonly sortField = input<SortField>('total');
   readonly sortDir = input<'asc' | 'desc'>('desc');
   readonly latestEventDate = input<string | null>(null);
   /** When false, the preclinical column is omitted (space does not track it). */
   readonly showPreclinical = input(true);
 
-  readonly rowClick = output<DensityBubble>();
+  readonly rowClick = output<HeatmapBubble>();
   readonly sortChange = output<SortEvent>();
 
   readonly phases = computed(() => visibleRingOrder(this.showPreclinical()));
@@ -472,7 +472,7 @@ export class DensityMatrixComponent {
     return PHASE_SHORT[phase];
   }
 
-  protected onRowClick(bubble: DensityBubble): void {
+  protected onRowClick(bubble: HeatmapBubble): void {
     this.rowClick.emit(bubble);
   }
 
@@ -484,6 +484,6 @@ export class DensityMatrixComponent {
   }
 
   protected onEscape(): void {
-    this.rowClick.emit(undefined as unknown as DensityBubble);
+    this.rowClick.emit(undefined as unknown as HeatmapBubble);
   }
 }

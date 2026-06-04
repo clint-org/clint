@@ -414,7 +414,7 @@ export class AppShellComponent implements OnInit {
       route === '' ||
       route === 'timeline' ||
       route.startsWith('bullseye') ||
-      route.startsWith('density-matrix') ||
+      route.startsWith('heatmap') ||
       route === 'events' ||
       route === 'intelligence' ||
       route === 'materials' ||
@@ -469,10 +469,10 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['bullseye'],
           },
           {
-            label: 'Density Matrix',
-            value: 'density-matrix',
-            active: route.startsWith('density-matrix'),
-            icon: NAV_ICONS['density-matrix'],
+            label: 'Heatmap',
+            value: 'heatmap',
+            active: route.startsWith('heatmap'),
+            icon: NAV_ICONS['heatmap'],
           },
           {
             label: 'Future Catalysts',
@@ -650,8 +650,8 @@ export class AppShellComponent implements OnInit {
           case 'bullseye':
             this.navigateToSpaceRoute('bullseye/by-indication');
             break;
-          case 'density-matrix':
-            this.navigateToSpaceRoute('density-matrix/by-moa');
+          case 'heatmap':
+            this.navigateToSpaceRoute('heatmap/by-moa');
             break;
           case 'catalysts':
             this.navigateToSpaceRoute('catalysts');

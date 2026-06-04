@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type CountUnit,
-  type DensityBubble,
-  type DensityGrouping,
+  type HeatmapBubble,
+  type HeatmapGrouping,
   PHASE_COLOR,
   type RingPhase,
 } from '../../core/models/landscape.model';
-import { cellTint } from './density-matrix.component';
+import { cellTint } from './heatmap.component';
 
-function makeBubble(overrides: Partial<DensityBubble> = {}): DensityBubble {
+function makeBubble(overrides: Partial<HeatmapBubble> = {}): HeatmapBubble {
   return {
     label: 'Test MOA',
     group_keys: {},
@@ -41,7 +41,7 @@ function escapeName(name: string): string {
   return name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function buildReadText(list: DensityBubble[], unit: CountUnit): string {
+function buildReadText(list: HeatmapBubble[], unit: CountUnit): string {
   if (list.length < 2) return '';
 
   const parts: string[] = [];
@@ -65,12 +65,12 @@ function buildReadText(list: DensityBubble[], unit: CountUnit): string {
 }
 
 function buildComputeds(
-  initialBubbles: DensityBubble[] = [],
-  initialGrouping: DensityGrouping = 'moa',
+  initialBubbles: HeatmapBubble[] = [],
+  initialGrouping: HeatmapGrouping = 'moa',
   initialCountUnit: CountUnit = 'assets'
 ) {
-  const bubbles = signal<DensityBubble[]>(initialBubbles);
-  const grouping = signal<DensityGrouping>(initialGrouping);
+  const bubbles = signal<HeatmapBubble[]>(initialBubbles);
+  const grouping = signal<HeatmapGrouping>(initialGrouping);
   const countUnit = signal<CountUnit>(initialCountUnit);
 
   const groupCount = computed(() => bubbles().length);
@@ -80,7 +80,7 @@ function buildComputeds(
   return { bubbles, grouping, countUnit, groupCount, totalCount, readText };
 }
 
-describe('DensityControlsPanelComponent GROUP BY', () => {
+describe('HeatmapControlsPanelComponent GROUP BY', () => {
   it('active button matches the grouping input', () => {
     const { grouping } = buildComputeds([], 'indication');
     expect(grouping()).toBe('indication');
@@ -94,7 +94,7 @@ describe('DensityControlsPanelComponent GROUP BY', () => {
   });
 });
 
-describe('DensityControlsPanelComponent COUNT', () => {
+describe('HeatmapControlsPanelComponent COUNT', () => {
   it('active button matches the countUnit input', () => {
     const { countUnit } = buildComputeds([], 'moa', 'trials');
     expect(countUnit()).toBe('trials');
@@ -108,7 +108,7 @@ describe('DensityControlsPanelComponent COUNT', () => {
   });
 });
 
-describe('DensityControlsPanelComponent READ', () => {
+describe('HeatmapControlsPanelComponent READ', () => {
   it('returns empty string when fewer than 2 bubbles', () => {
     const { readText } = buildComputeds([makeBubble()]);
     expect(readText()).toBe('');
@@ -203,8 +203,8 @@ describe('DensityControlsPanelComponent READ', () => {
   });
 });
 
-describe('DensityControlsPanelComponent LEGEND density ramp', () => {
-  // Mirrors how the component builds densitySwatches: cellTint() over the P3
+describe('HeatmapControlsPanelComponent LEGEND shade ramp', () => {
+  // Mirrors how the component builds swatches: cellTint() over the P3
   // hero hue across the absolute count buckets.
   const swatches = [1, 2, 3, 4, 6, 10].map((count) => cellTint(PHASE_COLOR.P3, count) as string);
 
@@ -234,7 +234,7 @@ describe('DensityControlsPanelComponent LEGEND density ramp', () => {
   });
 });
 
-describe('DensityControlsPanelComponent STATS', () => {
+describe('HeatmapControlsPanelComponent STATS', () => {
   it('group count matches bubbles.length', () => {
     const bubbles = [makeBubble(), makeBubble(), makeBubble()];
     const { groupCount } = buildComputeds(bubbles);

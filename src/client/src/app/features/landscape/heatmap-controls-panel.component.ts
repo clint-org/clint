@@ -4,23 +4,23 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
-  DENSITY_GROUPING_OPTIONS,
-  DensityBubble,
-  DensityGrouping,
+  HEATMAP_GROUPING_OPTIONS,
+  HeatmapBubble,
+  HeatmapGrouping,
   PHASE_COLOR,
   visibleRingOrder,
   RingPhase,
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
-import { cellTint } from './density-matrix.component';
+import { cellTint } from './heatmap.component';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
-  selector: 'app-density-controls-panel',
+  selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <aside class="density-controls">
+    <aside class="heatmap-controls">
       <div class="controls-section">
         <div class="section-label">GROUP BY</div>
         <div class="group-buttons">
@@ -82,9 +82,9 @@ import { LandscapeStateService } from './landscape-state.service';
             </div>
           }
           <div class="legend-divider"></div>
-          <div class="density-scale">
+          <div class="heatmap-scale">
             <span class="scale-label">1</span>
-            @for (swatch of densitySwatches; track $index) {
+            @for (swatch of swatches; track $index) {
               <span class="scale-swatch" [style.background]="swatch"></span>
             }
             <span class="scale-label">10+</span>
@@ -99,7 +99,7 @@ import { LandscapeStateService } from './landscape-state.service';
     </aside>
   `,
   styles: `
-    .density-controls {
+    .heatmap-controls {
       width: 260px;
       flex-shrink: 0;
       border-right: 1px solid #e2e8f0;
@@ -261,7 +261,7 @@ import { LandscapeStateService } from './landscape-state.service';
       margin: 4px 0;
     }
 
-    .density-scale {
+    .heatmap-scale {
       display: flex;
       align-items: center;
       gap: 2px;
@@ -299,16 +299,16 @@ import { LandscapeStateService } from './landscape-state.service';
     }
   `,
 })
-export class DensityControlsPanelComponent {
+export class HeatmapControlsPanelComponent {
   protected readonly state = inject(LandscapeStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly bubbles = input<DensityBubble[]>([]);
-  readonly grouping = input<DensityGrouping>('moa');
+  readonly bubbles = input<HeatmapBubble[]>([]);
+  readonly grouping = input<HeatmapGrouping>('moa');
   readonly countUnit = input<CountUnit>('assets');
 
-  protected readonly groupingOptions = DENSITY_GROUPING_OPTIONS;
+  protected readonly groupingOptions = HEATMAP_GROUPING_OPTIONS;
   protected readonly countOptions = COUNT_UNIT_OPTIONS;
 
   // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
@@ -321,11 +321,11 @@ export class DensityControlsPanelComponent {
     }))
   );
 
-  // Density ramp: one hue, deepening with count. Built from the same cellTint()
-  // the matrix cells use (with the P3 hero teal as the representative phase) so
+  // Shade ramp: one hue, deepening with count. Built from the same cellTint()
+  // the heatmap cells use (with the P3 hero teal as the representative phase) so
   // the legend swatches are literally the cell shades and cannot drift. Counts
   // span the absolute buckets cellTint maps: 1, 2, 3, 4-5, 6-9, 10+.
-  protected readonly densitySwatches = [1, 2, 3, 4, 6, 10].map(
+  protected readonly swatches = [1, 2, 3, 4, 6, 10].map(
     (count) => cellTint(PHASE_COLOR.P3, count) as string
   );
 
@@ -337,14 +337,14 @@ export class DensityControlsPanelComponent {
 
   protected readonly readText = computed<string>(() => {
     const result = buildLandscapeRead({
-      view: 'density',
+      view: 'heatmap',
       groupBy: this.grouping(),
       stats: fromBubbles(this.bubbles()),
     });
     return result.text;
   });
 
-  protected navigateToGrouping(grouping: DensityGrouping): void {
+  protected navigateToGrouping(grouping: HeatmapGrouping): void {
     const segment = groupingToSegment(grouping);
     this.router.navigate(['..', segment], { relativeTo: this.route });
   }
