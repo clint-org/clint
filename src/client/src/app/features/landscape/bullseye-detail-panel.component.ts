@@ -89,8 +89,15 @@ export class BullseyeDetailPanelComponent {
   protected openChangeEvent(changeEventId: string): void {
     const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
     if (!tenantId || !spaceId) return;
+    // Scope the events feed to this asset and filter to detected changes, so
+    // the list is the asset's recent changes (its trials roll up) rather than
+    // the global feed -- while still opening the most-recent one in the panel.
+    const assetId = this.selectedAsset()?.id ?? null;
     void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
-      queryParams: { detectedId: changeEventId },
+      queryParams: {
+        detectedId: changeEventId,
+        ...(assetId ? { entityLevel: 'product', entityId: assetId, source: 'detected' } : {}),
+      },
     });
   }
 

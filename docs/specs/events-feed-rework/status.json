@@ -10,7 +10,7 @@
     "component": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "entity-cell": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "template": { "status": "completed", "agent": null, "attempts": 1, "error": null },
-    "pill-scope": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "pill-scope": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "verify": { "status": "pending", "agent": null, "attempts": 0, "error": null }
   }
 }
