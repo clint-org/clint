@@ -207,18 +207,31 @@
                 [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
               ></span>
             </td>
-            <td class="col-secondary text-xs text-slate-500">
-              <span
-                [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"
-              ></span>
-              @if (item.has_annotation) {
-                <i
-                  class="fa-solid fa-message text-[8px] text-brand-500 ml-1"
-                  pTooltip="Analyst note attached"
-                  tooltipPosition="top"
-                  aria-label="Analyst note attached"
-                ></i>
-              }
+            <td class="col-secondary text-xs">
+              @let ec = entityCell(item);
+              <span class="inline-flex items-center gap-1.5 align-middle">
+                <span
+                  class="rounded-sm border border-brand-100 bg-brand-50 px-1 py-px font-mono text-[9px] font-semibold uppercase tracking-wider text-brand-700"
+                  >{{ ec.badge }}</span
+                >
+                @if (ec.value) {
+                  <span
+                    class="font-medium text-slate-900"
+                    [innerHTML]="ec.value | highlight: grid.debouncedGlobalSearch()"
+                  ></span>
+                }
+                @if (ec.parents.length) {
+                  <span class="text-slate-400">{{ ec.parents.join(' / ') }}</span>
+                }
+                @if (item.has_annotation) {
+                  <i
+                    class="fa-solid fa-message text-[8px] text-brand-500"
+                    pTooltip="Analyst note attached"
+                    tooltipPosition="top"
+                    aria-label="Analyst note attached"
+                  ></i>
+                }
+              </span>
             </td>
             <td class="col-priority text-center">
               @if (item.priority === 'high') {

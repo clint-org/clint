@@ -44,6 +44,7 @@ import { EntityNounPipe } from '../../shared/pipes/entity-noun.pipe';
 import { formatEventDateSuffix } from './format-event-date-suffix';
 import { EntityScope, parseEntityScope } from './entity-scope';
 import { buildServerQuery, type ServerQuery } from './server-query';
+import { entityCellParts, type EntityCellParts } from './entity-cell';
 
 @Component({
   selector: 'app-events-page',
@@ -311,6 +312,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     if (item.company_name && item.entity_name) return `${item.company_name} / ${item.entity_name}`;
     if (item.entity_name) return item.entity_name;
     return '--';
+  }
+
+  /** Entity column cell (level badge + most-specific name + parent path). */
+  protected entityCell(item: FeedItem): EntityCellParts {
+    return entityCellParts(item);
   }
 
   async onRowClick(item: FeedItem): Promise<void> {
