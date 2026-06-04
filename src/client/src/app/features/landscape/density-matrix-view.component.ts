@@ -73,6 +73,7 @@ import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel
                 [sortField]="sortField()"
                 [sortDir]="sortDir()"
                 [latestEventDate]="data.latest_event_date ?? null"
+                [showPreclinical]="state.showPreclinical()"
                 (rowClick)="onBubbleClick($event)"
                 (sortChange)="onSortChange($event)"
               />

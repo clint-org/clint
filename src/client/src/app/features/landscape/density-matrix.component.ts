@@ -4,8 +4,8 @@ import {
   type CountUnit,
   type DensityBubble,
   PHASE_COLOR,
-  RING_ORDER,
   type RingPhase,
+  visibleRingOrder,
 } from '../../core/models/landscape.model';
 
 const PHASE_SHORT: Record<RingPhase, string> = {
@@ -307,7 +307,8 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
     <div class="matrix-header">
       <div class="matrix-title">Competitive Density</div>
       <div class="matrix-subtitle">
-        {{ rows().length }} {{ rows().length === 1 ? 'group' : 'groups' }} across 7 phases
+        {{ rows().length }} {{ rows().length === 1 ? 'group' : 'groups' }} across
+        {{ phases().length }} phases
       </div>
       @if (freshnessText()) {
         <div class="matrix-freshness">{{ freshnessText() }}</div>
@@ -322,7 +323,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       >
         <colgroup>
           <col class="row-label-col" />
-          @for (phase of phases; track phase) {
+          @for (phase of phases(); track phase) {
             <col class="phase-col" />
           }
           <col class="total-col" />
@@ -343,7 +344,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
                 <span class="sort-arrow">{{ sortDir() === 'asc' ? '▲' : '▼' }}</span>
               }
             </th>
-            @for (phase of phases; track phase) {
+            @for (phase of phases(); track phase) {
               <th role="columnheader">
                 <span class="phase-dot" [style.background]="phaseColor(phase)"></span
                 >{{ phaseShort(phase) }}
@@ -414,11 +415,13 @@ export class DensityMatrixComponent {
   readonly sortField = input<SortField>('total');
   readonly sortDir = input<'asc' | 'desc'>('desc');
   readonly latestEventDate = input<string | null>(null);
+  /** When false, the preclinical column is omitted (space does not track it). */
+  readonly showPreclinical = input(true);
 
   readonly rowClick = output<DensityBubble>();
   readonly sortChange = output<SortEvent>();
 
-  readonly phases = RING_ORDER;
+  readonly phases = computed(() => visibleRingOrder(this.showPreclinical()));
 
   protected readonly freshnessText = computed(() =>
     formatFreshness(this.latestEventDate(), new Date())
@@ -430,7 +433,7 @@ export class DensityMatrixComponent {
     const dir = this.sortDir();
 
     const rows: MatrixRow[] = bubbles.map((bubble) => {
-      const cells: MatrixCell[] = RING_ORDER.map((phase) => {
+      const cells: MatrixCell[] = this.phases().map((phase) => {
         const count = bubble.phase_counts[phase] ?? 0;
         return {
           phase,
