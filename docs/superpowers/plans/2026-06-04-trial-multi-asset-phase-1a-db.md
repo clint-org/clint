@@ -194,10 +194,14 @@ create trigger trg_trial_assets_bootstrap
 ```sql
 -- Keep trials.asset_id equal to the single is_primary member. One direction only:
 -- trial_assets.is_primary drives trials.asset_id, never the reverse.
--- If the primary membership is removed but others remain, promote the earliest
--- remaining member so the invariant (exactly one primary) is restored.
--- If zero members remain (e.g. mid-cascade when the trial is being deleted),
--- do nothing.
+-- Auto-promotion happens ONLY on DELETE: if the deleted row left the trial with
+-- no primary but other members remain, promote the earliest. We must NOT
+-- auto-promote during an UPDATE, because set_trial_assets repoints the primary by
+-- demoting all rows then promoting the chosen one in two separate statements;
+-- after the demote there is transiently no primary, and if this trigger promoted
+-- a different row then the subsequent promote would create a SECOND primary and
+-- violate uq_trial_assets_one_primary. So on UPDATE/INSERT we only sync asset_id,
+-- and only when exactly one primary exists (skipping the transient zero state).
 create or replace function public._trial_assets_sync_primary()
 returns trigger
 language plpgsql
@@ -207,30 +211,41 @@ as $$
 declare
   v_trial     uuid := coalesce(new.trial_id, old.trial_id);
   v_remaining int;
+  v_primaries int;
   v_primary   uuid;
 begin
   select count(*) into v_remaining
     from public.trial_assets where trial_id = v_trial;
 
   if v_remaining = 0 then
-    return null;
+    return null;  -- no members (trial being deleted); nothing to sync
   end if;
 
-  -- No primary flagged (e.g. the primary row was just deleted): promote the
-  -- earliest-created remaining member. The UPDATE re-fires this trigger, which
-  -- then syncs trials.asset_id on the next pass.
-  if not exists (
-    select 1 from public.trial_assets where trial_id = v_trial and is_primary
-  ) then
-    update public.trial_assets ta
-       set is_primary = true
-     where ta.trial_id = v_trial
-       and ta.asset_id = (
-         select t2.asset_id from public.trial_assets t2
-          where t2.trial_id = v_trial
-          order by t2.created_at, t2.asset_id
-          limit 1
-       );
+  -- DELETE only: restore the "exactly one primary" invariant by promoting the
+  -- earliest remaining member when the deleted row was the primary. The promotion
+  -- UPDATE re-fires this trigger, which then syncs trials.asset_id.
+  if tg_op = 'DELETE' then
+    if not exists (
+      select 1 from public.trial_assets where trial_id = v_trial and is_primary
+    ) then
+      update public.trial_assets ta
+         set is_primary = true
+       where ta.trial_id = v_trial
+         and ta.asset_id = (
+           select t2.asset_id from public.trial_assets t2
+            where t2.trial_id = v_trial
+            order by t2.created_at, t2.asset_id
+            limit 1
+         );
+      return null;
+    end if;
+  end if;
+
+  -- Sync only when exactly one primary exists. During set_trial_assets's
+  -- demote-then-promote the count is transiently 0; skip until it settles.
+  select count(*) into v_primaries
+    from public.trial_assets where trial_id = v_trial and is_primary;
+  if v_primaries <> 1 then
     return null;
   end if;
 
