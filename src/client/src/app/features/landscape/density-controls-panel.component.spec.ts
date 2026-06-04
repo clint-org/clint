@@ -1,12 +1,14 @@
 import { signal, computed } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
-import type {
-  CountUnit,
-  DensityBubble,
-  DensityGrouping,
-  RingPhase,
+import {
+  type CountUnit,
+  type DensityBubble,
+  type DensityGrouping,
+  PHASE_COLOR,
+  type RingPhase,
 } from '../../core/models/landscape.model';
+import { cellTint } from './density-matrix.component';
 
 function makeBubble(overrides: Partial<DensityBubble> = {}): DensityBubble {
   return {
@@ -198,6 +200,37 @@ describe('DensityControlsPanelComponent READ', () => {
 
     expect(text).toContain('&lt;Bio &amp; Tech&gt;');
     expect(text).not.toContain('<Bio');
+  });
+});
+
+describe('DensityControlsPanelComponent LEGEND density ramp', () => {
+  // Mirrors how the component builds densitySwatches: cellTint() over the P3
+  // hero hue across the absolute count buckets.
+  const swatches = [1, 2, 3, 4, 6, 10].map((count) => cellTint(PHASE_COLOR.P3, count) as string);
+
+  it('produces one swatch per count bucket', () => {
+    expect(swatches).toHaveLength(6);
+    expect(swatches.every((s) => typeof s === 'string' && s.length > 0)).toBe(true);
+  });
+
+  it('is a single hue: every swatch tints the P3 phase color, none use the old amber/red ramp', () => {
+    for (const swatch of swatches) {
+      expect(swatch).toContain(PHASE_COLOR.P3);
+    }
+    // The retired heatmap ramp mixed in amber and red; the new ramp never does.
+    const retired = ['#fffbeb', '#fef3c7', '#fef2f2', '#fee2e2', '#fecaca'];
+    for (const swatch of swatches) {
+      for (const oldColor of retired) {
+        expect(swatch).not.toContain(oldColor);
+      }
+    }
+  });
+
+  it('deepens monotonically: the mix percentage rises with the count', () => {
+    const pct = (s: string) => Number(/(\d+)%/.exec(s)?.[1] ?? '0');
+    for (let i = 1; i < swatches.length; i++) {
+      expect(pct(swatches[i])).toBeGreaterThan(pct(swatches[i - 1]));
+    }
   });
 });
 

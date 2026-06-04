@@ -13,6 +13,7 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
+import { cellTint } from './density-matrix.component';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
@@ -86,8 +87,9 @@ import { LandscapeStateService } from './landscape-state.service';
             @for (swatch of densitySwatches; track $index) {
               <span class="scale-swatch" [style.background]="swatch"></span>
             }
-            <span class="scale-label">max</span>
+            <span class="scale-label">10+</span>
           </div>
+          <div class="scale-caption">shade = count, in each phase color</div>
           <div class="legend-item empty-cell-indicator">
             <span class="empty-dot"></span>
             <span>No assets</span>
@@ -277,6 +279,12 @@ import { LandscapeStateService } from './landscape-state.service';
       height: 10px;
     }
 
+    .scale-caption {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
     .empty-cell-indicator {
       margin-top: 4px;
     }
@@ -313,16 +321,13 @@ export class DensityControlsPanelComponent {
     }))
   );
 
-  protected readonly densitySwatches = [
-    '#f0fdfa',
-    '#ccfbf1',
-    '#99f6e4',
-    '#fffbeb',
-    '#fef3c7',
-    '#fef2f2',
-    '#fee2e2',
-    '#fecaca',
-  ];
+  // Density ramp: one hue, deepening with count. Built from the same cellTint()
+  // the matrix cells use (with the P3 hero teal as the representative phase) so
+  // the legend swatches are literally the cell shades and cannot drift. Counts
+  // span the absolute buckets cellTint maps: 1, 2, 3, 4-5, 6-9, 10+.
+  protected readonly densitySwatches = [1, 2, 3, 4, 6, 10].map(
+    (count) => cellTint(PHASE_COLOR.P3, count) as string
+  );
 
   protected readonly groupCount = computed(() => this.bubbles().length);
 
