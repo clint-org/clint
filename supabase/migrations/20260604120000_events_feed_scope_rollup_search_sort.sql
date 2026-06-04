@@ -526,3 +526,9 @@ begin
   delete from auth.users where id = v_owner_id;
   perform set_config('clint.member_guard_cascade', 'off', true);
 end$$;
+
+-- The function signature changed (3 new params); tell PostgREST to reload its
+-- schema cache so the new overload is callable immediately after apply,
+-- locally and on remote db push. Without this, calls with the new named args
+-- 404 until the next PostgREST restart.
+notify pgrst, 'reload schema';

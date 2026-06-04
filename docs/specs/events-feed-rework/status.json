@@ -1,6 +1,6 @@
 {
   "spec_id": "spec-2026-events-feed-rework",
-  "status": "in_progress",
+  "status": "complete",
   "branch": "spec/events-feed-rework",
   "updatedAt": "2026-06-04T00:00:00Z",
   "tasks": {
@@ -11,6 +11,6 @@
     "entity-cell": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "template": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "pill-scope": { "status": "completed", "agent": null, "attempts": 1, "error": null },
-    "verify": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+    "verify": { "status": "completed", "agent": null, "attempts": 1, "error": null }
   }
 }
