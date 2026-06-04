@@ -78,15 +78,34 @@
             </th>
             <th pSortableColumn="title">
               Title <p-sortIcon field="title" />
-              <p-column-filter type="text" field="title" display="menu" />
             </th>
             <th pSortableColumn="category_name" class="col-secondary">
               Category <p-sortIcon field="category_name" />
-              <p-column-filter type="text" field="category_name" display="menu" />
+              <p-column-filter
+                field="category_name"
+                display="menu"
+                matchMode="in"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select
+                    [options]="allCategoryOptions()"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                  />
+                </ng-template>
+              </p-column-filter>
             </th>
             <th pSortableColumn="entity_display" class="col-secondary">
               Entity <p-sortIcon field="entity_display" />
-              <p-column-filter type="text" field="entity_display" display="menu" />
             </th>
             <th pSortableColumn="priority" class="col-priority">
               Priority <p-sortIcon field="priority" />

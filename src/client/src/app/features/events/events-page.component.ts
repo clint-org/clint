@@ -157,17 +157,15 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       {
         field: 'title',
         header: 'Title',
-        filter: { kind: 'text' },
       },
       {
         field: 'category_name',
         header: 'Category',
-        filter: { kind: 'text' },
+        filter: { kind: 'select', options: () => this.allCategoryOptions() },
       },
       {
         field: 'entity_display',
         header: 'Entity',
-        filter: { kind: 'text' },
         getValue: (row) => this.getEntityDisplay(row),
       },
       {
