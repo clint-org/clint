@@ -7,7 +7,7 @@
     "rpc": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "model-service": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "server-query": { "status": "completed", "agent": null, "attempts": 1, "error": null },
-    "component": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "component": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "entity-cell": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "template": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "pill-scope": { "status": "pending", "agent": null, "attempts": 0, "error": null },
