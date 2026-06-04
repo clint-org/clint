@@ -369,6 +369,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         company_name: detail.company_name,
         company_id: detail.company_id,
         asset_id: detail.asset_id,
+        asset_name: null,
+        trial_id: detail.entity_level === 'trial' ? detail.entity_id : null,
+        trial_name: detail.entity_level === 'trial' ? detail.entity_name : null,
         tags: detail.tags,
         has_thread: !!detail.thread,
         thread_id: detail.thread_id,
@@ -462,6 +465,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         company_name: detail.catalyst.company_name,
         company_id: detail.catalyst.company_id,
         asset_id: detail.catalyst.asset_id,
+        asset_name: detail.catalyst.asset_name,
+        trial_id: detail.catalyst.trial_id,
+        trial_name: detail.catalyst.trial_acronym ?? detail.catalyst.trial_name,
         tags: [],
         has_thread: false,
         thread_id: null,
@@ -589,6 +595,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       tags: [],
       priority: null,
       sourceType: null,
+      search: null,
+      sortField: null,
+      sortDir: null,
     };
   }
 

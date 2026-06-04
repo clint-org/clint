@@ -5,7 +5,7 @@
   "updatedAt": "2026-06-04T00:00:00Z",
   "tasks": {
     "rpc": { "status": "completed", "agent": null, "attempts": 1, "error": null },
-    "model-service": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "model-service": { "status": "completed", "agent": null, "attempts": 1, "error": null },
     "server-query": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "component": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "entity-cell": { "status": "pending", "agent": null, "attempts": 0, "error": null },

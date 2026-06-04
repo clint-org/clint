@@ -37,6 +37,9 @@ export class EventService {
               p_source_type: filters.sourceType,
               p_limit: limit,
               p_offset: offset,
+              p_search: filters.search,
+              p_sort_field: filters.sortField ?? 'feed_ts',
+              p_sort_dir: filters.sortDir ?? 'desc',
             })
             .throwOnError();
           const result = data as { items: FeedItem[]; total: number } | null;
