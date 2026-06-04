@@ -146,6 +146,18 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
   user_facing: true
   role: owner
   status: active
+- id: tenant-settings-preclinical
+  summary: Per-space "Track preclinical phase" toggle (spaces.show_preclinical, default off). When off, the PRECLIN phase is excluded from every analytic RPC and the trial list, and dropped from phase dropdowns; enforcement is server-side via space_shows_preclinical(). Owners set it on the same settings/fields page.
+  routes:
+    - /t/:tenantId/s/:spaceId/settings/fields
+  rpcs:
+    - update_space_show_preclinical
+  tables:
+    - spaces
+  related: []
+  user_facing: true
+  role: owner
+  status: active
 - id: tenant-settings-taxonomies
   summary: Space-scoped taxonomy management surface for therapeutic areas, MOAs, and ROAs.
   routes:
