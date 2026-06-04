@@ -4,6 +4,8 @@ import {
   BullseyeData,
   BullseyeAsset,
   PHASE_COLOR,
+  RING_DEV_RANK,
+  RING_ORDER,
   RingPhase,
 } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
@@ -129,15 +131,26 @@ export class BullseyeChartComponent {
 
   protected readonly totalSpokes = computed(() => this.spokes().length);
 
+  // Number of rings actually drawn. Driven by the data's ring_order, which the
+  // server (and the client-grouped fallback) narrow to the space's tracked
+  // phases -- 6 when preclinical is hidden, 7 otherwise.
+  protected readonly ringCount = computed(() => this.data()?.ring_order?.length ?? RING_ORDER.length);
+
   protected readonly rings = computed<RingSpec[]>(() => {
-    const phases: RingPhase[] = ['LAUNCHED', 'APPROVED', 'P4', 'P3', 'P2', 'P1', 'PRECLIN'];
-    const devRanks = [6, 5, 4, 3, 2, 1, 0];
-    return phases.map((phase, i) => ({
-      devRank: devRanks[i],
-      phase,
-      radius: ringRadius(devRanks[i]),
-      isOuter: devRanks[i] === 0,
-    }));
+    // ring_order is in development order (earliest -> LAUNCHED); the earliest
+    // tracked phase is the outer rim. Fall back to the full order if absent.
+    const order = (this.data()?.ring_order as RingPhase[] | undefined) ?? [...RING_ORDER];
+    const count = order.length;
+    const outerDevRank = Math.min(...order.map((phase) => RING_DEV_RANK[phase]));
+    return order.map((phase) => {
+      const devRank = RING_DEV_RANK[phase];
+      return {
+        devRank,
+        phase,
+        radius: ringRadius(devRank, count),
+        isOuter: devRank === outerDevRank,
+      };
+    });
   });
 
   protected readonly spokeLines = computed<SpokeLineSpec[]>(() => {
@@ -151,7 +164,8 @@ export class BullseyeChartComponent {
   });
 
   protected readonly bands = computed<BandSpec[]>(() => {
-    // Six annular bands: each one fills the area between two consecutive
+    // One annular band per gap between consecutive rings (six normally, five
+    // when preclinical is hidden): each fills the area between two consecutive
     // ring radii. Drawn between sectors and rings; uses an additive slate
     // tint at low alpha so it darkens whatever sector tint sits below
     // without obscuring it.
@@ -222,10 +236,11 @@ export class BullseyeChartComponent {
 
       const baseAngle = spokeAngle(spokeIndex, total);
 
+      const count = this.ringCount();
       for (const [devRank, products] of byRank) {
         const angles = jitterAngles(baseAngle, sectorW, products.length);
         for (let i = 0; i < products.length; i += 1) {
-          const xy = polarToCartesian(angles[i], ringRadius(devRank));
+          const xy = polarToCartesian(angles[i], ringRadius(devRank, count));
           out.push({ product: products[i], x: xy.x, y: xy.y });
         }
       }
