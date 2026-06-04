@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import {
   type CountUnit,
-  type DensityBubble,
+  type HeatmapBubble,
   PHASE_COLOR,
-  RING_ORDER,
   type RingPhase,
+  visibleRingOrder,
 } from '../../core/models/landscape.model';
 
 const PHASE_SHORT: Record<RingPhase, string> = {
@@ -26,7 +26,7 @@ export interface SortEvent {
 }
 
 export interface MatrixRow {
-  bubble: DensityBubble;
+  bubble: HeatmapBubble;
   cells: MatrixCell[];
   total: number;
 }
@@ -34,25 +34,36 @@ export interface MatrixRow {
 export interface MatrixCell {
   phase: RingPhase;
   count: number;
-  intensity: number;
+  /** Phase-hued tint for the cell, or null when the cell is empty. */
+  background: string | null;
 }
 
-export function computeIntensity(values: number[], value: number): number {
-  if (value === 0) return 0;
-  if (values.length === 0) return 1;
+/**
+ * Absolute shade step (0-6) for a cell's count. Independent of the rest of
+ * the heatmap and of the active count unit, so a given count always renders at
+ * the same shade across the Assets / Trials / Companies toggle.
+ */
+export function heatmapStep(count: number): number {
+  if (count <= 0) return 0;
+  if (count <= 3) return count; // 1, 2, 3 map one-to-one
+  if (count <= 5) return 4;
+  if (count <= 9) return 5;
+  return 6;
+}
 
-  const sorted = [...values].sort((a, b) => a - b);
-  const distinct = [...new Set(sorted)];
+// Mix percentage of the phase hue over white per step. Capped well below full
+// saturation so dark cell text keeps WCAG AA contrast on every phase color.
+const STEP_MIX_PCT = [0, 14, 22, 30, 38, 46, 54];
 
-  if (distinct.length < 8) {
-    const max = distinct[distinct.length - 1];
-    if (max === 0) return 1;
-    return Math.max(1, Math.min(8, Math.ceil((value / max) * 8)));
-  }
-
-  const idx = sorted.indexOf(value);
-  const bucket = Math.floor((idx / sorted.length) * 8);
-  return Math.max(1, Math.min(8, bucket + 1));
+/**
+ * Background tint for a cell: the cell's own phase color mixed over white,
+ * deeper as the count rises. Returns null for an empty cell. Color comes from
+ * the fixed phase palette (data color), never the tenant brand color.
+ */
+export function cellTint(phaseColor: string, count: number): string | null {
+  const step = heatmapStep(count);
+  if (step === 0) return null;
+  return `color-mix(in srgb, ${phaseColor} ${STEP_MIX_PCT[step]}%, white)`;
 }
 
 export function formatFreshness(isoDate: string | null, now: Date): string | null {
@@ -74,7 +85,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
 }
 
 @Component({
-  selector: 'app-density-matrix',
+  selector: 'app-heatmap',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(keydown.escape)': 'onEscape()',
@@ -180,6 +191,12 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       color: var(--slate-700);
     }
 
+    /* Tenant brand color marks the active sort column -- brand lives on the
+       interactive chrome, never on the data cells. */
+    table.matrix thead th.sortable.sorted {
+      color: var(--brand-700);
+    }
+
     .sort-arrow {
       font-size: 8px;
       margin-left: 2px;
@@ -261,39 +278,9 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       transition: all 0.12s;
-    }
-
-    .heat-pip.intensity-1 {
-      background: var(--brand-50);
-      color: var(--brand-700);
-    }
-    .heat-pip.intensity-2 {
-      background: var(--brand-100);
-      color: var(--brand-800);
-    }
-    .heat-pip.intensity-3 {
-      background: var(--brand-200);
-      color: var(--brand-900);
-    }
-    .heat-pip.intensity-4 {
-      background: var(--amber-50);
-      color: var(--amber-600);
-    }
-    .heat-pip.intensity-5 {
-      background: var(--amber-100);
-      color: var(--amber-600);
-    }
-    .heat-pip.intensity-6 {
-      background: var(--red-50);
-      color: var(--red-600);
-    }
-    .heat-pip.intensity-7 {
-      background: var(--red-100);
-      color: var(--red-700);
-    }
-    .heat-pip.intensity-8 {
-      background: var(--red-200);
-      color: var(--red-700);
+      /* Background is the cell's phase hue, applied inline per cell. Tints stay
+         light enough that this dark text holds WCAG AA contrast on every hue. */
+      color: var(--slate-900);
     }
 
     .heat-pip.empty {
@@ -318,9 +305,10 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
   `,
   template: `
     <div class="matrix-header">
-      <div class="matrix-title">Competitive Density</div>
+      <div class="matrix-title">Competitive Heatmap</div>
       <div class="matrix-subtitle">
-        {{ rows().length }} {{ rows().length === 1 ? 'group' : 'groups' }} across 7 phases
+        {{ rows().length }} {{ rows().length === 1 ? 'group' : 'groups' }} across
+        {{ phases().length }} phases
       </div>
       @if (freshnessText()) {
         <div class="matrix-freshness">{{ freshnessText() }}</div>
@@ -331,11 +319,11 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       <table
         class="matrix"
         role="grid"
-        aria-label="Competitive density heatmap by development phase"
+        aria-label="Competitive heatmap by development phase; cell color marks the phase, shade marks the count"
       >
         <colgroup>
           <col class="row-label-col" />
-          @for (phase of phases; track phase) {
+          @for (phase of phases(); track phase) {
             <col class="phase-col" />
           }
           <col class="total-col" />
@@ -344,6 +332,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
           <tr>
             <th
               class="sortable"
+              [class.sorted]="sortField() === 'name'"
               role="columnheader"
               [attr.aria-sort]="
                 sortField() === 'name' ? (sortDir() === 'asc' ? 'ascending' : 'descending') : 'none'
@@ -355,7 +344,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
                 <span class="sort-arrow">{{ sortDir() === 'asc' ? '▲' : '▼' }}</span>
               }
             </th>
-            @for (phase of phases; track phase) {
+            @for (phase of phases(); track phase) {
               <th role="columnheader">
                 <span class="phase-dot" [style.background]="phaseColor(phase)"></span
                 >{{ phaseShort(phase) }}
@@ -363,6 +352,7 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
             }
             <th
               class="sortable"
+              [class.sorted]="sortField() === 'total'"
               role="columnheader"
               [attr.aria-sort]="
                 sortField() === 'total'
@@ -403,7 +393,9 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
                     @if (cell.count === 0) {
                       <div class="heat-pip empty" aria-hidden="true"></div>
                     } @else {
-                      <div [class]="'heat-pip intensity-' + cell.intensity">{{ cell.count }}</div>
+                      <div class="heat-pip" [style.background-color]="cell.background">
+                        {{ cell.count }}
+                      </div>
                     }
                   </div>
                 </td>
@@ -416,47 +408,37 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
     </div>
   `,
 })
-export class DensityMatrixComponent {
-  readonly bubbles = input.required<DensityBubble[]>();
+export class HeatmapComponent {
+  readonly bubbles = input.required<HeatmapBubble[]>();
   readonly countUnit = input<CountUnit>('assets');
-  readonly selectedBubble = input<DensityBubble | null>(null);
+  readonly selectedBubble = input<HeatmapBubble | null>(null);
   readonly sortField = input<SortField>('total');
   readonly sortDir = input<'asc' | 'desc'>('desc');
   readonly latestEventDate = input<string | null>(null);
+  /** When false, the preclinical column is omitted (space does not track it). */
+  readonly showPreclinical = input(true);
 
-  readonly rowClick = output<DensityBubble>();
+  readonly rowClick = output<HeatmapBubble>();
   readonly sortChange = output<SortEvent>();
 
-  readonly phases = RING_ORDER;
+  readonly phases = computed(() => visibleRingOrder(this.showPreclinical()));
 
   protected readonly freshnessText = computed(() =>
     formatFreshness(this.latestEventDate(), new Date())
   );
 
-  protected readonly nonZeroValues = computed(() => {
-    const values: number[] = [];
-    for (const b of this.bubbles()) {
-      for (const phase of RING_ORDER) {
-        const v = b.phase_counts[phase] ?? 0;
-        if (v > 0) values.push(v);
-      }
-    }
-    return values;
-  });
-
   protected readonly rows = computed<MatrixRow[]>(() => {
     const bubbles = this.bubbles();
-    const allNonZero = this.nonZeroValues();
     const field = this.sortField();
     const dir = this.sortDir();
 
     const rows: MatrixRow[] = bubbles.map((bubble) => {
-      const cells: MatrixCell[] = RING_ORDER.map((phase) => {
+      const cells: MatrixCell[] = this.phases().map((phase) => {
         const count = bubble.phase_counts[phase] ?? 0;
         return {
           phase,
           count,
-          intensity: computeIntensity(allNonZero, count),
+          background: cellTint(PHASE_COLOR[phase], count),
         };
       });
       return { bubble, cells, total: bubble.unit_count };
@@ -490,7 +472,7 @@ export class DensityMatrixComponent {
     return PHASE_SHORT[phase];
   }
 
-  protected onRowClick(bubble: DensityBubble): void {
+  protected onRowClick(bubble: HeatmapBubble): void {
     this.rowClick.emit(bubble);
   }
 
@@ -502,6 +484,6 @@ export class DensityMatrixComponent {
   }
 
   protected onEscape(): void {
-    this.rowClick.emit(undefined as unknown as DensityBubble);
+    this.rowClick.emit(undefined as unknown as HeatmapBubble);
   }
 }

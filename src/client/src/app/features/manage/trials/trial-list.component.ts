@@ -27,6 +27,7 @@ import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { CompanyService } from '../../../core/services/company.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
+import { SpaceSettingsService } from '../../../core/services/space-settings.service';
 import { formatCtgovFieldValue } from '../../../shared/utils/ctgov-field-format';
 import { TrialCreateDialogComponent } from './trial-create-dialog.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
@@ -128,6 +129,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   // space has not customized this surface. Cells are read-only -- existing
   // p-table sort/filter behavior on the static columns stays untouched.
   private readonly fieldVisibilityService = inject(SpaceFieldVisibilityService);
+  private readonly spaceSettings = inject(SpaceSettingsService);
   private readonly perSpacePaths = signal<string[] | null>(null);
   private readonly snapshotsByTrial = signal<Map<string, unknown>>(new Map());
 
@@ -332,8 +334,13 @@ export class TrialListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     try {
       const spaceId = this.spaceId();
+      // Preclinical trials are excluded from the list unless the space tracks
+      // preclinical; the flag gates the Postgres-side filter in listBySpace.
+      const showPreclinical = await this.spaceSettings
+        .getShowPreclinical(spaceId)
+        .catch(() => false);
       const [trials, products, companies, visibilityMap, snapshots] = await Promise.all([
-        this.trialService.listBySpace(spaceId),
+        this.trialService.listBySpace(spaceId, showPreclinical),
         this.assetService.list(spaceId),
         this.companyService.list(spaceId),
         this.fieldVisibilityService.get(spaceId).catch(() => ({}) as Record<string, string[]>),

@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import {
   PHASE_COLOR,
   RING_DEV_RANK,
-  RING_ORDER,
   RingPhase,
+  visibleRingOrder,
 } from '../../core/models/landscape.model';
 
 const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
@@ -26,7 +26,7 @@ const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
     '[attr.aria-label]': '"Reached " + currentPhase()',
   },
   template: `
-    @for (phase of phases; track phase) {
+    @for (phase of phases(); track phase) {
       <span
         class="h-2 flex-1 rounded-sm"
         [style.background]="segmentColor(phase)"
@@ -38,8 +38,10 @@ const EMPTY_SEGMENT = '#e2e8f0'; // slate-200
 })
 export class DetailPanelMiniPhaseBarComponent {
   readonly currentPhase = input.required<RingPhase>();
+  /** When false, the PRECLIN segment is omitted (space does not track preclinical). */
+  readonly showPreclinical = input(true);
 
-  protected readonly phases = RING_ORDER;
+  protected readonly phases = computed(() => visibleRingOrder(this.showPreclinical()));
 
   private readonly currentRank = computed(() => RING_DEV_RANK[this.currentPhase()]);
 

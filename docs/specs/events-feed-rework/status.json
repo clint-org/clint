@@ -1,0 +1,16 @@
+{
+  "spec_id": "spec-2026-events-feed-rework",
+  "status": "complete",
+  "branch": "spec/events-feed-rework",
+  "updatedAt": "2026-06-04T00:00:00Z",
+  "tasks": {
+    "rpc": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "model-service": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "server-query": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "component": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "entity-cell": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "template": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "pill-scope": { "status": "completed", "agent": null, "attempts": 1, "error": null },
+    "verify": { "status": "completed", "agent": null, "attempts": 1, "error": null }
+  }
+}

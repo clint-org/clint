@@ -28,12 +28,18 @@ export const MAX_DOTS_PER_GROUP = 4;
 
 /**
  * Ring radius for a product at `devRank` (0=PRECLIN ... 6=LAUNCHED).
- * Inverts the dev rank so LAUNCHED (6) lands at the innermost ring
- * (ringRank 0) and PRECLIN (0) lands at the outer rim (ringRank 6).
+ * Inverts the dev rank so LAUNCHED (6) lands at the innermost ring and the
+ * earliest tracked phase lands at the outer rim.
+ *
+ * `ringCount` is the number of rings actually drawn. It is 7 normally, but 6
+ * when a space does not track preclinical (PRECLIN is dropped). LAUNCHED is
+ * always devRank 6 at the center; the outermost tracked phase always lands at
+ * OUTER_RADIUS because its ringRank equals `ringCount - 1`. This keeps the rings
+ * evenly spaced with no empty rim when preclinical is hidden.
  */
-export function ringRadius(devRank: number): number {
+export function ringRadius(devRank: number, ringCount = RINGS): number {
   const ringRank = RINGS - 1 - devRank;
-  const step = (OUTER_RADIUS - INNER_RADIUS) / (RINGS - 1);
+  const step = (OUTER_RADIUS - INNER_RADIUS) / (ringCount - 1);
   return INNER_RADIUS + step * ringRank;
 }
 
@@ -68,9 +74,10 @@ export function polarToCartesian(angle: number, radius: number): { x: number; y:
 export function dotXY(
   companyIndex: number,
   totalCompanies: number,
-  devRank: number
+  devRank: number,
+  ringCount = RINGS
 ): { x: number; y: number } {
-  return polarToCartesian(spokeAngle(companyIndex, totalCompanies), ringRadius(devRank));
+  return polarToCartesian(spokeAngle(companyIndex, totalCompanies), ringRadius(devRank, ringCount));
 }
 
 /**

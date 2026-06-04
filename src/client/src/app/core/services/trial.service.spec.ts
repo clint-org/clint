@@ -15,6 +15,7 @@ interface QueryBuilderStub {
   update: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
+  or: ReturnType<typeof vi.fn>;
   order: ReturnType<typeof vi.fn>;
   limit: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
@@ -31,6 +32,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     update: vi.fn(),
     delete: vi.fn(),
     eq: vi.fn(),
+    or: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
     single: vi.fn(),
@@ -52,6 +54,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
+  qb.or.mockReturnValue(qb);
   qb.order.mockReturnValue(qb);
   qb.limit.mockReturnValue(qb);
   qb.throwOnError.mockReturnValue(qb);
@@ -269,6 +272,48 @@ describe('TrialService.update with phase fields', () => {
     const { service, captured } = setup();
     await service.update('t1', { phase_type: 'P2', phase_type_source: 'ctgov' });
     expect(captured['phase_type_source']).toBe('ctgov');
+  });
+});
+
+describe('TrialService.listBySpace preclinical filtering', () => {
+  // RpcCache shim runs the fetch closure so we exercise the PostgREST query build.
+  function setup(rows: unknown[]) {
+    const qb = makeQueryBuilder(rows);
+    const from = vi.fn().mockReturnValue(qb);
+    const cacheGet = vi.fn().mockImplementation((_name, _params, opts) => opts.fetch());
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { get: cacheGet, invalidateTags: vi.fn() }
+    );
+    return { service, from, qb, cacheGet };
+  }
+
+  it('omits the preclinical filter and keys the cache as tracking when showPreclinical=true', async () => {
+    const { service, from, qb, cacheGet } = setup([{ id: 't1' }]);
+
+    await service.listBySpace('space-1', true);
+
+    expect(from).toHaveBeenCalledWith('trials');
+    expect(qb.eq).toHaveBeenCalledWith('space_id', 'space-1');
+    expect(qb.or).not.toHaveBeenCalled();
+    expect(qb.order).toHaveBeenCalledWith('display_order');
+    expect(cacheGet.mock.calls[0][1]).toEqual({ spaceId: 'space-1', showPreclinical: true });
+  });
+
+  it('applies the Postgres-executed .or filter (keeping null-phase rows) when not tracked', async () => {
+    const { service, qb, cacheGet } = setup([]);
+
+    await service.listBySpace('space-1', false);
+
+    expect(qb.or).toHaveBeenCalledWith('phase_type.is.null,phase_type.neq.PRECLIN');
+    expect(qb.order).toHaveBeenCalledWith('display_order');
+    expect(cacheGet.mock.calls[0][1]).toEqual({ spaceId: 'space-1', showPreclinical: false });
+  });
+
+  it('defaults to tracking (no filter) when the flag is omitted', async () => {
+    const { service, qb } = setup([]);
+    await service.listBySpace('space-1');
+    expect(qb.or).not.toHaveBeenCalled();
   });
 });
 

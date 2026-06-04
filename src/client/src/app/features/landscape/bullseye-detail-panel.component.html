@@ -150,6 +150,8 @@
                       [count]="trial.recent_changes_count ?? 0"
                       [type]="trial.most_recent_change_type ?? null"
                       [eventId]="trial.most_recent_change_event_id ?? null"
+                      entityLevel="trial"
+                      [entityId]="trial.id"
                     />
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">

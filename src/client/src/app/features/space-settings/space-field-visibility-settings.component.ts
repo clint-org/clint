@@ -6,13 +6,16 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 import { Tooltip } from 'primeng/tooltip';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
+import { SpaceSettingsService } from '../../core/services/space-settings.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
 import { CtgovFieldPickerComponent } from '../../shared/components/ctgov-field-picker/ctgov-field-picker.component';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -52,7 +55,9 @@ const SURFACES: SurfaceTab[] = [
   selector: 'app-space-field-visibility-settings',
   standalone: true,
   imports: [
+    FormsModule,
     ButtonModule,
+    ToggleSwitch,
     Tooltip,
     Tabs,
     TabList,
@@ -69,6 +74,7 @@ const SURFACES: SurfaceTab[] = [
 export class SpaceFieldVisibilitySettingsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private service = inject(SpaceFieldVisibilityService);
+  private settings = inject(SpaceSettingsService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
 
@@ -91,6 +97,10 @@ export class SpaceFieldVisibilitySettingsComponent implements OnInit {
   readonly draft = signal<Record<string, string[]>>({});
   readonly loading = signal(true);
   readonly saving = signal(false);
+
+  /** Whether this space tracks the preclinical phase (default false). */
+  readonly showPreclinical = signal(false);
+  readonly preclinicalSaving = signal(false);
 
   readonly isDirty = computed(() => JSON.stringify(this.loaded()) !== JSON.stringify(this.draft()));
 
@@ -135,9 +145,39 @@ export class SpaceFieldVisibilitySettingsComponent implements OnInit {
     }
   }
 
+  /**
+   * Owner-only. Persists the preclinical tracking flag, with optimistic UI and
+   * rollback on failure (e.g. a non-owner racing the RLS guard).
+   */
+  async onTogglePreclinical(value: boolean): Promise<void> {
+    if (!this.canEdit() || this.preclinicalSaving()) return;
+    const previous = this.showPreclinical();
+    this.showPreclinical.set(value);
+    this.preclinicalSaving.set(true);
+    try {
+      await this.settings.setShowPreclinical(this.spaceId(), value);
+      this.messageService.add({
+        severity: 'success',
+        summary: value ? 'Now tracking preclinical phase.' : 'Preclinical phase hidden.',
+        life: 3000,
+      });
+    } catch (e) {
+      this.showPreclinical.set(previous);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not update preclinical setting',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    } finally {
+      this.preclinicalSaving.set(false);
+    }
+  }
+
   private async load(spaceId: string): Promise<void> {
     this.loading.set(true);
     try {
+      this.showPreclinical.set(await this.settings.getShowPreclinical(spaceId).catch(() => false));
       const visibility = await this.service.get(spaceId);
       // Seed missing surfaces with their defaults so the picker renders
       // something useful on first visit.

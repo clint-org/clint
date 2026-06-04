@@ -39,9 +39,9 @@ const NAV_SECTIONS: NavSection[] = [
         icon: NAV_ICONS['bullseye'],
       },
       {
-        label: 'Density Matrix',
-        route: 'density-matrix',
-        icon: NAV_ICONS['density-matrix'],
+        label: 'Heatmap',
+        route: 'heatmap',
+        icon: NAV_ICONS['heatmap'],
       },
       { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
     ],

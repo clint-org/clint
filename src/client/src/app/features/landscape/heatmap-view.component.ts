@@ -13,77 +13,79 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { DensityBubble, DensityGrouping } from '../../core/models/landscape.model';
+import { HeatmapBubble, HeatmapGrouping } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { DensityMatrixComponent, type SortEvent, type SortField } from './density-matrix.component';
-import { DensityControlsPanelComponent } from './density-controls-panel.component';
-import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel.component';
+import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.component';
+import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
+import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 
 @Component({
-  selector: 'app-density-matrix-view',
+  selector: 'app-heatmap-view',
   imports: [
-    DensityMatrixComponent,
-    DensityControlsPanelComponent,
-    DensityMatrixDetailPanelComponent,
+    HeatmapComponent,
+    HeatmapControlsPanelComponent,
+    HeatmapDetailPanelComponent,
     SkeletonComponent,
     MessageModule,
     ButtonModule,
   ],
   animations: [slidePanelAnimation],
   template: `
-    @if (densityData.isLoading()) {
+    @if (heatmapData.isLoading()) {
       <div
         class="flex h-full items-center justify-center"
         aria-busy="true"
-        aria-label="Loading density matrix data"
+        aria-label="Loading heatmap data"
       >
         <app-skeleton w="200px" h="14px" />
       </div>
-    } @else if (densityData.error()) {
+    } @else if (heatmapData.error()) {
       <div class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
           <p-message severity="error" [closable]="false">
-            Failed to load density matrix data. Please try again.
+            Failed to load heatmap data. Please try again.
           </p-message>
           <p-button
             label="Retry"
             severity="primary"
             size="small"
-            (onClick)="densityData.reload()"
+            (onClick)="heatmapData.reload()"
           />
         </div>
       </div>
     } @else {
-      @let data = densityData.value();
+      @let data = heatmapData.value();
       @if (data && data.bubbles.length > 0) {
         <div class="flex h-full overflow-auto">
-          <app-density-controls-panel
+          <app-heatmap-controls-panel
             [bubbles]="data.bubbles"
-            [grouping]="state.densityGrouping()"
+            [grouping]="state.heatmapGrouping()"
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout">
             <div class="flex-1 min-w-0 min-h-0 overflow-auto">
-              <app-density-matrix
+              <app-heatmap
                 [bubbles]="data.bubbles"
                 [countUnit]="state.countUnit()"
                 [selectedBubble]="selectedBubble()"
                 [sortField]="sortField()"
                 [sortDir]="sortDir()"
                 [latestEventDate]="data.latest_event_date ?? null"
+                [showPreclinical]="state.showPreclinical()"
                 (rowClick)="onBubbleClick($event)"
                 (sortChange)="onSortChange($event)"
               />
             </div>
             @if (showPanel()) {
               <div class="landscape-panel-wrap" @slidePanel>
-                <app-density-matrix-detail-panel
+                <app-heatmap-detail-panel
                   [bubble]="selectedBubble()"
                   [countUnit]="state.countUnit()"
                   [totalBubbles]="data.bubbles.length"
-                  [grouping]="state.densityGrouping()"
+                  [grouping]="state.heatmapGrouping()"
+                  [showPreclinical]="state.showPreclinical()"
                   (clearSelection)="selectedBubble.set(null)"
                   (openAsset)="onOpenAsset($event)"
                   (openInBullseye)="onOpenInBullseye()"
@@ -103,7 +105,7 @@ import { DensityMatrixDetailPanelComponent } from './density-matrix-detail-panel
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DensityMatrixViewComponent implements OnInit {
+export class HeatmapViewComponent implements OnInit {
   private readonly landscapeService = inject(LandscapeService);
   private readonly route = inject(ActivatedRoute);
   readonly state = inject(LandscapeStateService);
@@ -111,7 +113,7 @@ export class DensityMatrixViewComponent implements OnInit {
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
-  readonly selectedBubble = signal<DensityBubble | null>(null);
+  readonly selectedBubble = signal<HeatmapBubble | null>(null);
   readonly sortField = signal<SortField>('total');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
 
@@ -126,23 +128,23 @@ export class DensityMatrixViewComponent implements OnInit {
   constructor() {
     // Clear selection when grouping, count unit, or filters change
     effect(() => {
-      this.state.densityGrouping();
+      this.state.heatmapGrouping();
       this.state.countUnit();
       this.state.filters();
       this.selectedBubble.set(null);
     });
   }
 
-  readonly densityData = resource({
+  readonly heatmapData = resource({
     params: () => ({
       spaceId: this.spaceId(),
-      grouping: this.state.densityGrouping(),
+      grouping: this.state.heatmapGrouping(),
       countUnit: this.state.countUnit(),
       filters: this.state.filters(),
     }),
     loader: async ({ params }) => {
       if (!params.spaceId) return null;
-      return this.landscapeService.getDensityData(
+      return this.landscapeService.getHeatmapData(
         params.spaceId,
         params.grouping,
         params.countUnit,
@@ -164,7 +166,7 @@ export class DensityMatrixViewComponent implements OnInit {
     }
   }
 
-  onBubbleClick(bubble: DensityBubble): void {
+  onBubbleClick(bubble: HeatmapBubble): void {
     if (!bubble || this.selectedBubble() === bubble) {
       this.selectedBubble.set(null);
     } else {
@@ -194,15 +196,15 @@ export class DensityMatrixViewComponent implements OnInit {
     ]);
   }
 
-  /** Map density grouping to the closest bullseye dimension segment. */
+  /** Map heatmap grouping to the closest bullseye dimension segment. */
   private bullseyeSegment(): string {
-    const map: Record<DensityGrouping, string> = {
+    const map: Record<HeatmapGrouping, string> = {
       moa: 'by-moa',
       indication: 'by-indication',
       'moa+indication': 'by-indication',
       company: 'by-company',
       roa: 'by-roa',
     };
-    return map[this.state.densityGrouping()] ?? 'by-indication';
+    return map[this.state.heatmapGrouping()] ?? 'by-indication';
   }
 }

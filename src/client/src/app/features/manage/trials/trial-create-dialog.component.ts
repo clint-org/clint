@@ -20,6 +20,7 @@ import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { IndicationService } from '../../../core/services/indication.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
+import { SpaceSettingsService } from '../../../core/services/space-settings.service';
 import { Trial } from '../../../core/models/trial.model';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
@@ -51,6 +52,7 @@ export class TrialCreateDialogComponent {
   private indicationService = inject(IndicationService);
   private changeEventService = inject(ChangeEventService);
   private messageService = inject(MessageService);
+  private spaceSettings = inject(SpaceSettingsService);
 
   readonly visible = input<boolean>(false);
   readonly visibleChange = output<boolean>();
@@ -81,7 +83,7 @@ export class TrialCreateDialogComponent {
   readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
   readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
 
-  protected readonly PHASE_OPTIONS: { id: string; name: string }[] = [
+  private readonly ALL_PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
     { id: 'P1', name: 'Phase 1' },
     { id: 'P2', name: 'Phase 2' },
@@ -89,6 +91,16 @@ export class TrialCreateDialogComponent {
     { id: 'P4', name: 'Phase 4' },
     { id: 'OBS', name: 'Observational' },
   ];
+
+  /** True when the space tracks preclinical (default false: option hidden). */
+  protected readonly showPreclinical = signal(false);
+
+  /** Phase options, dropping Preclinical when the space does not track it. */
+  protected readonly phaseOptions = computed(() =>
+    this.showPreclinical()
+      ? this.ALL_PHASE_OPTIONS
+      : this.ALL_PHASE_OPTIONS.filter((o) => o.id !== 'PRECLIN')
+  );
 
   readonly products = signal<SelectOption[]>([]);
   readonly indications = signal<SelectOption[]>([]);
@@ -155,6 +167,10 @@ export class TrialCreateDialogComponent {
       const sid = this.spaceId();
       if (!sid) return;
       void this.loadOptions(sid);
+      void this.spaceSettings
+        .getShowPreclinical(sid)
+        .then((show) => this.showPreclinical.set(show))
+        .catch(() => this.showPreclinical.set(false));
     });
 
     // Reset form when the dialog is closed.

@@ -84,8 +84,8 @@ describe('LandscapeService.getBullseyeData', () => {
   });
 });
 
-describe('LandscapeService.getDensityData', () => {
-  it('uses tag space:{id}:density, passes all key params, and remaps products->assets', async () => {
+describe('LandscapeService.getHeatmapData', () => {
+  it('uses tag space:{id}:heatmap, passes all key params, and remaps products->assets', async () => {
     const rawWireResult = { rows: [], count_unit: 'products' };
     const rpc = vi.fn().mockReturnValue(makeRpcResult(rawWireResult));
     // cache.get invokes opts.fetch() directly so the products->assets remap is exercised.
@@ -103,11 +103,11 @@ describe('LandscapeService.getDensityData', () => {
       studyTypes: [],
     };
 
-    const result = await service.getDensityData('space-1', 'company', 'assets', filters);
+    const result = await service.getHeatmapData('space-1', 'company', 'assets', filters);
 
     const [rpcName, params, opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_positioning_data');
-    expect(opts.tags).toEqual(['space:space-1:density']);
+    expect(opts.tags).toEqual(['space:space-1:heatmap']);
     expect(params).toMatchObject({
       spaceId: 'space-1',
       grouping: 'company',

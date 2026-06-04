@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-import type { DensityBubble, RingPhase } from '../../core/models/landscape.model';
-import { computeIntensity, formatFreshness } from './density-matrix.component';
+import type { HeatmapBubble, RingPhase } from '../../core/models/landscape.model';
+import { cellTint, heatmapStep, formatFreshness } from './heatmap.component';
 
 function makeBubble(
   label: string,
   phaseCounts: Partial<Record<RingPhase, number>>,
-  overrides: Partial<DensityBubble> = {}
-): DensityBubble {
+  overrides: Partial<HeatmapBubble> = {}
+): HeatmapBubble {
   const total = Object.values(phaseCounts).reduce((s, v) => s + (v ?? 0), 0);
   return {
     label,
@@ -22,34 +22,58 @@ function makeBubble(
   };
 }
 
-describe('computeIntensity', () => {
-  it('returns 0 for a zero value', () => {
-    expect(computeIntensity([1, 2, 3], 0)).toBe(0);
+describe('heatmapStep', () => {
+  it('returns 0 for an empty cell', () => {
+    expect(heatmapStep(0)).toBe(0);
+    expect(heatmapStep(-3)).toBe(0);
   });
 
-  it('returns max intensity for a single non-zero value (it is both min and max)', () => {
-    expect(computeIntensity([5], 5)).toBe(8);
+  it('maps the low counts one-to-one', () => {
+    expect(heatmapStep(1)).toBe(1);
+    expect(heatmapStep(2)).toBe(2);
+    expect(heatmapStep(3)).toBe(3);
   });
 
-  it('uses linear mapping when fewer than 8 distinct values', () => {
-    expect(computeIntensity([1, 2, 3, 4], 1)).toBe(2);
-    expect(computeIntensity([1, 2, 3, 4], 2)).toBe(4);
-    expect(computeIntensity([1, 2, 3, 4], 3)).toBe(6);
-    expect(computeIntensity([1, 2, 3, 4], 4)).toBe(8);
+  it('buckets 4-5 together as step 4', () => {
+    expect(heatmapStep(4)).toBe(4);
+    expect(heatmapStep(5)).toBe(4);
   });
 
-  it('clamps linear mapping to 1 minimum', () => {
-    expect(computeIntensity([10], 1)).toBe(1);
+  it('buckets 6-9 together as step 5', () => {
+    expect(heatmapStep(6)).toBe(5);
+    expect(heatmapStep(9)).toBe(5);
   });
 
-  it('uses quantile bucketing with 8+ distinct values', () => {
-    const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-    expect(computeIntensity(values, 1)).toBe(1);
-    expect(computeIntensity(values, 16)).toBe(8);
+  it('caps at step 6 for 10 or more', () => {
+    expect(heatmapStep(10)).toBe(6);
+    expect(heatmapStep(50)).toBe(6);
   });
 
-  it('returns 1 as minimum intensity for value not in the values array', () => {
-    expect(computeIntensity([5, 10], 1)).toBe(1);
+  it('is absolute: a given count maps to the same step regardless of the rest of the matrix', () => {
+    // No second argument: the step does not depend on other cells, so it is
+    // stable across the Assets / Trials / Companies toggle.
+    expect(heatmapStep(3)).toBe(heatmapStep(3));
+  });
+});
+
+describe('cellTint', () => {
+  it('returns null for an empty cell so no background paints', () => {
+    expect(cellTint('#0d9488', 0)).toBeNull();
+  });
+
+  it('mixes the phase hue over white, deeper as the count rises', () => {
+    const c1 = cellTint('#0d9488', 1);
+    const c6 = cellTint('#0d9488', 10);
+    expect(c1).toContain('#0d9488');
+    expect(c1).toContain('white');
+    expect(c1).toMatch(/14%/);
+    expect(c6).toMatch(/54%/);
+  });
+
+  it('uses the cell phase color, not a fixed brand color', () => {
+    // A violet phase cell tints violet; a teal phase cell tints teal.
+    expect(cellTint('#7c3aed', 2)).toContain('#7c3aed');
+    expect(cellTint('#0d9488', 2)).toContain('#0d9488');
   });
 });
 
@@ -90,7 +114,7 @@ describe('formatFreshness', () => {
   });
 });
 
-describe('DensityMatrixComponent row computation', () => {
+describe('HeatmapComponent row computation', () => {
   it('computes correct number of rows from bubbles', () => {
     const bubbles = [
       makeBubble('Alpha', { PRECLIN: 2, P1: 3 }),
@@ -140,7 +164,7 @@ describe('DensityMatrixComponent row computation', () => {
   });
 
   it('handles empty bubbles array', () => {
-    const bubbles: DensityBubble[] = [];
+    const bubbles: HeatmapBubble[] = [];
     expect(bubbles).toHaveLength(0);
   });
 
@@ -152,11 +176,10 @@ describe('DensityMatrixComponent row computation', () => {
     expect(selected === b2).toBe(false);
   });
 
-  it('computes intensity for each cell in a row', () => {
-    const allNonZero = [1, 2, 3, 4, 5, 6, 7, 8];
-    expect(computeIntensity(allNonZero, 1)).toBeGreaterThanOrEqual(1);
-    expect(computeIntensity(allNonZero, 8)).toBeLessThanOrEqual(8);
-    expect(computeIntensity(allNonZero, 0)).toBe(0);
+  it('computes a phase-hued background for each non-empty cell', () => {
+    // Empty cells get no background; non-empty cells tint their own phase hue.
+    expect(cellTint('#0d9488', 0)).toBeNull();
+    expect(cellTint('#0d9488', 4)).toContain('#0d9488');
   });
 
   it('produces correct cell structure for all 7 phases', () => {

@@ -27,6 +27,17 @@ export const RING_ORDER: readonly RingPhase[] = [
 ];
 
 /**
+ * Ring order narrowed for a space's preclinical setting. When a space does not
+ * track preclinical (the default), PRECLIN is dropped so the bullseye omits the
+ * outer preclinical ring and phase bars omit its segment. The server enforces
+ * exclusion of preclinical records regardless; this only controls what the UI
+ * renders. See SpaceSettingsService and core/models/phase-colors.ts.
+ */
+export function visibleRingOrder(showPreclinical: boolean): readonly RingPhase[] {
+  return showPreclinical ? RING_ORDER : RING_ORDER.filter((p) => p !== 'PRECLIN');
+}
+
+/**
  * Map of phase → development rank. Used when comparing "who has gone
  * furthest" and when projecting a phase onto a ring radius.
  */
@@ -178,12 +189,12 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye' | 'density-matrix' | 'catalysts';
+export type ViewMode = 'timeline' | 'bullseye' | 'heatmap' | 'catalysts';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
-  { label: 'Density Matrix', value: 'density-matrix' },
+  { label: 'Heatmap', value: 'heatmap' },
   { label: 'Future Catalysts', value: 'catalysts' },
 ];
 
@@ -288,13 +299,13 @@ function getSpokeKeys(
   }
 }
 
-// --- Density Matrix types ---
+// --- Heatmap types ---
 
-export type DensityGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
+export type HeatmapGrouping = 'moa' | 'indication' | 'moa+indication' | 'company' | 'roa';
 
 export type CountUnit = 'assets' | 'trials' | 'companies';
 
-export interface DensityAsset {
+export interface HeatmapAsset {
   id: string;
   name: string;
   generic_name: string | null;
@@ -305,7 +316,7 @@ export interface DensityAsset {
   trial_count: number;
 }
 
-export interface DensityBubble {
+export interface HeatmapBubble {
   label: string;
   group_keys: Record<string, string>;
   competitor_count: number;
@@ -313,17 +324,17 @@ export interface DensityBubble {
   highest_phase_rank: number;
   unit_count: number;
   phase_counts: Partial<Record<RingPhase, number>>;
-  products: DensityAsset[];
+  products: HeatmapAsset[];
 }
 
-export interface DensityData {
-  grouping: DensityGrouping;
+export interface HeatmapData {
+  grouping: HeatmapGrouping;
   count_unit: CountUnit;
   latest_event_date: string | null;
-  bubbles: DensityBubble[];
+  bubbles: HeatmapBubble[];
 }
 
-export const DENSITY_GROUPING_OPTIONS: { label: string; value: DensityGrouping }[] = [
+export const HEATMAP_GROUPING_OPTIONS: { label: string; value: HeatmapGrouping }[] = [
   { label: 'Mechanism of Action', value: 'moa' },
   { label: 'Indication', value: 'indication' },
   { label: 'MOA + Indication', value: 'moa+indication' },
@@ -331,8 +342,8 @@ export const DENSITY_GROUPING_OPTIONS: { label: string; value: DensityGrouping }
   { label: 'Route of Administration', value: 'roa' },
 ];
 
-export function groupingToSegment(g: DensityGrouping): string {
-  const map: Record<DensityGrouping, string> = {
+export function groupingToSegment(g: HeatmapGrouping): string {
+  const map: Record<HeatmapGrouping, string> = {
     moa: 'by-moa',
     indication: 'by-indication',
     'moa+indication': 'by-moa-indication',
@@ -342,8 +353,8 @@ export function groupingToSegment(g: DensityGrouping): string {
   return map[g];
 }
 
-export function segmentToGrouping(segment: string): DensityGrouping {
-  const map: Record<string, DensityGrouping> = {
+export function segmentToGrouping(segment: string): HeatmapGrouping {
+  const map: Record<string, HeatmapGrouping> = {
     'by-moa': 'moa',
     'by-indication': 'indication',
     'by-moa-indication': 'moa+indication',
@@ -353,7 +364,7 @@ export function segmentToGrouping(segment: string): DensityGrouping {
   return map[segment] ?? 'moa';
 }
 
-export const DENSITY_SEGMENTS = [
+export const HEATMAP_SEGMENTS = [
   'by-moa',
   'by-indication',
   'by-moa-indication',

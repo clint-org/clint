@@ -48,8 +48,11 @@ describe('humanizeCountKey', () => {
     expect(humanizeCountKey('primary_intelligence_links')).toBe('Intelligence links');
   });
 
+  it('renders the products count key as "Assets" (user-facing noun)', () => {
+    expect(humanizeCountKey('products')).toBe('Assets');
+  });
+
   it('sentence-cases generic keys', () => {
-    expect(humanizeCountKey('products')).toBe('Products');
     expect(humanizeCountKey('trials')).toBe('Trials');
     expect(humanizeCountKey('events')).toBe('Events');
   });
@@ -76,7 +79,7 @@ describe('formatCountBreakdown', () => {
     };
     const rows = formatCountBreakdown(counts);
     expect(rows).toEqual([
-      { key: 'products', label: 'Products', value: 14 },
+      { key: 'products', label: 'Assets', value: 14 },
       { key: 'trials', label: 'Trials', value: 47 },
       { key: 'events', label: 'Events', value: 312 },
     ]);

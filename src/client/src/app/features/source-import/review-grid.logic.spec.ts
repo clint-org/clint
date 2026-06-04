@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, orphanTrialIndexes } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -137,5 +137,46 @@ describe('trialMissingAsset (exported, shared with the component gate)', () => {
   });
   it('is not missing when existing_id is set even without asset_ref', () => {
     expect(trialMissingAsset({ existing_id: 'id-1' })).toBe(false);
+  });
+});
+
+describe('resolveTrialAssetIndex', () => {
+  it('returns the asset_ref when it is a valid in-range index', () => {
+    expect(resolveTrialAssetIndex({ asset_ref: 1 }, 2)).toBe(1);
+    expect(resolveTrialAssetIndex({ asset_ref: 0 }, 2)).toBe(0);
+  });
+  it('returns null when asset_ref is missing', () => {
+    expect(resolveTrialAssetIndex({ name: 'NCT1' }, 2)).toBeNull();
+  });
+  it('returns null when asset_ref is null', () => {
+    expect(resolveTrialAssetIndex({ asset_ref: null }, 2)).toBeNull();
+  });
+  it('returns null when asset_ref is out of range', () => {
+    expect(resolveTrialAssetIndex({ asset_ref: 5 }, 2)).toBeNull();
+    expect(resolveTrialAssetIndex({ asset_ref: 2 }, 2)).toBeNull();
+  });
+  it('returns null when asset_ref is negative or non-integer', () => {
+    expect(resolveTrialAssetIndex({ asset_ref: -1 }, 2)).toBeNull();
+    expect(resolveTrialAssetIndex({ asset_ref: 1.5 }, 2)).toBeNull();
+  });
+});
+
+describe('orphanTrialIndexes', () => {
+  it('returns indices of trials that do not nest under any asset', () => {
+    const trials = [
+      { name: 'A', asset_ref: 0 }, // nests
+      { name: 'B' }, // no ref -> orphan
+      { name: 'C', asset_ref: 9 }, // out of range -> orphan
+      { name: 'D', asset_ref: 1 }, // nests
+    ];
+    expect(orphanTrialIndexes(trials, 2)).toEqual([1, 2]);
+  });
+  it('returns an empty array when every trial nests', () => {
+    expect(orphanTrialIndexes([{ asset_ref: 0 }, { asset_ref: 1 }], 2)).toEqual([]);
+  });
+  it('treats a master-protocol trial with no asset_ref as an orphan', () => {
+    // The motivating case: an NCT master protocol testing two assets cannot
+    // pick a single asset_ref, so it must remain visible rather than vanish.
+    expect(orphanTrialIndexes([{ name: 'NCT07165028' }], 2)).toEqual([0]);
   });
 });

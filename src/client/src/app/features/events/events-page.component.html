@@ -5,19 +5,36 @@
 
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search events..." />
 
+  @if (scope(); as s) {
+    <div
+      class="mb-3 flex items-center justify-between gap-3 border border-brand-200 bg-brand-50 px-3 py-2"
+    >
+      <span class="text-xs text-slate-600">
+        Scoped to this {{ s.entityLevel | entityNoun }} and everything beneath it.
+      </span>
+      <button
+        type="button"
+        class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800"
+        (click)="clearScope()"
+      >
+        View all events
+      </button>
+    </div>
+  }
+
   <div class="flex gap-0" [class.divide-x]="selectedItem()">
     <!-- Table area -->
     <div class="min-w-0 flex-1 overflow-x-auto">
       <p-table
         styleClass="data-table"
-        [value]="visibleRows()"
+        [value]="feedItems()"
         [loading]="loading()"
         [lazy]="true"
         (onLazyLoad)="grid.onLazyLoad($event)"
         [paginator]="true"
         [rows]="grid.page().rows"
         [first]="grid.page().first"
-        [totalRecords]="grid.totalRecords()"
+        [totalRecords]="serverTotal()"
         [rowsPerPageOptions]="[10, 25, 50]"
         [filters]="grid.primengFilters()"
         selectionMode="single"
@@ -61,15 +78,34 @@
             </th>
             <th pSortableColumn="title">
               Title <p-sortIcon field="title" />
-              <p-column-filter type="text" field="title" display="menu" />
             </th>
             <th pSortableColumn="category_name" class="col-secondary">
               Category <p-sortIcon field="category_name" />
-              <p-column-filter type="text" field="category_name" display="menu" />
+              <p-column-filter
+                field="category_name"
+                display="menu"
+                matchMode="in"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select
+                    [options]="allCategoryOptions()"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                  />
+                </ng-template>
+              </p-column-filter>
             </th>
             <th pSortableColumn="entity_display" class="col-secondary">
               Entity <p-sortIcon field="entity_display" />
-              <p-column-filter type="text" field="entity_display" display="menu" />
             </th>
             <th pSortableColumn="priority" class="col-priority">
               Priority <p-sortIcon field="priority" />
@@ -190,18 +226,31 @@
                 [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
               ></span>
             </td>
-            <td class="col-secondary text-xs text-slate-500">
-              <span
-                [innerHTML]="getEntityDisplay(item) | highlight: grid.debouncedGlobalSearch()"
-              ></span>
-              @if (item.has_annotation) {
-                <i
-                  class="fa-solid fa-message text-[8px] text-brand-500 ml-1"
-                  pTooltip="Analyst note attached"
-                  tooltipPosition="top"
-                  aria-label="Analyst note attached"
-                ></i>
-              }
+            <td class="col-secondary text-xs">
+              @let ec = entityCell(item);
+              <span class="inline-flex items-center gap-1.5 align-middle">
+                <span
+                  class="rounded-sm border border-brand-100 bg-brand-50 px-1 py-px font-mono text-[9px] font-semibold uppercase tracking-wider text-brand-700"
+                  >{{ ec.badge }}</span
+                >
+                @if (ec.value) {
+                  <span
+                    class="font-medium text-slate-900"
+                    [innerHTML]="ec.value | highlight: grid.debouncedGlobalSearch()"
+                  ></span>
+                }
+                @if (ec.parents.length) {
+                  <span class="text-slate-400">{{ ec.parents.join(' / ') }}</span>
+                }
+                @if (item.has_annotation) {
+                  <i
+                    class="fa-solid fa-message text-[8px] text-brand-500"
+                    pTooltip="Analyst note attached"
+                    tooltipPosition="top"
+                    aria-label="Analyst note attached"
+                  ></i>
+                }
+              </span>
             </td>
             <td class="col-priority text-center">
               @if (item.priority === 'high') {
@@ -258,7 +307,7 @@
           [selectedFeedItem]="selectedItem()"
           [canEdit]="spaceRole.canEdit()"
           [feedItems]="feedItems()"
-          [spaceId]="spaceId"
+          [spaceId]="spaceId()"
           [tenantId]="tenantId"
           (edit)="onEditSelected()"
           (panelClose)="closePanel()"

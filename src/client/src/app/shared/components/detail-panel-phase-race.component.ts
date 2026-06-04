@@ -1,6 +1,11 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { PHASE_COLOR, RING_DEV_RANK, RingPhase } from '../../core/models/landscape.model';
+import {
+  PHASE_COLOR,
+  RING_DEV_RANK,
+  RingPhase,
+  visibleRingOrder,
+} from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import { DetailPanelMiniPhaseBarComponent } from './detail-panel-mini-phase-bar.component';
 
@@ -23,7 +28,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
 };
 
 /**
- * Visual race comparison used in the density matrix detail pane. Each row is a
+ * Visual race comparison used in the heatmap detail pane. Each row is a
  * asset with a 7-segment mini phase bar (variant B from the mockup:
  * two-line label, multi-color bar). Sorted by phase rank descending so the
  * leader sits at the top.
@@ -42,7 +47,7 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
         {{ label() }}
       </p>
       <p class="whitespace-nowrap font-mono text-[9px] uppercase tracking-wider text-slate-300">
-        Pre &middot; PH 1 &middot; PH 2 &middot; PH 3 &middot; PH 4 &middot; App &middot; L
+        {{ phaseScale() }}
       </p>
     </div>
     <div class="space-y-2">
@@ -52,7 +57,10 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
             <p class="truncate text-[12px] font-medium text-slate-900">{{ entry.name }}</p>
             <p class="truncate font-mono text-[10px] text-slate-500">{{ entry.subtitle }}</p>
           </div>
-          <app-detail-panel-mini-phase-bar [currentPhase]="entry.phase" />
+          <app-detail-panel-mini-phase-bar
+            [currentPhase]="entry.phase"
+            [showPreclinical]="showPreclinical()"
+          />
           <span
             class="w-7 text-right font-mono text-[10px] font-semibold tabular-nums"
             [style.color]="phaseColor(entry.phase)"
@@ -68,6 +76,15 @@ const PHASE_DISPLAY: Partial<Record<RingPhase, string>> = {
 export class DetailPanelPhaseRaceComponent {
   readonly label = input<string>('Phase progress');
   readonly entries = input.required<PhaseRaceEntry[]>();
+  /** When false, the PRECLIN segment/scale label is omitted. */
+  readonly showPreclinical = input(true);
+
+  /** Scale legend, narrowed to the space's tracked phases. */
+  protected readonly phaseScale = computed(() =>
+    visibleRingOrder(this.showPreclinical())
+      .map((p) => this.phaseDisplay(p))
+      .join(' · ')
+  );
 
   protected sortedEntries(): PhaseRaceEntry[] {
     return [...this.entries()].sort((a, b) => RING_DEV_RANK[b.phase] - RING_DEV_RANK[a.phase]);

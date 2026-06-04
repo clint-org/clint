@@ -241,6 +241,12 @@ Trial-detail pages have a **Sync from CT.gov** button that forces an immediate p
 
 Space owners pick which CT.gov fields appear on each surface (trial detail, bullseye detail, timeline detail, key catalysts panel, trial list). Useful for hiding noise fields the team doesn't track or for surfacing rare fields a particular engagement cares about. Choices are per-space.
 
+### Track preclinical phase
+
+**Navigate:** `/t/:tenantId/s/:spaceId/settings/fields`
+
+Preclinical activity is hard to track and is not usually tracked, so the preclinical (PRECLIN) phase is **hidden by default**. A space owner can turn on **Track preclinical phase** to surface preclinical trials and assets across the landscape, timeline, heatmap, and trial list for that space. While it is off, preclinical records are excluded from every analytic view and the phase is not offered when adding or editing a trial. Enforcement is server-side: each analytic RPC reads `spaces.show_preclinical` via `space_shows_preclinical()` and drops preclinical rows, so the setting cannot be bypassed from the client. Choices are per-space.
+
 ---
 
 ## Exporting to PowerPoint

@@ -19,7 +19,7 @@ import {
   BullseyeData,
   BullseyeSpoke,
   LandscapeFilters,
-  RING_ORDER,
+  visibleRingOrder,
   RingPhase,
   SPOKE_GROUPING_OPTIONS,
   groupAssetsIntoSpokes,
@@ -97,7 +97,7 @@ export class LandscapeComponent implements OnInit {
     return {
       dimension: this.state.spokeGrouping() as BullseyeData['dimension'],
       scope: { id: 'scope', name: 'Filtered' },
-      ring_order: RING_ORDER as unknown as RingPhase[],
+      ring_order: visibleRingOrder(this.state.showPreclinical()) as unknown as RingPhase[],
       spokes: result.spokes,
       spoke_label:
         SPOKE_GROUPING_OPTIONS.find((o) => o.value === this.state.spokeGrouping())?.label ??

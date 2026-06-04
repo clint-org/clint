@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { Tooltip } from 'primeng/tooltip';
 
 import {
-  DensityBubble,
-  DensityGrouping,
-  DensityAsset,
+  HeatmapBubble,
+  HeatmapGrouping,
+  HeatmapAsset,
 } from '../../core/models/landscape.model';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -16,7 +16,7 @@ import {
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
-const GROUPING_LABEL: Record<DensityGrouping, string> = {
+const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
   moa: 'MOA group',
   indication: 'Indication group',
   'moa+indication': 'MOA + Indication group',
@@ -25,12 +25,12 @@ const GROUPING_LABEL: Record<DensityGrouping, string> = {
 };
 
 /**
- * Bullseye destination per density grouping. Mirrors
- * `density-matrix-view.bullseyeSegment()`. The `moa+indication` row
+ * Bullseye destination per heatmap grouping. Mirrors
+ * `heatmap-view.bullseyeSegment()`. The `moa+indication` row
  * intentionally drops MOA and lands on Indication; the tooltip names
  * the resolved dimension so the user can predict the navigation.
  */
-const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
+const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
   moa: 'mechanism of action',
   indication: 'indication',
   'moa+indication': 'indication',
@@ -39,7 +39,7 @@ const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
 };
 
 @Component({
-  selector: 'app-density-matrix-detail-panel',
+  selector: 'app-heatmap-detail-panel',
   imports: [
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,
@@ -80,7 +80,10 @@ const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
 
         @if (raceEntries().length > 0) {
           <app-detail-panel-section>
-            <app-detail-panel-phase-race [entries]="raceEntries()" />
+            <app-detail-panel-phase-race
+              [entries]="raceEntries()"
+              [showPreclinical]="showPreclinical()"
+            />
           </app-detail-panel-section>
         }
 
@@ -138,18 +141,20 @@ const BULLSEYE_TARGET_LABEL: Record<DensityGrouping, string> = {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DensityMatrixDetailPanelComponent {
-  readonly bubble = input<DensityBubble | null>(null);
+export class HeatmapDetailPanelComponent {
+  readonly bubble = input<HeatmapBubble | null>(null);
   readonly countUnit = input<string>('assets');
   readonly totalBubbles = input<number>(0);
-  readonly grouping = input<DensityGrouping>('moa');
+  readonly grouping = input<HeatmapGrouping>('moa');
+  /** Whether the space tracks preclinical; forwarded to the phase-race scale. */
+  readonly showPreclinical = input(true);
 
   readonly clearSelection = output<void>();
   readonly openAsset = output<string>();
   readonly openInBullseye = output<void>();
 
   readonly headerLabel = computed(() =>
-    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Density . overview'
+    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Heatmap . overview'
   );
 
   readonly openInBullseyeTooltip = computed(
@@ -169,7 +174,7 @@ export class DensityMatrixDetailPanelComponent {
     return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 
-  readonly sortedAssets = computed<DensityAsset[]>(() => {
+  readonly sortedAssets = computed<HeatmapAsset[]>(() => {
     const b = this.bubble();
     if (!b) return [];
     return [...b.products].sort((a, x) => x.highest_phase_rank - a.highest_phase_rank);

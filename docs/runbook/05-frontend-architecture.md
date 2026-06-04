@@ -241,19 +241,19 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
         /by-moa/:entityId   -> /
         /by-roa   -> /
         /by-roa/:entityId   -> /
-      /density-matrix
+      /heatmap
         (empty)   -> by-moa
-        /by-moa   DensityMatrixViewComponent
-        /by-indication   DensityMatrixViewComponent
-        /by-moa-indication   DensityMatrixViewComponent
-        /by-company   DensityMatrixViewComponent
-        /by-roa   DensityMatrixViewComponent
-      /positioning   -> density-matrix
-      /positioning/by-moa   -> density-matrix/by-moa
-      /positioning/by-indication   -> density-matrix/by-indication
-      /positioning/by-moa-indication   -> density-matrix/by-moa-indication
-      /positioning/by-company   -> density-matrix/by-company
-      /positioning/by-roa   -> density-matrix/by-roa
+        /by-moa   HeatmapViewComponent
+        /by-indication   HeatmapViewComponent
+        /by-moa-indication   HeatmapViewComponent
+        /by-company   HeatmapViewComponent
+        /by-roa   HeatmapViewComponent
+      /positioning   -> heatmap
+      /positioning/by-moa   -> heatmap/by-moa
+      /positioning/by-indication   -> heatmap/by-indication
+      /positioning/by-moa-indication   -> heatmap/by-moa-indication
+      /positioning/by-company   -> heatmap/by-company
+      /positioning/by-roa   -> heatmap/by-roa
       /catalysts   CatalystsPageComponent
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
@@ -734,6 +734,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `RouteOfAdministrationService`
 - `RpcCacheService`
 - `SpaceFieldVisibilityService`
+- `SpaceSettingsService`
 
 **Models:**
 - `AuditEvent`

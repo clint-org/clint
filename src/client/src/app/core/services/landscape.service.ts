@@ -5,8 +5,8 @@ import {
   BullseyeData,
   BullseyeDimension,
   CountUnit,
-  DensityData,
-  DensityGrouping,
+  HeatmapData,
+  HeatmapGrouping,
   LandscapeFilters,
   LandscapeIndexEntry,
 } from '../models/landscape.model';
@@ -108,19 +108,19 @@ export class LandscapeService {
     );
   }
 
-  async getDensityData(
+  async getHeatmapData(
     spaceId: string,
-    grouping: DensityGrouping,
+    grouping: HeatmapGrouping,
     countUnit: CountUnit,
     filters: LandscapeFilters
-  ): Promise<DensityData> {
+  ): Promise<HeatmapData> {
     const wireCountUnit = countUnit === 'assets' ? 'products' : countUnit;
     return this.cache.get(
       'get_positioning_data',
       { spaceId, grouping, countUnit, filters },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:density`],
+        tags: [`space:${spaceId}:heatmap`],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc('get_positioning_data', {
@@ -143,7 +143,7 @@ export class LandscapeService {
               p_study_types: filters.studyTypes.length ? filters.studyTypes : null,
             })
             .throwOnError();
-          const raw = data as Omit<DensityData, 'count_unit'> & { count_unit: string };
+          const raw = data as Omit<HeatmapData, 'count_unit'> & { count_unit: string };
           return {
             ...raw,
             count_unit: (raw.count_unit === 'products' ? 'assets' : raw.count_unit) as CountUnit,

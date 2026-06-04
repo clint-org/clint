@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { EntityNounPipe } from '../../pipes/entity-noun.pipe';
 import {
   EntityEventRow,
   EntityEventsPanelService,
@@ -17,7 +18,7 @@ import {
 
 @Component({
   selector: 'app-entity-events-panel',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, EntityNounPipe],
   templateUrl: './entity-events-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

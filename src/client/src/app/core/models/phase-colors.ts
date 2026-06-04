@@ -135,3 +135,30 @@ export const DEVELOPMENT_STATUS_OPTIONS: { label: string; value: DevelopmentStat
   { label: 'Approved', value: 'APPROVED' },
   { label: 'Launched', value: 'LAUNCHED' },
 ];
+
+// ---------------------------------------------------------------------------
+// Per-space preclinical visibility.
+//
+// Preclinical is hard to track and hidden by default; a space owner opts in via
+// spaces.show_preclinical (see SpaceSettingsService). These helpers are the
+// single source of truth for narrowing phase lists in the UI when the flag is
+// off, so the filter bar, legends, phase bars, and data-entry dropdowns all hide
+// PRECLIN consistently. The DB enforces exclusion regardless; this is purely
+// about not showing a control for a phase that will never return data.
+// ---------------------------------------------------------------------------
+
+/** Phase descriptors visible for a space, dropping PRECLIN when not tracked. */
+export function visiblePhaseDescriptors(showPreclinical: boolean): PhaseDescriptor[] {
+  return showPreclinical
+    ? PHASE_DESCRIPTORS
+    : PHASE_DESCRIPTORS.filter((d) => d.key !== 'PRECLIN');
+}
+
+/** Development-status dropdown options, dropping PRECLIN when not tracked. */
+export function visibleDevelopmentStatusOptions(
+  showPreclinical: boolean
+): { label: string; value: DevelopmentStatus }[] {
+  return showPreclinical
+    ? DEVELOPMENT_STATUS_OPTIONS
+    : DEVELOPMENT_STATUS_OPTIONS.filter((o) => o.value !== 'PRECLIN');
+}

@@ -160,7 +160,7 @@ export class MechanismOfActionListComponent implements OnInit, OnDestroy {
       this.deleteError.set(
         err instanceof Error
           ? err.message
-          : 'Could not delete mechanism of action. It may be assigned to products.'
+          : 'Could not delete mechanism of action. It may be assigned to assets.'
       );
     }
   }

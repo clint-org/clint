@@ -7,7 +7,7 @@ spec: docs/specs/events-system/spec.md
 
 A unified chronological feed showing analyst-created events, timeline markers, and detected change events together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial. Detected change events (from the trial change feed pipeline) are merged as a third source type.
 
-**Route:** `/t/:tenantId/s/:spaceId/events`. Honors `?eventId=<id>` to deep-link a specific event into the detail panel on load (used by the command palette). Honors `?source=detected` to filter to detected change events (used by the `/activity` redirect and the what-changed widget link).
+**Route:** `/t/:tenantId/s/:spaceId/events`. Honors `?eventId=<id>` to deep-link a specific event into the detail panel on load (used by the command palette). Honors `?source=detected` to filter to detected change events (used by the `/activity` redirect and the what-changed widget link). Honors `?entityLevel=<trial|product|company>` + `?entityId=<id>` to scope the feed server-side to one entity and everything beneath it (hierarchical rollup); set by the "See all" link on the entity-events panel embedded in trial / asset / company detail pages, and surfaced as a dismissible scope banner with a "View all events" clear control.
 
 **Layout:** Data table (p-table) with sortable/filterable columns + a right-side overlay detail panel (340px, absolute-positioned, `@slidePanel` animation) that slides in on row click and hides when nothing is selected. The RPC `get_events_page_data` returns `{items, total}` instead of a flat array, enabling server-side pagination.
 
@@ -55,6 +55,20 @@ A unified chronological feed showing analyst-created events, timeline markers, a
     - events
   related:
     - palette-activation-targets
+  user_facing: true
+  role: viewer
+  status: active
+- id: events-entity-scope
+  summary: Query-params entityLevel + entityId scope the feed server-side (hierarchically rolled up) to one entity and everything beneath it, surfaced via a dismissible banner with a clear control. Set by the "See all" link on the entity-events panel on trial / asset / company detail pages.
+  routes:
+    - /t/:tenantId/s/:spaceId/events
+  rpcs:
+    - get_events_page_data
+  tables:
+    - events
+  related:
+    - events-feed
+    - events-detail-panel
   user_facing: true
   role: viewer
   status: active

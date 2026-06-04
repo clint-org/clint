@@ -75,6 +75,9 @@ export interface FeedItem {
   company_name: string | null;
   company_id: string | null;
   asset_id: string | null;
+  asset_name: string | null;
+  trial_id: string | null;
+  trial_name: string | null;
   tags: string[];
   has_thread: boolean;
   thread_id: string | null;
@@ -133,4 +136,7 @@ export interface EventsPageFilters {
   tags: string[];
   priority: EventPriority | null;
   sourceType: 'event' | 'marker' | 'detected' | null;
+  search: string | null;
+  sortField: string | null;
+  sortDir: 'asc' | 'desc' | null;
 }

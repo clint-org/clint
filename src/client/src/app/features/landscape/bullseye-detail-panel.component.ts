@@ -16,10 +16,11 @@ import {
   BullseyeDimension,
   BullseyeAsset,
   PHASE_COLOR,
-  RING_ORDER,
   RingPhase,
+  visibleRingOrder,
 } from '../../core/models/landscape.model';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
+import { LandscapeStateService } from './landscape-state.service';
 import {
   AssetIntelligenceNote,
   ENTITY_TYPE_LABEL,
@@ -88,8 +89,15 @@ export class BullseyeDetailPanelComponent {
   protected openChangeEvent(changeEventId: string): void {
     const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
     if (!tenantId || !spaceId) return;
+    // Scope the events feed to this asset and filter to detected changes, so
+    // the list is the asset's recent changes (its trials roll up) rather than
+    // the global feed -- while still opening the most-recent one in the panel.
+    const assetId = this.selectedAsset()?.id ?? null;
     void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
-      queryParams: { detectedId: changeEventId },
+      queryParams: {
+        detectedId: changeEventId,
+        ...(assetId ? { entityLevel: 'product', entityId: assetId, source: 'detected' } : {}),
+      },
     });
   }
 
@@ -100,6 +108,7 @@ export class BullseyeDetailPanelComponent {
   // snapshots only for the trials currently visible in the selected
   // asset trial list.
   private readonly route = inject(ActivatedRoute);
+  private readonly state = inject(LandscapeStateService);
   private readonly fieldVisibility = inject(SpaceFieldVisibilityService);
   private readonly trialService = inject(TrialService);
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
@@ -226,13 +235,14 @@ export class BullseyeDetailPanelComponent {
 
   protected readonly ringHistogram = computed<RingHistogramEntry[]>(() => {
     const assets = this.allAssets();
+    const visible = visibleRingOrder(this.state.showPreclinical());
     const counts = new Map<RingPhase, number>();
-    for (const phase of RING_ORDER) counts.set(phase, 0);
+    for (const phase of visible) counts.set(phase, 0);
     for (const asset of assets) {
       counts.set(asset.highest_phase, (counts.get(asset.highest_phase) ?? 0) + 1);
     }
     // Present in descending development order (launched at the top)
-    return [...RING_ORDER].reverse().map((phase) => ({ phase, count: counts.get(phase) ?? 0 }));
+    return [...visible].reverse().map((phase) => ({ phase, count: counts.get(phase) ?? 0 }));
   });
 
   protected readonly totalAssets = computed(() => this.allAssets().length);

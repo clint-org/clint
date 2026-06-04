@@ -88,7 +88,7 @@ export class LandscapeIndexComponent implements OnInit {
     const messages: Record<BullseyeDimension, string> = {
       indication:
         'No indications tracked yet. Add one to start building a landscape view.',
-      company: 'No companies tracked yet. Add companies and products to see them here.',
+      company: 'No companies tracked yet. Add companies and assets to see them here.',
       moa: 'No mechanisms of action defined yet. Add them in Manage to start.',
       roa: 'No routes of administration defined yet. Add them in Manage to start.',
     };

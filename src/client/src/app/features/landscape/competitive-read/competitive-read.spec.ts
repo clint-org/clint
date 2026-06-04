@@ -107,12 +107,12 @@ describe('buildLandscapeRead', () => {
       ]);
       const radial = buildLandscapeRead({ view: 'radial', groupBy: 'company', stats });
       const timeline = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
-      const density = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+      const heatmap = buildLandscapeRead({ view: 'heatmap', groupBy: 'company', stats });
 
       // No view should claim "deepest" for any runner-up here -- Lilly is leader on every dimension.
       expect(radial.text.toLowerCase()).not.toContain('deepest');
       expect(timeline.text.toLowerCase()).not.toContain('deepest');
-      expect(density.text.toLowerCase()).not.toContain('deepest');
+      expect(heatmap.text.toLowerCase()).not.toContain('deepest');
 
       // And the multi-word name "Novo Nordisk" should NOT cause momentum-suppression to leak
       // (this also exercises the C3 fix from the review).
@@ -458,7 +458,7 @@ describe('buildLandscapeRead', () => {
       });
     });
 
-    describe('density Clause 2', () => {
+    describe('heatmap Clause 2', () => {
       it('clustered-at-phase when >=60% of assets in one phase', () => {
         const stats = makeStats([
           {
@@ -472,7 +472,7 @@ describe('buildLandscapeRead', () => {
           { name: 'B', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
           { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
         ]);
-        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        const result = buildLandscapeRead({ view: 'heatmap', groupBy: 'company', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('clustered-at-phase');
         expect(result.text).toContain('4 of 6 assets clustered at Phase 3');
@@ -492,7 +492,7 @@ describe('buildLandscapeRead', () => {
           },
           { name: 'D', assetCount: 1, highestPhase: 'PRECLIN', highestPhaseRank: 1 },
         ]);
-        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        const result = buildLandscapeRead({ view: 'heatmap', groupBy: 'company', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('evenly-spread');
         expect(result.text).toContain('evenly spread across phases');
@@ -511,7 +511,7 @@ describe('buildLandscapeRead', () => {
           { name: 'B', assetCount: 2, highestPhase: 'P2', highestPhaseRank: 3 },
           { name: 'C', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
         ]);
-        const result = buildLandscapeRead({ view: 'density', groupBy: 'company', stats });
+        const result = buildLandscapeRead({ view: 'heatmap', groupBy: 'company', stats });
         expect(result.segments.find((s) => s.clause === 'view')).toBeUndefined();
       });
     });
@@ -840,7 +840,7 @@ describe('buildLandscapeRead', () => {
         expect(result.text).toContain('Obesity bucket has the deepest pipeline (3 at Phase 3)');
       });
 
-      it('density: late-stage-concentrated-in', () => {
+      it('heatmap: late-stage-concentrated-in', () => {
         const stats = makeStats([
           {
             name: 'Obesity',
@@ -852,7 +852,7 @@ describe('buildLandscapeRead', () => {
           },
           { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
         ]);
-        const result = buildLandscapeRead({ view: 'density', groupBy: 'indication', stats });
+        const result = buildLandscapeRead({ view: 'heatmap', groupBy: 'indication', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('late-stage-concentrated-in');
         expect(result.text).toContain('Late-stage activity concentrated in Obesity');
@@ -875,12 +875,12 @@ describe('buildLandscapeRead', () => {
         expect(viewSeg?.shape).toBe('bucket-quiet');
       });
 
-      it('density distributional: early-stage-only when leader has no late-stage', () => {
+      it('heatmap distributional: early-stage-only when leader has no late-stage', () => {
         const stats = makeStats([
           { name: 'Diabetes', assetCount: 5, highestPhase: 'P2', highestPhaseRank: 3 },
           { name: 'NASH', assetCount: 1, highestPhase: 'P1', highestPhaseRank: 2 },
         ]);
-        const result = buildLandscapeRead({ view: 'density', groupBy: 'indication', stats });
+        const result = buildLandscapeRead({ view: 'heatmap', groupBy: 'indication', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('early-stage-only');
         expect(result.text).toContain('Diabetes early-stage only, no Phase 3 assets');

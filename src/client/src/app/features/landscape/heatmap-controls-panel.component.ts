@@ -4,22 +4,23 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
-  DENSITY_GROUPING_OPTIONS,
-  DensityBubble,
-  DensityGrouping,
+  HEATMAP_GROUPING_OPTIONS,
+  HeatmapBubble,
+  HeatmapGrouping,
   PHASE_COLOR,
-  RING_ORDER,
+  visibleRingOrder,
   RingPhase,
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
+import { cellTint } from './heatmap.component';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
-  selector: 'app-density-controls-panel',
+  selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <aside class="density-controls">
+    <aside class="heatmap-controls">
       <div class="controls-section">
         <div class="section-label">GROUP BY</div>
         <div class="group-buttons">
@@ -74,20 +75,21 @@ import { LandscapeStateService } from './landscape-state.service';
       <div class="controls-section">
         <div class="section-label">LEGEND</div>
         <div class="legend-items">
-          @for (phase of phases; track phase.value) {
+          @for (phase of phases(); track phase.value) {
             <div class="legend-item">
               <span class="legend-dot" [style.background]="phase.color"></span>
               <span>{{ phase.label }}</span>
             </div>
           }
           <div class="legend-divider"></div>
-          <div class="density-scale">
+          <div class="heatmap-scale">
             <span class="scale-label">1</span>
-            @for (swatch of densitySwatches; track $index) {
+            @for (swatch of swatches; track $index) {
               <span class="scale-swatch" [style.background]="swatch"></span>
             }
-            <span class="scale-label">max</span>
+            <span class="scale-label">10+</span>
           </div>
+          <div class="scale-caption">shade = count, in each phase color</div>
           <div class="legend-item empty-cell-indicator">
             <span class="empty-dot"></span>
             <span>No assets</span>
@@ -97,7 +99,7 @@ import { LandscapeStateService } from './landscape-state.service';
     </aside>
   `,
   styles: `
-    .density-controls {
+    .heatmap-controls {
       width: 260px;
       flex-shrink: 0;
       border-right: 1px solid #e2e8f0;
@@ -149,9 +151,9 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     .group-buttons button.active {
-      border-color: #0d9488;
-      background: #f0fdfa;
-      color: #0f766e;
+      border-color: var(--brand-600, #0d9488);
+      background: var(--brand-50, #f0fdfa);
+      color: var(--brand-700, #0f766e);
       font-weight: 600;
     }
 
@@ -184,9 +186,9 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     .count-toggle button.active {
-      border-color: #0d9488;
-      background: #f0fdfa;
-      color: #0f766e;
+      border-color: var(--brand-600, #0d9488);
+      background: var(--brand-50, #f0fdfa);
+      color: var(--brand-700, #0f766e);
       font-weight: 600;
       z-index: 1;
     }
@@ -203,7 +205,7 @@ import { LandscapeStateService } from './landscape-state.service';
     }
 
     :host ::ng-deep .read-content strong.leader-name {
-      color: var(--teal-600, #0d9488);
+      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {
@@ -259,7 +261,7 @@ import { LandscapeStateService } from './landscape-state.service';
       margin: 4px 0;
     }
 
-    .density-scale {
+    .heatmap-scale {
       display: flex;
       align-items: center;
       gap: 2px;
@@ -277,6 +279,12 @@ import { LandscapeStateService } from './landscape-state.service';
       height: 10px;
     }
 
+    .scale-caption {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
     .empty-cell-indicator {
       margin-top: 4px;
     }
@@ -291,36 +299,35 @@ import { LandscapeStateService } from './landscape-state.service';
     }
   `,
 })
-export class DensityControlsPanelComponent {
+export class HeatmapControlsPanelComponent {
   protected readonly state = inject(LandscapeStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly bubbles = input<DensityBubble[]>([]);
-  readonly grouping = input<DensityGrouping>('moa');
+  readonly bubbles = input<HeatmapBubble[]>([]);
+  readonly grouping = input<HeatmapGrouping>('moa');
   readonly countUnit = input<CountUnit>('assets');
 
-  protected readonly groupingOptions = DENSITY_GROUPING_OPTIONS;
+  protected readonly groupingOptions = HEATMAP_GROUPING_OPTIONS;
   protected readonly countOptions = COUNT_UNIT_OPTIONS;
 
-  protected readonly phases: { value: RingPhase; label: string; color: string }[] = RING_ORDER.map(
-    (phase) => ({
+  // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
+  // the space does not track preclinical, matching the rings the server returns.
+  protected readonly phases = computed<{ value: RingPhase; label: string; color: string }[]>(() =>
+    visibleRingOrder(this.state.showPreclinical()).map((phase) => ({
       value: phase,
       label: this.formatPhase(phase),
       color: PHASE_COLOR[phase],
-    })
+    }))
   );
 
-  protected readonly densitySwatches = [
-    '#f0fdfa',
-    '#ccfbf1',
-    '#99f6e4',
-    '#fffbeb',
-    '#fef3c7',
-    '#fef2f2',
-    '#fee2e2',
-    '#fecaca',
-  ];
+  // Shade ramp: one hue, deepening with count. Built from the same cellTint()
+  // the heatmap cells use (with the P3 hero teal as the representative phase) so
+  // the legend swatches are literally the cell shades and cannot drift. Counts
+  // span the absolute buckets cellTint maps: 1, 2, 3, 4-5, 6-9, 10+.
+  protected readonly swatches = [1, 2, 3, 4, 6, 10].map(
+    (count) => cellTint(PHASE_COLOR.P3, count) as string
+  );
 
   protected readonly groupCount = computed(() => this.bubbles().length);
 
@@ -330,14 +337,14 @@ export class DensityControlsPanelComponent {
 
   protected readonly readText = computed<string>(() => {
     const result = buildLandscapeRead({
-      view: 'density',
+      view: 'heatmap',
       groupBy: this.grouping(),
       stats: fromBubbles(this.bubbles()),
     });
     return result.text;
   });
 
-  protected navigateToGrouping(grouping: DensityGrouping): void {
+  protected navigateToGrouping(grouping: HeatmapGrouping): void {
     const segment = groupingToSegment(grouping);
     this.router.navigate(['..', segment], { relativeTo: this.route });
   }

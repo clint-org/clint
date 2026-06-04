@@ -58,20 +58,29 @@ export class TrialService {
     );
   }
 
-  async listBySpace(spaceId: string): Promise<Trial[]> {
+  /**
+   * Lists a space's trials. When the space does not track preclinical
+   * (showPreclinical = false), preclinical trials are filtered out in Postgres
+   * via `.or(phase_type.is.null, phase_type.neq.PRECLIN)` so a preclinical trial
+   * never appears in the management list. Null-phase trials are retained. The
+   * flag is part of the cache key so the two states cache independently.
+   */
+  async listBySpace(spaceId: string, showPreclinical = true): Promise<Trial[]> {
     return this.cache.get(
       'trials_by_space',
-      { spaceId },
+      { spaceId, showPreclinical },
       {
         ttl: HEAVY_TTL,
         tags: [`space:${spaceId}:trials`],
         fetch: async () => {
-          const { data } = await this.supabase.client
+          let query = this.supabase.client
             .from('trials')
             .select(TRIAL_SELECT)
-            .eq('space_id', spaceId)
-            .order('display_order')
-            .throwOnError();
+            .eq('space_id', spaceId);
+          if (!showPreclinical) {
+            query = query.or('phase_type.is.null,phase_type.neq.PRECLIN');
+          }
+          const { data } = await query.order('display_order').throwOnError();
           return (data as Record<string, unknown>[]).map(normalizeTrial);
         },
       }
