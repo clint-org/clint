@@ -36,7 +36,8 @@ import {
   readableSummary,
   blockingReason,
   trialMissingAsset as trialMissingAssetLogic,
-  resolveTrialAssetIndex,
+  resolveTrialAssetIndexes,
+  resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
   type ReviewFlag,
 } from './review-grid.logic';
@@ -98,6 +99,10 @@ interface GridRow {
   indication: string | null;
   flags: ReviewFlag[];
   hasDetail: boolean;
+  // For a trial that tests more than one asset, marks whether this particular
+  // nesting is under its primary (headline) asset or a secondary one. Undefined
+  // for single-asset trials and for non-trial rows.
+  multiAssetRole?: 'primary' | 'secondary';
 }
 
 @Component({
@@ -789,6 +794,21 @@ interface GridRow {
                         >existing</span
                       >
                     }
+                    @if (row.multiAssetRole === 'primary') {
+                      <span
+                        class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                        pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
+                        tooltipPosition="top"
+                        >primary</span
+                      >
+                    } @else if (row.multiAssetRole === 'secondary') {
+                      <span
+                        class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
+                        pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
+                        tooltipPosition="top"
+                        >also tested</span
+                      >
+                    }
                     @for (f of row.flags; track f.id) {
                       <span
                         class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
@@ -1133,12 +1153,13 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       }
     }
 
+    // A trial nests under EVERY asset it tests, so a master-protocol trial
+    // appears beneath each of its assets (orphan when it resolves to none).
     const assetTrialsMap = new Map<number, number[]>();
     for (let ti = 0; ti < trials.length; ti++) {
-      const ar = resolveTrialAssetIndex(trials[ti], assets.length);
-      if (ar !== null) {
-        if (!assetTrialsMap.has(ar)) assetTrialsMap.set(ar, []);
-        assetTrialsMap.get(ar)!.push(ti);
+      for (const ai of resolveTrialAssetIndexes(trials[ti], assets.length)) {
+        if (!assetTrialsMap.has(ai)) assetTrialsMap.set(ai, []);
+        assetTrialsMap.get(ai)!.push(ti);
       }
     }
 
@@ -1202,9 +1223,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected readonly gridNodes = computed<TreeNode[]>(() => {
     const tree = this.hierarchicalTree();
     const trials = this.entitiesOf('trials');
+    const assetCount = this.entitiesOf('assets').length;
     const dupes = duplicateTrialIndexes(trials);
 
-    const trialRow = (idx: number): TreeNode => {
+    const trialRow = (idx: number, parentAssetIdx: number): TreeNode => {
       const t = trials[idx];
       const flags = [
         ...deriveTrialFlags(t),
@@ -1214,6 +1236,13 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       if (dupes.has(idx)) {
         flags.unshift({ id: 'duplicate', tier: 'blocking', label: 'Duplicate in batch' });
       }
+      const assetIdxs = resolveTrialAssetIndexes(t, assetCount);
+      const multiAssetRole =
+        assetIdxs.length > 1
+          ? resolveTrialPrimaryAssetIndex(t, assetCount) === parentAssetIdx
+            ? 'primary'
+            : 'secondary'
+          : undefined;
       const row: GridRow = {
         key: this.entityKey('trials', idx),
         type: 'trials',
@@ -1227,8 +1256,12 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         indication: (t['indication'] as string) ?? null,
         flags,
         hasDetail: flags.length > 0 || this.editableFields('trials', idx).length > 0,
+        multiAssetRole,
       };
-      return { key: row.key, data: row };
+      // The tree-node key must be unique per nesting: a multi-asset trial appears
+      // under several assets, so namespace it by the parent asset. row.key (the
+      // selection / detail key) stays per-trial so both copies share state.
+      return { key: `assets_${parentAssetIdx}/${row.key}`, data: row };
     };
 
     const assetRow = (an: { assetIdx: number; trials: { trialIdx: number }[] }): TreeNode => {
@@ -1252,7 +1285,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         flags,
         hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
       };
-      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx)) };
+      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx, an.assetIdx)) };
     };
 
     return tree.companies.map((cn) => {
