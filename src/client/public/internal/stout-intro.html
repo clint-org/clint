@@ -835,12 +835,40 @@
         font-size: 14px;
         color: var(--slate-600);
       }
+      /* Slide 7: a quiet, click-to-open link to the pricing detail page, pinned
+         to the top-right corner. The numbers live behind this deliberate click,
+         never on the slide itself. */
+      .reveal-link {
+        position: absolute;
+        top: 56px;
+        right: 72px;
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+        text-decoration: none;
+        border-bottom: 1px solid var(--brand-200);
+        padding-bottom: 2px;
+        transition: border-color 0.15s ease;
+        z-index: 2;
+      }
+      .reveal-link:hover,
+      .reveal-link:focus-visible {
+        border-bottom-color: var(--brand-600);
+      }
       @media (max-width: 768px) {
         .deck {
           height: 100dvh;
         }
         .slide {
           padding: 36px 20px 64px;
+        }
+        .reveal-link {
+          top: 36px;
+          right: 20px;
+          font-size: 9px;
         }
         .slide-inner {
           max-width: 100%;
@@ -2009,10 +2037,6 @@
                 <strong>Capped.</strong> There's a ceiling on the total, so it stays predictable
                 however widely you use it.
               </li>
-              <li>
-                <strong>Shaped with you.</strong> A starting point, not a fixed package. We'll
-                adjust it to fit your team's flow.
-              </li>
             </ul>
             <p class="close-note">
               The first step is simply putting Clint in your team's hands on a live engagement, and
@@ -2020,6 +2044,9 @@
             </p>
           </div>
         </div>
+        <a class="reveal-link" href="stout-pricing.html" target="_blank" rel="noopener"
+          >Pricing detail &rarr;</a
+        >
       </section>
     </div>
     <!-- /deck -->

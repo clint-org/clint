@@ -70,7 +70,7 @@ This is the brief the partner uses, not the deck the MD reads. The MD-facing art
 
 **6. The ask.**
 - A 30-minute walkthrough with the founder.
-- If it lands, scope a free 90-day pilot on one live engagement.
+- If it lands, scope a 90-day pilot on one live engagement.
 - Not asking for: a procurement decision, a contract, an exclusivity discussion in this meeting.
 
 **7. Soft "why now."**
@@ -99,7 +99,7 @@ This is the concrete number the partner quotes when the MD pushes on cost. It is
 **$25K per engagement space per year, flat, capped at $300K/yr firm-wide.**
 
 - **Unit.** One space = one client engagement. Cost scales only as Stout's book grows. More clients, more spaces. It is never a flat tax on the firm.
-- **Standard rate.** $25K/space from Year 1 on. No introductory discount; the free pilot is the concession, not a Year 1 markdown.
+- **Standard rate.** $25K/space from Year 1 on. No introductory discount.
 - **Cap.** $300K/yr total regardless of space count. The cap bites at 12 engagements; past that, every new client Stout adds to Clint is free. This is the line that drives roll-out across the whole practice, and it kills the runaway-bill fear in one sentence.
 - **Stout-facing, not client-facing.** $25K/space is what Stout pays Clint. Stout bundles it into the client engagement fee. The platform is never exposed to the end client as a SaaS line item (see 5a).
 
@@ -137,7 +137,7 @@ How cost scales against the cap:
 
 ### Recommended sequence
 
-1. **Free 90-day pilot.** No payment required. Live engagement on a real Stout client. Both sides see what works. Pilot ends with a delivered artifact the client can use. The free pilot is the only concession; there is no discounted Year 1.
+1. **Pilot on a live engagement.** A 90-day pilot on a real Stout client. We get Clint in front of the team, both sides see what works, and it ends with a delivered artifact the client can use. There is no discounted Year 1.
 2. **Standard per-space from Year 1.** Convert into paid spaces at the standard $25K/space rate (capped at $300K/yr). The number Stout has already seen work during the pilot is the number it pays.
 3. **Co-creator partnership at Year 2+.** The structural conversation layers on top of the per-space model: equity, exclusivity, roadmap seat. Option 04 above becomes the long-term shape.
 
@@ -266,7 +266,7 @@ Reference for the partner. Don't volunteer this; it's the answer if the MD pushe
 
 ### Option C -- Partner with Clint
 
-- Working product on Day 1. Free 90-day pilot. Discounted Year 1. Regular pricing Year 2+.
+- Working product on Day 1. A 90-day pilot on a live engagement. Standard per-space pricing thereafter.
 - Founder owns the asset and runs the team; pharma domain expertise comes with it.
 - Co-creator partnership at Year 2 gives Stout exclusivity in advisory and a seat shaping the roadmap, without owning the engineering burden.
 - Stout's resources stay on client work.

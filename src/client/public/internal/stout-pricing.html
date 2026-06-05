@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive" />
+    <title>Clint: Pricing</title>
+    <style>
+      :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --slate-800: #1e293b;
+        --slate-900: #0f172a;
+        --brand-50: #f0fdfa;
+        --brand-100: #ccfbf1;
+        --brand-200: #99f6e4;
+        --brand-600: #0d9488;
+        --brand-700: #0f766e;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-sans);
+        background: var(--slate-100);
+        color: var(--slate-700);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        padding: 56px 24px;
+      }
+      .sheet {
+        max-width: 880px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        box-shadow:
+          0 1px 3px rgba(15, 23, 42, 0.05),
+          0 18px 40px -16px rgba(15, 23, 42, 0.18);
+        overflow: hidden;
+      }
+      .accent-bar {
+        height: 4px;
+        background: var(--brand-600);
+      }
+      .pad {
+        padding: 44px 52px 52px;
+      }
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 36px;
+      }
+      .wordmark .logo {
+        width: 26px;
+        height: 26px;
+      }
+      .wordmark .name {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        color: var(--slate-900);
+      }
+      .wordmark .meta {
+        margin-left: auto;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+      }
+      h1 {
+        font-size: 13px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+        margin-bottom: 18px;
+      }
+      .headline {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+      .headline .num {
+        font-size: 52px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--slate-900);
+        line-height: 1;
+      }
+      .headline .unit {
+        font-size: 16px;
+        color: var(--slate-500);
+      }
+      .subhead {
+        font-size: 16px;
+        color: var(--slate-600);
+        margin-bottom: 26px;
+      }
+      .subhead strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      .lede {
+        font-size: 15px;
+        color: var(--slate-600);
+        max-width: 64ch;
+        margin-bottom: 34px;
+      }
+      .section-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        margin-bottom: 14px;
+      }
+      .block {
+        margin-bottom: 34px;
+      }
+      ul.points {
+        list-style: none;
+      }
+      ul.points li {
+        position: relative;
+        padding: 11px 0 11px 22px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 14.5px;
+        color: var(--slate-600);
+      }
+      ul.points li:first-child {
+        border-top: 0;
+      }
+      ul.points li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 19px;
+        width: 8px;
+        height: 1px;
+        background: var(--brand-600);
+      }
+      ul.points li strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      table.cap {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      table.cap thead th {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        text-align: left;
+        padding: 0 12px 10px;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      table.cap thead th:not(:first-child),
+      table.cap tbody td:not(:first-child) {
+        text-align: right;
+      }
+      table.cap tbody td {
+        padding: 10px 12px;
+        border-top: 1px solid var(--slate-100);
+        color: var(--slate-600);
+      }
+      table.cap tbody tr.cap-row td {
+        background: var(--brand-50);
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      table.cap tbody td:first-child {
+        color: var(--slate-700);
+      }
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .step {
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        padding: 16px 18px;
+        background: var(--slate-50);
+      }
+      .step .step-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+        margin-bottom: 8px;
+      }
+      .step h3 {
+        font-size: 14.5px;
+        color: var(--slate-900);
+        margin-bottom: 6px;
+      }
+      .step p {
+        font-size: 13px;
+        color: var(--slate-600);
+      }
+      .foot {
+        margin-top: 36px;
+        padding-top: 18px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 13.5px;
+        color: var(--slate-500);
+      }
+      @media (max-width: 640px) {
+        .pad {
+          padding: 32px 24px 36px;
+        }
+        .headline .num {
+          font-size: 40px;
+        }
+        .steps {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="accent-bar"></div>
+      <div class="pad">
+        <div class="wordmark">
+          <svg class="logo" viewBox="0 0 140 140" fill="none">
+            <polyline
+              points="112,24 24,24 24,116 112,116"
+              stroke="#cbd5e1"
+              stroke-width="4"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <polyline
+              points="96,40 40,40 40,100 96,100"
+              stroke="#94a3b8"
+              stroke-width="5.5"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <polyline
+              points="80,56 56,56 56,84 80,84"
+              stroke="#0d9488"
+              stroke-width="7.5"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span class="name">Clint</span>
+          <span class="meta">Pricing &middot; for Stout</span>
+        </div>
+
+        <h1>Pricing</h1>
+        <div class="headline">
+          <span class="num">$25,000</span>
+          <span class="unit">per engagement space, per year</span>
+        </div>
+        <p class="subhead">
+          Capped at <strong>$300,000 / year</strong> firmwide, however many engagements you run.
+        </p>
+
+        <p class="lede">
+          Priced per engagement, with a cap, and meant to be flexible. The goal right now is to get
+          Clint in front of your team on a live engagement and shape it around how you work. It
+          starts with a 90-day pilot on one engagement.
+        </p>
+
+        <div class="block">
+          <div class="section-label">How it works</div>
+          <ul class="points">
+            <li>
+              <strong>Per engagement.</strong> One space is one client engagement. You pay for the
+              engagements you run on Clint, not a flat platform fee.
+            </li>
+            <li>
+              <strong>Unlimited users.</strong> Every space includes your whole team and the
+              client's people. No per-seat charge, no counting.
+            </li>
+            <li>
+              <strong>Capped.</strong> Total cost never exceeds $300,000 a year. Past twelve
+              engagements, additional spaces are included.
+            </li>
+          </ul>
+        </div>
+
+        <div class="block">
+          <div class="section-label">What it costs as you grow</div>
+          <table class="cap">
+            <thead>
+              <tr>
+                <th>Active engagements</th>
+                <th>Annual cost</th>
+                <th>Effective per engagement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>$25,000</td>
+                <td>$25,000</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>$100,000</td>
+                <td>$25,000</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>$200,000</td>
+                <td>$25,000</td>
+              </tr>
+              <tr class="cap-row">
+                <td>12</td>
+                <td>$300,000 (cap)</td>
+                <td>$25,000</td>
+              </tr>
+              <tr>
+                <td>15</td>
+                <td>$300,000</td>
+                <td>$20,000</td>
+              </tr>
+              <tr>
+                <td>25</td>
+                <td>$300,000</td>
+                <td>$12,000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="foot">
+          A single engagement space costs less than one seat on the established data platforms, and
+          it covers the whole team plus the client.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
