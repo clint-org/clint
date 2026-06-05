@@ -43,6 +43,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - is_tenant_owner_strict
     - has_tenant_access
     - enforce_tenant_member_guards
+    - list_tenant_members
   tables:
     - tenant_members
     - tenants
@@ -113,6 +114,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - accept_space_invite
     - has_space_access
     - enforce_space_member_guards
+    - list_space_members
   tables:
     - space_members
     - space_invites

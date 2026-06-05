@@ -108,9 +108,7 @@ export class SpaceService {
 
   async listMembers(spaceId: string): Promise<SpaceMember[]> {
     const { data } = await this.supabase.client
-      .from('space_members_view')
-      .select('*')
-      .eq('space_id', spaceId)
+      .rpc('list_space_members', { p_space_id: spaceId })
       .order('created_at')
       .throwOnError();
     return data ?? [];

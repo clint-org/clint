@@ -61,21 +61,10 @@ export class AgencyService {
   // ---------------------------------------------------------------------------
 
   async listAgencyMembers(agencyId: string): Promise<AgencyMember[]> {
-    // Try the joined view first; fall back to raw rows if the view isn't deployed.
-    const { data, error } = await this.supabase.client
-      .from('agency_members_view')
-      .select('*')
-      .eq('agency_id', agencyId)
-      .order('created_at');
-    if (error) {
-      const { data: rawData } = await this.supabase.client
-        .from('agency_members')
-        .select('*')
-        .eq('agency_id', agencyId)
-        .order('created_at')
-        .throwOnError();
-      return rawData ?? [];
-    }
+    const { data } = await this.supabase.client
+      .rpc('list_agency_members', { p_agency_id: agencyId })
+      .order('created_at')
+      .throwOnError();
     return data ?? [];
   }
 

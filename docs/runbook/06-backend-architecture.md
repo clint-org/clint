@@ -73,8 +73,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -142,6 +142,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
 | `is_tenant_owner_strict` | - | tenant_members |
 | `link_asset_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration | mechanisms_of_action, routes_of_administration |
+| `list_agency_members` | - | agency_members |
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
@@ -149,6 +150,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_materials_for_space` | - | material_links, materials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
 | `list_recent_materials_for_space` | - | material_links, materials |
+| `list_space_members` | - | space_members |
+| `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
@@ -528,19 +531,39 @@ Caller must be a platform admin OR own at least one agency. Returns `{ found: tr
 
 See "Helpers" above.
 
-## Views
+## Member-listing RPCs
 
-### space_members_view
+The three membership tables are surfaced to the UI joined with their `auth.users`
+email and display name through SECURITY DEFINER functions, not views. They began
+as `*_members_view` views but were converted in migration `20260605215948` to
+clear two Supabase advisor ERROR classes that fire against the linked project:
+`security_definer_view` (the views ran as owner so they could read `auth.users`)
+and `auth_users_exposed` (the views selected `auth.users` columns into the
+exposed `public` schema). Set-returning SECURITY DEFINER functions are subject to
+neither lint, the same pattern `lookup_user_by_email` already uses. Each reads
+`auth.users` at query time (so email and display name are always fresh) and
+carries the same per-caller gate the view kept in its WHERE clause. All three are
+`revoke execute ... from public, anon` plus `grant execute ... to authenticated`.
 
-Joins `space_members` with `auth.users` metadata to expose display name (from `raw_user_meta_data->full_name` or email) and email alongside membership records. Owner-defined view (`security_invoker = true` was dropped in migration 40 to allow reading `auth.users`); access is gated inside the view body via `has_space_access()`.
+### list_space_members(p_space_id uuid)
 
-### tenant_members_view
+Returns `space_members` for the space joined with display name (from
+`raw_user_meta_data->full_name` or email) and email. Gated by `has_space_access(p_space_id)`.
 
-Same pattern for tenant membership. Also exposes `is_agency_backed` (boolean): true when the row's user is also an owner of the tenant's parent agency. The tenant-settings UI hides the row-actions menu for these rows and renders a "via agency" tag, since deleting the explicit `tenant_members` row would be cosmetic — `is_tenant_member()` retains them via the agency-owner disjunct. The `enforce_tenant_member_guards` trigger blocks the delete at the database layer regardless of UI state; only platform admins can override.
+### list_tenant_members(p_tenant_id uuid)
 
-### agency_members_view
+Same shape for tenant membership, gated by `is_tenant_member(p_tenant_id)`. Also
+returns `is_agency_backed` (boolean): true when the row's user is also an owner of
+the tenant's parent agency. The tenant-settings UI hides the row-actions menu for
+these rows and renders a "via agency" tag, since deleting the explicit
+`tenant_members` row would be cosmetic. `is_tenant_member()` retains them via the
+agency-owner disjunct, and the `enforce_tenant_member_guards` trigger blocks the
+delete at the database layer regardless of UI state; only platform admins can override.
 
-Joins `agency_members` with `auth.users` for the agency portal members table. Mirrors `tenant_members_view` shape but uses `SECURITY INVOKER` — RLS on `agency_members` is the access control. `grant select on public.agency_members_view to authenticated`.
+### list_agency_members(p_agency_id uuid)
+
+Returns `agency_members` for the agency joined with email and display name for the
+agency portal members table. Gated by `is_agency_member(p_agency_id) or is_platform_admin()`.
 
 ## Edge Functions
 

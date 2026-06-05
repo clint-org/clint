@@ -74,6 +74,7 @@ All writes go through SECURITY DEFINER RPCs; agency owners do all writes, agency
     - add_agency_member
     - lookup_user_by_email
     - enforce_agency_member_guards
+    - list_agency_members
   tables:
     - agency_members
     - agency_invites
