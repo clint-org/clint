@@ -62,6 +62,32 @@ export function toStudyRecord(study: unknown): NctStudyRecord {
   };
 }
 
+// The headline trial name: prefer CT.gov's study acronym (e.g. "SYNERGY-Outcomes"),
+// falling back to the brief title only when no acronym is published. Naming is
+// resolved deterministically here, not by the LLM, so it is testable and stays
+// consistent with the press-release import path. The full brief title is still
+// persisted separately on the trial.
+export function trialDisplayName(record: Pick<NctStudyRecord, 'acronym' | 'brief_title'>): string {
+  return record.acronym?.trim() || record.brief_title;
+}
+
+// Overrides each proposal trial's name with its CT.gov-derived display name,
+// matched by NCT id (new NCT trials carry their NCT id as `match.name`). Trials
+// matched to an existing record, or whose match is not in `records`, are left
+// untouched. Mutates `proposals.trials` in place, mirroring the other
+// post-validation enrichment steps in nct-handler.
+export function applyNctTrialNames(
+  proposals: { trials: { name?: string; match?: { name?: string } }[] },
+  records: Pick<NctStudyRecord, 'nct_id' | 'acronym' | 'brief_title'>[]
+): void {
+  const byNct = new Map(records.map((r) => [r.nct_id.toUpperCase(), r]));
+  for (const trial of proposals.trials) {
+    const nct = (trial.match?.name ?? '').toUpperCase();
+    const record = byNct.get(nct);
+    if (record) trial.name = trialDisplayName(record);
+  }
+}
+
 function normalizeCtgovDate(raw: string | null): string | null {
   if (!raw) return null;
   const parts = raw.split(/[\s-]+/);

@@ -38,8 +38,11 @@ import {
   trialMissingAsset as trialMissingAssetLogic,
   resolveTrialAssetIndexes,
   resolveTrialPrimaryAssetIndex,
+  trialIsMultiAsset,
+  resolveEntityLink,
   orphanTrialIndexes,
   type ReviewFlag,
+  type EntityLink,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 
@@ -103,6 +106,9 @@ interface GridRow {
   // nesting is under its primary (headline) asset or a secondary one. Undefined
   // for single-asset trials and for non-trial rows.
   multiAssetRole?: 'primary' | 'secondary';
+  // Click target for the entity name: an existing record's in-app /manage page,
+  // a new trial's ClinicalTrials.gov page, or null (new company/asset, plain text).
+  link: EntityLink | null;
 }
 
 @Component({
@@ -816,17 +822,22 @@ interface GridRow {
             }
           </div>
 
-          <p-treeTable [value]="filteredNodes()" dataKey="key">
+          <p-treeTable
+            [value]="filteredNodes()"
+            dataKey="key"
+            [resizableColumns]="true"
+            columnResizeMode="fit"
+          >
             <ng-template pTemplate="header">
               <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                 <th class="w-10"></th>
-                <th>Entity</th>
-                <th>Type</th>
-                <th>Phase</th>
-                <th>Status</th>
-                <th>MOA / ROA</th>
-                <th>Indication</th>
-                <th>Source</th>
+                <th ttResizableColumn class="min-w-72">Entity</th>
+                <th ttResizableColumn class="w-[5.25rem]">Type</th>
+                <th ttResizableColumn class="w-16">Phase</th>
+                <th ttResizableColumn class="w-28">Status</th>
+                <th ttResizableColumn class="min-w-48">MOA / ROA</th>
+                <th ttResizableColumn class="min-w-48">Indication</th>
+                <th ttResizableColumn class="w-[4.5rem]">Source</th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
@@ -840,18 +851,34 @@ interface GridRow {
                     size="small"
                   />
                 </td>
-                <td>
-                  <div class="flex items-center gap-2">
+                <td class="align-top">
+                  <div class="flex items-start gap-2">
                     <p-treeTableToggler [rowNode]="rowNode" />
-                    <span
-                      class="truncate"
-                      [class.font-mono]="row.kind === 'company'"
-                      [class.font-bold]="row.kind === 'company'"
-                      [class.uppercase]="row.kind === 'company'"
-                      [class.font-semibold]="row.kind === 'asset'"
-                      [class.text-brand-600]="row.kind === 'trial'"
-                      >{{ row.name }}</span
-                    >
+                    @if (row.link; as link) {
+                      <a
+                        [href]="link.href"
+                        target="_blank"
+                        rel="noopener"
+                        class="whitespace-normal break-words rounded-sm text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                        [class.font-mono]="row.kind === 'company'"
+                        [class.font-bold]="row.kind === 'company'"
+                        [class.uppercase]="row.kind === 'company'"
+                        [class.font-semibold]="row.kind === 'asset'"
+                        [pTooltip]="link.external ? 'Open on ClinicalTrials.gov' : 'Open ' + row.kind + ' record'"
+                        tooltipPosition="top"
+                        >{{ row.name }}</a
+                      >
+                    } @else {
+                      <span
+                        class="whitespace-normal break-words"
+                        [class.font-mono]="row.kind === 'company'"
+                        [class.font-bold]="row.kind === 'company'"
+                        [class.uppercase]="row.kind === 'company'"
+                        [class.font-semibold]="row.kind === 'asset'"
+                        [class.text-brand-600]="row.kind === 'trial'"
+                        >{{ row.name }}</span
+                      >
+                    }
                     @if (row.state === 'existing') {
                       <span
                         class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
@@ -897,10 +924,10 @@ interface GridRow {
                     }
                   </div>
                 </td>
-                <td class="font-mono text-[10px] uppercase text-slate-400">
+                <td class="align-top font-mono text-[10px] uppercase text-slate-400">
                   {{ row.kind === 'company' ? '' : row.kind }}
                 </td>
-                <td>
+                <td class="align-top">
                   @if (row.phase) {
                     <span
                       class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
@@ -908,10 +935,10 @@ interface GridRow {
                     >
                   }
                 </td>
-                <td class="text-slate-500">{{ row.status }}</td>
-                <td class="text-slate-500">{{ row.moaRoa }}</td>
-                <td class="text-slate-500">{{ row.indication }}</td>
-                <td>
+                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.status }}</td>
+                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.moaRoa }}</td>
+                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.indication }}</td>
+                <td class="align-top">
                   @if (row.kind === 'trial') {
                     <span
                       class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
@@ -1323,8 +1350,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: '',
         indication: (t['indication'] as string) ?? null,
         flags,
-        hasDetail: flags.length > 0 || this.editableFields('trials', idx).length > 0,
+        // Multi-asset trials are always expandable so the chip+star asset editor
+        // in the row detail stays reachable, even when the trial resolved cleanly
+        // (no flags, no editable fields) and the primary needs repointing.
+        hasDetail:
+          flags.length > 0 ||
+          this.editableFields('trials', idx).length > 0 ||
+          trialIsMultiAsset(t, assetCount),
         multiAssetRole,
+        link: this.entityLink('trials', idx),
       };
       // The tree-node key must be unique per nesting: a multi-asset trial appears
       // under several assets, so namespace it by the parent asset. row.key (the
@@ -1352,6 +1386,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         indication: null,
         flags,
         hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
+        link: this.entityLink('assets', idx),
       };
       return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx, an.assetIdx)) };
     };
@@ -1370,6 +1405,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         indication: null,
         flags: [],
         hasDetail: false,
+        link: this.entityLink('companies', cn.companyIdx),
       };
       return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
     });
@@ -1521,6 +1557,22 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const segment = routeMap[type];
     if (!segment) return null;
     return `/t/${this.tenantId()}/s/${this.spaceId()}/manage/${segment}/${match.id}`;
+  }
+
+  // The clickable target for a grid entity value: existing -> in-app /manage
+  // record, new trial -> its CT.gov study page, new company/asset -> null.
+  // Precomputed onto each GridRow so the template binds row.link with no call.
+  private entityLink(type: EntityType, index: number): EntityLink | null {
+    if (type !== 'companies' && type !== 'assets' && type !== 'trials') return null;
+    const entity = this.entitiesOf(type)[index];
+    const match = entity?.['match'] as { kind?: string; id?: string } | undefined;
+    return resolveEntityLink({
+      type,
+      matchKind: match?.kind,
+      matchId: match?.id,
+      nctId: type === 'trials' ? this.resolvedIdentifier('trials', index) : null,
+      manageBase: `/t/${this.tenantId()}/s/${this.spaceId()}/manage`,
+    });
   }
 
   protected trialPhase(index: number): string | null {

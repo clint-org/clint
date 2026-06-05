@@ -4,7 +4,7 @@ import { callRpc, type SupabaseConfig } from '../supabase';
 import { jwtSubject } from '../auth';
 import { createCtgovClient } from '../ctgov-sync/ctgov-client';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
-import { toStudyRecord } from './nct-study-record';
+import { toStudyRecord, applyNctTrialNames } from './nct-study-record';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
@@ -268,6 +268,12 @@ export async function handleNctResolve(
   const proposals = validation.result;
   const dropped = validation.dropped;
   warnings.push(...validation.warnings);
+
+  // Name each NCT trial deterministically from its CT.gov record (acronym, else
+  // brief title) rather than trusting the model's free-text choice. Keeps trial
+  // names short and consistent (e.g. "SYNERGY-Outcomes" instead of the full
+  // official title) and matches the press-release import path.
+  applyNctTrialNames(proposals, studyRecords);
 
   const apex = env.ALLOWED_APEXES.split(',')[0].trim();
   await applyLogoEnrichment(proposals, 'nct-resolve', BRANDFETCH_CLIENT_ID, `https://${apex}/`);

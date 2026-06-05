@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes, trialIsMultiAsset, resolveEntityLink } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -229,5 +229,60 @@ describe('trialMissingAsset with asset_refs', () => {
   });
   it('is not missing for an existing match even with empty asset_refs', () => {
     expect(trialMissingAsset({ match: { kind: 'existing', id: 'x' }, asset_refs: [] })).toBe(false);
+  });
+});
+
+describe('trialIsMultiAsset (gates the review-grid expand toggle)', () => {
+  it('is true when the trial resolves to more than one in-range asset', () => {
+    expect(trialIsMultiAsset({ asset_refs: [0, 1] }, 2)).toBe(true);
+  });
+  it('is false for a single-asset trial', () => {
+    expect(trialIsMultiAsset({ asset_refs: [0] }, 2)).toBe(false);
+    expect(trialIsMultiAsset({ asset_ref: 1 }, 2)).toBe(false);
+  });
+  it('counts only in-range refs, so out-of-range extras do not make it multi-asset', () => {
+    expect(trialIsMultiAsset({ asset_refs: [0, 5] }, 2)).toBe(false);
+  });
+  it('de-dupes repeated refs before counting', () => {
+    expect(trialIsMultiAsset({ asset_refs: [1, 1] }, 2)).toBe(false);
+  });
+  it('is false when the trial has no asset refs', () => {
+    expect(trialIsMultiAsset({ name: 'x' }, 2)).toBe(false);
+  });
+});
+
+describe('resolveEntityLink (review-grid clickable values)', () => {
+  const base = '/t/T1/s/S1/manage';
+
+  it('links an existing trial to its in-app manage record (internal)', () => {
+    expect(resolveEntityLink({ type: 'trials', matchKind: 'existing', matchId: 'tr-1', manageBase: base })).toEqual({
+      href: '/t/T1/s/S1/manage/trials/tr-1',
+      external: false,
+    });
+  });
+  it('links an existing company and asset to their manage records', () => {
+    expect(resolveEntityLink({ type: 'companies', matchKind: 'existing', matchId: 'co-1', manageBase: base })).toEqual({
+      href: '/t/T1/s/S1/manage/companies/co-1',
+      external: false,
+    });
+    expect(resolveEntityLink({ type: 'assets', matchKind: 'existing', matchId: 'as-1', manageBase: base })).toEqual({
+      href: '/t/T1/s/S1/manage/assets/as-1',
+      external: false,
+    });
+  });
+  it('links a new trial to its ClinicalTrials.gov study page (external)', () => {
+    expect(
+      resolveEntityLink({ type: 'trials', matchKind: 'new', matchId: undefined, nctId: 'NCT07165028', manageBase: base })
+    ).toEqual({ href: 'https://clinicaltrials.gov/study/NCT07165028', external: true });
+  });
+  it('returns null for a new company or asset (no record to point at yet)', () => {
+    expect(resolveEntityLink({ type: 'companies', matchKind: 'new', matchId: undefined, manageBase: base })).toBeNull();
+    expect(resolveEntityLink({ type: 'assets', matchKind: 'new', matchId: undefined, manageBase: base })).toBeNull();
+  });
+  it('returns null for a new trial with no NCT id', () => {
+    expect(resolveEntityLink({ type: 'trials', matchKind: 'new', matchId: undefined, nctId: null, manageBase: base })).toBeNull();
+  });
+  it('returns null for an existing match that is missing its id', () => {
+    expect(resolveEntityLink({ type: 'assets', matchKind: 'existing', matchId: undefined, manageBase: base })).toBeNull();
   });
 });

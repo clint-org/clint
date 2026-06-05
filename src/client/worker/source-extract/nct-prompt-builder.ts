@@ -66,7 +66,7 @@ Output schema (follow this exactly):
   }],
   "trials": [{
     "match": {"kind": "new", "name": "NCTxxxxxxxx"},
-    "name": "brief title from CT.gov",
+    "name": "study acronym if present, else brief title from CT.gov",
     "phase": "PRECLIN | P1 | P1_2 | P2 | P2_3 | P3 | P4 | OBS | null",
     "phase_start_date": "YYYY-MM-DD or null",
     "phase_end_date": "YYYY-MM-DD or null",
