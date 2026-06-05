@@ -77,15 +77,29 @@ export function validateExtraction(
       });
       continue;
     }
+    const badAssetRef = trial.asset_refs.find(
+      (r) => r < 0 || r >= data.assets.length,
+    );
+    if (badAssetRef !== undefined) {
+      dropped.push({
+        type: 'trial',
+        index: i,
+        name: trial.name,
+        reason: `asset_refs contains out-of-bounds index ${badAssetRef}`,
+      });
+      continue;
+    }
     if (
-      trial.asset_ref !== null &&
-      (trial.asset_ref < 0 || trial.asset_ref >= data.assets.length)
+      trial.primary_asset_ref !== null &&
+      (trial.primary_asset_ref < 0 ||
+        trial.primary_asset_ref >= data.assets.length ||
+        !trial.asset_refs.includes(trial.primary_asset_ref))
     ) {
       dropped.push({
         type: 'trial',
         index: i,
         name: trial.name,
-        reason: `asset_ref ${trial.asset_ref} out of bounds`,
+        reason: `primary_asset_ref ${trial.primary_asset_ref} must be one of asset_refs and in bounds`,
       });
       continue;
     }

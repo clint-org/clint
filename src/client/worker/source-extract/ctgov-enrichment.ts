@@ -93,7 +93,11 @@ export async function enrichWithCtgov(
 
     const key = String(idx);
     const companyName = companyNames[trial.sponsor_ref];
-    const assetName = trial.asset_ref != null ? assetNames[trial.asset_ref] : undefined;
+    // Use the headline asset for the CT.gov search hint: primary if set, else the
+    // first member of asset_refs (a multi-asset trial searches by its primary drug).
+    const primaryRef =
+      trial.primary_asset_ref ?? (trial.asset_refs.length > 0 ? trial.asset_refs[0] : null);
+    const assetName = primaryRef != null ? assetNames[primaryRef] : undefined;
     const url = buildSearchUrl(trial, companyName, assetName);
 
     try {
