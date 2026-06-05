@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="googlebot" content="noindex, nofollow, noarchive">
-<title>Clint -- Stout Briefing</title>
+<title>Clint -- Stout Presentation</title>
 <style>
   :root {
     --slate-50:  #f8fafc;
@@ -167,7 +167,9 @@
     .counter { font-size: 10px; }
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
     .cover-hero { margin: 4px 0 24px; }
-    .cover-hero img { max-height: 180px; }
+    /* Match the desktop treatment: a cropped, top-anchored band (a slice of
+       the product) rather than the whole screenshot shrunk to fit. */
+    .cover-hero img { height: auto; max-height: none; aspect-ratio: 7 / 2; }
     /* Mobile: stack the thumb above text full-width instead of floating. */
     .card > .card-thumb { float: none; width: 100%; margin: 0 0 12px 0; }
     .shot-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -265,8 +267,6 @@
     </div>
     <div class="footer-line">
       <span>Prepared 2026-06-04</span>
-      <span class="dot"></span>
-      <span>For discussion</span>
     </div>
   </div>
 </section>
@@ -283,48 +283,41 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">01</div>
     <h2 class="slide-title">Clint is the working surface, the deliverable layer, and the system of record for an engagement.</h2>
     <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, where deliverables get filed, and where the client sees it all in real time.</p>
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Engagement landing screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse band with identity strip (engagement name, active-since, trials/companies/assets totals), a brand-tinted hero catalyst with date column and companion list, and a one-line signal strip of motion metrics; below, a Latest from Stout intelligence feed with featured first post, a next-90-days catalyst rail, recent materials, and what changed this week"></button>
-          <div class="card-label">Home base</div>
-          <h3>Every engagement opens to a live pulse</h3>
-          <p>The engagement landing is what clients see first: the next catalyst as a hero, a one-line signal strip (P3 readouts, catalysts, new reads, trial moves), the latest analysis Stout has published, what changed this week, and recent materials. Inventory totals and every metric link straight into the data.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Engagement landing screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"></button>
+          <h3>Every engagement opens to a live read</h3>
+          <p>The landing page is the first thing clients see: the next catalyst front and center, a quick read on what's moving, the latest analysis from Stout, and what changed this week. The headline numbers take you straight into the data behind them.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Source import screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/source-import.png" alt="Source import review page -- a grouped company > asset > trial tree of AI-extracted proposals from a pasted source, with new and existing tags, amber flag chips on rows needing review, an expandable per-row detail panel with a CT.gov candidate picker and inline field edits, and a footer selection summary with a gated Confirm button"></button>
-          <div class="card-label">Get the landscape in</div>
-          <h3>AI builds the competitive baseline from a source</h3>
-          <p>Analysts paste a list of NCT IDs, a press-release URL, or raw text. Claude resolves the companies, assets, trials, and catalysts, detecting co-development and combination products, and proposes a structured set. The analyst reviews and confirms in one pass; every row carries its source, and every AI call is logged and cost-capped per tenant.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Source import screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/source-import.png" alt="Source import review page -- a grouped company, asset, and trial tree built by AI from a pasted source, with each row marked new or existing, items that need a quick look flagged, an expandable detail panel for editing, and a confirm button at the bottom"></button>
+          <h3>Build the competitive picture from a single source</h3>
+          <p>Paste a list of trial IDs, a press release, or any block of text, and Clint's AI turns it into a structured landscape: the companies, their drugs, the trials, and the catalysts coming up. What used to be hours of manual setup is ready to review in minutes, and every entry traces back to where it came from.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence on a trial detail page -- published read with byline (contributors plus updated-by-agency line), linked entities chips, and a history panel below showing a linear timeline of draft, published, archived, withdrawn events with word-level inline ins/del diffs between adjacent published versions"></button>
-          <div class="card-label">Stout's analysis</div>
-          <h3>Primary intelligence, with versioned history</h3>
-          <p>Stout's analysts publish primary intelligence directly onto trials, companies, assets, and markers via a ProseMirror editor with autosave. Every publish stamps a version. The history panel shows draft, publish, archive, and withdraw events with word-level diffs between versions. Clients see the current read; the audit trail is built in.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary analysis on a trial detail page -- a published note with its author, the entities it is linked to, and a history panel below showing how the analysis has changed from one version to the next"></button>
+          <h3>Stout's analysis, with its full history</h3>
+          <p>Stout's analysts write their read directly onto any trial, company, drug, or catalyst in a rich text editor. Each time they publish, Clint keeps the version before it, so the client always sees the latest thinking and anyone can look back at how it got there.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Trial change feed screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows: structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; events include phase transitions in destination phase color and marker edits in marker category color"></button>
-          <div class="card-label">Always current</div>
-          <h3>One change feed across the engagement</h3>
-          <p>A daily Cloudflare Worker pulls fresh ClinicalTrials.gov payloads and writes typed field diffs. Analyst marker edits and confirmed imports flow into the same stream. The output lands on the landing pulse, the activity page, trial row badges, marker history, and the intelligence feed. One pipeline, no manual restatement.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Activity feed screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity feed -- a running list of changes, each showing what changed (old value struck through, new value highlighted), the company, the trial or drug, when it happened, and where it came from"></button>
+          <h3>Always current, without the busywork</h3>
+          <p>A daily automatic sync pulls the latest from ClinicalTrials.gov, and the edits Stout's analysts make sit right alongside it. It all flows through to the landing page, the activity feed, and every trial, so the picture keeps itself current and no one has to rewrite it by hand.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Materials registry screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Materials registry on a trial detail page -- chip filter strip (All, Briefing, Priority Notice, Ad Hoc), recency-ordered rows with PPTX amber, PDF red, and DOCX blue file-type badges, title, type pill, upload date, link count, file size, and a drag-drop upload zone beneath"></button>
-          <div class="card-label">The deliverable layer</div>
-          <h3>Briefings filed where the client looks</h3>
-          <p>PPTX, PDF, and DOCX deliverables upload to the platform and register against the trials, companies, assets, and markers they cover. A file surfaces from any related detail page and from a single cross-cutting browse view. No lost briefings, no "which folder is that in" email.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Files screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Files on a trial detail page -- a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"></button>
+          <h3>Deliverables filed where the client looks</h3>
+          <p>Deliverable files attach to the trials, companies, drugs, and catalysts they're about, so a file turns up right where the client is already looking, and again in one place that gathers everything. Nothing gets buried in an inbox or a shared drive.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Whitelabel screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
-          <div class="card-label">Stout-owned surface</div>
-          <h3>A Stout-branded site per client, plus a portal you run</h3>
-          <p>Each pharma client lives on a Stout-themed tenant. Stout owners manage every tenant from a self-serve portal at /admin: provision new tenants with a live subdomain check, edit branding, invite the first user, audit member activity. Agency, tenant, and engagement-level branding are all supported.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Client-branded login screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="A client login page in the client's own brand -- the client's logo and colors in the foreground, with a quiet 'by Stout' attribution beneath the sign-in buttons"></button>
+          <h3>A site in each client's own brand, run from one portal</h3>
+          <p>Each client gets its own space, dressed in that client's brand: their logo, their colors. Stout runs all of it from the agency portal: set up a new client, choose their branding, and manage who has access. No IT project, no waiting.</p>
         </div>
       </div>
     </div>
@@ -343,18 +336,16 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">02</div>
     <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
     <div class="body">
       <ul class="points">
         <li><strong>Faster kickoff.</strong> Analysts stand up the competitive baseline by pasting NCT IDs, a press release, or raw text; Clint's AI resolves the companies, assets, trials, and catalysts into a working picture. The engagement starts from there, with Stout's curation and framing on top, instead of assembling from scratch.</li>
-        <li><strong>Continuous presence.</strong> The engagement landing shows clients what changed in the last week, the catalysts coming over the next quarter, and the most recent analysis from Stout, every time they sign in. They get a live, annotated view all quarter, not just on delivery day.</li>
-        <li><strong>The briefing focuses on strategy.</strong> Data review happens in the platform throughout the quarter, so the meeting opens at recommendations and decisions instead of slide narration.</li>
-        <li><strong>Every deliverable is filed where the client looks for it.</strong> PPTX, PDF, and DOCX deliverables register against the trials, companies, assets, and markers they cover, so files surface from any related detail page and from a single cross-cutting browse view. No more lost briefings, no more "which folder is that in" emails.</li>
-        <li><strong>Stickier renewals.</strong> A site that holds the client's annotations, the engagement's filed materials, and Stout's published reads with full version history has real switching cost. That's the difference between renewing the relationship and re-pitching it every year.</li>
-        <li><strong>No engineering investment.</strong> Clint's team runs the ingest pipelines, source updates, infrastructure, and security. Stout uses the platform; Clint runs it.</li>
+        <li><strong>Continuous presence.</strong> The engagement landing shows clients what changed in the last week, the catalysts coming over the next quarter, and the most recent analysis from Stout, every time they sign in. They get a live, annotated view every day, not just on delivery day.</li>
+        <li><strong>The data is ready when they are.</strong> Because the picture stays current in the platform, the client can come to any conversation already up to speed, and the time together can go wherever they want to take it.</li>
+        <li><strong>Something that compounds.</strong> Over the engagement, the platform fills up with the client's own notes, the filed deliverables, and Stout's analysis and its history. The longer it runs, the more the relationship has to stand on.</li>
+        <li><strong>No engineering investment.</strong> Clint's team runs the data syncs, the updates, the infrastructure, and the security. Stout uses the platform; Clint runs it.</li>
       </ul>
     </div>
   </div>
@@ -372,32 +363,27 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">03</div>
     <h2 class="slide-title">Win the pitch with the surface you'll deliver on.</h2>
     <p class="lede">The platform isn't only for live engagements. Use it to win them.</p>
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <div class="card-label">Start with a working landscape</div>
           <h3>No blank-page assembly before a pitch</h3>
-          <p>Paste the prospect's therapeutic-area sources -- NCT IDs, a press release, a list -- and Clint's AI assembles competitors, assets, trials, and recent catalysts in minutes. The pitch starts from a working competitive picture, not a blank page.</p>
+          <p>Paste the prospect's sources -- a few trial IDs, a press release, a list -- and Clint's AI assembles the competitors, their drugs, the trials, and recent catalysts in minutes. The pitch starts from a working competitive picture, not a blank page.</p>
         </div>
         <div class="card">
-          <div class="card-label">Layer Stout's intelligence on it</div>
           <h3>Show the kind of read Stout delivers</h3>
-          <p>Add primary analysis, framing, and selected catalysts to show what Stout would put in front of them as the consultant. The prospect sees Stout's analytical voice, not a generic dashboard.</p>
+          <p>Add Stout's own analysis, framing, and the catalysts that matter, so the prospect sees what Stout would put in front of them as their consultant, not a generic dashboard.</p>
         </div>
         <div class="card">
-          <div class="card-label">Demo it live, in their brand</div>
           <h3>The pitch is the product</h3>
-          <p>Prospects see a working Stout-branded site, not a static deck. They get a sneak peek of exactly what they'd use as a client.</p>
+          <p>Prospects see a working site in their own brand, not a static deck. They get a sneak peek of exactly what they'd use as a client.</p>
         </div>
         <div class="card">
-          <div class="card-label">Data carries forward when they sign</div>
           <h3>The pitch becomes the kickoff baseline</h3>
-          <p>Whatever was built for the pitch becomes the starting point for the engagement. No re-assembly between BD and delivery.</p>
+          <p>Whatever was built for the pitch becomes the starting point for the engagement. Nothing gets rebuilt between winning the work and starting it.</p>
         </div>
       </div>
     </div>
@@ -416,27 +402,26 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">04</div>
     <h2 class="slide-title">Three ways to put AI on top of Clint's data.</h2>
-    <p class="lede">Clint's data is already structured and cited, which is what AI needs to give reliable answers. AI-extracted ingestion is live inside the platform today; two further ways to use the data are on the roadmap.</p>
+    <p class="lede">Clint's data is already structured and cited, which is what AI needs to give reliable answers. AI-powered import is already live inside the platform today; two further ways to use the data are on the roadmap.</p>
     <div class="body">
       <div class="grid-3">
         <div class="card">
           <div class="card-label">Inside the platform &middot; live today</div>
-          <h3>AI ingestion is already in Clint</h3>
-          <p>Analysts already build a landscape from NCT IDs, a URL, or raw text, with Claude resolving the entities and every call cost-capped, audited, and logged per tenant. Next on this track: generated briefs, scenario analysis, and ask-a-question over the engagement, without sending client data to outside tools.</p>
+          <h3>AI import is already in Clint</h3>
+          <p>Analysts already build a full landscape from a few trial IDs, a link, or a block of text, with the AI doing the heavy lifting. Next on this track: drafting briefs, running quick what-if scenarios, and asking questions across the whole engagement, all without sending client data to outside tools.</p>
         </div>
         <div class="card">
           <div class="card-label">For Stout's data team &middot; roadmap</div>
           <h3>Pull Clint data into Stout's own systems</h3>
-          <p>Stout's data team can connect Clint to whatever they already use. Internal tools, AI workflows, data warehouses. The data flows out programmatically, with sources attached.</p>
+          <p>Stout's own data team can pull from Clint into whatever they already use -- internal tools, AI workflows, data warehouses -- with the sources carried along.</p>
         </div>
         <div class="card">
           <div class="card-label">For analysts using AI assistants &middot; roadmap</div>
-          <h3>Use Clint from inside Claude or Copilot</h3>
-          <p>Ask Claude or Copilot a question about competitive data, and it answers from Clint with citations. Analysts who already use AI assistants get Clint's data inside their existing workflow, no separate tool to learn.</p>
+          <h3>Use Clint from inside your AI assistant</h3>
+          <p>Ask your AI assistant about the competitive picture and get an answer drawn from Clint, with the sources attached. Analysts who already work this way get Clint's data without leaving the tools they use.</p>
         </div>
       </div>
     </div>
@@ -455,17 +440,16 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">05</div>
     <h2 class="slide-title">What you'll see in the <span class="accent">demo</span>.</h2>
     <div class="body">
       <div class="shot-grid">
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse band with identity strip, a brand-tinted hero catalyst, and a one-line signal strip of motion metrics; below, a Latest from Stout feed, a next-90-days catalyst rail, recent materials, and what changed this week"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"></button>
           <figcaption class="caption">
             <div class="caption-label">Engagement landing</div>
-            <h4>Pulse, signal strip, and Latest from Stout</h4>
+            <h4>What's moving, plus the latest from Stout</h4>
           </figcaption>
         </figure>
         <figure class="shot">
@@ -486,7 +470,7 @@
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/heatmap.png" alt="Heatmap by MOA -- mechanisms as rows, development phases as columns, cells heat-colored by asset count, with a left controls panel for group-by, count toggle, competitive read, and shade legend"></button>
           <figcaption class="caption">
             <div class="caption-label">Heatmap</div>
-            <h4>Asset counts by phase, across a grouping dimension</h4>
+            <h4>Asset counts by phase</h4>
           </figcaption>
         </figure>
         <figure class="shot">
@@ -500,28 +484,28 @@
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows showing structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; phase transitions render in destination phase color"></button>
           <figcaption class="caption">
             <div class="caption-label">Activity</div>
-            <h4>CT.gov plus analyst edits, one typed feed</h4>
+            <h4>Every change, in one place</h4>
           </figcaption>
         </figure>
         <figure class="shot">
           <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/source-import.png" alt="Source import review page -- a grouped company > asset > trial tree of AI-extracted proposals from a pasted source, with new and existing tags, amber flag chips on rows needing review, an expandable per-row CT.gov candidate picker, and a footer selection summary with a gated Confirm button"></button>
           <figcaption class="caption">
             <div class="caption-label">Source import</div>
-            <h4>Paste NCT IDs, a URL, or text -- AI builds the set</h4>
+            <h4>Paste a source, AI builds the landscape</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence drawer on a trial detail page -- ProseMirror editor with bold, italic, bullet, and numbered list controls, byline and linked-entities chips, with the history panel below showing draft, published, archived events and word-level inline ins/del diffs between published versions"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Stout's analysis on a trial detail page -- a rich text editor with simple formatting controls, the note's author and the entities it is linked to, and a history panel below showing how the analysis changed from one version to the next"></button>
           <figcaption class="caption">
-            <div class="caption-label">Primary intelligence</div>
-            <h4>Versioned analysis with history and diffs</h4>
+            <div class="caption-label">Stout's analysis</div>
+            <h4>Written in place, with its full history</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Materials registry on a trial detail page -- chip filter strip (All, Briefing, Priority Notice, Ad Hoc), recency-ordered rows with PPTX amber, PDF red, and DOCX blue file-type badges, title, type pill, upload date, link count, file size, and a drag-drop upload zone beneath"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Files on a trial detail page -- a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"></button>
           <figcaption class="caption">
-            <div class="caption-label">Materials</div>
-            <h4>PPTX, PDF, DOCX registered against the entities they cover</h4>
+            <div class="caption-label">Files</div>
+            <h4>Deliverables, filed against what they cover</h4>
           </figcaption>
         </figure>
         <figure class="shot">
