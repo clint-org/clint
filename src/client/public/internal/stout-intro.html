@@ -170,6 +170,26 @@
   .rm-stage .pill.brand { background: var(--brand-600); border-color: var(--brand-600); color: white; }
   .rm-stage h3 { font-size: 15px; font-weight: 600; color: var(--slate-900); margin-bottom: 8px; letter-spacing: -0.005em; }
   .rm-stage p { font-size: 13.5px; color: var(--slate-600); }
+  /* Slide 5 (what changes): a before/after shift table. Each row is one
+     dimension of the engagement. The "Without Clint" column recedes in muted
+     slate; the "With Clint" column is the hero, carried by a brand left rule
+     and a faint wash. The final row (compounding) is the climax: brand-tinted
+     and slightly heavier, so the payoff lands last. */
+  .shift { display: flex; flex-direction: column; }
+  .shift-head, .shift-row { display: grid; grid-template-columns: 168px 1fr 1.3fr; }
+  .shift-head { padding-bottom: 9px; }
+  .shift-col { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+  .shift-col.before { color: var(--slate-400); padding: 0 18px; }
+  .shift-col.after { color: var(--brand-700); padding: 0 18px; }
+  .shift-row { border-top: 1px solid var(--slate-200); }
+  .shift-dim { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; padding: 18px 16px 18px 0; }
+  .shift-before { padding: 18px; font-size: 13.5px; color: var(--slate-400); }
+  .shift-after { padding: 18px; font-size: 14px; color: var(--slate-600); border-left: 2px solid var(--brand-600); background: var(--slate-50); }
+  .shift-after strong { color: var(--slate-900); font-weight: 600; }
+  .shift-row.climax .shift-dim { color: var(--brand-700); }
+  .shift-row.climax .shift-after { background: var(--brand-50); font-size: 14.5px; }
+  .shift-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--slate-200); font-size: 13px; color: var(--slate-500); }
+  .shift-foot strong { color: var(--slate-700); font-weight: 600; }
   @media (max-width: 768px) {
     .deck { height: 100dvh; }
     .slide { padding: 36px 20px 64px; }
@@ -220,6 +240,15 @@
     .roadmap-grid { grid-template-columns: 1fr; gap: 24px; }
     .rm-stage { padding: 0; flex-direction: row; align-items: flex-start; gap: 14px; }
     .rm-marker { width: auto; margin-bottom: 0; padding-top: 2px; }
+    /* Stack the shift table; the column headers carry no meaning once the
+       columns are gone, so inline labels replace them. */
+    .shift-head { display: none; }
+    .shift-row { grid-template-columns: 1fr; padding: 14px 0; gap: 6px; }
+    .shift-dim { padding: 0; }
+    .shift-before { padding: 0; font-size: 13px; }
+    .shift-before::before { content: 'Without Clint  '; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--slate-400); display: block; margin-bottom: 2px; }
+    .shift-after { padding: 12px 14px; }
+    .shift-after::before { content: 'With Clint  '; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-700); display: block; margin-bottom: 2px; }
   }
   @media print {
     body { background: white; overflow: visible; }
@@ -467,13 +496,31 @@
       <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
     <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
+    <p class="lede">Clint doesn't just make the work faster. It changes what a Stout engagement is, and where Stout's hours go.</p>
     <div class="body">
-      <ul class="points">
-        <li><strong>Start at the read, not the setup.</strong> The competitive baseline is already built when the engagement begins, so analyst time goes to interpretation and recommendations instead of assembling the picture from scratch.</li>
-        <li><strong>A standing presence, not a delivery date.</strong> Clients see a live, annotated view any day they sign in, so Stout is present all the way through the engagement, not just at the readout.</li>
-        <li><strong>It compounds.</strong> Over time the platform accumulates Stout's analysis, its full history, and the filed deliverables, so each quarter builds on the last instead of starting over.</li>
-        <li><strong>No engineering investment.</strong> Clint's team runs the syncs, the infrastructure, and the security. Stout uses the platform; Clint runs it.</li>
-      </ul>
+      <div class="shift">
+        <div class="shift-head">
+          <span></span>
+          <span class="shift-col before">Without Clint</span>
+          <span class="shift-col after">With Clint</span>
+        </div>
+        <div class="shift-row">
+          <div class="shift-dim">Analyst time</div>
+          <div class="shift-before">Hours rebuilding the competitive picture from scratch at the start of every engagement.</div>
+          <div class="shift-after"><strong>AI assembles the baseline; analysts start at the read.</strong> Their time goes to interpretation and recommendations, not setup.</div>
+        </div>
+        <div class="shift-row">
+          <div class="shift-dim">How Stout shows up</div>
+          <div class="shift-before">A deliverable that lands on a date, then goes quiet until the next one.</div>
+          <div class="shift-after"><strong>A live, annotated view the client sees any day they sign in.</strong> Stout is present across the whole engagement, not just at the readout.</div>
+        </div>
+        <div class="shift-row climax">
+          <div class="shift-dim">Across engagements</div>
+          <div class="shift-before">Each one starts from zero.</div>
+          <div class="shift-after"><strong>Analysis, its full history, and filed deliverables accumulate.</strong> Each quarter builds on the last, and the account gets harder to replace over time.</div>
+        </div>
+      </div>
+      <p class="shift-foot"><strong>And no engineering investment.</strong> Clint runs the syncs, the infrastructure, and the security. Stout uses the platform; Clint runs it.</p>
     </div>
   </div>
 </section>
