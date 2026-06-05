@@ -11,7 +11,6 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
@@ -20,6 +19,7 @@ import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
@@ -43,10 +43,10 @@ export interface FlattenedTrial {
 @Component({
   selector: 'app-dashboard-grid',
   imports: [
+    BrandLogoComponent,
     ChangeBadgeComponent,
     GridHeaderComponent,
     MarkerComponent,
-    NgOptimizedImage,
     PhaseBarComponent,
     RowNotesComponent,
   ],

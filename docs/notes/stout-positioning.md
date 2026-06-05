@@ -3,7 +3,7 @@
 Working document. Edit freely as we sharpen the pitch.
 
 Companion artifacts:
-- `stout-briefing.html` -- MD-facing deck (shareable)
+- `stout-intro.html` -- MD-facing deck (shareable)
 - `stout-partner-notes.html` -- partner prep deck (internal, do not share)
 
 ---
@@ -37,7 +37,7 @@ Companion artifacts:
 
 ## 2. Talking points for the partner -> MD conversation
 
-This is the brief the partner uses, not the deck the MD reads. The MD-facing artifact is `stout-briefing.html`.
+This is the brief the partner uses, not the deck the MD reads. The MD-facing artifact is `stout-intro.html`.
 
 ### Tone
 

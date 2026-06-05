@@ -125,12 +125,12 @@
               >
                 @if (row.isFirstInCompany) {
                   @if (row.companyLogoUrl) {
-                    <img
-                      [ngSrc]="row.companyLogoUrl"
+                    <app-brand-logo
+                      [url]="row.companyLogoUrl"
                       [alt]="row.companyName"
-                      width="20"
-                      height="20"
-                      class="h-5 w-5 rounded object-contain flex-none"
+                      [width]="20"
+                      [height]="20"
+                      imgClass="h-5 w-5 rounded object-contain flex-none"
                     />
                   }
                   @if (!isScrolled()) {

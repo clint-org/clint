@@ -9,13 +9,12 @@
     <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
       <div class="flex items-center gap-3">
         @if (c.logo_url) {
-          <img
-            [ngSrc]="c.logo_url"
+          <app-brand-logo
+            [url]="c.logo_url"
             [alt]="c.name + ' logo'"
-            width="128"
-            height="24"
-            class="h-6 w-auto max-w-[8rem] object-contain"
-            loading="lazy"
+            [width]="128"
+            [height]="24"
+            imgClass="h-6 w-auto max-w-[8rem] object-contain"
           />
         }
         <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">

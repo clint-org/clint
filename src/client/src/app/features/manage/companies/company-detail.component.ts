@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -22,6 +21,7 @@ import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
@@ -37,8 +37,8 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
 @Component({
   selector: 'app-company-detail',
   imports: [
+    BrandLogoComponent,
     ConfirmDialogModule,
-    NgOptimizedImage,
     ToastModule,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
