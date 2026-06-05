@@ -894,4 +894,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260603120000_space_show_preclinical_setting.sql`
 - `20260603120100_guard_preclinical_in_analytic_rpcs.sql`
 - `20260604120000_events_feed_scope_rollup_search_sort.sql`
+- `20260605120000_fix_search_palette_trgm_schema_qualify.sql`
 <!-- /AUTO-GEN:DRIFT -->
