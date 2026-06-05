@@ -27,7 +27,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   user_facing: false
 
 - id: source-import-commit
-  summary: Atomic RPC that writes a reviewed source import via shared entity-create RPCs. Creates asset_indications for timeline visibility and emits trial_change_events with source=source_import for the activity feed. Post-commit, the review page invalidates all relevant RpcCache tags.
+  summary: Atomic RPC that writes a reviewed source import via shared entity-create RPCs. Records each trial's full asset set in trial_assets (a trial can test multiple assets, e.g. a master-protocol NCT) by calling set_trial_assets when a proposal carries more than one asset ref, back-compatible with the legacy scalar asset_ref. Creates asset_indications for timeline visibility and emits trial_change_events with source=source_import for the activity feed. Post-commit, the review page invalidates all relevant RpcCache tags.
   routes:
     - /t/:tenantId/s/:spaceId/import/:aiCallId/review
   rpcs:
@@ -35,6 +35,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - create_company
     - create_asset
     - create_trial
+    - set_trial_assets
     - create_marker
     - create_event
     - get_space_inventory_snapshot
@@ -43,6 +44,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - companies
     - assets
     - trials
+    - trial_assets
     - trial_conditions
     - condition_indication_map
     - asset_indications
@@ -137,6 +139,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
 | `ai_config` | Tenant-level AI settings (model, caps, rates, enabled flag) | Tenant owner + platform admin |
 | `source_documents` | One row per imported source (URL, pasted text, or NCT batch). `source_kind` CHECK allows `'url'`, `'text'`, `'nct'`. | Agency members of space + platform admin SELECT; RPC-only write |
 | `ai_calls` | Every LLM call regardless of outcome | Agency SELECT; RPC-only write; platform admin DELETE |
+| `trial_assets` | Many-to-many between trials and assets; source of truth for the set of assets a trial tests. `is_primary` marks the headline member, mirrored into `trials.asset_id` by a sync trigger. Written via `set_trial_assets` (RPC) and the trial-insert bootstrap trigger. | Agency members of space via parent trial; RPC-only write |
 
 ## Provenance columns
 

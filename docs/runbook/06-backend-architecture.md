@@ -57,6 +57,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trial_conditions, trials | - |
+| `_trial_assets_bootstrap` | trial_assets | - |
+| `_trial_assets_sync_primary` | trial_assets, trials | - |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
@@ -69,8 +71,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -176,6 +178,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `set_trial_assets` | trial_assets | trials |
 | `space_shows_preclinical` | - | spaces |
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
@@ -640,6 +643,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
+- `_trial_assets_bootstrap`
+- `_trial_assets_sync_primary`
 - `_verify_extract_source_worker_secret`
 - `_verify_r2_drain_worker_secret`
 - `ai_call_close`
@@ -721,6 +726,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `reset_asset_indication_status`
 - `restore_space`
 - `search_palette`
+- `set_trial_assets`
 - `space_shows_preclinical`
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`

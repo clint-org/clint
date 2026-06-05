@@ -86,6 +86,8 @@ erDiagram
   TENANTS ||--o{ TENANT_INVITES : "tenant_id"
   TENANTS ||--o{ TENANT_MEMBERS : "tenant_id"
   AGENCIES ||--o{ TENANTS : "agency_id"
+  ASSETS ||--o{ TRIAL_ASSETS : "asset_id"
+  TRIALS ||--o{ TRIAL_ASSETS : "trial_id"
   TRIAL_FIELD_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_change_id"
   MARKER_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_marker_change_id"
   MARKERS ||--o{ TRIAL_CHANGE_EVENTS : "marker_id"
@@ -687,6 +689,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `primary_intelligence_links`
 - `r2_pending_deletes`
 - `source_documents`
+- `trial_assets`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -893,4 +896,10 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260530210311_add_change_event_navigation.sql`
 - `20260603120000_space_show_preclinical_setting.sql`
 - `20260603120100_guard_preclinical_in_analytic_rpcs.sql`
+- `20260604120000_events_feed_scope_rollup_search_sort.sql`
+- `20260604224257_create_trial_assets.sql`
+- `20260604225708_trial_assets_triggers.sql`
+- `20260604230014_backfill_trial_assets.sql`
+- `20260604230309_set_trial_assets_rpc.sql`
+- `20260604230810_commit_source_import_multi_asset.sql`
 <!-- /AUTO-GEN:DRIFT -->
