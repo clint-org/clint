@@ -553,9 +553,13 @@ interface GridRow {
                         [closable]="false"
                         styleClass="mt-1.5 w-full text-xs"
                       >
-                        Asset required: link this trial to an asset above.
+                        Asset required: add at least one asset below.
                       </p-message>
                     }
+                    <ng-container
+                      [ngTemplateOutlet]="assetEditor"
+                      [ngTemplateOutletContext]="{ idx }"
+                    />
                   }
 
                   <!-- Inline field edits -->
@@ -575,6 +579,62 @@ interface GridRow {
                       }
                     </div>
                   }
+                }
+              </div>
+            </div>
+          </ng-template>
+
+          <!-- Asset membership editor: chips with a primary star + add controls.
+               idx is the trial's entity index. Shared by entityRow and rowDetail. -->
+          <ng-template #assetEditor let-idx="idx">
+            <div class="mt-1.5">
+              <div class="mb-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
+                Assets
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                @for (ar of trialAssetRefs(idx); track ar) {
+                  @let aeIsPrimary = trialPrimaryRef(idx) === ar;
+                  <span
+                    class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px]"
+                    [class.border-cyan-300]="aeIsPrimary"
+                    [class.bg-cyan-50]="aeIsPrimary"
+                    [class.border-slate-200]="!aeIsPrimary"
+                  >
+                    <button
+                      type="button"
+                      class="flex items-center"
+                      [class.text-cyan-600]="aeIsPrimary"
+                      [class.text-slate-300]="!aeIsPrimary"
+                      (click)="setTrialPrimary(idx, ar)"
+                      [pTooltip]="aeIsPrimary ? 'Primary (headline) asset' : 'Make primary'"
+                      tooltipPosition="top"
+                    >
+                      <i class="pi text-[10px]" [class.pi-star-fill]="aeIsPrimary" [class.pi-star]="!aeIsPrimary"></i>
+                    </button>
+                    <span class="text-slate-700">{{ entityName('assets', ar) }}</span>
+                    @if ($count > 1) {
+                      <button
+                        type="button"
+                        class="text-slate-400 hover:text-red-600"
+                        (click)="removeTrialAsset(idx, ar)"
+                        pTooltip="Remove this asset from the trial"
+                        tooltipPosition="top"
+                      >
+                        <i class="pi pi-times text-[9px]"></i>
+                      </button>
+                    }
+                  </span>
+                }
+                @for (a of assetsAvailableToAdd(idx); track a.idx) {
+                  <button
+                    type="button"
+                    class="rounded border border-dashed border-slate-300 px-1.5 py-0.5 text-[11px] text-slate-500 hover:border-brand-400 hover:text-brand-600"
+                    (click)="addTrialAsset(idx, a.idx)"
+                    pTooltip="Add this asset to the trial"
+                    tooltipPosition="top"
+                  >
+                    + {{ a.name }}
+                  </button>
                 }
               </div>
             </div>
@@ -691,9 +751,13 @@ interface GridRow {
 
               @if (trialMissingAsset(entitiesOf('trials')[idx])) {
                 <p-message severity="warn" [closable]="false" styleClass="mt-1.5 w-full text-xs">
-                  Asset required: link this trial to an asset above.
+                  Asset required: add at least one asset below.
                 </p-message>
               }
+              <ng-container
+                [ngTemplateOutlet]="assetEditor"
+                [ngTemplateOutletContext]="{ idx }"
+              />
             }
 
             @let rdFields = editableFields(type, idx);
@@ -999,6 +1063,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly matchOverrides = signal<Record<string, string>>({});
   readonly fieldEdits = signal<Record<string, Record<string, string>>>({});
   readonly nctOverrides = signal<Record<number, string>>({});
+  // Per-trial-index overrides for asset membership. When a key is absent the
+  // proposal's own asset_refs / primary_asset_ref are used; an entry replaces them.
+  readonly assetRefsOverrides = signal<Record<number, number[]>>({});
+  readonly primaryRefOverrides = signal<Record<number, number>>({});
 
   readonly collapsedRows = signal<Record<string, boolean>>({});
   readonly committing = signal(false);
@@ -1559,6 +1627,63 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return trialMissingAssetLogic(entity);
   }
 
+  // --- Per-trial asset membership editing (chip + star control) ---------------
+
+  // Current asset indices for a trial: the override if the analyst edited it,
+  // otherwise the proposal's own (validated) asset_refs.
+  protected trialAssetRefs(idx: number): number[] {
+    const ovr = this.assetRefsOverrides()[idx];
+    if (ovr) return ovr;
+    return resolveTrialAssetIndexes(this.entitiesOf('trials')[idx], this.entitiesOf('assets').length);
+  }
+
+  // Current primary asset index for a trial, constrained to its membership.
+  protected trialPrimaryRef(idx: number): number | null {
+    const refs = this.trialAssetRefs(idx);
+    if (refs.length === 0) return null;
+    const ovr = this.primaryRefOverrides()[idx];
+    if (ovr != null && refs.includes(ovr)) return ovr;
+    const proposed = resolveTrialPrimaryAssetIndex(
+      this.entitiesOf('trials')[idx],
+      this.entitiesOf('assets').length,
+    );
+    return proposed != null && refs.includes(proposed) ? proposed : refs[0];
+  }
+
+  // Proposal assets not yet linked to this trial, offered as "+ add" chips.
+  protected assetsAvailableToAdd(idx: number): { idx: number; name: string }[] {
+    const current = new Set(this.trialAssetRefs(idx));
+    const assets = this.entitiesOf('assets');
+    const out: { idx: number; name: string }[] = [];
+    for (let i = 0; i < assets.length; i++) {
+      if (!current.has(i)) out.push({ idx: i, name: this.entityName('assets', i) });
+    }
+    return out;
+  }
+
+  protected addTrialAsset(idx: number, assetIdx: number): void {
+    const refs = this.trialAssetRefs(idx);
+    if (refs.includes(assetIdx)) return;
+    this.assetRefsOverrides.update((prev) => ({ ...prev, [idx]: [...refs, assetIdx] }));
+  }
+
+  protected removeTrialAsset(idx: number, assetIdx: number): void {
+    const refs = this.trialAssetRefs(idx);
+    if (refs.length <= 1) return; // a trial must keep at least one asset
+    const next = refs.filter((r) => r !== assetIdx);
+    const currentPrimary = this.trialPrimaryRef(idx);
+    this.assetRefsOverrides.update((prev) => ({ ...prev, [idx]: next }));
+    // Auto-promote a new primary when the removed asset was the primary.
+    if (currentPrimary == null || !next.includes(currentPrimary)) {
+      this.primaryRefOverrides.update((prev) => ({ ...prev, [idx]: next[0] }));
+    }
+  }
+
+  protected setTrialPrimary(idx: number, assetIdx: number): void {
+    if (!this.trialAssetRefs(idx).includes(assetIdx)) return;
+    this.primaryRefOverrides.update((prev) => ({ ...prev, [idx]: assetIdx }));
+  }
+
   protected toggleSelection(key: string, value: boolean): void {
     this.selections.update((prev) => ({ ...prev, [key]: value }));
   }
@@ -1796,6 +1921,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const overrides = this.matchOverrides();
     const edits = this.fieldEdits();
     const nctOvr = this.nctOverrides();
+    const assetRefsOvr = this.assetRefsOverrides();
+    const primaryRefOvr = this.primaryRefOverrides();
 
     const filteredProposals: Record<string, unknown[]> = {};
     for (const type of ENTITY_ORDER) {
@@ -1818,6 +1945,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
             const nctId = nctOvr[i] ?? p.resolved_identifiers?.[`trials_${i}`];
             if (nctId) {
               patched['nct_id'] = nctId;
+            }
+            // Apply analyst edits to asset membership / primary, if any.
+            const arOvr = assetRefsOvr[i];
+            if (arOvr) {
+              patched['asset_refs'] = arOvr;
+            }
+            const pOvr = primaryRefOvr[i];
+            if (pOvr != null) {
+              patched['primary_asset_ref'] = pOvr;
             }
           }
 
