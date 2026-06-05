@@ -826,6 +826,15 @@
         color: var(--slate-700);
         font-weight: 600;
       }
+      /* Slide 7 (pricing): a quiet closing line set off by a divider, sitting
+         under the three plain pricing points. */
+      .close-note {
+        margin-top: 22px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 14px;
+        color: var(--slate-600);
+      }
       @media (max-width: 768px) {
         .deck {
           height: 100dvh;
@@ -1946,11 +1955,77 @@
           </div>
         </div>
       </section>
+
+      <!-- ============ SLIDE 7: HOW IT'S PRICED ============ -->
+      <section class="slide">
+        <div class="accent-bar"></div>
+        <div class="slide-inner">
+          <div class="wordmark">
+            <svg class="logo" viewBox="0 0 140 140" fill="none">
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="#0d9488"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="name">Clint</span>
+            <span class="sep"></span>
+            <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout">
+              <use href="#stout-logo" /></svg
+            ><span class="meta">Presentation</span>
+          </div>
+          <h2 class="slide-title">Pricing, kept simple.</h2>
+          <p class="lede">
+            Priced per engagement, with a cap, and meant to be flexible. Right now the goal is just
+            to get Clint in front of your team on a live engagement and shape it around how you
+            work.
+          </p>
+          <div class="body">
+            <ul class="points">
+              <li>
+                <strong>Per engagement.</strong> Priced per client engagement, not a platform fee.
+                Straightforward and predictable.
+              </li>
+              <li>
+                <strong>Capped.</strong> There's a ceiling on the total, so it stays predictable
+                however widely you use it.
+              </li>
+              <li>
+                <strong>Shaped with you.</strong> A starting point, not a fixed package. We'll
+                adjust it to fit your team's flow.
+              </li>
+            </ul>
+            <p class="close-note">
+              The first step is simply putting Clint in your team's hands on a live engagement, and
+              building it out together from there.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
     <!-- /deck -->
 
     <div class="chrome">
-      <span class="counter" id="counter">01 / 06</span>
+      <span class="counter" id="counter">01 / 07</span>
       <span class="hint">&larr; &rarr; &middot; SPACE to advance &middot; P to print</span>
       <div class="nav-btns">
         <button class="nav-btn" id="prev">&larr;</button>
