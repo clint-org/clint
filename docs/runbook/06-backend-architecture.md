@@ -82,7 +82,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `create_asset` | assets | - |
 | `create_company` | companies | - |
 | `create_event` | events | - |
-| `create_marker` | marker_assignments, markers | marker_changes |
+| `create_marker` | marker_assignments, markers | marker_changes, trials |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -189,7 +189,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_asset_routes` | asset_routes_of_administration | assets |
 | `update_event_links` | event_links | events |
 | `update_event_sources` | event_sources | events |
-| `update_marker_assignments` | marker_assignments | markers |
+| `update_marker_assignments` | marker_assignments | markers, trials |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
 | `update_space_show_preclinical` | spaces | - |

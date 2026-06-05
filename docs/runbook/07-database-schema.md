@@ -910,4 +910,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260605043037_landscape_bullseye_multi_asset.sql`
 - `20260605050638_events_feed_multi_asset_scope.sql`
 - `20260605120000_fix_search_palette_trgm_schema_qualify.sql`
+- `20260605130000_content_create_authz_and_marker_trial_space.sql`
+- `20260605140000_restore_preclinical_guard_bullseye_assets.sql`
 <!-- /AUTO-GEN:DRIFT -->
