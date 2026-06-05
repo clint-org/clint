@@ -83,7 +83,8 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   rpcs:
     - get_trial_detail_with_intelligence
     - get_company_detail_with_intelligence
-    - get_product_detail_with_intelligence
+    - get_asset_detail_with_intelligence
+    - get_marker_detail_with_intelligence
     - get_space_intelligence
     - referenced_in_entity
   tables:

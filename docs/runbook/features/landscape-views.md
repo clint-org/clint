@@ -44,6 +44,10 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
     - /t/:tenantId/s/:spaceId/bullseye
   rpcs:
     - get_bullseye_assets
+    - get_bullseye_data
+    - get_bullseye_by_company
+    - get_bullseye_by_moa
+    - get_bullseye_by_roa
     - get_intelligence_notes_for_asset
   tables:
     - companies

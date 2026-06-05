@@ -60,7 +60,7 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
     - search_palette
   tables:
     - companies
-    - products
+    - assets
     - trials
     - markers
     - events

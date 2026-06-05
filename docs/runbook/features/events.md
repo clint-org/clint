@@ -33,6 +33,8 @@ A unified chronological feed showing analyst-created events, timeline markers, a
     - /t/:tenantId/s/:spaceId/events
   rpcs:
     - get_events_page_data
+    - _humanize_phase
+    - _humanize_status
   tables:
     - events
     - markers
@@ -79,6 +81,7 @@ A unified chronological feed showing analyst-created events, timeline markers, a
   rpcs:
     - get_event_detail
     - get_event_thread
+    - update_event_sources
   tables:
     - events
     - event_sources
@@ -109,6 +112,7 @@ A unified chronological feed showing analyst-created events, timeline markers, a
     - /t/:tenantId/s/:spaceId/events
   rpcs:
     - get_event_detail
+    - update_event_links
   tables:
     - event_links
   related:

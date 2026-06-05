@@ -78,7 +78,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
 - id: trial-change-feed-unified-events
   summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The detail panel deep-links via ?detectedId=<changeEventId> (recent-change dot click-through) and renders company/asset as links to their manage pages. The standalone /activity route redirects to /events?source=detected.
   routes:
-    - /t/:tenantId/s/:spaceId/events?source=detected
+    - /t/:tenantId/s/:spaceId/events
   rpcs:
     - get_events_page_data
     - upsert_change_event_annotation
@@ -114,6 +114,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:
     - get_dashboard_data
+    - recent_change_window
   tables:
     - trial_change_events
   related:
@@ -173,7 +174,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - companies
     - marker_types
   related:
-    - trial-change-feed-activity-page
+    - trial-change-feed-unified-events
     - trial-change-feed-what-changed-widget
     - trial-change-feed-marker-history
   user_facing: true

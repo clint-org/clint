@@ -195,9 +195,11 @@ If the browser dies between steps 3 and 7 the row stays invisible; a future jani
   summary: Append-only queue that fires on every materials row deletion (direct delete, space cascade, tenant cascade, company / product / trial cascade). A cloudflare worker drains the queue once a day at 07:00 UTC (same fire as the CT.gov sync) via worker-secret-gated SECURITY DEFINER RPCs and removes the matching R2 object. Stuck rows surface for ops review once attempt_count hits 5. Orphaned objects clear within 24 hours.
   routes: []
   rpcs:
+    - _enqueue_r2_delete
     - claim_pending_r2_deletes
     - mark_r2_delete_succeeded
     - mark_r2_delete_failed
+    - _verify_r2_drain_worker_secret
   tables:
     - r2_pending_deletes
     - materials

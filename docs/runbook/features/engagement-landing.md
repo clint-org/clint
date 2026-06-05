@@ -42,7 +42,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   tables:
     - spaces
     - trials
-    - products
+    - assets
     - companies
   related: []
   user_facing: true
@@ -59,7 +59,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
     - marker_types
     - marker_assignments
   related:
-    - catalysts-calendar
+    - catalysts-list
   user_facing: true
   role: viewer
   status: active
@@ -85,6 +85,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
     - /t/:tenantId/s/:spaceId
   rpcs:
     - list_primary_intelligence
+    - list_draft_intelligence_for_space
   tables:
     - primary_intelligence
   related:
@@ -102,7 +103,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
     - markers
     - marker_types
   related:
-    - catalysts-calendar
+    - catalysts-list
   user_facing: true
   role: viewer
   status: active
