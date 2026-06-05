@@ -35,14 +35,15 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 |---|---|---|
 | `_audit_trigger_space_invite_issued` | - | spaces |
 | `_audit_trigger_space_members` | - | spaces |
-| `_auto_derive_on_trial_condition_change` | - | trials |
+| `_auto_derive_asset_indication_status` | - | trial_assets |
+| `_auto_derive_on_trial_condition_change` | - | trial_assets |
 | `_cleanup_orphan_marker` | markers | marker_assignments |
 | `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
-| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_conditions, trials |
+| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_asset_indications` | asset_indications | - |
@@ -57,6 +58,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trial_conditions, trials | - |
+| `_sync_asset_indications` | asset_indications | assets, condition_indication_map, trial_assets, trial_conditions, trials |
+| `_trial_assets_bootstrap` | trial_assets | - |
+| `_trial_assets_sync_primary` | trial_assets, trials | - |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
@@ -69,8 +73,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -98,17 +102,17 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, indications, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
-| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_change_events, trials |
+| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trials |
 | `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
-| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
+| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_change_events, trial_conditions, trial_notes, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trial_notes, trials |
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
-| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
 | `get_key_catalysts` | - | assets, companies, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
@@ -118,7 +122,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_latest_sync_run` | - | ctgov_sync_runs |
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
-| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trials |
+| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trial_assets, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
@@ -155,7 +159,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
 | `prepare_material_upload` | - | materials |
-| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
+| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
@@ -176,6 +180,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `set_trial_assets` | trial_assets | trials |
 | `space_shows_preclinical` | - | spaces |
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
@@ -640,6 +645,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
+- `_sync_asset_indications`
+- `_trial_assets_bootstrap`
+- `_trial_assets_sync_indications`
+- `_trial_assets_sync_primary`
 - `_verify_extract_source_worker_secret`
 - `_verify_r2_drain_worker_secret`
 - `ai_call_close`
@@ -721,6 +730,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `reset_asset_indication_status`
 - `restore_space`
 - `search_palette`
+- `set_trial_assets`
 - `space_shows_preclinical`
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`

@@ -26,37 +26,69 @@ export function entityState(entity: Entity): EntityState {
   return isExistingMatch(entity) ? 'existing' : 'new';
 }
 
+// Reads a trial's asset references as a raw array. A trial can test multiple
+// assets (a master-protocol NCT), so the source of truth is `asset_refs`. The
+// legacy scalar `asset_ref` is still accepted so older proposals keep working.
+function rawAssetRefs(trial: Entity): unknown[] {
+  const refs = trial['asset_refs'];
+  if (Array.isArray(refs)) return refs;
+  const single = trial['asset_ref'];
+  return single == null ? [] : [single];
+}
+
+function isValidIndex(v: unknown, assetCount: number): v is number {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < assetCount;
+}
+
 // A trial that resolved to an existing record is never "missing an asset";
-// otherwise it must carry an asset_ref. This is the single source of truth:
-// ReviewPageComponent.trialMissingAsset delegates here so the grid's no-asset
-// flag and the commit gate cannot disagree.
+// otherwise it must carry at least one asset reference. This is the single
+// source of truth: ReviewPageComponent.trialMissingAsset delegates here so the
+// grid's no-asset flag and the commit gate cannot disagree.
 export function trialMissingAsset(trial: Entity): boolean {
   if (isExistingMatch(trial)) return false;
-  return trial['asset_ref'] == null;
+  return rawAssetRefs(trial).length === 0;
 }
 
-// Resolves a trial's `asset_ref` to a valid parent-asset index, or null when
-// the trial cannot be nested (no ref, non-integer, negative, or out of range).
-// The grouped grid nests trials under assets by this index; trials that resolve
-// to null have no place in the company -> asset -> trial tree and are surfaced
-// in the "Unlinked trials" section instead of silently disappearing. This is
-// the single source of truth: the tree builder and orphanTrialIndexes both
-// delegate here so nesting and orphan-detection cannot disagree.
-export function resolveTrialAssetIndex(trial: Entity, assetCount: number): number | null {
-  const ar = trial['asset_ref'];
-  if (typeof ar !== 'number' || !Number.isInteger(ar) || ar < 0 || ar >= assetCount) {
-    return null;
+// All valid, in-range, de-duplicated parent-asset indices for a trial, in order.
+// The grouped grid nests the trial under EACH of these assets; a trial that
+// resolves to an empty list has no place in the company -> asset -> trial tree
+// and is surfaced in the "Unlinked trials" section instead of disappearing.
+export function resolveTrialAssetIndexes(trial: Entity, assetCount: number): number[] {
+  const seen = new Set<number>();
+  const out: number[] = [];
+  for (const r of rawAssetRefs(trial)) {
+    if (isValidIndex(r, assetCount) && !seen.has(r)) {
+      seen.add(r);
+      out.push(r);
+    }
   }
-  return ar;
+  return out;
 }
 
-// Indices of trials that do not nest under any asset (the complement of the
-// nesting predicate above). Existing-match trials with no asset_ref still count
-// as orphans for display, but deriveTrialFlags only blocks the new ones.
+// The primary (headline) asset index for a trial: primary_asset_ref when it is
+// valid and among the resolved refs, else the first resolved ref, else null.
+export function resolveTrialPrimaryAssetIndex(trial: Entity, assetCount: number): number | null {
+  const refs = resolveTrialAssetIndexes(trial, assetCount);
+  if (refs.length === 0) return null;
+  const p = trial['primary_asset_ref'];
+  if (isValidIndex(p, assetCount) && refs.includes(p)) return p;
+  return refs[0];
+}
+
+// Back-compat single-index resolver (the trial's primary asset). Retained for
+// callers that need one owning asset; multi-asset nesting uses
+// resolveTrialAssetIndexes.
+export function resolveTrialAssetIndex(trial: Entity, assetCount: number): number | null {
+  return resolveTrialPrimaryAssetIndex(trial, assetCount);
+}
+
+// Indices of trials that do not nest under any asset (zero valid asset refs).
+// The tree builder and orphanTrialIndexes both delegate to
+// resolveTrialAssetIndexes so nesting and orphan-detection cannot disagree.
 export function orphanTrialIndexes(trials: Entity[], assetCount: number): number[] {
   const out: number[] = [];
   trials.forEach((t, i) => {
-    if (resolveTrialAssetIndex(t, assetCount) === null) out.push(i);
+    if (resolveTrialAssetIndexes(t, assetCount).length === 0) out.push(i);
   });
   return out;
 }

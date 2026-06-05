@@ -37,22 +37,43 @@
       </p>
     </app-form-field>
 
-    <app-form-field label="Asset" fieldId="edit-trial-product" [required]="true">
-      <p-select
-        inputId="edit-trial-product"
+    <app-form-field label="Assets" fieldId="edit-trial-assets" [required]="true">
+      <p-multiselect
+        inputId="edit-trial-assets"
         [options]="products()"
         optionLabel="name"
         optionValue="id"
-        [ngModel]="assetId()"
-        (ngModelChange)="assetId.set($event)"
-        name="product"
-        placeholder="Select asset"
+        [ngModel]="assetIds()"
+        (ngModelChange)="onAssetsChange($event)"
+        name="assets"
+        placeholder="Select assets"
         [filter]="true"
         styleClass="w-full"
         appendTo="body"
         [attr.aria-required]="true"
       />
+      <p class="mt-1 text-[11px] text-slate-500">
+        A trial can test more than one asset (e.g. a master protocol).
+      </p>
     </app-form-field>
+
+    @if (assetIds().length > 1) {
+      <app-form-field label="Primary asset" fieldId="edit-trial-primary" [required]="true">
+        <p-select
+          inputId="edit-trial-primary"
+          [options]="primaryOptions()"
+          optionLabel="name"
+          optionValue="id"
+          [ngModel]="primaryAssetId()"
+          (ngModelChange)="primaryAssetId.set($event)"
+          name="primaryAsset"
+          placeholder="Select primary asset"
+          styleClass="w-full"
+          appendTo="body"
+          [attr.aria-required]="true"
+        />
+      </app-form-field>
+    }
 
     <app-form-field label="Indication" fieldId="edit-trial-indication">
       <p-select

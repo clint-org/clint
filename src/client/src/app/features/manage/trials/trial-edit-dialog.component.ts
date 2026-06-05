@@ -11,6 +11,7 @@ import {
 import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { MultiSelect } from 'primeng/multiselect';
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
@@ -47,6 +48,7 @@ interface SelectOption {
     Dialog,
     InputTextModule,
     Select,
+    MultiSelect,
     DatePicker,
     Tooltip,
     FormsModule,
@@ -70,7 +72,10 @@ export class TrialEditDialogComponent {
 
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);
-  readonly assetId = signal<string | null>(null);
+  // A trial can test multiple assets; assetIds is the membership and
+  // primaryAssetId (one of assetIds) is the headline asset.
+  readonly assetIds = signal<string[]>([]);
+  readonly primaryAssetId = signal<string | null>(null);
   readonly phaseType = signal<string | null>(null);
   readonly phaseStart = signal<string | null>(null);
   readonly phaseEnd = signal<string | null>(null);
@@ -110,13 +115,33 @@ export class TrialEditDialogComponent {
       : this.ALL_PHASE_OPTIONS.filter((o) => o.id !== 'PRECLIN');
   });
 
+  // Primary-asset choices are the currently selected assets.
+  protected readonly primaryOptions = computed(() => {
+    const sel = new Set(this.assetIds());
+    return this.products().filter((p) => sel.has(p.id));
+  });
+
   readonly isValid = computed(() => {
     const id = this.identifier();
     const idValid = !id || id.trim() === '' || /^NCT\d{8}$/i.test(id.trim());
-    return (
-      this.name().trim().length > 0 && !!this.assetId() && idValid
-    );
+    const ids = this.assetIds();
+    const primary = this.primaryAssetId();
+    const assetsValid = ids.length > 0 && !!primary && ids.includes(primary);
+    return this.name().trim().length > 0 && assetsValid && idValid;
   });
+
+  // MultiSelect with showClear can emit null; coalesce to []. Keep the primary in
+  // sync: default to the first member, clear when no assets remain.
+  protected onAssetsChange(ids: string[] | null): void {
+    const next = ids ?? [];
+    this.assetIds.set(next);
+    const primary = this.primaryAssetId();
+    if (next.length === 0) {
+      this.primaryAssetId.set(null);
+    } else if (primary === null || !next.includes(primary)) {
+      this.primaryAssetId.set(next[0]);
+    }
+  }
 
   constructor() {
     // Seed form from the input trial when the dialog opens. Re-seeds on every
@@ -126,7 +151,21 @@ export class TrialEditDialogComponent {
         const t = this.trial();
         this.name.set(t.name ?? '');
         this.identifier.set(t.identifier ?? null);
-        this.assetId.set(t.asset_id ?? null);
+        // Seed asset membership from trial_assets; fall back to the cached
+        // primary if no membership rows exist (legacy data).
+        this.assetIds.set(t.asset_id ? [t.asset_id] : []);
+        this.primaryAssetId.set(t.asset_id ?? null);
+        void this.trialService
+          .listAssets(t.id)
+          .then((members) => {
+            if (members.length > 0) {
+              this.assetIds.set(members.map((m) => m.asset_id));
+              this.primaryAssetId.set(
+                members.find((m) => m.is_primary)?.asset_id ?? members[0].asset_id,
+              );
+            }
+          })
+          .catch(() => undefined);
         this.phaseType.set(t.phase_type ?? null);
         this.phaseStart.set(t.phase_start_date ?? null);
         this.phaseEnd.set(t.phase_end_date ?? null);
@@ -177,10 +216,18 @@ export class TrialEditDialogComponent {
     if (!this.isValid()) return;
     this.saving.set(true);
     try {
+      const t = this.trial();
+      // Asset membership + primary go through set_trial_assets (the sync trigger
+      // updates trials.asset_id), so the field update below omits asset_id.
+      await this.trialService.setAssets(
+        t.id,
+        this.assetIds(),
+        this.primaryAssetId()!,
+        t.space_id,
+      );
       const updates: Partial<Trial> = {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,
-        asset_id: this.assetId()!,
       };
       // Only send phase fields the user is allowed to edit. The server-side
       // trigger also enforces this; the UI lock is the user-facing constraint.
@@ -193,7 +240,7 @@ export class TrialEditDialogComponent {
       if (!this.phaseEndLocked()) {
         updates.phase_end_date = this.phaseEnd();
       }
-      const updated = await this.trialService.update(this.trial().id, updates);
+      const updated = await this.trialService.update(t.id, updates);
       this.saved.emit(updated);
       this.close();
       this.messageService.add({ severity: 'success', summary: 'Trial updated.', life: 3000 });
