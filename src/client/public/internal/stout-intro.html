@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="googlebot" content="noindex, nofollow, noarchive">
-<title>Clint -- Stout Briefing</title>
+<title>Clint: Stout Presentation</title>
 <style>
   :root {
     --slate-50:  #f8fafc;
@@ -130,6 +130,66 @@
   .shot .caption { padding: 10px 12px 12px; }
   .shot .caption-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 4px; }
   .shot .caption h4 { font-size: 13.5px; font-weight: 600; color: var(--slate-900); margin: 0; letter-spacing: -0.005em; }
+  /* Slide 5 roadmap: a dashed track runs through three milestone nodes.
+     The live-today node is a filled teal marker; roadmap nodes are hollow.
+     Status is carried by the node + pill, audience by the mono label. */
+  /* Top padding leaves room for the live node's glow, which expands above
+     the node and would otherwise be clipped by .body's overflow. */
+  .roadmap { position: relative; padding-top: 18px; }
+  /* Pull the track up under a tighter lede so the extra top room above
+     doesn't push the slide taller. */
+  .slide:has(.roadmap) .lede { margin-bottom: 14px; }
+  /* Dashed track: a teal -> slate gradient fading toward the right (the
+     future). The color is a left-to-right gradient; a repeating mask cuts
+     it into dashes, so the dashes themselves carry the gradient. */
+  /* Endpoints sit on the node centers: each node's left edge is 24px (stage
+     padding) into its column and the node is 22px wide, so the center is
+     35px in. node3 lives in the last third, hence the calc on the right. */
+  .roadmap-line { position: absolute; top: 28px; left: 35px; right: calc(33.333% - 35px); height: 2px; z-index: 0;
+    background: linear-gradient(to right, var(--brand-600), var(--slate-200));
+    -webkit-mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px);
+            mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px); }
+  .roadmap-line::after { content: ''; position: absolute; right: -2px; top: -5px; width: 8px; height: 8px; border-top: 2px solid var(--slate-300); border-right: 2px solid var(--slate-300); transform: rotate(45deg); }
+  .roadmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); position: relative; z-index: 1; }
+  .rm-stage { padding: 0 24px; display: flex; flex-direction: column; align-items: flex-start; }
+  .rm-marker { width: 100%; display: flex; justify-content: flex-start; margin-bottom: 22px; }
+  .rm-node { width: 22px; height: 22px; border-radius: 50%; background: white; border: 2px solid var(--slate-300); box-sizing: border-box; }
+  /* Live node glows like a bullseye marker: a steady soft halo plus an
+     expanding ring that fades out, matching the bullseye pulse-ring. */
+  @keyframes rm-pulse {
+    0%   { box-shadow: 0 0 9px 1px rgba(13, 148, 136, 0.5), 0 0 0 3px rgba(13, 148, 136, 0.4); }
+    100% { box-shadow: 0 0 9px 1px rgba(13, 148, 136, 0.5), 0 0 0 13px rgba(13, 148, 136, 0); }
+  }
+  .rm-node.live { background: var(--brand-600); border-color: var(--brand-600); animation: rm-pulse 2.4s ease-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .rm-node.live { animation: none; box-shadow: 0 0 9px 1px rgba(13, 148, 136, 0.5), 0 0 0 4px var(--brand-100); }
+  }
+  .rm-stage .pill { margin-bottom: 12px; }
+  /* Fill the live pill teal so "now" reads as the hero, echoing the glowing
+     node; the two roadmap pills stay as quiet slate outlines. */
+  .rm-stage .pill.brand { background: var(--brand-600); border-color: var(--brand-600); color: white; }
+  .rm-stage h3 { font-size: 15px; font-weight: 600; color: var(--slate-900); margin-bottom: 8px; letter-spacing: -0.005em; }
+  .rm-stage p { font-size: 13.5px; color: var(--slate-600); }
+  /* Slide 5 (what changes): a before/after shift table. Each row is one
+     dimension of the engagement. The "Without Clint" column recedes in muted
+     slate; the "With Clint" column is the hero, carried by a brand left rule
+     and a faint wash. The final row (compounding) is the climax: brand-tinted
+     and slightly heavier, so the payoff lands last. */
+  .shift { display: flex; flex-direction: column; }
+  .shift-head, .shift-row { display: grid; grid-template-columns: 168px 1fr 1.3fr; }
+  .shift-head { padding-bottom: 9px; }
+  .shift-col { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+  .shift-col.before { color: var(--slate-400); padding: 0 18px; }
+  .shift-col.after { color: var(--brand-700); padding: 0 18px; }
+  .shift-row { border-top: 1px solid var(--slate-200); }
+  .shift-dim { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--slate-500); letter-spacing: 0.08em; text-transform: uppercase; padding: 18px 16px 18px 0; }
+  .shift-before { padding: 18px; font-size: 13.5px; color: var(--slate-400); }
+  .shift-after { padding: 18px; font-size: 14px; color: var(--slate-600); border-left: 2px solid var(--brand-600); background: var(--slate-50); }
+  .shift-after strong { color: var(--slate-900); font-weight: 600; }
+  .shift-row.climax .shift-dim { color: var(--brand-700); }
+  .shift-row.climax .shift-after { background: var(--brand-50); font-size: 14.5px; }
+  .shift-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--slate-200); font-size: 13px; color: var(--slate-500); }
+  .shift-foot strong { color: var(--slate-700); font-weight: 600; }
   @media (max-width: 768px) {
     .deck { height: 100dvh; }
     .slide { padding: 36px 20px 64px; }
@@ -167,12 +227,28 @@
     .counter { font-size: 10px; }
     .nav-btn { width: 36px; height: 36px; font-size: 16px; }
     .cover-hero { margin: 4px 0 24px; }
-    .cover-hero img { max-height: 180px; }
+    /* Match the desktop treatment: a cropped, top-anchored band (a slice of
+       the product) rather than the whole screenshot shrunk to fit. */
+    .cover-hero img { height: auto; max-height: none; aspect-ratio: 7 / 2; }
     /* Mobile: stack the thumb above text full-width instead of floating. */
     .card > .card-thumb { float: none; width: 100%; margin: 0 0 12px 0; }
     .shot-grid { grid-template-columns: 1fr; gap: 10px; }
     .shot .caption { padding: 8px 10px 10px; }
     .shot .caption h4 { font-size: 12.5px; }
+    /* Stack the roadmap; the horizontal track has no meaning in a column. */
+    .roadmap-line { display: none; }
+    .roadmap-grid { grid-template-columns: 1fr; gap: 24px; }
+    .rm-stage { padding: 0; flex-direction: row; align-items: flex-start; gap: 14px; }
+    .rm-marker { width: auto; margin-bottom: 0; padding-top: 2px; }
+    /* Stack the shift table; the column headers carry no meaning once the
+       columns are gone, so inline labels replace them. */
+    .shift-head { display: none; }
+    .shift-row { grid-template-columns: 1fr; padding: 14px 0; gap: 6px; }
+    .shift-dim { padding: 0; }
+    .shift-before { padding: 0; font-size: 13px; }
+    .shift-before::before { content: 'Without Clint  '; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--slate-400); display: block; margin-bottom: 2px; }
+    .shift-after { padding: 12px 14px; }
+    .shift-after::before { content: 'With Clint  '; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-700); display: block; margin-bottom: 2px; }
   }
   @media print {
     body { background: white; overflow: visible; }
@@ -259,14 +335,12 @@
       <span class="big-logo-sep" aria-hidden="true"></span>
       <svg class="stout-cover-logo" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg>
     </div>
-    <h1>Primary pharma intelligence, published live through <span class="accent">your brand</span>.</h1>
+    <h1><span class="accent">Primary</span> pharma intelligence, published <span class="accent">live</span> through <span class="accent">your brand</span>.</h1>
     <div class="cover-hero">
-      <img src="img/timeline.png" alt="Pfizer-branded Clint timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar">
+      <img src="img/timeline.png" alt="Pfizer-branded Clint timeline view: multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar">
     </div>
     <div class="footer-line">
-      <span>Prepared 2026-05-11</span>
-      <span class="dot"></span>
-      <span>For discussion</span>
+      <span>Prepared 2026-06-04</span>
     </div>
   </div>
 </section>
@@ -283,43 +357,48 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">01</div>
     <h2 class="slide-title">Clint is the working surface, the deliverable layer, and the system of record for an engagement.</h2>
     <p class="lede">Clint sits on top of the data Stout already consumes and produces. It's where the CI work lives, where deliverables get filed, and where the client sees it all in real time.</p>
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Engagement landing screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse header with active-trials, companies, programs, catalysts in next 90 days, and intelligence total tiles; three-up below with what changed (last 7 days), next 14 days calendar, and an agency-only drafts panel; full-width Latest from Stout feed with featured first post"></button>
-          <div class="card-label">Home base</div>
-          <h3>Every engagement opens to a live pulse</h3>
-          <p>The engagement landing is what clients see first: what changed in the past week, catalysts in the next fourteen days, the latest analysis Stout has published, and (for analysts) drafts in progress. Five stat tiles link straight to trials, companies, programs, catalysts, and intelligence.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Engagement landing screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing: the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"></button>
+          <h3>Every engagement opens to a live read</h3>
+          <p>The landing page is the first thing clients see: the next catalyst front and center, a quick read on what's moving, the latest analysis from Stout, and what changed this week. The headline numbers take you straight into the data behind them.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence on a trial detail page -- published read with byline (contributors plus updated-by-agency line), linked entities chips, and a history panel below showing a linear timeline of draft, published, archived, withdrawn events with word-level inline ins/del diffs between adjacent published versions"></button>
-          <div class="card-label">Stout's analysis</div>
-          <h3>Primary intelligence, with versioned history</h3>
-          <p>Stout's analysts publish primary intelligence directly onto trials, companies, products, and markers via a ProseMirror editor with autosave. Every publish stamps a version. The history panel shows draft, publish, archive, and withdraw events with word-level diffs between versions. Clients see the current read; the audit trail is built in.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Source import screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/source-import.png" alt="Source import review page: a grouped company, asset, and trial tree built by AI from a pasted source, with each row marked new or existing, items that need a quick look flagged, an expandable detail panel for editing, and a confirm button at the bottom"></button>
+          <h3>Build the competitive picture from a single source</h3>
+          <p>Paste a list of trial IDs, a press release, or any block of text, and Clint's AI turns it into a structured landscape: the companies, their assets, the trials, and the catalysts coming up. What used to be hours of manual setup is ready to review in minutes, and every entry traces back to where it came from.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Trial change feed screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows: structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; events include phase transitions in destination phase color and marker edits in marker category color"></button>
-          <div class="card-label">Always current</div>
-          <h3>One change feed, six surfaces</h3>
-          <p>A daily Cloudflare Worker pulls fresh ClinicalTrials.gov payloads and writes typed field diffs. Analyst marker edits flow into the same stream. The output lands on the engagement landing, the activity page, trial row badges, marker history, the intelligence feed, and trial detail. One pipeline, no manual restatement.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Primary intelligence screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary analysis on a trial detail page: a published note with its author, the entities it is linked to, and a history panel below showing how the analysis has changed from one version to the next"></button>
+          <h3>Stout's analysis, with its full history</h3>
+          <p>Stout's analysts write their read directly onto any trial, company, asset, or catalyst in a rich text editor. Each time they publish, Clint keeps the version before it, so the client always sees the latest thinking and anyone can look back at how it got there.</p>
         </div>
         <div class="card">
-          <button type="button" class="card-thumb" aria-label="Expand: Whitelabel screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground, 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
-          <div class="card-label">Stout-owned surface</div>
-          <h3>A Stout-branded site per client, plus a portal you run</h3>
-          <p>Each pharma client lives on a Stout-themed tenant. Stout owners manage every tenant from a self-serve portal at /admin: provision new tenants with a live subdomain check, edit branding, invite the first user, audit member activity. Agency, tenant, and engagement-level branding are all supported.</p>
+          <button type="button" class="card-thumb" aria-label="Expand: Activity feed screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity feed: a running list of changes, each showing what changed (old value struck through, new value highlighted), the company, the trial or asset, when it happened, and where it came from"></button>
+          <h3>Always current, without the busywork</h3>
+          <p>A daily automatic sync pulls the latest from ClinicalTrials.gov, and the edits Stout's analysts make sit right alongside it. It all flows through to the landing page, the activity feed, and every trial, so the picture keeps itself current and no one has to rewrite it by hand.</p>
+        </div>
+        <div class="card">
+          <button type="button" class="card-thumb" aria-label="Expand: Files screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Files on a trial detail page: a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"></button>
+          <h3>Deliverables filed where the client looks</h3>
+          <p>Deliverable files attach to the trials, companies, assets, and catalysts they're about, so a file turns up right where the client is already looking, and again in one place that gathers everything. Nothing gets buried in an inbox or a shared drive.</p>
+        </div>
+        <div class="card">
+          <button type="button" class="card-thumb" aria-label="Expand: Client-branded login screenshot" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="A client login page in the client's own brand: the client's logo and colors in the foreground, with a quiet 'by Stout' attribution beneath the sign-in buttons"></button>
+          <h3>A site in each client's own brand, run from one portal</h3>
+          <p>Each client gets its own space, dressed in that client's brand: their logo, their colors. Stout runs all of it from the agency portal: set up a new client, choose their branding, and manage who has access. No IT project, no waiting.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ SLIDE 3: WHAT CHANGES FOR STOUT ============ -->
+<!-- ============ SLIDE 3: BD PITCH TOOL ============ -->
 <section class="slide">
   <div class="accent-bar"></div>
   <div class="slide-inner">
@@ -331,68 +410,34 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">02</div>
-    <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
-    <div class="body">
-      <ul class="points">
-        <li><strong>Faster kickoff.</strong> The competitive baseline for the target therapeutic area is already in the platform when the engagement starts. Analysts begin from a working picture and add Stout's curation and framing on top, instead of assembling from scratch.</li>
-        <li><strong>Continuous presence.</strong> The engagement landing shows clients what changed in the last week, what's coming in the next two weeks, and the most recent analysis from Stout, every time they sign in. They get a live, annotated view all quarter, not just on delivery day.</li>
-        <li><strong>The briefing focuses on strategy.</strong> Data review happens in the platform throughout the quarter, so the meeting opens at recommendations and decisions instead of slide narration.</li>
-        <li><strong>Every deliverable is filed where the client looks for it.</strong> PPTX, PDF, and DOCX deliverables register against the trials, companies, products, and markers they cover, so files surface from any related detail page and from a single cross-cutting browse view. No more lost briefings, no more "which folder is that in" emails.</li>
-        <li><strong>Stickier renewals.</strong> A site that holds the client's annotations, the engagement's filed materials, and Stout's published reads with full version history has real switching cost. That's the difference between renewing the relationship and re-pitching it every year.</li>
-        <li><strong>No engineering investment.</strong> Clint's team runs the ingest pipelines, source updates, infrastructure, and security. Stout uses the platform; Clint runs it.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ============ SLIDE 4: BD PITCH TOOL ============ -->
-<section class="slide">
-  <div class="accent-bar"></div>
-  <div class="slide-inner">
-    <div class="wordmark">
-      <svg class="logo" viewBox="0 0 140 140" fill="none">
-        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="name">Clint</span>
-      <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
-    </div>
-    <div class="label">03</div>
     <h2 class="slide-title">Win the pitch with the surface you'll deliver on.</h2>
     <p class="lede">The platform isn't only for live engagements. Use it to win them.</p>
     <div class="body">
       <div class="grid-2">
         <div class="card">
-          <div class="card-label">Start with a working landscape</div>
           <h3>No blank-page assembly before a pitch</h3>
-          <p>Pre-load competitors, products, trials, and recent events for the prospect's therapeutic area before the meeting. The pitch starts from a working competitive picture, with Stout's data already in place.</p>
+          <p>Paste the client's sources (a few trial IDs, a press release, a list) and Clint's AI assembles the competitors, their assets, the trials, and recent catalysts in minutes. The pitch starts from a working competitive picture, not a blank page.</p>
         </div>
         <div class="card">
-          <div class="card-label">Layer Stout's intelligence on it</div>
           <h3>Show the kind of read Stout delivers</h3>
-          <p>Add primary analysis, framing, and selected catalysts to show what Stout would put in front of them as the consultant. The prospect sees Stout's analytical voice, not a generic dashboard.</p>
+          <p>Add Stout's own analysis, framing, and the catalysts that matter, so the client sees what Stout would put in front of them as their vendor, not a generic dashboard.</p>
         </div>
         <div class="card">
-          <div class="card-label">Demo it live, in their brand</div>
           <h3>The pitch is the product</h3>
-          <p>Prospects see a working Stout-branded site, not a static deck. They get a sneak peek of exactly what they'd use as a client.</p>
+          <p>Clients see a working site in their own brand, not a static deck. They get a sneak peek of exactly what they'd use as a client.</p>
         </div>
         <div class="card">
-          <div class="card-label">Data carries forward when they sign</div>
           <h3>The pitch becomes the kickoff baseline</h3>
-          <p>Whatever was built for the pitch becomes the starting point for the engagement. No re-assembly between BD and delivery.</p>
+          <p>Whatever was built for the pitch becomes the starting point for the engagement. Nothing gets rebuilt between winning the work and starting it.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ SLIDE 5: AI INTEGRATION ROADMAP ============ -->
+<!-- ============ SLIDE 4: AI INTEGRATION ROADMAP ============ -->
 <section class="slide">
   <div class="accent-bar"></div>
   <div class="slide-inner">
@@ -404,29 +449,78 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">04</div>
-    <h2 class="slide-title">Three ways to put AI on top of Clint's data.</h2>
-    <p class="lede">Clint's data is already structured and cited, which is what AI needs to give reliable answers. Three ways to use it are on the roadmap.</p>
+    <h2 class="slide-title">Clint's data is built for AI.</h2>
+    <p class="lede">Clint's data is already structured and cited, which is what AI needs to give reliable answers. AI-powered import is already live inside the platform today; two further ways to use the data are on the roadmap.</p>
     <div class="body">
-      <div class="grid-3">
-        <div class="card">
-          <div class="card-label">For Stout's data team</div>
-          <h3>Pull Clint data into Stout's own systems</h3>
-          <p>Stout's data team can connect Clint to whatever they already use. Internal tools, AI workflows, data warehouses. The data flows out programmatically, with sources attached.</p>
-        </div>
-        <div class="card">
-          <div class="card-label">For analysts using AI assistants</div>
-          <h3>Use Clint from inside Claude or Copilot</h3>
-          <p>Ask Claude or Copilot a question about competitive data, and it answers from Clint with citations. Analysts who already use AI assistants get Clint's data inside their existing workflow, no separate tool to learn.</p>
-        </div>
-        <div class="card">
-          <div class="card-label">Inside the platform</div>
-          <h3>AI built into Clint itself</h3>
-          <p>Generate briefs, run scenario analysis, ask questions, all inside Clint. No need to send client data to outside AI tools.</p>
+      <div class="roadmap">
+        <div class="roadmap-line" aria-hidden="true"></div>
+        <div class="roadmap-grid">
+          <div class="rm-stage">
+            <div class="rm-marker"><span class="rm-node live"></span></div>
+            <span class="pill brand">Live today</span>
+            <h3>Clint already supports AI import</h3>
+            <p>Paste a few trial IDs, a link, or a block of text, and Clint's AI builds the full competitive landscape, doing the heavy lifting for the analyst.</p>
+          </div>
+          <div class="rm-stage">
+            <div class="rm-marker"><span class="rm-node"></span></div>
+            <span class="pill">On the roadmap</span>
+            <h3>Draft, model, and ask inside Clint</h3>
+            <p>Draft briefs, run quick what-if scenarios, and ask questions across the whole engagement, all in the platform, without sending client data to outside tools.</p>
+          </div>
+          <div class="rm-stage">
+            <div class="rm-marker"><span class="rm-node"></span></div>
+            <span class="pill">On the roadmap</span>
+            <h3>Use Clint from inside your AI assistant</h3>
+            <p>Ask your AI assistant about the competitive picture and get an answer drawn from Clint, with the sources attached. Analysts who already work this way get Clint's data without leaving the tools they use.</p>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5: WHAT CHANGES FOR STOUT ============ -->
+<section class="slide">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="wordmark">
+      <svg class="logo" viewBox="0 0 140 140" fill="none">
+        <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="name">Clint</span>
+      <span class="sep"></span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
+    </div>
+    <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
+    <p class="lede">Clint doesn't just make the work faster. It changes what a Stout engagement is, and where Stout's hours go.</p>
+    <div class="body">
+      <div class="shift">
+        <div class="shift-head">
+          <span></span>
+          <span class="shift-col before">Without Clint</span>
+          <span class="shift-col after">With Clint</span>
+        </div>
+        <div class="shift-row">
+          <div class="shift-dim">Analyst time</div>
+          <div class="shift-before">Hours rebuilding the competitive picture from scratch at the start of every engagement.</div>
+          <div class="shift-after"><strong>AI assembles the baseline; analysts start at the read.</strong> Their time goes to interpretation and recommendations, not setup.</div>
+        </div>
+        <div class="shift-row">
+          <div class="shift-dim">How Stout shows up</div>
+          <div class="shift-before">A deliverable that lands on a date, then goes quiet until the next one.</div>
+          <div class="shift-after"><strong>A live, annotated view the client sees any day they sign in.</strong> Stout is present across the whole engagement, not just at the readout.</div>
+        </div>
+        <div class="shift-row climax">
+          <div class="shift-dim">Across engagements</div>
+          <div class="shift-before">Each one starts from zero.</div>
+          <div class="shift-after"><strong>Analysis, its full history, and filed deliverables accumulate.</strong> Each quarter builds on the last, and the account gets harder to replace over time.</div>
+        </div>
+      </div>
+      <p class="shift-foot"><strong>And no engineering investment.</strong> Clint runs the syncs, the infrastructure, and the security. Stout uses the platform; Clint runs it.</p>
     </div>
   </div>
 </section>
@@ -443,91 +537,97 @@
       </svg>
       <span class="name">Clint</span>
       <span class="sep"></span>
-      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Briefing</span>
+      <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout"><use href="#stout-logo"/></svg><span class="meta">Presentation</span>
     </div>
-    <div class="label">05</div>
     <h2 class="slide-title">What you'll see in the <span class="accent">demo</span>.</h2>
     <div class="body">
       <div class="shot-grid">
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing -- pulse header with engagement title and five linked stat tiles, three-up below with what changed, next 14 days calendar, and an agency-only drafts panel, full-width Latest from Stout feed beneath"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/engagement-landing.png" alt="Engagement landing: the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"></button>
           <figcaption class="caption">
             <div class="caption-label">Engagement landing</div>
-            <h4>Live home for every engagement</h4>
+            <h4>What's moving, plus the latest from Stout</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/timeline.png" alt="Pfizer timeline view -- multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/timeline.png" alt="Pfizer timeline view: multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"></button>
           <figcaption class="caption">
             <div class="caption-label">Timeline</div>
             <h4>Multi-company pipeline with phases and markers</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/bullseye.png" alt="Bullseye for Heart Failure -- competitors arranged radially by phase and company, with a Zelvox detail panel showing trials, MOA, and recent markers"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/bullseye.png" alt="Bullseye for Heart Failure: competitors arranged radially by phase, grouped into spokes by company, with halo rings for intelligence and recent activity, a one-line competitive read bar, and a Zelvox detail panel showing trials, MOA, and recent markers"></button>
           <figcaption class="caption">
             <div class="caption-label">Bullseye</div>
-            <h4>Competitors by phase, around a therapeutic area</h4>
+            <h4>Competitors by phase, with a one-line competitive read</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/positioning.png" alt="Positioning by MOA -- mechanisms plotted by highest phase against competitor count, bubbles sized by trial volume"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/heatmap.png" alt="Heatmap by MOA: mechanisms as rows, development phases as columns, cells heat-colored by asset count, with a left controls panel for group-by, count toggle, competitive read, and shade legend"></button>
           <figcaption class="caption">
-            <div class="caption-label">Positioning</div>
-            <h4>Phase vs. competitive density, by MOA</h4>
+            <div class="caption-label">Heatmap</div>
+            <h4>Asset counts by phase</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list -- upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/catalysts.png" alt="Catalysts list: upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"></button>
           <figcaption class="caption">
             <div class="caption-label">Future catalysts</div>
             <h4>Upcoming readouts, regulatory dates, milestones</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page -- typed change-event feed with summary-led rows showing structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; phase transitions render in destination phase color"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/activity.png" alt="Activity page: typed change-event feed with summary-led rows showing structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; phase transitions render in destination phase color"></button>
           <figcaption class="caption">
             <div class="caption-label">Activity</div>
-            <h4>CT.gov plus analyst edits, one typed feed</h4>
+            <h4>Every change, in one place</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Primary intelligence drawer on a trial detail page -- ProseMirror editor with bold, italic, bullet, and numbered list controls, byline and linked-entities chips, with the history panel below showing draft, published, archived events and word-level inline ins/del diffs between published versions"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/source-import.png" alt="Source import review page: a grouped company > asset > trial tree of AI-extracted proposals from a pasted source, with new and existing tags, amber flag chips on rows needing review, an expandable per-row CT.gov candidate picker, and a footer selection summary with a gated Confirm button"></button>
           <figcaption class="caption">
-            <div class="caption-label">Primary intelligence</div>
-            <h4>Versioned analysis with history and diffs</h4>
+            <div class="caption-label">Source import</div>
+            <h4>Paste a source, AI builds the landscape</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Materials registry on a trial detail page -- chip filter strip (All, Briefing, Priority Notice, Ad Hoc), recency-ordered rows with PPTX amber, PDF red, and DOCX blue file-type badges, title, type pill, upload date, link count, file size, and a drag-drop upload zone beneath"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/intelligence.png" alt="Stout's analysis on a trial detail page: a rich text editor with simple formatting controls, the note's author and the entities it is linked to, and a history panel below showing how the analysis changed from one version to the next"></button>
           <figcaption class="caption">
-            <div class="caption-label">Materials</div>
-            <h4>PPTX, PDF, DOCX registered against the entities they cover</h4>
+            <div class="caption-label">Stout's analysis</div>
+            <h4>Written in place, with its full history</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/command-palette.png" alt="Command palette -- Cmd+K overlay with prefix tokens for commands, companies, trials, and catalysts, showing pinned entities, recents, and trigram-matched results across companies, products, trials, markers, and events"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/materials.png" alt="Files on a trial detail page: a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"></button>
+          <figcaption class="caption">
+            <div class="caption-label">Files</div>
+            <h4>Deliverables, filed against what they cover</h4>
+          </figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/command-palette.png" alt="Command palette: Cmd+K overlay with prefix tokens for commands, companies, trials, and catalysts, showing pinned entities, recents, and trigram-matched results across companies, products, trials, markers, and events"></button>
           <figcaption class="caption">
             <div class="caption-label">Command palette</div>
             <h4>Cmd+K finder across the engagement</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail -- markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/trial-detail.png" alt="CARDIO-SHIELD trial detail: markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"></button>
           <figcaption class="caption">
             <div class="caption-label">Trial detail</div>
             <h4>Intelligence, markers, materials on every trial</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed -- dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/events.png" alt="Events feed: dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"></button>
           <figcaption class="caption">
             <div class="caption-label">Event feed</div>
             <h4>Threaded events across the competitive set</h4>
           </figcaption>
         </figure>
         <figure class="shot">
-          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel -- Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
+          <button type="button" class="img-wrap" onclick="openLightbox(this.querySelector('img'))"><img src="img/whitelabel-stout-login.png" alt="Pfizer login page on the Stout whitelabel: Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"></button>
           <figcaption class="caption">
             <div class="caption-label">Whitelabel</div>
             <h4>Tenant brand foreground, Stout attribution below</h4>
