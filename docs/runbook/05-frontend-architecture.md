@@ -646,6 +646,12 @@ Both surfaces hide gracefully on agency, super-admin, and default brands (no age
 
 The dev brand override at `main.ts` accepts `wl_agency_name` and `wl_agency_logo` query params (alongside `wl_kind=tenant`) for smoke-testing this attribution UI without a real tenant→agency row in the local DB.
 
+### Company & asset logos (Brandfetch Logo Link)
+
+Company and asset `logo_url` values are Brandfetch Logo Link URLs (`cdn.brandfetch.io/<domain>/<type>`) written by the source-import enrichment step (see `features/source-import.md`). They are stored **without** the `?c=<clientId>` query param the CDN requires for hotlinking — Brandfetch 302-redirects an unauthenticated request to its guidelines page, so a raw `<img [ngSrc]>` never loads the image.
+
+All logo surfaces must render through `shared/components/brand-logo.component.ts` (`<app-brand-logo>`), never a raw `[ngSrc]` binding. The component (via the pure `brand-logo-url.ts` resolver) appends `?c=<environment.brandfetchClientId>` and a `/fallback/lettermark` path segment at render time, so the CDN returns the brand's first-letter lettermark instead of its generic "B" placeholder when a domain has no real asset of the stored type. On a network error or a null / non-Brandfetch `url`, it falls through to projected `<ng-content>` (a monogram or muted placeholder supplied by the caller). Consumers: company-list, company-detail, asset-detail (company + asset), the dashboard grid company column, and the change-event / event-detail feeds.
+
 ## Toasts (save/action feedback)
 
 All user-facing success feedback uses PrimeNG `p-toast` via `MessageService`. A single `<p-toast position="top-right" />` lives in `app.component.ts` -- individual components never render their own toast element.

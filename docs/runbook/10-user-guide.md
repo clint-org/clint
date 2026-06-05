@@ -123,7 +123,7 @@ Access the management screens via the header navigation links.
 **Navigate:** Companies link in header
 
 - **Add Company** -- Enter name, optional logo URL and display order
-- **Logo column** -- When a company has a `logo_url` set, the Logo column renders the image as a small preview (lazy-loaded, 20px tall, max 128px wide). Broken / missing URLs fall back to a muted placeholder.
+- **Logo column** -- When a company has a `logo_url` set, the Logo column renders the image as a small preview (lazy-loaded, 20px tall, max 128px wide). Brandfetch-hosted logos whose domain has no real asset fall back to the brand's first-letter lettermark; a null URL or load failure falls back to a muted placeholder.
 - **Click a company name** -- Drills into the Assets list filtered to that company (`?company=<id>`). A "Clear filter" button in the Products header pops back to the unfiltered view.
 - **Edit / Delete / View assets** -- Use the row overflow (`...`) menu. Delete is destructive and cascades to all linked assets and trials.
 - Companies are ordered by `display_order`.
