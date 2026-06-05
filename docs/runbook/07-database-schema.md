@@ -902,4 +902,12 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260604230014_backfill_trial_assets.sql`
 - `20260604230309_set_trial_assets_rpc.sql`
 - `20260604230810_commit_source_import_multi_asset.sql`
+- `20260605013416_trial_multi_asset_delete_semantics.sql`
+- `20260605030242_asset_indications_multi_asset_derive.sql`
+- `20260605030919_dashboard_data_multi_asset.sql`
+- `20260605042514_positioning_multi_asset_trial_count.sql`
+- `20260605042723_preview_asset_delete_multi_asset.sql`
+- `20260605043037_landscape_bullseye_multi_asset.sql`
+- `20260605050638_events_feed_multi_asset_scope.sql`
+- `20260605120000_fix_search_palette_trgm_schema_qualify.sql`
 <!-- /AUTO-GEN:DRIFT -->
