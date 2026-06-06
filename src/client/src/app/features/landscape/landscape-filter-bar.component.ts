@@ -37,6 +37,7 @@ import { MechanismOfActionService } from '../../core/services/mechanism-of-actio
 import { AssetService } from '../../core/services/asset.service';
 import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
 import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
+import { TrialService } from '../../core/services/trial.service';
 import { LandscapeStateService } from './landscape-state.service';
 
 interface SelectOption {
@@ -74,6 +75,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   private readonly taService = inject(TherapeuticAreaService);
   private readonly moaService = inject(MechanismOfActionService);
   private readonly roaService = inject(RouteOfAdministrationService);
+  private readonly trialService = inject(TrialService);
   private readonly markerCategoryService = inject(MarkerCategoryService);
   private readonly messageService = inject(MessageService);
   readonly state = inject(LandscapeStateService);
@@ -95,6 +97,7 @@ export class LandscapeFilterBarComponent implements OnInit {
   readonly loading = signal(true);
   readonly companyOptions = signal<SelectOption[]>([]);
   readonly productOptions = signal<SelectOption[]>([]);
+  readonly trialOptions = signal<SelectOption[]>([]);
   readonly taOptions = signal<SelectOption[]>([]);
   readonly moaOptions = signal<SelectOption[]>([]);
   readonly roaOptions = signal<SelectOption[]>([]);
@@ -144,12 +147,6 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Withdrawn', value: 'Withdrawn' },
   ];
 
-  readonly studyTypeOptions: SelectOption[] = [
-    { label: 'Interventional', value: 'Interventional' },
-    { label: 'Observational', value: 'Observational' },
-    { label: 'Expanded Access', value: 'Expanded Access' },
-  ];
-
   readonly activeChips = computed<FilterChip[]>(() => {
     const f = this.state.filters();
     const chips: FilterChip[] = [];
@@ -168,6 +165,7 @@ export class LandscapeFilterBarComponent implements OnInit {
 
     addChips(f.companyIds, this.companyOptions(), 'companyIds', 'Company');
     addChips(f.assetIds, this.productOptions(), 'assetIds', 'Asset');
+    addChips(f.trialIds, this.trialOptions(), 'trialIds', 'Trial');
     addChips(f.indicationIds, this.taOptions(), 'indicationIds', 'Indication');
     addChips(f.mechanismOfActionIds, this.moaOptions(), 'mechanismOfActionIds', 'MOA');
     addChips(f.routeOfAdministrationIds, this.roaOptions(), 'routeOfAdministrationIds', 'ROA');
@@ -180,9 +178,6 @@ export class LandscapeFilterBarComponent implements OnInit {
     for (const status of f.recruitmentStatuses) {
       chips.push({ field: 'recruitmentStatuses', header: 'Status', value: status, id: status });
     }
-    for (const type of f.studyTypes) {
-      chips.push({ field: 'studyTypes', header: 'Study Type', value: type, id: type });
-    }
 
     return chips;
   });
@@ -192,12 +187,12 @@ export class LandscapeFilterBarComponent implements OnInit {
     return (
       f.companyIds.length > 0 ||
       f.assetIds.length > 0 ||
+      f.trialIds.length > 0 ||
       f.indicationIds.length > 0 ||
       f.mechanismOfActionIds.length > 0 ||
       f.routeOfAdministrationIds.length > 0 ||
       f.phases.length > 0 ||
       f.recruitmentStatuses.length > 0 ||
-      f.studyTypes.length > 0 ||
       f.markerCategoryIds.length > 0
     );
   });
@@ -214,9 +209,15 @@ export class LandscapeFilterBarComponent implements OnInit {
       return;
     }
     try {
-      const [companies, products, areas, moas, roas, markerCategories] = await Promise.all([
+      // Trials load with showPreclinical = true so every trial on the timeline
+      // is reachable here. Gating on state.showPreclinical() would race the
+      // async space-settings load (default false) and wrongly drop preclinical
+      // trials from the dropdown -- the exact "in timeline but not filterable"
+      // gap this control closes.
+      const [companies, products, trials, areas, moas, roas, markerCategories] = await Promise.all([
         this.companyService.list(sid),
         this.assetService.list(sid),
+        this.trialService.listBySpace(sid, true),
         this.taService.list(sid),
         this.moaService.list(sid),
         this.roaService.list(sid),
@@ -224,6 +225,12 @@ export class LandscapeFilterBarComponent implements OnInit {
       ]);
       this.companyOptions.set(companies.map((c) => ({ label: c.name, value: c.id })));
       this.productOptions.set(products.map((p) => ({ label: p.name, value: p.id })));
+      this.trialOptions.set(
+        trials.map((t) => ({
+          label: t.identifier ? `${t.name} (${t.identifier})` : t.name,
+          value: t.id,
+        }))
+      );
       this.taOptions.set(areas.map((a) => ({ label: a.name, value: a.id })));
       this.moaOptions.set(moas.map((m) => ({ label: m.name, value: m.id })));
       this.roaOptions.set(roas.map((r) => ({ label: r.name, value: r.id })));

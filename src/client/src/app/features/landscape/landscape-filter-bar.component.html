@@ -72,6 +72,23 @@
         [selectedItemsLabel]="'Asset (' + state.filters().assetIds.length + ')'"
       />
 
+      <p-multiselect
+        [options]="trialOptions()"
+        [ngModel]="state.filters().trialIds"
+        (ngModelChange)="update('trialIds', $event ?? [])"
+        placeholder="Trial"
+        ariaLabel="Filter by trial"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        [showClear]="true"
+        appendTo="body"
+        [styleClass]="'w-fit' + (state.filters().trialIds.length ? ' has-value' : '')"
+        size="small"
+        [maxSelectedLabels]="0"
+        [selectedItemsLabel]="'Trial (' + state.filters().trialIds.length + ')'"
+      />
+
       @if (viewMode() !== 'bullseye' || dimension() !== 'indication') {
         <p-multiselect
           [options]="taOptions()"
@@ -168,22 +185,6 @@
       />
 
       <p-multiselect
-        [options]="studyTypeOptions"
-        [ngModel]="state.filters().studyTypes"
-        (ngModelChange)="update('studyTypes', $event ?? [])"
-        placeholder="Study type"
-        ariaLabel="Filter by study type"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().studyTypes.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Study type (' + state.filters().studyTypes.length + ')'"
-      />
-
-      <p-multiselect
         [options]="markerCategoryOptions()"
         [ngModel]="state.filters().markerCategoryIds"
         (ngModelChange)="update('markerCategoryIds', $event ?? [])"
@@ -219,10 +220,10 @@
       @if (state.lastSyncedAt(); as ts) {
         <span
           class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-400"
-          [pTooltip]="'Most recent CT.gov sync across all trials'"
+          [pTooltip]="'Most recent CT.gov sync across all trials. Individual trials may be older or not yet synced.'"
           tooltipPosition="left"
         >
-          Data as of {{ ts | date: 'MMM d, y, h:mm a' }}
+          Last CT.gov sync {{ ts | date: 'MMM d, y, h:mm a' }}
         </span>
       }
     }

@@ -326,6 +326,19 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             trials = trials.filter((t) => filters.trialIds.includes(t.id));
           }
 
+          // Indication filter: trials carry their indication grouping in
+          // `_indication` (attached by DashboardService). Match on the
+          // indication entity id, which is `_indication.indication_id` -- not
+          // the asset_indication join-row id on `_indication.id`. Trials with
+          // no `_indication` are excluded when an indication filter is active.
+          if (filters.indicationIds.length > 0) {
+            trials = trials.filter(
+              (t) =>
+                t._indication?.indication_id &&
+                filters.indicationIds.includes(t._indication.indication_id)
+            );
+          }
+
           if (filters.phases.length > 0) {
             trials = trials.filter(
               (t) => t.phase_type && (filters.phases as string[]).includes(t.phase_type)
