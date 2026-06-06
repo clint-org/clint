@@ -40,6 +40,7 @@ import { SectionCardComponent } from '../../../shared/components/section-card.co
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
@@ -78,6 +79,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
+    BrandLogoComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,

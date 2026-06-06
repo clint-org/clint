@@ -28,7 +28,7 @@ export interface Trial {
   assets?: {
     id: string;
     name: string;
-    companies?: { id: string; name: string } | null;
+    companies?: { id: string; name: string; logo_url: string | null } | null;
   } | null;
   markers?: Marker[];
   trial_notes?: TrialNote[];

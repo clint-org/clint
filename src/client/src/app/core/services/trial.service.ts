@@ -8,7 +8,7 @@ import { SupabaseService } from './supabase.service';
 
 const TRIAL_SELECT = `
   *,
-  assets!trials_asset_id_fkey(id, name, companies(id, name)),
+  assets!trials_asset_id_fkey(id, name, companies(id, name, logo_url)),
   marker_assignments(
     id,
     marker_id,
