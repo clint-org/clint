@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   HostListener,
   inject,
   OnInit,
@@ -555,6 +556,21 @@ export class AppShellComponent implements OnInit {
     return '';
   });
 
+  constructor() {
+    // Keep the space picker in sync. The list is reloaded both on tenant
+    // switch (tenantId changes) and after any space mutation through
+    // SpaceService (create / archive / restore / permanent delete), which
+    // bumps spacesChanged. Without the latter, mutations within the current
+    // tenant would leave the picker showing a stale snapshot.
+    effect(() => {
+      this.spaceService.spacesChanged();
+      const tenantId = this.tenantId();
+      if (tenantId) {
+        this.loadSpaces(tenantId);
+      }
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     // Restore pinned state
     const pinned = localStorage.getItem('clint-sidebar-pinned');
@@ -802,8 +818,9 @@ export class AppShellComponent implements OnInit {
     }
 
     if (params['tenantId'] && params['tenantId'] !== this.tenantId()) {
+      // Setting tenantId triggers the reload effect (constructor), which
+      // calls loadSpaces for the new tenant.
       this.tenantId.set(params['tenantId']);
-      this.loadSpaces(params['tenantId']);
     }
     if (params['spaceId']) {
       this.spaceId.set(params['spaceId']);

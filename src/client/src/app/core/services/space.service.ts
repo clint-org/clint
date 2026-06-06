@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { Space, SpaceMember, SpaceInvite } from '../models/space.model';
 import { SupabaseService } from './supabase.service';
@@ -6,6 +6,20 @@ import { SupabaseService } from './supabase.service';
 @Injectable({ providedIn: 'root' })
 export class SpaceService {
   private supabase = inject(SupabaseService);
+
+  /**
+   * Monotonic tick bumped after every mutation that changes the set of
+   * active spaces for a tenant (create / archive / restore / permanent
+   * delete). Consumers that cache the space list (e.g. the app-shell space
+   * picker) read this signal to reload, since the list is otherwise a
+   * snapshot taken only on tenant switch.
+   */
+  private readonly _spacesChanged = signal(0);
+  readonly spacesChanged = this._spacesChanged.asReadonly();
+
+  private notifySpacesChanged(): void {
+    this._spacesChanged.update((n) => n + 1);
+  }
 
   async createSpace(tenantId: string, name: string, description?: string): Promise<Space> {
     const { data } = await this.supabase.client
@@ -15,6 +29,7 @@ export class SpaceService {
         p_description: description ?? null,
       })
       .throwOnError();
+    this.notifySpacesChanged();
     return data as Space;
   }
 
@@ -58,6 +73,7 @@ export class SpaceService {
         p_space_id: id,
       })
       .throwOnError();
+    this.notifySpacesChanged();
   }
 
   /**
@@ -70,6 +86,7 @@ export class SpaceService {
         p_space_id: id,
       })
       .throwOnError();
+    this.notifySpacesChanged();
   }
 
   /**
@@ -82,6 +99,7 @@ export class SpaceService {
     const { data } = await this.supabase.client
       .rpc('permanently_delete_space', { p_space_id: id })
       .throwOnError();
+    this.notifySpacesChanged();
     return (data ?? {}) as Record<string, unknown>;
   }
 
