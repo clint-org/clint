@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +20,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
@@ -106,6 +108,7 @@ export class TrialDetailComponent implements OnDestroy {
 
   private location = inject(Location);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private trialService = inject(TrialService);
   private markerService = inject(MarkerService);
   private noteService = inject(TrialNoteService);
@@ -127,23 +130,49 @@ export class TrialDetailComponent implements OnDestroy {
   });
 
   private readonly topbarActionsEffect = effect(() => {
-    // Re-added an "Edit details" topbar action via the trial-edit-dialog
-    // after the trial-form retirement left no UI path to fix typos /
-    // backfill a missing NCT / reassign product or therapeutic area.
-    // Inline per-field editing is still the planned future state.
-    if (!this.trial() || !this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([]);
+    // Edit details (opens trial-edit-dialog) and Delete share the topbar
+    // overflow kebab, matching the grid-row idiom. Inline per-field editing
+    // is still the planned future state.
+    const trial = this.trial();
+    if (!trial || !this.spaceRole.canEdit()) {
+      this.topbarState.overflowActions.set([]);
       return;
     }
-    this.topbarState.actions.set([
-      {
-        label: 'Edit details',
-        icon: 'fa-solid fa-pen',
-        text: true,
-        callback: () => this.editingTrial.set(true),
-      },
-    ]);
+    this.topbarState.overflowActions.set(
+      buildEntityActionMenu({
+        canEdit: true,
+        editLabel: 'Edit details',
+        onEdit: () => this.editingTrial.set(true),
+        onDelete: () => void this.deleteTrial(trial),
+      })
+    );
   });
+
+  private async deleteTrial(trial: Trial): Promise<void> {
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete trial',
+        entityLabel: trial.acronym ?? trial.name,
+        message: `Delete "${trial.acronym ?? trial.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.trialService.previewDelete(trial.id),
+      delete: () => this.trialService.delete(trial.id),
+      successSummary: 'Trial deleted.',
+      onSuccess: () =>
+        void this.router.navigate([
+          '/t',
+          this.tenantIdSig(),
+          's',
+          this.spaceIdSig(),
+          'manage',
+          'trials',
+        ]),
+      errorFallback: 'Could not delete trial. Check your connection and try again.',
+    });
+  }
 
   readonly editingTrial = signal(false);
 
@@ -331,26 +360,15 @@ export class TrialDetailComponent implements OnDestroy {
     const key = `marker:${marker.id}`;
     const cached = this.menuCache.get(key);
     if (cached) return cached;
-    const items: MenuItem[] = [];
-    if (this.spaceRole.canEdit()) {
-      items.push(
-        {
-          label: 'Edit',
-          icon: 'fa-solid fa-pen',
-          command: () => {
-            this.editingMarker.set(marker);
-            this.addingMarker.set(false);
-          },
-        },
-        { separator: true },
-        {
-          label: 'Delete',
-          icon: 'fa-solid fa-trash',
-          styleClass: 'row-actions-danger',
-          command: () => this.deleteMarker(marker.id),
-        }
-      );
-    }
+    const items = buildEntityActionMenu({
+      canEdit: this.spaceRole.canEdit(),
+      editLabel: 'Edit',
+      onEdit: () => {
+        this.editingMarker.set(marker);
+        this.addingMarker.set(false);
+      },
+      onDelete: () => void this.deleteMarker(marker.id),
+    });
     this.menuCache.set(key, items);
     return items;
   }
@@ -359,26 +377,15 @@ export class TrialDetailComponent implements OnDestroy {
     const key = `note:${note.id}`;
     const cached = this.menuCache.get(key);
     if (cached) return cached;
-    const items: MenuItem[] = [];
-    if (this.spaceRole.canEdit()) {
-      items.push(
-        {
-          label: 'Edit',
-          icon: 'fa-solid fa-pen',
-          command: () => {
-            this.editingNote.set(note);
-            this.addingNote.set(false);
-          },
-        },
-        { separator: true },
-        {
-          label: 'Delete',
-          icon: 'fa-solid fa-trash',
-          styleClass: 'row-actions-danger',
-          command: () => this.deleteNote(note.id),
-        }
-      );
-    }
+    const items = buildEntityActionMenu({
+      canEdit: this.spaceRole.canEdit(),
+      editLabel: 'Edit',
+      onEdit: () => {
+        this.editingNote.set(note);
+        this.addingNote.set(false);
+      },
+      onDelete: () => void this.deleteNote(note.id),
+    });
     this.menuCache.set(key, items);
     return items;
   }
