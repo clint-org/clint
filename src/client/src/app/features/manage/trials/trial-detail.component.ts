@@ -408,13 +408,14 @@ export class TrialDetailComponent implements OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     this.indications.set([]);
+    const id = this.trialId();
 
     try {
-      const trial = await this.trialService.getById(this.trialId());
+      const trial = await this.trialService.getById(id);
       this.trial.set(trial);
       this.menuCache.clear();
       this.indications.set(
-        await fetchIndicationsSafe(() => this.trialService.listIndications(this.trialId()))
+        await fetchIndicationsSafe(() => this.trialService.listIndications(id))
       );
       // History panel depends on the loaded trial's space_id; refresh once
       // the trial resolves so the inline panel reflects the latest versions.
