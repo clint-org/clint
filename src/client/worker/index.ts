@@ -101,7 +101,10 @@ export default {
 
     if (url.pathname === '/robots.txt') {
       return new Response(buildRobots(url.hostname, apexes), {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400',
+        },
       });
     }
 

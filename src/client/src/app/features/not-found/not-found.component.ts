@@ -19,6 +19,7 @@ import { BrandContextService } from '../../core/services/brand-context.service';
               [alt]="brand.appDisplayName() + ' logo'"
               width="160"
               height="40"
+              priority
               class="h-10 w-auto object-contain"
             />
           } @else {
