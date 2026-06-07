@@ -27,17 +27,27 @@ via `get_brand_by_host` and `BrandContextService`.
 
 ## Decisions (locked)
 
-- **Legal content model:** one platform-authored template, brand-filled. Same
-  legal text on every host; only the brand name, logo, operator reference, and
-  contact email swap per host. No DB-stored per-agency legal text, no editor UI
-  (YAGNI for now). Caveat recorded below.
-- **Contact:** no dedicated contact page or form. A footer `mailto:` only,
-  resolved per host.
-- **Contact email source:** host-aware. Extend `get_brand_by_host` to project a
-  `contact_email` (the agency's existing `contact_email` for agency/tenant hosts;
-  null on apex/super-admin), surfaced through the `Brand` model +
-  `BrandContextService`. Footer falls back to a platform constant
-  (`support@clintapp.com`) when null.
+- **Legal content model:** platform-owned documents, attributed to Clint (the
+  platform operator), NOT brand-swapped in the legal body. The same Privacy
+  Policy + Terms render on every host and plainly name "Clint" and describe its
+  role (operator / sub-processor). Agencies are responsible for their own
+  customer-facing legal docs off-platform. This is structure "A" from the
+  whitelabel-responsibility analysis; the rejected "brand-filled template"
+  (structure "C") would have authored legal commitments in a third party's name
+  for text they never reviewed. Per-agency uploaded docs ("B") are a future
+  feature, out of scope. Rationale: the agency layer is, for now, largely the
+  platform owner operating under different brands, so platform-owned docs are
+  both the safest and the most accurate.
+- **Host-aware scope (clarified):** only the *chrome* is host-aware -- footer
+  styling, brand logo, brand name in the footer copyright line, and page layout.
+  The legal *text*, the named responsible entity, and the contact address are
+  NOT brand-swapped; they are Clint's.
+- **Contact:** no dedicated contact page or form. A footer `mailto:` only.
+- **Contact email source:** a single static platform constant
+  (`privacy@clintapp.com` for legal pages / footer). This removes the previously
+  planned `get_brand_by_host` migration, the `Brand.contact_email` field, the
+  `BrandContextService` / `brand-bootstrap` changes, and the `docs:arch` regen.
+  There is no DB or migration work in this spec anymore.
 - **robots.txt:** host-aware, served by the Worker. Apex (marketing) host allows
   indexing but disallows app/auth paths; every subdomain returns
   `Disallow: /` so client workspaces are never indexed.
@@ -59,18 +69,45 @@ starting template. They are not legal advice and have not been reviewed by
 counsel. The product owner must have qualified legal review before relying on
 them. This caveat lives in the spec, not on the live page.
 
+### Why platform-owned docs (whitelabel responsibility)
+
+In a whitelabel chain (platform owner -> agency -> pharma client), legal
+responsibility splits by document and by data-protection role:
+
+- **Terms of Service** are two separate contracts: platform owner <-> agency
+  (yours) and agency <-> their end users (the agency's). You only own the first.
+- **Privacy / data protection** follows controller vs processor roles: the
+  pharma client is typically the controller, the agency a processor, and the
+  platform a sub-processor. The customer-facing privacy policy belongs to the
+  party the user perceives as running the service.
+
+Three possible structures were considered:
+- **A (chosen):** the platform publishes its own Privacy + Terms, attributed to
+  Clint, rendered on every host. Safest and most accurate: you only ever speak
+  for yourself. Fits the current reality that the agency layer is largely the
+  platform owner under different brands.
+- **B (future):** each agency supplies its own legal docs, shown on its
+  subdomain. Correct for full third-party whitelabel; heavier (DB-backed +
+  editor); the content and liability are the agency's. Out of scope.
+- **C (rejected):** one template brand-swapped into the agency's name. Authors
+  legal commitments in a third party's name for text they never reviewed. Muddy
+  liability. Not built.
+
 ## Architecture
 
-Six independent units. They share `BrandContextService` for host-aware values but
-otherwise have no coupling and can be built/tested in isolation.
+Five independent units. The footer and 404 read `BrandContextService` for
+host-aware chrome; the legal pages use it only for surrounding chrome (logo /
+footer), not for their body text. Units are otherwise uncoupled and can be
+built/tested in isolation.
 
 ### 1. PublicFooterComponent
 - Path: `src/client/src/app/shared/components/public-footer.component.ts`
 - Standalone, `ChangeDetectionStrategy.OnPush`.
-- Reads `BrandContextService`: `appDisplayName`, `contactEmail` (new).
+- Reads `BrandContextService`: `appDisplayName` (chrome only).
 - Renders: `© {year} {appDisplayName}`, `Privacy` (`routerLink="/privacy"`),
-  `Terms` (`routerLink="/terms"`), and a contact `mailto:` using
-  `contactEmail() ?? 'support@clintapp.com'`.
+  `Terms` (`routerLink="/terms"`), and a contact `mailto:` to the static
+  platform constant `privacy@clintapp.com` (exported from a shared
+  `legal-content.ts` so the footer and legal pages reference one value).
 - Year: a static constant computed at build/run is fine; use
   `new Date().getFullYear()` is disallowed in some contexts but is fine in a
   component (not in workflow scripts). Acceptable here.
@@ -85,9 +122,12 @@ otherwise have no coupling and can be built/tested in isolation.
   - `src/client/src/app/features/legal/legal-content.ts` (shared section text +
     interpolation helper; single source of truth, mirrors the help-page pattern)
 - Routes: top-level `/privacy` and `/terms`, available on every host.
-- `legal-content.ts` exports the templated sections as data; each component
-  interpolates `{brandName}` (from `appDisplayName`), the platform operator
-  name ("Clint"), `{contactEmail}`, and a `LAST_UPDATED` constant date.
+- `legal-content.ts` exports the section text as data plus the constants
+  `PLATFORM_OPERATOR = 'Clint'`, `PLATFORM_LEGAL_EMAIL = 'privacy@clintapp.com'`,
+  and `LAST_UPDATED`. The legal body names Clint as the operator/sub-processor;
+  it is NOT brand-swapped to the host's display name.
+- Host-aware chrome only: the surrounding page uses the brand logo/footer, but
+  the document text reads as Clint's platform terms regardless of host.
 - Page shape mirrors existing help pages: header + summary + section list +
   back link, with `PublicFooterComponent` at the bottom.
 
@@ -101,24 +141,7 @@ otherwise have no coupling and can be built/tested in isolation.
 - Note: SPA fallback (`not_found_handling: single-page-application`) already
   serves `index.html` for unknown paths; Angular's wildcard then renders this.
 
-### 4. Contact email plumbing (DB + model)
-- Migration: recreate `public.get_brand_by_host(text)` to add `contact_email` to
-  the returned JSON. Source it from `agencies.contact_email`:
-  - tenant brand: the tenant's agency's `contact_email`
-  - agency brand: that agency's `contact_email`
-  - super-admin / default: null
-- The RPC is anon-callable and read-only (NOT a Tier-1 audit RPC), so no
-  `record_audit_event` / `@audit:tier1` marker needed.
-- End the migration with `notify pgrst, 'reload schema';` (per project rule:
-  PostgREST reload after RPC signature change) and keep the in-migration smoke
-  consistent.
-- Update `Brand` model (`brand.model.ts`): add `contact_email: string | null`.
-- Update `DEFAULT_BRAND` and `BrandContextService`: add `contactEmail` computed.
-- Update `brand-bootstrap.ts`: parse `contact_email` from the RPC response.
-- Run `npm run docs:arch` after the migration (regenerates the RPC->table matrix
-  and schema docs) and commit the regen in the same change set.
-
-### 5. Host-aware robots.txt (Worker)
+### 4. Host-aware robots.txt (Worker)
 - File: `src/client/worker/index.ts`.
 - Add a handler before the `env.ASSETS.fetch` fallback:
   - `if (url.pathname === '/robots.txt')` -> `text/plain` response.
@@ -130,7 +153,7 @@ otherwise have no coupling and can be built/tested in isolation.
 - New file `src/client/worker/robots.ts` holding a pure
   `buildRobots(host, apexes): string` so it is unit-testable without a Request.
 
-### 6. SEO meta + OG image
+### 5. SEO meta + OG image
 - `src/client/src/index.html`: set `<title>` to
   "Clint: Competitive intelligence for pharma" (em dash is banned in our content,
   so use a colon/hyphen, never an em dash), add `meta name="description"`,
@@ -155,28 +178,27 @@ otherwise have no coupling and can be built/tested in isolation.
 Each unit ships its spec in the same change set (project rule: tests paired with
 each task, never deferred to a phase):
 
-- `public-footer.component.spec.ts`: renders brand name; renders contact mailto
-  with agency email when present; falls back to `support@clintapp.com` when null.
+- `public-footer.component.spec.ts`: renders brand name in the copyright line;
+  renders the `privacy@clintapp.com` mailto and the Privacy/Terms links.
 - `privacy-policy.component.spec.ts` / `terms-of-service.component.spec.ts`:
-  brand-name interpolation appears; contact email rendered.
+  the body names "Clint" as operator and renders the platform legal email; it is
+  NOT brand-swapped (a non-default brand display name does not appear in the
+  legal body).
 - `not-found.component.spec.ts`: renders home + login links.
 - `worker/robots.spec.ts` (Vitest, pure function): `buildRobots` returns the
   apex body for an apex host and `Disallow: /` for a subdomain host.
-- `brand-bootstrap.spec.ts`: extend to assert `contact_email` is parsed into the
-  Brand (and defaults to null when absent).
 
 ## Verification
 
 - `cd src/client && ng lint && ng build`
 - Worker/unit tests: `npm run test:units`
-- `supabase db advisors --local --type all` after the migration
-- `npm run docs:arch` regen committed
+- (No migration in this spec, so no `supabase db advisors` / `docs:arch` regen.)
 - Manual: load `/privacy`, `/terms`, an unknown path (404), and `/robots.txt`
   on apex vs a `?wl_kind=tenant&wl_id=<uuid>` dev override; eyeball `og-image.png`.
 
 ## Out of scope (YAGNI)
 
-- Per-agency editable legal text + editor UI.
+- Per-agency uploaded/editable legal docs + editor UI (structure "B").
 - Contact form + email-sending backend.
 - Sitemap.xml.
 - Cookie-consent banner (separate follow-up if EU/UK consent is required).
