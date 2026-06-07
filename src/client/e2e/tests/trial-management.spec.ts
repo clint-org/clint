@@ -10,7 +10,7 @@ import {
   getAdminClient,
 } from '../helpers/test-data.helper';
 import { fillInput, clearAndFill } from '../helpers/form.helper';
-import { clickRowAction } from '../helpers/menu.helper';
+import { clickRowAction, clickTopbarAction } from '../helpers/menu.helper';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -49,7 +49,7 @@ test.describe('Trial Management CRUD', () => {
 
   test('edit trial basic info', async () => {
     // The "Edit details" topbar action opens the trial-edit dialog.
-    await page.getByRole('button', { name: 'Edit details' }).click();
+    await clickTopbarAction(page, 'Edit details');
     await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
 
     await clearAndFill(page, '#edit-trial-name', 'Updated Trial');
@@ -211,7 +211,7 @@ test.describe('Trial List CRUD', () => {
     await clickRowAction(page, row, 'Edit');
     await expect(page).toHaveURL(/\/manage\/trials\/[0-9a-f-]+/, { timeout: 10000 });
 
-    await page.getByRole('button', { name: 'Edit details' }).click();
+    await clickTopbarAction(page, 'Edit details');
     await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#edit-trial-name')).toHaveValue('KEYNOTE-001');
 
@@ -402,7 +402,7 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
 
   test('ct.gov-managed trial locks phase fields in edit dialog', async () => {
     await page.goto(trialDetailUrl(ctgovTrialId), { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Edit details' }).click();
+    await clickTopbarAction(page, 'Edit details');
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
     await expect(dialog).toBeVisible({ timeout: 5000 });
@@ -428,7 +428,7 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
 
   test('analyst-managed trial leaves phase fields editable', async () => {
     await page.goto(trialDetailUrl(analystTrialId), { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Edit details' }).click();
+    await clickTopbarAction(page, 'Edit details');
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
     await expect(dialog).toBeVisible({ timeout: 5000 });

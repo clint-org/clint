@@ -4,16 +4,8 @@
   [showClose]="hasSelection()"
   (closed)="panelClose.emit()"
 >
-  @if (hasSelection() && canEdit() && !isDetected()) {
-    <button
-      headerActions
-      type="button"
-      class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-      (click)="edit.emit()"
-      aria-label="Edit event"
-    >
-      <i class="fa-solid fa-pen text-xs"></i>
-    </button>
+  @if (headerMenu().length > 0) {
+    <app-row-actions headerActions [items]="headerMenu()" ariaLabel="Event actions" />
   }
 
   <!-- Event detail branch -->

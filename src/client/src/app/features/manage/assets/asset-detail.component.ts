@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
@@ -37,6 +37,8 @@ import { TopbarStateService } from '../../../core/services/topbar-state.service'
 import { Asset } from '../../../core/models/asset.model';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 import { AssetFormComponent } from './asset-form.component';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
 @Component({
   selector: 'app-asset-detail',
@@ -65,6 +67,7 @@ import { AssetFormComponent } from './asset-form.component';
 })
 export class AssetDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private confirmation = inject(ConfirmationService);
@@ -97,22 +100,49 @@ export class AssetDetailComponent implements OnDestroy {
   readonly editingAsset = signal(false);
 
   private readonly topbarActionsEffect = effect(() => {
-    if (!this.asset() || !this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([]);
+    const asset = this.asset();
+    if (!asset || !this.spaceRole.canEdit()) {
+      this.topbarState.overflowActions.set([]);
       return;
     }
-    this.topbarState.actions.set([
-      {
-        label: 'Edit details',
-        icon: 'fa-solid fa-pen',
-        text: true,
-        callback: () => this.editingAsset.set(true),
-      },
-    ]);
+    this.topbarState.overflowActions.set(
+      buildEntityActionMenu({
+        canEdit: true,
+        editLabel: 'Edit details',
+        onEdit: () => this.editingAsset.set(true),
+        onDelete: () => void this.deleteAsset(asset),
+      })
+    );
   });
 
   ngOnDestroy(): void {
     this.topbarState.clear();
+  }
+
+  private async deleteAsset(asset: Asset): Promise<void> {
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete asset',
+        entityLabel: asset.name,
+        message: `Delete "${asset.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.assetService.previewDelete(asset.id),
+      delete: () => this.assetService.delete(asset.id),
+      successSummary: 'Asset deleted.',
+      onSuccess: () =>
+        void this.router.navigate([
+          '/t',
+          this.tenantIdSig(),
+          's',
+          this.spaceIdSig(),
+          'manage',
+          'assets',
+        ]),
+      errorFallback: 'Could not delete asset. It may have associated trials.',
+    });
   }
 
   async onAssetEdited(): Promise<void> {

@@ -10,11 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { TopbarAction } from '../services/topbar-state.service';
 import { PaletteHotkeyService } from '../services/palette-hotkey.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
+import { RowActionsComponent } from '../../shared/components/row-actions.component';
 
 export interface TopbarTab {
   label: string;
@@ -27,7 +29,7 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule, NgOptimizedImage, Tooltip],
+  imports: [ButtonModule, NgOptimizedImage, Tooltip, RowActionsComponent],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -309,6 +311,9 @@ export interface TopbarTab {
             size="small"
             (click)="action.callback()"
           />
+        }
+        @if (overflowActions().length > 0) {
+          <app-row-actions [items]="overflowActions()" ariaLabel="Entity actions" />
         }
         <ng-content select="[topbar-actions]" />
       </div>
@@ -843,6 +848,7 @@ export class ContextualTopbarComponent {
 
   // ---- Actions ----
   readonly actionButtons = input<TopbarAction[]>([]);
+  readonly overflowActions = input<MenuItem[]>([]);
 
   // ---- Onboarding tooltip pinned to Timeline tab ----
   readonly timelineHintVisible = input<boolean>(false);
