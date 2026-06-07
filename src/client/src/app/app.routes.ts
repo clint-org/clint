@@ -486,5 +486,9 @@ export const routes: Routes = [
         (m) => m.MarketingLandingComponent
       ),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
 ];
