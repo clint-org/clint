@@ -75,6 +75,7 @@ export class TrialEditDialogComponent {
   // A trial can test multiple assets; assetIds is the membership and
   // primaryAssetId (one of assetIds) is the headline asset.
   readonly assetIds = signal<string[]>([]);
+  readonly indicationIds = signal<string[]>([]);
   readonly primaryAssetId = signal<string | null>(null);
   readonly phaseType = signal<string | null>(null);
   readonly phaseStart = signal<string | null>(null);
@@ -130,6 +131,11 @@ export class TrialEditDialogComponent {
     return this.name().trim().length > 0 && assetsValid && idValid;
   });
 
+  // MultiSelect with showClear can emit null; coalesce to [].
+  protected onIndicationsChange(ids: string[] | null): void {
+    this.indicationIds.set(ids ?? []);
+  }
+
   // MultiSelect with showClear can emit null; coalesce to []. Keep the primary in
   // sync: default to the first member, clear when no assets remain.
   protected onAssetsChange(ids: string[] | null): void {
@@ -169,6 +175,11 @@ export class TrialEditDialogComponent {
         this.phaseType.set(t.phase_type ?? null);
         this.phaseStart.set(t.phase_start_date ?? null);
         this.phaseEnd.set(t.phase_end_date ?? null);
+        this.indicationIds.set([]);
+        void this.trialService
+          .listIndications(t.id)
+          .then((rows) => this.indicationIds.set(rows.map((r) => r.id)))
+          .catch(() => this.indicationIds.set([]));
         void this.loadOptions(t.space_id);
         void this.spaceSettings
           .getShowPreclinical(t.space_id)
@@ -217,14 +228,16 @@ export class TrialEditDialogComponent {
     this.saving.set(true);
     try {
       const t = this.trial();
-      // Asset membership + primary go through set_trial_assets (the sync trigger
-      // updates trials.asset_id), so the field update below omits asset_id.
+      // Asset and indication membership go through their respective RPCs.
+      // The asset sync trigger also updates trials.asset_id, so the field
+      // update below omits asset_id.
       await this.trialService.setAssets(
         t.id,
         this.assetIds(),
         this.primaryAssetId()!,
         t.space_id,
       );
+      await this.trialService.setIndications(t.id, this.indicationIds(), t.space_id);
       const updates: Partial<Trial> = {
         name: this.name().trim(),
         identifier: this.identifier()?.trim() || null,

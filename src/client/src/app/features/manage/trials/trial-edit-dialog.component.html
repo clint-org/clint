@@ -76,14 +76,15 @@
     }
 
     <app-form-field label="Indication" fieldId="edit-trial-indication">
-      <p-select
+      <p-multiselect
         inputId="edit-trial-indication"
         [options]="indications()"
         optionLabel="name"
         optionValue="id"
-        [ngModel]="null"
+        [ngModel]="indicationIds()"
+        (ngModelChange)="onIndicationsChange($event)"
         name="indication"
-        placeholder="Select indication (optional)"
+        placeholder="Select indication(s)"
         [filter]="true"
         [showClear]="true"
         styleClass="w-full"
