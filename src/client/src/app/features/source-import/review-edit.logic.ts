@@ -74,3 +74,56 @@ export function applyTrialForm(value: TrialFormValue, idx: number, p: Proposal):
   });
   return { ...p, proposals: { ...p.proposals, trials } };
 }
+
+export interface AssetFormValue {
+  name: string;
+  genericName: string | null;
+  companyId: string | null;
+  moa: string[];
+  roa: string[];
+}
+
+export function proposalAssetToForm(idx: number, p: Proposal): AssetFormValue {
+  const a = p.proposals.assets[idx];
+  const cref = a['company_ref'];
+  return {
+    name: String(a['name'] ?? ''),
+    genericName: (a['generic_name'] as string) ?? null,
+    companyId: typeof cref === 'number' ? String(cref) : null,
+    moa: Array.isArray(a['moa']) ? (a['moa'] as string[]) : [],
+    roa: Array.isArray(a['roa']) ? (a['roa'] as string[]) : [],
+  };
+}
+
+export function applyAssetForm(value: AssetFormValue, idx: number, p: Proposal): Proposal {
+  const assets = p.proposals.assets.map((a, i) =>
+    i !== idx
+      ? a
+      : {
+          ...a,
+          name: value.name,
+          generic_name: value.genericName,
+          company_ref: value.companyId != null ? Number(value.companyId) : null,
+          moa: value.moa,
+          roa: value.roa,
+        },
+  );
+  return { ...p, proposals: { ...p.proposals, assets } };
+}
+
+export interface CompanyFormValue {
+  name: string;
+  website: string | null;
+}
+
+export function proposalCompanyToForm(idx: number, p: Proposal): CompanyFormValue {
+  const c = p.proposals.companies[idx];
+  return { name: String(c['name'] ?? ''), website: (c['website'] as string) ?? null };
+}
+
+export function applyCompanyForm(value: CompanyFormValue, idx: number, p: Proposal): Proposal {
+  const companies = p.proposals.companies.map((c, i) =>
+    i !== idx ? c : { ...c, name: value.name, website: value.website },
+  );
+  return { ...p, proposals: { ...p.proposals, companies } };
+}

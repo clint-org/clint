@@ -5,6 +5,10 @@ import {
   companyOptionsFromProposal,
   proposalTrialToForm,
   applyTrialForm,
+  proposalAssetToForm,
+  applyAssetForm,
+  proposalCompanyToForm,
+  applyCompanyForm,
 } from './review-edit.logic';
 
 const proposal = () => ({
@@ -72,5 +76,32 @@ describe('applyTrialForm', () => {
     expect(t['match']).toEqual({ kind: 'new', name: 'NCT07165028' }); // untouched
     // input proposal not mutated
     expect((p.proposals.trials[0] as Record<string, unknown>)['asset_refs']).toEqual([0, 1]);
+  });
+});
+
+describe('asset mapping', () => {
+  const p = () => ({ proposals: { companies: [{ match: { kind: 'existing', id: 'co' }, name: 'Lilly' }],
+    assets: [{ match: { kind: 'new', name: 'Retatrutide' }, name: 'Retatrutide', generic_name: 'reta',
+      company_ref: 0, moa: ['tri-agonist'], roa: ['Subcutaneous'] }], trials: [] } });
+  it('maps to form value with company id and moa/roa names', () => {
+    expect(proposalAssetToForm(0, p())).toEqual({
+      name: 'Retatrutide', genericName: 'reta', companyId: '0', moa: ['tri-agonist'], roa: ['Subcutaneous'],
+    });
+  });
+  it('writes form back without mutating input', () => {
+    const src = p();
+    const next = applyAssetForm({ name: 'Reta', genericName: null, companyId: '0', moa: ['X'], roa: [] }, 0, src);
+    const a = next.proposals.assets[0] as Record<string, unknown>;
+    expect(a['name']).toBe('Reta'); expect(a['moa']).toEqual(['X']); expect(a['roa']).toEqual([]);
+    expect((src.proposals.assets[0] as Record<string, unknown>)['name']).toBe('Retatrutide');
+  });
+});
+
+describe('company mapping', () => {
+  const p = () => ({ proposals: { companies: [{ match: { kind: 'new', name: 'Lilly' }, name: 'Lilly', website: 'x.com' }], assets: [], trials: [] } });
+  it('round-trips name + website', () => {
+    expect(proposalCompanyToForm(0, p())).toEqual({ name: 'Lilly', website: 'x.com' });
+    const next = applyCompanyForm({ name: 'Eli Lilly', website: null }, 0, p());
+    expect((next.proposals.companies[0] as Record<string, unknown>)['name']).toBe('Eli Lilly');
   });
 });
