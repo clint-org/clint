@@ -47,6 +47,9 @@
   font-size: 13px;
   color: rgb(51 65 85); /* slate-700 */
   line-height: 1.5;
+  /* Honor newlines in the message string so callers can break long
+     confirm copy onto separate lines (escape stays on; no innerHTML). */
+  white-space: pre-line;
 }
 
 /* -- Inputs ------------------------------------------------------------ */

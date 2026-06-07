@@ -135,8 +135,9 @@ export class MaterialsSectionComponent implements OnInit {
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete material',
       message:
-        `Delete "${material.title}"? The file and all of its links will be ` +
-        `permanently removed. This cannot be undone.`,
+        `Delete "${material.title}"?\n\n` +
+        `The file and all of its links will be permanently removed. ` +
+        `This cannot be undone.`,
     });
     if (!ok) return;
 
