@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
-import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -48,8 +46,6 @@ interface AssetRow {
   standalone: true,
   imports: [
     RouterLink,
-    FormsModule,
-    SelectModule,
     TableModule,
     ButtonModule,
     Dialog,
@@ -123,14 +119,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     columns: [
       { field: 'asset.name', header: 'Name', filter: { kind: 'text' } },
       { field: 'asset.generic_name', header: 'Generic', filter: { kind: 'text' } },
-      {
-        field: 'asset.company_id',
-        header: 'Company',
-        filter: {
-          kind: 'select',
-          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
-        },
-      },
+      { field: 'companyName', header: 'Company', filter: { kind: 'text' } },
       { field: 'moaNames', header: 'MOA', filter: { kind: 'text' } },
       { field: 'roaNames', header: 'ROA', filter: { kind: 'text' } },
       { field: 'trialCount', header: 'Trials', filter: { kind: 'numeric' } },
@@ -181,7 +170,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
         {
           label: 'View trials',
           icon: 'fa-solid fa-flask',
-          command: () => this.openTrials(row.asset.id),
+          command: () => this.openTrials(row.asset.name),
         },
       ],
     });
@@ -215,10 +204,10 @@ export class AssetListComponent implements OnInit, OnDestroy {
     });
   }
 
-  openTrials(assetId: string): void {
+  openTrials(assetName: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
       queryParams: buildFilterQueryParams({
-        'trial.asset_id': { kind: 'select', values: [assetId] },
+        assetName: { kind: 'text', contains: assetName },
       }),
     });
   }

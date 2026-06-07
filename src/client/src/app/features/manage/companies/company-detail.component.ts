@@ -37,6 +37,7 @@ import { TopbarStateService } from '../../../core/services/topbar-state.service'
 import { Company } from '../../../core/models/company.model';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 import { CompanyFormComponent } from './company-form.component';
+import { buildFilterQueryParams } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
@@ -124,14 +125,14 @@ export class CompanyDetailComponent implements OnDestroy {
             label: 'View assets',
             icon: 'fa-solid fa-box',
             command: () =>
-              this.router.navigate([
-                '/t',
-                this.tenantIdSig(),
-                's',
-                this.spaceIdSig(),
-                'manage',
-                'assets',
-              ]),
+              this.router.navigate(
+                ['/t', this.tenantIdSig(), 's', this.spaceIdSig(), 'manage', 'assets'],
+                {
+                  queryParams: buildFilterQueryParams({
+                    companyName: { kind: 'text', contains: company.name },
+                  }),
+                }
+              ),
           },
         ],
       })

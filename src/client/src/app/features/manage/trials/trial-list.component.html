@@ -31,55 +31,11 @@
         </th>
         <th pSortableColumn="assetName">
           Asset <p-sortIcon field="assetName" />
-          <p-column-filter
-            field="trial.asset_id"
-            display="menu"
-            matchMode="in"
-            [showMatchModes]="false"
-            [showOperator]="false"
-            [showAddButton]="false"
-          >
-            <ng-template #filter let-value let-filter="filterCallback">
-              <p-select
-                [options]="products()"
-                [ngModel]="value"
-                (ngModelChange)="filter($event)"
-                optionLabel="name"
-                optionValue="id"
-                placeholder="All assets"
-                [showClear]="true"
-                [filter]="true"
-                size="small"
-                appendTo="body"
-              />
-            </ng-template>
-          </p-column-filter>
+          <p-column-filter type="text" field="assetName" display="menu" />
         </th>
         <th pSortableColumn="companyName">
           Company <p-sortIcon field="companyName" />
-          <p-column-filter
-            field="companyId"
-            display="menu"
-            matchMode="in"
-            [showMatchModes]="false"
-            [showOperator]="false"
-            [showAddButton]="false"
-          >
-            <ng-template #filter let-value let-filter="filterCallback">
-              <p-select
-                [options]="companies()"
-                [ngModel]="value"
-                (ngModelChange)="filter($event)"
-                optionLabel="name"
-                optionValue="id"
-                placeholder="All companies"
-                [showClear]="true"
-                [filter]="true"
-                size="small"
-                appendTo="body"
-              />
-            </ng-template>
-          </p-column-filter>
+          <p-column-filter type="text" field="companyName" display="menu" />
         </th>
         <th pSortableColumn="trial.status">
           Status <p-sortIcon field="trial.status" />
