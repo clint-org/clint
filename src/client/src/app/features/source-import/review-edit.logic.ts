@@ -127,3 +127,42 @@ export function applyCompanyForm(value: CompanyFormValue, idx: number, p: Propos
   );
   return { ...p, proposals: { ...p.proposals, companies } };
 }
+
+type EntityType = 'companies' | 'assets' | 'trials';
+interface FuzzyAlt {
+  id: string;
+  name: string;
+  score: number;
+}
+interface ProposalWithFuzzy extends Proposal {
+  fuzzy_alternates?: Record<string, FuzzyAlt[]>;
+}
+
+export function matchOptionsFor(type: EntityType, idx: number, p: ProposalWithFuzzy): FormOption[] {
+  const e = p.proposals[type][idx];
+  const alts = p.fuzzy_alternates?.[`${type}_${idx}`] ?? [];
+  return [
+    { id: '__new__', name: `Create new: ${entityName(e)}` },
+    ...alts.map((a) => ({ id: a.id, name: `${a.name} (${a.score.toFixed(2)})` })),
+  ];
+}
+
+export function currentMatchId(type: EntityType, idx: number, p: ProposalWithFuzzy): string {
+  const m = p.proposals[type][idx]['match'] as { kind?: string; id?: string } | undefined;
+  return m?.kind === 'existing' && m.id ? m.id : '__new__';
+}
+
+export function applyMatchOverride(
+  type: EntityType,
+  idx: number,
+  optionId: string,
+  p: ProposalWithFuzzy,
+): ProposalWithFuzzy {
+  const list = p.proposals[type].map((e, i) => {
+    if (i !== idx) return e;
+    const match =
+      optionId === '__new__' ? { kind: 'new', name: entityName(e) } : { kind: 'existing', id: optionId };
+    return { ...e, match };
+  });
+  return { ...p, proposals: { ...p.proposals, [type]: list } };
+}

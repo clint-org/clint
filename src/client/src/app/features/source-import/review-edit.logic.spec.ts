@@ -9,6 +9,9 @@ import {
   applyAssetForm,
   proposalCompanyToForm,
   applyCompanyForm,
+  matchOptionsFor,
+  currentMatchId,
+  applyMatchOverride,
 } from './review-edit.logic';
 
 const proposal = () => ({
@@ -103,5 +106,28 @@ describe('company mapping', () => {
     expect(proposalCompanyToForm(0, p())).toEqual({ name: 'Lilly', website: 'x.com' });
     const next = applyCompanyForm({ name: 'Eli Lilly', website: null }, 0, p());
     expect((next.proposals.companies[0] as Record<string, unknown>)['name']).toBe('Eli Lilly');
+  });
+});
+
+const fp = () => ({
+  proposals: { companies: [], assets: [{ match: { kind: 'new', name: 'Reta' }, name: 'Reta' }], trials: [] },
+  fuzzy_alternates: { assets_0: [{ id: 'as-9', name: 'Retatrutide (existing)', score: 0.82 }] },
+});
+
+describe('match options', () => {
+  it('offers create-new plus fuzzy candidates with scores', () => {
+    expect(matchOptionsFor('assets', 0, fp())).toEqual([
+      { id: '__new__', name: 'Create new: Reta' },
+      { id: 'as-9', name: 'Retatrutide (existing) (0.82)' },
+    ]);
+  });
+  it('current match id is __new__ for a new entity', () => {
+    expect(currentMatchId('assets', 0, fp())).toBe('__new__');
+  });
+  it('applies an existing override and clears it back to new', () => {
+    const linked = applyMatchOverride('assets', 0, 'as-9', fp());
+    expect((linked.proposals.assets[0] as Record<string, unknown>)['match']).toEqual({ kind: 'existing', id: 'as-9' });
+    const reset = applyMatchOverride('assets', 0, '__new__', linked);
+    expect((reset.proposals.assets[0] as Record<string, unknown>)['match']).toEqual({ kind: 'new', name: 'Reta' });
   });
 });
