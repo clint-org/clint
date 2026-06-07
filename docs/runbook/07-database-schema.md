@@ -914,4 +914,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260605130000_content_create_authz_and_marker_trial_space.sql`
 - `20260605140000_restore_preclinical_guard_bullseye_assets.sql`
 - `20260606120000_set_trial_indications_rpc.sql`
+- `20260607120000_lock_down_function_execute_grants.sql`
 <!-- /AUTO-GEN:DRIFT -->
