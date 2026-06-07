@@ -1,0 +1,38 @@
+<app-form-field
+  label="Name"
+  fieldId="company-name"
+  [required]="true"
+  [error]="nameInvalid() ? 'Name is required.' : null"
+>
+  <input
+    pInputText
+    id="company-name"
+    name="name"
+    class="w-full"
+    [(ngModel)]="name"
+    (blur)="nameBlur.emit()"
+    [attr.aria-required]="true"
+    [attr.aria-invalid]="nameInvalid()"
+    [attr.aria-describedby]="nameInvalid() ? 'company-name-error' : null"
+  />
+</app-form-field>
+
+<app-form-field label="Logo URL" fieldId="company-logo-url">
+  <input
+    pInputText
+    id="company-logo-url"
+    name="logoUrl"
+    class="w-full"
+    [(ngModel)]="logoUrl"
+    placeholder="https://..."
+  />
+</app-form-field>
+
+<app-form-field label="Display Order" fieldId="company-display-order" spacing="mb-6">
+  <p-inputnumber
+    inputId="company-display-order"
+    name="displayOrder"
+    [(ngModel)]="displayOrder"
+    styleClass="w-full"
+  />
+</app-form-field>
