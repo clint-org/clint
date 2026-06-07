@@ -37,41 +37,7 @@ export class DashboardService {
             })
             .throwOnError();
 
-          const companies = (data ?? []).map((c: any) => ({
-            ...c,
-            assets: (c.assets ?? []).map((p: any) => {
-              const indicationTrials = (p.indications ?? []).flatMap((ind: any) =>
-                (ind.trials ?? []).map((t: any) => ({ ...t, _indication: ind }))
-              );
-              const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
-              return {
-                ...p,
-                indications: p.indications ?? [],
-                trials: allTrials.map((t: any) => ({
-                  ...t,
-                  identifier: t.identifier ?? null,
-                  phase_type: t.phase_data?.phase_type ?? null,
-                  phase_start_date: t.phase_data?.phase_start_date ?? null,
-                  phase_end_date: t.phase_data?.phase_end_date ?? null,
-                  markers: (t.markers ?? []).map((m: any) => ({
-                    ...m,
-                    marker_types: m.marker_type
-                      ? {
-                          ...m.marker_type,
-                          category_id: m.marker_type.category_id ?? null,
-                          marker_categories: m.marker_type.category_name
-                            ? { id: m.marker_type.category_id, name: m.marker_type.category_name }
-                            : null,
-                        }
-                      : null,
-                  })),
-                  trial_notes: t.trial_notes ?? [],
-                })),
-              };
-            }),
-          }));
-
-          return { companies } as DashboardData;
+          return { companies: mapDashboardCompanies(data) } as DashboardData;
         },
       }
     );
@@ -89,4 +55,53 @@ export class DashboardService {
       `space:${spaceId}:roa`,
     ]);
   }
+}
+
+/**
+ * Maps the raw get_dashboard_data RPC payload into the client DashboardData
+ * company > asset > trial shape. Trials nested under an indication get an
+ * `_indication` augmentation so the client-side indication filter can match
+ * on the indication entity id. Exported as a pure function so the mapping can
+ * be unit-tested without mocking Supabase (mirrors filterDashboardData).
+ */
+export function mapDashboardCompanies(data: any[]): any[] {
+  return (data ?? []).map((c: any) => ({
+    ...c,
+    assets: (c.assets ?? []).map((p: any) => {
+      const indicationTrials = (p.indications ?? []).flatMap((ind: any) =>
+        (ind.trials ?? []).map((t: any) => ({
+          ...t,
+          // The RPC emits the indication entity id as `id` and its name as
+          // `name`. The indication filter matches on `_indication.indication_id`,
+          // so surface the entity id under that key (and the name) here.
+          _indication: { id: ind.id, indication_id: ind.id, indication_name: ind.name },
+        }))
+      );
+      const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
+      return {
+        ...p,
+        indications: p.indications ?? [],
+        trials: allTrials.map((t: any) => ({
+          ...t,
+          identifier: t.identifier ?? null,
+          phase_type: t.phase_data?.phase_type ?? null,
+          phase_start_date: t.phase_data?.phase_start_date ?? null,
+          phase_end_date: t.phase_data?.phase_end_date ?? null,
+          markers: (t.markers ?? []).map((m: any) => ({
+            ...m,
+            marker_types: m.marker_type
+              ? {
+                  ...m.marker_type,
+                  category_id: m.marker_type.category_id ?? null,
+                  marker_categories: m.marker_type.category_name
+                    ? { id: m.marker_type.category_id, name: m.marker_type.category_name }
+                    : null,
+                }
+              : null,
+          })),
+          trial_notes: t.trial_notes ?? [],
+        })),
+      };
+    }),
+  }));
 }
