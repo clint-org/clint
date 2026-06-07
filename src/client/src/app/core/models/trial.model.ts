@@ -50,11 +50,11 @@ export interface Trial {
   most_recent_change_event_id?: string | null;
 
   /**
-   * Dashboard-only augmentation: the asset_indication grouping this trial was
-   * nested under in get_dashboard_data. Attached by DashboardService (absent
+   * Dashboard-only augmentation: the indication grouping this trial was nested
+   * under in get_dashboard_data. Attached by DashboardService (absent
    * everywhere else). `indication_id` is the indication entity id that the
-   * Indication filter (filters.indicationIds) matches against; the outer `id`
-   * is the asset_indication join-row id, which is NOT what the filter holds.
+   * Indication filter (filters.indicationIds) matches against; `id` mirrors it
+   * (the RPC does not surface the asset_indication join-row id).
    */
   _indication?: { id: string; indication_id: string; indication_name: string } | null;
 }
