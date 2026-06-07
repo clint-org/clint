@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
-import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -57,8 +55,6 @@ interface TrialRow {
   standalone: true,
   imports: [
     RouterLink,
-    FormsModule,
-    SelectModule,
     TableModule,
     ButtonModule,
     MessageModule,
@@ -184,22 +180,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
     columns: [
       { field: 'trial.name', header: 'Trial', filter: { kind: 'text' } },
       { field: 'trial.identifier', header: 'NCT ID', filter: { kind: 'text' } },
-      {
-        field: 'trial.asset_id',
-        header: 'Asset',
-        filter: {
-          kind: 'select',
-          options: () => this.products().map((p) => ({ label: p.name, value: p.id })),
-        },
-      },
-      {
-        field: 'companyId',
-        header: 'Company',
-        filter: {
-          kind: 'select',
-          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
-        },
-      },
+      { field: 'assetName', header: 'Asset', filter: { kind: 'text' } },
+      { field: 'companyName', header: 'Company', filter: { kind: 'text' } },
       {
         field: 'trial.status',
         header: 'Status',

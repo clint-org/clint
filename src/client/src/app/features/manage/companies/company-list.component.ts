@@ -130,10 +130,10 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  openAssets(companyId: string): void {
+  openAssets(companyName: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'assets'], {
       queryParams: buildFilterQueryParams({
-        'asset.company_id': { kind: 'select', values: [companyId] },
+        companyName: { kind: 'text', contains: companyName },
       }),
     });
   }
@@ -150,7 +150,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
         {
           label: 'View assets',
           icon: 'fa-solid fa-box',
-          command: () => this.openAssets(company.id),
+          command: () => this.openAssets(company.name),
         },
       ],
     });
