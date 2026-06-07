@@ -9,6 +9,7 @@ import { handleSourceExtract } from './source-extract/handler';
 import { handleNctResolve } from './source-extract/nct-handler';
 import { handleAiHealth } from './source-extract/ai-health';
 import { handleBrandfetchLookup } from './brandfetch';
+import { buildRobots } from './robots';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
@@ -96,6 +97,12 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       return errorResponse(404, 'not_found', cors);
+    }
+
+    if (url.pathname === '/robots.txt') {
+      return new Response(buildRobots(url.hostname, apexes), {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      });
     }
 
     if (env.ASSETS) {
