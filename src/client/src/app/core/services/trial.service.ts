@@ -238,6 +238,38 @@ export class TrialService {
   }
 
   /**
+   * Atomically replace a trial's full indication membership via the
+   * set_trial_indications RPC. Invalidates the space, indication, and
+   * trial-detail caches.
+   */
+  async setIndications(trialId: string, indicationIds: string[], spaceId: string): Promise<void> {
+    await this.supabase.client
+      .rpc('set_trial_indications', {
+        p_trial_id: trialId,
+        p_indication_ids: indicationIds,
+      })
+      .throwOnError();
+    this.cache.invalidateTags([
+      `space:${spaceId}:trials`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+      `space:${spaceId}:indications`,
+      `trial:${trialId}:detail`,
+    ]);
+  }
+
+  /** Returns the indications currently assigned to a trial. */
+  async listIndications(trialId: string): Promise<{ id: string; name: string }[]> {
+    const { data } = await this.supabase.client
+      .rpc('get_trial_indications', { p_trial_id: trialId })
+      .throwOnError();
+    return (
+      (data ?? []) as { indication_id: string; indication_name: string }[]
+    ).map((row) => ({ id: row.indication_id, name: row.indication_name }));
+  }
+
+  /**
    * Read-only preview of the cascade footprint of deleting this trial.
    * Returns a jsonb count breakdown matching what the FK cascade + T3 / T4
    * triggers will remove (trial_notes, events, material_links, PI, PIL,
