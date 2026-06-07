@@ -201,6 +201,8 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 ```
 /login   LoginComponent
 /auth/callback   AuthCallbackComponent
+/privacy   PrivacyPolicyComponent
+/terms   TermsOfServiceComponent
 /admin   agencyGuard + authGuard | AgencyShellComponent
   (empty)   -> tenants
   /tenants   AgencyTenantListComponent
@@ -288,7 +290,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /events   EventsPageComponent
     /seed-demo   SeedDemoComponent
 (empty)   marketingLandingGuard | MarketingLandingComponent | exact
-/**   -> /
+/**   NotFoundComponent
 ```
 <!-- /AUTO-GEN:ROUTES -->
 
