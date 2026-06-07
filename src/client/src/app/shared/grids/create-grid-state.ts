@@ -56,6 +56,23 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     initial = { ...initial, sort: initialSort };
   }
 
+  // Drop any persisted/decoded filter whose column no longer exists or whose
+  // kind no longer matches the column. Without this, stale localStorage state
+  // from before a column changed (e.g. a select-by-id column replaced by a
+  // text-by-name column) would apply an invisible, un-clearable filter: the
+  // chip row skips unknown columns, so the user has no UI to remove it.
+  const filterKindByField = new Map(
+    config.columns.filter((c) => c.filter).map((c) => [c.field, c.filter!.kind])
+  );
+  const sanitizedFilters = Object.fromEntries(
+    Object.entries(initial.filters).filter(
+      ([field, value]) => filterKindByField.get(field) === value.kind
+    )
+  );
+  if (Object.keys(sanitizedFilters).length !== Object.keys(initial.filters).length) {
+    initial = { ...initial, filters: sanitizedFilters };
+  }
+
   // --- core signals ---------------------------------------------------------
   const globalSearch: WritableSignal<string> = signal(initial.globalSearch);
   const debouncedGlobalSearch: WritableSignal<string> = signal(initial.globalSearch);
@@ -127,41 +144,46 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
 
   const isFiltered: Signal<boolean> = computed(() => activeFilters().length > 0);
 
-  const primengFilters: Signal<Record<string, { value: unknown; matchMode: string }[]>> = computed(() => {
-    const out: Record<string, { value: unknown; matchMode: string }[]> = {};
-    const activeFiltersMap = filters();
+  const primengFilters: Signal<Record<string, { value: unknown; matchMode: string }[]>> = computed(
+    () => {
+      const out: Record<string, { value: unknown; matchMode: string }[]> = {};
+      const activeFiltersMap = filters();
 
-    // Seed every filterable column with a null default so PrimeNG renders
-    // the first filter rule in the popover even when no filter is active.
-    for (const col of config.columns) {
-      if (!col.filter) continue;
-      const defaultMatchMode =
-        col.filter.kind === 'text' ? 'contains' :
-        col.filter.kind === 'select' ? 'in' :
-        col.filter.kind === 'numeric' ? 'equals' :
-        'contains';
-      out[col.field] = [{ value: null, matchMode: defaultMatchMode }];
-    }
-
-    // Overwrite defaults with actual active filter values.
-    for (const [field, value] of Object.entries(activeFiltersMap)) {
-      switch (value.kind) {
-        case 'text':
-          out[field] = [{ value: value.contains, matchMode: 'contains' }];
-          break;
-        case 'select':
-          out[field] = [{ value: value.values, matchMode: 'in' }];
-          break;
-        case 'numeric':
-          out[field] = [{ value: value.value, matchMode: value.op }];
-          break;
-        case 'date':
-          out[field] = [{ value: [value.from, value.to], matchMode: 'dateRange' }];
-          break;
+      // Seed every filterable column with a null default so PrimeNG renders
+      // the first filter rule in the popover even when no filter is active.
+      for (const col of config.columns) {
+        if (!col.filter) continue;
+        const defaultMatchMode =
+          col.filter.kind === 'text'
+            ? 'contains'
+            : col.filter.kind === 'select'
+              ? 'in'
+              : col.filter.kind === 'numeric'
+                ? 'equals'
+                : 'contains';
+        out[col.field] = [{ value: null, matchMode: defaultMatchMode }];
       }
+
+      // Overwrite defaults with actual active filter values.
+      for (const [field, value] of Object.entries(activeFiltersMap)) {
+        switch (value.kind) {
+          case 'text':
+            out[field] = [{ value: value.contains, matchMode: 'contains' }];
+            break;
+          case 'select':
+            out[field] = [{ value: value.values, matchMode: 'in' }];
+            break;
+          case 'numeric':
+            out[field] = [{ value: value.value, matchMode: value.op }];
+            break;
+          case 'date':
+            out[field] = [{ value: [value.from, value.to], matchMode: 'dateRange' }];
+            break;
+        }
+      }
+      return out;
     }
-    return out;
-  });
+  );
 
   // --- filteredRows + totalRecords ------------------------------------------
   // The consumer wires the raw rows signal exactly once via filteredRows(raw).
@@ -204,7 +226,10 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     const total = applyAllResult().total;
     const currentPage = page();
     if (total > 0 && currentPage.first >= total) {
-      const lastPageFirst = Math.max(0, Math.floor((total - 1) / currentPage.rows) * currentPage.rows);
+      const lastPageFirst = Math.max(
+        0,
+        Math.floor((total - 1) / currentPage.rows) * currentPage.rows
+      );
       page.set({ first: lastPageFirst, rows: currentPage.rows });
     }
   });

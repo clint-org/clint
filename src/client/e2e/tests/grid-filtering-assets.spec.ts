@@ -108,8 +108,8 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   test('inbound deep-link via company "View assets" lands pre-filtered', async () => {
     // The company-name cell now links to the company detail page; the
     // "click name -> filtered assets" affordance moved to the row-actions
-    // menu's "View assets" item, which still calls openAssets(pfizerId)
-    // using buildFilterQueryParams.
+    // menu's "View assets" item, which deep-links to the assets grid with a
+    // text-contains companyName filter.
     const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
     await page.goto(companiesUrl, { waitUntil: 'domcontentloaded' });
 
@@ -118,7 +118,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     await page.getByRole('menuitem', { name: 'View assets' }).click();
 
     // Landed on assets page with the filter applied via the unified URL shape.
-    await expect(page).toHaveURL(new RegExp(`filter\\.asset\\.company_id=${pfizerId}`));
+    await expect(page).toHaveURL(/filter\.companyName=Pfizer/);
     await expect(page.getByRole('list', { name: 'Active filters' })).toContainText('Pfizer');
 
     // All visible rows are Pfizer assets.

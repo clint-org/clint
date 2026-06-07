@@ -51,14 +51,22 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-trials
-  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records and notes.
+  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records, notes, and indication assignment.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials
     - /t/:tenantId/s/:spaceId/manage/trials/:id
-  rpcs: []
+  rpcs:
+    - set_trial_indications
+    - get_trial_indications
   tables:
     - trials
     - trial_notes
+    - trial_conditions
+    - trial_assets
+    - conditions
+    - condition_indication_map
+    - indications
+    - asset_indications
   related:
     - manage-assets
     - ctgov-snapshot-ingest
