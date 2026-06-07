@@ -16,6 +16,7 @@ import { signal, computed } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import { SpaceLandingStats } from './engagement-landing.service';
 import { BriefResult, computeBrief } from './brief-window';
+import { shouldReloadEngagement } from './engagement-landing.nav';
 
 // ---------------------------------------------------------------------------
 // Helpers shared between tests
@@ -513,6 +514,44 @@ describe('empty-space redirect decision', () => {
 
   it('shows dashboard when stats are null (still loading)', () => {
     expect(decideRedirect(null, true, true)).toBe('show-dashboard');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Space-switch reload decision (shouldReloadEngagement)
+//
+// Regression guard: switching spaces via the header space switcher navigates
+// to the same route config with a different :spaceId, so Angular reuses the
+// component and ngOnInit never re-runs. The component re-extracts route ids on
+// NavigationEnd and relies on this helper to decide when to reload.
+// ---------------------------------------------------------------------------
+
+describe('shouldReloadEngagement', () => {
+  it('reloads when the spaceId changes (the space-switch bug)', () => {
+    expect(
+      shouldReloadEngagement({ tenantId: 't1', spaceId: 's1' }, { tenantId: 't1', spaceId: 's2' })
+    ).toBe(true);
+  });
+
+  it('reloads when the tenantId changes', () => {
+    expect(
+      shouldReloadEngagement({ tenantId: 't1', spaceId: 's1' }, { tenantId: 't2', spaceId: 's1' })
+    ).toBe(true);
+  });
+
+  it('does not reload when nothing changed (avoids redundant initial load)', () => {
+    expect(
+      shouldReloadEngagement({ tenantId: 't1', spaceId: 's1' }, { tenantId: 't1', spaceId: 's1' })
+    ).toBe(false);
+  });
+
+  it('does not reload while the next ids are incomplete', () => {
+    expect(
+      shouldReloadEngagement({ tenantId: 't1', spaceId: 's1' }, { tenantId: 't1', spaceId: null })
+    ).toBe(false);
+    expect(
+      shouldReloadEngagement({ tenantId: 't1', spaceId: 's1' }, { tenantId: '', spaceId: 's2' })
+    ).toBe(false);
   });
 });
 
