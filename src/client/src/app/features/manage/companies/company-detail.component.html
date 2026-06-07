@@ -175,4 +175,20 @@
   }
 </app-manage-page-shell>
 
+<p-dialog
+  header="Edit company"
+  [(visible)]="editingCompany"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="editingCompany.set(false)"
+>
+  @if (editingCompany()) {
+    <app-company-form
+      [company]="company()"
+      (saved)="onCompanyEdited()"
+      (cancelled)="editingCompany.set(false)"
+    />
+  }
+</p-dialog>
+
 <app-entity-marker-drawer />

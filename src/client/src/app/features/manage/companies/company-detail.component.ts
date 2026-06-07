@@ -4,12 +4,14 @@ import {
   computed,
   effect,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
@@ -31,15 +33,21 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 import { CompanyService } from '../../../core/services/company.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Company } from '../../../core/models/company.model';
 import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import { CompanyFormComponent } from './company-form.component';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
 @Component({
   selector: 'app-company-detail',
   imports: [
     BrandLogoComponent,
     ConfirmDialogModule,
+    Dialog,
     ToastModule,
+    CompanyFormComponent,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
@@ -56,13 +64,16 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
   templateUrl: './company-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompanyDetailComponent {
+export class CompanyDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private companyService = inject(CompanyService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
+  private topbarState = inject(TopbarStateService);
+  protected readonly editingCompany = signal(false);
 
   // Route paramMap as a signal so companyId reacts to in-place navigation
   // when clicking a LINKED company chip on a company detail page (same route
@@ -93,6 +104,75 @@ export class CompanyDetailComponent {
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
+
+  // Populate the shared topbar overflow kebab (Edit details + Delete) so the
+  // company can be managed from its own detail page, matching the grid row.
+  private readonly overflowEffect = effect(() => {
+    const company = this.company();
+    if (!company || !this.spaceRole.canEdit()) {
+      this.topbarState.overflowActions.set([]);
+      return;
+    }
+    this.topbarState.overflowActions.set(
+      buildEntityActionMenu({
+        canEdit: true,
+        editLabel: 'Edit details',
+        onEdit: () => this.editingCompany.set(true),
+        onDelete: () => void this.deleteCompany(company),
+        extras: [
+          {
+            label: 'View assets',
+            icon: 'fa-solid fa-box',
+            command: () =>
+              this.router.navigate([
+                '/t',
+                this.tenantIdSig(),
+                's',
+                this.spaceIdSig(),
+                'manage',
+                'assets',
+              ]),
+          },
+        ],
+      })
+    );
+  });
+
+  ngOnDestroy(): void {
+    this.topbarState.overflowActions.set([]);
+  }
+
+  protected async onCompanyEdited(): Promise<void> {
+    this.editingCompany.set(false);
+    await this.loadCompany();
+    this.messageService.add({ severity: 'success', summary: 'Company updated.', life: 3000 });
+  }
+
+  private async deleteCompany(company: Company): Promise<void> {
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete company',
+        entityLabel: company.name,
+        message: `Delete "${company.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.companyService.previewDelete(company.id),
+      delete: () => this.companyService.delete(company.id),
+      successSummary: 'Company deleted.',
+      onSuccess: () =>
+        void this.router.navigate([
+          '/t',
+          this.tenantIdSig(),
+          's',
+          this.spaceIdSig(),
+          'manage',
+          'companies',
+        ]),
+      errorFallback: 'Could not delete company. It may have associated assets.',
+    });
+  }
 
   private readonly landscape = inject(LandscapeStateService);
 

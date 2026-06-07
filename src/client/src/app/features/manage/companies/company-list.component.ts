@@ -24,7 +24,8 @@ import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
-import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 
@@ -140,29 +141,19 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   rowMenu(company: Company): MenuItem[] {
     const cached = this.menuCache.get(company.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'View assets',
-        icon: 'fa-solid fa-box',
-        command: () => this.openAssets(company.id),
-      },
-    ];
-    if (this.spaceRole.canEdit()) {
-      items.push(
+    const items = buildEntityActionMenu({
+      canEdit: this.spaceRole.canEdit(),
+      editLabel: 'Edit',
+      onEdit: () => this.openEditModal(company),
+      onDelete: () => void this.confirmDelete(company),
+      extras: [
         {
-          label: 'Edit',
-          icon: 'fa-solid fa-pen',
-          command: () => this.openEditModal(company),
+          label: 'View assets',
+          icon: 'fa-solid fa-box',
+          command: () => this.openAssets(company.id),
         },
-        { separator: true },
-        {
-          label: 'Delete',
-          icon: 'fa-solid fa-trash',
-          styleClass: 'row-actions-danger',
-          command: () => this.confirmDelete(company),
-        }
-      );
-    }
+      ],
+    });
     this.menuCache.set(company.id, items);
     return items;
   }
@@ -194,42 +185,22 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(company: Company): Promise<void> {
-    // Fetch the count breakdown so the dialog can show an honest pre-flight
-    // read of what the cascade will remove. If preview fails (RLS, network),
-    // surface the error and bail rather than opening a count-less dialog.
-    let counts;
-    try {
-      counts = await this.companyService.previewDelete(company.id);
-    } catch (err) {
-      this.deleteError.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not load delete preview. Check your connection and try again.'
-      );
-      return;
-    }
-
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete company',
-      entityLabel: company.name,
-      message: `Delete "${company.name}"? This will permanently remove:`,
-      counts,
-      requireTypedConfirmation: true,
-    });
-    if (!ok) return;
-
     this.deleteError.set(null);
-    try {
-      await this.companyService.delete(company.id);
-      await this.loadCompanies();
-      this.messageService.add({ severity: 'success', summary: 'Company deleted.', life: 3000 });
-    } catch (err) {
-      this.deleteError.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not delete company. It may have associated assets.'
-      );
-    }
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete company',
+        entityLabel: company.name,
+        message: `Delete "${company.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.companyService.previewDelete(company.id),
+      delete: () => this.companyService.delete(company.id),
+      successSummary: 'Company deleted.',
+      onSuccess: () => this.loadCompanies(),
+      errorFallback: 'Could not delete company. It may have associated assets.',
+    });
   }
 
   private async loadCompanies(): Promise<void> {
