@@ -12,13 +12,15 @@ import { environment } from '../../../environments/environment';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
+import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ClintLogoComponent, NgOptimizedImage],
+  imports: [ClintLogoComponent, NgOptimizedImage, PublicFooterComponent],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-slate-50">
+    <div class="flex min-h-screen flex-col bg-slate-50">
+      <main class="flex flex-1 items-center justify-center px-6 py-12">
       <div class="w-full max-w-sm border border-slate-200 bg-white">
         <div class="h-0.5 bg-brand-500"></div>
         <div class="px-8 py-10">
@@ -175,6 +177,8 @@ import { ClintLogoComponent } from '../../shared/components/clint-logo.component
           </div>
         }
       </div>
+      </main>
+      <app-public-footer />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

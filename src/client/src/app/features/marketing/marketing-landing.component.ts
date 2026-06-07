@@ -3,11 +3,12 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { environment } from '../../../environments/environment';
+import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 
 @Component({
   selector: 'app-marketing-landing',
   standalone: true,
-  imports: [ButtonModule, InputTextModule, RouterLink],
+  imports: [ButtonModule, InputTextModule, RouterLink, PublicFooterComponent],
   template: `
     <div class="flex min-h-screen flex-col bg-slate-50">
       <header class="border-b border-slate-200 bg-white">
@@ -117,6 +118,7 @@ import { environment } from '../../../environments/environment';
           </p>
         </div>
       </main>
+      <app-public-footer />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

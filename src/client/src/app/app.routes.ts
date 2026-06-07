@@ -26,6 +26,16 @@ export const routes: Routes = [
       import('./features/auth/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/legal/privacy-policy.component').then((m) => m.PrivacyPolicyComponent),
+  },
+  {
+    path: 'terms',
+    loadComponent: () =>
+      import('./features/legal/terms-of-service.component').then((m) => m.TermsOfServiceComponent),
+  },
+  {
     path: 'admin',
     canActivate: [agencyGuard, authGuard],
     loadComponent: () =>
@@ -476,5 +486,9 @@ export const routes: Routes = [
         (m) => m.MarketingLandingComponent
       ),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),
+  },
 ];
