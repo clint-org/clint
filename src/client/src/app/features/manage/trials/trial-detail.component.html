@@ -415,6 +415,25 @@
             <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Asset</dt>
             <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
           </div>
+          <div>
+            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+              Indications
+            </dt>
+            <dd class="mt-1">
+              @if (indications().length) {
+                <div class="flex flex-wrap items-center gap-1">
+                  @for (ind of indications(); track ind.id) {
+                    <span
+                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700"
+                      >{{ ind.name }}</span
+                    >
+                  }
+                </div>
+              } @else {
+                <span class="text-sm text-slate-900">--</span>
+              }
+            </dd>
+          </div>
           @if (spaceRole.canEdit()) {
             <div>
               <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
