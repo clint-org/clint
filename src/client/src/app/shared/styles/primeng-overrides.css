@@ -303,3 +303,43 @@
   line-height: 1.4;
   max-width: 280px;
 }
+
+/* -- TreeTable: resizable columns (source-import review grid) ----------- */
+
+/* Only the import review grid uses a resizable p-treeTable. PrimeNG positions
+   the drag indicator with `left = pageX - host.offsetLeft`, which is correct
+   only when the host is the indicator's offset parent. The component host
+   ships as `display: inline`, leaving the indicator with a null offset parent
+   so it anchors to the viewport and drifts left by the nav-rail width. Making
+   the host a block-level positioned box makes the indicator track the cursor. */
+p-treetable {
+  display: block;
+  position: relative;
+}
+
+/* The column-resize grip ships fully transparent, so nothing signals that the
+   columns are draggable. Draw a hairline divider at each column edge (via
+   box-shadow, which PrimeNG does not set, so no specificity battle) that warms
+   to brand on hover, with the resize cursor across the full handle. The `th`
+   in the selector clears PrimeNG's two-class default specificity. */
+.p-treetable th .p-column-resizer {
+  width: 0.5rem;
+  cursor: col-resize;
+  box-shadow: inset -1px 0 0 rgb(226 232 240); /* slate-200 divider at column edge */
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.p-treetable th:hover .p-column-resizer {
+  box-shadow: inset -1px 0 0 rgb(203 213 225); /* slate-300 */
+}
+.p-treetable th .p-column-resizer:hover {
+  background: var(--brand-50); /* teal-50 wash */
+  box-shadow: inset -2px 0 0 var(--brand-600); /* teal-600 grip line */
+}
+
+/* The drag indicator: a crisp brand line rather than the default faint bar. */
+.p-treetable .p-column-resizer-helper {
+  background: var(--brand-600); /* teal-600 */
+  width: 2px;
+}
