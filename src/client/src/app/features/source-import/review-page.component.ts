@@ -909,14 +909,15 @@ interface GridRow {
                     @if (row.hasDetail) {
                       <button
                         type="button"
-                        class="ml-auto text-slate-400 hover:text-brand-600"
+                        class="ml-auto flex items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
                         [attr.aria-expanded]="isDetailOpen(row.key)"
                         (click)="toggleDetail(row.key)"
-                        pTooltip="Show review detail"
+                        [pTooltip]="row.multiAssetRole ? 'Edit assets and primary' : 'Show review detail'"
                         tooltipPosition="top"
                       >
+                        <span>{{ row.multiAssetRole ? 'Assets' : 'Detail' }}</span>
                         <i
-                          class="pi text-[10px]"
+                          class="pi text-[9px]"
                           [class.pi-chevron-down]="isDetailOpen(row.key)"
                           [class.pi-chevron-right]="!isDetailOpen(row.key)"
                         ></i>
