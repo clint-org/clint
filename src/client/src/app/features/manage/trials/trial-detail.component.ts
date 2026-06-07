@@ -55,6 +55,7 @@ import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-fi
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
 import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
 import { TrialEditDialogComponent } from './trial-edit-dialog.component';
+import { fetchIndicationsSafe } from './trial-indications';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -216,6 +217,7 @@ export class TrialDetailComponent implements OnDestroy {
   });
 
   readonly trial = signal<Trial | null>(null);
+  readonly indications = signal<{ id: string; name: string }[]>([]);
   readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -405,11 +407,15 @@ export class TrialDetailComponent implements OnDestroy {
   async loadTrial(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.indications.set([]);
 
     try {
       const trial = await this.trialService.getById(this.trialId());
       this.trial.set(trial);
       this.menuCache.clear();
+      this.indications.set(
+        await fetchIndicationsSafe(() => this.trialService.listIndications(this.trialId()))
+      );
       // History panel depends on the loaded trial's space_id; refresh once
       // the trial resolves so the inline panel reflects the latest versions.
       await this.refreshHistory();
