@@ -130,6 +130,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_tenant_access_settings` | - | tenants |
 | `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
+| `get_trial_indications` | - | condition_indication_map, indications, trial_conditions, trials |
 | `get_trials_for_polling` | - | trials |
 | `handle_new_user` | agency_invites, agency_members | - |
 | `has_space_access` | - | space_members, spaces, tenants |
@@ -184,6 +185,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `set_trial_assets` | trial_assets | trials |
+| `set_trial_indications` | condition_indication_map, conditions, trial_conditions | indications, trial_assets, trials |
 | `space_shows_preclinical` | - | spaces |
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
@@ -720,6 +722,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_space_landing_stats`
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
+- `get_trial_indications`
 - `guard_primary_intelligence_state`
 - `is_tenant_owner_strict`
 - `jsonb_strip_pii_keys`
@@ -754,6 +757,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `restore_space`
 - `search_palette`
 - `set_trial_assets`
+- `set_trial_indications`
 - `space_shows_preclinical`
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`
