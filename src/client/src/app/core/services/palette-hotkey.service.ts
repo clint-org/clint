@@ -1,4 +1,4 @@
-import { Injectable, NgZone, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 export function shouldOpenPalette(ev: KeyboardEvent): boolean {
   const key = (ev.key ?? '').toLowerCase();
@@ -16,23 +16,22 @@ export function shouldOpenPalette(ev: KeyboardEvent): boolean {
 
 @Injectable({ providedIn: 'root' })
 export class PaletteHotkeyService {
-  private readonly zone = inject(NgZone);
   readonly isOpen = signal(false);
 
   constructor() {
-    this.zone.runOutsideAngular(() => {
-      document.addEventListener('keydown', this.onKeydown, { capture: false });
-    });
+    // Zoneless: writing the `isOpen` signal in the handler triggers change
+    // detection directly, so no NgZone.run / runOutsideAngular wrapper is needed.
+    document.addEventListener('keydown', this.onKeydown, { capture: false });
   }
 
   private readonly onKeydown = (ev: KeyboardEvent) => {
     if (this.isOpen() && ev.key === 'Escape') {
-      this.zone.run(() => this.isOpen.set(false));
+      this.isOpen.set(false);
       ev.preventDefault();
       return;
     }
     if (shouldOpenPalette(ev)) {
-      this.zone.run(() => this.isOpen.set(true));
+      this.isOpen.set(true);
       ev.preventDefault();
     }
   };

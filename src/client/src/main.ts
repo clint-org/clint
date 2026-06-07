@@ -1,4 +1,3 @@
-import 'zone.js';
 import { ApplicationConfig, mergeApplicationConfig } from '@angular/core';
 import { providePrimeNG } from 'primeng/config';
 import { bootstrapApplication } from '@angular/platform-browser';
