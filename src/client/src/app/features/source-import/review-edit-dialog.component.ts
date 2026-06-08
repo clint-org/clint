@@ -175,6 +175,7 @@ export class ReviewEditDialogComponent {
   readonly index = input<number | null>(null);
   readonly spaceId = input<string>('');
   readonly closed = output<void>();
+  readonly saved = output<void>();
 
   protected readonly phaseOptions: FormOption[] = PHASE_DESCRIPTORS.map((d) => ({
     id: d.key,
@@ -370,6 +371,7 @@ export class ReviewEditDialogComponent {
     }
 
     this.sourceImportService.setProposal(next);
+    this.saved.emit();
     this.close();
   }
 }

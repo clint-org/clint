@@ -17,8 +17,6 @@ import { Tooltip } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
 
 import { ChangeEventService } from '../../core/services/change-event.service';
-import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
-import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
 import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import {
@@ -38,11 +36,8 @@ import {
   trialMissingAsset as trialMissingAssetLogic,
   resolveTrialAssetIndexes,
   resolveTrialPrimaryAssetIndex,
-  trialIsMultiAsset,
-  resolveEntityLink,
   orphanTrialIndexes,
   type ReviewFlag,
-  type EntityLink,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
@@ -51,20 +46,7 @@ type EditableEntityType = 'companies' | 'assets' | 'trials';
 
 type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
 
-const ENTITY_LABELS: Record<EntityType, string> = {
-  companies: 'Companies',
-  assets: 'Assets',
-  trials: 'Trials',
-  markers: 'Markers',
-  events: 'Events',
-};
-
 const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'markers', 'events'];
-
-interface FieldEdit {
-  field: string;
-  value: string;
-}
 
 interface CompanyNode {
   companyIdx: number;
@@ -104,14 +86,10 @@ interface GridRow {
   moaRoa: string;
   indication: string | null;
   flags: ReviewFlag[];
-  hasDetail: boolean;
   // For a trial that tests more than one asset, marks whether this particular
   // nesting is under its primary (headline) asset or a secondary one. Undefined
   // for single-asset trials and for non-trial rows.
   multiAssetRole?: 'primary' | 'secondary';
-  // Click target for the entity name: an existing record's in-app /manage page,
-  // a new trial's ClinicalTrials.gov page, or null (new company/asset, plain text).
-  link: EntityLink | null;
 }
 
 @Component({
@@ -501,6 +479,7 @@ interface GridRow {
         [type]="editType()"
         [index]="editIndex()"
         [spaceId]="spaceId()"
+        (saved)="proposalEdited.set(true)"
         (closed)="closeEdit()"
       />
     </div>
@@ -515,10 +494,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
-  private readonly moaService = inject(MechanismOfActionService);
-  private readonly roaService = inject(RouteOfAdministrationService);
-  private readonly existingMoaNames = signal<Set<string>>(new Set());
-  private readonly existingRoaNames = signal<Set<string>>(new Set());
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -550,7 +525,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly assetRefsOverrides = signal<Record<number, number[]>>({});
   readonly primaryRefOverrides = signal<Record<number, number>>({});
 
-  readonly collapsedRows = signal<Record<string, boolean>>({});
   readonly committing = signal(false);
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
@@ -560,6 +534,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly editTarget = signal<{ type: EditableEntityType; index: number } | null>(null);
   protected readonly editType = computed<EditableEntityType | null>(() => this.editTarget()?.type ?? null);
   protected readonly editIndex = computed<number | null>(() => this.editTarget()?.index ?? null);
+
+  // Set once the user saves an edit through the dialog; the dialog mutates the
+  // proposal in place, so the override-based dirty check below cannot see it.
+  protected readonly proposalEdited = signal(false);
 
   protected openEdit(type: EntityType, index: number): void {
     if (type !== 'companies' && type !== 'assets' && type !== 'trials') return;
@@ -575,6 +553,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const edits = this.fieldEdits();
     const overrides = this.matchOverrides();
     return (
+      this.proposalEdited() ||
       Object.values(sel).some((v) => v === false) ||
       Object.keys(edits).length > 0 ||
       Object.keys(overrides).length > 0
@@ -769,13 +748,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return { companies: companyNodes, orphanTrials, orphanMarkers, orphanEvents };
   });
 
-  protected readonly openDetails = signal<Record<string, boolean>>({});
-  protected isDetailOpen(key: string): boolean {
-    return this.openDetails()[key] ?? false;
-  }
-  protected toggleDetail(key: string): void {
-    this.openDetails.update((o) => ({ ...o, [key]: !o[key] }));
-  }
   protected hasBlockingFlag(row: GridRow): boolean {
     return row.flags.some((f) => f.tier === 'blocking');
   }
@@ -819,19 +791,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: '',
         indication: this.trialIndicationLabel(t),
         flags,
-        // Multi-asset trials are always expandable so the chip+star asset editor
-        // in the row detail stays reachable, even when the trial resolved cleanly
-        // (no flags, no editable fields) and the primary needs repointing.
-        hasDetail:
-          flags.length > 0 ||
-          this.editableFields('trials', idx).length > 0 ||
-          trialIsMultiAsset(t, assetCount),
         multiAssetRole,
-        link: this.entityLink('trials', idx),
       };
       // The tree-node key must be unique per nesting: a multi-asset trial appears
       // under several assets, so namespace it by the parent asset. row.key (the
-      // selection / detail key) stays per-trial so both copies share state.
+      // selection key) stays per-trial so both copies share state.
       return { key: `assets_${parentAssetIdx}/${row.key}`, data: row };
     };
 
@@ -854,8 +818,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: [...this.assetMoas(idx), ...this.assetRoas(idx)].join(' / '),
         indication: null,
         flags,
-        hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
-        link: this.entityLink('assets', idx),
       };
       return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx, an.assetIdx)) };
     };
@@ -873,8 +835,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: '',
         indication: null,
         flags: [],
-        hasDetail: false,
-        link: this.entityLink('companies', cn.companyIdx),
       };
       return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
     });
@@ -938,22 +898,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
-    void this.loadExistingMoaRoa();
-  }
-
-  private async loadExistingMoaRoa(): Promise<void> {
-    const sid = this.spaceId();
-    if (!sid) return;
-    try {
-      const [moas, roas] = await Promise.all([
-        this.moaService.list(sid),
-        this.roaService.list(sid),
-      ]);
-      this.existingMoaNames.set(new Set(moas.map((m) => m.name)));
-      this.existingRoaNames.set(new Set(roas.map((r) => r.name)));
-    } catch {
-      // Non-critical; pills will default to showing as new
-    }
   }
 
   hasUnsavedChanges(): boolean {
@@ -968,19 +912,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     } catch {
       return url;
     }
-  }
-
-  protected resolvedIdentifier(type: EntityType, index: number): string | null {
-    if (type !== 'trials') return null;
-    return this.proposal()?.resolved_identifiers?.[`${type}_${index}`] ?? null;
-  }
-
-  protected ctgovUrl(nctId: string): string {
-    return `https://clinicaltrials.gov/study/${nctId}`;
-  }
-
-  protected entityLabel(type: EntityType): string {
-    return ENTITY_LABELS[type];
   }
 
   protected entitiesOf(type: EntityType): Record<string, unknown>[] {
@@ -1011,39 +942,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return (entity['name'] as string) ?? (entity['title'] as string) ?? `${type} #${index + 1}`;
   }
 
-  protected entityDetailUrl(type: EntityType, index: number): string | null {
-    if (this.isNew(type, index)) return null;
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return null;
-    const match = entity['match'] as { kind: string; id?: string } | undefined;
-    if (!match || match.kind !== 'existing' || !match.id) return null;
-    const routeMap: Partial<Record<EntityType, string>> = {
-      companies: 'companies',
-      assets: 'assets',
-      trials: 'trials',
-      markers: 'markers',
-    };
-    const segment = routeMap[type];
-    if (!segment) return null;
-    return `/t/${this.tenantId()}/s/${this.spaceId()}/manage/${segment}/${match.id}`;
-  }
-
-  // The clickable target for a grid entity value: existing -> in-app /manage
-  // record, new trial -> its CT.gov study page, new company/asset -> null.
-  // Precomputed onto each GridRow so the template binds row.link with no call.
-  private entityLink(type: EntityType, index: number): EntityLink | null {
-    if (type !== 'companies' && type !== 'assets' && type !== 'trials') return null;
-    const entity = this.entitiesOf(type)[index];
-    const match = entity?.['match'] as { kind?: string; id?: string } | undefined;
-    return resolveEntityLink({
-      type,
-      matchKind: match?.kind,
-      matchId: match?.id,
-      nctId: type === 'trials' ? this.resolvedIdentifier('trials', index) : null,
-      manageBase: `/t/${this.tenantId()}/s/${this.spaceId()}/manage`,
-    });
-  }
-
   protected trialPhase(index: number): string | null {
     const entity = this.entitiesOf('trials')[index];
     return (entity?.['phase'] as string) ?? null;
@@ -1066,11 +964,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return typeof one === 'string' && one.length > 0 ? one : null;
   }
 
-  protected assetGenericName(index: number): string | null {
-    const entity = this.entitiesOf('assets')[index];
-    return (entity?.['generic_name'] as string) ?? null;
-  }
-
   protected assetMoas(index: number): string[] {
     const entity = this.entitiesOf('assets')[index];
     return (entity?.['moa'] as string[]) ?? [];
@@ -1079,50 +972,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected assetRoas(index: number): string[] {
     const entity = this.entitiesOf('assets')[index];
     return (entity?.['roa'] as string[]) ?? [];
-  }
-
-  protected isMoaExisting(name: string): boolean {
-    return this.existingMoaNames().has(name);
-  }
-
-  protected isRoaExisting(name: string): boolean {
-    return this.existingRoaNames().has(name);
-  }
-
-  protected entityEvidence(type: EntityType, index: number): string | null {
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return null;
-    return (entity['evidence'] as string) ?? null;
-  }
-
-  protected editableFields(type: EntityType, index: number): FieldEdit[] {
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return [];
-    const skip = new Set([
-      'match',
-      'name',
-      'title',
-      'existing_id',
-      'evidence',
-      'asset_ref',
-      'company_ref',
-      'trial_ref',
-      'marker_ref',
-      'sponsor_ref',
-      'moa',
-      'roa',
-      'trial_refs',
-      'tags',
-      'anchor',
-    ]);
-    const out: FieldEdit[] = [];
-    for (const [k, v] of Object.entries(entity)) {
-      if (skip.has(k)) continue;
-      if (typeof v === 'string' && v.length < 200) {
-        out.push({ field: k, value: v });
-      }
-    }
-    return out;
   }
 
   protected fuzzyAlternatesFor(type: EntityType, index: number): FuzzyAlternate[] {
@@ -1138,83 +987,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return p.ctgov_candidates[`trials_${index}`] ?? [];
   }
 
-  protected trialCtgovStatus(index: number): 'matched' | 'no_matches' | 'failed' | 'skipped' {
-    const entity = this.entitiesOf('trials')[index];
-    if (!entity) return 'skipped';
-    const match = entity['match'] as { kind: string } | undefined;
-    if (match?.kind === 'existing') return 'skipped';
-
-    const p = this.proposal();
-    if (!p) return 'skipped';
-
-    const hasFailed = p.warnings.some((w) => w === `ctgov_partial:trial_${index}`);
-    if (hasFailed) return 'failed';
-
-    const candidates = p.ctgov_candidates[`trials_${index}`] ?? [];
-    return candidates.length > 0 ? 'matched' : 'no_matches';
-  }
 
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
     // Delegate to the pure logic module so the grid's no-asset flag and the
     // commit gate share one definition (an existing_id match also counts).
     return trialMissingAssetLogic(entity);
-  }
-
-  // --- Per-trial asset membership editing (chip + star control) ---------------
-
-  // Current asset indices for a trial: the override if the analyst edited it,
-  // otherwise the proposal's own (validated) asset_refs.
-  protected trialAssetRefs(idx: number): number[] {
-    const ovr = this.assetRefsOverrides()[idx];
-    if (ovr) return ovr;
-    return resolveTrialAssetIndexes(this.entitiesOf('trials')[idx], this.entitiesOf('assets').length);
-  }
-
-  // Current primary asset index for a trial, constrained to its membership.
-  protected trialPrimaryRef(idx: number): number | null {
-    const refs = this.trialAssetRefs(idx);
-    if (refs.length === 0) return null;
-    const ovr = this.primaryRefOverrides()[idx];
-    if (ovr != null && refs.includes(ovr)) return ovr;
-    const proposed = resolveTrialPrimaryAssetIndex(
-      this.entitiesOf('trials')[idx],
-      this.entitiesOf('assets').length,
-    );
-    return proposed != null && refs.includes(proposed) ? proposed : refs[0];
-  }
-
-  // Proposal assets not yet linked to this trial, offered as "+ add" chips.
-  protected assetsAvailableToAdd(idx: number): { idx: number; name: string }[] {
-    const current = new Set(this.trialAssetRefs(idx));
-    const assets = this.entitiesOf('assets');
-    const out: { idx: number; name: string }[] = [];
-    for (let i = 0; i < assets.length; i++) {
-      if (!current.has(i)) out.push({ idx: i, name: this.entityName('assets', i) });
-    }
-    return out;
-  }
-
-  protected addTrialAsset(idx: number, assetIdx: number): void {
-    const refs = this.trialAssetRefs(idx);
-    if (refs.includes(assetIdx)) return;
-    this.assetRefsOverrides.update((prev) => ({ ...prev, [idx]: [...refs, assetIdx] }));
-  }
-
-  protected removeTrialAsset(idx: number, assetIdx: number): void {
-    const refs = this.trialAssetRefs(idx);
-    if (refs.length <= 1) return; // a trial must keep at least one asset
-    const next = refs.filter((r) => r !== assetIdx);
-    const currentPrimary = this.trialPrimaryRef(idx);
-    this.assetRefsOverrides.update((prev) => ({ ...prev, [idx]: next }));
-    // Auto-promote a new primary when the removed asset was the primary.
-    if (currentPrimary == null || !next.includes(currentPrimary)) {
-      this.primaryRefOverrides.update((prev) => ({ ...prev, [idx]: next[0] }));
-    }
-  }
-
-  protected setTrialPrimary(idx: number, assetIdx: number): void {
-    if (!this.trialAssetRefs(idx).includes(assetIdx)) return;
-    this.primaryRefOverrides.update((prev) => ({ ...prev, [idx]: assetIdx }));
   }
 
   protected toggleSelection(key: string, value: boolean): void {
@@ -1237,69 +1014,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const items = this.entitiesOf(type);
     const sel = this.selections();
     return items.every((_, i) => sel[`${type}_${i}`] !== false);
-  }
-
-  protected getMatchOverride(key: string): string | undefined {
-    return this.matchOverrides()[key];
-  }
-
-  protected setMatchOverride(key: string, id: string): void {
-    this.matchOverrides.update((prev) => ({ ...prev, [key]: id }));
-  }
-
-  protected clearMatchOverride(key: string): void {
-    this.matchOverrides.update((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  }
-
-  protected getTrialNctOverride(index: number): string | undefined {
-    return this.nctOverrides()[index];
-  }
-
-  protected setTrialNctOverride(index: number, nctId: string): void {
-    this.nctOverrides.update((prev) => ({ ...prev, [index]: nctId }));
-  }
-
-  protected getFieldEdit(key: string, field: string): string | undefined {
-    return this.fieldEdits()[key]?.[field];
-  }
-
-  protected onFieldEdit(key: string, field: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.fieldEdits.update((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? {}), [field]: value },
-    }));
-  }
-
-  protected isCollapsed(key: string): boolean {
-    return this.collapsedRows()[key] === true;
-  }
-
-  protected toggleCollapsed(key: string): void {
-    this.collapsedRows.update((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  protected isObservationalTrial(index: number): boolean {
-    const entity = this.entitiesOf('trials')[index];
-    return String(entity?.['study_type'] ?? '').toLowerCase().includes('observational');
-  }
-
-  protected nctIdFromEvidence(type: EntityType, index: number): string | null {
-    const evidence = this.entityEvidence(type, index);
-    if (!evidence) return null;
-    const match = evidence.match(/^CT\.gov:\s*(NCT\d{8}(?:,\s*NCT\d{8})*)$/i);
-    return match ? match[1] : null;
-  }
-
-  protected clearHighlightIfNotPinned(): void {
-    const current = this.highlightedEvidence();
-    if (current && !current.pinned) {
-      this.highlightedEvidence.set(null);
-    }
   }
 
   protected downloadProposal(): void {
@@ -1433,15 +1147,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       if (Object.keys(nctDefaults).length > 0) {
         this.nctOverrides.set(nctDefaults);
       }
-    }
-
-    if (this.isNctImport()) {
-      const collapsed: Record<string, boolean> = {};
-      const trials = p.trials ?? [];
-      for (let i = 0; i < trials.length; i++) {
-        collapsed[`trials_${i}`] = true;
-      }
-      this.collapsedRows.set(collapsed);
     }
   }
 

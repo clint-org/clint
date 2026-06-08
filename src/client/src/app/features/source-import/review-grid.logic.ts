@@ -75,14 +75,6 @@ export function resolveTrialPrimaryAssetIndex(trial: Entity, assetCount: number)
   return refs[0];
 }
 
-// True when a trial tests more than one asset (a master protocol). The review
-// grid uses this to keep multi-asset trials expandable: their primary/membership
-// must always be editable via the row detail, even when the trial resolved
-// cleanly and would otherwise have no flags or editable fields.
-export function trialIsMultiAsset(trial: Entity, assetCount: number): boolean {
-  return resolveTrialAssetIndexes(trial, assetCount).length > 1;
-}
-
 // Back-compat single-index resolver (the trial's primary asset). Retained for
 // callers that need one owning asset; multi-asset nesting uses
 // resolveTrialAssetIndexes.
@@ -160,34 +152,6 @@ export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
   return alternateCount > 0
     ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' }
     : null;
-}
-
-export interface EntityLink {
-  href: string;
-  external: boolean;
-}
-
-// Resolves the click target for a review-grid entity value:
-// - an existing company/asset/trial -> its in-app /manage record (internal nav)
-// - a new trial -> its ClinicalTrials.gov study page (external, new tab)
-// - a new company/asset -> null (no record to point at yet, render plain text)
-// The entity type doubles as the /manage route segment. Pure so the grid and the
-// orphan entityRow sections resolve links identically.
-export function resolveEntityLink(params: {
-  type: 'companies' | 'assets' | 'trials';
-  matchKind: string | undefined;
-  matchId: string | undefined;
-  nctId?: string | null;
-  manageBase: string;
-}): EntityLink | null {
-  const { type, matchKind, matchId, nctId, manageBase } = params;
-  if (matchKind === 'existing' && matchId) {
-    return { href: `${manageBase}/${type}/${matchId}`, external: false };
-  }
-  if (type === 'trials' && nctId) {
-    return { href: `https://clinicaltrials.gov/study/${nctId}`, external: true };
-  }
-  return null;
 }
 
 export interface SelectionCounts {
