@@ -2,10 +2,9 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 work="$(mktemp -d)"
-trap 'rm -rf "$work"; psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null 2>&1 || true' EXIT
-
 LOCAL_DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 ADMIN_URL="$LOCAL_DB_URL"
+trap 'rm -rf "$work"; psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null 2>&1 || true' EXIT
 
 # Throwaway recipient keypair.
 age-keygen -o "$work/key.txt" 2>"$work/pub.txt"
@@ -13,11 +12,8 @@ PUB="$(grep -o 'age1[0-9a-z]*' "$work/pub.txt" | head -1)"
 
 # Produce the encrypted bundle.
 "$here/make-bundle.sh" \
-  --db-url "$LOCAL_DB_URL" \
-  --env local \
-  --tier daily \
-  --recipient "$PUB" \
-  --outdir "$work"
+  --db-url "$LOCAL_DB_URL" --env local --tier daily \
+  --recipient "$PUB" --outdir "$work" >/dev/null
 
 bundle="$(ls "$work"/clint-local-daily-*.tar.zst.age | head -1)"
 manifest="${bundle%.tar.zst.age}.manifest.json"
@@ -33,19 +29,32 @@ sha_manifest="$(jq -r .sha256 "$manifest")"
 age -d -i "$work/key.txt" -o "$work/bundle.tar.zst" "$bundle"
 zstd -d "$work/bundle.tar.zst" -o "$work/bundle.tar"
 mkdir -p "$work/unpacked" && tar -xf "$work/bundle.tar" -C "$work/unpacked"
-[ -f "$work/unpacked/roles.sql" ]  || { echo "FAIL: roles.sql missing";  exit 1; }
-[ -f "$work/unpacked/schema.sql" ] || { echo "FAIL: schema.sql missing"; exit 1; }
-[ -f "$work/unpacked/data.sql" ]   || { echo "FAIL: data.sql missing";   exit 1; }
+for f in roles.sql schema.sql data.sql auth_storage.sql; do
+  [ -f "$work/unpacked/$f" ] || { echo "FAIL: $f missing"; exit 1; }
+done
 
-# Restore schema+data into a scratch DB and assert a known table restored.
+# Restore the public schema + data into a scratch DB and assert a seeded table.
 psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null
 psql "$ADMIN_URL" -c "create database backup_roundtrip;" >/dev/null
 SCRATCH="postgresql://postgres:postgres@127.0.0.1:54322/backup_roundtrip"
 psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/schema.sql" >/dev/null
 psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/data.sql"   >/dev/null
-
-# marker_types is seeded by seed.sql, so a healthy restore has rows.
 count="$(psql "$SCRATCH" -tAc "select count(*) from public.marker_types;")"
 [ "$count" -gt 0 ] || { echo "FAIL: marker_types empty after restore ($count)"; exit 1; }
+echo "ok: public restore (marker_types rows: $count)"
 
-echo "ALL PASS (marker_types rows: $count)"
+# Auth/storage capture integrity: each identity/storage table must be present in
+# the data dump, and the captured rows must equal the live source counts AND the
+# counts recorded in the manifest.
+for tbl in auth.users auth.identities storage.buckets storage.objects; do
+  grep -q "COPY ${tbl} " "$work/unpacked/auth_storage.sql" \
+    || { echo "FAIL: $tbl not in auth_storage.sql"; exit 1; }
+  live="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from ${tbl};")"
+  dumped="$(awk -v t="COPY ${tbl} " 'index($0,t)==1 {f=1; next} f && $0=="\\." {f=0} f {c++} END{print c+0}' "$work/unpacked/auth_storage.sql")"
+  [ "$live" = "$dumped" ] || { echo "FAIL: $tbl count mismatch live=$live dumped=$dumped"; exit 1; }
+  man="$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' "$manifest")"
+  [ "$man" = "$live" ] || { echo "FAIL: $tbl manifest count $man != live $live"; exit 1; }
+  echo "ok: $tbl captured ($live rows; manifest+dump agree)"
+done
+
+echo "ALL PASS"
