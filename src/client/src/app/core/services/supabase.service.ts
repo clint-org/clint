@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
 import { createCookieStorage } from '../util/cookie-session-storage';
+import { authStorageKey } from '../util/auth-storage-key';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
@@ -54,7 +55,7 @@ export class SupabaseService {
         path: '/',
         maxAgeSeconds: 60 * 60 * 24 * 30,
       }),
-      storageKey: 'sb-auth',
+      storageKey: authStorageKey(environment.envName),
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
