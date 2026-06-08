@@ -96,7 +96,7 @@ import { isExistingWorkspace } from './workspace-finder';
                   [value]="subdomain()"
                   (input)="onInput($event)"
                   placeholder="your-workspace"
-                  class="flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                  class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
                   aria-label="Workspace subdomain"
                 />
                 <span
