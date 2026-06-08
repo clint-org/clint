@@ -458,17 +458,24 @@ scripts/backup/setup-buckets.sh
 ```
 
 Then, following the `cloudflare`/`wrangler` skill and B2 docs, apply the
-lifecycle JSON and Object Lock default-retention to both buckets. Verify:
+lifecycle JSON and the lock to both buckets. Verify:
 
 ```bash
-# R2 (S3 API): confirm versioning + lifecycle + object-lock are present.
-aws s3api get-bucket-versioning      --bucket "$R2_BACKUP_BUCKET" --endpoint-url "https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com"
-aws s3api get-bucket-lifecycle-configuration --bucket "$R2_BACKUP_BUCKET" --endpoint-url "https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com"
-aws s3api get-object-lock-configuration      --bucket "$R2_BACKUP_BUCKET" --endpoint-url "https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com"
+# R2 immutability is Cloudflare Bucket Lock (NOT S3 Object Lock); R2 has no S3
+# versioning. Lifecycle is the only S3 bucket API R2 implements here.
+wrangler r2 bucket lock list "$R2_BACKUP_BUCKET"
+aws s3api get-bucket-lifecycle-configuration --bucket "$R2_BACKUP_BUCKET" --endpoint-url "https://$CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com" | jq .
 ```
 
-Expected: versioning `Enabled`, the seven lifecycle rules, and an Object Lock
-configuration present. Repeat the equivalent checks for B2.
+Expected: a Bucket Lock rule present, and the seven lifecycle rules. For B2, use
+`b2 bucket get "$B2_BACKUP_BUCKET"` to confirm file lock + lifecycle.
+
+> The committed `scripts/backup/setup-buckets.sh` is the authoritative, current
+> version: R2 uses `wrangler r2 bucket create` + `wrangler r2 bucket lock set`
+> (Bucket Lock) + `aws s3api put-bucket-lifecycle-configuration`; R2 has no S3
+> versioning. The lock window must be <= the shortest lifecycle tier (7d) because
+> Bucket Lock takes precedence over lifecycle. B2 create/lock/lifecycle remain
+> guided steps to verify against current Backblaze docs.
 
 - [ ] **Step 4: Add GitHub Actions secrets**
 

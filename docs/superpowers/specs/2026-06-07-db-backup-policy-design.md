@@ -140,10 +140,21 @@ write path.
 
 ### 4. Immutability
 
-Both buckets are created with **Object Lock (compliance mode) + versioning**,
-with lock retention matching each tier's lifecycle window. Even an actor with
-full bucket-admin credentials cannot delete or overwrite an object before its
-retention expires. Lifecycle rules then reclaim space once the lock lapses.
+Both buckets are made immutable, using each provider's native mechanism
+(revision 2026-06-07, confirmed against the `wrangler` skill):
+
+- **R2 (primary):** Cloudflare **Bucket Lock** (`wrangler r2 bucket lock`), not
+  the S3 Object Lock API (R2 does not implement S3 `PutObjectLockConfiguration`
+  or `PutBucketVersioning`). Lifecycle is applied through the R2 S3 API
+  (`PutBucketLifecycleConfiguration`, which R2 does implement).
+- **B2 (secondary):** Object Lock + versioning (native B2 file lock).
+
+Even an actor with full bucket-admin credentials cannot delete or overwrite a
+locked object before its lock window expires. **Important ordering constraint:**
+on R2, Bucket Lock takes precedence over lifecycle, so the lock window must be
+set no longer than the shortest lifecycle tier (7 days); otherwise lifecycle
+cannot reclaim expired objects. Lock protects the recent write window against
+tampering; lifecycle then reclaims space on the per-tier schedule.
 
 ### 5. On-deploy (pre-migration) snapshot
 
@@ -237,9 +248,10 @@ with **`age`** (in addition to provider-side encryption):
 ## Out of scope (flagged, not built here)
 
 - **R2 materials blobs.** File bytes already live in R2; this policy backs up
-  only the Postgres metadata that points at them. Ensure the materials bucket
-  has versioning + lifecycle so a DB restore does not leave dangling pointers.
-  Adjacent DR item, tracked separately.
+  only the Postgres metadata that points at them. Consider Bucket Lock and a
+  retention/lifecycle policy on the materials bucket (R2 has no S3 versioning) so
+  a DB restore does not leave dangling pointers to deleted blobs. Adjacent DR
+  item, tracked separately.
 - **Enabling/paying for Supabase PITR.** A separate Supabase decision. The
   design functions with or without it; documenting its state is part of the
   runbook.
