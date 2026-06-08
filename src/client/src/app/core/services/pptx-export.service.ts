@@ -51,13 +51,22 @@ const PHASE_COLORS: Record<string, string> = {
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
-const TITLE_H = 0.3;
+const HEADER_Y = 0.06;
 const HEADER_H = 0.28;
 const HEADER_BAND = '1e293b';
 const LEGEND_H = 0.85;
-const DATA_Y = TITLE_H + HEADER_H;
+const DATA_Y = HEADER_Y + HEADER_H;
+const FOOTER_H = 0.26;
 
 const FALLBACK_PRIMARY = '0d9488';
+
+interface FooterBrand {
+  appDisplayName: string;
+  dateStr: string;
+  tenantLogo: string | null;
+  agencyName: string | null;
+  agencyLogo: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PptxExportService {
@@ -75,7 +84,15 @@ export class PptxExportService {
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
     const logoData = logoUrl ? await this.loadLogoAsBase64(logoUrl) : null;
-    const agencyName = this.brand.agency()?.name ?? null;
+    const agency = this.brand.agency();
+    const agencyName = agency?.name ?? null;
+    const agencyLogo = agency?.logo_url ? await this.loadLogoAsBase64(agency.logo_url) : null;
+    const dateStr = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const footer: FooterBrand = { appDisplayName, dateStr, tenantLogo: logoData, agencyName, agencyLogo };
 
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
@@ -87,8 +104,8 @@ export class PptxExportService {
 
     // Slide 1: branded cover.
     const cover = pptx.addSlide();
-    this.renderCover(cover, appDisplayName, primaryColorHex, logoData, agencyName);
-    this.addFooter(cover, appDisplayName, 1, totalPages);
+    this.renderCover(cover, appDisplayName, primaryColorHex, logoData, agencyName, agencyLogo, dateStr);
+    this.addFooter(cover, footer, 1, totalPages);
 
     // Slide 2: data slide.
     const slide = pptx.addSlide();
@@ -102,17 +119,16 @@ export class PptxExportService {
     });
     const logoByCompany = await this.loadCompanyLogos(companies);
 
-    this.renderTitle(slide, appDisplayName, primaryColorHex);
     this.renderHeader(slide, layout, startYear, endYear, zoomLevel);
     this.renderGridLines(slide, layout, startYear, endYear, zoomLevel, rows.length, rowH);
     this.renderRows(slide, rows, layout, logoByCompany, rowH, startYear, endYear, primaryColorHex);
     await this.renderLegend(slide, companies);
-    this.addFooter(slide, appDisplayName, 2, totalPages);
+    this.addFooter(slide, footer, 2, totalPages);
 
     for (let p = 0; p < tablePages.length; p++) {
       const tableSlide = pptx.addSlide();
       this.renderMarkerTable(tableSlide, tablePages[p], primaryColorHex);
-      this.addFooter(tableSlide, appDisplayName, 3 + p, totalPages);
+      this.addFooter(tableSlide, footer, 3 + p, totalPages);
     }
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
@@ -120,28 +136,96 @@ export class PptxExportService {
 
   private addFooter(
     slide: PptxGenJS.Slide,
-    appDisplayName: string,
+    footer: FooterBrand,
     pageNum: number,
     totalPages: number
   ): void {
-    slide.addText(appDisplayName, {
-      x: 0.1,
-      y: SLIDE_H - 0.25,
-      w: 4,
-      h: 0.2,
+    const footerY = SLIDE_H - FOOTER_H;
+    const glyph = 0.18;
+    const glyphY = footerY + (FOOTER_H - glyph) / 2;
+
+    // Left cluster: tenant logo + name.
+    let tenantTextX = 0.1;
+    if (footer.tenantLogo) {
+      slide.addImage({
+        data: footer.tenantLogo,
+        x: 0.1,
+        y: glyphY,
+        w: glyph,
+        h: glyph,
+        sizing: { type: 'contain', w: glyph, h: glyph },
+      });
+      tenantTextX = 0.1 + glyph + 0.07;
+    }
+    slide.addText(footer.appDisplayName, {
+      x: tenantTextX,
+      y: footerY,
+      w: 3,
+      h: FOOTER_H,
       fontSize: 8,
       fontFace: 'Arial',
-      color: '94a3b8',
+      bold: true,
+      color: '64748b',
+      valign: 'middle',
+      wrap: false,
+      margin: 0,
     });
-    slide.addText(`${pageNum} / ${totalPages}`, {
-      x: SLIDE_W - 1.5,
-      y: SLIDE_H - 0.25,
-      w: 1.4,
-      h: 0.2,
+
+    // Center cluster: agency attribution + logo.
+    if (footer.agencyName) {
+      let agencyTextX = 3.7;
+      if (footer.agencyLogo) {
+        slide.addImage({
+          data: footer.agencyLogo,
+          x: 3.5,
+          y: glyphY,
+          w: glyph,
+          h: glyph,
+          sizing: { type: 'contain', w: glyph, h: glyph },
+        });
+        agencyTextX = 3.5 + glyph + 0.07;
+      }
+      slide.addText(`Intelligence delivered by ${footer.agencyName}`, {
+        x: agencyTextX,
+        y: footerY,
+        w: 4.5,
+        h: FOOTER_H,
+        fontSize: 8,
+        fontFace: 'Arial',
+        italic: true,
+        color: '94a3b8',
+        valign: 'middle',
+        wrap: false,
+        margin: 0,
+      });
+    }
+
+    // Right cluster: date + page number.
+    slide.addText(footer.dateStr, {
+      x: SLIDE_W - 2.7,
+      y: footerY,
+      w: 1.6,
+      h: FOOTER_H,
       fontSize: 8,
       fontFace: 'Arial',
       color: '94a3b8',
       align: 'right',
+      valign: 'middle',
+      wrap: false,
+      margin: 0,
+    });
+    slide.addText(`${pageNum} / ${totalPages}`, {
+      x: SLIDE_W - 1.05,
+      y: footerY,
+      w: 0.95,
+      h: FOOTER_H,
+      fontSize: 8,
+      fontFace: 'Arial',
+      color: '94a3b8',
+      align: 'right',
+      valign: 'middle',
+      wrap: false,
+      margin: 0,
     });
   }
 
@@ -150,7 +234,9 @@ export class PptxExportService {
     appDisplayName: string,
     primaryColorHex: string,
     logoData: string | null,
-    agencyName: string | null
+    agencyName: string | null,
+    agencyLogo: string | null,
+    dateStr: string
   ): void {
     if (logoData) {
       cover.addImage({
@@ -181,28 +267,38 @@ export class PptxExportService {
       fontFace: 'Arial',
       color: '475569',
     });
-    cover.addText(
-      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      {
-        x: 0.5,
-        y: 3.3,
-        w: 12,
-        h: 0.3,
-        fontSize: 11,
-        fontFace: 'Arial',
-        color: '64748b',
-      }
-    );
+    cover.addText(dateStr, {
+      x: 0.5,
+      y: 3.3,
+      w: 12,
+      h: 0.3,
+      fontSize: 11,
+      fontFace: 'Arial',
+      color: '64748b',
+    });
     if (agencyName) {
+      let attrX = 0.5;
+      if (agencyLogo) {
+        cover.addImage({
+          data: agencyLogo,
+          x: 0.5,
+          y: 3.75,
+          w: 0.3,
+          h: 0.3,
+          sizing: { type: 'contain', w: 0.3, h: 0.3 },
+        });
+        attrX = 0.9;
+      }
       cover.addText(`Intelligence delivered by ${agencyName}`, {
-        x: 0.5,
+        x: attrX,
         y: 3.75,
-        w: 12,
+        w: 11,
         h: 0.3,
         fontSize: 10,
         fontFace: 'Arial',
         italic: true,
         color: '94a3b8',
+        valign: 'middle',
       });
     }
   }
@@ -275,43 +371,6 @@ export class PptxExportService {
     return rows;
   }
 
-  private renderTitle(
-    slide: PptxGenJS.Slide,
-    appDisplayName: string,
-    primaryColorHex: string
-  ): void {
-    slide.addText(appDisplayName, {
-      x: 0.2,
-      y: 0,
-      w: SLIDE_W - 0.4,
-      h: TITLE_H,
-      fontSize: 12,
-      fontFace: 'Arial',
-      bold: true,
-      color: primaryColorHex,
-    });
-    slide.addText(
-      new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      {
-        x: SLIDE_W - 2.5,
-        y: 0,
-        w: 2.3,
-        h: TITLE_H,
-        fontSize: 8,
-        fontFace: 'Arial',
-        color: '64748b',
-        align: 'right',
-      }
-    );
-    slide.addShape('line', {
-      x: 0,
-      y: TITLE_H - 0.02,
-      w: SLIDE_W,
-      h: 0,
-      line: { color: primaryColorHex, width: 1.5 },
-    });
-  }
-
   private renderHeader(
     slide: PptxGenJS.Slide,
     layout: ColumnLayout,
@@ -319,7 +378,7 @@ export class PptxExportService {
     endYear: number,
     zoom: ZoomLevel
   ): void {
-    const headerY = TITLE_H;
+    const headerY = HEADER_Y;
     const timelineX = layout.labelColW;
     const timelineW = SLIDE_W - layout.labelColW;
 
@@ -772,7 +831,7 @@ export class PptxExportService {
     rows: MarkerRow[],
     primaryColorHex: string
   ): void {
-    slide.addText('Catalyst & Milestone Detail', {
+    slide.addText('Marker Detail', {
       x: 0.3,
       y: 0.2,
       w: SLIDE_W - 0.6,
