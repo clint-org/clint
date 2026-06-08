@@ -12,5 +12,12 @@ assert_eq "$(run 2026-06-01)" "daily,monthly"         "1st (Mon) -> daily+monthl
 assert_eq "$(run 2026-03-01)" "daily,weekly,monthly"  "Sunday+1st -> all three"
 assert_eq "$(run 2026-06-09)" "daily"                 "weekday -> daily only"
 
+# Negative path: invalid date exits non-zero and prints no tiers.
+if out="$("$here/tiers.sh" not-a-date 2>/dev/null)"; then
+  echo "FAIL: invalid date should exit non-zero (got [$out])"; fail=1
+else
+  echo "ok: invalid date exits non-zero"
+fi
+
 if [ "$fail" -ne 0 ]; then echo "TESTS FAILED"; exit 1; fi
 echo "ALL PASS"
