@@ -97,10 +97,15 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
       if (!el || lastX === null) return;
 
       requestAnimationFrame(() => {
+        // The frozen label pane (Asset/MOA/ROA/Trial) is sticky inside the same
+        // scroller, so only `clientWidth - frozenWidth` of the viewport actually
+        // shows timeline. Anchor against that effective width, not the full one.
+        const frozen = el.querySelector<HTMLElement>('.sticky');
+        const frozenWidth = frozen ? frozen.getBoundingClientRect().width : 0;
         el.scrollLeft = computeInitialScrollLeft({
           todayX,
           lastEventX: lastX,
-          viewportWidth: el.clientWidth,
+          viewportWidth: Math.max(0, el.clientWidth - frozenWidth),
           contentWidth,
         });
       });
