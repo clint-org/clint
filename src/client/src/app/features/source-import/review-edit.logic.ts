@@ -7,8 +7,20 @@ export interface FormOption {
 }
 
 type Entity = Record<string, unknown>;
+type EntityKind = 'companies' | 'assets' | 'trials';
 interface Proposal {
   proposals: { companies: Entity[]; assets: Entity[]; trials: Entity[] };
+  // Existing-matched entities carry no inline `name`; their display name is
+  // resolved from inventory into resolved_names, keyed `${type}_${idx}`.
+  resolved_names?: Record<string, string>;
+}
+
+// Display name for an entity: the inline name (new entities) or, for an
+// existing match that has no inline name, the inventory-resolved name.
+function displayName(p: Proposal, type: EntityKind, idx: number): string {
+  const inline = entityName(p.proposals[type][idx]);
+  if (inline) return inline;
+  return p.resolved_names?.[`${type}_${idx}`] ?? '';
 }
 
 export interface TrialFormValue {
@@ -34,11 +46,11 @@ function entityName(e: Entity): string {
 }
 
 export function assetOptionsFromProposal(p: Proposal): FormOption[] {
-  return p.proposals.assets.map((a, i) => ({ id: String(i), name: entityName(a) }));
+  return p.proposals.assets.map((_, i) => ({ id: String(i), name: displayName(p, 'assets', i) }));
 }
 
 export function companyOptionsFromProposal(p: Proposal): FormOption[] {
-  return p.proposals.companies.map((c, i) => ({ id: String(i), name: entityName(c) }));
+  return p.proposals.companies.map((_, i) => ({ id: String(i), name: displayName(p, 'companies', i) }));
 }
 
 function rawRefs(t: Entity): number[] {
@@ -53,7 +65,7 @@ export function proposalTrialToForm(idx: number, p: Proposal): TrialFormValue {
   const refs = rawRefs(t);
   const primary = t['primary_asset_ref'];
   return {
-    name: String(t['name'] ?? ''),
+    name: displayName(p, 'trials', idx),
     identifier: (t['identifier'] as string) ?? null,
     assetIds: refs.map(String),
     primaryAssetId:
@@ -94,7 +106,7 @@ export function proposalAssetToForm(idx: number, p: Proposal): AssetFormValue {
   const a = p.proposals.assets[idx];
   const cref = a['company_ref'];
   return {
-    name: String(a['name'] ?? ''),
+    name: displayName(p, 'assets', idx),
     genericName: (a['generic_name'] as string) ?? null,
     companyId: typeof cref === 'number' ? String(cref) : null,
     moa: Array.isArray(a['moa']) ? (a['moa'] as string[]) : [],
@@ -125,7 +137,7 @@ export interface CompanyFormValue {
 
 export function proposalCompanyToForm(idx: number, p: Proposal): CompanyFormValue {
   const c = p.proposals.companies[idx];
-  return { name: String(c['name'] ?? ''), website: (c['website'] as string) ?? null };
+  return { name: displayName(p, 'companies', idx), website: (c['website'] as string) ?? null };
 }
 
 export function applyCompanyForm(value: CompanyFormValue, idx: number, p: Proposal): Proposal {
@@ -146,12 +158,19 @@ interface ProposalWithFuzzy extends Proposal {
 }
 
 export function matchOptionsFor(type: EntityType, idx: number, p: ProposalWithFuzzy): FormOption[] {
-  const e = p.proposals[type][idx];
   const alts = p.fuzzy_alternates?.[`${type}_${idx}`] ?? [];
-  return [
-    { id: '__new__', name: `Create new: ${entityName(e)}` },
-    ...alts.map((a) => ({ id: a.id, name: `${a.name} (${a.score.toFixed(2)})` })),
+  const m = p.proposals[type][idx]['match'] as { kind?: string; id?: string } | undefined;
+  const options: FormOption[] = [
+    { id: '__new__', name: `Create new: ${displayName(p, type, idx)}` },
   ];
+  // Keep the current existing match selectable even when it is not among the
+  // fuzzy alternates, so its Select has a valid selected option and the analyst
+  // can switch away from (or back to) it.
+  if (m?.kind === 'existing' && m.id && !alts.some((a) => a.id === m.id)) {
+    options.push({ id: m.id, name: `${displayName(p, type, idx)} (current match)` });
+  }
+  options.push(...alts.map((a) => ({ id: a.id, name: `${a.name} (${a.score.toFixed(2)})` })));
+  return options;
 }
 
 export function currentMatchId(type: EntityType, idx: number, p: ProposalWithFuzzy): string {
@@ -168,7 +187,9 @@ export function applyMatchOverride(
   const list = p.proposals[type].map((e, i) => {
     if (i !== idx) return e;
     const match =
-      optionId === '__new__' ? { kind: 'new', name: entityName(e) } : { kind: 'existing', id: optionId };
+      optionId === '__new__'
+        ? { kind: 'new', name: displayName(p, type, idx) }
+        : { kind: 'existing', id: optionId };
     return { ...e, match };
   });
   return { ...p, proposals: { ...p.proposals, [type]: list } };

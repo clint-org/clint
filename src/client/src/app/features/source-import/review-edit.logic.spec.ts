@@ -138,3 +138,43 @@ describe('match options', () => {
     expect((reset.proposals.assets[0] as Record<string, unknown>)['match']).toEqual({ kind: 'new', name: 'Reta' });
   });
 });
+
+// Existing-matched entities carry no inline `name`; the display name comes from
+// resolved_names. This is the common NCT-import case.
+describe('existing-match name resolution', () => {
+  const ep = () => ({
+    proposals: {
+      companies: [{ match: { kind: 'existing', id: 'co-novo' } }],
+      assets: [{ match: { kind: 'existing', id: 'as-sema' }, generic_name: 'semaglutide', company_ref: 0, moa: ['GLP-1'], roa: ['SC'] }],
+      trials: [{ match: { kind: 'existing', id: 'tr-1' }, asset_ref: 0 }],
+    },
+    resolved_names: { companies_0: 'Novo Nordisk', assets_0: 'Semaglutide', trials_0: 'STEP-1' },
+    fuzzy_alternates: {},
+  });
+
+  it('company options use the resolved name', () => {
+    expect(companyOptionsFromProposal(ep())).toEqual([{ id: '0', name: 'Novo Nordisk' }]);
+  });
+  it('asset options use the resolved name', () => {
+    expect(assetOptionsFromProposal(ep())).toEqual([{ id: '0', name: 'Semaglutide' }]);
+  });
+  it('proposalCompanyToForm resolves the name', () => {
+    expect(proposalCompanyToForm(0, ep()).name).toBe('Novo Nordisk');
+  });
+  it('proposalAssetToForm resolves the name and keeps the company ref', () => {
+    const v = proposalAssetToForm(0, ep());
+    expect(v.name).toBe('Semaglutide');
+    expect(v.companyId).toBe('0');
+  });
+  it('proposalTrialToForm resolves the name', () => {
+    expect(proposalTrialToForm(0, ep()).name).toBe('STEP-1');
+  });
+  it('matchOptionsFor keeps the current existing match selectable with the resolved name', () => {
+    const opts = matchOptionsFor('companies', 0, ep());
+    expect(opts).toEqual([
+      { id: '__new__', name: 'Create new: Novo Nordisk' },
+      { id: 'co-novo', name: 'Novo Nordisk (current match)' },
+    ]);
+    expect(currentMatchId('companies', 0, ep())).toBe('co-novo');
+  });
+});
