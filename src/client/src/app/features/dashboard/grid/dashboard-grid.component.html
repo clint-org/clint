@@ -8,7 +8,10 @@
 
   <!-- Scrollable grid area -->
   <div class="overflow-x-auto">
-    <div class="flex">
+    <!-- w-max so this flex track shrink-wraps the full content width; otherwise it
+         stays viewport-width and the sticky left pane unsticks once you scroll past
+         (trackWidth - paneWidth). -->
+    <div class="flex w-max">
       <!-- Left labels columns (frozen pane) -->
       <div
         class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"

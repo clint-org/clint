@@ -130,7 +130,7 @@ interface GridRow {
         <div class="flex items-center gap-2">
           <p-button
             label="Download JSON"
-            icon="pi pi-download"
+            icon="fa-solid fa-download"
             size="small"
             [text]="true"
             severity="secondary"
@@ -140,7 +140,7 @@ interface GridRow {
           />
           <p-button
             label="Back"
-            icon="pi pi-arrow-left"
+            icon="fa-solid fa-arrow-left"
             size="small"
             [outlined]="true"
             severity="secondary"
@@ -204,7 +204,7 @@ interface GridRow {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
             >
-              <i class="pi pi-check-circle text-[10px]"></i>
+              <i class="fa-solid fa-circle-check text-[10px]"></i>
               CT.gov: {{ ctgovSummaryVal.matchedCount }}
               {{ ctgovSummaryVal.matchedCount === 1 ? 'trial' : 'trials' }} enriched
             </div>
@@ -212,7 +212,7 @@ interface GridRow {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
             >
-              <i class="pi pi-exclamation-triangle text-[10px]"></i>
+              <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
               CT.gov: lookup failed
             </div>
           }
@@ -334,7 +334,7 @@ interface GridRow {
                       tooltipPosition="left"
                       [attr.aria-label]="'Edit ' + row.name"
                     >
-                      <i class="pi pi-pencil text-[11px]"></i>
+                      <i class="fa-solid fa-pen text-[11px]"></i>
                     </button>
                   </td>
                 </tr>
@@ -378,7 +378,7 @@ interface GridRow {
                   tooltipPosition="left"
                   [attr.aria-label]="'Edit ' + entityName(type, idx)"
                 >
-                  <i class="pi pi-pencil text-[11px]"></i>
+                  <i class="fa-solid fa-pen text-[11px]"></i>
                 </button>
               }
             </div>
