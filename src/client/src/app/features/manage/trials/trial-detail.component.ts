@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
+import { sectionHashUrl } from './section-hash-url';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
@@ -652,6 +653,8 @@ export class TrialDetailComponent implements OnDestroy {
   scrollToSection(event: Event, id: string): void {
     event.preventDefault();
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    history.replaceState(null, '', `#${id}`);
+    // Preserve the route path/query: a bare `#id` resolves against <base href="/">
+    // and would drop the trial route (see sectionHashUrl).
+    history.replaceState(null, '', sectionHashUrl(location.pathname, location.search, id));
   }
 }
