@@ -11,6 +11,9 @@ export interface ExportOptions {
   zoomLevel: ZoomLevel;
   startYear: number;
   endYear: number;
+  showMoaColumn: boolean;
+  showRoaColumn: boolean;
+  showNotesColumn: boolean;
 }
 
 interface FlatRow {

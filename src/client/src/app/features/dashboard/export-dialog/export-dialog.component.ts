@@ -92,6 +92,9 @@ export class ExportDialogComponent {
   readonly companies = input.required<Company[]>();
   readonly startYear = input.required<number>();
   readonly endYear = input.required<number>();
+  readonly showMoaColumn = input(true);
+  readonly showRoaColumn = input(true);
+  readonly showNotesColumn = input(true);
   readonly open = input(false);
   readonly visible = signal(false);
   readonly closed = output<void>();
@@ -120,6 +123,9 @@ export class ExportDialogComponent {
         zoomLevel: this.selectedZoom(),
         startYear: this.startYear(),
         endYear: this.endYear(),
+        showMoaColumn: this.showMoaColumn(),
+        showRoaColumn: this.showRoaColumn(),
+        showNotesColumn: this.showNotesColumn(),
       });
       this.visible.set(false);
       this.closed.emit();
