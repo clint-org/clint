@@ -9,7 +9,8 @@
     id="company-name"
     name="name"
     class="w-full"
-    [(ngModel)]="name"
+    [ngModel]="name()"
+    (ngModelChange)="name.set($event)"
     (blur)="nameBlur.emit()"
     [attr.aria-required]="true"
     [attr.aria-invalid]="nameInvalid()"
@@ -23,7 +24,8 @@
     id="company-logo-url"
     name="logoUrl"
     class="w-full"
-    [(ngModel)]="logoUrl"
+    [ngModel]="logoUrl()"
+    (ngModelChange)="logoUrl.set($event)"
     placeholder="https://..."
   />
 </app-form-field>
@@ -32,7 +34,8 @@
   <p-inputnumber
     inputId="company-display-order"
     name="displayOrder"
-    [(ngModel)]="displayOrder"
+    [ngModel]="displayOrder()"
+    (ngModelChange)="displayOrder.set($event)"
     styleClass="w-full"
   />
 </app-form-field>

@@ -88,7 +88,8 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                 [options]="matchOptions()"
                 optionLabel="name"
                 optionValue="id"
-                [(ngModel)]="matchId"
+                [ngModel]="matchId()"
+                (ngModelChange)="matchId.set($event)"
                 name="match"
                 styleClass="w-full"
                 appendTo="body"
@@ -112,7 +113,8 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                   id="review-edit-company-name"
                   name="companyName"
                   class="w-full"
-                  [(ngModel)]="companyName"
+                  [ngModel]="companyName()"
+                  (ngModelChange)="companyName.set($event)"
                   (blur)="companyNameBlurred.set(true)"
                 />
               </app-form-field>
@@ -122,7 +124,8 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                   id="review-edit-company-website"
                   name="companyWebsite"
                   class="w-full"
-                  [(ngModel)]="companyWebsite"
+                  [ngModel]="companyWebsite()"
+                  (ngModelChange)="companyWebsite.set($event)"
                   placeholder="https://..."
                 />
               </app-form-field>
