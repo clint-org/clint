@@ -45,7 +45,7 @@ supabase start   # exposes Postgres on localhost:54322 (user/pass: postgres/post
 | `scripts/backup/tiers.sh` | Pure: map a UTC date to its GFS tier prefixes (`daily`/`weekly`/`monthly`) |
 | `scripts/backup/tiers.test.sh` | Plain-bash unit tests for `tiers.sh` |
 | `scripts/backup/make-bundle.sh` | Dump roles + public schema/data + auth/storage data from a `--db-url`, write manifest (with captured row counts), `tar`+`zstd`, `age`-encrypt |
-| `scripts/backup/roundtrip.test.sh` | Local end-to-end: bundle the local DB, decrypt, restore public into a scratch DB, verify auth/storage capture integrity |
+| `scripts/backup/roundtrip.test.sh` | Local: bundle the local DB, decrypt, verify capture integrity (artifacts, checksum, public + auth/storage row counts vs live and manifest) |
 | `scripts/backup/upload.sh` | Upload one file to R2 + B2 via AWS CLI S3 API; `DRY_RUN` mode echoes commands |
 | `scripts/backup/upload.test.sh` | Assert `upload.sh` builds correct `aws s3` commands (DRY_RUN) |
 | `scripts/backup/setup-buckets.sh` | Operator-run, idempotent: create both buckets with versioning, Object Lock, lifecycle |
@@ -188,13 +188,24 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 LOCAL_DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 
-# Count rows in a COPY block for schema.table, tolerant of pg_dump quoting.
-copy_rows() { # $1=file $2=schema $3=table
+# Count data rows for schema.table, handling BOTH dump styles: pg_dump COPY
+# blocks (auth_storage.sql) and supabase db dump INSERT...VALUES tuples
+# (data.sql). Tolerant of pg_dump identifier quoting.
+table_rows() { # $1=file $2=schema $3=table
   awk -v s="$2" -v t="$3" '
     { line=$0; gsub(/"/,"",line) }
-    line ~ ("^COPY " s "\\." t " ") && line ~ /FROM stdin;/ { f=1; next }
-    f && $0=="\\." { f=0 }
-    f { c++ }
+    line ~ ("^COPY " s "\\." t " ") && line ~ /FROM stdin;/ { mode="copy"; next }
+    mode=="copy" && $0=="\\." { mode=""; next }
+    mode=="copy" { c++; next }
+    line ~ ("^INSERT INTO " s "\\." t " ") {
+      mode="insert"
+      if (line ~ /\);[ \t]*$/) { c++; mode="" }   # single-line insert
+      next
+    }
+    mode=="insert" {
+      if (line ~ /^[ \t]*\(/) c++
+      if (line ~ /;[ \t]*$/) mode=""
+    }
     END { print c+0 }
   ' "$1"
 }
@@ -229,7 +240,7 @@ echo "ok: schema.sql contains core public DDL (marker_types)"
 # Public data captured: marker_types row count in data.sql equals live.
 live_mt="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from public.marker_types;")"
 [ "$live_mt" -gt 0 ] || { echo "FAIL: live marker_types empty; cannot validate"; exit 1; }
-dump_mt="$(copy_rows "$work/unpacked/data.sql" public marker_types)"
+dump_mt="$(table_rows "$work/unpacked/data.sql" public marker_types)"
 [ "$dump_mt" = "$live_mt" ] || { echo "FAIL: data.sql marker_types rows=$dump_mt live=$live_mt"; exit 1; }
 echo "ok: data.sql captured public.marker_types ($live_mt rows)"
 
@@ -239,7 +250,7 @@ for pair in auth:users auth:identities storage:buckets storage:objects; do
   grep -q "COPY ${tbl} " "$work/unpacked/auth_storage.sql" \
     || { echo "FAIL: $tbl not in auth_storage.sql"; exit 1; }
   live="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from ${tbl};")"
-  dumped="$(copy_rows "$work/unpacked/auth_storage.sql" "$s" "$t")"
+  dumped="$(table_rows "$work/unpacked/auth_storage.sql" "$s" "$t")"
   [ "$live" = "$dumped" ] || { echo "FAIL: $tbl mismatch live=$live dumped=$dumped"; exit 1; }
   [ "$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' "$manifest")" = "$live" ] \
     || { echo "FAIL: $tbl manifest count mismatch"; exit 1; }
