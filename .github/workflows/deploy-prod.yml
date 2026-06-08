@@ -34,6 +34,23 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
+      - name: Pre-migration backup (prod)
+        uses: ./.github/actions/db-backup
+        with:
+          environment: prod
+          project_ref: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          db_password: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+          tier_override: pre-migration
+          r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
+          r2_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          r2_key_id: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          r2_secret: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          b2_bucket: ${{ secrets.B2_BACKUP_BUCKET }}
+          b2_endpoint: ${{ secrets.B2_S3_ENDPOINT }}
+          b2_key_id: ${{ secrets.B2_BACKUP_KEY_ID }}
+          b2_app_key: ${{ secrets.B2_BACKUP_APP_KEY }}
+
       - name: Apply migrations to prod
         # --include-all applies migration files whose timestamp predates the
         # last migration already on the remote (out-of-order inserts that land
