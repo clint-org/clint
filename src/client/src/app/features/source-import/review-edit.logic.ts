@@ -16,10 +16,17 @@ export interface TrialFormValue {
   identifier: string | null;
   assetIds: string[];
   primaryAssetId: string | null;
-  indication: string | null;
+  indications: string[];
   phase: string | null;
   phaseStart: string | null;
   phaseEnd: string | null;
+}
+
+function trialIndications(t: Entity): string[] {
+  const many = t['indications'];
+  if (Array.isArray(many)) return many.filter((i): i is string => typeof i === 'string');
+  const one = t['indication'];
+  return typeof one === 'string' && one.length > 0 ? [one] : [];
 }
 
 function entityName(e: Entity): string {
@@ -51,7 +58,7 @@ export function proposalTrialToForm(idx: number, p: Proposal): TrialFormValue {
     assetIds: refs.map(String),
     primaryAssetId:
       typeof primary === 'number' ? String(primary) : refs.length ? String(refs[0]) : null,
-    indication: (t['indication'] as string) ?? null,
+    indications: trialIndications(t),
     phase: (t['phase'] as string) ?? null,
     phaseStart: (t['phase_start_date'] as string) ?? null,
     phaseEnd: (t['phase_end_date'] as string) ?? null,
@@ -66,7 +73,7 @@ export function applyTrialForm(value: TrialFormValue, idx: number, p: Proposal):
       name: value.name,
       asset_refs: value.assetIds.map(Number),
       primary_asset_ref: value.primaryAssetId != null ? Number(value.primaryAssetId) : null,
-      indication: value.indication,
+      indications: value.indications,
       phase: value.phase,
       phase_start_date: value.phaseStart,
       phase_end_date: value.phaseEnd,

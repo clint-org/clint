@@ -23,7 +23,7 @@ const proposal = () => ({
     ],
     trials: [
       { match: { kind: 'new', name: 'NCT07165028' }, name: 'SYNERGY-Outcomes', identifier: 'NCT07165028',
-        phase: 'P3', status: 'Active', indication: 'MASLD', asset_refs: [0, 1], primary_asset_ref: 0,
+        phase: 'P3', status: 'Active', indications: ['MASLD', 'NASH'], asset_refs: [0, 1], primary_asset_ref: 0,
         phase_start_date: '2025-10-15', phase_end_date: null },
     ],
   },
@@ -48,7 +48,7 @@ describe('proposalTrialToForm', () => {
       identifier: 'NCT07165028',
       assetIds: ['0', '1'],
       primaryAssetId: '0',
-      indication: 'MASLD',
+      indications: ['MASLD', 'NASH'],
       phase: 'P3',
       phaseStart: '2025-10-15',
       phaseEnd: null,
@@ -59,6 +59,13 @@ describe('proposalTrialToForm', () => {
     delete (p.proposals.trials[0] as Record<string, unknown>)['primary_asset_ref'];
     expect(proposalTrialToForm(0, p).primaryAssetId).toBe('0');
   });
+  it('folds a legacy scalar indication into the indications array', () => {
+    const p = proposal();
+    const t = p.proposals.trials[0] as Record<string, unknown>;
+    delete t['indications'];
+    t['indication'] = 'MASLD';
+    expect(proposalTrialToForm(0, p).indications).toEqual(['MASLD']);
+  });
 });
 
 describe('applyTrialForm', () => {
@@ -66,14 +73,14 @@ describe('applyTrialForm', () => {
     const p = proposal();
     const next = applyTrialForm(
       { name: 'SYNERGY-Outcomes', identifier: 'NCT07165028', assetIds: ['1'], primaryAssetId: '1',
-        indication: 'NASH', phase: 'P2', phaseStart: null, phaseEnd: null },
+        indications: ['NASH', 'MASLD'], phase: 'P2', phaseStart: null, phaseEnd: null },
       0,
       p,
     );
     const t = next.proposals.trials[0] as Record<string, unknown>;
     expect(t['asset_refs']).toEqual([1]);
     expect(t['primary_asset_ref']).toBe(1);
-    expect(t['indication']).toBe('NASH');
+    expect(t['indications']).toEqual(['NASH', 'MASLD']);
     expect(t['phase']).toBe('P2');
     expect(t['status']).toBe('Active'); // untouched
     expect(t['match']).toEqual({ kind: 'new', name: 'NCT07165028' }); // untouched
