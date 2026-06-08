@@ -5,6 +5,7 @@ import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
+import { computeLeftColumns, type ColumnLayout, formatDateShort } from './pptx-export.util';
 import { TimelineService } from './timeline.service';
 
 export interface ExportOptions {
@@ -18,8 +19,13 @@ export interface ExportOptions {
 
 interface FlatRow {
   companyName: string;
+  companyId: string;
   assetName: string;
   trialName: string;
+  nctId: string | null;
+  moa: string;
+  roa: string;
+  hasNotes: boolean;
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
@@ -36,19 +42,10 @@ const PHASE_COLORS: Record<string, string> = {
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
 const TITLE_H = 0.3;
-const HEADER_H = 0.25;
-const LEGEND_H = 0.55;
-const LABEL_COL_W = 2.8;
-const TIMELINE_X = LABEL_COL_W;
-const TIMELINE_W = SLIDE_W - LABEL_COL_W;
+const HEADER_H = 0.28;
+const HEADER_BAND = '1e293b';
+const LEGEND_H = 0.7;
 const DATA_Y = TITLE_H + HEADER_H;
-
-const COMPANY_X = 0.1;
-const COMPANY_W = 0.9;
-const PRODUCT_X = 1.0;
-const PRODUCT_W = 0.8;
-const TRIAL_X = 1.8;
-const TRIAL_W = 1.0;
 
 const FALLBACK_PRIMARY = '0d9488';
 
@@ -84,10 +81,17 @@ export class PptxExportService {
     const rowH = Math.min(0.28, (SLIDE_H - DATA_Y - LEGEND_H) / rows.length);
     const { startYear, endYear, zoomLevel } = options;
 
+    const layout = computeLeftColumns({
+      showMoa: options.showMoaColumn,
+      showRoa: options.showRoaColumn,
+      showNotes: options.showNotesColumn,
+    });
+    const logoByCompany = await this.loadCompanyLogos(companies);
+
     this.renderTitle(slide, appDisplayName, primaryColorHex);
-    this.renderHeader(slide, startYear, endYear, zoomLevel);
-    this.renderGridLines(slide, startYear, endYear, zoomLevel, rows.length, rowH);
-    this.renderRows(slide, rows, rowH, startYear, endYear, primaryColorHex);
+    this.renderHeader(slide, layout, startYear, endYear, zoomLevel);
+    this.renderGridLines(slide, layout, startYear, endYear, zoomLevel, rows.length, rowH);
+    this.renderRows(slide, rows, layout, logoByCompany, rowH, startYear, endYear, primaryColorHex);
     this.renderLegend(slide, companies);
     this.addFooter(slide, appDisplayName, 2, totalPages);
 
@@ -188,6 +192,19 @@ export class PptxExportService {
     }
   }
 
+  private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {
+    const entries = await Promise.all(
+      companies
+        .filter((c) => c.logo_url)
+        .map(async (c) => [c.id, await this.loadLogoAsBase64(c.logo_url!)] as const)
+    );
+    const map = new Map<string, string>();
+    for (const [id, data] of entries) {
+      if (data) map.set(id, data);
+    }
+    return map;
+  }
+
   private normalizeHex(value: string | null | undefined): string {
     if (!value) return '';
     return value.replace('#', '').trim().toLowerCase();
@@ -197,13 +214,22 @@ export class PptxExportService {
     const rows: FlatRow[] = [];
     for (const company of companies) {
       let isFirstInCompany = true;
-      for (const product of company.assets ?? []) {
+      for (const asset of company.assets ?? []) {
         let isFirstInAsset = true;
-        for (const trial of product.trials ?? []) {
+        const moa = (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', ');
+        const roa = (asset.routes_of_administration ?? [])
+          .map((r) => r.abbreviation ?? r.name)
+          .join(', ');
+        for (const trial of asset.trials ?? []) {
           rows.push({
             companyName: company.name,
-            assetName: product.name,
+            companyId: company.id,
+            assetName: asset.name,
             trialName: trial.acronym ?? trial.name,
+            nctId: trial.identifier ?? null,
+            moa,
+            roa,
+            hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
             trial,
             isFirstInCompany,
             isFirstInAsset,
@@ -255,22 +281,49 @@ export class PptxExportService {
 
   private renderHeader(
     slide: PptxGenJS.Slide,
+    layout: ColumnLayout,
     startYear: number,
     endYear: number,
     zoom: ZoomLevel
   ): void {
     const headerY = TITLE_H;
-    const hStyle = { fontSize: 6, fontFace: 'Arial' as const, bold: true, color: '64748b' };
-    slide.addText('Company', { x: COMPANY_X, y: headerY, w: COMPANY_W, h: HEADER_H, ...hStyle });
-    slide.addText('Asset', { x: PRODUCT_X, y: headerY, w: PRODUCT_W, h: HEADER_H, ...hStyle });
-    slide.addText('Trial', { x: TRIAL_X, y: headerY, w: TRIAL_W, h: HEADER_H, ...hStyle });
+    const timelineX = layout.labelColW;
+    const timelineW = SLIDE_W - layout.labelColW;
+
+    // Dark band across the full header row.
+    slide.addShape('rect', {
+      x: 0,
+      y: headerY,
+      w: SLIDE_W,
+      h: HEADER_H,
+      fill: { color: HEADER_BAND },
+    });
+
+    const hStyle = { fontSize: 6, fontFace: 'Arial' as const, bold: true, color: 'e2e8f0' };
+    const labels: Record<string, string> = {
+      company: 'Company',
+      asset: 'Asset',
+      moa: 'MOA',
+      roa: 'ROA',
+      trial: 'Trial',
+      notes: 'Notes',
+    };
+    for (const col of layout.columns) {
+      slide.addText(labels[col.key], {
+        x: col.x + 0.05,
+        y: headerY,
+        w: col.width - 0.05,
+        h: HEADER_H,
+        valign: 'middle',
+        ...hStyle,
+      });
+    }
 
     const columns = this.timeline.getColumns(startYear, endYear, zoom);
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, zoom);
-
     for (const col of columns) {
-      const x = TIMELINE_X + (col.startX / totalPx) * TIMELINE_W;
-      const w = (col.width / totalPx) * TIMELINE_W;
+      const x = timelineX + (col.startX / totalPx) * timelineW;
+      const w = (col.width / totalPx) * timelineW;
       slide.addText(col.label, {
         x,
         y: headerY,
@@ -278,7 +331,7 @@ export class PptxExportService {
         h: HEADER_H,
         fontSize: 7,
         fontFace: 'Consolas',
-        color: '475569',
+        color: 'ffffff',
         align: 'center',
         valign: 'middle',
       });
@@ -295,18 +348,21 @@ export class PptxExportService {
 
   private renderGridLines(
     slide: PptxGenJS.Slide,
+    layout: ColumnLayout,
     startYear: number,
     endYear: number,
     zoom: ZoomLevel,
     rowCount: number,
     rowH: number
   ): void {
+    const timelineX = layout.labelColW;
+    const timelineW = SLIDE_W - layout.labelColW;
     const columns = this.timeline.getColumns(startYear, endYear, zoom);
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, zoom);
     const gridBottom = DATA_Y + rowCount * rowH;
 
     for (const col of columns) {
-      const x = TIMELINE_X + (col.startX / totalPx) * TIMELINE_W;
+      const x = timelineX + (col.startX / totalPx) * timelineW;
       slide.addShape('line', {
         x,
         y: DATA_Y,
@@ -320,32 +376,43 @@ export class PptxExportService {
   private renderRows(
     slide: PptxGenJS.Slide,
     rows: FlatRow[],
+    layout: ColumnLayout,
+    logoByCompany: Map<string, string>,
     rowH: number,
     startYear: number,
     endYear: number,
     primaryColorHex: string
   ): void {
     const fontSize = Math.max(5, Math.min(7, rowH * 28));
+    const col = (key: string) => layout.columns.find((c) => c.key === key);
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const y = DATA_Y + i * rowH;
 
       if (i % 2 !== 0) {
-        slide.addShape('rect', {
-          x: 0,
-          y,
-          w: SLIDE_W,
-          h: rowH,
-          fill: { color: 'f8fafc' },
-        });
+        slide.addShape('rect', { x: 0, y, w: SLIDE_W, h: rowH, fill: { color: 'f8fafc' } });
       }
 
+      const companyCol = col('company')!;
       if (row.isFirstInCompany) {
+        const logo = logoByCompany.get(row.companyId);
+        const logoSize = 0.16;
+        const textX = companyCol.x + (logo ? logoSize + 0.07 : 0.05);
+        if (logo) {
+          slide.addImage({
+            data: logo,
+            x: companyCol.x + 0.04,
+            y: y + (rowH - logoSize) / 2,
+            w: logoSize,
+            h: logoSize,
+            sizing: { type: 'contain', w: logoSize, h: logoSize },
+          });
+        }
         slide.addText(row.companyName.toUpperCase(), {
-          x: COMPANY_X,
+          x: textX,
           y,
-          w: COMPANY_W,
+          w: companyCol.x + companyCol.width - textX,
           h: rowH,
           fontSize: Math.max(4, fontSize - 1),
           fontFace: 'Arial',
@@ -356,46 +423,102 @@ export class PptxExportService {
         });
       }
 
+      const assetCol = col('asset')!;
       if (row.isFirstInAsset) {
         slide.addText(row.assetName, {
-          x: PRODUCT_X,
+          x: assetCol.x + 0.05,
           y,
-          w: PRODUCT_W,
+          w: assetCol.width - 0.05,
           h: rowH,
           fontSize,
           fontFace: 'Arial',
           bold: true,
           color: '475569',
           valign: 'middle',
+          shrinkText: true,
         });
       }
 
-      slide.addText(row.trialName, {
-        x: TRIAL_X,
-        y,
-        w: TRIAL_W,
-        h: rowH,
-        fontSize,
-        fontFace: 'Arial',
-        color: '334155',
-        valign: 'middle',
-        shrinkText: true,
-      });
+      const moaCol = col('moa');
+      if (moaCol && row.isFirstInAsset && row.moa) {
+        slide.addText(row.moa, {
+          x: moaCol.x + 0.05,
+          y,
+          w: moaCol.width - 0.05,
+          h: rowH,
+          fontSize: Math.max(4, fontSize - 1),
+          fontFace: 'Arial',
+          color: '64748b',
+          valign: 'middle',
+          shrinkText: true,
+        });
+      }
 
-      this.renderPhaseBars(slide, row.trial, y, rowH, startYear, endYear, fontSize);
-      this.renderMarkers(slide, row.trial, y, rowH, startYear, endYear, fontSize);
+      const roaCol = col('roa');
+      if (roaCol && row.isFirstInAsset && row.roa) {
+        slide.addText(row.roa, {
+          x: roaCol.x + 0.05,
+          y,
+          w: roaCol.width - 0.05,
+          h: rowH,
+          fontSize: Math.max(4, fontSize - 1),
+          fontFace: 'Arial',
+          color: '64748b',
+          valign: 'middle',
+        });
+      }
+
+      const trialCol = col('trial')!;
+      const nctRun = row.nctId
+        ? [
+            {
+              text: `  ${row.nctId}`,
+              options: { color: '94a3b8', fontSize: Math.max(4, fontSize - 2) },
+            },
+          ]
+        : [];
+      slide.addText(
+        [{ text: row.trialName, options: { bold: true, color: '334155' } }, ...nctRun],
+        {
+          x: trialCol.x + 0.05,
+          y,
+          w: trialCol.width - 0.05,
+          h: rowH,
+          fontSize,
+          fontFace: 'Arial',
+          valign: 'middle',
+          shrinkText: true,
+        }
+      );
+
+      const notesCol = col('notes');
+      if (notesCol && row.hasNotes) {
+        slide.addShape('ellipse', {
+          x: notesCol.x + notesCol.width / 2 - 0.03,
+          y: y + rowH / 2 - 0.03,
+          w: 0.06,
+          h: 0.06,
+          fill: { color: '94a3b8' },
+        });
+      }
+
+      this.renderPhaseBars(slide, row.trial, layout, y, rowH, startYear, endYear, fontSize);
+      this.renderMarkers(slide, row.trial, layout, y, rowH, startYear, endYear, fontSize);
     }
   }
 
   private renderPhaseBars(
     slide: PptxGenJS.Slide,
     trial: Trial,
+    layout: ColumnLayout,
     rowY: number,
     rowH: number,
     startYear: number,
     endYear: number,
     fontSize: number
   ): void {
+    const timelineX = layout.labelColW;
+    const timelineW = SLIDE_W - layout.labelColW;
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, 'yearly');
     const barH = rowH * 0.45;
     const barY = rowY + (rowH - barH) / 2;
@@ -406,8 +529,8 @@ export class PptxExportService {
 
       const sx = this.timeline.dateToX(startDate, startYear, endYear, totalPx);
       const ex = this.timeline.dateToX(endDate, startYear, endYear, totalPx);
-      const barX = TIMELINE_X + (sx / totalPx) * TIMELINE_W;
-      const barW = Math.max(0.05, ((ex - sx) / totalPx) * TIMELINE_W);
+      const barX = timelineX + (sx / totalPx) * timelineW;
+      const barW = Math.max(0.05, ((ex - sx) / totalPx) * timelineW);
 
       const color = (PHASE_COLORS[trial.phase_type] ?? '94a3b8').replace('#', '');
 
@@ -417,8 +540,8 @@ export class PptxExportService {
         w: barW,
         h: barH,
         rectRadius: 0.02,
-        fill: { color, transparency: 25 },
-        line: { color, width: 0.5, transparency: 60 },
+        fill: { color },
+        line: { color, width: 0.5 },
       });
 
       if (barW > 0.4) {
@@ -441,12 +564,15 @@ export class PptxExportService {
   private renderMarkers(
     slide: PptxGenJS.Slide,
     trial: Trial,
+    layout: ColumnLayout,
     rowY: number,
     rowH: number,
     startYear: number,
     endYear: number,
     fontSize: number
   ): void {
+    const timelineX = layout.labelColW;
+    const timelineW = SLIDE_W - layout.labelColW;
     const totalPx = this.timeline.getTimelineWidth(startYear, endYear, 'yearly');
     const markerSize = Math.min(0.12, rowH * 0.35);
     const markers = trial.markers ?? [];
@@ -460,7 +586,7 @@ export class PptxExportService {
 
     for (const marker of sorted) {
       const mx = this.timeline.dateToX(marker.event_date, startYear, endYear, totalPx);
-      const centerX = TIMELINE_X + (mx / totalPx) * TIMELINE_W;
+      const centerX = timelineX + (mx / totalPx) * timelineW;
       const x = centerX - markerSize / 2;
       const y = rowY + rowH * 0.1;
       const color = (marker.marker_types!.color ?? '3b82f6').replace('#', '');
@@ -479,12 +605,14 @@ export class PptxExportService {
         marker.end_date,
         startYear,
         endYear,
-        totalPx
+        totalPx,
+        timelineX,
+        timelineW
       );
 
       // Only show date label if far enough from previous label
-      if (centerX - lastLabelX > 0.3) {
-        const dateLabel = this.formatDateShort(marker.event_date);
+      if (centerX - lastLabelX > 0.4) {
+        const dateLabel = formatDateShort(marker.event_date);
         slide.addText(dateLabel, {
           x: centerX - 0.15,
           y: y + markerSize + 0.01,
@@ -511,7 +639,9 @@ export class PptxExportService {
     endDate: string | null,
     startYear: number,
     endYear: number,
-    totalPx: number
+    totalPx: number,
+    timelineX: number,
+    timelineW: number
   ): void {
     if (shape === 'circle') {
       slide.addShape('ellipse', {
@@ -585,8 +715,8 @@ export class PptxExportService {
     } else if (shape === 'bar' && endDate) {
       const startPx = x + size / 2;
       const endPx =
-        TIMELINE_X +
-        (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * TIMELINE_W;
+        timelineX +
+        (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * timelineW;
       const barW = Math.max(0.1, endPx - startPx);
       slide.addShape('roundRect', {
         x: startPx,
@@ -692,24 +822,5 @@ export class PptxExportService {
         shrinkText: true,
       });
     }
-  }
-
-  private formatDateShort(dateStr: string): string {
-    const d = new Date(dateStr);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return `${months[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
   }
 }
