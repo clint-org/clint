@@ -62,7 +62,7 @@ Output schema (follow this exactly):
     "sponsor_ref": 0,
     "asset_refs": [0],
     "primary_asset_ref": 0 or null,
-    "indication": "disease/condition string or null",
+    "indications": ["disease/condition string", ...] (every indication the trial studies; empty array if none),
     "evidence": "verbatim quote"
   }],
   "markers": [{

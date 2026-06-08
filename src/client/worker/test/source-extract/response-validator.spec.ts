@@ -330,4 +330,36 @@ describe('validateExtraction', () => {
       expect((r.result.trials[0] as { asset_refs: number[] }).asset_refs).toEqual([0, 1]);
     }
   });
+
+  it('carries a multi-value indications array through validation', () => {
+    const json = JSON.parse(validJson());
+    const trial = trialWith([0], null) as Record<string, unknown>;
+    delete trial['indication'];
+    trial['indications'] = ['MASLD', 'NASH'];
+    json.trials = [trial];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect((r.result.trials[0] as { indications: string[] }).indications).toEqual([
+        'MASLD',
+        'NASH',
+      ]);
+    }
+  });
+
+  it('defaults indications to [] when omitted', () => {
+    const json = JSON.parse(validJson());
+    const trial = trialWith([0], null) as Record<string, unknown>;
+    delete trial['indication'];
+    json.trials = [trial];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect((r.result.trials[0] as { indications: string[] }).indications).toEqual([]);
+    }
+  });
 });
