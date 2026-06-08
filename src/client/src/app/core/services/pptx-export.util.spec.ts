@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { computeLeftColumns } from './pptx-export.util';
 import { orderLegendItems, type PresentMarkerType } from './pptx-export.util';
 import type { MarkerType } from '../models/marker.model';
+import {
+  buildMarkerTableRows,
+  paginate,
+  formatDateShort,
+  formatMarkerDate,
+} from './pptx-export.util';
+import type { Company } from '../models/company.model';
 
 describe('computeLeftColumns', () => {
   it('includes only company/asset/trial when all toggles off', () => {
@@ -111,5 +118,90 @@ describe('orderLegendItems', () => {
     );
     expect(result.items.map((i) => i.name)).toEqual(['A', 'B']);
     expect(result.breakIndex).toBe(-1);
+  });
+});
+
+function companyWithMarkers(): Company[] {
+  return [
+    {
+      id: 'c1', space_id: 's1', created_by: 'u', name: 'Eli Lilly', logo_url: null,
+      display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+      assets: [
+        {
+          id: 'a1', space_id: 's1', created_by: 'u', company_id: 'c1', name: 'Mounjaro',
+          generic_name: null, logo_url: null, display_order: 0,
+          created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+          trials: [
+            {
+              id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'SURPASS-2',
+              acronym: 'SURPASS-2', identifier: 'NCT01', status: null, notes: null,
+              display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01',
+              updated_by: null, phase_type: null, phase_start_date: null, phase_end_date: null,
+              markers: [
+                {
+                  id: 'm2', space_id: 's1', created_by: 'u', marker_type_id: 'mt1',
+                  title: 'Approved by FDA', projection: 'actual', event_date: '2022-05-13',
+                  end_date: null, description: null, source_url: null, metadata: null,
+                  is_projected: false, no_longer_expected: false,
+                  created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                  marker_types: { id: 'mt1', name: 'Approval' } as never,
+                },
+                {
+                  id: 'm1', space_id: 's1', created_by: 'u', marker_type_id: 'mt2',
+                  title: 'Topline expected', projection: 'company', event_date: '2021-10-01',
+                  end_date: null, description: null, source_url: null, metadata: null,
+                  is_projected: true, no_longer_expected: false,
+                  created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                  marker_types: { id: 'mt2', name: 'Topline Data' } as never,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } as never,
+  ];
+}
+
+describe('buildMarkerTableRows', () => {
+  it('flattens, sorts markers within a trial by date, and derives status', () => {
+    const rows = buildMarkerTableRows(companyWithMarkers());
+    expect(rows).toHaveLength(2);
+    expect(rows[0].marker).toBe('Topline Data');
+    expect(rows[0].status).toBe('Projected');
+    expect(rows[0].company).toBe('Eli Lilly');
+    expect(rows[0].asset).toBe('Mounjaro');
+    expect(rows[0].trial).toBe('SURPASS-2');
+    expect(rows[1].marker).toBe('Approval');
+    expect(rows[1].status).toBe('Actual');
+  });
+
+  it('marks no_longer_expected markers as NLE', () => {
+    const companies = companyWithMarkers();
+    companies[0].assets![0].trials![0].markers![0].no_longer_expected = true;
+    const rows = buildMarkerTableRows(companies);
+    const approval = rows.find((r) => r.marker === 'Approval');
+    expect(approval?.status).toBe('NLE');
+  });
+});
+
+describe('paginate', () => {
+  it('chunks rows into pages of the given size', () => {
+    expect(paginate([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+  it('returns an empty array for no rows', () => {
+    expect(paginate([], 20)).toEqual([]);
+  });
+});
+
+describe('date formatting', () => {
+  it("formats a single date as Mon ‘99", () => {
+    expect(formatDateShort('2021-10-01')).toBe("Oct ‘21");
+  });
+  it('formats a range with a hyphen', () => {
+    expect(formatMarkerDate('2021-10-01', '2021-12-01')).toBe("Oct ‘21-Dec ‘21");
+  });
+  it('formats a single event when end_date is null', () => {
+    expect(formatMarkerDate('2021-10-01', null)).toBe("Oct ‘21");
   });
 });

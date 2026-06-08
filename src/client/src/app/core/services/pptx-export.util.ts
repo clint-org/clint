@@ -1,4 +1,5 @@
 import type { MarkerType } from '../models/marker.model';
+import type { Company } from '../models/company.model';
 
 export interface ColumnVisibility {
   showMoa: boolean;
@@ -111,4 +112,71 @@ export function orderLegendItems(
   const breakIndex = lastRegIndex >= 0 && lastRegIndex + 1 < sorted.length ? lastRegIndex + 1 : -1;
 
   return { items: sorted.map(toItem), breakIndex };
+}
+
+export type MarkerStatus = 'Actual' | 'Projected' | 'NLE';
+
+export interface MarkerRow {
+  company: string;
+  asset: string;
+  trial: string;
+  marker: string;
+  date: string;
+  status: MarkerStatus;
+  notes: string;
+}
+
+const NOTE_MAX = 80;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function formatDateShort(dateStr: string): string {
+  const [year, month] = dateStr.split('-').map(Number);
+  return `${MONTHS[month - 1]} ‘${String(year).slice(2)}`;
+}
+
+export function formatMarkerDate(eventDate: string, endDate: string | null): string {
+  if (endDate) return `${formatDateShort(eventDate)}-${formatDateShort(endDate)}`;
+  return formatDateShort(eventDate);
+}
+
+function truncate(value: string, max: number): string {
+  return value.length > max ? value.slice(0, max - 1).trimEnd() + '…' : value;
+}
+
+export function buildMarkerTableRows(companies: Company[]): MarkerRow[] {
+  const rows: MarkerRow[] = [];
+  for (const company of companies) {
+    for (const asset of company.assets ?? []) {
+      for (const trial of asset.trials ?? []) {
+        const markers = [...(trial.markers ?? [])]
+          .filter((m) => m.event_date && m.marker_types)
+          .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+        for (const m of markers) {
+          const status: MarkerStatus = m.no_longer_expected
+            ? 'NLE'
+            : m.is_projected || m.projection !== 'actual'
+              ? 'Projected'
+              : 'Actual';
+          rows.push({
+            company: company.name,
+            asset: asset.name,
+            trial: trial.acronym ?? trial.name,
+            marker: m.marker_types!.name,
+            date: formatMarkerDate(m.event_date, m.end_date),
+            status,
+            notes: truncate(m.title ?? m.description ?? '', NOTE_MAX),
+          });
+        }
+      }
+    }
+  }
+  return rows;
+}
+
+export function paginate<T>(rows: T[], perPage: number): T[][] {
+  const pages: T[][] = [];
+  for (let i = 0; i < rows.length; i += perPage) {
+    pages.push(rows.slice(i, i + perPage));
+  }
+  return pages;
 }
