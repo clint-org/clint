@@ -45,6 +45,9 @@ import {
   type EntityLink,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
+import { ReviewEditDialogComponent } from './review-edit-dialog.component';
+
+type EditableEntityType = 'companies' | 'assets' | 'trials';
 
 type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
 
@@ -113,7 +116,7 @@ interface GridRow {
 
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule],
+  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule, ReviewEditDialogComponent],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -217,573 +220,6 @@ interface GridRow {
             </details>
           }
 
-          <!-- Reusable entity row template -->
-          <ng-template #entityRow let-type="type" let-idx="idx">
-            @let erk = entityKey(type, idx);
-            @let erSel = isSelected(erk);
-            <div
-              class="flex items-start gap-3 rounded py-1.5 transition-colors"
-              [class.opacity-50]="!erSel"
-            >
-              <p-checkbox
-                [ngModel]="erSel"
-                (ngModelChange)="toggleSelection(erk, $event)"
-                [binary]="true"
-                [inputId]="erk"
-                size="small"
-              />
-
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <!-- Entity name: link for existing, label for new -->
-                  @if (!isNew(type, idx)) {
-                    @let erUrl = entityDetailUrl(type, idx);
-                    @if (erUrl) {
-                      <a
-                        [href]="erUrl"
-                        target="_blank"
-                        rel="noopener"
-                        class="cursor-pointer truncate text-sm font-semibold text-brand-600 hover:underline"
-                        [class.font-mono]="type === 'companies'"
-                        [class.font-bold]="type === 'companies'"
-                        [class.uppercase]="type === 'companies'"
-                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                        (click)="$event.stopPropagation()"
-                        >{{ entityName(type, idx) }}</a
-                      >
-                    } @else {
-                      <span
-                        class="truncate text-sm text-slate-700"
-                        [class.font-mono]="type === 'companies'"
-                        [class.font-bold]="type === 'companies'"
-                        [class.uppercase]="type === 'companies'"
-                        [class.font-semibold]="type !== 'companies'"
-                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                        >{{ entityName(type, idx) }}</span
-                      >
-                    }
-                    <span
-                      class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                      >Existing</span
-                    >
-                    @let erIdentifier = resolvedIdentifier(type, idx);
-                    @if (erIdentifier) {
-                      <a
-                        [href]="ctgovUrl(erIdentifier)"
-                        target="_blank"
-                        rel="noopener"
-                        class="inline-flex items-center gap-0.5 font-mono text-[10px] text-brand-600 hover:underline"
-                        pTooltip="View on ClinicalTrials.gov"
-                        tooltipPosition="top"
-                        (click)="$event.stopPropagation()"
-                        >{{ erIdentifier }}<i class="pi pi-external-link text-[8px]"></i
-                      ></a>
-                    }
-                  } @else {
-                    <label
-                      [for]="erk"
-                      class="cursor-pointer truncate text-sm font-semibold text-slate-900"
-                      [class.font-mono]="type === 'companies'"
-                      [class.font-bold]="type === 'companies'"
-                      [class.uppercase]="type === 'companies'"
-                      [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                      >{{ entityName(type, idx) }}</label
-                    >
-                    <span
-                      class="inline-block rounded bg-brand-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700"
-                      >New</span
-                    >
-                  }
-
-                  <!-- Phase badge for trials -->
-                  @if (type === 'trials') {
-                    @let erPhase = trialPhase(idx);
-                    @if (erPhase) {
-                      <span
-                        class="inline-block rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-600"
-                        >{{ erPhase }}</span
-                      >
-                    }
-                    @let erStatus = trialStatus(idx);
-                    @if (erStatus) {
-                      <span class="text-xs text-slate-400">{{ erStatus }}</span>
-                    }
-                    @if (isNctImport()) {
-                      <span
-                        class="inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-cyan-700 border border-cyan-200"
-                        >CT.gov</span
-                      >
-                      @if (isObservationalTrial(idx)) {
-                        <span
-                          class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-700 border border-amber-200"
-                          >Observational</span
-                        >
-                      }
-                    }
-                  }
-
-                  <!-- Generic name for assets -->
-                  @if (type === 'assets') {
-                    @let erGeneric = assetGenericName(idx);
-                    @if (erGeneric) {
-                      <span class="text-xs text-slate-400">{{ erGeneric }}</span>
-                    }
-                    @let erMoas = assetMoas(idx);
-                    @let erRoas = assetRoas(idx);
-                    @if (erMoas.length > 0) {
-                      @for (m of erMoas; track m) {
-                        <span
-                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
-                          [class.bg-violet-50]="isMoaExisting(m)"
-                          [class.text-violet-700]="isMoaExisting(m)"
-                          [class.border-violet-200]="isMoaExisting(m)"
-                          [class.bg-brand-50]="!isMoaExisting(m)"
-                          [class.text-brand-700]="!isMoaExisting(m)"
-                          [class.border-brand-200]="!isMoaExisting(m)"
-                          [pTooltip]="
-                            isMoaExisting(m) ? 'MOA (existing)' : 'MOA (new, will be created)'
-                          "
-                          tooltipPosition="top"
-                          >{{ m
-                          }}<span
-                            class="rounded px-0.5 text-[8px]"
-                            [class.bg-violet-100]="isMoaExisting(m)"
-                            [class.bg-brand-100]="!isMoaExisting(m)"
-                            >{{ isMoaExisting(m) ? 'Existing' : 'New' }}</span
-                          ></span
-                        >
-                      }
-                    }
-                    @if (erRoas.length > 0) {
-                      @for (r of erRoas; track r) {
-                        <span
-                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
-                          [class.bg-cyan-50]="isRoaExisting(r)"
-                          [class.text-cyan-700]="isRoaExisting(r)"
-                          [class.border-cyan-200]="isRoaExisting(r)"
-                          [class.bg-brand-50]="!isRoaExisting(r)"
-                          [class.text-brand-700]="!isRoaExisting(r)"
-                          [class.border-brand-200]="!isRoaExisting(r)"
-                          [pTooltip]="
-                            isRoaExisting(r) ? 'ROA (existing)' : 'ROA (new, will be created)'
-                          "
-                          tooltipPosition="top"
-                          >{{ r
-                          }}<span
-                            class="rounded px-0.5 text-[8px]"
-                            [class.bg-cyan-100]="isRoaExisting(r)"
-                            [class.bg-brand-100]="!isRoaExisting(r)"
-                            >{{ isRoaExisting(r) ? 'Existing' : 'New' }}</span
-                          ></span
-                        >
-                      }
-                    }
-                    @if (erMoas.length === 0 && erRoas.length === 0) {
-                      <span
-                        class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-600 border border-amber-200"
-                        pTooltip="MOA and ROA were not detected from the source. Add them manually after import."
-                        tooltipPosition="top"
-                        >No MOA/ROA</span
-                      >
-                    }
-                  }
-
-                  <!-- Evidence / Source pill -->
-                  @let erEvidence = entityEvidence(type, idx);
-                  @if (erEvidence) {
-                    @if (isNctImport()) {
-                      @let erNctIds = nctIdFromEvidence(type, idx);
-                      @if (erNctIds) {
-                        <a
-                          [href]="ctgovUrl(erNctIds.split(',')[0].trim())"
-                          target="_blank"
-                          rel="noopener"
-                          class="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-600 hover:bg-slate-200 hover:underline"
-                          pTooltip="View on ClinicalTrials.gov"
-                          tooltipPosition="top"
-                          (click)="$event.stopPropagation()"
-                        >
-                          Source: {{ erNctIds }}<i class="pi pi-external-link text-[8px]"></i>
-                        </a>
-                      } @else {
-                        <span
-                          class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                        >
-                          Source
-                        </span>
-                      }
-                    } @else {
-                      <button
-                        class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-                        (mouseenter)="highlightedEvidence.set({ text: erEvidence, pinned: false })"
-                        (mouseleave)="clearHighlightIfNotPinned()"
-                        (click)="highlightedEvidence.set({ text: erEvidence, pinned: true })"
-                        pTooltip="Click to pin highlight in source pane"
-                        tooltipPosition="top"
-                      >
-                        Evidence
-                      </button>
-                    }
-                  }
-
-                  @if (isNctImport() && type === 'trials') {
-                    <button
-                      class="ml-auto shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                      (click)="toggleCollapsed(erk)"
-                      [pTooltip]="isCollapsed(erk) ? 'Expand' : 'Collapse'"
-                      tooltipPosition="top"
-                    >
-                      <i
-                        class="pi text-[10px]"
-                        [class.pi-chevron-right]="isCollapsed(erk)"
-                        [class.pi-chevron-down]="!isCollapsed(erk)"
-                      ></i>
-                    </button>
-                  }
-                </div>
-
-                @if (!isCollapsed(erk)) {
-                  <!-- Fuzzy alternates for match override -->
-                  @let erAlts = fuzzyAlternatesFor(type, idx);
-                  @if (erAlts.length > 0) {
-                    <div class="mt-1 flex flex-wrap gap-1">
-                      @let erOverride = getMatchOverride(erk);
-                      <button
-                        class="rounded px-1.5 py-0.5 text-[10px]"
-                        [class.bg-brand-100]="!erOverride"
-                        [class.text-brand-700]="!erOverride"
-                        [class.bg-slate-100]="!!erOverride"
-                        [class.text-slate-500]="!!erOverride"
-                        (click)="clearMatchOverride(erk)"
-                      >
-                        LLM pick
-                      </button>
-                      @for (alt of erAlts; track alt.id) {
-                        <button
-                          class="rounded px-1.5 py-0.5 text-[10px]"
-                          [class.bg-brand-100]="erOverride === alt.id"
-                          [class.text-brand-700]="erOverride === alt.id"
-                          [class.bg-slate-100]="erOverride !== alt.id"
-                          [class.text-slate-500]="erOverride !== alt.id"
-                          (click)="setMatchOverride(erk, alt.id)"
-                          [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                          tooltipPosition="top"
-                        >
-                          {{ alt.name }}
-                        </button>
-                      }
-                      <button
-                        class="rounded px-1.5 py-0.5 text-[10px]"
-                        [class.bg-brand-100]="erOverride === '__new__'"
-                        [class.text-brand-700]="erOverride === '__new__'"
-                        [class.bg-slate-100]="erOverride !== '__new__'"
-                        [class.text-slate-500]="erOverride !== '__new__'"
-                        (click)="setMatchOverride(erk, '__new__')"
-                      >
-                        Create new
-                      </button>
-                    </div>
-                  }
-
-                  <!-- Trial-specific: CT.gov enrichment -->
-                  @if (type === 'trials') {
-                    @let erCtgovStatus = trialCtgovStatus(idx);
-                    @if (erCtgovStatus !== 'skipped') {
-                      <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                            >ClinicalTrials.gov</span
-                          >
-                          @if (erCtgovStatus === 'matched') {
-                            @let erCandidates = ctgovCandidatesFor(idx);
-                            <span
-                              class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                              >{{ erCandidates.length }}
-                              {{ erCandidates.length === 1 ? 'match' : 'matches' }}</span
-                            >
-                          } @else if (erCtgovStatus === 'no_matches') {
-                            <span
-                              class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                              >No matches</span
-                            >
-                          } @else if (erCtgovStatus === 'failed') {
-                            <span
-                              class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                              >Lookup failed</span
-                            >
-                          }
-                        </div>
-
-                        @let erCands = ctgovCandidatesFor(idx);
-                        @if (erCands.length > 0) {
-                          <div class="mt-1.5 flex flex-col gap-1">
-                            @let erCurrentNct = getTrialNctOverride(idx);
-                            @for (c of erCands; track c.nct_id) {
-                              <label
-                                class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                                [class.bg-white]="erCurrentNct === c.nct_id"
-                                [class.ring-1]="erCurrentNct === c.nct_id"
-                                [class.ring-brand-300]="erCurrentNct === c.nct_id"
-                              >
-                                <input
-                                  type="radio"
-                                  [name]="'nct_' + idx"
-                                  [value]="c.nct_id"
-                                  [checked]="erCurrentNct === c.nct_id"
-                                  (change)="setTrialNctOverride(idx, c.nct_id)"
-                                  class="accent-brand-600"
-                                />
-                                <a
-                                  [href]="ctgovUrl(c.nct_id)"
-                                  target="_blank"
-                                  rel="noopener"
-                                  class="font-mono text-brand-600 hover:underline"
-                                  (click)="$event.stopPropagation()"
-                                  >{{ c.nct_id }}</a
-                                >
-                                <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                                <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                                  >{{ c.phase }} / {{ c.status }}</span
-                                >
-                              </label>
-                            }
-                          </div>
-                        }
-                      </div>
-                    }
-
-                    @if (trialMissingAsset(entitiesOf('trials')[idx])) {
-                      <p-message
-                        severity="warn"
-                        [closable]="false"
-                        styleClass="mt-1.5 w-full text-xs"
-                      >
-                        Asset required: add at least one asset below.
-                      </p-message>
-                    }
-                    <ng-container
-                      [ngTemplateOutlet]="assetEditor"
-                      [ngTemplateOutletContext]="{ idx }"
-                    />
-                  }
-
-                  <!-- Inline field edits -->
-                  @let erFields = editableFields(type, idx);
-                  @if (erFields.length > 0) {
-                    <div class="mt-1.5 flex flex-wrap gap-2">
-                      @for (f of erFields; track f.field) {
-                        <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                          <span class="font-mono uppercase">{{ f.field }}:</span>
-                          <input
-                            type="text"
-                            class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                            [value]="getFieldEdit(erk, f.field) ?? f.value"
-                            (input)="onFieldEdit(erk, f.field, $event)"
-                          />
-                        </label>
-                      }
-                    </div>
-                  }
-                }
-              </div>
-            </div>
-          </ng-template>
-
-          <!-- Asset membership editor: chips with a primary star + add controls.
-               idx is the trial's entity index. Shared by entityRow and rowDetail. -->
-          <ng-template #assetEditor let-idx="idx">
-            <div class="mt-1.5">
-              <div class="mb-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
-                Assets
-              </div>
-              <div class="flex flex-wrap items-center gap-1.5">
-                @for (ar of trialAssetRefs(idx); track ar) {
-                  @let aeIsPrimary = trialPrimaryRef(idx) === ar;
-                  <span
-                    class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px]"
-                    [class.border-cyan-300]="aeIsPrimary"
-                    [class.bg-cyan-50]="aeIsPrimary"
-                    [class.border-slate-200]="!aeIsPrimary"
-                  >
-                    <button
-                      type="button"
-                      class="flex items-center"
-                      [class.text-cyan-600]="aeIsPrimary"
-                      [class.text-slate-300]="!aeIsPrimary"
-                      (click)="setTrialPrimary(idx, ar)"
-                      [pTooltip]="aeIsPrimary ? 'Primary (headline) asset' : 'Make primary'"
-                      tooltipPosition="top"
-                    >
-                      <i class="pi text-[10px]" [class.pi-star-fill]="aeIsPrimary" [class.pi-star]="!aeIsPrimary"></i>
-                    </button>
-                    <span class="text-slate-700">{{ entityName('assets', ar) }}</span>
-                    @if ($count > 1) {
-                      <button
-                        type="button"
-                        class="text-slate-400 hover:text-red-600"
-                        (click)="removeTrialAsset(idx, ar)"
-                        pTooltip="Remove this asset from the trial"
-                        tooltipPosition="top"
-                      >
-                        <i class="pi pi-times text-[9px]"></i>
-                      </button>
-                    }
-                  </span>
-                }
-                @for (a of assetsAvailableToAdd(idx); track a.idx) {
-                  <button
-                    type="button"
-                    class="rounded border border-dashed border-slate-300 px-1.5 py-0.5 text-[11px] text-slate-500 hover:border-brand-400 hover:text-brand-600"
-                    (click)="addTrialAsset(idx, a.idx)"
-                    pTooltip="Add this asset to the trial"
-                    tooltipPosition="top"
-                  >
-                    + {{ a.name }}
-                  </button>
-                }
-              </div>
-            </div>
-          </ng-template>
-
-          <!-- Per-row review detail for the grouped grid -->
-          <ng-template #rowDetail let-type="type" let-idx="idx" let-erk="key">
-            @let rdAlts = fuzzyAlternatesFor(type, idx);
-            @if (rdAlts.length > 0) {
-              <div class="mt-1 flex flex-wrap gap-1">
-                @let rdOverride = getMatchOverride(erk);
-                <button
-                  class="rounded px-1.5 py-0.5 text-[10px]"
-                  [class.bg-brand-100]="!rdOverride"
-                  [class.text-brand-700]="!rdOverride"
-                  [class.bg-slate-100]="!!rdOverride"
-                  [class.text-slate-500]="!!rdOverride"
-                  (click)="clearMatchOverride(erk)"
-                >
-                  LLM pick
-                </button>
-                @for (alt of rdAlts; track alt.id) {
-                  <button
-                    class="rounded px-1.5 py-0.5 text-[10px]"
-                    [class.bg-brand-100]="rdOverride === alt.id"
-                    [class.text-brand-700]="rdOverride === alt.id"
-                    [class.bg-slate-100]="rdOverride !== alt.id"
-                    [class.text-slate-500]="rdOverride !== alt.id"
-                    (click)="setMatchOverride(erk, alt.id)"
-                    [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                    tooltipPosition="top"
-                  >
-                    {{ alt.name }}
-                  </button>
-                }
-                <button
-                  class="rounded px-1.5 py-0.5 text-[10px]"
-                  [class.bg-brand-100]="rdOverride === '__new__'"
-                  [class.text-brand-700]="rdOverride === '__new__'"
-                  [class.bg-slate-100]="rdOverride !== '__new__'"
-                  [class.text-slate-500]="rdOverride !== '__new__'"
-                  (click)="setMatchOverride(erk, '__new__')"
-                >
-                  Create new
-                </button>
-              </div>
-            }
-
-            @if (type === 'trials') {
-              @let rdCtgovStatus = trialCtgovStatus(idx);
-              @if (rdCtgovStatus !== 'skipped') {
-                <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                      >ClinicalTrials.gov</span
-                    >
-                    @if (rdCtgovStatus === 'matched') {
-                      @let rdCandidates = ctgovCandidatesFor(idx);
-                      <span
-                        class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                        >{{ rdCandidates.length }}
-                        {{ rdCandidates.length === 1 ? 'match' : 'matches' }}</span
-                      >
-                    } @else if (rdCtgovStatus === 'no_matches') {
-                      <span
-                        class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                        >No matches</span
-                      >
-                    } @else if (rdCtgovStatus === 'failed') {
-                      <span
-                        class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                        >Lookup failed</span
-                      >
-                    }
-                  </div>
-
-                  @let rdCands = ctgovCandidatesFor(idx);
-                  @if (rdCands.length > 0) {
-                    <div class="mt-1.5 flex flex-col gap-1">
-                      @let rdCurrentNct = getTrialNctOverride(idx);
-                      @for (c of rdCands; track c.nct_id) {
-                        <label
-                          class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                          [class.bg-white]="rdCurrentNct === c.nct_id"
-                          [class.ring-1]="rdCurrentNct === c.nct_id"
-                          [class.ring-brand-300]="rdCurrentNct === c.nct_id"
-                        >
-                          <input
-                            type="radio"
-                            [name]="'nct_' + idx"
-                            [value]="c.nct_id"
-                            [checked]="rdCurrentNct === c.nct_id"
-                            (change)="setTrialNctOverride(idx, c.nct_id)"
-                            class="accent-brand-600"
-                          />
-                          <a
-                            [href]="ctgovUrl(c.nct_id)"
-                            target="_blank"
-                            rel="noopener"
-                            class="font-mono text-brand-600 hover:underline"
-                            (click)="$event.stopPropagation()"
-                            >{{ c.nct_id }}</a
-                          >
-                          <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                          <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                            >{{ c.phase }} / {{ c.status }}</span
-                          >
-                        </label>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (trialMissingAsset(entitiesOf('trials')[idx])) {
-                <p-message severity="warn" [closable]="false" styleClass="mt-1.5 w-full text-xs">
-                  Asset required: add at least one asset below.
-                </p-message>
-              }
-              <ng-container
-                [ngTemplateOutlet]="assetEditor"
-                [ngTemplateOutletContext]="{ idx }"
-              />
-            }
-
-            @let rdFields = editableFields(type, idx);
-            @if (rdFields.length > 0) {
-              <div class="mt-1.5 flex flex-wrap gap-2">
-                @for (f of rdFields; track f.field) {
-                  <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                    <span class="font-mono uppercase">{{ f.field }}:</span>
-                    <input
-                      type="text"
-                      class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                      [value]="getFieldEdit(erk, f.field) ?? f.value"
-                      (input)="onFieldEdit(erk, f.field, $event)"
-                    />
-                  </label>
-                }
-              </div>
-            }
-          </ng-template>
-
           <!-- CT.gov enrichment summary -->
           @let ctgovSummaryVal = ctgovSummary();
           @if (ctgovSummaryVal.status === 'matched') {
@@ -822,53 +258,35 @@ interface GridRow {
             }
           </div>
 
-          <p-treeTable
-            [value]="filteredNodes()"
-            dataKey="key"
-            [resizableColumns]="true"
-            columnResizeMode="fit"
-          >
-            <ng-template pTemplate="header">
-              <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
-                <th class="w-10"></th>
-                <th ttResizableColumn class="min-w-72">Entity</th>
-                <th ttResizableColumn class="w-[5.25rem]">Type</th>
-                <th ttResizableColumn class="w-16">Phase</th>
-                <th ttResizableColumn class="w-28">Status</th>
-                <th ttResizableColumn class="min-w-48">MOA / ROA</th>
-                <th ttResizableColumn class="min-w-48">Indication</th>
-                <th ttResizableColumn class="w-[4.5rem]">Source</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              @let row = asGridRow(rowData);
-              <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
-                <td>
-                  <p-checkbox
-                    [ngModel]="isSelected(row.key)"
-                    (ngModelChange)="toggleSelection(row.key, $event)"
-                    [binary]="true"
-                    size="small"
-                  />
-                </td>
-                <td class="align-top">
-                  <div class="flex items-start gap-2">
-                    <p-treeTableToggler [rowNode]="rowNode" />
-                    @if (row.link; as link) {
-                      <a
-                        [href]="link.href"
-                        target="_blank"
-                        rel="noopener"
-                        class="whitespace-normal break-words rounded-sm text-brand-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
-                        [class.font-mono]="row.kind === 'company'"
-                        [class.font-bold]="row.kind === 'company'"
-                        [class.uppercase]="row.kind === 'company'"
-                        [class.font-semibold]="row.kind === 'asset'"
-                        [pTooltip]="link.external ? 'Open on ClinicalTrials.gov' : 'Open ' + row.kind + ' record'"
-                        tooltipPosition="top"
-                        >{{ row.name }}</a
-                      >
-                    } @else {
+          <div class="overflow-x-auto">
+            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem]">
+              <ng-template pTemplate="header">
+                <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
+                  <th class="w-10"></th>
+                  <th class="min-w-72">Entity</th>
+                  <th class="w-[5.25rem]">Type</th>
+                  <th class="w-16">Phase</th>
+                  <th class="w-28">Status</th>
+                  <th class="min-w-48">MOA / ROA</th>
+                  <th class="min-w-48">Indication</th>
+                  <th class="w-[4.5rem]">Source</th>
+                  <th class="w-16 text-right">Edit</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+                @let row = asGridRow(rowData);
+                <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
+                  <td>
+                    <p-checkbox
+                      [ngModel]="isSelected(row.key)"
+                      (ngModelChange)="toggleSelection(row.key, $event)"
+                      [binary]="true"
+                      size="small"
+                    />
+                  </td>
+                  <td class="align-top">
+                    <div class="flex items-start gap-2">
+                      <p-treeTableToggler [rowNode]="rowNode" />
                       <span
                         class="whitespace-normal break-words"
                         [class.font-mono]="row.kind === 'company'"
@@ -878,89 +296,115 @@ interface GridRow {
                         [class.text-brand-600]="row.kind === 'trial'"
                         >{{ row.name }}</span
                       >
-                    }
-                    @if (row.state === 'existing') {
+                      @if (row.state === 'existing') {
+                        <span
+                          class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                          >existing</span
+                        >
+                      }
+                      @if (row.multiAssetRole === 'primary') {
+                        <span
+                          class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                          pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
+                          tooltipPosition="top"
+                          >primary</span
+                        >
+                      } @else if (row.multiAssetRole === 'secondary') {
+                        <span
+                          class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
+                          pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
+                          tooltipPosition="top"
+                          >also tested</span
+                        >
+                      }
+                      @for (f of row.flags; track f.id) {
+                        <span
+                          class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
+                          >{{ f.label }}</span
+                        >
+                      }
+                    </div>
+                  </td>
+                  <td class="align-top font-mono text-[10px] uppercase text-slate-400">
+                    {{ row.kind === 'company' ? '' : row.kind }}
+                  </td>
+                  <td class="align-top">
+                    @if (row.phase) {
                       <span
-                        class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
-                        >existing</span
+                        class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
+                        >{{ row.phase }}</span
                       >
                     }
-                    @if (row.multiAssetRole === 'primary') {
+                  </td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.status }}</td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.moaRoa }}</td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.indication }}</td>
+                  <td class="align-top">
+                    @if (row.kind === 'trial') {
                       <span
                         class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
-                        pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
-                        tooltipPosition="top"
-                        >primary</span
-                      >
-                    } @else if (row.multiAssetRole === 'secondary') {
-                      <span
-                        class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
-                        pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
-                        tooltipPosition="top"
-                        >also tested</span
+                        >ct.gov</span
                       >
                     }
-                    @for (f of row.flags; track f.id) {
-                      <span
-                        class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
-                        >{{ f.label }}</span
-                      >
-                    }
-                    @if (row.hasDetail) {
-                      <button
-                        type="button"
-                        class="ml-auto flex items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
-                        [attr.aria-expanded]="isDetailOpen(row.key)"
-                        (click)="toggleDetail(row.key)"
-                        [pTooltip]="row.multiAssetRole ? 'Edit assets and primary' : 'Show review detail'"
-                        tooltipPosition="top"
-                      >
-                        <span>{{ row.multiAssetRole ? 'Assets' : 'Detail' }}</span>
-                        <i
-                          class="pi text-[9px]"
-                          [class.pi-chevron-down]="isDetailOpen(row.key)"
-                          [class.pi-chevron-right]="!isDetailOpen(row.key)"
-                        ></i>
-                      </button>
-                    }
-                  </div>
-                </td>
-                <td class="align-top font-mono text-[10px] uppercase text-slate-400">
-                  {{ row.kind === 'company' ? '' : row.kind }}
-                </td>
-                <td class="align-top">
-                  @if (row.phase) {
-                    <span
-                      class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
-                      >{{ row.phase }}</span
+                  </td>
+                  <td class="align-top text-right">
+                    <button
+                      type="button"
+                      class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                      (click)="openEdit(row.type, row.idx)"
+                      [pTooltip]="'Edit ' + row.kind"
+                      tooltipPosition="left"
+                      [attr.aria-label]="'Edit ' + row.name"
                     >
-                  }
-                </td>
-                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.status }}</td>
-                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.moaRoa }}</td>
-                <td class="align-top whitespace-normal break-words text-slate-500">{{ row.indication }}</td>
-                <td class="align-top">
-                  @if (row.kind === 'trial') {
-                    <span
-                      class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
-                      >ct.gov</span
-                    >
-                  }
-                </td>
-              </tr>
-              @if (isDetailOpen(row.key)) {
-                <tr>
-                  <td></td>
-                  <td [attr.colspan]="7">
-                    <ng-container
-                      [ngTemplateOutlet]="rowDetail"
-                      [ngTemplateOutletContext]="{ type: row.type, idx: row.idx, key: row.key }"
-                    />
+                      <i class="pi pi-pencil text-[11px]"></i>
+                    </button>
                   </td>
                 </tr>
+              </ng-template>
+            </p-treeTable>
+          </div>
+
+          <!-- Reusable read-only orphan row -->
+          <ng-template #orphanRow let-type="type" let-idx="idx" let-editable="editable">
+            @let orphKey = entityKey(type, idx);
+            <div class="flex items-center gap-2 py-1">
+              <p-checkbox
+                [ngModel]="isSelected(orphKey)"
+                (ngModelChange)="toggleSelection(orphKey, $event)"
+                [binary]="true"
+                [inputId]="orphKey"
+                size="small"
+              />
+              <span class="min-w-0 flex-1 truncate text-sm text-slate-700">{{ entityName(type, idx) }}</span>
+              @if (type === 'trials') {
+                @let orphPhase = trialPhase(idx);
+                @if (orphPhase) {
+                  <span
+                    class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
+                    >{{ orphPhase }}</span
+                  >
+                }
               }
-            </ng-template>
-          </p-treeTable>
+              @if (!isNew(type, idx)) {
+                <span
+                  class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                  >existing</span
+                >
+              }
+              @if (editable) {
+                <button
+                  type="button"
+                  class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                  (click)="openEdit(type, idx)"
+                  pTooltip="Edit"
+                  tooltipPosition="left"
+                  [attr.aria-label]="'Edit ' + entityName(type, idx)"
+                >
+                  <i class="pi pi-pencil text-[11px]"></i>
+                </button>
+              }
+            </div>
+          </ng-template>
 
           <!-- Orphaned trials (asset_ref does not resolve to an asset) -->
           @if (tree.orphanTrials.length > 0) {
@@ -969,10 +413,13 @@ interface GridRow {
                 Unlinked trials ({{ tree.orphanTrials.length }})
               </h2>
               <div class="rounded border border-amber-200 bg-white px-4 py-2">
+                <p class="mb-1 text-[11px] text-amber-700">
+                  These trials have no resolvable asset. Edit each to assign one before confirming.
+                </p>
                 @for (ti of tree.orphanTrials; track ti) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'trials', idx: ti }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'trials', idx: ti, editable: true }"
                   />
                 }
               </div>
@@ -988,8 +435,8 @@ interface GridRow {
               <div class="rounded border border-slate-200 bg-white px-4 py-2">
                 @for (mi of tree.orphanMarkers; track mi) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi, editable: false }"
                   />
                 }
               </div>
@@ -1005,8 +452,8 @@ interface GridRow {
               <div class="rounded border border-slate-200 bg-white px-4 py-2">
                 @for (ei of tree.orphanEvents; track ei) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'events', idx: ei, editable: false }"
                   />
                 }
               </div>
@@ -1049,6 +496,13 @@ interface GridRow {
           />
         </div>
       </footer>
+
+      <app-review-edit-dialog
+        [type]="editType()"
+        [index]="editIndex()"
+        [spaceId]="spaceId()"
+        (closed)="closeEdit()"
+      />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1101,6 +555,20 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
   readonly highlightedEvidence = signal<{ text: string; pinned: boolean } | null>(null);
+
+  // The entity currently open in the edit dialog (null when closed).
+  private readonly editTarget = signal<{ type: EditableEntityType; index: number } | null>(null);
+  protected readonly editType = computed<EditableEntityType | null>(() => this.editTarget()?.type ?? null);
+  protected readonly editIndex = computed<number | null>(() => this.editTarget()?.index ?? null);
+
+  protected openEdit(type: EntityType, index: number): void {
+    if (type !== 'companies' && type !== 'assets' && type !== 'trials') return;
+    this.editTarget.set({ type, index });
+  }
+
+  protected closeEdit(): void {
+    this.editTarget.set(null);
+  }
 
   readonly dirty = computed(() => {
     const sel = this.selections();
@@ -1349,7 +817,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         phase: this.trialPhase(idx),
         status: this.trialStatus(idx),
         moaRoa: '',
-        indication: (t['indication'] as string) ?? null,
+        indication: this.trialIndicationLabel(t),
         flags,
         // Multi-asset trials are always expandable so the chip+star asset editor
         // in the row detail stays reachable, even when the trial resolved cleanly
@@ -1584,6 +1052,18 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected trialStatus(index: number): string | null {
     const entity = this.entitiesOf('trials')[index];
     return (entity?.['status'] as string) ?? null;
+  }
+
+  // Display label for a trial's indication(s): the indications[] array joined,
+  // falling back to a legacy scalar indication.
+  private trialIndicationLabel(entity: Record<string, unknown>): string | null {
+    const many = entity['indications'];
+    if (Array.isArray(many)) {
+      const names = many.filter((i): i is string => typeof i === 'string' && i.length > 0);
+      return names.length ? names.join(', ') : null;
+    }
+    const one = entity['indication'];
+    return typeof one === 'string' && one.length > 0 ? one : null;
   }
 
   protected assetGenericName(index: number): string | null {
