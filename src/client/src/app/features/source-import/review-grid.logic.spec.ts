@@ -41,6 +41,14 @@ describe('deriveTrialFlags', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'Obesity' });
     expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
   });
+  it('does not flag missing indication when indications[] has entries', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: ['Obesity', 'Overweight'] });
+    expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
+  });
+  it('flags missing indication when indications[] is empty', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: [] });
+    expect(flags).toContainEqual({ id: 'no-indication', tier: 'attention', label: 'No indication' });
+  });
   it('flags observational study_type as attention', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'X', study_type: 'Observational' });
     expect(flags).toContainEqual({ id: 'observational', tier: 'attention', label: 'Observational' });

@@ -98,12 +98,20 @@ function isObservational(trial: Entity): boolean {
   return t.includes('observational');
 }
 
+// A trial carries an indication when either the multi-value indications[] array
+// has entries or the legacy scalar indication is set.
+function trialHasIndication(trial: Entity): boolean {
+  const many = trial['indications'];
+  if (Array.isArray(many) && many.some((i) => typeof i === 'string' && i.length > 0)) return true;
+  return typeof trial['indication'] === 'string' && (trial['indication'] as string).length > 0;
+}
+
 export function deriveTrialFlags(trial: Entity): ReviewFlag[] {
   const flags: ReviewFlag[] = [];
   if (trialMissingAsset(trial)) {
     flags.push({ id: 'no-asset', tier: 'blocking', label: 'No asset' });
   }
-  if (!trial['indication']) {
+  if (!trialHasIndication(trial)) {
     flags.push({ id: 'no-indication', tier: 'attention', label: 'No indication' });
   }
   if (isObservational(trial)) {
