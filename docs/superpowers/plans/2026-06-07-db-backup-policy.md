@@ -641,7 +641,7 @@ inputs:
   environment:    { description: prod or dev, required: true }
   project_ref:    { description: Supabase project ref, required: true }
   db_password:    { description: Supabase DB password, required: true }
-  access_token:   { description: Supabase access token, required: true }
+  db_url:         { description: Optional full Postgres connection string (e.g. session-mode pooler). If empty, the direct db.<ref>.supabase.co URL is built., required: false, default: "" }
   age_recipient:  { description: age public key, required: true }
   tier_override:  { description: explicit tier (e.g. pre-migration); empty = auto by date, required: false, default: "" }
   r2_bucket:      { required: true, description: R2 bucket }
@@ -655,35 +655,43 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install age
+    - name: Install tooling (age, pg_dump 17)
       shell: bash
       run: |
-        sudo apt-get update -qq && sudo apt-get install -y -qq age
-
-    - name: Link Supabase project
-      shell: bash
-      env:
-        SUPABASE_ACCESS_TOKEN: ${{ inputs.access_token }}
-      run: supabase link --project-ref ${{ inputs.project_ref }}
+        set -euo pipefail
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq postgresql-client-17 age
+        pg_dump --version
 
     - name: Build encrypted bundle
       id: bundle
       shell: bash
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ inputs.access_token }}
+        DB_PASSWORD: ${{ inputs.db_password }}
+        PROJECT_REF: ${{ inputs.project_ref }}
+        DB_URL_OVERRIDE: ${{ inputs.db_url }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        AGE_RECIPIENT: ${{ inputs.age_recipient }}
+        TIER_OVERRIDE: ${{ inputs.tier_override }}
       run: |
-        db_url="postgresql://postgres:${{ inputs.db_password }}@db.${{ inputs.project_ref }}.supabase.co:5432/postgres"
-        tier="${{ inputs.tier_override }}"
-        [ -z "$tier" ] && tier="daily"   # placeholder tier in filename; upload fans out to real tiers
+        set -euo pipefail
+        db_url="${DB_URL_OVERRIDE:-postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres}"
+        tier="${TIER_OVERRIDE:-daily}"   # filename label only; upload fans out to real tiers
         out="$(scripts/backup/make-bundle.sh \
-          --db-url "$db_url" --env "${{ inputs.environment }}" --tier "$tier" \
-          --recipient "${{ inputs.age_recipient }}" --outdir ./_backup | tail -1)"
+          --db-url "$db_url" --env "$ENVIRONMENT" --tier "$tier" \
+          --recipient "$AGE_RECIPIENT" --outdir ./_backup | tail -1)"
         echo "bundle=$out" >> "$GITHUB_OUTPUT"
         echo "manifest=${out%.tar.zst.age}.manifest.json" >> "$GITHUB_OUTPUT"
 
     - name: Upload to each tier prefix
       shell: bash
       env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        TIER_OVERRIDE: ${{ inputs.tier_override }}
+        BUNDLE: ${{ steps.bundle.outputs.bundle }}
+        MANIFEST: ${{ steps.bundle.outputs.manifest }}
         R2_BACKUP_BUCKET: ${{ inputs.r2_bucket }}
         R2_S3_ENDPOINT: ${{ inputs.r2_endpoint }}
         R2_BACKUP_ACCESS_KEY_ID: ${{ inputs.r2_key_id }}
@@ -694,25 +702,28 @@ runs:
         B2_BACKUP_APP_KEY: ${{ inputs.b2_app_key }}
       run: |
         set -euo pipefail
-        env="${{ inputs.environment }}"
-        bundle="${{ steps.bundle.outputs.bundle }}"
-        manifest="${{ steps.bundle.outputs.manifest }}"
-        if [ -n "${{ inputs.tier_override }}" ]; then
-          tiers="${{ inputs.tier_override }}"
+        if [ -n "$TIER_OVERRIDE" ]; then
+          tiers="$TIER_OVERRIDE"
         else
           tiers="$(scripts/backup/tiers.sh "$(date -u +%Y-%m-%d)")"
         fi
         for tier in $tiers; do
-          base="$(basename "$bundle")"
-          scripts/backup/upload.sh --file "$bundle"   --key "clint/$env/$tier/$base"
-          scripts/backup/upload.sh --file "$manifest" --key "clint/$env/$tier/$(basename "$manifest")"
+          scripts/backup/upload.sh --file "$BUNDLE"   --key "clint/$ENVIRONMENT/$tier/$(basename "$BUNDLE")"
+          scripts/backup/upload.sh --file "$MANIFEST" --key "clint/$ENVIRONMENT/$tier/$(basename "$MANIFEST")"
         done
 ```
 
-> The `db_url` host form `db.<ref>.supabase.co:5432` is the direct connection.
-> If the project enforces pooler-only access, switch to the session-mode pooler
-> URI from the Supabase dashboard (Project Settings -> Database -> Connection
-> string). Confirm during the Task 6 live smoke.
+> Secrets are passed through `env:` (not interpolated into the run script body)
+> so the DB password is never written into the rendered shell. `make-bundle.sh`
+> needs `psql` + `pg_dump` (from `postgresql-client-17`), `zstd`, `jq`, and
+> `supabase` (the calling workflow installs the Supabase CLI via `setup-cli`);
+> `zstd`/`jq`/`aws` are preinstalled on `ubuntu-latest`.
+>
+> The default `db_url` host form `db.<ref>.supabase.co:5432` is the direct
+> connection. Supabase has largely deprecated direct IPv4; if the runner cannot
+> reach it, pass the `db_url` input set to the **session-mode** pooler URI
+> (port 5432, user `postgres.<ref>`) from the Supabase dashboard. Transaction
+> mode (6543) will not work with `pg_dump`. Confirm during the Task 6 live smoke.
 
 - [ ] **Step 2: Lint the action**
 
@@ -779,7 +790,6 @@ jobs:
           environment: ${{ matrix.environment }}
           project_ref: ${{ secrets[matrix.project_ref_secret] }}
           db_password: ${{ secrets[matrix.db_password_secret] }}
-          access_token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
           r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
           r2_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
@@ -854,7 +864,6 @@ checkout and `supabase/setup-cli@v1` steps already exist earlier in the job):
           environment: prod
           project_ref: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
           db_password: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
-          access_token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
           tier_override: pre-migration
           r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
