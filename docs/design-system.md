@@ -23,8 +23,8 @@ Exact values live in code. These are the global, named decisions -- stated as ru
   (`formField.borderRadius`, per-component `borderRadius`) in
   [`primeng-theme.ts`](../src/client/src/app/config/primeng-theme.ts). Do not round
   data elements.
-- **Light mode only.** Dark mode is disabled in the preset (`darkModeSelector` off). Never
-  add a dark variant.
+- **Light mode only.** Dark mode is disabled (`darkModeSelector: false`, set where PrimeNG
+  is provided in `main.ts`). Never add a dark variant.
 - **Slate is the neutral family.** Never `gray-*`. Surface tokens map to `{slate.*}` in the
   preset.
 - **Brand utilities, not raw teal.** Use `bg-brand-*` / `text-brand-*` / `border-brand-*` /
