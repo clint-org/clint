@@ -1042,17 +1042,37 @@ Create `docs/runbook/<NN>-backup-and-restore.md`:
 # Backup and Restore
 
 ## What is backed up
-- Prod and dev Postgres, full logical dumps (roles + schema + data, including
-  `public`, `auth`, and `storage` metadata), restorable into any Postgres 17.
-- File blobs already live in Cloudflare R2 (materials cutover) and are out of
-  scope here; ensure that bucket has its own versioning + lifecycle.
+Per backup (per environment) the bundle holds four SQL artifacts:
+- `roles.sql` - database roles and grants.
+- `schema.sql` - the full `public` schema DDL.
+- `data.sql` - all `public` schema data.
+- `auth_storage.sql` - data for the platform-managed identity and file-pointer
+  tables: `auth.users`, `auth.identities`, `storage.buckets`, `storage.objects`.
+
+Plus a `manifest.json` (env, tier, timestamp, sha256 of the encrypted bundle,
+and the captured auth/storage row counts).
+
+Not in scope: the materials file blobs already live in Cloudflare R2 (materials
+cutover); this policy backs up only the Postgres pointers to them. Give that
+bucket its own Bucket Lock + lifecycle separately.
+
+## Restore target (important)
+Restores target a **Supabase project (new or self-hosted)**, not a bare vanilla
+Postgres. The `auth`, `storage`, and `extensions` schemas (and extensions such as
+`pg_net` and `pg_trgm`) are provisioned by the Supabase platform; the `public`
+schema DDL depends on them. The backup artifacts are intentionally clean (no
+stubbed auth schema), so they restore onto a target that already provides that
+environment.
 
 ## Where backups live
 - Primary: Cloudflare R2 bucket `clint-db-backups`, prefixes
   `clint/<env>/{daily,weekly,monthly,pre-migration}/`.
 - Secondary (cross-cloud): Backblaze B2 bucket `clint-db-backups`, same prefixes.
-- Both buckets have versioning + Object Lock (compliance mode). The backup job
-  has write-only credentials; retention is enforced by lifecycle, not the job.
+- Immutability: R2 uses Cloudflare **Bucket Lock** (R2 has no S3 versioning);
+  B2 uses Object Lock + versioning. The backup job holds write-only credentials
+  (no delete). Retention is enforced by lifecycle rules, not the job. On R2 the
+  lock window is <= the shortest tier (7 days) so lifecycle can still reclaim
+  space (Bucket Lock takes precedence over lifecycle).
 
 ## Schedule and retention (GFS)
 - Daily 09:00 UTC (`backup-db.yml`); kept 7 days.
@@ -1067,6 +1087,14 @@ Create `docs/runbook/<NN>-backup-and-restore.md`:
   `production`-environment secret `BACKUP_AGE_PRIVATE_KEY` for the verification
   workflow only.
 
+## Verification
+- Weekly `backup-verify.yml`: freshness (newest daily <= 26h) + capture integrity
+  (checksum matches manifest; all five artifacts present; core public DDL present;
+  auth/storage dump row counts match the manifest). It does NOT run a live restore
+  (a generic runner lacks the Supabase environment).
+- Quarterly manual drill (below): the true end-to-end restore into a real
+  Supabase project.
+
 ## RPO / RTO
 - RPO: ~24h off-site; last-deploy via pre-migration snapshot; seconds via
   Supabase PITR where enabled and intact.
@@ -1077,17 +1105,27 @@ Create `docs/runbook/<NN>-backup-and-restore.md`:
 2. Download it and its `.manifest.json`; verify `sha256` against the manifest.
 3. Decrypt: `age -d -i clint-backup-age.key -o bundle.tar.zst bundle.tar.zst.age`
 4. Unpack: `zstd -d bundle.tar.zst -o bundle.tar && tar -xf bundle.tar`
-5. Provision the target (new Supabase project or Postgres 17).
-6. Restore in order: `psql "$URL" -f roles.sql` (skip if target manages roles),
-   then `schema.sql`, then `data.sql` (use `-v ON_ERROR_STOP=1`).
-7. Sanity-check: `select count(*) from public.marker_types;` (> 0).
+5. Provision the target: a fresh Supabase project (or self-hosted Supabase). Note
+   its session-mode connection string as `$URL`.
+6. Restore in order with `-v ON_ERROR_STOP=1`:
+   - `psql "$URL" -f roles.sql` (skip or expect benign "role exists" notices if
+     the target manages its own roles)
+   - `psql "$URL" -f schema.sql` (public schema DDL)
+   - `psql "$URL" -f data.sql` (public data)
+   - `psql "$URL" -f auth_storage.sql` (auth/storage data; the auth/storage
+     schemas already exist on a Supabase target)
+7. Sanity-check: `select count(*) from public.marker_types;` (> 0) and
+   `select count(*) from auth.users;` (matches the manifest's recorded count).
 8. Repoint the app's Supabase connection / DNS to the restored instance.
 
 ## Quarterly restore drill (checklist)
-- [ ] Pull the latest prod bundle and run the full restore procedure into a scratch project.
-- [ ] Confirm row counts on key tables match expectations.
+- [ ] Pull the latest prod bundle and run the full restore procedure into a fresh
+      throwaway Supabase project (including `auth_storage.sql`).
+- [ ] Confirm `public` row counts on key tables and `auth.users` count match the
+      manifest.
 - [ ] Time the restore; record against the RTO target.
 - [ ] Confirm the offline private key is still accessible to both custodians.
+- [ ] Tear down the throwaway project.
 ```
 
 - [ ] **Step 3: Write the client-facing policy statement**
@@ -1107,9 +1145,10 @@ data, independent of its primary database provider.
 - **Off-site and cross-cloud:** every backup is stored in two independent cloud
   providers in separate infrastructure, so no single provider failure can
   destroy all copies.
-- **Immutable:** backups are write-once (Object Lock); they cannot be altered or
-  deleted before their retention period elapses, including by an actor holding
-  production credentials.
+- **Immutable:** backups are write-once (object lock); they cannot be altered or
+  deleted before their lock window elapses, including by an actor holding
+  production credentials. The backup process itself has write-only, no-delete
+  credentials.
 - **Encrypted:** all backups are encrypted at rest; decryption keys are held
   offline by named custodians.
 - **Tested:** restores are verified automatically every week and via a manual
