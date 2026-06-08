@@ -11,7 +11,7 @@
  */
 export const PLATFORM_OPERATOR = 'Clint';
 export const PLATFORM_LEGAL_EMAIL = 'privacy@clintapp.com';
-export const LAST_UPDATED = 'June 6, 2026';
+export const LAST_UPDATED = 'June 7, 2026';
 
 export interface LegalSection {
   heading: string;
@@ -41,9 +41,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     ],
   },
   {
-    heading: 'Cookies and analytics',
+    heading: 'Cookies',
     body: [
-      'We use strictly necessary cookies to keep you signed in, including a session cookie scoped to our domain so that you stay authenticated across workspace subdomains. We use privacy-respecting product analytics to understand aggregate usage and improve the service.',
+      'We use strictly necessary cookies to keep you signed in, including a session cookie scoped to our domain so that you stay authenticated across workspace subdomains. We do not use advertising or third-party tracking cookies.',
     ],
   },
   {
