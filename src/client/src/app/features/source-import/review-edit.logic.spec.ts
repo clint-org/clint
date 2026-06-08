@@ -125,7 +125,7 @@ describe('match options', () => {
   it('offers create-new plus fuzzy candidates with scores', () => {
     expect(matchOptionsFor('assets', 0, fp())).toEqual([
       { id: '__new__', name: 'Create new: Reta' },
-      { id: 'as-9', name: 'Retatrutide (existing) (0.82)' },
+      { id: 'as-9', name: 'Retatrutide (existing) (82% match)' },
     ]);
   });
   it('current match id is __new__ for a new entity', () => {

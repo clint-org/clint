@@ -169,7 +169,11 @@ export function matchOptionsFor(type: EntityType, idx: number, p: ProposalWithFu
   if (m?.kind === 'existing' && m.id && !alts.some((a) => a.id === m.id)) {
     options.push({ id: m.id, name: `${displayName(p, type, idx)} (current match)` });
   }
-  options.push(...alts.map((a) => ({ id: a.id, name: `${a.name} (${a.score.toFixed(2)})` })));
+  // Score is a 0-1 Jaro-Winkler name similarity; show it as a "% match" so the
+  // confidence reads clearly rather than as a bare decimal.
+  options.push(
+    ...alts.map((a) => ({ id: a.id, name: `${a.name} (${Math.round(a.score * 100)}% match)` })),
+  );
   return options;
 }
 
