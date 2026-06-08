@@ -46,7 +46,8 @@ function buildSearchUrl(
 
   if (companyName) params.set('query.spons', companyName);
   params.set('query.titles', trial.name);
-  if (trial.indication) params.set('query.cond', trial.indication);
+  const cond = trial.indications?.[0] ?? trial.indication;
+  if (cond) params.set('query.cond', cond);
   if (assetName) params.set('query.intr', assetName);
   if (trial.phase) {
     const mapped = PHASE_MAP[trial.phase];

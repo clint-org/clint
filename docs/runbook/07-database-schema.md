@@ -915,4 +915,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260605140000_restore_preclinical_guard_bullseye_assets.sql`
 - `20260606120000_set_trial_indications_rpc.sql`
 - `20260607120000_lock_down_function_execute_grants.sql`
+- `20260607130000_lock_down_read_rpc_and_helper_grants.sql`
+- `20260607140000_multi_indication_on_import.sql`
 <!-- /AUTO-GEN:DRIFT -->

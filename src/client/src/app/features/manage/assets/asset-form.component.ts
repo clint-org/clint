@@ -9,10 +9,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { InputText } from 'primeng/inputtext';
-import { InputNumber } from 'primeng/inputnumber';
-import { MultiSelect } from 'primeng/multiselect';
-import { Select } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -25,8 +21,8 @@ import { CompanyService } from '../../../core/services/company.service';
 import { MechanismOfActionService } from '../../../core/services/mechanism-of-action.service';
 import { RouteOfAdministrationService } from '../../../core/services/route-of-administration.service';
 import { extractConstraintMessage } from '../../../core/util/db-error';
-import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { AssetEditFormComponent } from './asset-edit-form.component';
 
 const ASSET_FIELD_LABELS: Record<string, string> = {
   name: 'Name',
@@ -36,17 +32,7 @@ const ASSET_FIELD_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-asset-form',
   standalone: true,
-  imports: [
-    FormsModule,
-    InputText,
-    InputNumber,
-    MultiSelect,
-    Select,
-    ButtonModule,
-    MessageModule,
-    FormFieldComponent,
-    FormActionsComponent,
-  ],
+  imports: [FormsModule, ButtonModule, MessageModule, FormActionsComponent, AssetEditFormComponent],
   templateUrl: './asset-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -58,9 +44,9 @@ export class AssetFormComponent implements OnInit {
 
   readonly name = signal('');
   readonly genericName = signal('');
-  readonly companyId = signal('');
+  readonly companyId = signal<string | null>('');
   readonly logoUrl = signal('');
-  readonly displayOrder = signal(0);
+  readonly displayOrder = signal<number | null>(0);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameBlurred = signal(false);
@@ -117,7 +103,7 @@ export class AssetFormComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
-    return this.name().trim().length > 0 && this.companyId().trim().length > 0;
+    return this.name().trim().length > 0 && (this.companyId() ?? '').trim().length > 0;
   }
 
   async onSubmit(): Promise<void> {
@@ -131,9 +117,9 @@ export class AssetFormComponent implements OnInit {
       const payload: Partial<Asset> = {
         name: this.name().trim(),
         generic_name: this.genericName().trim() || null,
-        company_id: this.companyId(),
+        company_id: this.companyId() ?? '',
         logo_url: this.logoUrl().trim() || null,
-        display_order: this.displayOrder(),
+        display_order: this.displayOrder() ?? 0,
       };
 
       let result: Asset;

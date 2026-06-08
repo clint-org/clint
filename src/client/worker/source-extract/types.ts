@@ -64,6 +64,10 @@ const TrialSchema = z.object({
   // primary_asset_ref is the headline asset and must be one of asset_refs.
   asset_refs: z.array(z.number().int()).optional().default([]),
   primary_asset_ref: z.number().int().nullable().optional().default(null),
+  // A trial can study more than one indication. `indications` is the canonical
+  // multi-value field; the scalar `indication` is kept for back-compat with
+  // older proposals and is folded into `indications` downstream.
+  indications: z.array(z.string()).optional().default([]),
   indication: z.string().nullable().optional().default(null),
   evidence: z.string(),
 });

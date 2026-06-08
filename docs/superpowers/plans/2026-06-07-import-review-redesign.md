@@ -613,6 +613,42 @@ unioned with the proposed values). On Save it applies `applyMatchOverride` then 
 
 ---
 
+## Scope Revision (2026-06-07): multi-indication on import (end-to-end)
+
+Decision (confirmed with product owner): the import review must support **multiple
+indications per trial**, matching the recent dev change that made the Manage trial dialogs
+multi-indication. Investigation showed multi-indication previously reached only the Manage UI
+(`set_trial_indications`); the import commit path (`commit_source_import` -> `create_trial`)
+still persisted a single indication. This revision closes that gap end-to-end.
+
+Added/changed tasks (executed in dependency order before the original Tasks 6-9):
+
+- **Task A — backend.** New migration `20260607140000_multi_indication_on_import.sql`:
+  - Refactor `create_trial` to accept `p_indication_names text[]` (drop the old 10-arg
+    signature, create the 11-arg version, re-grant). Body loops over the name set
+    (prefers the array, falls back to the legacy `p_indication_name`), writing
+    `indications`/`conditions`/`condition_indication_map`/`trial_conditions`/`asset_indications`
+    per name, then recomputes asset-indication status once.
+  - `create or replace commit_source_import`: trials loop reads `v_item->'indications'`
+    (array of names) with fallback to the scalar `indication`, and passes it as the new array
+    param. All other loops copied verbatim.
+  - In-migration smoke: a trial proposed with two indications creates two `trial_conditions`
+    rows. Plus an integration test in `source-import-rpc.spec.ts`.
+- **Task B — worker.** `worker/source-extract/types.ts` `TrialSchema`: add
+  `indications: string[]` (back-compatible: prefer it, fall back to `indication`). Update
+  `prompt-builder.ts` / `nct-prompt-builder.ts` to request the array, and `ctgov-enrichment.ts`
+  to use the first indication. Worker vitest covers the schema default.
+- **Task 1 (revised).** `TrialFormValue.indication: string | null` becomes
+  `indications: string[]`; `proposalTrialToForm` reads `indications` (fallback `[indication]`),
+  `applyTrialForm` writes `indications`. Committed tests updated.
+- **Task 6 (revised).** The shared `TrialEditFormComponent` indication control is a
+  **multi-select of `{id,name}` options** with `indicationIds = model<string[]>`. The host
+  decides option-`id` semantics: Manage edit binds indication **UUIDs** (unchanged
+  multi-indication behaviour); the review dialog binds indication **names** (options =
+  space indications union proposed names). No mode flag needed. The Manage **create** dialog
+  stays unshared (single-asset + NCT-autopopulate divergence); edit + review share the body.
+- **Tasks 7-9** unchanged in intent; the review dialog wires the multi-select indication by name.
+
 ## Self-Review (completed)
 
 - **Spec coverage:** read-only grid + scroll (Task 8/9); dialog editing with real controls (Tasks 4–7);

@@ -9,11 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
-import { Select } from 'primeng/select';
-import { MultiSelect } from 'primeng/multiselect';
-import { DatePicker } from 'primeng/datepicker';
-import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 
@@ -22,8 +17,8 @@ import { AssetService } from '../../../core/services/asset.service';
 import { IndicationService } from '../../../core/services/indication.service';
 import { SpaceSettingsService } from '../../../core/services/space-settings.service';
 import { Trial } from '../../../core/models/trial.model';
-import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { TrialEditFormComponent } from './trial-edit-form.component';
 
 interface SelectOption {
   id: string;
@@ -44,17 +39,7 @@ interface SelectOption {
  */
 @Component({
   selector: 'app-trial-edit-dialog',
-  imports: [
-    Dialog,
-    InputTextModule,
-    Select,
-    MultiSelect,
-    DatePicker,
-    Tooltip,
-    FormsModule,
-    FormFieldComponent,
-    FormActionsComponent,
-  ],
+  imports: [Dialog, FormsModule, FormActionsComponent, TrialEditFormComponent],
   templateUrl: './trial-edit-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -89,9 +74,6 @@ export class TrialEditDialogComponent {
   readonly phaseStartLocked = computed(() => this.trial().phase_start_date_source === 'ctgov');
   readonly phaseEndLocked = computed(() => this.trial().phase_end_date_source === 'ctgov');
 
-  readonly phaseStartDate = computed(() => this.parseDate(this.phaseStart()));
-  readonly phaseEndDate = computed(() => this.parseDate(this.phaseEnd()));
-
   private readonly ALL_PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
     { id: 'P1', name: 'Phase 1' },
@@ -116,12 +98,6 @@ export class TrialEditDialogComponent {
       : this.ALL_PHASE_OPTIONS.filter((o) => o.id !== 'PRECLIN');
   });
 
-  // Primary-asset choices are the currently selected assets.
-  protected readonly primaryOptions = computed(() => {
-    const sel = new Set(this.assetIds());
-    return this.products().filter((p) => sel.has(p.id));
-  });
-
   readonly isValid = computed(() => {
     const id = this.identifier();
     const idValid = !id || id.trim() === '' || /^NCT\d{8}$/i.test(id.trim());
@@ -130,24 +106,6 @@ export class TrialEditDialogComponent {
     const assetsValid = ids.length > 0 && !!primary && ids.includes(primary);
     return this.name().trim().length > 0 && assetsValid && idValid;
   });
-
-  // MultiSelect with showClear can emit null; coalesce to [].
-  protected onIndicationsChange(ids: string[] | null): void {
-    this.indicationIds.set(ids ?? []);
-  }
-
-  // MultiSelect with showClear can emit null; coalesce to []. Keep the primary in
-  // sync: default to the first member, clear when no assets remain.
-  protected onAssetsChange(ids: string[] | null): void {
-    const next = ids ?? [];
-    this.assetIds.set(next);
-    const primary = this.primaryAssetId();
-    if (next.length === 0) {
-      this.primaryAssetId.set(null);
-    } else if (primary === null || !next.includes(primary)) {
-      this.primaryAssetId.set(next[0]);
-    }
-  }
 
   constructor() {
     // Seed form from the input trial when the dialog opens. Re-seeds on every
@@ -200,27 +158,6 @@ export class TrialEditDialogComponent {
 
   close(): void {
     this.visibleChange.emit(false);
-  }
-
-  protected setPhaseStartDate(date: Date | null): void {
-    this.phaseStart.set(date ? this.formatDate(date) : null);
-  }
-
-  protected setPhaseEndDate(date: Date | null): void {
-    this.phaseEnd.set(date ? this.formatDate(date) : null);
-  }
-
-  private parseDate(value: string | null): Date | null {
-    if (!value) return null;
-    const [y, m, d] = value.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  }
-
-  private formatDate(date: Date): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
   }
 
   async save(): Promise<void> {
