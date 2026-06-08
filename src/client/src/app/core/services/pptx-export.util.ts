@@ -26,7 +26,7 @@ const COLUMN_WIDTHS: Record<ColumnKey, number> = {
   moa: 0.8,
   roa: 0.45,
   trial: 1.05,
-  notes: 0.22,
+  notes: 0.35,
 };
 
 export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
@@ -46,72 +46,49 @@ export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
   return { columns, labelColW: x };
 }
 
-export interface PresentMarkerType {
-  id: string;
+export interface LegendEntry {
   name: string;
   color: string;
   shape: string;
   fill_style: string;
-  display_order: number;
+  inner_mark: string;
 }
 
-export interface LegendItem {
-  name: string;
-  color: string;
-  shape: string;
-  fill_style: string;
+export interface LegendGroup {
+  label: string;
+  items: LegendEntry[];
 }
 
-export interface LegendLayout {
-  items: LegendItem[];
-  /** Index of the first item AFTER the Regulatory group, or -1 if none / no break. */
-  breakIndex: number;
-}
-
-const REGULATORY_CATEGORY = 'regulatory';
-
-export function orderLegendItems(
-  present: PresentMarkerType[],
-  allTypes: MarkerType[]
-): LegendLayout {
-  const toItem = (p: PresentMarkerType): LegendItem => ({
-    name: p.name,
-    color: p.color,
-    shape: p.shape,
-    fill_style: p.fill_style,
-  });
-
-  // Fallback: no authoritative ordering available -> flat by type display_order.
-  if (!allTypes.length) {
-    const items = [...present].sort((a, b) => a.display_order - b.display_order).map(toItem);
-    return { items, breakIndex: -1 };
-  }
-
-  const meta = new Map<string, { catOrder: number; typeOrder: number; catName: string }>();
+/**
+ * Group marker types by category for the legend, mirroring the on-screen legend
+ * (`legend.component.ts` groupedMarkerTypes): only types with display_order > 0,
+ * groups sorted by category display_order, items left in the input order (the
+ * MarkerTypeService lists types ordered by display_order, so items within a
+ * category are already display-order ascending).
+ */
+export function buildLegendGroups(allTypes: MarkerType[]): LegendGroup[] {
+  const groups = new Map<string, { label: string; order: number; items: LegendEntry[] }>();
   for (const t of allTypes) {
-    meta.set(t.id, {
-      catOrder: t.marker_categories?.display_order ?? 999,
-      typeOrder: t.display_order,
-      catName: (t.marker_categories?.name ?? '').toLowerCase(),
+    if (t.display_order <= 0) continue;
+    const cat = t.marker_categories;
+    const label = cat?.name ?? 'Other';
+    const order = cat?.display_order ?? 999;
+    let g = groups.get(label);
+    if (!g) {
+      g = { label, order, items: [] };
+      groups.set(label, g);
+    }
+    g.items.push({
+      name: t.name,
+      color: t.color,
+      shape: t.shape,
+      fill_style: t.fill_style,
+      inner_mark: t.inner_mark,
     });
   }
-
-  const sorted = [...present].sort((a, b) => {
-    const ma = meta.get(a.id);
-    const mb = meta.get(b.id);
-    const ca = ma?.catOrder ?? 999;
-    const cb = mb?.catOrder ?? 999;
-    if (ca !== cb) return ca - cb;
-    return (ma?.typeOrder ?? a.display_order) - (mb?.typeOrder ?? b.display_order);
-  });
-
-  let lastRegIndex = -1;
-  sorted.forEach((p, i) => {
-    if (meta.get(p.id)?.catName === REGULATORY_CATEGORY) lastRegIndex = i;
-  });
-  const breakIndex = lastRegIndex >= 0 && lastRegIndex + 1 < sorted.length ? lastRegIndex + 1 : -1;
-
-  return { items: sorted.map(toItem), breakIndex };
+  return [...groups.values()]
+    .sort((a, b) => a.order - b.order)
+    .map((g) => ({ label: g.label, items: g.items }));
 }
 
 export type MarkerStatus = 'Actual' | 'Projected' | 'NLE';
@@ -123,7 +100,7 @@ export interface MarkerRow {
   marker: string;
   date: string;
   status: MarkerStatus;
-  notes: string;
+  detail: string;
 }
 
 const NOTE_MAX = 80;
@@ -164,7 +141,7 @@ export function buildMarkerTableRows(companies: Company[]): MarkerRow[] {
             marker: m.marker_types!.name,
             date: formatMarkerDate(m.event_date, m.end_date),
             status,
-            notes: truncate(m.title ?? m.description ?? '', NOTE_MAX),
+            detail: truncate(m.title ?? m.description ?? '', NOTE_MAX),
           });
         }
       }

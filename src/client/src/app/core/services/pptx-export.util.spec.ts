@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeLeftColumns } from './pptx-export.util';
-import { orderLegendItems, type PresentMarkerType } from './pptx-export.util';
+import { computeLeftColumns, buildLegendGroups } from './pptx-export.util';
 import type { MarkerType } from '../models/marker.model';
 import {
   buildMarkerTableRows,
@@ -22,7 +21,7 @@ describe('computeLeftColumns', () => {
     expect(layout.columns.map((c) => c.key)).toEqual([
       'company', 'asset', 'moa', 'roa', 'trial', 'notes',
     ]);
-    expect(layout.labelColW).toBeCloseTo(4.37, 5);
+    expect(layout.labelColW).toBeCloseTo(4.5, 5);
   });
 
   it('lays out x positions cumulatively and matches labelColW', () => {
@@ -40,10 +39,6 @@ describe('computeLeftColumns', () => {
     expect(last.x + last.width).toBeCloseTo(layout.labelColW, 5);
   });
 });
-
-function present(id: string, order: number): PresentMarkerType {
-  return { id, name: id, color: '#000000', shape: 'circle', fill_style: 'filled', display_order: order };
-}
 
 function fullType(id: string, typeOrder: number, catName: string, catOrder: number): MarkerType {
   return {
@@ -72,52 +67,43 @@ function fullType(id: string, typeOrder: number, catName: string, catOrder: numb
   };
 }
 
-describe('orderLegendItems', () => {
+describe('buildLegendGroups', () => {
+  // ordered by display_order globally, as MarkerTypeService.list returns them
   const allTypes: MarkerType[] = [
-    fullType('Submission', 1, 'Regulatory', 3),
-    fullType('Approval', 1, 'Approval', 4),
     fullType('Trial Start', 1, 'Clinical Trial', 1),
     fullType('Full Data', 1, 'Data', 2),
-    fullType('Regulatory Filing', 2, 'Regulatory', 3),
+    fullType('Regulatory Filing', 1, 'Regulatory', 3),
+    fullType('Submission', 2, 'Regulatory', 3),
+    fullType('Approval', 1, 'Approval', 4),
     fullType('LOE Date', 1, 'Loss of Exclusivity', 5),
   ];
 
-  it('orders present items by category then type order', () => {
-    const result = orderLegendItems(
-      [present('Submission', 1), present('Approval', 1), present('Trial Start', 1),
-       present('Full Data', 1), present('Regulatory Filing', 2), present('LOE Date', 1)],
-      allTypes
-    );
-    expect(result.items.map((i) => i.name)).toEqual([
-      'Trial Start', 'Full Data', 'Submission', 'Regulatory Filing', 'Approval', 'LOE Date',
+  it('groups by category, ordered by category display_order', () => {
+    const groups = buildLegendGroups(allTypes);
+    expect(groups.map((g) => g.label)).toEqual([
+      'Clinical Trial', 'Data', 'Regulatory', 'Approval', 'Loss of Exclusivity',
     ]);
   });
 
-  it('sets breakIndex to the first item after the Regulatory group', () => {
-    const result = orderLegendItems(
-      [present('Submission', 1), present('Approval', 1), present('Trial Start', 1),
-       present('Regulatory Filing', 2), present('LOE Date', 1)],
-      allTypes
-    );
-    // ordered: Trial Start, Submission, Regulatory Filing, Approval, LOE Date
-    expect(result.breakIndex).toBe(3);
+  it('keeps items within a group in input (display_order) order', () => {
+    const reg = buildLegendGroups(allTypes).find((g) => g.label === 'Regulatory');
+    expect(reg?.items.map((i) => i.name)).toEqual(['Regulatory Filing', 'Submission']);
   });
 
-  it('returns breakIndex -1 when no Regulatory item is present', () => {
-    const result = orderLegendItems(
-      [present('Trial Start', 1), present('Approval', 1)],
-      allTypes
-    );
-    expect(result.breakIndex).toBe(-1);
+  it('carries shape, fill_style, inner_mark, and color through', () => {
+    const groups = buildLegendGroups([fullType('Approval', 1, 'Approval', 4)]);
+    expect(groups[0].items[0]).toMatchObject({
+      name: 'Approval', color: '#000000', shape: 'circle', fill_style: 'filled', inner_mark: 'none',
+    });
   });
 
-  it('falls back to display_order with no break when allTypes is empty', () => {
-    const result = orderLegendItems(
-      [present('B', 2), present('A', 1)],
-      []
-    );
-    expect(result.items.map((i) => i.name)).toEqual(['A', 'B']);
-    expect(result.breakIndex).toBe(-1);
+  it('excludes types with display_order <= 0', () => {
+    const groups = buildLegendGroups([
+      fullType('Hidden', 0, 'Data', 2),
+      fullType('Full Data', 1, 'Data', 2),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].items.map((i) => i.name)).toEqual(['Full Data']);
   });
 });
 
@@ -174,6 +160,9 @@ describe('buildMarkerTableRows', () => {
     expect(rows[0].trial).toBe('SURPASS-2');
     expect(rows[1].marker).toBe('Approval');
     expect(rows[1].status).toBe('Actual');
+    // detail carries the marker's title (the catalyst label), not a trial note
+    expect(rows[0].detail).toBe('Topline expected');
+    expect(rows[1].detail).toBe('Approved by FDA');
   });
 
   it('marks no_longer_expected markers as NLE', () => {

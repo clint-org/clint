@@ -7,14 +7,14 @@ import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
 import { MarkerTypeService } from './marker-type.service';
 import {
+  buildLegendGroups,
   buildMarkerTableRows,
   computeLeftColumns,
   type ColumnLayout,
   formatDateShort,
+  type LegendEntry,
   type MarkerRow,
-  orderLegendItems,
   paginate,
-  type PresentMarkerType,
 } from './pptx-export.util';
 import { TimelineService } from './timeline.service';
 
@@ -54,7 +54,7 @@ const SLIDE_H = 7.5;
 const TITLE_H = 0.3;
 const HEADER_H = 0.28;
 const HEADER_BAND = '1e293b';
-const LEGEND_H = 0.7;
+const LEGEND_H = 0.85;
 const DATA_Y = TITLE_H + HEADER_H;
 
 const FALLBACK_PRIMARY = '0d9488';
@@ -75,6 +75,7 @@ export class PptxExportService {
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
     const logoData = logoUrl ? await this.loadLogoAsBase64(logoUrl) : null;
+    const agencyName = this.brand.agency()?.name ?? null;
 
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
@@ -86,7 +87,7 @@ export class PptxExportService {
 
     // Slide 1: branded cover.
     const cover = pptx.addSlide();
-    this.renderCover(cover, appDisplayName, primaryColorHex, logoData);
+    this.renderCover(cover, appDisplayName, primaryColorHex, logoData, agencyName);
     this.addFooter(cover, appDisplayName, 1, totalPages);
 
     // Slide 2: data slide.
@@ -148,7 +149,8 @@ export class PptxExportService {
     cover: PptxGenJS.Slide,
     appDisplayName: string,
     primaryColorHex: string,
-    logoData: string | null
+    logoData: string | null,
+    agencyName: string | null
   ): void {
     if (logoData) {
       cover.addImage({
@@ -191,6 +193,18 @@ export class PptxExportService {
         color: '64748b',
       }
     );
+    if (agencyName) {
+      cover.addText(`Intelligence delivered by ${agencyName}`, {
+        x: 0.5,
+        y: 3.75,
+        w: 12,
+        h: 0.3,
+        fontSize: 10,
+        fontFace: 'Arial',
+        italic: true,
+        color: '94a3b8',
+      });
+    }
   }
 
   private async loadLogoAsBase64(url: string): Promise<string | null> {
@@ -334,6 +348,8 @@ export class PptxExportService {
         w: col.width - 0.05,
         h: HEADER_H,
         valign: 'middle',
+        wrap: false,
+        margin: 0,
         ...hStyle,
       });
     }
@@ -348,11 +364,13 @@ export class PptxExportService {
         y: headerY,
         w,
         h: HEADER_H,
-        fontSize: 7,
+        fontSize: 6,
         fontFace: 'Consolas',
         color: 'ffffff',
         align: 'center',
         valign: 'middle',
+        wrap: false,
+        margin: 0,
       });
     }
 
@@ -765,7 +783,7 @@ export class PptxExportService {
       color: primaryColorHex,
     });
 
-    const header = ['Company', 'Asset', 'Trial', 'Marker', 'Date', 'Status', 'Notes'];
+    const header = ['Company', 'Asset', 'Trial', 'Marker', 'Date', 'Status', 'Detail'];
     const headerRow = header.map((text) => ({
       text,
       options: { bold: true, color: 'ffffff', fill: { color: HEADER_BAND } },
@@ -773,7 +791,7 @@ export class PptxExportService {
 
     const body = rows.map((r, i) => {
       const fill = i % 2 === 0 ? 'ffffff' : 'f8fafc';
-      const cells = [r.company, r.asset, r.trial, r.marker, r.date, r.status, r.notes];
+      const cells = [r.company, r.asset, r.trial, r.marker, r.date, r.status, r.detail];
       return cells.map((text) => ({ text, options: { fill: { color: fill }, color: '334155' } }));
     });
 
@@ -802,97 +820,129 @@ export class PptxExportService {
       line: { color: 'e2e8f0', width: 0.5 },
     });
 
-    // Collect unique present marker types.
-    const presentMap = new Map<string, PresentMarkerType>();
-    for (const company of companies) {
-      for (const asset of company.assets ?? []) {
-        for (const trial of asset.trials ?? []) {
-          for (const marker of trial.markers ?? []) {
-            const mt = marker.marker_types;
-            if (mt && !presentMap.has(mt.id)) {
-              presentMap.set(mt.id, {
-                id: mt.id,
-                name: mt.name,
-                color: mt.color,
-                shape: mt.shape,
-                fill_style: mt.fill_style,
-                display_order: mt.display_order,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Authoritative category ordering (same source as the on-screen legend).
+    // Authoritative marker types (same source as the on-screen legend), grouped
+    // by category. Mirrors legend.component.ts so the deck legend never drifts.
     let allTypes: Awaited<ReturnType<MarkerTypeService['list']>> = [];
     try {
       allTypes = await this.markerTypeService.list(companies[0]?.space_id);
     } catch {
       allTypes = [];
     }
+    const groups = buildLegendGroups(allTypes);
 
-    const { items, breakIndex } = orderLegendItems([...presentMap.values()], allTypes);
+    const xStart = 0.3;
+    const xEnd = SLIDE_W - 0.3;
+    const rowH = 0.16;
+    const s = 0.09;
+    const yTop = legendY + 0.07;
+    const CHAR = 0.032;
+    const HCHAR = 0.04;
 
-    const dotSize = 0.08;
-    const itemW = 1.5;
-    const itemsPerRow = Math.floor((SLIDE_W - 0.4) / itemW);
-    const rowH = 0.2;
-
-    let col = 0;
-    let rowIdx = 0;
-    for (let i = 0; i < items.length; i++) {
-      if (i === breakIndex || col >= itemsPerRow) {
-        col = 0;
-        rowIdx++;
+    let x = xStart;
+    let row = 0;
+    const place = (w: number): { px: number; py: number } => {
+      if (x + w > xEnd) {
+        x = xStart;
+        row++;
       }
-      const mt = items[i];
-      const x = 0.3 + col * itemW;
-      const itemY = legendY + 0.08 + rowIdx * rowH;
-      const color = mt.color.replace('#', '');
-      const isFilled = mt.fill_style === 'filled';
-
-      if (mt.shape === 'circle') {
-        slide.addShape('ellipse', {
-          x,
-          y: itemY,
-          w: dotSize,
-          h: dotSize,
-          fill: isFilled ? { color } : undefined,
-          line: { color, width: 0.5 },
-        });
-      } else if (mt.shape === 'diamond') {
-        slide.addShape('diamond', {
-          x,
-          y: itemY,
-          w: dotSize,
-          h: dotSize,
-          fill: isFilled ? { color } : undefined,
-          line: { color, width: 0.5 },
-        });
-      } else {
-        slide.addShape('rect', {
-          x,
-          y: itemY,
-          w: dotSize,
-          h: dotSize,
-          fill: isFilled ? { color } : undefined,
-          line: { color, width: 0.5 },
-        });
-      }
-
-      slide.addText(mt.name, {
-        x: x + dotSize + 0.04,
-        y: itemY - 0.03,
-        w: itemW - dotSize - 0.15,
+      const px = x;
+      x += w;
+      return { px, py: yTop + row * rowH };
+    };
+    const label = (text: string, px: number, py: number, w: number, bold: boolean): void => {
+      slide.addText(text, {
+        x: px,
+        y: py - 0.03,
+        w: w + 0.1,
         h: 0.14,
         fontSize: 5,
         fontFace: 'Arial',
-        color: '64748b',
+        bold,
+        color: bold ? '475569' : '64748b',
         valign: 'middle',
-        shrinkText: true,
+        wrap: false,
+        margin: 0,
       });
-      col++;
+    };
+
+    // Projection / status indicators (fixed prefix, matching the app legend).
+    const statuses: { name: string; kind: 'actual' | 'projected' | 'nle' }[] = [
+      { name: 'Actual', kind: 'actual' },
+      { name: 'Projected', kind: 'projected' },
+      { name: 'NLE', kind: 'nle' },
+    ];
+    for (const st of statuses) {
+      const w = s + 0.04 + st.name.length * CHAR + 0.16;
+      const { px, py } = place(w);
+      const cy = py + s / 2;
+      if (st.kind === 'actual') {
+        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, fill: { color: '64748b' }, line: { color: '64748b', width: 0.5 } });
+      } else if (st.kind === 'projected') {
+        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, line: { color: '64748b', width: 1 } });
+      } else {
+        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, fill: { color: '64748b', transparency: 70 }, line: { color: '64748b', width: 0.5 } });
+        slide.addShape('line', { x: px - 0.01, y: cy, w: s + 0.02, h: 0, line: { color: '64748b', width: 1 } });
+      }
+      label(st.name, px + s + 0.03, py, st.name.length * CHAR, false);
+    }
+
+    // Category groups with bold uppercase headers + real marker shapes.
+    for (const g of groups) {
+      const head = g.label.toUpperCase();
+      const hw = head.length * HCHAR + 0.14;
+      const h = place(hw);
+      label(head, h.px, h.py, head.length * HCHAR, true);
+      for (const it of g.items) {
+        const w = s + 0.04 + it.name.length * CHAR + 0.16;
+        const { px, py } = place(w);
+        this.renderLegendShape(slide, it, px, py, s);
+        label(it.name, px + s + 0.03, py, it.name.length * CHAR, false);
+      }
+    }
+  }
+
+  private renderLegendShape(
+    slide: PptxGenJS.Slide,
+    entry: LegendEntry,
+    x: number,
+    y: number,
+    s: number
+  ): void {
+    const color = entry.color.replace('#', '');
+    const filled = entry.fill_style === 'filled';
+    const fill = filled ? { color } : undefined;
+    const cx = x + s / 2;
+    const cy = y + s / 2;
+
+    if (entry.shape === 'flag') {
+      slide.addShape('line', { x: x + s * 0.18, y, w: 0, h: s, line: { color, width: 0.75 } });
+      slide.addShape('rect', { x: x + s * 0.18, y, w: s * 0.6, h: s * 0.45, fill: { color }, line: { color, width: 0.5 } });
+      return;
+    }
+    if (entry.shape === 'dashed-line') {
+      slide.addShape('line', { x: cx, y, w: 0, h: s, line: { color, width: 1, dashType: 'dash' } });
+      return;
+    }
+    if (entry.shape === 'diamond') {
+      slide.addShape('diamond', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
+    } else if (entry.shape === 'triangle') {
+      slide.addShape('triangle', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
+    } else if (entry.shape === 'square') {
+      slide.addShape('rect', { x: x + s * 0.08, y: y + s * 0.08, w: s * 0.84, h: s * 0.84, fill, line: { color, width: 0.75 } });
+    } else {
+      slide.addShape('ellipse', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
+    }
+
+    // Inner marks (dot / dash / x / check). Use white on filled shapes.
+    const ink = filled ? 'ffffff' : color;
+    const a = s * 0.18;
+    if (entry.inner_mark === 'dot' || entry.inner_mark === 'check') {
+      slide.addShape('ellipse', { x: cx - s * 0.12, y: cy - s * 0.12, w: s * 0.24, h: s * 0.24, fill: { color: ink } });
+    } else if (entry.inner_mark === 'dash') {
+      slide.addShape('line', { x: cx - s * 0.2, y: cy, w: s * 0.4, h: 0, line: { color: ink, width: 1 } });
+    } else if (entry.inner_mark === 'x') {
+      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, line: { color: ink, width: 0.75 } });
+      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, flipV: true, line: { color: ink, width: 0.75 } });
     }
   }
 }
