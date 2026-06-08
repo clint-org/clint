@@ -173,19 +173,21 @@ export class PptxExportService {
       margin: 0,
     });
 
-    // Center cluster: agency attribution + logo.
+    // Agency attribution, left-aligned right after the tenant cluster.
     if (footer.agencyName) {
-      let agencyTextX = 3.7;
+      const tenantNameW = footer.appDisplayName.length * 0.065;
+      const agencyX = tenantTextX + tenantNameW + 0.3;
+      let agencyTextX = agencyX;
       if (footer.agencyLogo) {
         slide.addImage({
           data: footer.agencyLogo,
-          x: 3.5,
+          x: agencyX,
           y: glyphY,
           w: glyph,
           h: glyph,
           sizing: { type: 'contain', w: glyph, h: glyph },
         });
-        agencyTextX = 3.5 + glyph + 0.07;
+        agencyTextX = agencyX + glyph + 0.07;
       }
       slide.addText(`Intelligence delivered by ${footer.agencyName}`, {
         x: agencyTextX,
@@ -240,60 +242,64 @@ export class PptxExportService {
     agencyLogo: string | null,
     dateStr: string
   ): void {
+    // Logo + name lockup: the logo sits directly left of the name; the rest of
+    // the text column aligns under the name.
+    const textX = logoData ? 1.45 : 0.5;
     if (logoData) {
       cover.addImage({
         data: logoData,
         x: 0.5,
-        y: 0.5,
-        w: 2,
-        h: 0.8,
-        sizing: { type: 'contain', w: 2, h: 0.8 },
+        y: 1.95,
+        w: 0.75,
+        h: 0.75,
+        sizing: { type: 'contain', w: 0.75, h: 0.75 },
       });
     }
     cover.addText(appDisplayName, {
-      x: 0.5,
+      x: textX,
       y: 2,
-      w: 12,
+      w: 12 - textX,
       h: 0.6,
       fontSize: 28,
       fontFace: 'Arial',
       bold: true,
       color: primaryColorHex,
+      valign: 'middle',
     });
     cover.addText('Clinical Trial Landscape', {
-      x: 0.5,
-      y: 2.7,
-      w: 12,
+      x: textX,
+      y: 2.75,
+      w: 12 - textX,
       h: 0.4,
       fontSize: 14,
       fontFace: 'Arial',
       color: '475569',
     });
     cover.addText(dateStr, {
-      x: 0.5,
-      y: 3.3,
-      w: 12,
+      x: textX,
+      y: 3.35,
+      w: 12 - textX,
       h: 0.3,
       fontSize: 11,
       fontFace: 'Arial',
       color: '64748b',
     });
     if (agencyName) {
-      let attrX = 0.5;
+      let attrX = textX;
       if (agencyLogo) {
         cover.addImage({
           data: agencyLogo,
-          x: 0.5,
-          y: 3.75,
+          x: textX,
+          y: 3.8,
           w: 0.3,
           h: 0.3,
           sizing: { type: 'contain', w: 0.3, h: 0.3 },
         });
-        attrX = 0.9;
+        attrX = textX + 0.4;
       }
       cover.addText(`Intelligence delivered by ${agencyName}`, {
         x: attrX,
-        y: 3.75,
+        y: 3.8,
         w: 11,
         h: 0.3,
         fontSize: 10,
