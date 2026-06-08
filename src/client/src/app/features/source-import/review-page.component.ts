@@ -237,7 +237,7 @@ interface GridRow {
           </div>
 
           <div class="overflow-x-auto">
-            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem]">
+            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem] review-grid">
               <ng-template pTemplate="header">
                 <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                   <th class="w-10"></th>
