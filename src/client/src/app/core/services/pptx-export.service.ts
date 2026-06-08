@@ -7,10 +7,13 @@ import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
 import { MarkerTypeService } from './marker-type.service';
 import {
+  buildMarkerTableRows,
   computeLeftColumns,
   type ColumnLayout,
   formatDateShort,
+  type MarkerRow,
   orderLegendItems,
+  paginate,
   type PresentMarkerType,
 } from './pptx-export.util';
 import { TimelineService } from './timeline.service';
@@ -76,8 +79,10 @@ export class PptxExportService {
     const rows = this.flattenTrials(companies);
     if (rows.length === 0) return;
 
-    // Two slides total: cover + data slide.
-    const totalPages = 2;
+    const markerRows = buildMarkerTableRows(companies);
+    const ROWS_PER_TABLE_PAGE = 20;
+    const tablePages = paginate(markerRows, ROWS_PER_TABLE_PAGE);
+    const totalPages = 2 + tablePages.length;
 
     // Slide 1: branded cover.
     const cover = pptx.addSlide();
@@ -102,6 +107,12 @@ export class PptxExportService {
     this.renderRows(slide, rows, layout, logoByCompany, rowH, startYear, endYear, primaryColorHex);
     await this.renderLegend(slide, companies);
     this.addFooter(slide, appDisplayName, 2, totalPages);
+
+    for (let p = 0; p < tablePages.length; p++) {
+      const tableSlide = pptx.addSlide();
+      this.renderMarkerTable(tableSlide, tablePages[p], primaryColorHex);
+      this.addFooter(tableSlide, appDisplayName, 3 + p, totalPages);
+    }
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
   }
@@ -736,6 +747,47 @@ export class PptxExportService {
         line: { color, width: 0.5 },
       });
     }
+  }
+
+  private renderMarkerTable(
+    slide: PptxGenJS.Slide,
+    rows: MarkerRow[],
+    primaryColorHex: string
+  ): void {
+    slide.addText('Catalyst & Milestone Detail', {
+      x: 0.3,
+      y: 0.2,
+      w: SLIDE_W - 0.6,
+      h: 0.35,
+      fontSize: 14,
+      fontFace: 'Arial',
+      bold: true,
+      color: primaryColorHex,
+    });
+
+    const header = ['Company', 'Asset', 'Trial', 'Marker', 'Date', 'Status', 'Notes'];
+    const headerRow = header.map((text) => ({
+      text,
+      options: { bold: true, color: 'ffffff', fill: { color: HEADER_BAND } },
+    }));
+
+    const body = rows.map((r, i) => {
+      const fill = i % 2 === 0 ? 'ffffff' : 'f8fafc';
+      const cells = [r.company, r.asset, r.trial, r.marker, r.date, r.status, r.notes];
+      return cells.map((text) => ({ text, options: { fill: { color: fill }, color: '334155' } }));
+    });
+
+    slide.addTable([headerRow, ...body] as Parameters<PptxGenJS.Slide['addTable']>[0], {
+      x: 0.3,
+      y: 0.7,
+      w: SLIDE_W - 0.6,
+      colW: [1.6, 1.5, 1.6, 1.4, 1.1, 0.9, 4.63],
+      fontSize: 8,
+      fontFace: 'Arial',
+      border: { type: 'solid', color: 'e2e8f0', pt: 0.5 },
+      valign: 'middle',
+      rowH: 0.26,
+    });
   }
 
   private async renderLegend(slide: PptxGenJS.Slide, companies: Company[]): Promise<void> {
