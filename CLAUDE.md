@@ -10,6 +10,8 @@
 
 `docs/brand.md` is the authoritative brand guide. This section is the short form that should shape every design decision.
 
+`docs/design-system.md` is the engineering contract beneath the brand guide -- the concrete *how* (tokens, primitives, controls, label/copy and form/dialog rules). Consult it for any UI implementation decision.
+
 ### Product positioning
 **Competitive intelligence for pharma.** The product covers pipeline intelligence, catalyst tracking, clinical trial timelines, and portfolio analysis -- the four cuts that pharma CI professionals use most. Sub-disciplines it serves: pipeline intelligence, asset/scientific intelligence, catalyst tracking, portfolio intelligence, early signal analysis.
 

@@ -2,6 +2,8 @@
 
 > Positioning: **Competitive intelligence for pharma.** Covers pipeline, catalyst, clinical trial, and portfolio cuts.
 
+> Engineering contract (tokens, primitives, controls, rules): see [`design-system.md`](./design-system.md).
+
 ## Personality
 **Precise. Authoritative. Premium.**
 Clean, structured, data-dense. Inspired by medical journals, regulatory documents, and financial terminals. Feels like a serious analytical tool built by people who understand clinical data. Should convey institutional credibility -- users make high-stakes investment and partnership decisions based on what they see.
