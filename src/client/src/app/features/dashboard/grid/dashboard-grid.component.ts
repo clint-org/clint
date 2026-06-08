@@ -18,6 +18,7 @@ import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
+import { computeInitialScrollLeft } from './initial-scroll';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { GridHeaderComponent } from './grid-header.component';
@@ -85,13 +86,28 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
 
   constructor() {
+    // On load (and when the data/range changes) anchor the horizontal scroll on
+    // "today" so the user lands on current and upcoming activity rather than the
+    // empty early years. See computeInitialScrollLeft for the anchoring rules.
     effect(() => {
       const el = this.scrollContainerEl();
-      const x = this.earliestEventX();
-      if (!el || x === null) return;
+      const lastX = this.lastEventX();
+      const todayX = this.todayX();
+      const contentWidth = this.totalWidth();
+      if (!el || lastX === null) return;
 
       requestAnimationFrame(() => {
-        el.scrollLeft = Math.max(0, x - 80);
+        // The frozen label pane (Asset/MOA/ROA/Trial) is sticky inside the same
+        // scroller, so only `clientWidth - frozenWidth` of the viewport actually
+        // shows timeline. Anchor against that effective width, not the full one.
+        const frozen = el.querySelector<HTMLElement>('.sticky');
+        const frozenWidth = frozen ? frozen.getBoundingClientRect().width : 0;
+        el.scrollLeft = computeInitialScrollLeft({
+          todayX,
+          lastEventX: lastX,
+          viewportWidth: Math.max(0, el.clientWidth - frozenWidth),
+          contentWidth,
+        });
       });
     });
   }
@@ -104,25 +120,38 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     this.timeline.getTimelineWidth(this.startYear(), this.endYear(), this.zoomLevel())
   );
 
-  private readonly earliestEventX = computed<number | null>(() => {
+  /** Pixel x-position of "today" within the timeline content. */
+  readonly todayX = computed<number>(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return this.timeline.dateToX(today, this.startYear(), this.endYear(), this.totalWidth());
+  });
+
+  /** Today's x-position when it falls within the rendered range, else null (hides the marker). */
+  readonly todayMarkerX = computed<number | null>(() => {
+    const x = this.todayX();
+    return x >= 0 && x <= this.totalWidth() ? x : null;
+  });
+
+  /** Pixel x-position of the latest phase start or marker across all trials. */
+  private readonly lastEventX = computed<number | null>(() => {
     const trials = this.flattenedTrials();
     if (trials.length === 0) return null;
 
-    let earliestMs = Infinity;
+    let latestMs = -Infinity;
     for (const row of trials) {
       if (row.trial.phase_start_date) {
         const t = new Date(row.trial.phase_start_date).getTime();
-        if (t < earliestMs) earliestMs = t;
+        if (t > latestMs) latestMs = t;
       }
       for (const marker of row.trial.markers ?? []) {
         const t = new Date(marker.event_date).getTime();
-        if (t < earliestMs) earliestMs = t;
+        if (t > latestMs) latestMs = t;
       }
     }
 
-    if (earliestMs === Infinity) return null;
+    if (latestMs === -Infinity) return null;
 
-    const dateStr = new Date(earliestMs).toISOString().split('T')[0];
+    const dateStr = new Date(latestMs).toISOString().split('T')[0];
     return this.timeline.dateToX(dateStr, this.startYear(), this.endYear(), this.totalWidth());
   });
 

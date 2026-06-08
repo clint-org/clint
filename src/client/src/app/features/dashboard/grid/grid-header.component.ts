@@ -56,6 +56,21 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
           }
         }
       </div>
+
+      <!-- Today reference line + cap label -->
+      @if (todayX() !== null) {
+        <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div
+            class="absolute top-0 bottom-0 border-l border-dashed border-slate-300"
+            [style.left.px]="todayX()"
+          ></div>
+          <span
+            class="absolute top-0 -translate-x-1/2 rounded-b bg-slate-100 px-1 font-mono text-[9px] font-semibold uppercase tracking-widest text-slate-500"
+            [style.left.px]="todayX()"
+            >Today</span
+          >
+        </div>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,6 +78,7 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
 export class GridHeaderComponent {
   readonly columns = input.required<TimelineColumn[]>();
   readonly totalWidth = input.required<number>();
+  readonly todayX = input<number | null>(null);
 
   hasSubColumns(): boolean {
     return this.columns().some((c) => c.subColumns && c.subColumns.length > 0);

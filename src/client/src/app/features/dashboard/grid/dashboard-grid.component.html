@@ -252,7 +252,11 @@
       <!-- Timeline area -->
       <div class="flex-none" [style.width.px]="totalWidth()">
         <!-- Header -->
-        <app-grid-header [columns]="columns()" [totalWidth]="totalWidth()" />
+        <app-grid-header
+          [columns]="columns()"
+          [totalWidth]="totalWidth()"
+          [todayX]="todayMarkerX()"
+        />
 
         <!-- Trial rows -->
         <div [style.width.px]="totalWidth()">
@@ -301,6 +305,15 @@
                     (phaseClick)="onPhaseClick(row.trial)"
                   />
                 </svg>
+              }
+
+              <!-- Today reference line (subtle, behind markers) -->
+              @if (todayMarkerX() !== null) {
+                <div
+                  class="pointer-events-none absolute top-0 bottom-0 border-l border-dashed border-slate-300"
+                  [style.left.px]="todayMarkerX()"
+                  aria-hidden="true"
+                ></div>
               }
 
               <!-- Markers (absolute positioned) -->
