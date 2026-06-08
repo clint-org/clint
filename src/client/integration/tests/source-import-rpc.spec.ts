@@ -406,6 +406,64 @@ describe('commit_source_import', () => {
     expect(aiRow!.source_doc_id).toBe(docId);
   });
 
+  it('persists multiple indications per trial via indications[]', async () => {
+    const aiCallId = await openAndCloseAiCall();
+
+    const snapResult = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
+      p_space_id: p.org.spaceId,
+    });
+    const snapHash = expectOk(snapResult).hash as string;
+
+    const indA = `Indication A ${uniqueSuffix()}`;
+    const indB = `Indication B ${uniqueSuffix()}`;
+    const proposal = makeProposal({
+      trials: [
+        {
+          match: { kind: 'new', name: `TEST-MI-${uniqueSuffix()}` },
+          asset_ref: 0,
+          phase: 'P2',
+          status: 'Active',
+          indications: [indA, indB],
+        },
+      ],
+    });
+
+    const r = await as(p, 'contributor').rpc('commit_source_import', {
+      p_space_id: p.org.spaceId,
+      p_ai_call_id: aiCallId,
+      p_source_document: makeSourceDoc(),
+      p_proposal: proposal,
+      p_inventory_snapshot_hash: snapHash,
+    });
+    const result = expectOk(r) as Record<string, unknown>;
+    createdSourceDocIds.push(result.source_doc_id as string);
+    const created = result.created as Record<string, string[]>;
+    const trialId = created.trials[0];
+    const assetId = created.assets[0];
+
+    // Two trial_conditions rows (one per indication name).
+    const { count: condCount } = await admin
+      .from('trial_conditions')
+      .select('*', { count: 'exact', head: true })
+      .eq('trial_id', trialId);
+    expect(condCount).toBe(2);
+
+    // Two asset_indications rows for the primary asset.
+    const { count: aiCount } = await admin
+      .from('asset_indications')
+      .select('*', { count: 'exact', head: true })
+      .eq('asset_id', assetId);
+    expect(aiCount).toBe(2);
+
+    // Both indication names exist in the space.
+    const { data: inds } = await admin
+      .from('indications')
+      .select('name')
+      .eq('space_id', p.org.spaceId)
+      .in('name', [indA, indB]);
+    expect(inds!.map((i) => i.name).sort()).toEqual([indA, indB].sort());
+  });
+
   it('returns duplicate_source on same text_hash', async () => {
     const aiCallId1 = await openAndCloseAiCall();
     const aiCallId2 = await openAndCloseAiCall();
