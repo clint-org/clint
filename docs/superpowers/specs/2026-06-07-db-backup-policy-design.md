@@ -77,8 +77,12 @@ already provides those schemas -- a **fresh Supabase project or a self-hosted
 Supabase**, not a bare vanilla Postgres. The backup artifacts are kept clean
 (no stubbed `auth.*` objects, no `CREATE OR REPLACE` that would clobber the
 platform's real auth functions); restoring them onto a Supabase target is the
-documented recovery path. The `public` schema alone does restore into any
-Postgres 17, which is what the automated verification exercises (see below).
+documented recovery path. Note the `public` schema is **not** restorable into a
+bare vanilla Postgres either: its DDL creates Supabase extensions
+(`pg_net`) and its functions/indexes reference the `extensions` schema
+(`pg_trgm`: `similarity()`, `gin_trgm_ops`). The realistic restore target is
+therefore always a Supabase environment. Automated tests consequently verify
+**capture integrity** rather than performing a live restore (see below).
 
 **Cost note:** at a deliberately pessimistic 500 MB/dump, GFS 7/4/12 across both
 environments stores ~23 GB and costs well under USD 1/month combined across R2 +
@@ -155,24 +159,25 @@ Untested backups are not backups. A **weekly** workflow:
 1. Pulls the newest prod backup from R2.
 2. Decrypts it (private `age` key supplied via a guarded secret -- see Key
    custody) and decompresses.
-3. Spins up a `postgres:17` service container and restores `schema.sql` +
-   `data.sql` (the `public` schema, which is platform-independent) into it.
-4. Asserts sanity: schema applies clean; key application tables have row counts
-   > 0; and `auth_storage.sql` is present and contains the four expected
-   identity/storage tables (capture integrity).
-5. **Freshness check:** fails/alerts if the newest backup object is older than
+3. Verifies **capture integrity** of the decrypted bundle: all five artifacts
+   present and non-empty; the bundle `sha256` matches the manifest; `schema.sql`
+   contains core `public` DDL; `data.sql` and `auth_storage.sql` contain the
+   expected tables; and the captured row counts match the manifest.
+4. **Freshness check:** fails/alerts if the newest backup object is older than
    26 hours (catches a silently broken nightly job).
 
-**Verification split (revision 2026-06-07):** because the `postgres:17` service
-container does not carry Supabase's platform-managed `auth`/`storage` schemas,
-the automated weekly job restores and asserts on the `public` schema and
-verifies that the auth/storage *data* was captured (the dump contains the four
-tables with the row counts recorded in the manifest). A **full** restore that
-loads `auth_storage.sql` into a live target is exercised by the **quarterly
-manual restore drill** against a real fresh Supabase project (runbook). The
-local `roundtrip.test.sh` mirrors the automated check: full `public`
-restore + auth/storage capture-integrity (live source row counts equal the rows
-present in `auth_storage.sql`).
+**Verification split (revision 2026-06-07):** a *live* restore cannot run in a
+generic CI container because this app's schema depends on the Supabase
+environment (the `extensions` schema with `pg_net`/`pg_trgm`, and the `auth`
+schema for RLS). So the automated checks (the weekly workflow and the local
+`roundtrip.test.sh`) verify that the backup **captured** everything correctly --
+artifacts present, checksums match, and live source row counts equal the rows
+present in the dump and recorded in the manifest. The **actual end-to-end
+restore** is exercised by the **quarterly manual restore drill** against a real
+fresh Supabase project (runbook), which is the true recovery scenario. This
+keeps the automated suite robust (it does not break when Supabase adds an
+extension) while still proving, between drills, that no data is silently dropped
+or truncated.
 
 ### 7. Failure alerting
 

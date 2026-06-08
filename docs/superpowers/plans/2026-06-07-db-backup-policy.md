@@ -4,7 +4,7 @@
 
 **Goal:** Stand up an independent, off-site, immutable Postgres backup policy for Clint's prod and dev Supabase databases, stored cross-cloud in Cloudflare R2 + Backblaze B2, with automated daily + pre-migration dumps, GFS retention, encryption, and a weekly restore-verification test.
 
-**Architecture:** A repo-root `scripts/backup/` toolkit does the heavy lifting (tier selection, dump+bundle+encrypt, multi-destination upload) so the logic is unit-testable locally against the local Supabase stack and reused by every trigger. A local GitHub composite action (`.github/actions/db-backup`) wraps the toolkit; a scheduled workflow (`backup-db.yml`) runs it daily over a `[prod, dev]` matrix, and `deploy-prod.yml` calls it for a pre-migration snapshot. Retention and immutability are enforced by bucket lifecycle + Object Lock, never by the job, and the job holds write-only credentials. A separate weekly `backup-verify.yml` downloads the newest prod backup, decrypts it with an offline-held `age` key (gated behind a protected environment), restores it into a throwaway `postgres:17`, and asserts sanity.
+**Architecture:** A repo-root `scripts/backup/` toolkit does the heavy lifting (tier selection, dump+bundle+encrypt, multi-destination upload) so the logic is unit-testable locally against the local Supabase stack and reused by every trigger. A local GitHub composite action (`.github/actions/db-backup`) wraps the toolkit; a scheduled workflow (`backup-db.yml`) runs it daily over a `[prod, dev]` matrix, and `deploy-prod.yml` calls it for a pre-migration snapshot. Retention and immutability are enforced by bucket lifecycle + Object Lock, never by the job, and the job holds write-only credentials. A separate weekly `backup-verify.yml` downloads the newest prod backup, checks freshness, decrypts it with an offline-held `age` key (gated behind a protected environment), and verifies capture integrity (checksum, all artifacts present, core public DDL, and auth/storage dump row counts matching the manifest). A live end-to-end restore needs the Supabase environment and is the quarterly manual drill, not an automated step.
 
 **Tech Stack:** Bash, Supabase CLI (`supabase db dump`), `zstd`, `age` (encryption), AWS CLI v2 (S3-compatible uploads to both R2 and B2), GitHub Actions, Cloudflare R2 + `wrangler`, Backblaze B2.
 
@@ -104,7 +104,7 @@ chmod +x scripts/backup/tiers.test.sh
 scripts/backup/tiers.test.sh
 ```
 
-Expected: FAIL — `tiers.sh` does not exist (`No such file or directory`).
+Expected: FAIL, `tiers.sh` does not exist (`No such file or directory`).
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -143,7 +143,7 @@ git commit -m "Add GFS tier-selection logic for DB backups"
 
 ---
 
-## Task 2: Dump + bundle + encrypt, verified by local restore roundtrip
+## Task 2: Dump + bundle + encrypt, verified by local capture roundtrip
 
 **Files:**
 - Create: `scripts/backup/make-bundle.sh`
@@ -156,9 +156,11 @@ git commit -m "Add GFS tier-selection logic for DB backups"
 > bundle has FOUR sql artifacts: `roles.sql`, `schema.sql` (public DDL),
 > `data.sql` (public data), and `auth_storage.sql` (a `pg_dump --data-only` of
 > `auth.users`, `auth.identities`, `storage.buckets`, `storage.objects`). The
-> automated test verifies the public restore plus auth/storage *capture
-> integrity* (live row counts equal what is in the dump); full auth restore is a
-> quarterly manual drill. See spec section 6 "Verification split".
+> automated test verifies *capture integrity* only (bundle well-formed; live row
+> counts equal what is in the dump and the manifest). It does NOT do a live
+> restore: this app's schema needs the Supabase `extensions`/`auth` environment,
+> so end-to-end restore is the quarterly manual drill. See spec section 6
+> "Verification split".
 
 `make-bundle.sh` produces, for one database, an encrypted bundle plus a manifest.
 It dumps four artifacts (roles, public schema, public data, auth/storage data),
@@ -168,72 +170,79 @@ row counts, and encrypts with `age`.
 - [ ] **Step 1: Write the failing test**
 
 Create `scripts/backup/roundtrip.test.sh`. It requires local Supabase running
-(`supabase start`). It generates a throwaway `age` keypair, bundles the local
-DB, decrypts, restores into a scratch database, and asserts the restore worked.
+(`supabase start`). It generates a throwaway `age` keypair, bundles the local DB,
+decrypts it, and verifies **capture integrity** (it does NOT do a live restore --
+this app's schema depends on the Supabase `extensions`/`auth` environment, so a
+live restore is the quarterly manual drill; see spec section 6).
 
 ```bash
 #!/usr/bin/env bash
+# Roundtrip CAPTURE verification for make-bundle.sh. This app's public schema
+# depends on Supabase's extensions/auth environment (pg_net, pg_trgm, auth.uid),
+# so a full restore is only possible against a real Supabase target (the
+# quarterly manual drill). Here we verify the bundle is well-formed and CAPTURED
+# all data with correct row counts.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 work="$(mktemp -d)"
-trap 'rm -rf "$work"; psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null 2>&1 || true' EXIT
-
+trap 'rm -rf "$work"' EXIT
 LOCAL_DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-ADMIN_URL="$LOCAL_DB_URL"
 
-# Throwaway recipient keypair.
+# Count rows in a COPY block for schema.table, tolerant of pg_dump quoting.
+copy_rows() { # $1=file $2=schema $3=table
+  awk -v s="$2" -v t="$3" '
+    { line=$0; gsub(/"/,"",line) }
+    line ~ ("^COPY " s "\\." t " ") && line ~ /FROM stdin;/ { f=1; next }
+    f && $0=="\\." { f=0 }
+    f { c++ }
+    END { print c+0 }
+  ' "$1"
+}
+
 age-keygen -o "$work/key.txt" 2>"$work/pub.txt"
 PUB="$(grep -o 'age1[0-9a-z]*' "$work/pub.txt" | head -1)"
 
-# Produce the encrypted bundle.
-"$here/make-bundle.sh" \
-  --db-url "$LOCAL_DB_URL" \
-  --env local \
-  --tier daily \
-  --recipient "$PUB" \
-  --outdir "$work"
+"$here/make-bundle.sh" --db-url "$LOCAL_DB_URL" --env local --tier daily \
+  --recipient "$PUB" --outdir "$work" >/dev/null
 
 bundle="$(ls "$work"/clint-local-daily-*.tar.zst.age | head -1)"
 manifest="${bundle%.tar.zst.age}.manifest.json"
-[ -f "$bundle" ]   || { echo "FAIL: no bundle produced"; exit 1; }
-[ -f "$manifest" ] || { echo "FAIL: no manifest produced"; exit 1; }
+[ -f "$bundle" ] && [ -f "$manifest" ] || { echo "FAIL: bundle/manifest missing"; exit 1; }
 
-# Manifest sanity: sha256 in manifest matches the bundle on disk.
 sha_now="$(shasum -a 256 "$bundle" 2>/dev/null | awk '{print $1}' || sha256sum "$bundle" | awk '{print $1}')"
-sha_manifest="$(jq -r .sha256 "$manifest")"
-[ "$sha_now" = "$sha_manifest" ] || { echo "FAIL: manifest sha256 mismatch"; exit 1; }
+[ "$sha_now" = "$(jq -r .sha256 "$manifest")" ] || { echo "FAIL: sha256 mismatch"; exit 1; }
+echo "ok: bundle sha256 matches manifest"
 
-# Decrypt + unpack.
 age -d -i "$work/key.txt" -o "$work/bundle.tar.zst" "$bundle"
 zstd -d "$work/bundle.tar.zst" -o "$work/bundle.tar"
 mkdir -p "$work/unpacked" && tar -xf "$work/bundle.tar" -C "$work/unpacked"
-for f in roles.sql schema.sql data.sql auth_storage.sql; do
-  [ -f "$work/unpacked/$f" ] || { echo "FAIL: $f missing"; exit 1; }
+for f in roles.sql schema.sql data.sql auth_storage.sql manifest.json; do
+  [ -s "$work/unpacked/$f" ] || { echo "FAIL: $f missing or empty"; exit 1; }
 done
+echo "ok: all five artifacts present and non-empty"
 
-# Restore the public schema + data into a scratch DB and assert a seeded table.
-# (The scratch DB is bare Postgres, which carries the platform-independent public
-# schema only; auth/storage restore is the quarterly manual drill, not here.)
-psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null
-psql "$ADMIN_URL" -c "create database backup_roundtrip;" >/dev/null
-SCRATCH="postgresql://postgres:postgres@127.0.0.1:54322/backup_roundtrip"
-psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/schema.sql" >/dev/null
-psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/data.sql"   >/dev/null
-count="$(psql "$SCRATCH" -tAc "select count(*) from public.marker_types;")"
-[ "$count" -gt 0 ] || { echo "FAIL: marker_types empty after restore ($count)"; exit 1; }
-echo "ok: public restore (marker_types rows: $count)"
+# Schema captured: a core public table's DDL is present.
+grep -Eq 'CREATE TABLE (IF NOT EXISTS )?("?public"?\.)?"?marker_types"?' "$work/unpacked/schema.sql" \
+  || { echo "FAIL: schema.sql missing CREATE TABLE for marker_types"; exit 1; }
+echo "ok: schema.sql contains core public DDL (marker_types)"
 
-# Auth/storage capture integrity: each identity/storage table must be present in
-# the data dump, and the captured rows must equal the live source counts AND the
-# counts recorded in the manifest.
-for tbl in auth.users auth.identities storage.buckets storage.objects; do
+# Public data captured: marker_types row count in data.sql equals live.
+live_mt="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from public.marker_types;")"
+[ "$live_mt" -gt 0 ] || { echo "FAIL: live marker_types empty; cannot validate"; exit 1; }
+dump_mt="$(copy_rows "$work/unpacked/data.sql" public marker_types)"
+[ "$dump_mt" = "$live_mt" ] || { echo "FAIL: data.sql marker_types rows=$dump_mt live=$live_mt"; exit 1; }
+echo "ok: data.sql captured public.marker_types ($live_mt rows)"
+
+# Auth/storage capture integrity vs live and manifest.
+for pair in auth:users auth:identities storage:buckets storage:objects; do
+  s="${pair%%:*}"; t="${pair##*:}"; tbl="$s.$t"
   grep -q "COPY ${tbl} " "$work/unpacked/auth_storage.sql" \
     || { echo "FAIL: $tbl not in auth_storage.sql"; exit 1; }
   live="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from ${tbl};")"
-  dumped="$(awk -v t="COPY ${tbl} " 'index($0,t)==1 {f=1; next} f && $0=="\\." {f=0} f {c++} END{print c+0}' "$work/unpacked/auth_storage.sql")"
-  [ "$live" = "$dumped" ] || { echo "FAIL: $tbl count mismatch live=$live dumped=$dumped"; exit 1; }
-  man="$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' "$manifest")"
-  [ "$man" = "$live" ] || { echo "FAIL: $tbl manifest count $man != live $live"; exit 1; }
+  dumped="$(copy_rows "$work/unpacked/auth_storage.sql" "$s" "$t")"
+  [ "$live" = "$dumped" ] || { echo "FAIL: $tbl mismatch live=$live dumped=$dumped"; exit 1; }
+  [ "$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' "$manifest")" = "$live" ] \
+    || { echo "FAIL: $tbl manifest count mismatch"; exit 1; }
   echo "ok: $tbl captured ($live rows; manifest+dump agree)"
 done
 
@@ -248,7 +257,7 @@ chmod +x scripts/backup/roundtrip.test.sh
 scripts/backup/roundtrip.test.sh
 ```
 
-Expected: FAIL — `make-bundle.sh` does not exist.
+Expected: FAIL, `make-bundle.sh` does not exist.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -334,7 +343,8 @@ chmod +x scripts/backup/make-bundle.sh
 scripts/backup/roundtrip.test.sh
 ```
 
-Expected: `ALL PASS (marker_types rows: N)` with N > 0.
+Expected final line: `ALL PASS`, preceded by `ok:` lines for sha, artifacts,
+schema DDL, public data, and each of the four auth/storage tables.
 
 > If `supabase db dump --db-url` rejects the local URL, confirm the CLI version
 > supports `--db-url` (`supabase --version`); the project uses a current CLI in
@@ -344,7 +354,7 @@ Expected: `ALL PASS (marker_types rows: N)` with N > 0.
 
 ```bash
 git add scripts/backup/make-bundle.sh scripts/backup/roundtrip.test.sh
-git commit -m "Add encrypted DB bundle script with local restore roundtrip test"
+git commit -m "Capture auth/storage data in backups; verify capture integrity in roundtrip"
 ```
 
 ---
@@ -535,7 +545,7 @@ chmod +x scripts/backup/upload.test.sh
 scripts/backup/upload.test.sh
 ```
 
-Expected: FAIL — `upload.sh` does not exist.
+Expected: FAIL, `upload.sh` does not exist.
 
 - [ ] **Step 3: Write minimal implementation**
 
@@ -867,10 +877,12 @@ git commit -m "Take a pre-migration backup before applying prod migrations"
 **Files:**
 - Create: `.github/workflows/backup-verify.yml`
 
-This workflow proves the backups restore. It runs the private `age` key, so it
-is gated behind the `production` environment (reviewer-protected) and reads
-`BACKUP_AGE_PRIVATE_KEY` from that environment's secrets (added in Task 3,
-Step 4).
+This workflow proves the newest backup is fresh and fully captured. A live
+restore is NOT run here -- the app's schema needs the Supabase environment
+(`extensions`/`auth`), so end-to-end restore is the quarterly manual drill (Task
+9 runbook). The job runs the private `age` key, so it is gated behind the
+`production` environment (reviewer-protected) and reads `BACKUP_AGE_PRIVATE_KEY`
+from that environment's secrets (added in Task 3, Step 4).
 
 - [ ] **Step 1: Write the workflow**
 
@@ -890,20 +902,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     environment: production   # gates access to BACKUP_AGE_PRIVATE_KEY
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
       - name: Install tools
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq age zstd postgresql-client jq
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age zstd jq
 
       - name: Download newest prod backup from R2
         env:
@@ -918,38 +921,37 @@ jobs:
             --query 'sort_by(Contents,&LastModified)[-1].Key' --output text)"
           echo "newest=$newest"
           [ "$newest" != "None" ] || { echo "no prod backups found"; exit 1; }
+          case "$newest" in *.tar.zst.age) ;; *) echo "newest is not a bundle: $newest"; exit 1 ;; esac
           # Freshness: fail if newest backup is older than 26h.
           lm="$(aws s3api head-object --bucket "$BUCKET" --key "$newest" --endpoint-url "$ENDPOINT" --query LastModified --output text)"
           age_h=$(( ( $(date -u +%s) - $(date -u -d "$lm" +%s) ) / 3600 ))
           echo "backup age: ${age_h}h"
           [ "$age_h" -le 26 ] || { echo "stale backup (${age_h}h > 26h)"; exit 1; }
-          aws s3 cp "s3://$BUCKET/$newest" ./bundle.tar.zst.age --endpoint-url "$ENDPOINT" --only-show-errors
+          aws s3 cp "s3://$BUCKET/$newest"                         ./bundle.tar.zst.age --endpoint-url "$ENDPOINT" --only-show-errors
+          aws s3 cp "s3://$BUCKET/${newest%.tar.zst.age}.manifest.json" ./remote.manifest.json --endpoint-url "$ENDPOINT" --only-show-errors
 
-      - name: Decrypt, restore public, verify auth/storage capture
+      - name: Decrypt and verify capture integrity
         env:
           AGE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
-          PGURL: postgresql://postgres:postgres@localhost:5432/postgres
         run: |
           set -euo pipefail
           printf '%s' "$AGE_KEY" > key.txt
+          # Remote checksum must match the downloaded bundle before we trust it.
+          want="$(jq -r .sha256 remote.manifest.json)"
+          got="$(sha256sum bundle.tar.zst.age | awk '{print $1}')"
+          [ "$want" = "$got" ] || { echo "FAIL: bundle sha256 $got != manifest $want"; rm -f key.txt; exit 1; }
           age -d -i key.txt -o bundle.tar.zst bundle.tar.zst.age
           zstd -d bundle.tar.zst -o bundle.tar
           mkdir unpacked && tar -xf bundle.tar -C unpacked
           rm -f key.txt
 
-          # Restore the platform-independent public schema into bare Postgres.
-          psql "$PGURL" -c "create database restore_check;"
-          R="postgresql://postgres:postgres@localhost:5432/restore_check"
-          psql "$R" -v ON_ERROR_STOP=1 -f unpacked/schema.sql >/dev/null
-          psql "$R" -v ON_ERROR_STOP=1 -f unpacked/data.sql   >/dev/null
-          mt="$(psql "$R" -tAc 'select count(*) from public.marker_types;')"
-          echo "marker_types=$mt"
-          [ "$mt" -gt 0 ] || { echo "FAIL: marker_types empty"; exit 1; }
+          for f in roles.sql schema.sql data.sql auth_storage.sql manifest.json; do
+            [ -s "unpacked/$f" ] || { echo "FAIL: $f missing or empty"; exit 1; }
+          done
+          grep -Eq 'CREATE TABLE (IF NOT EXISTS )?("?public"?\.)?"?marker_types"?' unpacked/schema.sql \
+            || { echo "FAIL: schema.sql missing core public DDL"; exit 1; }
 
-          # Auth/storage CAPTURE integrity (bare Postgres has no auth/storage
-          # schema, so we verify the dump captured them, not a live restore).
-          man="$(ls unpacked/*.manifest.json 2>/dev/null | head -1)"
-          [ -n "$man" ] && [ -f unpacked/manifest.json ] || true
+          # Auth/storage CAPTURE integrity: dump row counts must match the manifest.
           for tbl in auth.users auth.identities storage.buckets storage.objects; do
             grep -q "COPY ${tbl} " unpacked/auth_storage.sql \
               || { echo "FAIL: $tbl not captured in auth_storage.sql"; exit 1; }
@@ -958,14 +960,15 @@ jobs:
             [ "$dumped" = "$recorded" ] || { echo "FAIL: $tbl dump rows $dumped != manifest $recorded"; exit 1; }
             echo "ok: $tbl captured ($dumped rows, matches manifest)"
           done
+          echo "ALL PASS"
 ```
 
-> The bare `postgres:17` service has no Supabase `auth`/`storage` schema, so a
-> live auth restore is not possible here; this job restores the `public` schema
-> and verifies auth/storage *capture* (dump row counts match the manifest). A
-> full auth/storage restore into a real Supabase project is the quarterly manual
-> drill (runbook). `marker_types` is always seeded, so it is the hard public
-> assertion.
+> This job does NOT run a live restore: the app schema needs the Supabase
+> `extensions`/`auth` environment, which a generic runner lacks. It instead
+> verifies freshness (<= 26h) and capture integrity (checksum, all artifacts,
+> core public DDL, and auth/storage dump row counts matching the manifest). The
+> full end-to-end restore into a real Supabase project is the quarterly manual
+> drill (Task 9 runbook).
 
 - [ ] **Step 2: Lint the workflow**
 
@@ -985,12 +988,12 @@ gh workflow run "Verify DB backup"
 gh run watch
 ```
 
-Expected: run succeeds, logs show `marker_types=<N>` with N > 0 and a backup
-age <= 26h.
+Expected: run succeeds, logs show `ALL PASS`, the four `ok: <table> captured`
+lines, and a backup age <= 26h.
 
 ---
 
-## Task 9: Documentation — runbook + client policy statement
+## Task 9: Documentation: runbook + client policy statement
 
 **Files:**
 - Create: `docs/runbook/12-backup-and-restore.md` (use the real next number)
