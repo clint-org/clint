@@ -5,7 +5,14 @@ import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
-import { computeLeftColumns, type ColumnLayout, formatDateShort } from './pptx-export.util';
+import { MarkerTypeService } from './marker-type.service';
+import {
+  computeLeftColumns,
+  type ColumnLayout,
+  formatDateShort,
+  orderLegendItems,
+  type PresentMarkerType,
+} from './pptx-export.util';
 import { TimelineService } from './timeline.service';
 
 export interface ExportOptions {
@@ -53,6 +60,7 @@ const FALLBACK_PRIMARY = '0d9488';
 export class PptxExportService {
   private timeline = inject(TimelineService);
   private brand = inject(BrandContextService);
+  private markerTypeService = inject(MarkerTypeService);
 
   async exportDashboard(companies: Company[], options: ExportOptions): Promise<void> {
     const pptx = new PptxGenJS();
@@ -92,7 +100,7 @@ export class PptxExportService {
     this.renderHeader(slide, layout, startYear, endYear, zoomLevel);
     this.renderGridLines(slide, layout, startYear, endYear, zoomLevel, rows.length, rowH);
     this.renderRows(slide, rows, layout, logoByCompany, rowH, startYear, endYear, primaryColorHex);
-    this.renderLegend(slide, companies);
+    await this.renderLegend(slide, companies);
     this.addFooter(slide, appDisplayName, 2, totalPages);
 
     await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
@@ -730,7 +738,7 @@ export class PptxExportService {
     }
   }
 
-  private renderLegend(slide: PptxGenJS.Slide, companies: Company[]): void {
+  private async renderLegend(slide: PptxGenJS.Slide, companies: Company[]): Promise<void> {
     const legendY = SLIDE_H - LEGEND_H;
 
     slide.addShape('rect', {
@@ -742,22 +750,21 @@ export class PptxExportService {
       line: { color: 'e2e8f0', width: 0.5 },
     });
 
-    // Collect unique marker types preserving display order
-    const markerTypes = new Map<
-      string,
-      { name: string; color: string; shape: string; fill_style: string; display_order: number }
-    >();
+    // Collect unique present marker types.
+    const presentMap = new Map<string, PresentMarkerType>();
     for (const company of companies) {
-      for (const product of company.assets ?? []) {
-        for (const trial of product.trials ?? []) {
+      for (const asset of company.assets ?? []) {
+        for (const trial of asset.trials ?? []) {
           for (const marker of trial.markers ?? []) {
-            if (marker.marker_types && !markerTypes.has(marker.marker_types.id)) {
-              markerTypes.set(marker.marker_types.id, {
-                name: marker.marker_types.name,
-                color: marker.marker_types.color,
-                shape: marker.marker_types.shape,
-                fill_style: marker.marker_types.fill_style,
-                display_order: marker.marker_types.display_order,
+            const mt = marker.marker_types;
+            if (mt && !presentMap.has(mt.id)) {
+              presentMap.set(mt.id, {
+                id: mt.id,
+                name: mt.name,
+                color: mt.color,
+                shape: mt.shape,
+                fill_style: mt.fill_style,
+                display_order: mt.display_order,
               });
             }
           }
@@ -765,19 +772,31 @@ export class PptxExportService {
       }
     }
 
-    const sortedTypes = [...markerTypes.values()].sort((a, b) => a.display_order - b.display_order);
+    // Authoritative category ordering (same source as the on-screen legend).
+    let allTypes: Awaited<ReturnType<MarkerTypeService['list']>> = [];
+    try {
+      allTypes = await this.markerTypeService.list(companies[0]?.space_id);
+    } catch {
+      allTypes = [];
+    }
+
+    const { items, breakIndex } = orderLegendItems([...presentMap.values()], allTypes);
+
     const dotSize = 0.08;
     const itemW = 1.5;
     const itemsPerRow = Math.floor((SLIDE_W - 0.4) / itemW);
     const rowH = 0.2;
 
-    for (let i = 0; i < sortedTypes.length; i++) {
-      const mt = sortedTypes[i];
-      const col = i % itemsPerRow;
-      const row = Math.floor(i / itemsPerRow);
+    let col = 0;
+    let rowIdx = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (i === breakIndex || col >= itemsPerRow) {
+        col = 0;
+        rowIdx++;
+      }
+      const mt = items[i];
       const x = 0.3 + col * itemW;
-      const itemY = legendY + 0.08 + row * rowH;
-
+      const itemY = legendY + 0.08 + rowIdx * rowH;
       const color = mt.color.replace('#', '');
       const isFilled = mt.fill_style === 'filled';
 
@@ -821,6 +840,7 @@ export class PptxExportService {
         valign: 'middle',
         shrinkText: true,
       });
+      col++;
     }
   }
 }
