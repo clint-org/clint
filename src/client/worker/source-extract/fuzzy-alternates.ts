@@ -1,7 +1,11 @@
 import jaroWinkler from 'jaro-winkler';
 import type { FuzzyAlternate, InventorySnapshot } from './types';
 
-const SIMILARITY_THRESHOLD = 0.7;
+// Jaro-Winkler floor for surfacing an existing record as a match alternate.
+// JW is generous (it weights shared prefixes, and pharma names share affixes),
+// and the LLM already does the primary semantic match, so this lexical backstop
+// stays conservative: only strong near-matches (typos/variants) are offered.
+const SIMILARITY_THRESHOLD = 0.8;
 const MAX_ALTERNATES = 3;
 
 type EntityType = 'company' | 'asset' | 'trial';
