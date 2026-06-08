@@ -42,16 +42,18 @@
   />
 </app-form-field>
 
-<app-form-field label="Logo URL" fieldId="asset-logo-url">
-  <input
-    pInputText
-    id="asset-logo-url"
-    name="logoUrl"
-    class="w-full"
-    [(ngModel)]="logoUrl"
-    placeholder="https://..."
-  />
-</app-form-field>
+@if (showLogoUrl()) {
+  <app-form-field label="Logo URL" fieldId="asset-logo-url">
+    <input
+      pInputText
+      id="asset-logo-url"
+      name="logoUrl"
+      class="w-full"
+      [(ngModel)]="logoUrl"
+      placeholder="https://..."
+    />
+  </app-form-field>
+}
 
 <app-form-field label="Mechanisms of Action" fieldId="asset-moas">
   <p-multiselect

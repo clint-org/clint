@@ -32,5 +32,6 @@ export class AssetEditFormComponent {
   readonly roaOptions = input<{ id: string; name: string }[]>([]);
   readonly nameInvalid = input<boolean>(false);
   readonly showDisplayOrder = input<boolean>(true);
+  readonly showLogoUrl = input<boolean>(true);
   readonly nameBlur = output<void>();
 }
