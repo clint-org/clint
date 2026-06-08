@@ -220,14 +220,14 @@ echo ""
 #   6. Click "Continue to Summary" -> "Create Token".
 #   7. Copy the token and the key ID from the confirmation screen.
 #   8. Store both as GitHub Actions secrets:
-#        BACKUP_R2_API_TOKEN_ID  (the key ID / access key)
-#        BACKUP_R2_API_TOKEN_SECRET (the token secret / secret key)
+#        R2_BACKUP_ACCESS_KEY_ID  (the key ID / access key)
+#        R2_BACKUP_SECRET_ACCESS_KEY (the token secret / secret key)
 #
 # IMPORTANT: "Object Read and Write" permission grants PutObject but NOT
 # DeleteObject. Verify this in the token's permission summary before saving.
 echo "[ACTION REQUIRED] Create an R2 API token with Object Read+Write (no Delete)"
 echo "  Dashboard: https://dash.cloudflare.com/profile/api-tokens"
-echo "  Store as GitHub secrets: BACKUP_R2_API_TOKEN_ID, BACKUP_R2_API_TOKEN_SECRET"
+echo "  Store as GitHub secrets: R2_BACKUP_ACCESS_KEY_ID, R2_BACKUP_SECRET_ACCESS_KEY"
 echo ""
 
 # Step 2b: B2 application key (write-only, no delete) for CI.
@@ -243,8 +243,8 @@ echo ""
 #   7. Click "Create New Key".
 #   8. Record the keyID and applicationKey immediately (shown only once).
 #   9. Store as GitHub Actions secrets:
-#        BACKUP_B2_KEY_ID
-#        BACKUP_B2_APP_KEY
+#        B2_BACKUP_KEY_ID
+#        B2_BACKUP_APP_KEY
 #
 # Alternatively via the b2 CLI:
 #   b2 create-key --bucket "${B2_BUCKET}" \
@@ -252,7 +252,7 @@ echo ""
 #     readFiles,writeFiles,listBuckets,listFiles
 echo "[ACTION REQUIRED] Create a B2 application key with writeFiles+listBuckets (no deleteFiles)"
 echo "  Dashboard: https://secure.backblaze.com/b2_buckets.htm -> App Keys"
-echo "  Store as GitHub secrets: BACKUP_B2_KEY_ID, BACKUP_B2_APP_KEY"
+echo "  Store as GitHub secrets: B2_BACKUP_KEY_ID, B2_BACKUP_APP_KEY"
 echo ""
 
 
@@ -384,10 +384,10 @@ echo "   [_] R2 bucket created and visible in the Cloudflare dashboard"
 echo "   [_] R2 Bucket Lock rules confirmed (wrangler r2 bucket lock list)"
 echo "   [_] R2 lifecycle rules confirmed (7 rules, all prefixes present)"
 echo "   [_] R2 CI token created (Object Read+Write, no Delete)"
-echo "   [_] R2 CI secrets stored in GitHub (BACKUP_R2_API_TOKEN_ID, BACKUP_R2_API_TOKEN_SECRET)"
+echo "   [_] R2 CI secrets stored in GitHub (R2_BACKUP_ACCESS_KEY_ID, R2_BACKUP_SECRET_ACCESS_KEY)"
 echo "   [_] B2 bucket created with File Lock enabled"
 echo "   [_] B2 default retention set (7 days, compliance)"
 echo "   [_] B2 lifecycle rules configured (7 prefixes, matching R2)"
 echo "   [_] B2 CI key created (writeFiles+listBuckets, no deleteFiles)"
-echo "   [_] B2 CI secrets stored in GitHub (BACKUP_B2_KEY_ID, BACKUP_B2_APP_KEY)"
+echo "   [_] B2 CI secrets stored in GitHub (B2_BACKUP_KEY_ID, B2_BACKUP_APP_KEY)"
 echo "================================================================"
