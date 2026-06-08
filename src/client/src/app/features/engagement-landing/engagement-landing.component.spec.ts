@@ -24,6 +24,7 @@ import { shouldReloadEngagement } from './engagement-landing.nav';
 
 function makeStats(overrides: Partial<SpaceLandingStats> = {}): SpaceLandingStats {
   return {
+    trials: 40,
     active_trials: 36,
     companies: 13,
     assets: 28,
@@ -92,7 +93,7 @@ function buildComputeds(
   const inventoryTotals = computed<InventoryTotals | null>(() => {
     const s = stats();
     if (!s) return null;
-    return { trials: s.active_trials, companies: s.companies, assets: s.assets };
+    return { trials: s.trials, companies: s.companies, assets: s.assets };
   });
 
   // motionStats
@@ -169,10 +170,10 @@ describe('EngagementLandingComponent header computeds', () => {
     expect(activeSince()).toBe('Active since 2026-Q2');
   });
 
-  it('inventoryTotals returns the three counts from stats', () => {
+  it('inventoryTotals uses total trials (not active_trials) plus companies and assets', () => {
     const { stats, inventoryTotals } = buildComputeds();
-    stats.set(makeStats({ active_trials: 36, companies: 13, assets: 28 }));
-    expect(inventoryTotals()).toEqual({ trials: 36, companies: 13, assets: 28 });
+    stats.set(makeStats({ trials: 40, active_trials: 36, companies: 13, assets: 28 }));
+    expect(inventoryTotals()).toEqual({ trials: 40, companies: 13, assets: 28 });
   });
 
   it('inventoryTotals returns null when stats are still loading', () => {
