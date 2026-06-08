@@ -65,9 +65,20 @@ The four threats are served by three layers; only L2 and L3 are built here.
 | **L3** | Pre-migration snapshot before each prod deploy | Bad migration | last deploy |
 
 L1 is a Supabase setting, not something we build; the design documents its
-state but does not require it. The off-site dumps are self-contained (`public`
-schema + `auth` + `storage` metadata + roles/grants) so they restore into any
-Postgres 17 -- a fresh Supabase project or a self-hosted instance.
+state but does not require it. The off-site dumps capture roles/grants, the full
+`public` schema (DDL + data), and the user-identity + file-pointer data from the
+platform-managed schemas (`auth.users`, `auth.identities`, `storage.buckets`,
+`storage.objects`).
+
+**Restore target (revision 2026-06-07):** the `auth` and `storage` schemas are
+provisioned and managed by the Supabase platform (GoTrue / Storage), not by our
+migrations. Their *data* can therefore only be restored into a target that
+already provides those schemas -- a **fresh Supabase project or a self-hosted
+Supabase**, not a bare vanilla Postgres. The backup artifacts are kept clean
+(no stubbed `auth.*` objects, no `CREATE OR REPLACE` that would clobber the
+platform's real auth functions); restoring them onto a Supabase target is the
+documented recovery path. The `public` schema alone does restore into any
+Postgres 17, which is what the automated verification exercises (see below).
 
 **Cost note:** at a deliberately pessimistic 500 MB/dump, GFS 7/4/12 across both
 environments stores ~23 GB and costs well under USD 1/month combined across R2 +
@@ -84,7 +95,12 @@ add-on), which is an independent decision outside this policy.
 - **Per-environment steps:**
   1. Install Supabase CLI (`supabase/setup-cli@v1`).
   2. `supabase link --project-ref <env ref>`.
-  3. `supabase db dump` producing three artifacts: roles, schema, data.
+  3. Produce four artifacts: `roles.sql` (`supabase db dump --role-only`),
+     `schema.sql` (`supabase db dump`, public DDL), `data.sql`
+     (`supabase db dump --data-only -s public`), and `auth_storage.sql`
+     (a targeted `pg_dump --data-only` of `auth.users`, `auth.identities`,
+     `storage.buckets`, `storage.objects`). Artifacts are kept clean -- no
+     stubbed `auth.*` schema and no `CREATE OR REPLACE` of platform functions.
   4. Bundle (`tar`) and compress (`zstd`).
   5. **Encrypt** the bundle with `age` using `BACKUP_AGE_PUBLIC_KEY`.
   6. Compute `sha256` and write a small JSON manifest (env, tier, timestamp,
@@ -139,12 +155,24 @@ Untested backups are not backups. A **weekly** workflow:
 1. Pulls the newest prod backup from R2.
 2. Decrypts it (private `age` key supplied via a guarded secret -- see Key
    custody) and decompresses.
-3. Spins up a `postgres:17` service container and restores roles + schema +
-   data into it.
+3. Spins up a `postgres:17` service container and restores `schema.sql` +
+   `data.sql` (the `public` schema, which is platform-independent) into it.
 4. Asserts sanity: schema applies clean; key application tables have row counts
-   > 0; `auth.users` count > 0.
+   > 0; and `auth_storage.sql` is present and contains the four expected
+   identity/storage tables (capture integrity).
 5. **Freshness check:** fails/alerts if the newest backup object is older than
    26 hours (catches a silently broken nightly job).
+
+**Verification split (revision 2026-06-07):** because the `postgres:17` service
+container does not carry Supabase's platform-managed `auth`/`storage` schemas,
+the automated weekly job restores and asserts on the `public` schema and
+verifies that the auth/storage *data* was captured (the dump contains the four
+tables with the row counts recorded in the manifest). A **full** restore that
+loads `auth_storage.sql` into a live target is exercised by the **quarterly
+manual restore drill** against a real fresh Supabase project (runbook). The
+local `roundtrip.test.sh` mirrors the automated check: full `public`
+restore + auth/storage capture-integrity (live source row counts equal the rows
+present in `auth_storage.sql`).
 
 ### 7. Failure alerting
 

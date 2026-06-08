@@ -44,8 +44,8 @@ supabase start   # exposes Postgres on localhost:54322 (user/pass: postgres/post
 |---|---|
 | `scripts/backup/tiers.sh` | Pure: map a UTC date to its GFS tier prefixes (`daily`/`weekly`/`monthly`) |
 | `scripts/backup/tiers.test.sh` | Plain-bash unit tests for `tiers.sh` |
-| `scripts/backup/make-bundle.sh` | Dump roles+schema+data from a `--db-url`, write manifest, `tar`+`zstd`, `age`-encrypt |
-| `scripts/backup/roundtrip.test.sh` | Local end-to-end: bundle the local DB, decrypt, restore into a scratch DB, assert |
+| `scripts/backup/make-bundle.sh` | Dump roles + public schema/data + auth/storage data from a `--db-url`, write manifest (with captured row counts), `tar`+`zstd`, `age`-encrypt |
+| `scripts/backup/roundtrip.test.sh` | Local end-to-end: bundle the local DB, decrypt, restore public into a scratch DB, verify auth/storage capture integrity |
 | `scripts/backup/upload.sh` | Upload one file to R2 + B2 via AWS CLI S3 API; `DRY_RUN` mode echoes commands |
 | `scripts/backup/upload.test.sh` | Assert `upload.sh` builds correct `aws s3` commands (DRY_RUN) |
 | `scripts/backup/setup-buckets.sh` | Operator-run, idempotent: create both buckets with versioning, Object Lock, lifecycle |
@@ -149,9 +149,21 @@ git commit -m "Add GFS tier-selection logic for DB backups"
 - Create: `scripts/backup/make-bundle.sh`
 - Test: `scripts/backup/roundtrip.test.sh`
 
-`make-bundle.sh` produces, for one database, an encrypted, self-contained bundle
-plus a manifest. It dumps three artifacts via the Supabase CLI (roles, schema,
-data), bundles + compresses them with a manifest, and encrypts with `age`.
+> **Revision 2026-06-07:** the restore target is a Supabase project (new or
+> self-hosted), not bare Postgres -- the `auth`/`storage` schemas are platform-
+> managed. Artifacts are kept CLEAN (no stubbed `auth.*` schema, no
+> `CREATE OR REPLACE` that would clobber Supabase's real auth functions). The
+> bundle has FOUR sql artifacts: `roles.sql`, `schema.sql` (public DDL),
+> `data.sql` (public data), and `auth_storage.sql` (a `pg_dump --data-only` of
+> `auth.users`, `auth.identities`, `storage.buckets`, `storage.objects`). The
+> automated test verifies the public restore plus auth/storage *capture
+> integrity* (live row counts equal what is in the dump); full auth restore is a
+> quarterly manual drill. See spec section 6 "Verification split".
+
+`make-bundle.sh` produces, for one database, an encrypted bundle plus a manifest.
+It dumps four artifacts (roles, public schema, public data, auth/storage data),
+bundles + compresses them with a manifest that records the captured auth/storage
+row counts, and encrypts with `age`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -195,22 +207,37 @@ sha_manifest="$(jq -r .sha256 "$manifest")"
 age -d -i "$work/key.txt" -o "$work/bundle.tar.zst" "$bundle"
 zstd -d "$work/bundle.tar.zst" -o "$work/bundle.tar"
 mkdir -p "$work/unpacked" && tar -xf "$work/bundle.tar" -C "$work/unpacked"
-[ -f "$work/unpacked/roles.sql" ]  || { echo "FAIL: roles.sql missing";  exit 1; }
-[ -f "$work/unpacked/schema.sql" ] || { echo "FAIL: schema.sql missing"; exit 1; }
-[ -f "$work/unpacked/data.sql" ]   || { echo "FAIL: data.sql missing";   exit 1; }
+for f in roles.sql schema.sql data.sql auth_storage.sql; do
+  [ -f "$work/unpacked/$f" ] || { echo "FAIL: $f missing"; exit 1; }
+done
 
-# Restore schema+data into a scratch DB and assert a known table restored.
+# Restore the public schema + data into a scratch DB and assert a seeded table.
+# (The scratch DB is bare Postgres, which carries the platform-independent public
+# schema only; auth/storage restore is the quarterly manual drill, not here.)
 psql "$ADMIN_URL" -c "drop database if exists backup_roundtrip;" >/dev/null
 psql "$ADMIN_URL" -c "create database backup_roundtrip;" >/dev/null
 SCRATCH="postgresql://postgres:postgres@127.0.0.1:54322/backup_roundtrip"
 psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/schema.sql" >/dev/null
 psql "$SCRATCH" -v ON_ERROR_STOP=1 -f "$work/unpacked/data.sql"   >/dev/null
-
-# marker_types is seeded by seed.sql, so a healthy restore has rows.
 count="$(psql "$SCRATCH" -tAc "select count(*) from public.marker_types;")"
 [ "$count" -gt 0 ] || { echo "FAIL: marker_types empty after restore ($count)"; exit 1; }
+echo "ok: public restore (marker_types rows: $count)"
 
-echo "ALL PASS (marker_types rows: $count)"
+# Auth/storage capture integrity: each identity/storage table must be present in
+# the data dump, and the captured rows must equal the live source counts AND the
+# counts recorded in the manifest.
+for tbl in auth.users auth.identities storage.buckets storage.objects; do
+  grep -q "COPY ${tbl} " "$work/unpacked/auth_storage.sql" \
+    || { echo "FAIL: $tbl not in auth_storage.sql"; exit 1; }
+  live="$(psql "$LOCAL_DB_URL" -tAc "select count(*) from ${tbl};")"
+  dumped="$(awk -v t="COPY ${tbl} " 'index($0,t)==1 {f=1; next} f && $0=="\\." {f=0} f {c++} END{print c+0}' "$work/unpacked/auth_storage.sql")"
+  [ "$live" = "$dumped" ] || { echo "FAIL: $tbl count mismatch live=$live dumped=$dumped"; exit 1; }
+  man="$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' "$manifest")"
+  [ "$man" = "$live" ] || { echo "FAIL: $tbl manifest count $man != live $live"; exit 1; }
+  echo "ok: $tbl captured ($live rows; manifest+dump agree)"
+done
+
+echo "ALL PASS"
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -229,7 +256,9 @@ Create `scripts/backup/make-bundle.sh`:
 
 ```bash
 #!/usr/bin/env bash
-# Dump roles+schema+data for one database, bundle+compress+encrypt, write manifest.
+# Dump roles + public schema/data + auth/storage identity data for one database,
+# bundle + compress + encrypt, and write a manifest. Artifacts are kept clean so
+# they restore onto a Supabase target (new project or self-hosted); see the spec.
 set -euo pipefail
 
 db_url="" env="" tier="" recipient="" outdir=""
@@ -251,25 +280,35 @@ ts="$(date -u +%Y%m%dT%H%M%SZ)"
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 
-echo "[make-bundle] dumping roles/schema/data for env=$env ..."
-supabase db dump --db-url "$db_url" --role-only -f "$stage/roles.sql"
-supabase db dump --db-url "$db_url"             -f "$stage/schema.sql"
-supabase db dump --db-url "$db_url" --data-only -f "$stage/data.sql"
+# Tables from the platform-managed schemas whose DATA we capture. These restore
+# onto a Supabase target where the auth/storage schemas already exist.
+auth_storage_tables=(auth.users auth.identities storage.buckets storage.objects)
 
-# Manifest (sha256 filled in after the encrypted artifact exists).
+echo "[make-bundle] dumping roles / public schema+data / auth+storage data for env=$env ..." >&2
+supabase db dump --db-url "$db_url" --role-only           -f "$stage/roles.sql"
+supabase db dump --db-url "$db_url"                       -f "$stage/schema.sql"
+supabase db dump --db-url "$db_url" --data-only -s public -f "$stage/data.sql"
+
+pg_dump_args=(--data-only --no-owner --no-privileges)
+for t in "${auth_storage_tables[@]}"; do pg_dump_args+=(--table="$t"); done
+pg_dump "$db_url" "${pg_dump_args[@]}" -f "$stage/auth_storage.sql"
+
+# Live source row counts for the captured auth/storage tables (point-in-time).
+counts_json="$(
+  for t in "${auth_storage_tables[@]}"; do
+    printf '%s\t%s\n' "$t" "$(psql "$db_url" -tAc "select count(*) from ${t};")"
+  done | jq -R -s 'split("\n") | map(select(length>0) | split("\t") | {(.[0]): (.[1]|tonumber)}) | add'
+)"
+
 sha() { shasum -a 256 "$1" 2>/dev/null | awk '{print $1}' || sha256sum "$1" | awk '{print $1}'; }
-cat > "$stage/manifest.json" <<JSON
-{
-  "env": "$env",
-  "tier": "$tier",
-  "timestamp": "$ts",
-  "supabase_cli": "$(supabase --version 2>/dev/null | head -1)",
-  "files": ["roles.sql", "schema.sql", "data.sql"]
-}
-JSON
+jq -n --arg env "$env" --arg tier "$tier" --arg ts "$ts" \
+   --arg cli "$(supabase --version 2>/dev/null | head -1)" --argjson counts "$counts_json" \
+   '{env:$env, tier:$tier, timestamp:$ts, supabase_cli:$cli,
+     files:["roles.sql","schema.sql","data.sql","auth_storage.sql"],
+     auth_storage_row_counts:$counts}' > "$stage/manifest.json"
 
 base="clint-$env-$tier-$ts"
-tar -C "$stage" -cf "$stage/$base.tar" roles.sql schema.sql data.sql manifest.json
+tar -C "$stage" -cf "$stage/$base.tar" roles.sql schema.sql data.sql auth_storage.sql manifest.json
 zstd -q -19 "$stage/$base.tar" -o "$stage/$base.tar.zst"
 age -r "$recipient" -o "$outdir/$base.tar.zst.age" "$stage/$base.tar.zst"
 
@@ -280,9 +319,13 @@ jq --arg sha "$enc_sha" --arg size "$enc_size" --arg artifact "$base.tar.zst.age
    '. + {artifact: $artifact, sha256: $sha, bytes: ($size|tonumber)}' \
    "$stage/manifest.json" > "$outdir/$base.manifest.json"
 
-echo "[make-bundle] wrote $outdir/$base.tar.zst.age ($enc_size bytes)"
+echo "[make-bundle] wrote $outdir/$base.tar.zst.age ($enc_size bytes)" >&2
 echo "$outdir/$base.tar.zst.age"
 ```
+
+> `pg_dump` must be version >= 17 (matching the server). On GitHub runners install
+> `postgresql-client-17` from the PGDG apt repo in the composite action (Task 5);
+> locally use the Supabase-bundled `pg_dump` or `brew install postgresql@17`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -860,7 +903,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install tools
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq age zstd postgresql-client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age zstd postgresql-client jq
 
       - name: Download newest prod backup from R2
         env:
@@ -882,7 +925,7 @@ jobs:
           [ "$age_h" -le 26 ] || { echo "stale backup (${age_h}h > 26h)"; exit 1; }
           aws s3 cp "s3://$BUCKET/$newest" ./bundle.tar.zst.age --endpoint-url "$ENDPOINT" --only-show-errors
 
-      - name: Decrypt, restore, assert
+      - name: Decrypt, restore public, verify auth/storage capture
         env:
           AGE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
           PGURL: postgresql://postgres:postgres@localhost:5432/postgres
@@ -892,19 +935,37 @@ jobs:
           age -d -i key.txt -o bundle.tar.zst bundle.tar.zst.age
           zstd -d bundle.tar.zst -o bundle.tar
           mkdir unpacked && tar -xf bundle.tar -C unpacked
+          rm -f key.txt
+
+          # Restore the platform-independent public schema into bare Postgres.
           psql "$PGURL" -c "create database restore_check;"
           R="postgresql://postgres:postgres@localhost:5432/restore_check"
           psql "$R" -v ON_ERROR_STOP=1 -f unpacked/schema.sql >/dev/null
           psql "$R" -v ON_ERROR_STOP=1 -f unpacked/data.sql   >/dev/null
           mt="$(psql "$R" -tAc 'select count(*) from public.marker_types;')"
-          au="$(psql "$R" -tAc 'select count(*) from auth.users;' 2>/dev/null || echo 0)"
-          echo "marker_types=$mt auth.users=$au"
+          echo "marker_types=$mt"
           [ "$mt" -gt 0 ] || { echo "FAIL: marker_types empty"; exit 1; }
-          rm -f key.txt
+
+          # Auth/storage CAPTURE integrity (bare Postgres has no auth/storage
+          # schema, so we verify the dump captured them, not a live restore).
+          man="$(ls unpacked/*.manifest.json 2>/dev/null | head -1)"
+          [ -n "$man" ] && [ -f unpacked/manifest.json ] || true
+          for tbl in auth.users auth.identities storage.buckets storage.objects; do
+            grep -q "COPY ${tbl} " unpacked/auth_storage.sql \
+              || { echo "FAIL: $tbl not captured in auth_storage.sql"; exit 1; }
+            dumped="$(awk -v t="COPY ${tbl} " 'index($0,t)==1 {f=1; next} f && $0=="\\." {f=0} f {c++} END{print c+0}' unpacked/auth_storage.sql)"
+            recorded="$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' unpacked/manifest.json)"
+            [ "$dumped" = "$recorded" ] || { echo "FAIL: $tbl dump rows $dumped != manifest $recorded"; exit 1; }
+            echo "ok: $tbl captured ($dumped rows, matches manifest)"
+          done
 ```
 
-> `auth.users` may legitimately be 0 in some restores; the assertion only hard-
-> fails on `marker_types` (always seeded). Keep `auth.users` as a reported metric.
+> The bare `postgres:17` service has no Supabase `auth`/`storage` schema, so a
+> live auth restore is not possible here; this job restores the `public` schema
+> and verifies auth/storage *capture* (dump row counts match the manifest). A
+> full auth/storage restore into a real Supabase project is the quarterly manual
+> drill (runbook). `marker_types` is always seeded, so it is the hard public
+> assertion.
 
 - [ ] **Step 2: Lint the workflow**
 
