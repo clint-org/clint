@@ -4,9 +4,9 @@ inputs:
   environment:    { description: prod or dev, required: true }
   project_ref:    { description: Supabase project ref, required: true }
   db_password:    { description: Supabase DB password, required: true }
-  db_url:         { description: Optional full Postgres connection string (e.g. session-mode pooler). If empty, the direct db.<ref>.supabase.co URL is built., required: false, default: "" }
+  db_url:         { description: "Optional full Postgres connection string (e.g. session-mode pooler). If empty, the direct db.<ref>.supabase.co URL is built.", required: false, default: "" }
   age_recipient:  { description: age public key, required: true }
-  tier_override:  { description: explicit tier (e.g. pre-migration); empty = auto by date, required: false, default: "" }
+  tier_override:  { description: "explicit tier (e.g. pre-migration); empty = auto by date", required: false, default: "" }
   r2_bucket:      { required: true, description: R2 bucket }
   r2_endpoint:    { required: true, description: R2 S3 endpoint }
   r2_key_id:      { required: true, description: R2 access key id }
