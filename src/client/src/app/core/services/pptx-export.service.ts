@@ -21,6 +21,7 @@ import { TimelineService } from './timeline.service';
 import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual';
 import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
+import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
 
 export interface ExportOptions {
   zoomLevel: ZoomLevel;
@@ -44,14 +45,6 @@ interface FlatRow {
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
 }
-
-const PHASE_COLORS: Record<string, string> = {
-  P1: '94a3b8',
-  P2: '67e8f9',
-  P3: '2dd4bf',
-  P4: 'a78bfa',
-  OBS: 'fbbf24',
-};
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
@@ -668,7 +661,7 @@ export class PptxExportService {
       const barX = timelineX + (sx / totalPx) * timelineW;
       const barW = Math.max(0.05, ((ex - sx) / totalPx) * timelineW);
 
-      const color = (PHASE_COLORS[trial.phase_type] ?? '94a3b8').replace('#', '');
+      const color = (PHASE_COLORS[trial.phase_type] ?? PHASE_FALLBACK_COLOR).replace('#', '');
 
       slide.addShape('roundRect', {
         x: barX,
@@ -676,19 +669,19 @@ export class PptxExportService {
         w: barW,
         h: barH,
         rectRadius: 0.02,
-        fill: { color },
-        line: { color, width: 0.5 },
+        fill: { color, transparency: 88 }, // 12% opacity wash, matching the web
+        line: { color, width: 0.75 },
       });
 
       if (barW > 0.4) {
-        slide.addText(trial.phase_type, {
+        slide.addText(phaseShortLabel(trial.phase_type), {
           x: barX,
           y: barY,
           w: barW,
           h: barH,
           fontSize: Math.max(4, fontSize - 2),
           fontFace: 'Arial',
-          color: 'ffffff',
+          color,
           bold: true,
           align: 'center',
           valign: 'middle',
