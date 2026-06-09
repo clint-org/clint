@@ -20,11 +20,13 @@ import { AnnotationService, Annotation } from '../../core/services/annotation.se
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
+import { DetailPanelEntityLinkDirective } from '../../shared/components/detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
 import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { ExternalLinkComponent } from '../../shared/components/external-link.component';
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
@@ -62,11 +64,13 @@ const CATEGORY_COLOR: Record<string, string> = {
     BrandLogoComponent,
     RouterLink,
     DetailPanelEmptyStateComponent,
+    DetailPanelEntityLinkDirective,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
     DetailPanelPillComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
+    ExternalLinkComponent,
     MarkerDetailContentComponent,
     RowActionsComponent,
   ],
