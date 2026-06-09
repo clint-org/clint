@@ -34,8 +34,10 @@ import {
   HistoryEntry,
   HistoryFieldDiff,
 } from './detail-panel-history.component';
+import { DetailPanelEntityLinkDirective } from './detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from './detail-panel-entity-list.component';
 import { DetailPanelEntityRowComponent } from './detail-panel-entity-row.component';
+import { ExternalLinkComponent } from './external-link.component';
 import { DetailPanelPillComponent, PillTone } from './detail-panel-pill.component';
 import { DetailPanelSectionComponent } from './detail-panel-section.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
@@ -66,11 +68,13 @@ interface CtgovProvenanceBlock {
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
     DatePipe,
+    DetailPanelEntityLinkDirective,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
     DetailPanelHistoryComponent,
     DetailPanelPillComponent,
     DetailPanelSectionComponent,
+    ExternalLinkComponent,
     MaterialsSectionComponent,
   ],
   template: `
@@ -123,7 +127,8 @@ interface CtgovProvenanceBlock {
                     'companies',
                     d.catalyst.company_id,
                   ]"
-                  class="font-semibold uppercase text-brand-700 hover:underline"
+                  appDetailPanelEntityLink
+                  class="font-semibold uppercase"
                 >
                   {{ d.catalyst.company_name }}
                 </a>
@@ -143,7 +148,7 @@ interface CtgovProvenanceBlock {
                       'assets',
                       d.catalyst.asset_id,
                     ]"
-                    class="text-brand-700 hover:underline"
+                    appDetailPanelEntityLink
                   >
                     {{ d.catalyst.asset_name }}
                   </a>
@@ -226,28 +231,16 @@ interface CtgovProvenanceBlock {
             }
           </dl>
           @if (d.catalyst.source_url) {
-            <a
-              [href]="d.catalyst.source_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="mt-2 inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
-            >
+            <app-external-link [href]="d.catalyst.source_url" class="mt-2 block">
               View on ClinicalTrials.gov
-              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-            </a>
+            </app-external-link>
           }
         </app-detail-panel-section>
       } @else if (d.catalyst.source_url) {
         <app-detail-panel-section label="Source">
-          <a
-            [href]="d.catalyst.source_url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
-          >
+          <app-external-link [href]="d.catalyst.source_url">
             {{ extractDomain(d.catalyst.source_url) }}
-            <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-          </a>
+          </app-external-link>
         </app-detail-panel-section>
       }
 

@@ -572,6 +572,15 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.openEditModal(item.id);
   }
 
+  // Delete from the detail-panel kebab. Only manual events are deletable here;
+  // the kebab never offers Delete for markers (deleted on their trial) or
+  // detected items, but guard defensively in case the selection shifts.
+  onDeleteSelected(): void {
+    const item = this.selectedItem();
+    if (!item || item.source_type !== 'event') return;
+    void this.onDeleteEvent(item.id);
+  }
+
   closeModal(): void {
     this.modalOpen.set(false);
     this.editingEventId.set(null);

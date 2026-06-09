@@ -44,7 +44,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
     onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
-    onRejected?: ((reason: unknown) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null
   ) => {
     if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
     return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
@@ -64,7 +64,7 @@ function makeRpcResult(data: unknown, error: unknown = null) {
   const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (t as { then: PromiseLike<unknown>['then'] }).then = (
     onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
-    onRejected?: ((r: unknown) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null
   ) => {
     if (error) return Promise.reject(error).then(null, onRejected);
     return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
@@ -123,7 +123,9 @@ describe('SpaceService.restoreSpace', () => {
 
   it('throws when the RPC returns an error', async () => {
     rpc.mockReturnValueOnce(makeRpcResult(null, { message: 'not archived' }));
-    await expect(service.restoreSpace('space-2')).rejects.toMatchObject({ message: 'not archived' });
+    await expect(service.restoreSpace('space-2')).rejects.toMatchObject({
+      message: 'not archived',
+    });
   });
 });
 
@@ -158,6 +160,43 @@ describe('SpaceService.permanentlyDeleteSpace', () => {
     await expect(service.permanentlyDeleteSpace('space-3')).rejects.toMatchObject({
       message: 'must archive first',
     });
+  });
+});
+
+describe('SpaceService.spacesChanged', () => {
+  it('starts at 0 and bumps once per mutation (create/archive/restore/delete)', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ id: 'space-1' }));
+    const service = makeService({ from: vi.fn(), rpc });
+
+    expect(service.spacesChanged()).toBe(0);
+
+    await service.createSpace('tenant-1', 'New');
+    expect(service.spacesChanged()).toBe(1);
+
+    await service.archiveSpace('space-1');
+    expect(service.spacesChanged()).toBe(2);
+
+    await service.restoreSpace('space-1');
+    expect(service.spacesChanged()).toBe(3);
+
+    await service.permanentlyDeleteSpace('space-1');
+    expect(service.spacesChanged()).toBe(4);
+  });
+
+  it('does not bump on a read (listSpaces)', async () => {
+    const qb = makeQueryBuilder([{ id: 'a' }]);
+    const service = makeService({ from: vi.fn().mockReturnValue(qb), rpc: vi.fn() });
+
+    await service.listSpaces('tenant-1');
+    expect(service.spacesChanged()).toBe(0);
+  });
+
+  it('does not bump when a mutation RPC fails', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null, { message: 'denied' }));
+    const service = makeService({ from: vi.fn(), rpc });
+
+    await expect(service.archiveSpace('space-1')).rejects.toMatchObject({ message: 'denied' });
+    expect(service.spacesChanged()).toBe(0);
   });
 });
 

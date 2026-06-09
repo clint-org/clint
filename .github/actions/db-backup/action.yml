@@ -1,0 +1,76 @@
+name: DB backup
+description: Dump, encrypt, and upload one environment's Postgres to R2 + B2.
+inputs:
+  environment:    { description: prod or dev, required: true }
+  project_ref:    { description: Supabase project ref, required: true }
+  db_password:    { description: Supabase DB password, required: true }
+  db_url:         { description: "Optional full Postgres connection string (e.g. session-mode pooler). If empty, the direct db.<ref>.supabase.co URL is built.", required: false, default: "" }
+  age_recipient:  { description: age public key, required: true }
+  tier_override:  { description: "explicit tier (e.g. pre-migration); empty = auto by date", required: false, default: "" }
+  r2_bucket:      { required: true, description: R2 bucket }
+  r2_endpoint:    { required: true, description: R2 S3 endpoint }
+  r2_key_id:      { required: true, description: R2 access key id }
+  r2_secret:      { required: true, description: R2 secret }
+  b2_bucket:      { required: true, description: B2 bucket }
+  b2_endpoint:    { required: true, description: B2 S3 endpoint }
+  b2_key_id:      { required: true, description: B2 key id }
+  b2_app_key:     { required: true, description: B2 app key }
+runs:
+  using: composite
+  steps:
+    - name: Install tooling (age, pg_dump 17)
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq postgresql-client-17 age zstd
+        pg_dump --version
+
+    - name: Build encrypted bundle
+      id: bundle
+      shell: bash
+      env:
+        DB_PASSWORD: ${{ inputs.db_password }}
+        PROJECT_REF: ${{ inputs.project_ref }}
+        DB_URL_OVERRIDE: ${{ inputs.db_url }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        AGE_RECIPIENT: ${{ inputs.age_recipient }}
+        TIER_OVERRIDE: ${{ inputs.tier_override }}
+      run: |
+        set -euo pipefail
+        db_url="${DB_URL_OVERRIDE:-postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres}"
+        tier="${TIER_OVERRIDE:-daily}"
+        out="$(scripts/backup/make-bundle.sh \
+          --db-url "$db_url" --env "$ENVIRONMENT" --tier "$tier" \
+          --recipient "$AGE_RECIPIENT" --outdir ./_backup | tail -1)"
+        echo "bundle=$out" >> "$GITHUB_OUTPUT"
+        echo "manifest=${out%.tar.zst.age}.manifest.json" >> "$GITHUB_OUTPUT"
+
+    - name: Upload to each tier prefix
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        TIER_OVERRIDE: ${{ inputs.tier_override }}
+        BUNDLE: ${{ steps.bundle.outputs.bundle }}
+        MANIFEST: ${{ steps.bundle.outputs.manifest }}
+        R2_BACKUP_BUCKET: ${{ inputs.r2_bucket }}
+        R2_S3_ENDPOINT: ${{ inputs.r2_endpoint }}
+        R2_BACKUP_ACCESS_KEY_ID: ${{ inputs.r2_key_id }}
+        R2_BACKUP_SECRET_ACCESS_KEY: ${{ inputs.r2_secret }}
+        B2_BACKUP_BUCKET: ${{ inputs.b2_bucket }}
+        B2_S3_ENDPOINT: ${{ inputs.b2_endpoint }}
+        B2_BACKUP_KEY_ID: ${{ inputs.b2_key_id }}
+        B2_BACKUP_APP_KEY: ${{ inputs.b2_app_key }}
+      run: |
+        set -euo pipefail
+        if [ -n "$TIER_OVERRIDE" ]; then
+          tiers="$TIER_OVERRIDE"
+        else
+          tiers="$(scripts/backup/tiers.sh "$(date -u +%Y-%m-%d)")"
+        fi
+        for tier in $tiers; do
+          scripts/backup/upload.sh --file "$BUNDLE"   --key "clint/$ENVIRONMENT/$tier/$(basename "$BUNDLE")"
+          scripts/backup/upload.sh --file "$MANIFEST" --key "clint/$ENVIRONMENT/$tier/$(basename "$MANIFEST")"
+        done

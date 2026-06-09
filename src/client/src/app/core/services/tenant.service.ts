@@ -43,9 +43,7 @@ export class TenantService {
 
   async listMembers(tenantId: string): Promise<TenantMember[]> {
     const { data } = await this.supabase.client
-      .from('tenant_members_view')
-      .select('*')
-      .eq('tenant_id', tenantId)
+      .rpc('list_tenant_members', { p_tenant_id: tenantId })
       .order('created_at')
       .throwOnError();
     return data ?? [];

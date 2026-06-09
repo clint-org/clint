@@ -39,7 +39,8 @@ A full CRUD interface for managing all data within a space:
   routes:
     - /t/:tenantId/s/:spaceId/manage/assets
     - /t/:tenantId/s/:spaceId/manage/assets/:id
-  rpcs: []
+  rpcs:
+    - link_asset_moa_roa
   tables:
     - assets
     - asset_mechanisms_of_action
@@ -50,14 +51,22 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-trials
-  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records and notes.
+  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records, notes, and indication assignment.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials
     - /t/:tenantId/s/:spaceId/manage/trials/:id
-  rpcs: []
+  rpcs:
+    - set_trial_indications
+    - get_trial_indications
   tables:
     - trials
     - trial_notes
+    - trial_conditions
+    - trial_assets
+    - conditions
+    - condition_indication_map
+    - indications
+    - asset_indications
   related:
     - manage-assets
     - ctgov-snapshot-ingest
@@ -70,6 +79,7 @@ A full CRUD interface for managing all data within a space:
     - /t/:tenantId/s/:spaceId/manage/trials/:id
   rpcs:
     - update_marker_assignments
+    - _cleanup_orphan_marker
   tables:
     - markers
     - marker_assignments
@@ -110,7 +120,8 @@ A full CRUD interface for managing all data within a space:
   summary: Manage mechanism-of-action taxonomy attached to assets.
   routes:
     - /t/:tenantId/s/:spaceId/manage/mechanisms-of-action
-  rpcs: []
+  rpcs:
+    - update_asset_mechanisms
   tables:
     - mechanisms_of_action
     - asset_mechanisms_of_action
@@ -123,7 +134,8 @@ A full CRUD interface for managing all data within a space:
   summary: Manage route-of-administration taxonomy attached to assets.
   routes:
     - /t/:tenantId/s/:spaceId/manage/routes-of-administration
-  rpcs: []
+  rpcs:
+    - update_asset_routes
   tables:
     - routes_of_administration
     - asset_routes_of_administration
@@ -149,6 +161,7 @@ A full CRUD interface for managing all data within a space:
     - /t/:tenantId/s/:spaceId/seed-demo
   rpcs:
     - seed_demo_data
+    - auto_join_demo_tenant_local
   tables:
     - companies
     - assets
@@ -174,6 +187,7 @@ A full CRUD interface for managing all data within a space:
     - _seed_demo_materials
     - _seed_demo_moa_roa
     - _seed_demo_indications
+    - _seed_demo_therapeutic_areas
     - _seed_demo_asset_indications
     - _seed_demo_recent_activity
     - _seed_demo_activity_variety
@@ -208,5 +222,41 @@ A full CRUD interface for managing all data within a space:
   related: []
   user_facing: false
   role: super-admin
+  status: active
+- id: asset-indication-derivation
+  summary: Trigger-driven derivation of each asset_indication's development_status from the trials linked to that asset and indication, kept in sync as trials and their conditions change. reset_asset_indication_status clears a manual override back to the auto-derived value.
+  routes: []
+  rpcs:
+    - _auto_derive_asset_indication_status
+    - _auto_derive_on_trial_condition_change
+    - _recompute_asset_indication_status
+    - _sync_asset_indications
+    - reset_asset_indication_status
+  tables:
+    - asset_indications
+    - trials
+    - trial_conditions
+    - condition_indication_map
+  related:
+    - manage-indications
+  user_facing: false
+  role: editor
+  status: active
+- id: trial-assets-sync
+  summary: Triggers that keep the trial_assets many-to-many in sync with trials. Bootstrap seeds a trial_assets row from the scalar asset_id on trial insert; sync triggers mirror the is_primary member back into trials.asset_id and keep asset_indications aligned with the trial's full asset set.
+  routes: []
+  rpcs:
+    - _trial_assets_bootstrap
+    - _trial_assets_sync_indications
+    - _trial_assets_sync_primary
+  tables:
+    - trial_assets
+    - trials
+    - asset_indications
+  related:
+    - manage-trials
+    - source-import-commit
+  user_facing: false
+  role: editor
   status: active
 ```

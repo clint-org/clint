@@ -197,4 +197,16 @@ The pipeline is enforced by:
   user_facing: false
   role: super-admin
   status: active
+- id: audit-row-columns
+  summary: Generic server-side row-audit triggers that stamp created_by, updated_by, and updated_at on entity tables (assets, indications, conditions, change_event_annotations, and others) from auth.uid() so client-supplied audit values are never trusted. Distinct from the audit_events governance trail.
+  routes: []
+  rpcs:
+    - _set_created_by
+    - _set_updated_audit
+  tables: []
+  related:
+    - audit-record-event
+  user_facing: false
+  role: viewer
+  status: active
 ```

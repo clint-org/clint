@@ -35,14 +35,15 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 |---|---|---|
 | `_audit_trigger_space_invite_issued` | - | spaces |
 | `_audit_trigger_space_members` | - | spaces |
-| `_auto_derive_on_trial_condition_change` | - | trials |
+| `_auto_derive_asset_indication_status` | - | trial_assets |
+| `_auto_derive_on_trial_condition_change` | - | trial_assets |
 | `_cleanup_orphan_marker` | markers | marker_assignments |
 | `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trials | - |
-| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_conditions, trials |
+| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_asset_indications` | asset_indications | - |
@@ -57,6 +58,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trial_conditions, trials | - |
+| `_sync_asset_indications` | asset_indications | assets, condition_indication_map, trial_assets, trial_conditions, trials |
+| `_trial_assets_bootstrap` | trial_assets | - |
+| `_trial_assets_sync_primary` | trial_assets, trials | - |
 | `accept_invite` | tenant_invites, tenant_members | tenants |
 | `accept_space_invite` | space_invites, space_members | spaces |
 | `add_agency_member` | agency_invites, agency_members | agencies |
@@ -78,7 +82,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `create_asset` | assets | - |
 | `create_company` | companies | - |
 | `create_event` | events | - |
-| `create_marker` | marker_assignments, markers | marker_changes |
+| `create_marker` | marker_assignments, markers | marker_changes, trials |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -98,17 +102,17 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, indications, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
-| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_change_events, trials |
+| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trials |
 | `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
-| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
+| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_change_events, trial_conditions, trial_notes, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trial_notes, trials |
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
-| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
 | `get_key_catalysts` | - | assets, companies, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
@@ -118,7 +122,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_latest_sync_run` | - | ctgov_sync_runs |
 | `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
-| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trials |
+| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trial_assets, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
@@ -126,6 +130,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_tenant_access_settings` | - | tenants |
 | `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
+| `get_trial_indications` | - | condition_indication_map, indications, trial_conditions, trials |
 | `get_trials_for_polling` | - | trials |
 | `handle_new_user` | agency_invites, agency_members | - |
 | `has_space_access` | - | space_members, spaces, tenants |
@@ -138,6 +143,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `is_tenant_member` | - | agency_members, tenant_members, tenants |
 | `is_tenant_owner_strict` | - | tenant_members |
 | `link_asset_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration | mechanisms_of_action, routes_of_administration |
+| `list_agency_members` | - | agency_members |
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
@@ -145,6 +151,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_materials_for_space` | - | material_links, materials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
 | `list_recent_materials_for_space` | - | material_links, materials |
+| `list_space_members` | - | space_members |
+| `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
@@ -155,7 +163,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
 | `prepare_material_upload` | - | materials |
-| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
+| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
@@ -176,6 +184,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `set_trial_assets` | trial_assets | trials |
+| `set_trial_indications` | condition_indication_map, conditions, trial_conditions | indications, trial_assets, trials |
 | `space_shows_preclinical` | - | spaces |
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
@@ -184,7 +194,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_asset_routes` | asset_routes_of_administration | assets |
 | `update_event_links` | event_links | events |
 | `update_event_sources` | event_sources | events |
-| `update_marker_assignments` | marker_assignments | markers |
+| `update_marker_assignments` | marker_assignments | markers, trials |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
 | `update_space_show_preclinical` | spaces | - |
@@ -523,19 +533,39 @@ Caller must be a platform admin OR own at least one agency. Returns `{ found: tr
 
 See "Helpers" above.
 
-## Views
+## Member-listing RPCs
 
-### space_members_view
+The three membership tables are surfaced to the UI joined with their `auth.users`
+email and display name through SECURITY DEFINER functions, not views. They began
+as `*_members_view` views but were converted in migration `20260605215948` to
+clear two Supabase advisor ERROR classes that fire against the linked project:
+`security_definer_view` (the views ran as owner so they could read `auth.users`)
+and `auth_users_exposed` (the views selected `auth.users` columns into the
+exposed `public` schema). Set-returning SECURITY DEFINER functions are subject to
+neither lint, the same pattern `lookup_user_by_email` already uses. Each reads
+`auth.users` at query time (so email and display name are always fresh) and
+carries the same per-caller gate the view kept in its WHERE clause. All three are
+`revoke execute ... from public, anon` plus `grant execute ... to authenticated`.
 
-Joins `space_members` with `auth.users` metadata to expose display name (from `raw_user_meta_data->full_name` or email) and email alongside membership records. Owner-defined view (`security_invoker = true` was dropped in migration 40 to allow reading `auth.users`); access is gated inside the view body via `has_space_access()`.
+### list_space_members(p_space_id uuid)
 
-### tenant_members_view
+Returns `space_members` for the space joined with display name (from
+`raw_user_meta_data->full_name` or email) and email. Gated by `has_space_access(p_space_id)`.
 
-Same pattern for tenant membership. Also exposes `is_agency_backed` (boolean): true when the row's user is also an owner of the tenant's parent agency. The tenant-settings UI hides the row-actions menu for these rows and renders a "via agency" tag, since deleting the explicit `tenant_members` row would be cosmetic — `is_tenant_member()` retains them via the agency-owner disjunct. The `enforce_tenant_member_guards` trigger blocks the delete at the database layer regardless of UI state; only platform admins can override.
+### list_tenant_members(p_tenant_id uuid)
 
-### agency_members_view
+Same shape for tenant membership, gated by `is_tenant_member(p_tenant_id)`. Also
+returns `is_agency_backed` (boolean): true when the row's user is also an owner of
+the tenant's parent agency. The tenant-settings UI hides the row-actions menu for
+these rows and renders a "via agency" tag, since deleting the explicit
+`tenant_members` row would be cosmetic. `is_tenant_member()` retains them via the
+agency-owner disjunct, and the `enforce_tenant_member_guards` trigger blocks the
+delete at the database layer regardless of UI state; only platform admins can override.
 
-Joins `agency_members` with `auth.users` for the agency portal members table. Mirrors `tenant_members_view` shape but uses `SECURITY INVOKER` — RLS on `agency_members` is the access control. `grant select on public.agency_members_view to authenticated`.
+### list_agency_members(p_agency_id uuid)
+
+Returns `agency_members` for the agency joined with email and display name for the
+agency portal members table. Gated by `is_agency_member(p_agency_id) or is_platform_admin()`.
 
 ## Edge Functions
 
@@ -640,6 +670,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
+- `_sync_asset_indications`
+- `_trial_assets_bootstrap`
+- `_trial_assets_sync_indications`
+- `_trial_assets_sync_primary`
 - `_verify_extract_source_worker_secret`
 - `_verify_r2_drain_worker_secret`
 - `ai_call_close`
@@ -688,6 +722,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_space_landing_stats`
 - `get_space_tags`
 - `get_trial_detail_with_intelligence`
+- `get_trial_indications`
 - `guard_primary_intelligence_state`
 - `is_tenant_owner_strict`
 - `jsonb_strip_pii_keys`
@@ -721,6 +756,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `reset_asset_indication_status`
 - `restore_space`
 - `search_palette`
+- `set_trial_assets`
+- `set_trial_indications`
 - `space_shows_preclinical`
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`

@@ -12,22 +12,24 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
 ```yaml
 - id: source-extract-worker
   summary: Cloudflare Worker route that fetches/cleans a source, calls Claude Sonnet 4.6, validates the response, enriches with CT.gov lookups, probes Brandfetch's Logo Link CDN with a 1-byte Range GET per new company to pick the best non-placeholder asset type (symbol > icon > logo by ETag), and returns structured proposals.
-  routes:
-    - /api/source/extract (POST)
+  routes: []
   rpcs:
     - ai_call_open
     - ai_call_preflight
     - ai_call_close
     - get_space_inventory_snapshot
+    - _verify_extract_source_worker_secret
   tables:
     - ai_calls
     - ai_config
   related:
     - source-import-commit
   user_facing: false
+  role: agency
+  status: active
 
 - id: source-import-commit
-  summary: Atomic RPC that writes a reviewed source import via shared entity-create RPCs. Creates asset_indications for timeline visibility and emits trial_change_events with source=source_import for the activity feed. Post-commit, the review page invalidates all relevant RpcCache tags.
+  summary: Atomic RPC that writes a reviewed source import via shared entity-create RPCs. Records each trial's full asset set in trial_assets (a trial can test multiple assets, e.g. a master-protocol NCT) by calling set_trial_assets when a proposal carries more than one asset ref, back-compatible with the legacy scalar asset_ref. Creates asset_indications for timeline visibility and emits trial_change_events with source=source_import for the activity feed. Post-commit, the review page invalidates all relevant RpcCache tags.
   routes:
     - /t/:tenantId/s/:spaceId/import/:aiCallId/review
   rpcs:
@@ -35,6 +37,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - create_company
     - create_asset
     - create_trial
+    - set_trial_assets
     - create_marker
     - create_event
     - get_space_inventory_snapshot
@@ -43,6 +46,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - companies
     - assets
     - trials
+    - trial_assets
     - trial_conditions
     - condition_indication_map
     - asset_indications
@@ -60,11 +64,12 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - source-extract-worker
     - trial-change-feed-pipeline
   user_facing: true
+  role: agency
+  status: active
 
 - id: nct-resolve-worker
-  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, probes Brandfetch's Logo Link CDN per new company to pick the best non-placeholder asset type, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor). Extracts MOA and ROA from intervention type/description when determinable; leaves empty otherwise. The study record carries CT.gov arm groups (`toStudyRecord` in `nct-study-record.ts`) so the model can resolve fixed-dose combination products: an arm whose intervention list names two or more active drugs is treated as a combination asset named by the arm label (e.g. "CagriSema" = cagrilintide + semaglutide), with union MOA and slash-joined generic name, and the trial's asset maps to that combination when it is the experimental arm. Without the arm layer, combinations were previously imported as a single component (e.g. cagrilintide), since CT.gov lists the molecules separately and the brand name lives only in the arm label.
-  routes:
-    - /api/source/nct-resolve (POST)
+  summary: Cloudflare Worker route that batch-fetches CT.gov studies by NCT ID, applies deterministic phase mapping, calls Claude Sonnet 4.6 to resolve companies/assets from structured data, probes Brandfetch's Logo Link CDN per new company to pick the best non-placeholder asset type, and returns proposals in the same ExtractResponse shape. Co-development detected automatically (duplicate assets under each pharma sponsor). Extracts MOA and ROA from intervention type/description when determinable; leaves empty otherwise. The study record carries CT.gov arm groups (`toStudyRecord` in `nct-study-record.ts`) so the model can resolve fixed-dose combination products, where an arm whose intervention list names two or more active drugs is treated as a combination asset named by the arm label (e.g. "CagriSema" = cagrilintide + semaglutide), with union MOA and slash-joined generic name, and the trial's asset maps to that combination when it is the experimental arm. Without the arm layer, combinations were previously imported as a single component (e.g. cagrilintide), since CT.gov lists the molecules separately and the brand name lives only in the arm label.
+  routes: []
   rpcs:
     - ai_call_open
     - ai_call_preflight
@@ -76,18 +81,21 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   related:
     - source-extract-worker
     - source-import-commit
-    - ctgov-daily-sync
+    - ctgov-worker-cron
   user_facing: false
+  role: agency
+  status: active
 
 - id: ai-health-endpoint
   summary: Lightweight health probe that fetches the Anthropic status page (status.claude.com/api/v2/summary.json), finds the "Claude API" component status, and caches the result for 60s. No auth required.
-  routes:
-    - /api/ai/health (GET)
+  routes: []
   rpcs: []
   tables: []
   related:
     - source-import-page
   user_facing: false
+  role: viewer
+  status: active
 
 - id: source-import-page
   summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks quotas, rate limits, and Anthropic service health on load. Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
@@ -102,9 +110,11 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - source-extract-worker
     - nct-resolve-worker
     - ai-health-endpoint
-    - engagement-landing
-    - command-palette
+    - engagement-landing-import-button
+    - palette-activation-targets
   user_facing: true
+  role: editor
+  status: active
 
 - id: source-import-dialog
   summary: "[DEPRECATED] Former two-mode dialog (URL/paste text). Replaced by source-import-page. Component file retained but no longer referenced."
@@ -114,6 +124,8 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   related:
     - source-import-page
   user_facing: false
+  role: editor
+  status: deprecated
 
 - id: ai-admin-toggle
   summary: Platform-admin RPC to toggle ai_enabled per tenant with required reason. Tier 1 audited.
@@ -126,8 +138,24 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - ai_config
     - audit_events
   related:
-    - super-admin-portal
+    - super-admin-shell
   user_facing: true
+  role: super-admin
+  status: active
+
+- id: ai-tenant-config
+  summary: Tenant-owner RPC to update the tenant's AI configuration (model, daily cap, rate limits) for their own tenant, separate from the platform-admin enable/disable toggle.
+  routes:
+    - /t/:tenantId/settings
+  rpcs:
+    - tenant_owner_update_ai_config
+  tables:
+    - ai_config
+  related:
+    - ai-admin-toggle
+  user_facing: true
+  role: owner
+  status: active
 ```
 
 ## New tables
@@ -137,6 +165,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
 | `ai_config` | Tenant-level AI settings (model, caps, rates, enabled flag) | Tenant owner + platform admin |
 | `source_documents` | One row per imported source (URL, pasted text, or NCT batch). `source_kind` CHECK allows `'url'`, `'text'`, `'nct'`. | Agency members of space + platform admin SELECT; RPC-only write |
 | `ai_calls` | Every LLM call regardless of outcome | Agency SELECT; RPC-only write; platform admin DELETE |
+| `trial_assets` | Many-to-many between trials and assets; source of truth for the set of assets a trial tests. `is_primary` marks the headline member, mirrored into `trials.asset_id` by a sync trigger. Written via `set_trial_assets` (RPC) and the trial-insert bootstrap trigger. | Agency members of space via parent trial; RPC-only write |
 
 ## Provenance columns
 
@@ -181,7 +210,7 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 | `ImportPageComponent` | `features/source-import/` | Full-page import shell with 3 tabs (NCT, URL, Text) and AI status panel. Route: `/import`. |
 | `NctInputComponent` | `features/source-import/nct-input/` | NCT paste area with live parsing, dedup, duplicate detection, progress, error handling. |
 | `ImportFromSourceDialogComponent` | `features/source-import/` | [DEPRECATED] Former two-mode dialog. Replaced by `ImportPageComponent`. |
-| `ReviewPageComponent` | `features/source-import/` | Review page as a grouped grid (PrimeNG TreeTable): company > asset > trial nesting with column-aligned scanning. Calm-by-default rows (new carries no badge; `existing` gets a quiet slate tag); amber flag chips only on rows needing review per the taxonomy below. Per-row chevron expands an inline detail panel (CT.gov candidate picker, fuzzy-match override, missing-asset blocker, inline field edits incl. indication). Toolbar filter (All / Needs review / New) collapses to flagged rows keeping parent context. Trials whose `asset_ref` does not resolve to an asset (e.g. a master-protocol NCT testing two drugs, which cannot pick a single asset) cannot nest in the company > asset > trial tree, so they render in a separate "Unlinked trials" section rather than silently disappearing while still counting toward the "(N trials)" header. Footer shows a readable selection summary and an amber blocking message; Confirm is gated on blocking flags (a new trial with no asset is blocking, so it cannot reach the NOT NULL `trials.asset_id` insert). Full two-pane layout (source text) retained for URL/text imports. Pure review-decision logic lives in `review-grid.logic.ts` (unit-tested). |
+| `ReviewPageComponent` | `features/source-import/` | Review page as a grouped grid (PrimeNG TreeTable): company > asset > trial nesting with column-aligned scanning. Calm-by-default rows (new carries no badge; `existing` gets a quiet slate tag); amber flag chips only on rows needing review per the taxonomy below. Per-row chevron expands an inline detail panel (CT.gov candidate picker, fuzzy-match override, missing-asset blocker, inline field edits incl. indication). The per-entity edit dialog (`ReviewEditDialogComponent`) locks identity fields when the Match control links the entity to an existing record, because `commit_source_import` links existing matches by id and discards their proposal fields: assets disable name/generic-name/company (MOA/ROA stay editable since the commit merges those into the matched asset), companies disable name/website, trials disable every field, and an inline note explains the link. Toolbar filter (All / Needs review / New) collapses to flagged rows keeping parent context. Trials whose `asset_ref` does not resolve to an asset (e.g. a master-protocol NCT testing two drugs, which cannot pick a single asset) cannot nest in the company > asset > trial tree, so they render in a separate "Unlinked trials" section rather than silently disappearing while still counting toward the "(N trials)" header. Footer shows a readable selection summary and an amber blocking message; Confirm is gated on blocking flags (a new trial with no asset is blocking, so it cannot reach the NOT NULL `trials.asset_id` insert). Full two-pane layout (source text) retained for URL/text imports. Pure review-decision logic lives in `review-grid.logic.ts` (unit-tested). |
 | `review-grid.logic.ts` | `features/source-import/` | Pure, DOM-free review-decision module (vitest `npm run test:units`). Exports `entityState`, `deriveTrialFlags`/`deriveAssetFlags`, `duplicateTrialIndexes`, `deriveCtgovFlag`/`deriveFuzzyFlag`, `readableSummary`, `blockingReason`, `trialMissingAsset` (shared by the grid flag and the commit gate so they cannot diverge), and `resolveTrialAssetIndex`/`orphanTrialIndexes` (the single predicate the tree builder uses to nest trials under assets and to surface the unlinked remainder, so nesting and orphan-detection cannot disagree). Flag taxonomy: blocking = no-asset, within-batch duplicate; attention = no-indication, observational (by `study_type`), no-MOA/ROA, missing phase/status, CT.gov pick, fuzzy; info = CT.gov lookup failed. |
 | `SourceImportService` | `features/source-import/` | Ephemeral proposal state between import page and review. `source_kind` widened to `'url' | 'text' | 'nct'`. |
 | `SuperAdminAiUsageComponent` | `features/super-admin/` | 3-level AI usage drill-down + ai_enabled toggle |

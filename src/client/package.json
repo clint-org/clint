@@ -16,6 +16,7 @@
     "test:worker": "vitest run --config worker/vitest.config.mts",
     "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh && ./scripts/check-supabase-rls.sh",
     "docs:arch": "node scripts/gen-architecture.mjs",
+    "og:image": "node scripts/og-image/render.mjs",
     "features:check": "node scripts/features-drift.mjs check",
     "features:stub": "node scripts/features-drift.mjs stub",
     "features:near": "node scripts/features-drift.mjs near",
@@ -58,14 +59,13 @@
     "rxjs": "~7.8.0",
     "tailwindcss-primeui": "^0.6.1",
     "tslib": "^2.6.0",
-    "zod": "^4.4.3",
-    "zone.js": "~0.15.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@angular/build": "^21.2.10",
     "@angular/cli": "^21.2.10",
     "@angular/compiler-cli": "^21.2.12",
-    "@cloudflare/vitest-pool-workers": "^0.15.2",
+    "@cloudflare/vitest-pool-workers": "^0.16.13",
     "@cloudflare/workers-types": "^4.20260501.1",
     "@playwright/test": "^1.50.0",
     "@tailwindcss/postcss": "^4.0.0",
@@ -81,6 +81,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.33.1",
     "vitest": "^4.1.5",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.98.0"
   }
 }

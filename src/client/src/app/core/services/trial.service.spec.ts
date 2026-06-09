@@ -317,6 +317,86 @@ describe('TrialService.listBySpace preclinical filtering', () => {
   });
 });
 
+describe('TrialService.setIndications', () => {
+  let rpc: ReturnType<typeof vi.fn>;
+  let invalidateTags: ReturnType<typeof vi.fn>;
+  let service: TrialService;
+
+  beforeEach(() => {
+    rpc = vi.fn();
+    invalidateTags = vi.fn();
+    service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags },
+    );
+  });
+
+  it('calls set_trial_indications RPC with correct params', async () => {
+    rpc.mockReturnValueOnce(makeRpcResult(null));
+
+    await service.setIndications('trial-1', ['ind-a', 'ind-b'], 'space-1');
+
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('set_trial_indications', {
+      p_trial_id: 'trial-1',
+      p_indication_ids: ['ind-a', 'ind-b'],
+    });
+  });
+
+  it('invalidates the expected cache tags including :indications', async () => {
+    rpc.mockReturnValueOnce(makeRpcResult(null));
+
+    await service.setIndications('trial-1', ['ind-a'], 'space-1');
+
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'space:space-1:trials',
+      'space:space-1:dashboard',
+      'space:space-1:activity',
+      'space:space-1:landing-stats',
+      'space:space-1:indications',
+      'trial:trial-1:detail',
+    ]);
+  });
+});
+
+describe('TrialService.listIndications', () => {
+  let rpc: ReturnType<typeof vi.fn>;
+  let service: TrialService;
+
+  beforeEach(() => {
+    rpc = vi.fn();
+    service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() },
+    );
+  });
+
+  it('calls get_trial_indications RPC and maps indication_id/indication_name to id/name', async () => {
+    rpc.mockReturnValueOnce(
+      makeRpcResult([
+        { indication_id: 'ind-a', indication_name: 'NSCLC' },
+        { indication_id: 'ind-b', indication_name: 'SCLC' },
+      ]),
+    );
+
+    const result = await service.listIndications('trial-1');
+
+    expect(rpc).toHaveBeenCalledWith('get_trial_indications', { p_trial_id: 'trial-1' });
+    expect(result).toEqual([
+      { id: 'ind-a', name: 'NSCLC' },
+      { id: 'ind-b', name: 'SCLC' },
+    ]);
+  });
+
+  it('returns an empty array when data is null', async () => {
+    rpc.mockReturnValueOnce(makeRpcResult(null));
+
+    const result = await service.listIndications('trial-1');
+
+    expect(result).toEqual([]);
+  });
+});
+
 describe('TrialService.getLatestSnapshotsForSpace', () => {
   it('calls list_latest_snapshots_for_space RPC and returns a Map keyed by trial_id', async () => {
     const rpc = vi.fn().mockReturnValue(makeRpcResult([

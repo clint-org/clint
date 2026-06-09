@@ -46,13 +46,18 @@
                 aria-label="Engagement inventory"
               >
                 <span
-                  ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trials</span
+                  ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trial{{
+                    inv.trials === 1 ? '' : 's'
+                  }}</span
                 >
                 <span
-                  ><b class="font-semibold text-slate-600">{{ inv.companies }}</b> companies</span
+                  ><b class="font-semibold text-slate-600">{{ inv.companies }}</b>
+                  {{ inv.companies === 1 ? 'company' : 'companies' }}</span
                 >
                 <span
-                  ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> assets</span
+                  ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> asset{{
+                    inv.assets === 1 ? '' : 's'
+                  }}</span
                 >
               </div>
             }

@@ -28,7 +28,7 @@ export interface Trial {
   assets?: {
     id: string;
     name: string;
-    companies?: { id: string; name: string } | null;
+    companies?: { id: string; name: string; logo_url: string | null } | null;
   } | null;
   markers?: Marker[];
   trial_notes?: TrialNote[];
@@ -48,6 +48,15 @@ export interface Trial {
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
   most_recent_change_event_id?: string | null;
+
+  /**
+   * Dashboard-only augmentation: the indication grouping this trial was nested
+   * under in get_dashboard_data. Attached by DashboardService (absent
+   * everywhere else). `indication_id` is the indication entity id that the
+   * Indication filter (filters.indicationIds) matches against; `id` mirrors it
+   * (the RPC does not surface the asset_indication join-row id).
+   */
+  _indication?: { id: string; indication_id: string; indication_name: string } | null;
 }
 
 export interface TrialNote {

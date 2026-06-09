@@ -8,7 +8,7 @@ import { SupabaseService } from './supabase.service';
 
 const TRIAL_SELECT = `
   *,
-  assets(id, name, companies(id, name)),
+  assets!trials_asset_id_fkey(id, name, companies(id, name, logo_url)),
   marker_assignments(
     id,
     marker_id,
@@ -197,6 +197,76 @@ export class TrialService {
     if (trial.asset_id) tags.push(`asset:${trial.asset_id}:trials`);
     this.cache.invalidateTags(tags);
     return trial;
+  }
+
+  /** All asset memberships for a trial (asset_id + whether it is the primary). */
+  async listAssets(trialId: string): Promise<{ asset_id: string; is_primary: boolean }[]> {
+    const { data } = await this.supabase.client
+      .from('trial_assets')
+      .select('asset_id, is_primary')
+      .eq('trial_id', trialId)
+      .throwOnError();
+    return (data ?? []) as { asset_id: string; is_primary: boolean }[];
+  }
+
+  /**
+   * Atomically set a trial's full asset membership and primary via the
+   * set_trial_assets RPC (the sync trigger updates trials.asset_id). Invalidates
+   * the space and every affected asset's caches.
+   */
+  async setAssets(
+    trialId: string,
+    assetIds: string[],
+    primaryAssetId: string,
+    spaceId: string
+  ): Promise<void> {
+    await this.supabase.client
+      .rpc('set_trial_assets', {
+        p_trial_id: trialId,
+        p_asset_ids: assetIds,
+        p_primary_asset_id: primaryAssetId,
+      })
+      .throwOnError();
+    this.cache.invalidateTags([
+      `space:${spaceId}:trials`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+      `trial:${trialId}:detail`,
+      ...assetIds.map((a) => `asset:${a}:trials`),
+    ]);
+  }
+
+  /**
+   * Atomically replace a trial's full indication membership via the
+   * set_trial_indications RPC. Invalidates the space, indication, and
+   * trial-detail caches.
+   */
+  async setIndications(trialId: string, indicationIds: string[], spaceId: string): Promise<void> {
+    await this.supabase.client
+      .rpc('set_trial_indications', {
+        p_trial_id: trialId,
+        p_indication_ids: indicationIds,
+      })
+      .throwOnError();
+    this.cache.invalidateTags([
+      `space:${spaceId}:trials`,
+      `space:${spaceId}:dashboard`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+      `space:${spaceId}:indications`,
+      `trial:${trialId}:detail`,
+    ]);
+  }
+
+  /** Returns the indications currently assigned to a trial. */
+  async listIndications(trialId: string): Promise<{ id: string; name: string }[]> {
+    const { data } = await this.supabase.client
+      .rpc('get_trial_indications', { p_trial_id: trialId })
+      .throwOnError();
+    return (
+      (data ?? []) as { indication_id: string; indication_name: string }[]
+    ).map((row) => ({ id: row.indication_id, name: row.indication_name }));
   }
 
   /**

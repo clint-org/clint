@@ -46,7 +46,7 @@ describe('computeFuzzyAlternates', () => {
     }
   });
 
-  it('filters out low-similarity items at the 0.7 threshold', () => {
+  it('filters out low-similarity items below the similarity threshold', () => {
     const entities: NewEntity[] = [
       { type: 'company', index: 0, name: 'Alpha' },
     ];

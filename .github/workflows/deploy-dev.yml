@@ -34,7 +34,12 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Apply migrations to dev
-        run: supabase db push
+        # --include-all applies migration files whose timestamp predates the
+        # last migration already on the remote (out-of-order inserts that land
+        # when a hotfix is pushed ahead of an older feature branch). Without it
+        # `db push` aborts with "Found local migration files to be inserted
+        # before the last migration on remote database".
+        run: supabase db push --include-all
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
 

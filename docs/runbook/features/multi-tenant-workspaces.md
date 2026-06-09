@@ -43,6 +43,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - is_tenant_owner_strict
     - has_tenant_access
     - enforce_tenant_member_guards
+    - list_tenant_members
   tables:
     - tenant_members
     - tenants
@@ -80,7 +81,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
   tables:
     - spaces
   related:
-    - audit-log-emission
+    - audit-record-event
   user_facing: true
   role: owner
   status: active
@@ -92,14 +93,15 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - /t/:tenantId/s/:spaceId/manage/trials
   rpcs:
     - preview_company_delete
-    - preview_product_delete
+    - preview_asset_delete
     - preview_trial_delete
+    - _cleanup_polymorphic_refs
   tables:
     - companies
-    - products
+    - assets
     - trials
   related:
-    - data-management
+    - manage-assets
   user_facing: true
   role: viewer
   status: active
@@ -112,6 +114,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - accept_space_invite
     - has_space_access
     - enforce_space_member_guards
+    - list_space_members
   tables:
     - space_members
     - space_invites
@@ -152,6 +155,7 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
     - /t/:tenantId/s/:spaceId/settings/fields
   rpcs:
     - update_space_show_preclinical
+    - space_shows_preclinical
   tables:
     - spaces
   related: []
@@ -159,17 +163,17 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
   role: owner
   status: active
 - id: tenant-settings-taxonomies
-  summary: Space-scoped taxonomy management surface for therapeutic areas, MOAs, and ROAs.
+  summary: Space-scoped taxonomy management surface for indications, MOAs, and ROAs.
   routes:
     - /t/:tenantId/s/:spaceId/settings/taxonomies
   rpcs:
     - get_space_tags
   tables:
-    - therapeutic_areas
+    - indications
     - mechanisms_of_action
     - routes_of_administration
   related:
-    - manage-therapeutic-areas
+    - manage-indications
     - manage-mechanisms-of-action
     - manage-routes-of-administration
   user_facing: true

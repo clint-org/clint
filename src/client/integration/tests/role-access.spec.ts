@@ -146,12 +146,14 @@ describe('reader (space viewer)', () => {
   });
 
   it('insert space_invites direct: 42501 (RLS rejects)', async () => {
-    const r = await as(p, 'reader').from('space_invites').insert({
-      space_id: p.org.spaceId,
-      email: 'x@x.test',
-      role: 'viewer',
-      invite_code: 'a'.repeat(32),
-    });
+    const r = await as(p, 'reader')
+      .from('space_invites')
+      .insert({
+        space_id: p.org.spaceId,
+        email: 'x@x.test',
+        role: 'viewer',
+        invite_code: 'a'.repeat(32),
+      });
     expectCode(r, '42501');
   });
 });
@@ -162,7 +164,9 @@ describe('reader (space viewer)', () => {
 
 describe('contributor (space editor)', () => {
   it('insert events: ok', async () => {
-    const r = await as(p, 'contributor').from('events').insert(eventBody({ title: 'contrib-1' }));
+    const r = await as(p, 'contributor')
+      .from('events')
+      .insert(eventBody({ title: 'contrib-1' }));
     expectOk(r);
   });
 
@@ -196,12 +200,14 @@ describe('contributor (space editor)', () => {
   });
 
   it('insert space_invites direct: 42501', async () => {
-    const r = await as(p, 'contributor').from('space_invites').insert({
-      space_id: p.org.spaceId,
-      email: 'x@x.test',
-      role: 'editor',
-      invite_code: 'b'.repeat(32),
-    });
+    const r = await as(p, 'contributor')
+      .from('space_invites')
+      .insert({
+        space_id: p.org.spaceId,
+        email: 'x@x.test',
+        role: 'editor',
+        invite_code: 'b'.repeat(32),
+      });
     expectCode(r, '42501');
   });
 });
@@ -212,7 +218,9 @@ describe('contributor (space editor)', () => {
 
 describe('space_owner', () => {
   it('insert events: ok', async () => {
-    const r = await as(p, 'space_owner').from('events').insert(eventBody({ title: 'owner-1' }));
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .insert(eventBody({ title: 'owner-1' }));
     expectOk(r);
   });
 
@@ -276,7 +284,9 @@ describe('tenant_owner (no space membership)', () => {
   });
 
   it('insert events on a space they are not a member of: 42501', async () => {
-    const r = await as(p, 'tenant_owner').from('events').insert(eventBody({ title: 'reject-tenant-owner' }));
+    const r = await as(p, 'tenant_owner')
+      .from('events')
+      .insert(eventBody({ title: 'reject-tenant-owner' }));
     expectCode(r, '42501');
   });
 
@@ -349,15 +359,14 @@ describe('agency_owner (with explicit tenant_members row)', () => {
 
   it('insert events on test space (no space_members row): 42501', async () => {
     // tenant_members row + agency-owner role do NOT grant space data write.
-    const r = await as(p, 'agency_owner').from('events').insert(eventBody({ title: 'reject-agency-owner' }));
+    const r = await as(p, 'agency_owner')
+      .from('events')
+      .insert(eventBody({ title: 'reject-agency-owner' }));
     expectCode(r, '42501');
   });
 
   it('select events on test space: 0 rows (no space_members row, data firewall)', async () => {
-    const r = await as(p, 'agency_owner')
-      .from('events')
-      .select('id')
-      .eq('space_id', p.org.spaceId);
+    const r = await as(p, 'agency_owner').from('events').select('id').eq('space_id', p.org.spaceId);
     expectCount(r, 0);
   });
 });
@@ -438,7 +447,9 @@ describe('platform_admin', () => {
   });
 
   it('insert events on test space (no space_members row): 42501 (admin bypass is read-only)', async () => {
-    const r = await as(p, 'platform_admin').from('events').insert(eventBody({ title: 'admin-write-attempt' }));
+    const r = await as(p, 'platform_admin')
+      .from('events')
+      .insert(eventBody({ title: 'admin-write-attempt' }));
     expectCode(r, '42501');
   });
 
@@ -449,26 +460,32 @@ describe('platform_admin', () => {
 });
 
 // ============================================================================
-// tenant_members_view shape (closes #10's surface side)
+// list_tenant_members shape (closes #10's surface side)
 // ============================================================================
 
-describe('tenant_members_view.is_agency_backed', () => {
+describe('list_tenant_members.is_agency_backed', () => {
   it('true for agency_owner, false for tenant_owner', async () => {
     const r = await as(p, 'tenant_owner')
-      .from('tenant_members_view')
-      .select('user_id, is_agency_backed')
-      .eq('tenant_id', p.org.tenantId);
+      .rpc('list_tenant_members', { p_tenant_id: p.org.tenantId })
+      .select('user_id, is_agency_backed');
     const rows = expectOk(r) as { user_id: string; is_agency_backed: boolean }[];
     const byUser = new Map(rows.map((row) => [row.user_id, row.is_agency_backed]));
     expect(byUser.get(p.ids.agency_owner)).toBe(true);
     expect(byUser.get(p.ids.tenant_owner)).toBe(false);
   });
 
-  it('agency_only sees the view too (tenant member via agency-owner disjunct)', async () => {
+  it('agency_only sees the rows too (tenant member via agency-owner disjunct)', async () => {
     const r = await as(p, 'agency_only')
-      .from('tenant_members_view')
-      .select('user_id, is_agency_backed')
-      .eq('tenant_id', p.org.tenantId);
+      .rpc('list_tenant_members', { p_tenant_id: p.org.tenantId })
+      .select('user_id, is_agency_backed');
     expectOk(r);
+  });
+
+  it('a non-member gets zero rows (per-caller gating)', async () => {
+    const r = await as(p, 'no_memberships').rpc('list_tenant_members', {
+      p_tenant_id: p.org.tenantId,
+    });
+    const rows = expectOk(r) as unknown[];
+    expect(rows).toHaveLength(0);
   });
 });

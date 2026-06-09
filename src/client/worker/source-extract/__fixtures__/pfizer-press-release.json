@@ -42,7 +42,8 @@
       "status": "Active",
       "sample_size": 1200,
       "sponsor_ref": 0,
-      "asset_ref": 0,
+      "asset_refs": [0],
+      "primary_asset_ref": 0,
       "indication": "COVID-19",
       "evidence": "The Phase 3 ATTAIN-1 trial continues to enroll..."
     },
@@ -55,7 +56,8 @@
       "status": "Active",
       "sample_size": 60,
       "sponsor_ref": 1,
-      "asset_ref": 1,
+      "asset_refs": [1],
+      "primary_asset_ref": 1,
       "indication": "solid tumors",
       "evidence": "Eikon initiated a Phase 1 first-in-human study..."
     }

@@ -11,7 +11,7 @@ import {
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import type { ChangeEvent } from '../../core/models/change-event.model';
@@ -20,14 +20,18 @@ import { AnnotationService, Annotation } from '../../core/services/annotation.se
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
+import { DetailPanelEntityLinkDirective } from '../../shared/components/detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
 import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { ExternalLinkComponent } from '../../shared/components/external-link.component';
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
+import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
+import { buildEntityActionMenu } from '../../shared/entity-actions/entity-action-menu';
 
 interface CategoryHistogramEntry {
   name: string;
@@ -60,12 +64,15 @@ const CATEGORY_COLOR: Record<string, string> = {
     BrandLogoComponent,
     RouterLink,
     DetailPanelEmptyStateComponent,
+    DetailPanelEntityLinkDirective,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
     DetailPanelPillComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
+    ExternalLinkComponent,
     MarkerDetailContentComponent,
+    RowActionsComponent,
   ],
   templateUrl: './event-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,6 +95,7 @@ export class EventDetailPanelComponent {
   readonly feedItems = input<FeedItem[]>([]);
 
   readonly edit = output<void>();
+  readonly delete = output<void>();
   readonly panelClose = output<void>();
   readonly openThread = output<void>();
   readonly threadEventClick = output<string>();
@@ -126,6 +134,25 @@ export class EventDetailPanelComponent {
   readonly hasSelection = computed(
     () => !!this.detail() || !!this.catalystDetail() || this.isDetected()
   );
+
+  /**
+   * Shared overflow kebab for the panel header. Edit is offered for any
+   * editable, non-detected selection (the parent routes marker edits to the
+   * trial page). Delete is offered only for an actual event selection -- a
+   * marker is deleted on its trial, not from this panel.
+   */
+  protected readonly headerMenu = computed<MenuItem[]>(() => {
+    if (!this.canEdit() || this.isDetected() || !this.hasSelection()) return [];
+    if (this.detail()) {
+      return buildEntityActionMenu({
+        canEdit: true,
+        editLabel: 'Edit event',
+        onEdit: () => this.edit.emit(),
+        onDelete: () => this.delete.emit(),
+      });
+    }
+    return [{ label: 'Edit', icon: 'fa-solid fa-pen', command: () => this.edit.emit() }];
+  });
 
   readonly headerLabel = computed(() => {
     const d = this.detail();

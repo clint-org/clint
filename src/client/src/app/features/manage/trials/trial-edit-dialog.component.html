@@ -7,150 +7,22 @@
   [closeOnEscape]="true"
 >
   <form (ngSubmit)="save()" novalidate>
-    <app-form-field label="Name" fieldId="edit-trial-name" [required]="true">
-      <input
-        id="edit-trial-name"
-        type="text"
-        pInputText
-        class="w-full"
-        [ngModel]="name()"
-        (ngModelChange)="name.set($event)"
-        name="name"
-        required
-        aria-required="true"
-      />
-    </app-form-field>
-
-    <app-form-field label="NCT identifier (optional)" fieldId="edit-trial-nct">
-      <input
-        id="edit-trial-nct"
-        type="text"
-        pInputText
-        class="w-full"
-        [ngModel]="identifier()"
-        (ngModelChange)="identifier.set($event)"
-        name="identifier"
-        placeholder="NCT12345678"
-      />
-      <p class="mt-1 text-[11px] text-slate-500">
-        Format: NCT followed by 8 digits. Sync from CT.gov runs after save.
-      </p>
-    </app-form-field>
-
-    <app-form-field label="Asset" fieldId="edit-trial-product" [required]="true">
-      <p-select
-        inputId="edit-trial-product"
-        [options]="products()"
-        optionLabel="name"
-        optionValue="id"
-        [ngModel]="assetId()"
-        (ngModelChange)="assetId.set($event)"
-        name="product"
-        placeholder="Select asset"
-        [filter]="true"
-        styleClass="w-full"
-        appendTo="body"
-        [attr.aria-required]="true"
-      />
-    </app-form-field>
-
-    <app-form-field label="Indication" fieldId="edit-trial-indication">
-      <p-select
-        inputId="edit-trial-indication"
-        [options]="indications()"
-        optionLabel="name"
-        optionValue="id"
-        [ngModel]="null"
-        name="indication"
-        placeholder="Select indication (optional)"
-        [filter]="true"
-        [showClear]="true"
-        styleClass="w-full"
-        appendTo="body"
-      />
-    </app-form-field>
-
-    <app-form-field label="Phase" fieldId="phase-type">
-      <span labelSuffix>
-        @if (phaseTypeLocked()) {
-          <span
-            class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
-          >
-            ct.gov
-          </span>
-        }
-      </span>
-      <p-select
-        inputId="phase-type"
-        [options]="phaseOptions()"
-        optionLabel="name"
-        optionValue="id"
-        [ngModel]="phaseType()"
-        (ngModelChange)="phaseType.set($event)"
-        name="phaseType"
-        [disabled]="phaseTypeLocked()"
-        placeholder="Select a phase"
-        [showClear]="true"
-        styleClass="w-full"
-        appendTo="body"
-        [pTooltip]="
-          phaseTypeLocked()
-            ? 'Managed by ct.gov. Edit at clinicaltrials.gov or remove the NCT to override.'
-            : ''
-        "
-        tooltipPosition="top"
-      />
-    </app-form-field>
-
-    <div class="grid grid-cols-2 gap-4">
-      <app-form-field label="Phase start" fieldId="phase-start" spacing="">
-        <span labelSuffix>
-          @if (phaseStartLocked()) {
-            <span
-              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
-              >ct.gov</span
-            >
-          }
-        </span>
-        <p-datepicker
-          inputId="phase-start"
-          [ngModel]="phaseStartDate()"
-          (ngModelChange)="setPhaseStartDate($event)"
-          name="phaseStart"
-          dateFormat="yy-mm-dd"
-          styleClass="w-full"
-          [disabled]="phaseStartLocked()"
-          [showIcon]="true"
-          appendTo="body"
-          [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
-          tooltipPosition="top"
-        />
-      </app-form-field>
-
-      <app-form-field label="Phase end" fieldId="phase-end" spacing="">
-        <span labelSuffix>
-          @if (phaseEndLocked()) {
-            <span
-              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
-              >ct.gov</span
-            >
-          }
-        </span>
-        <p-datepicker
-          inputId="phase-end"
-          [ngModel]="phaseEndDate()"
-          (ngModelChange)="setPhaseEndDate($event)"
-          name="phaseEnd"
-          dateFormat="yy-mm-dd"
-          styleClass="w-full"
-          [disabled]="phaseEndLocked()"
-          [showIcon]="true"
-          appendTo="body"
-          [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
-          tooltipPosition="top"
-        />
-      </app-form-field>
-    </div>
+    <app-trial-edit-form
+      [(name)]="name"
+      [(identifier)]="identifier"
+      [(assetIds)]="assetIds"
+      [(primaryAssetId)]="primaryAssetId"
+      [(indicationIds)]="indicationIds"
+      [(phaseType)]="phaseType"
+      [(phaseStart)]="phaseStart"
+      [(phaseEnd)]="phaseEnd"
+      [assetOptions]="products()"
+      [indicationOptions]="indications()"
+      [phaseOptions]="phaseOptions()"
+      [phaseTypeLocked]="phaseTypeLocked()"
+      [phaseStartLocked]="phaseStartLocked()"
+      [phaseEndLocked]="phaseEndLocked()"
+    />
 
     <app-form-actions
       submitLabel="Save"

@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
-import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -29,7 +27,8 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
-import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 
@@ -47,8 +46,6 @@ interface AssetRow {
   standalone: true,
   imports: [
     RouterLink,
-    FormsModule,
-    SelectModule,
     TableModule,
     ButtonModule,
     Dialog,
@@ -122,14 +119,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     columns: [
       { field: 'asset.name', header: 'Name', filter: { kind: 'text' } },
       { field: 'asset.generic_name', header: 'Generic', filter: { kind: 'text' } },
-      {
-        field: 'asset.company_id',
-        header: 'Company',
-        filter: {
-          kind: 'select',
-          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
-        },
-      },
+      { field: 'companyName', header: 'Company', filter: { kind: 'text' } },
       { field: 'moaNames', header: 'MOA', filter: { kind: 'text' } },
       { field: 'roaNames', header: 'ROA', filter: { kind: 'text' } },
       { field: 'trialCount', header: 'Trials', filter: { kind: 'numeric' } },
@@ -171,29 +161,19 @@ export class AssetListComponent implements OnInit, OnDestroy {
   rowMenu(row: AssetRow): MenuItem[] {
     const cached = this.menuCache.get(row.asset.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'View trials',
-        icon: 'fa-solid fa-flask',
-        command: () => this.openTrials(row.asset.id),
-      },
-    ];
-    if (this.spaceRole.canEdit()) {
-      items.push(
+    const items = buildEntityActionMenu({
+      canEdit: this.spaceRole.canEdit(),
+      editLabel: 'Edit',
+      onEdit: () => this.openEditModal(row.asset),
+      onDelete: () => void this.confirmDelete(row.asset),
+      extras: [
         {
-          label: 'Edit',
-          icon: 'fa-solid fa-pen',
-          command: () => this.openEditModal(row.asset),
+          label: 'View trials',
+          icon: 'fa-solid fa-flask',
+          command: () => this.openTrials(row.asset.name),
         },
-        { separator: true },
-        {
-          label: 'Delete',
-          icon: 'fa-solid fa-trash',
-          styleClass: 'row-actions-danger',
-          command: () => this.confirmDelete(row.asset),
-        }
-      );
-    }
+      ],
+    });
     this.menuCache.set(row.asset.id, items);
     return items;
   }
@@ -224,50 +204,31 @@ export class AssetListComponent implements OnInit, OnDestroy {
     });
   }
 
-  openTrials(assetId: string): void {
+  openTrials(assetName: string): void {
     this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
       queryParams: buildFilterQueryParams({
-        'trial.asset_id': { kind: 'select', values: [assetId] },
+        assetName: { kind: 'text', contains: assetName },
       }),
     });
   }
 
   async confirmDelete(asset: Asset): Promise<void> {
-    // Preview the cascade so the dialog renders honest counts. The preview
-    // RPC is read-only; if it fails (RLS or network), surface and bail.
-    let counts;
-    try {
-      counts = await this.assetService.previewDelete(asset.id);
-    } catch (err) {
-      this.deleteError.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not load delete preview. Check your connection and try again.'
-      );
-      return;
-    }
-
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete asset',
-      entityLabel: asset.name,
-      message: `Delete "${asset.name}"? This will permanently remove:`,
-      counts,
-      requireTypedConfirmation: true,
-    });
-    if (!ok) return;
-
     this.deleteError.set(null);
-    try {
-      await this.assetService.delete(asset.id);
-      await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Asset deleted.', life: 3000 });
-    } catch (err) {
-      this.deleteError.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not delete asset. It may have associated trials.'
-      );
-    }
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete asset',
+        entityLabel: asset.name,
+        message: `Delete "${asset.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.assetService.previewDelete(asset.id),
+      delete: () => this.assetService.delete(asset.id),
+      successSummary: 'Asset deleted.',
+      onSuccess: () => this.loadData(),
+      errorFallback: 'Could not delete asset. It may have associated trials.',
+    });
   }
 
   private async loadData(): Promise<void> {

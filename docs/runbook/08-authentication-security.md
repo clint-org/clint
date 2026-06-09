@@ -315,6 +315,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `tenant_invites` | yes | 4 |
 | `tenant_members` | yes | 4 |
 | `tenants` | yes | 3 |
+| `trial_assets` | yes | 3 |
 | `trial_change_events` | yes | 1 |
 | `trial_conditions` | yes | 3 |
 | `trial_ctgov_snapshots` | yes | 1 |

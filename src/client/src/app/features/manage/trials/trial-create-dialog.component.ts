@@ -11,6 +11,7 @@ import {
 import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { MultiSelect } from 'primeng/multiselect';
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
@@ -37,6 +38,7 @@ interface SelectOption {
     Dialog,
     InputTextModule,
     Select,
+    MultiSelect,
     DatePicker,
     Tooltip,
     FormsModule,
@@ -65,6 +67,7 @@ export class TrialCreateDialogComponent {
   readonly name = signal('');
   readonly identifier = signal<string | null>(null);
   readonly assetId = signal<string | null>(null);
+  readonly indicationIds = signal<string[]>([]);
 
   // form fields for the three new phase columns
   readonly phaseType = signal<string | null>(null);
@@ -179,6 +182,7 @@ export class TrialCreateDialogComponent {
         this.name.set('');
         this.identifier.set(null);
         this.assetId.set(null);
+        this.indicationIds.set([]);
         this.nctLookupState.set('idle');
         this.nctLookupAcronym.set(null);
         this.nameWasManuallyEdited.set(false);
@@ -295,6 +299,11 @@ export class TrialCreateDialogComponent {
     this.nameWasManuallyEdited.set(true);
   }
 
+  // MultiSelect with showClear can emit null; coalesce to [].
+  protected onIndicationsChange(ids: string[] | null): void {
+    this.indicationIds.set(ids ?? []);
+  }
+
   private async loadOptions(spaceId: string): Promise<void> {
     const [products, indications] = await Promise.all([
       this.assetService.list(spaceId),
@@ -351,6 +360,9 @@ export class TrialCreateDialogComponent {
         payload.phase_end_date_source = this.phaseEndFromCtgov() ? 'ctgov' : 'analyst';
       }
       const trial = await this.trialService.create(this.spaceId(), payload);
+      if (this.indicationIds().length) {
+        await this.trialService.setIndications(trial.id, this.indicationIds(), this.spaceId());
+      }
       // Best-effort: kick off CT.gov sync if NCT was provided. Don't block the
       // save path on the sync result.
       if (trial.identifier) {

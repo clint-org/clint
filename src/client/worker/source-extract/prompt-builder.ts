@@ -60,8 +60,9 @@ Output schema (follow this exactly):
     "status": "Planned | Active | Completed | Terminated | Withdrawn | null",
     "sample_size": number or null,
     "sponsor_ref": 0,
-    "asset_ref": 0 or null,
-    "indication": "disease/condition string or null",
+    "asset_refs": [0],
+    "primary_asset_ref": 0 or null,
+    "indications": ["disease/condition string", ...] (every indication the trial studies; empty array if none),
     "evidence": "verbatim quote"
   }],
   "markers": [{
@@ -86,7 +87,7 @@ Output schema (follow this exactly):
   }]
 }
 
-company_ref, sponsor_ref, asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
+company_ref, sponsor_ref, asset_refs, primary_asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). asset_refs is the list of assets a trial tests (empty for observational; multiple for a master protocol testing several drugs) and primary_asset_ref (one of asset_refs) is the headline asset. Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
 
 If nothing can be extracted, return all arrays as empty.`;
 }

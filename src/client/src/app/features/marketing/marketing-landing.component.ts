@@ -3,11 +3,14 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { environment } from '../../../environments/environment';
+import { PublicFooterComponent } from '../../shared/components/public-footer.component';
+import { SupabaseService } from '../../core/services/supabase.service';
+import { isExistingWorkspace } from './workspace-finder';
 
 @Component({
   selector: 'app-marketing-landing',
   standalone: true,
-  imports: [ButtonModule, InputTextModule, RouterLink],
+  imports: [ButtonModule, InputTextModule, RouterLink, PublicFooterComponent],
   template: `
     <div class="flex min-h-screen flex-col bg-slate-50">
       <header class="border-b border-slate-200 bg-white">
@@ -85,7 +88,7 @@ import { environment } from '../../../environments/environment';
               Find your workspace
             </h2>
             <p class="mt-1 text-xs text-slate-500">Enter your workspace subdomain to sign in.</p>
-            <form class="mt-4 flex gap-2" (submit)="goToWorkspace($event)">
+            <form class="mt-4 flex flex-col gap-2 sm:flex-row" (submit)="goToWorkspace($event)">
               <div class="flex flex-1 items-stretch border border-slate-300 bg-white">
                 <input
                   pInputText
@@ -93,7 +96,7 @@ import { environment } from '../../../environments/environment';
                   [value]="subdomain()"
                   (input)="onInput($event)"
                   placeholder="your-workspace"
-                  class="flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                  class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
                   aria-label="Workspace subdomain"
                 />
                 <span
@@ -102,7 +105,13 @@ import { environment } from '../../../environments/environment';
                   .{{ apexDisplay }}
                 </span>
               </div>
-              <p-button label="Go" [disabled]="!subdomain()" type="submit" />
+              <p-button
+                label="Go"
+                styleClass="w-full sm:w-auto"
+                [disabled]="!subdomain() || checking()"
+                [loading]="checking()"
+                type="submit"
+              />
             </form>
             @if (errorMessage()) {
               <p class="mt-3 text-xs text-red-700" role="alert">{{ errorMessage() }}</p>
@@ -117,15 +126,18 @@ import { environment } from '../../../environments/environment';
           </p>
         </div>
       </main>
+      <app-public-footer />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarketingLandingComponent {
   private readonly router = inject(Router);
+  private readonly supabase = inject(SupabaseService);
 
   readonly subdomain = signal<string>('');
   readonly errorMessage = signal<string | null>(null);
+  readonly checking = signal<boolean>(false);
 
   protected readonly apexDisplay = environment.apexDomain || 'yourproduct.com';
 
@@ -135,8 +147,9 @@ export class MarketingLandingComponent {
     this.errorMessage.set(null);
   }
 
-  goToWorkspace(e: Event) {
+  async goToWorkspace(e: Event) {
     e.preventDefault();
+    if (this.checking()) return;
     const sub = this.subdomain().trim();
     if (!sub || !/^[a-z][a-z0-9-]{1,62}$/.test(sub)) {
       this.errorMessage.set(
@@ -144,11 +157,35 @@ export class MarketingLandingComponent {
       );
       return;
     }
-    if (environment.apexDomain) {
-      const url = `${window.location.protocol}//${sub}.${environment.apexDomain}/login`;
-      window.location.href = url;
-    } else {
+
+    // Local dev (no apex) keeps the old behavior: there is no per-subdomain host
+    // to verify against, so route to the shared login.
+    if (!environment.apexDomain) {
       this.router.navigate(['/login'], { queryParams: { workspace: sub } });
+      return;
+    }
+
+    const host = `${sub}.${environment.apexDomain}`;
+    const target = `${window.location.protocol}//${host}/login`;
+    this.errorMessage.set(null);
+    this.checking.set(true);
+    try {
+      const { data, error } = await this.supabase.client.rpc('get_brand_by_host', {
+        p_host: host,
+      });
+      if (error) throw error;
+      if (isExistingWorkspace(data as { kind?: string } | null)) {
+        window.location.href = target; // navigating away; leave the checking state set
+        return;
+      }
+      this.errorMessage.set(
+        `We couldn't find a workspace at ${host}. Check the spelling, or ask your administrator for the link.`
+      );
+      this.checking.set(false);
+    } catch {
+      // Fail open: if we can't verify the workspace (network/unexpected), fall
+      // back to the redirect so a flaky lookup never blocks a real user.
+      window.location.href = target;
     }
   }
 }

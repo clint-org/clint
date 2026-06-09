@@ -30,7 +30,6 @@ The table below is auto-generated from `src/client/package.json`. Edit the curat
 | `@angular/cdk` | ^21.2.10 |
 | `typescript` | ~5.9.3 |
 | `rxjs` | ~7.8.0 |
-| `zone.js` | ~0.15.0 |
 | `tslib` | ^2.6.0 |
 | `primeng` | ^21.1.6 |
 | `@primeng/themes` | ^21.0.4 |
@@ -75,7 +74,6 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `tailwindcss-primeui`
 - `tslib`
 - `zod`
-- `zone.js`
 - `@cloudflare/vitest-pool-workers`
 - `@cloudflare/workers-types`
 - `@playwright/test`

@@ -47,6 +47,9 @@
   font-size: 13px;
   color: rgb(51 65 85); /* slate-700 */
   line-height: 1.5;
+  /* Honor newlines in the message string so callers can break long
+     confirm copy onto separate lines (escape stays on; no innerHTML). */
+  white-space: pre-line;
 }
 
 /* -- Inputs ------------------------------------------------------------ */
@@ -302,4 +305,28 @@
   letter-spacing: 0.01em;
   line-height: 1.4;
   max-width: 280px;
+}
+
+/* -- TreeTable: source-import review grid ------------------------------- */
+
+/* The review grid is the only p-treeTable. Make the host block-level so the
+   table fills its horizontal-scroll container (the grid is read-only; the
+   former resizable-column styling was removed with the redesign). */
+p-treetable {
+  display: block;
+}
+
+/* Denser review grid: the import-review grid is a data-dense instrument, so
+   tighten cell padding and body type well below PrimeNG's roomy default
+   (12px/16px, 16px font -> ~73px rows). Selectors mirror PrimeNG's internal
+   structure (.p-treetable-tbody/.p-treetable-thead) so they outrank the theme.
+   Header keeps its small mono styling from the template. */
+.review-grid.p-treetable .p-treetable-thead > tr > th,
+.review-grid.p-treetable .p-treetable-tbody > tr > td {
+  padding-block: 0.3125rem; /* 5px */
+  padding-inline: 0.625rem; /* 10px */
+}
+.review-grid.p-treetable .p-treetable-tbody > tr > td {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.2rem;
 }

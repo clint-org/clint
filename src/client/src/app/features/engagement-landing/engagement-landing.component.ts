@@ -6,7 +6,9 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
 import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -39,6 +41,7 @@ import {
   UpcomingCatalyst,
 } from './engagement-landing.service';
 import { BriefResult, computeBrief } from './brief-window';
+import { EngagementRouteIds, shouldReloadEngagement } from './engagement-landing.nav';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
 
@@ -253,7 +256,7 @@ export class EngagementLandingComponent implements OnInit {
   readonly inventoryTotals = computed<InventoryTotals | null>(() => {
     const s = this.stats();
     if (!s) return null;
-    return { trials: s.active_trials, companies: s.companies, assets: s.assets };
+    return { trials: s.trials, companies: s.companies, assets: s.assets };
   });
 
   readonly briefVisible = computed(() => this.brief() !== null);
@@ -367,6 +370,32 @@ export class EngagementLandingComponent implements OnInit {
     const week = recentCount(this.latestIntelligence(), 7);
     return { total, week };
   });
+
+  constructor() {
+    // The header space switcher navigates to the same route config with a
+    // different :spaceId, so Angular reuses this component instance and
+    // ngOnInit does not fire again. Re-extract the route ids on every completed
+    // navigation and reload when the resolved engagement actually changed.
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed()
+      )
+      .subscribe(() => {
+        const prev: EngagementRouteIds = {
+          tenantId: this.tenantId(),
+          spaceId: this.spaceId(),
+        };
+        this.extractRouteParams();
+        const next: EngagementRouteIds = {
+          tenantId: this.tenantId(),
+          spaceId: this.spaceId(),
+        };
+        if (shouldReloadEngagement(prev, next)) {
+          void this.loadAll();
+        }
+      });
+  }
 
   ngOnInit(): void {
     this.extractRouteParams();

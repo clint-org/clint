@@ -14,7 +14,8 @@
 
 **Conventions to follow (from the codebase):**
 - Never edit an applied migration. Create a new timestamped file with `supabase migration new <name>`.
-- Migrations carry their own `do $$ ... $$` smoke blocks that `raise exception` on failure, mirroring `20260526120100_shared_entity_create_rpcs.sql`. A failed assert aborts `supabase db reset`, so the smoke block IS the test.
+- Migrations carry their own `do $$ ... $$` smoke blocks that `raise exception` on failure. A failed assert aborts `supabase db reset`, so the smoke block IS the test.
+- **CORRECTION (smoke fixtures must be inline, discovered during execution):** `supabase db reset` runs migrations BEFORE `seed.sql`, so a smoke block that reads seed data (`select id from public.spaces limit 1`) finds an empty database and SKIPS instead of running. The literal smoke SQL shown in some tasks below uses that seed-reading shape and must NOT be used as-is. Instead, follow the working convention in `supabase/migrations/20260604120000_events_feed_scope_rollup_search_sort.sql` (the trailing `do $$ ... end$$` smoke, roughly lines 427-528): create ALL fixtures inline with fixed UUIDs (a task-unique prefix and a unique `@invalid.local` email): `auth.users` -> `agencies` -> `tenants` -> `tenant_members` -> `spaces` -> `space_members` -> `companies` -> `assets` -> `trials`; call `perform set_config('request.jwt.claim.sub', v_owner::text, true)` before any RPC that checks `has_space_access`; run the task's assertions; emit the `... smoke ok` notice; then clean up by resetting the jwt claim and deleting the fixtures (set `clint.member_guard_cascade='on'`, delete the tenant which cascades to spaces/companies/assets/trials/trial_assets, delete the agency and the auth user, set the guard back `off`). Verify the `... smoke ok` NOTICE appears during `supabase db reset` (NOT a "skipped" notice) and that `select count(*) from public.spaces` is unchanged after a reset (proving cleanup worked). The assertion LOGIC in each task below is correct; only the fixture-acquisition and cleanup scaffolding must switch to this inline convention.
 - Local Supabase must be running (`supabase start`). Verify with `supabase db reset` after each migration.
 - RLS for M2M tables is derived from the parent trial's `space_id` via an `exists` check, exactly like `trial_conditions` (`20260524120000_create_indication_condition_tables.sql:130-147`) and `marker_assignments` (`20260412130100_marker_system_redesign.sql:287-309`).
 
@@ -193,10 +194,14 @@ create trigger trg_trial_assets_bootstrap
 ```sql
 -- Keep trials.asset_id equal to the single is_primary member. One direction only:
 -- trial_assets.is_primary drives trials.asset_id, never the reverse.
--- If the primary membership is removed but others remain, promote the earliest
--- remaining member so the invariant (exactly one primary) is restored.
--- If zero members remain (e.g. mid-cascade when the trial is being deleted),
--- do nothing.
+-- Auto-promotion happens ONLY on DELETE: if the deleted row left the trial with
+-- no primary but other members remain, promote the earliest. We must NOT
+-- auto-promote during an UPDATE, because set_trial_assets repoints the primary by
+-- demoting all rows then promoting the chosen one in two separate statements;
+-- after the demote there is transiently no primary, and if this trigger promoted
+-- a different row then the subsequent promote would create a SECOND primary and
+-- violate uq_trial_assets_one_primary. So on UPDATE/INSERT we only sync asset_id,
+-- and only when exactly one primary exists (skipping the transient zero state).
 create or replace function public._trial_assets_sync_primary()
 returns trigger
 language plpgsql
@@ -206,30 +211,41 @@ as $$
 declare
   v_trial     uuid := coalesce(new.trial_id, old.trial_id);
   v_remaining int;
+  v_primaries int;
   v_primary   uuid;
 begin
   select count(*) into v_remaining
     from public.trial_assets where trial_id = v_trial;
 
   if v_remaining = 0 then
-    return null;
+    return null;  -- no members (trial being deleted); nothing to sync
   end if;
 
-  -- No primary flagged (e.g. the primary row was just deleted): promote the
-  -- earliest-created remaining member. The UPDATE re-fires this trigger, which
-  -- then syncs trials.asset_id on the next pass.
-  if not exists (
-    select 1 from public.trial_assets where trial_id = v_trial and is_primary
-  ) then
-    update public.trial_assets ta
-       set is_primary = true
-     where ta.trial_id = v_trial
-       and ta.asset_id = (
-         select t2.asset_id from public.trial_assets t2
-          where t2.trial_id = v_trial
-          order by t2.created_at, t2.asset_id
-          limit 1
-       );
+  -- DELETE only: restore the "exactly one primary" invariant by promoting the
+  -- earliest remaining member when the deleted row was the primary. The promotion
+  -- UPDATE re-fires this trigger, which then syncs trials.asset_id.
+  if tg_op = 'DELETE' then
+    if not exists (
+      select 1 from public.trial_assets where trial_id = v_trial and is_primary
+    ) then
+      update public.trial_assets ta
+         set is_primary = true
+       where ta.trial_id = v_trial
+         and ta.asset_id = (
+           select t2.asset_id from public.trial_assets t2
+            where t2.trial_id = v_trial
+            order by t2.created_at, t2.asset_id
+            limit 1
+         );
+      return null;
+    end if;
+  end if;
+
+  -- Sync only when exactly one primary exists. During set_trial_assets's
+  -- demote-then-promote the count is transiently 0; skip until it settles.
+  select count(*) into v_primaries
+    from public.trial_assets where trial_id = v_trial and is_primary;
+  if v_primaries <> 1 then
     return null;
   end if;
 

@@ -1,0 +1,180 @@
+<app-form-field
+  label="Name"
+  fieldId="trial-form-name"
+  [required]="true"
+  [error]="nameInvalid() ? 'Name is required.' : null"
+>
+  <input
+    id="trial-form-name"
+    type="text"
+    pInputText
+    class="w-full"
+    [ngModel]="name()"
+    (ngModelChange)="name.set($event)"
+    (blur)="nameBlur.emit()"
+    name="name"
+    required
+    aria-required="true"
+    [disabled]="disabled()"
+  />
+</app-form-field>
+
+<app-form-field label="NCT identifier (optional)" fieldId="trial-form-nct">
+  <input
+    id="trial-form-nct"
+    type="text"
+    pInputText
+    class="w-full"
+    [ngModel]="identifier()"
+    (ngModelChange)="identifier.set($event)"
+    name="identifier"
+    placeholder="NCT12345678"
+    [readonly]="identifierReadonly()"
+    [disabled]="disabled()"
+  />
+  @if (!identifierReadonly()) {
+    <p class="mt-1 text-[11px] text-slate-500">
+      Format: NCT followed by 8 digits. Sync from CT.gov runs after save.
+    </p>
+  }
+</app-form-field>
+
+<app-form-field label="Assets" fieldId="trial-form-assets" [required]="true">
+  <p-multiselect
+    inputId="trial-form-assets"
+    [options]="assetOptions()"
+    optionLabel="name"
+    optionValue="id"
+    [ngModel]="assetIds()"
+    (ngModelChange)="onAssetsChange($event)"
+    name="assets"
+    placeholder="Select assets"
+    [filter]="true"
+    styleClass="w-full"
+    appendTo="body"
+    [disabled]="disabled()"
+    [attr.aria-required]="true"
+  />
+  <p class="mt-1 text-[11px] text-slate-500">
+    A trial can test more than one asset (e.g. a master protocol).
+  </p>
+</app-form-field>
+
+@if (assetIds().length > 1) {
+  <app-form-field label="Primary asset" fieldId="trial-form-primary" [required]="true">
+    <p-select
+      inputId="trial-form-primary"
+      [options]="primaryOptions()"
+      optionLabel="name"
+      optionValue="id"
+      [ngModel]="primaryAssetId()"
+      (ngModelChange)="primaryAssetId.set($event)"
+      name="primaryAsset"
+      placeholder="Select primary asset"
+      styleClass="w-full"
+      appendTo="body"
+      [disabled]="disabled()"
+      [attr.aria-required]="true"
+    />
+  </app-form-field>
+}
+
+<app-form-field label="Indication" fieldId="trial-form-indication">
+  <p-multiselect
+    inputId="trial-form-indication"
+    [options]="indicationOptions()"
+    optionLabel="name"
+    optionValue="id"
+    [ngModel]="indicationIds()"
+    (ngModelChange)="onIndicationsChange($event)"
+    name="indication"
+    placeholder="Select indication(s)"
+    [filter]="true"
+    [showClear]="true"
+    styleClass="w-full"
+    appendTo="body"
+    [disabled]="disabled()"
+  />
+</app-form-field>
+
+<app-form-field label="Phase" fieldId="trial-form-phase-type">
+  <span labelSuffix>
+    @if (phaseTypeLocked()) {
+      <span
+        class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+      >
+        ct.gov
+      </span>
+    }
+  </span>
+  <p-select
+    inputId="trial-form-phase-type"
+    [options]="phaseOptions()"
+    optionLabel="name"
+    optionValue="id"
+    [ngModel]="phaseType()"
+    (ngModelChange)="phaseType.set($event)"
+    name="phaseType"
+    [disabled]="phaseTypeLocked() || disabled()"
+    placeholder="Select a phase"
+    [showClear]="true"
+    styleClass="w-full"
+    appendTo="body"
+    [pTooltip]="
+      phaseTypeLocked()
+        ? 'Managed by ct.gov. Edit at clinicaltrials.gov or remove the NCT to override.'
+        : ''
+    "
+    tooltipPosition="top"
+  />
+</app-form-field>
+
+<div class="grid grid-cols-2 gap-4">
+  <app-form-field label="Phase start" fieldId="trial-form-phase-start" spacing="">
+    <span labelSuffix>
+      @if (phaseStartLocked()) {
+        <span
+          class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+          >ct.gov</span
+        >
+      }
+    </span>
+    <p-datepicker
+      inputId="trial-form-phase-start"
+      [ngModel]="phaseStartDate()"
+      (ngModelChange)="setPhaseStartDate($event)"
+      name="phaseStart"
+      dateFormat="yy-mm-dd"
+      styleClass="w-full"
+      [disabled]="phaseStartLocked() || disabled()"
+      [showIcon]="true"
+      appendTo="body"
+      [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
+      tooltipPosition="top"
+    />
+  </app-form-field>
+
+  <app-form-field label="Phase end" fieldId="trial-form-phase-end" spacing="">
+    <span labelSuffix>
+      @if (phaseEndLocked()) {
+        <span
+          class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
+          >ct.gov</span
+        >
+      }
+    </span>
+    <p-datepicker
+      inputId="trial-form-phase-end"
+      [ngModel]="phaseEndDate()"
+      (ngModelChange)="setPhaseEndDate($event)"
+      name="phaseEnd"
+      dateFormat="yy-mm-dd"
+      styleClass="w-full"
+      [disabled]="phaseEndLocked() || disabled()"
+      [showIcon]="true"
+      appendTo="body"
+      [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
+      tooltipPosition="top"
+    />
+  </app-form-field>
+</div>

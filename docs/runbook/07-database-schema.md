@@ -86,6 +86,8 @@ erDiagram
   TENANTS ||--o{ TENANT_INVITES : "tenant_id"
   TENANTS ||--o{ TENANT_MEMBERS : "tenant_id"
   AGENCIES ||--o{ TENANTS : "agency_id"
+  ASSETS ||--o{ TRIAL_ASSETS : "asset_id"
+  TRIALS ||--o{ TRIAL_ASSETS : "trial_id"
   TRIAL_FIELD_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_change_id"
   MARKER_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_marker_change_id"
   MARKERS ||--o{ TRIAL_CHANGE_EVENTS : "marker_id"
@@ -186,6 +188,7 @@ The unique partial index `primary_intelligence_one_published` (one published row
 | 112 | `20260523120000_entity_name_uniqueness.sql` | Adds `unique(space_id, name)` constraints to `therapeutic_areas` (now indications), `marker_types`, and `event_categories`. Includes dedup safety net (keeps oldest row per group, reassigns FK references) and partial unique indexes for system rows (`space_id IS NULL, is_system = true`) on `marker_types` and `event_categories`, since PostgreSQL treats NULLs as distinct in table-level unique constraints. `mechanisms_of_action` and `routes_of_administration` already had these constraints since migration 17. |
 | -- | `20260523120000_add_updated_by_columns.sql` | Adds `updated_by uuid references auth.users(id)` to companies, assets, trials, markers, events, trial_notes. Server-side BEFORE triggers enforce all audit columns from JWT |
 | 113-124 | `20260524120000`--`20260524121100` | Indication model redesign. New tables: `indications`, `conditions`, `condition_indication_map`, `asset_indications`, `trial_conditions`. Renames `products` to `assets`, `trials.product_id` to `trials.asset_id`. Narrows `trial_phases.phase_type` constraint (removes APPROVED/LAUNCHED, now development statuses on `asset_indications`). Adds auto-derive trigger `_recompute_asset_indication_status` to compute `asset_indications.development_status` from trial phase data. Migrates data from `therapeutic_areas` to `indications`. Updates all RPCs: `get_dashboard_data` returns companies > assets > indications > trials hierarchy; `get_bullseye_data` scoped by indication_id; `get_positioning_data` grouping 'indication' replaces 'therapeutic-area'; `get_landscape_index` groups by indications; `preview_product_delete` renamed to `preview_asset_delete`; `get_product_detail_with_intelligence` renamed to `get_asset_detail_with_intelligence`. Drops `therapeutic_areas` table after data migration. |
+| -- | `20260605215948_replace_member_views_with_rpcs.sql` | Drops `space_members_view`, `tenant_members_view`, `agency_members_view` and replaces each with a `list_space_members` / `list_tenant_members` / `list_agency_members` SECURITY DEFINER function of identical shape, keeping the same per-caller `has_space_access` / `is_tenant_member` / `is_agency_member` gate. Clears two advisor ERROR classes that fire only against the linked project: `security_definer_view` (the views ran as owner to read `auth.users`) and `auth_users_exposed` (the views exposed `auth.users` columns in `public`). Set-returning definer functions are subject to neither lint, matching the existing `lookup_user_by_email` pattern. Tenant/space/agency services switch `.from('..._view')` to `.rpc('list_..._members', ...)`. |
 
 ## Core Data Tables
 
@@ -687,6 +690,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `primary_intelligence_links`
 - `r2_pending_deletes`
 - `source_documents`
+- `trial_assets`
 - `user_redactions`
 
 **Migration files not in history table:**
@@ -894,4 +898,24 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260603120000_space_show_preclinical_setting.sql`
 - `20260603120100_guard_preclinical_in_analytic_rpcs.sql`
 - `20260604120000_events_feed_scope_rollup_search_sort.sql`
+- `20260604224257_create_trial_assets.sql`
+- `20260604225708_trial_assets_triggers.sql`
+- `20260604230014_backfill_trial_assets.sql`
+- `20260604230309_set_trial_assets_rpc.sql`
+- `20260604230810_commit_source_import_multi_asset.sql`
+- `20260605013416_trial_multi_asset_delete_semantics.sql`
+- `20260605030242_asset_indications_multi_asset_derive.sql`
+- `20260605030919_dashboard_data_multi_asset.sql`
+- `20260605042514_positioning_multi_asset_trial_count.sql`
+- `20260605042723_preview_asset_delete_multi_asset.sql`
+- `20260605043037_landscape_bullseye_multi_asset.sql`
+- `20260605050638_events_feed_multi_asset_scope.sql`
+- `20260605120000_fix_search_palette_trgm_schema_qualify.sql`
+- `20260605130000_content_create_authz_and_marker_trial_space.sql`
+- `20260605140000_restore_preclinical_guard_bullseye_assets.sql`
+- `20260606120000_set_trial_indications_rpc.sql`
+- `20260607120000_lock_down_function_execute_grants.sql`
+- `20260607130000_lock_down_read_rpc_and_helper_grants.sql`
+- `20260607140000_multi_indication_on_import.sql`
+- `20260608120000_add_total_trials_to_landing_stats.sql`
 <!-- /AUTO-GEN:DRIFT -->

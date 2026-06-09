@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toStudyRecord } from './nct-study-record';
+import { toStudyRecord, trialDisplayName, applyNctTrialNames } from './nct-study-record';
 
 // Shaped after the real ClinicalTrials.gov v2 payload for NCT05567796
 // (REDEFINE 1). The combination product "CagriSema" appears only as an arm
@@ -106,5 +106,52 @@ describe('toStudyRecord arm-group parsing', () => {
     };
     const record = toStudyRecord(noArms);
     expect(record.arm_groups).toEqual([]);
+  });
+});
+
+describe('trialDisplayName (acronym-preferring trial name)', () => {
+  it('uses the acronym when present', () => {
+    expect(
+      trialDisplayName({ acronym: 'SYNERGY-Outcomes', brief_title: 'A Master Protocol of Multiple Agents' })
+    ).toBe('SYNERGY-Outcomes');
+  });
+  it('falls back to the brief title when the acronym is null', () => {
+    expect(trialDisplayName({ acronym: null, brief_title: 'A Master Protocol of Multiple Agents' })).toBe(
+      'A Master Protocol of Multiple Agents'
+    );
+  });
+  it('falls back to the brief title when the acronym is blank/whitespace', () => {
+    expect(trialDisplayName({ acronym: '   ', brief_title: 'Fallback Title' })).toBe('Fallback Title');
+  });
+});
+
+describe('applyNctTrialNames (deterministic naming over the LLM choice)', () => {
+  const records = [
+    { nct_id: 'NCT07165028', acronym: 'SYNERGY-Outcomes', brief_title: 'A Master Protocol of Multiple Agents' },
+    { nct_id: 'NCT04184622', acronym: null, brief_title: 'A Study of Tirzepatide in Obesity (SURMOUNT-1)' },
+  ];
+
+  it('renames a new trial to its CT.gov acronym, keyed by NCT id', () => {
+    const proposals = { trials: [{ name: 'long LLM-chosen title', match: { kind: 'new', name: 'NCT07165028' } }] };
+    applyNctTrialNames(proposals, records);
+    expect(proposals.trials[0].name).toBe('SYNERGY-Outcomes');
+  });
+
+  it('renames to the brief title when the record has no acronym', () => {
+    const proposals = { trials: [{ name: 'whatever', match: { kind: 'new', name: 'NCT04184622' } }] };
+    applyNctTrialNames(proposals, records);
+    expect(proposals.trials[0].name).toBe('A Study of Tirzepatide in Obesity (SURMOUNT-1)');
+  });
+
+  it('matches the NCT id case-insensitively', () => {
+    const proposals = { trials: [{ name: 'x', match: { kind: 'new', name: 'nct07165028' } }] };
+    applyNctTrialNames(proposals, records);
+    expect(proposals.trials[0].name).toBe('SYNERGY-Outcomes');
+  });
+
+  it('leaves a trial untouched when its match is not an NCT in the record set', () => {
+    const proposals = { trials: [{ name: 'Existing Trial Name', match: { kind: 'existing', id: 'uuid-1' } }] };
+    applyNctTrialNames(proposals, records);
+    expect(proposals.trials[0].name).toBe('Existing Trial Name');
   });
 });

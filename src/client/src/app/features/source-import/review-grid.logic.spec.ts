@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, orphanTrialIndexes } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes, countFilterMatches } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -40,6 +40,14 @@ describe('deriveTrialFlags', () => {
   it('does not flag missing indication when indication is present', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'Obesity' });
     expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
+  });
+  it('does not flag missing indication when indications[] has entries', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: ['Obesity', 'Overweight'] });
+    expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
+  });
+  it('flags missing indication when indications[] is empty', () => {
+    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: [] });
+    expect(flags).toContainEqual({ id: 'no-indication', tier: 'attention', label: 'No indication' });
   });
   it('flags observational study_type as attention', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'X', study_type: 'Observational' });
@@ -178,5 +186,101 @@ describe('orphanTrialIndexes', () => {
     // The motivating case: an NCT master protocol testing two assets cannot
     // pick a single asset_ref, so it must remain visible rather than vanish.
     expect(orphanTrialIndexes([{ name: 'NCT07165028' }], 2)).toEqual([0]);
+  });
+  it('does not orphan a trial that lists multiple valid asset_refs', () => {
+    expect(orphanTrialIndexes([{ asset_refs: [0, 1] }], 2)).toEqual([]);
+  });
+  it('orphans a trial whose asset_refs are all out of range', () => {
+    expect(orphanTrialIndexes([{ asset_refs: [5, 9] }], 2)).toEqual([0]);
+  });
+});
+
+describe('resolveTrialAssetIndexes (multi-asset nesting)', () => {
+  it('returns every valid in-range index from asset_refs', () => {
+    expect(resolveTrialAssetIndexes({ asset_refs: [0, 1] }, 2)).toEqual([0, 1]);
+  });
+  it('drops out-of-range and de-duplicates, preserving order', () => {
+    expect(resolveTrialAssetIndexes({ asset_refs: [1, 5, 1, 0] }, 2)).toEqual([1, 0]);
+  });
+  it('falls back to the legacy scalar asset_ref', () => {
+    expect(resolveTrialAssetIndexes({ asset_ref: 1 }, 2)).toEqual([1]);
+  });
+  it('returns empty for no refs or an empty array', () => {
+    expect(resolveTrialAssetIndexes({ name: 'x' }, 2)).toEqual([]);
+    expect(resolveTrialAssetIndexes({ asset_refs: [] }, 2)).toEqual([]);
+  });
+});
+
+describe('resolveTrialPrimaryAssetIndex', () => {
+  it('uses primary_asset_ref when valid and among the refs', () => {
+    expect(resolveTrialPrimaryAssetIndex({ asset_refs: [0, 1], primary_asset_ref: 1 }, 2)).toBe(1);
+  });
+  it('falls back to the first ref when primary is missing or not a member', () => {
+    expect(resolveTrialPrimaryAssetIndex({ asset_refs: [0, 1] }, 2)).toBe(0);
+    expect(resolveTrialPrimaryAssetIndex({ asset_refs: [0, 1], primary_asset_ref: 5 }, 2)).toBe(0);
+    expect(resolveTrialPrimaryAssetIndex({ asset_refs: [0, 1], primary_asset_ref: 1 }, 2)).toBe(1);
+  });
+  it('returns null when the trial has no valid refs', () => {
+    expect(resolveTrialPrimaryAssetIndex({ asset_refs: [] }, 2)).toBeNull();
+  });
+  it('resolveTrialAssetIndex (singular) returns the primary', () => {
+    expect(resolveTrialAssetIndex({ asset_refs: [0, 1], primary_asset_ref: 1 }, 2)).toBe(1);
+  });
+});
+
+describe('trialMissingAsset with asset_refs', () => {
+  it('is not missing when asset_refs has entries', () => {
+    expect(trialMissingAsset({ asset_refs: [0] })).toBe(false);
+  });
+  it('is missing when new and asset_refs is empty', () => {
+    expect(trialMissingAsset({ match: { kind: 'new' }, asset_refs: [] })).toBe(true);
+  });
+  it('is not missing for an existing match even with empty asset_refs', () => {
+    expect(trialMissingAsset({ match: { kind: 'existing', id: 'x' }, asset_refs: [] })).toBe(false);
+  });
+});
+
+describe('countFilterMatches', () => {
+  const flag = { id: 'no-asset', tier: 'blocking' as const, label: 'No asset' };
+
+  it('counts every row in the tree for all', () => {
+    const nodes = [
+      { data: { flags: [], state: 'existing' }, children: [
+        { data: { flags: [], state: 'existing' }, children: [
+          { data: { flags: [], state: 'new' } },
+        ] },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).all).toBe(3);
+  });
+
+  it('counts flagged rows at any depth', () => {
+    const nodes = [
+      { data: { flags: [flag], state: 'existing' }, children: [
+        { data: { flags: [], state: 'existing' }, children: [
+          { data: { flags: [flag], state: 'new' } },
+        ] },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).flagged).toBe(2);
+  });
+
+  it('counts new rows at any depth', () => {
+    const nodes = [
+      { data: { flags: [], state: 'new' }, children: [
+        { data: { flags: [], state: 'existing' } },
+        { data: { flags: [], state: 'new' } },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).new).toBe(2);
+  });
+
+  it('returns all-zero counts for an empty tree', () => {
+    expect(countFilterMatches([])).toEqual({ all: 0, flagged: 0, new: 0 });
+  });
+
+  it('handles nodes with no children array', () => {
+    const nodes = [{ data: { flags: [flag], state: 'new' } }];
+    expect(countFilterMatches(nodes)).toEqual({ all: 1, flagged: 1, new: 1 });
   });
 });

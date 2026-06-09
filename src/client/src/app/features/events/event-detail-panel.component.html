@@ -4,16 +4,8 @@
   [showClose]="hasSelection()"
   (closed)="panelClose.emit()"
 >
-  @if (hasSelection() && canEdit() && !isDetected()) {
-    <button
-      headerActions
-      type="button"
-      class="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-      (click)="edit.emit()"
-      aria-label="Edit event"
-    >
-      <i class="fa-solid fa-pen text-xs"></i>
-    </button>
+  @if (headerMenu().length > 0) {
+    <app-row-actions headerActions [items]="headerMenu()" ariaLabel="Event actions" />
   }
 
   <!-- Event detail branch -->
@@ -32,7 +24,8 @@
           @if (d.company_id && tenantId() && spaceId()) {
             <a
               [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', d.company_id]"
-              class="text-slate-500 hover:text-brand-700 hover:underline"
+              appDetailPanelEntityLink
+              entityLinkTone="muted"
               >{{ d.company_name }}</a
             >
           } @else {
@@ -43,7 +36,8 @@
             @if (d.asset_id && tenantId() && spaceId()) {
               <a
                 [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', d.asset_id]"
-                class="text-slate-500 hover:text-brand-700 hover:underline"
+                appDetailPanelEntityLink
+                entityLinkTone="muted"
                 >{{ d.entity_name }}</a
               >
             } @else {
@@ -65,15 +59,7 @@
         <ul class="space-y-1">
           @for (src of d.sources; track src.id) {
             <li>
-              <a
-                [href]="src.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:text-brand-800 hover:underline"
-              >
-                {{ src.label || src.url }}
-                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-              </a>
+              <app-external-link [href]="src.url">{{ src.label || src.url }}</app-external-link>
             </li>
           }
         </ul>
@@ -84,7 +70,7 @@
       <app-detail-panel-section label="Tags">
         <div class="flex flex-wrap gap-1">
           @for (tag of d.tags; track tag) {
-            <span class="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{{
+            <span class="rounded-sm bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">{{
               tag
             }}</span>
           }
@@ -157,7 +143,7 @@
   } @else if (isDetected() && selectedFeedItem(); as item) {
     <!-- Title: rich summary segments -->
     @if (detectedSummary(); as summary) {
-      <h2 class="text-[15px] font-semibold leading-snug text-slate-900">
+      <h2 class="text-base font-semibold leading-snug text-slate-900">
         @for (seg of summary.segments; track $index) {
           @switch (seg.kind) {
             @case ('old') {
@@ -179,15 +165,14 @@
         }
       </h2>
     } @else {
-      <h2 class="text-[15px] font-semibold leading-snug text-slate-900">{{ item.title }}</h2>
+      <h2 class="text-base font-semibold leading-snug text-slate-900">{{ item.title }}</h2>
     }
 
     <!-- Signal row: date + priority -->
     <div class="mt-2 flex items-center gap-2 text-[12px] text-slate-500">
       <span class="font-mono tabular-nums">{{ item.event_date | date: 'MMM d, y' }}</span>
       @if (item.priority === 'high') {
-        <span class="inline-block h-[7px] w-[7px] rounded-full bg-red-500"></span>
-        <span class="text-[11px] font-semibold text-red-600">High signal</span>
+        <app-detail-panel-pill tone="red">High signal</app-detail-panel-pill>
       }
     </div>
 
@@ -223,26 +208,16 @@
     }
 
     <!-- Source provenance -->
-    <div class="mt-4">
-      <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">Source</p>
+    <app-detail-panel-section label="Source">
       @if (item.source_url) {
-        <a
-          [href]="item.source_url"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-1 text-[12px] text-brand-700 hover:underline"
-        >
-          ClinicalTrials.gov
-          <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
-        </a>
+        <app-external-link [href]="item.source_url">ClinicalTrials.gov</app-external-link>
       } @else {
         <span class="text-[12px] text-slate-500">Analyst</span>
       }
-    </div>
+    </app-detail-panel-section>
 
     <!-- Trial entity context -->
-    <div class="mt-4">
-      <p class="mb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">Trial</p>
+    <app-detail-panel-section label="Trial">
       <div class="flex items-center gap-2">
         @if (item.company_logo_url) {
           <app-brand-logo
@@ -257,8 +232,16 @@
           @if (item.company_name) {
             @if (item.company_id && tenantId() && spaceId()) {
               <a
-                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', item.company_id]"
-                class="text-slate-700 hover:text-brand-700 hover:underline"
+                [routerLink]="[
+                  '/t',
+                  tenantId(),
+                  's',
+                  spaceId(),
+                  'manage',
+                  'companies',
+                  item.company_id,
+                ]"
+                appDetailPanelEntityLink
                 >{{ item.company_name }}</a
               >
             } @else {
@@ -269,7 +252,7 @@
           @if (item.asset_id && tenantId() && spaceId()) {
             <a
               [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', item.asset_id]"
-              class="text-slate-700 hover:text-brand-700 hover:underline"
+              appDetailPanelEntityLink
               >{{ item.entity_name }}</a
             >
           } @else {
@@ -277,7 +260,7 @@
           }
         </span>
       </div>
-    </div>
+    </app-detail-panel-section>
 
     <!-- Analyst note block -->
     <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">

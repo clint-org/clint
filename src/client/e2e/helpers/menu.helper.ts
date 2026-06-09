@@ -46,3 +46,13 @@ export async function clickRowAction(page: Page, row: Locator, actionLabel: stri
   await trigger.click();
   await page.getByRole('menuitem', { name: actionLabel }).click();
 }
+
+/**
+ * Open the detail-page topbar overflow kebab (`app-row-actions` in
+ * `.topbar-actions`) and click the named menuitem. Detail-page Edit/Delete
+ * moved out of standalone topbar buttons into this shared kebab, mirroring the
+ * grid-row idiom; scopes the same robust open-and-click logic to the topbar.
+ */
+export async function clickTopbarAction(page: Page, actionLabel: string): Promise<void> {
+  await clickRowAction(page, page.locator('.topbar-actions'), actionLabel);
+}

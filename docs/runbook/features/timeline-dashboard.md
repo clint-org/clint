@@ -14,6 +14,8 @@ Company
               +-- Trial (with phase bars and event markers)
 ```
 
+**Multi-asset trials (master protocols).** A trial can test more than one asset (e.g. a master-protocol NCT with separate experimental arms). Membership lives in the `trial_assets` join table; `trials.asset_id` is a maintained cache of the trial's primary asset. `get_dashboard_data` nests such a trial under EVERY asset it tests (for the matching indication), and its indication/development_status derives onto each member asset. The same per-asset attribution applies to positioning and bullseye; landscape index views pivot on `asset_indications` and inherit it. `get_events_page_data` likewise surfaces a trial's events / markers / detected changes on each member asset's timeline and entity-events panel (its asset-scope filters match `trial_assets` membership). Membership is set at import (the review grid's chip + star editor) or later in the trial-edit dialog (`Assets` multi-select + primary), both via the `set_trial_assets` RPC. Deleting an asset only removes a trial if that was its last asset; otherwise the trial survives with a repointed primary. See `docs/superpowers/specs/2026-06-04-trial-multi-asset-design.md`.
+
 **Phase Bars** -- horizontal bands that span the timeline for each trial phase. Color-coded by phase type:
 - **Phase 1** -- Muted slate (`#94a3b8`, early/exploratory)
 - **Phase 2** -- Cyan (`#67e8f9`, building evidence)

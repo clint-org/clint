@@ -17,8 +17,6 @@ import { Tooltip } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
 
 import { ChangeEventService } from '../../core/services/change-event.service';
-import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
-import { RouteOfAdministrationService } from '../../core/services/route-of-administration.service';
 import { RpcCache } from '../../core/services/rpc-cache.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import {
@@ -36,28 +34,20 @@ import {
   readableSummary,
   blockingReason,
   trialMissingAsset as trialMissingAssetLogic,
-  resolveTrialAssetIndex,
+  resolveTrialAssetIndexes,
+  resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
+  countFilterMatches,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
+import { ReviewEditDialogComponent } from './review-edit-dialog.component';
+
+type EditableEntityType = 'companies' | 'assets' | 'trials';
 
 type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
 
-const ENTITY_LABELS: Record<EntityType, string> = {
-  companies: 'Companies',
-  assets: 'Assets',
-  trials: 'Trials',
-  markers: 'Markers',
-  events: 'Events',
-};
-
 const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'markers', 'events'];
-
-interface FieldEdit {
-  field: string;
-  value: string;
-}
 
 interface CompanyNode {
   companyIdx: number;
@@ -97,12 +87,15 @@ interface GridRow {
   moaRoa: string;
   indication: string | null;
   flags: ReviewFlag[];
-  hasDetail: boolean;
+  // For a trial that tests more than one asset, marks whether this particular
+  // nesting is under its primary (headline) asset or a secondary one. Undefined
+  // for single-asset trials and for non-trial rows.
+  multiAssetRole?: 'primary' | 'secondary';
 }
 
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule],
+  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule, ReviewEditDialogComponent],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -138,7 +131,7 @@ interface GridRow {
         <div class="flex items-center gap-2">
           <p-button
             label="Download JSON"
-            icon="pi pi-download"
+            icon="fa-solid fa-download"
             size="small"
             [text]="true"
             severity="secondary"
@@ -148,7 +141,7 @@ interface GridRow {
           />
           <p-button
             label="Back"
-            icon="pi pi-arrow-left"
+            icon="fa-solid fa-arrow-left"
             size="small"
             [outlined]="true"
             severity="secondary"
@@ -206,516 +199,13 @@ interface GridRow {
             </details>
           }
 
-          <!-- Reusable entity row template -->
-          <ng-template #entityRow let-type="type" let-idx="idx">
-            @let erk = entityKey(type, idx);
-            @let erSel = isSelected(erk);
-            <div
-              class="flex items-start gap-3 rounded py-1.5 transition-colors"
-              [class.opacity-50]="!erSel"
-            >
-              <p-checkbox
-                [ngModel]="erSel"
-                (ngModelChange)="toggleSelection(erk, $event)"
-                [binary]="true"
-                [inputId]="erk"
-                size="small"
-              />
-
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <!-- Entity name: link for existing, label for new -->
-                  @if (!isNew(type, idx)) {
-                    @let erUrl = entityDetailUrl(type, idx);
-                    @if (erUrl) {
-                      <a
-                        [href]="erUrl"
-                        target="_blank"
-                        rel="noopener"
-                        class="cursor-pointer truncate text-sm font-semibold text-brand-600 hover:underline"
-                        [class.font-mono]="type === 'companies'"
-                        [class.font-bold]="type === 'companies'"
-                        [class.uppercase]="type === 'companies'"
-                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                        (click)="$event.stopPropagation()"
-                        >{{ entityName(type, idx) }}</a
-                      >
-                    } @else {
-                      <span
-                        class="truncate text-sm text-slate-700"
-                        [class.font-mono]="type === 'companies'"
-                        [class.font-bold]="type === 'companies'"
-                        [class.uppercase]="type === 'companies'"
-                        [class.font-semibold]="type !== 'companies'"
-                        [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                        >{{ entityName(type, idx) }}</span
-                      >
-                    }
-                    <span
-                      class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                      >Existing</span
-                    >
-                    @let erIdentifier = resolvedIdentifier(type, idx);
-                    @if (erIdentifier) {
-                      <a
-                        [href]="ctgovUrl(erIdentifier)"
-                        target="_blank"
-                        rel="noopener"
-                        class="inline-flex items-center gap-0.5 font-mono text-[10px] text-brand-600 hover:underline"
-                        pTooltip="View on ClinicalTrials.gov"
-                        tooltipPosition="top"
-                        (click)="$event.stopPropagation()"
-                        >{{ erIdentifier }}<i class="pi pi-external-link text-[8px]"></i
-                      ></a>
-                    }
-                  } @else {
-                    <label
-                      [for]="erk"
-                      class="cursor-pointer truncate text-sm font-semibold text-slate-900"
-                      [class.font-mono]="type === 'companies'"
-                      [class.font-bold]="type === 'companies'"
-                      [class.uppercase]="type === 'companies'"
-                      [style.letter-spacing]="type === 'companies' ? '0.06em' : null"
-                      >{{ entityName(type, idx) }}</label
-                    >
-                    <span
-                      class="inline-block rounded bg-brand-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-700"
-                      >New</span
-                    >
-                  }
-
-                  <!-- Phase badge for trials -->
-                  @if (type === 'trials') {
-                    @let erPhase = trialPhase(idx);
-                    @if (erPhase) {
-                      <span
-                        class="inline-block rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-slate-600"
-                        >{{ erPhase }}</span
-                      >
-                    }
-                    @let erStatus = trialStatus(idx);
-                    @if (erStatus) {
-                      <span class="text-xs text-slate-400">{{ erStatus }}</span>
-                    }
-                    @if (isNctImport()) {
-                      <span
-                        class="inline-block rounded bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-cyan-700 border border-cyan-200"
-                        >CT.gov</span
-                      >
-                      @if (isObservationalTrial(idx)) {
-                        <span
-                          class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-700 border border-amber-200"
-                          >Observational</span
-                        >
-                      }
-                    }
-                  }
-
-                  <!-- Generic name for assets -->
-                  @if (type === 'assets') {
-                    @let erGeneric = assetGenericName(idx);
-                    @if (erGeneric) {
-                      <span class="text-xs text-slate-400">{{ erGeneric }}</span>
-                    }
-                    @let erMoas = assetMoas(idx);
-                    @let erRoas = assetRoas(idx);
-                    @if (erMoas.length > 0) {
-                      @for (m of erMoas; track m) {
-                        <span
-                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
-                          [class.bg-violet-50]="isMoaExisting(m)"
-                          [class.text-violet-700]="isMoaExisting(m)"
-                          [class.border-violet-200]="isMoaExisting(m)"
-                          [class.bg-brand-50]="!isMoaExisting(m)"
-                          [class.text-brand-700]="!isMoaExisting(m)"
-                          [class.border-brand-200]="!isMoaExisting(m)"
-                          [pTooltip]="
-                            isMoaExisting(m) ? 'MOA (existing)' : 'MOA (new, will be created)'
-                          "
-                          tooltipPosition="top"
-                          >{{ m
-                          }}<span
-                            class="rounded px-0.5 text-[8px]"
-                            [class.bg-violet-100]="isMoaExisting(m)"
-                            [class.bg-brand-100]="!isMoaExisting(m)"
-                            >{{ isMoaExisting(m) ? 'Existing' : 'New' }}</span
-                          ></span
-                        >
-                      }
-                    }
-                    @if (erRoas.length > 0) {
-                      @for (r of erRoas; track r) {
-                        <span
-                          class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] border"
-                          [class.bg-cyan-50]="isRoaExisting(r)"
-                          [class.text-cyan-700]="isRoaExisting(r)"
-                          [class.border-cyan-200]="isRoaExisting(r)"
-                          [class.bg-brand-50]="!isRoaExisting(r)"
-                          [class.text-brand-700]="!isRoaExisting(r)"
-                          [class.border-brand-200]="!isRoaExisting(r)"
-                          [pTooltip]="
-                            isRoaExisting(r) ? 'ROA (existing)' : 'ROA (new, will be created)'
-                          "
-                          tooltipPosition="top"
-                          >{{ r
-                          }}<span
-                            class="rounded px-0.5 text-[8px]"
-                            [class.bg-cyan-100]="isRoaExisting(r)"
-                            [class.bg-brand-100]="!isRoaExisting(r)"
-                            >{{ isRoaExisting(r) ? 'Existing' : 'New' }}</span
-                          ></span
-                        >
-                      }
-                    }
-                    @if (erMoas.length === 0 && erRoas.length === 0) {
-                      <span
-                        class="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-amber-600 border border-amber-200"
-                        pTooltip="MOA and ROA were not detected from the source. Add them manually after import."
-                        tooltipPosition="top"
-                        >No MOA/ROA</span
-                      >
-                    }
-                  }
-
-                  <!-- Evidence / Source pill -->
-                  @let erEvidence = entityEvidence(type, idx);
-                  @if (erEvidence) {
-                    @if (isNctImport()) {
-                      @let erNctIds = nctIdFromEvidence(type, idx);
-                      @if (erNctIds) {
-                        <a
-                          [href]="ctgovUrl(erNctIds.split(',')[0].trim())"
-                          target="_blank"
-                          rel="noopener"
-                          class="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-brand-600 hover:bg-slate-200 hover:underline"
-                          pTooltip="View on ClinicalTrials.gov"
-                          tooltipPosition="top"
-                          (click)="$event.stopPropagation()"
-                        >
-                          Source: {{ erNctIds }}<i class="pi pi-external-link text-[8px]"></i>
-                        </a>
-                      } @else {
-                        <span
-                          class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                        >
-                          Source
-                        </span>
-                      }
-                    } @else {
-                      <button
-                        class="inline-block cursor-pointer rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-                        (mouseenter)="highlightedEvidence.set({ text: erEvidence, pinned: false })"
-                        (mouseleave)="clearHighlightIfNotPinned()"
-                        (click)="highlightedEvidence.set({ text: erEvidence, pinned: true })"
-                        pTooltip="Click to pin highlight in source pane"
-                        tooltipPosition="top"
-                      >
-                        Evidence
-                      </button>
-                    }
-                  }
-
-                  @if (isNctImport() && type === 'trials') {
-                    <button
-                      class="ml-auto shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                      (click)="toggleCollapsed(erk)"
-                      [pTooltip]="isCollapsed(erk) ? 'Expand' : 'Collapse'"
-                      tooltipPosition="top"
-                    >
-                      <i
-                        class="pi text-[10px]"
-                        [class.pi-chevron-right]="isCollapsed(erk)"
-                        [class.pi-chevron-down]="!isCollapsed(erk)"
-                      ></i>
-                    </button>
-                  }
-                </div>
-
-                @if (!isCollapsed(erk)) {
-                  <!-- Fuzzy alternates for match override -->
-                  @let erAlts = fuzzyAlternatesFor(type, idx);
-                  @if (erAlts.length > 0) {
-                    <div class="mt-1 flex flex-wrap gap-1">
-                      @let erOverride = getMatchOverride(erk);
-                      <button
-                        class="rounded px-1.5 py-0.5 text-[10px]"
-                        [class.bg-brand-100]="!erOverride"
-                        [class.text-brand-700]="!erOverride"
-                        [class.bg-slate-100]="!!erOverride"
-                        [class.text-slate-500]="!!erOverride"
-                        (click)="clearMatchOverride(erk)"
-                      >
-                        LLM pick
-                      </button>
-                      @for (alt of erAlts; track alt.id) {
-                        <button
-                          class="rounded px-1.5 py-0.5 text-[10px]"
-                          [class.bg-brand-100]="erOverride === alt.id"
-                          [class.text-brand-700]="erOverride === alt.id"
-                          [class.bg-slate-100]="erOverride !== alt.id"
-                          [class.text-slate-500]="erOverride !== alt.id"
-                          (click)="setMatchOverride(erk, alt.id)"
-                          [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                          tooltipPosition="top"
-                        >
-                          {{ alt.name }}
-                        </button>
-                      }
-                      <button
-                        class="rounded px-1.5 py-0.5 text-[10px]"
-                        [class.bg-brand-100]="erOverride === '__new__'"
-                        [class.text-brand-700]="erOverride === '__new__'"
-                        [class.bg-slate-100]="erOverride !== '__new__'"
-                        [class.text-slate-500]="erOverride !== '__new__'"
-                        (click)="setMatchOverride(erk, '__new__')"
-                      >
-                        Create new
-                      </button>
-                    </div>
-                  }
-
-                  <!-- Trial-specific: CT.gov enrichment -->
-                  @if (type === 'trials') {
-                    @let erCtgovStatus = trialCtgovStatus(idx);
-                    @if (erCtgovStatus !== 'skipped') {
-                      <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                            >ClinicalTrials.gov</span
-                          >
-                          @if (erCtgovStatus === 'matched') {
-                            @let erCandidates = ctgovCandidatesFor(idx);
-                            <span
-                              class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                              >{{ erCandidates.length }}
-                              {{ erCandidates.length === 1 ? 'match' : 'matches' }}</span
-                            >
-                          } @else if (erCtgovStatus === 'no_matches') {
-                            <span
-                              class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                              >No matches</span
-                            >
-                          } @else if (erCtgovStatus === 'failed') {
-                            <span
-                              class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                              >Lookup failed</span
-                            >
-                          }
-                        </div>
-
-                        @let erCands = ctgovCandidatesFor(idx);
-                        @if (erCands.length > 0) {
-                          <div class="mt-1.5 flex flex-col gap-1">
-                            @let erCurrentNct = getTrialNctOverride(idx);
-                            @for (c of erCands; track c.nct_id) {
-                              <label
-                                class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                                [class.bg-white]="erCurrentNct === c.nct_id"
-                                [class.ring-1]="erCurrentNct === c.nct_id"
-                                [class.ring-brand-300]="erCurrentNct === c.nct_id"
-                              >
-                                <input
-                                  type="radio"
-                                  [name]="'nct_' + idx"
-                                  [value]="c.nct_id"
-                                  [checked]="erCurrentNct === c.nct_id"
-                                  (change)="setTrialNctOverride(idx, c.nct_id)"
-                                  class="accent-brand-600"
-                                />
-                                <a
-                                  [href]="ctgovUrl(c.nct_id)"
-                                  target="_blank"
-                                  rel="noopener"
-                                  class="font-mono text-brand-600 hover:underline"
-                                  (click)="$event.stopPropagation()"
-                                  >{{ c.nct_id }}</a
-                                >
-                                <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                                <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                                  >{{ c.phase }} / {{ c.status }}</span
-                                >
-                              </label>
-                            }
-                          </div>
-                        }
-                      </div>
-                    }
-
-                    @if (trialMissingAsset(entitiesOf('trials')[idx])) {
-                      <p-message
-                        severity="warn"
-                        [closable]="false"
-                        styleClass="mt-1.5 w-full text-xs"
-                      >
-                        Asset required: link this trial to an asset above.
-                      </p-message>
-                    }
-                  }
-
-                  <!-- Inline field edits -->
-                  @let erFields = editableFields(type, idx);
-                  @if (erFields.length > 0) {
-                    <div class="mt-1.5 flex flex-wrap gap-2">
-                      @for (f of erFields; track f.field) {
-                        <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                          <span class="font-mono uppercase">{{ f.field }}:</span>
-                          <input
-                            type="text"
-                            class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                            [value]="getFieldEdit(erk, f.field) ?? f.value"
-                            (input)="onFieldEdit(erk, f.field, $event)"
-                          />
-                        </label>
-                      }
-                    </div>
-                  }
-                }
-              </div>
-            </div>
-          </ng-template>
-
-          <!-- Per-row review detail for the grouped grid -->
-          <ng-template #rowDetail let-type="type" let-idx="idx" let-erk="key">
-            @let rdAlts = fuzzyAlternatesFor(type, idx);
-            @if (rdAlts.length > 0) {
-              <div class="mt-1 flex flex-wrap gap-1">
-                @let rdOverride = getMatchOverride(erk);
-                <button
-                  class="rounded px-1.5 py-0.5 text-[10px]"
-                  [class.bg-brand-100]="!rdOverride"
-                  [class.text-brand-700]="!rdOverride"
-                  [class.bg-slate-100]="!!rdOverride"
-                  [class.text-slate-500]="!!rdOverride"
-                  (click)="clearMatchOverride(erk)"
-                >
-                  LLM pick
-                </button>
-                @for (alt of rdAlts; track alt.id) {
-                  <button
-                    class="rounded px-1.5 py-0.5 text-[10px]"
-                    [class.bg-brand-100]="rdOverride === alt.id"
-                    [class.text-brand-700]="rdOverride === alt.id"
-                    [class.bg-slate-100]="rdOverride !== alt.id"
-                    [class.text-slate-500]="rdOverride !== alt.id"
-                    (click)="setMatchOverride(erk, alt.id)"
-                    [pTooltip]="'Score: ' + alt.score.toFixed(2)"
-                    tooltipPosition="top"
-                  >
-                    {{ alt.name }}
-                  </button>
-                }
-                <button
-                  class="rounded px-1.5 py-0.5 text-[10px]"
-                  [class.bg-brand-100]="rdOverride === '__new__'"
-                  [class.text-brand-700]="rdOverride === '__new__'"
-                  [class.bg-slate-100]="rdOverride !== '__new__'"
-                  [class.text-slate-500]="rdOverride !== '__new__'"
-                  (click)="setMatchOverride(erk, '__new__')"
-                >
-                  Create new
-                </button>
-              </div>
-            }
-
-            @if (type === 'trials') {
-              @let rdCtgovStatus = trialCtgovStatus(idx);
-              @if (rdCtgovStatus !== 'skipped') {
-                <div class="mt-1.5 rounded border border-slate-100 bg-slate-50/60 px-3 py-2">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-                      >ClinicalTrials.gov</span
-                    >
-                    @if (rdCtgovStatus === 'matched') {
-                      @let rdCandidates = ctgovCandidatesFor(idx);
-                      <span
-                        class="inline-block rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
-                        >{{ rdCandidates.length }}
-                        {{ rdCandidates.length === 1 ? 'match' : 'matches' }}</span
-                      >
-                    } @else if (rdCtgovStatus === 'no_matches') {
-                      <span
-                        class="inline-block rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500"
-                        >No matches</span
-                      >
-                    } @else if (rdCtgovStatus === 'failed') {
-                      <span
-                        class="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
-                        >Lookup failed</span
-                      >
-                    }
-                  </div>
-
-                  @let rdCands = ctgovCandidatesFor(idx);
-                  @if (rdCands.length > 0) {
-                    <div class="mt-1.5 flex flex-col gap-1">
-                      @let rdCurrentNct = getTrialNctOverride(idx);
-                      @for (c of rdCands; track c.nct_id) {
-                        <label
-                          class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs hover:bg-white"
-                          [class.bg-white]="rdCurrentNct === c.nct_id"
-                          [class.ring-1]="rdCurrentNct === c.nct_id"
-                          [class.ring-brand-300]="rdCurrentNct === c.nct_id"
-                        >
-                          <input
-                            type="radio"
-                            [name]="'nct_' + idx"
-                            [value]="c.nct_id"
-                            [checked]="rdCurrentNct === c.nct_id"
-                            (change)="setTrialNctOverride(idx, c.nct_id)"
-                            class="accent-brand-600"
-                          />
-                          <a
-                            [href]="ctgovUrl(c.nct_id)"
-                            target="_blank"
-                            rel="noopener"
-                            class="font-mono text-brand-600 hover:underline"
-                            (click)="$event.stopPropagation()"
-                            >{{ c.nct_id }}</a
-                          >
-                          <span class="truncate text-slate-500">{{ c.brief_title }}</span>
-                          <span class="ml-auto shrink-0 font-mono text-[10px] text-slate-400"
-                            >{{ c.phase }} / {{ c.status }}</span
-                          >
-                        </label>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (trialMissingAsset(entitiesOf('trials')[idx])) {
-                <p-message severity="warn" [closable]="false" styleClass="mt-1.5 w-full text-xs">
-                  Asset required: link this trial to an asset above.
-                </p-message>
-              }
-            }
-
-            @let rdFields = editableFields(type, idx);
-            @if (rdFields.length > 0) {
-              <div class="mt-1.5 flex flex-wrap gap-2">
-                @for (f of rdFields; track f.field) {
-                  <label class="flex items-center gap-1 text-[11px] text-slate-500">
-                    <span class="font-mono uppercase">{{ f.field }}:</span>
-                    <input
-                      type="text"
-                      class="w-36 rounded border border-slate-200 px-1.5 py-0.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none"
-                      [value]="getFieldEdit(erk, f.field) ?? f.value"
-                      (input)="onFieldEdit(erk, f.field, $event)"
-                    />
-                  </label>
-                }
-              </div>
-            }
-          </ng-template>
-
           <!-- CT.gov enrichment summary -->
           @let ctgovSummaryVal = ctgovSummary();
           @if (ctgovSummaryVal.status === 'matched') {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
             >
-              <i class="pi pi-check-circle text-[10px]"></i>
+              <i class="fa-solid fa-circle-check text-[10px]"></i>
               CT.gov: {{ ctgovSummaryVal.matchedCount }}
               {{ ctgovSummaryVal.matchedCount === 1 ? 'trial' : 'trials' }} enriched
             </div>
@@ -723,7 +213,7 @@ interface GridRow {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
             >
-              <i class="pi pi-exclamation-triangle text-[10px]"></i>
+              <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
               CT.gov: lookup failed
             </div>
           }
@@ -743,112 +233,167 @@ interface GridRow {
                 (click)="gridFilter.set(opt.value)"
               >
                 {{ opt.label }}
+                <span class="ml-1 font-mono text-[10px] tabular-nums opacity-60"
+                  >{{ filterCounts()[opt.countKey] }}</span
+                >
               </button>
             }
           </div>
 
-          <p-treeTable [value]="filteredNodes()" dataKey="key">
-            <ng-template pTemplate="header">
-              <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
-                <th class="w-10"></th>
-                <th>Entity</th>
-                <th>Type</th>
-                <th>Phase</th>
-                <th>Status</th>
-                <th>MOA / ROA</th>
-                <th>Indication</th>
-                <th>Source</th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              @let row = asGridRow(rowData);
-              <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
-                <td>
-                  <p-checkbox
-                    [ngModel]="isSelected(row.key)"
-                    (ngModelChange)="toggleSelection(row.key, $event)"
-                    [binary]="true"
-                    size="small"
-                  />
-                </td>
-                <td>
-                  <div class="flex items-center gap-2">
-                    <p-treeTableToggler [rowNode]="rowNode" />
-                    <span
-                      class="truncate"
-                      [class.font-mono]="row.kind === 'company'"
-                      [class.font-bold]="row.kind === 'company'"
-                      [class.uppercase]="row.kind === 'company'"
-                      [class.font-semibold]="row.kind === 'asset'"
-                      [class.text-brand-600]="row.kind === 'trial'"
-                      >{{ row.name }}</span
-                    >
-                    @if (row.state === 'existing') {
-                      <span
-                        class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
-                        >existing</span
-                      >
-                    }
-                    @for (f of row.flags; track f.id) {
-                      <span
-                        class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
-                        >{{ f.label }}</span
-                      >
-                    }
-                    @if (row.hasDetail) {
-                      <button
-                        type="button"
-                        class="ml-auto text-slate-400 hover:text-brand-600"
-                        [attr.aria-expanded]="isDetailOpen(row.key)"
-                        (click)="toggleDetail(row.key)"
-                        pTooltip="Show review detail"
-                        tooltipPosition="top"
-                      >
-                        <i
-                          class="pi text-[10px]"
-                          [class.pi-chevron-down]="isDetailOpen(row.key)"
-                          [class.pi-chevron-right]="!isDetailOpen(row.key)"
-                        ></i>
-                      </button>
-                    }
-                  </div>
-                </td>
-                <td class="font-mono text-[10px] uppercase text-slate-400">
-                  {{ row.kind === 'company' ? '' : row.kind }}
-                </td>
-                <td>
-                  @if (row.phase) {
-                    <span
-                      class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
-                      >{{ row.phase }}</span
-                    >
-                  }
-                </td>
-                <td class="text-slate-500">{{ row.status }}</td>
-                <td class="text-slate-500">{{ row.moaRoa }}</td>
-                <td class="text-slate-500">{{ row.indication }}</td>
-                <td>
-                  @if (row.kind === 'trial') {
-                    <span
-                      class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
-                      >ct.gov</span
-                    >
-                  }
-                </td>
-              </tr>
-              @if (isDetailOpen(row.key)) {
-                <tr>
-                  <td></td>
-                  <td [attr.colspan]="7">
-                    <ng-container
-                      [ngTemplateOutlet]="rowDetail"
-                      [ngTemplateOutletContext]="{ type: row.type, idx: row.idx, key: row.key }"
+          <div class="overflow-x-auto">
+            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem] review-grid">
+              <ng-template pTemplate="header">
+                <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
+                  <th class="w-10"></th>
+                  <th class="min-w-72">Entity</th>
+                  <th class="w-[5.25rem]">Type</th>
+                  <th class="w-16">Phase</th>
+                  <th class="w-28">Status</th>
+                  <th class="min-w-48">MOA / ROA</th>
+                  <th class="min-w-48">Indication</th>
+                  <th class="w-[4.5rem]">Source</th>
+                  <th class="w-16 text-right">Edit</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+                @let row = asGridRow(rowData);
+                <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
+                  <td>
+                    <p-checkbox
+                      [ngModel]="isSelected(row.key)"
+                      (ngModelChange)="toggleSelection(row.key, $event)"
+                      [binary]="true"
+                      size="small"
                     />
                   </td>
+                  <td class="align-top">
+                    <div class="flex items-start gap-2">
+                      <p-treeTableToggler [rowNode]="rowNode" />
+                      <span
+                        class="whitespace-normal break-words"
+                        [class.font-mono]="row.kind === 'company'"
+                        [class.font-bold]="row.kind === 'company'"
+                        [class.uppercase]="row.kind === 'company'"
+                        [class.font-semibold]="row.kind === 'asset'"
+                        [class.text-brand-600]="row.kind === 'trial'"
+                        >{{ row.name }}</span
+                      >
+                      @if (row.state === 'existing') {
+                        <span
+                          class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                          >existing</span
+                        >
+                      }
+                      @if (row.multiAssetRole === 'primary') {
+                        <span
+                          class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                          pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
+                          tooltipPosition="top"
+                          >primary</span
+                        >
+                      } @else if (row.multiAssetRole === 'secondary') {
+                        <span
+                          class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
+                          pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
+                          tooltipPosition="top"
+                          >also tested</span
+                        >
+                      }
+                      @for (f of row.flags; track f.id) {
+                        <span
+                          class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
+                          >{{ f.label }}</span
+                        >
+                      }
+                    </div>
+                  </td>
+                  <td class="align-top font-mono text-[10px] uppercase text-slate-400">
+                    {{ row.kind === 'company' ? '' : row.kind }}
+                  </td>
+                  <td class="align-top">
+                    @if (row.phase) {
+                      <span
+                        class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
+                        >{{ row.phase }}</span
+                      >
+                    }
+                  </td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.status }}</td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.moaRoa }}</td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.indication }}</td>
+                  <td class="align-top">
+                    @if (row.kind === 'trial') {
+                      <span
+                        class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                        >ct.gov</span
+                      >
+                    }
+                  </td>
+                  <td class="align-top text-right">
+                    <button
+                      type="button"
+                      class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                      (click)="openEdit(row.type, row.idx)"
+                      [pTooltip]="'Edit ' + row.kind"
+                      tooltipPosition="left"
+                      [attr.aria-label]="'Edit ' + row.name"
+                    >
+                      <i class="fa-solid fa-pen text-[11px]"></i>
+                    </button>
+                  </td>
                 </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="9" class="px-4 py-10 text-center text-sm text-slate-500">
+                    {{ emptyFilterMessage() }}
+                  </td>
+                </tr>
+              </ng-template>
+            </p-treeTable>
+          </div>
+
+          <!-- Reusable read-only orphan row -->
+          <ng-template #orphanRow let-type="type" let-idx="idx" let-editable="editable">
+            @let orphKey = entityKey(type, idx);
+            <div class="flex items-center gap-2 py-1">
+              <p-checkbox
+                [ngModel]="isSelected(orphKey)"
+                (ngModelChange)="toggleSelection(orphKey, $event)"
+                [binary]="true"
+                [inputId]="orphKey"
+                size="small"
+              />
+              <span class="min-w-0 flex-1 truncate text-sm text-slate-700">{{ entityName(type, idx) }}</span>
+              @if (type === 'trials') {
+                @let orphPhase = trialPhase(idx);
+                @if (orphPhase) {
+                  <span
+                    class="rounded border border-brand-200 bg-brand-50 px-1 py-0.5 font-mono text-[10px] uppercase text-brand-700"
+                    >{{ orphPhase }}</span
+                  >
+                }
               }
-            </ng-template>
-          </p-treeTable>
+              @if (!isNew(type, idx)) {
+                <span
+                  class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                  >existing</span
+                >
+              }
+              @if (editable) {
+                <button
+                  type="button"
+                  class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                  (click)="openEdit(type, idx)"
+                  pTooltip="Edit"
+                  tooltipPosition="left"
+                  [attr.aria-label]="'Edit ' + entityName(type, idx)"
+                >
+                  <i class="fa-solid fa-pen text-[11px]"></i>
+                </button>
+              }
+            </div>
+          </ng-template>
 
           <!-- Orphaned trials (asset_ref does not resolve to an asset) -->
           @if (tree.orphanTrials.length > 0) {
@@ -857,10 +402,13 @@ interface GridRow {
                 Unlinked trials ({{ tree.orphanTrials.length }})
               </h2>
               <div class="rounded border border-amber-200 bg-white px-4 py-2">
+                <p class="mb-1 text-[11px] text-amber-700">
+                  These trials have no resolvable asset. Edit each to assign one before confirming.
+                </p>
                 @for (ti of tree.orphanTrials; track ti) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'trials', idx: ti }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'trials', idx: ti, editable: true }"
                   />
                 }
               </div>
@@ -876,8 +424,8 @@ interface GridRow {
               <div class="rounded border border-slate-200 bg-white px-4 py-2">
                 @for (mi of tree.orphanMarkers; track mi) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi, editable: false }"
                   />
                 }
               </div>
@@ -893,8 +441,8 @@ interface GridRow {
               <div class="rounded border border-slate-200 bg-white px-4 py-2">
                 @for (ei of tree.orphanEvents; track ei) {
                   <ng-container
-                    [ngTemplateOutlet]="entityRow"
-                    [ngTemplateOutletContext]="{ type: 'events', idx: ei }"
+                    [ngTemplateOutlet]="orphanRow"
+                    [ngTemplateOutletContext]="{ type: 'events', idx: ei, editable: false }"
                   />
                 }
               </div>
@@ -937,6 +485,14 @@ interface GridRow {
           />
         </div>
       </footer>
+
+      <app-review-edit-dialog
+        [type]="editType()"
+        [index]="editIndex()"
+        [spaceId]="spaceId()"
+        (saved)="proposalEdited.set(true)"
+        (closed)="closeEdit()"
+      />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -949,10 +505,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
-  private readonly moaService = inject(MechanismOfActionService);
-  private readonly roaService = inject(RouteOfAdministrationService);
-  private readonly existingMoaNames = signal<Set<string>>(new Set());
-  private readonly existingRoaNames = signal<Set<string>>(new Set());
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -979,18 +531,40 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly matchOverrides = signal<Record<string, string>>({});
   readonly fieldEdits = signal<Record<string, Record<string, string>>>({});
   readonly nctOverrides = signal<Record<number, string>>({});
+  // Per-trial-index overrides for asset membership. When a key is absent the
+  // proposal's own asset_refs / primary_asset_ref are used; an entry replaces them.
+  readonly assetRefsOverrides = signal<Record<number, number[]>>({});
+  readonly primaryRefOverrides = signal<Record<number, number>>({});
 
-  readonly collapsedRows = signal<Record<string, boolean>>({});
   readonly committing = signal(false);
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
   readonly highlightedEvidence = signal<{ text: string; pinned: boolean } | null>(null);
+
+  // The entity currently open in the edit dialog (null when closed).
+  private readonly editTarget = signal<{ type: EditableEntityType; index: number } | null>(null);
+  protected readonly editType = computed<EditableEntityType | null>(() => this.editTarget()?.type ?? null);
+  protected readonly editIndex = computed<number | null>(() => this.editTarget()?.index ?? null);
+
+  // Set once the user saves an edit through the dialog; the dialog mutates the
+  // proposal in place, so the override-based dirty check below cannot see it.
+  protected readonly proposalEdited = signal(false);
+
+  protected openEdit(type: EntityType, index: number): void {
+    if (type !== 'companies' && type !== 'assets' && type !== 'trials') return;
+    this.editTarget.set({ type, index });
+  }
+
+  protected closeEdit(): void {
+    this.editTarget.set(null);
+  }
 
   readonly dirty = computed(() => {
     const sel = this.selections();
     const edits = this.fieldEdits();
     const overrides = this.matchOverrides();
     return (
+      this.proposalEdited() ||
       Object.values(sel).some((v) => v === false) ||
       Object.keys(edits).length > 0 ||
       Object.keys(overrides).length > 0
@@ -1133,12 +707,13 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       }
     }
 
+    // A trial nests under EVERY asset it tests, so a master-protocol trial
+    // appears beneath each of its assets (orphan when it resolves to none).
     const assetTrialsMap = new Map<number, number[]>();
     for (let ti = 0; ti < trials.length; ti++) {
-      const ar = resolveTrialAssetIndex(trials[ti], assets.length);
-      if (ar !== null) {
-        if (!assetTrialsMap.has(ar)) assetTrialsMap.set(ar, []);
-        assetTrialsMap.get(ar)!.push(ti);
+      for (const ai of resolveTrialAssetIndexes(trials[ti], assets.length)) {
+        if (!assetTrialsMap.has(ai)) assetTrialsMap.set(ai, []);
+        assetTrialsMap.get(ai)!.push(ti);
       }
     }
 
@@ -1184,13 +759,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return { companies: companyNodes, orphanTrials, orphanMarkers, orphanEvents };
   });
 
-  protected readonly openDetails = signal<Record<string, boolean>>({});
-  protected isDetailOpen(key: string): boolean {
-    return this.openDetails()[key] ?? false;
-  }
-  protected toggleDetail(key: string): void {
-    this.openDetails.update((o) => ({ ...o, [key]: !o[key] }));
-  }
   protected hasBlockingFlag(row: GridRow): boolean {
     return row.flags.some((f) => f.tier === 'blocking');
   }
@@ -1202,9 +770,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected readonly gridNodes = computed<TreeNode[]>(() => {
     const tree = this.hierarchicalTree();
     const trials = this.entitiesOf('trials');
+    const assetCount = this.entitiesOf('assets').length;
     const dupes = duplicateTrialIndexes(trials);
 
-    const trialRow = (idx: number): TreeNode => {
+    const trialRow = (idx: number, parentAssetIdx: number): TreeNode => {
       const t = trials[idx];
       const flags = [
         ...deriveTrialFlags(t),
@@ -1214,6 +783,13 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       if (dupes.has(idx)) {
         flags.unshift({ id: 'duplicate', tier: 'blocking', label: 'Duplicate in batch' });
       }
+      const assetIdxs = resolveTrialAssetIndexes(t, assetCount);
+      const multiAssetRole =
+        assetIdxs.length > 1
+          ? resolveTrialPrimaryAssetIndex(t, assetCount) === parentAssetIdx
+            ? 'primary'
+            : 'secondary'
+          : undefined;
       const row: GridRow = {
         key: this.entityKey('trials', idx),
         type: 'trials',
@@ -1224,11 +800,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         phase: this.trialPhase(idx),
         status: this.trialStatus(idx),
         moaRoa: '',
-        indication: (t['indication'] as string) ?? null,
+        indication: this.trialIndicationLabel(t),
         flags,
-        hasDetail: flags.length > 0 || this.editableFields('trials', idx).length > 0,
+        multiAssetRole,
       };
-      return { key: row.key, data: row };
+      // The tree-node key must be unique per nesting: a multi-asset trial appears
+      // under several assets, so namespace it by the parent asset. row.key (the
+      // selection key) stays per-trial so both copies share state.
+      return { key: `assets_${parentAssetIdx}/${row.key}`, data: row };
     };
 
     const assetRow = (an: { assetIdx: number; trials: { trialIdx: number }[] }): TreeNode => {
@@ -1250,9 +829,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: [...this.assetMoas(idx), ...this.assetRoas(idx)].join(' / '),
         indication: null,
         flags,
-        hasDetail: flags.length > 0 || this.editableFields('assets', idx).length > 0,
       };
-      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx)) };
+      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx, an.assetIdx)) };
     };
 
     return tree.companies.map((cn) => {
@@ -1268,7 +846,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         moaRoa: '',
         indication: null,
         flags: [],
-        hasDetail: false,
       };
       return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
     });
@@ -1295,10 +872,23 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       .filter((n): n is TreeNode => n !== null);
   });
 
+  protected readonly filterCounts = computed(() => countFilterMatches(this.gridNodes()));
+
+  protected readonly emptyFilterMessage = computed(() => {
+    switch (this.gridFilter()) {
+      case 'flagged':
+        return 'Nothing needs review. Every proposal in this batch is complete and matched.';
+      case 'new':
+        return 'No new records. Every proposal in this batch matched an existing record.';
+      default:
+        return 'No proposals in this batch.';
+    }
+  });
+
   protected readonly filterOptions = [
-    { value: 'all' as const, label: 'All' },
-    { value: 'flagged' as const, label: 'Needs review' },
-    { value: 'new' as const, label: 'New' },
+    { value: 'all' as const, label: 'All', countKey: 'all' as const },
+    { value: 'flagged' as const, label: 'Needs review', countKey: 'flagged' as const },
+    { value: 'new' as const, label: 'New', countKey: 'new' as const },
   ];
 
   readonly highlightedSourceText = computed(() => {
@@ -1332,22 +922,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
-    void this.loadExistingMoaRoa();
-  }
-
-  private async loadExistingMoaRoa(): Promise<void> {
-    const sid = this.spaceId();
-    if (!sid) return;
-    try {
-      const [moas, roas] = await Promise.all([
-        this.moaService.list(sid),
-        this.roaService.list(sid),
-      ]);
-      this.existingMoaNames.set(new Set(moas.map((m) => m.name)));
-      this.existingRoaNames.set(new Set(roas.map((r) => r.name)));
-    } catch {
-      // Non-critical; pills will default to showing as new
-    }
   }
 
   hasUnsavedChanges(): boolean {
@@ -1362,19 +936,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     } catch {
       return url;
     }
-  }
-
-  protected resolvedIdentifier(type: EntityType, index: number): string | null {
-    if (type !== 'trials') return null;
-    return this.proposal()?.resolved_identifiers?.[`${type}_${index}`] ?? null;
-  }
-
-  protected ctgovUrl(nctId: string): string {
-    return `https://clinicaltrials.gov/study/${nctId}`;
-  }
-
-  protected entityLabel(type: EntityType): string {
-    return ENTITY_LABELS[type];
   }
 
   protected entitiesOf(type: EntityType): Record<string, unknown>[] {
@@ -1405,23 +966,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return (entity['name'] as string) ?? (entity['title'] as string) ?? `${type} #${index + 1}`;
   }
 
-  protected entityDetailUrl(type: EntityType, index: number): string | null {
-    if (this.isNew(type, index)) return null;
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return null;
-    const match = entity['match'] as { kind: string; id?: string } | undefined;
-    if (!match || match.kind !== 'existing' || !match.id) return null;
-    const routeMap: Partial<Record<EntityType, string>> = {
-      companies: 'companies',
-      assets: 'assets',
-      trials: 'trials',
-      markers: 'markers',
-    };
-    const segment = routeMap[type];
-    if (!segment) return null;
-    return `/t/${this.tenantId()}/s/${this.spaceId()}/manage/${segment}/${match.id}`;
-  }
-
   protected trialPhase(index: number): string | null {
     const entity = this.entitiesOf('trials')[index];
     return (entity?.['phase'] as string) ?? null;
@@ -1432,9 +976,16 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return (entity?.['status'] as string) ?? null;
   }
 
-  protected assetGenericName(index: number): string | null {
-    const entity = this.entitiesOf('assets')[index];
-    return (entity?.['generic_name'] as string) ?? null;
+  // Display label for a trial's indication(s): the indications[] array joined,
+  // falling back to a legacy scalar indication.
+  private trialIndicationLabel(entity: Record<string, unknown>): string | null {
+    const many = entity['indications'];
+    if (Array.isArray(many)) {
+      const names = many.filter((i): i is string => typeof i === 'string' && i.length > 0);
+      return names.length ? names.join(', ') : null;
+    }
+    const one = entity['indication'];
+    return typeof one === 'string' && one.length > 0 ? one : null;
   }
 
   protected assetMoas(index: number): string[] {
@@ -1445,50 +996,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected assetRoas(index: number): string[] {
     const entity = this.entitiesOf('assets')[index];
     return (entity?.['roa'] as string[]) ?? [];
-  }
-
-  protected isMoaExisting(name: string): boolean {
-    return this.existingMoaNames().has(name);
-  }
-
-  protected isRoaExisting(name: string): boolean {
-    return this.existingRoaNames().has(name);
-  }
-
-  protected entityEvidence(type: EntityType, index: number): string | null {
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return null;
-    return (entity['evidence'] as string) ?? null;
-  }
-
-  protected editableFields(type: EntityType, index: number): FieldEdit[] {
-    const entity = this.entitiesOf(type)[index];
-    if (!entity) return [];
-    const skip = new Set([
-      'match',
-      'name',
-      'title',
-      'existing_id',
-      'evidence',
-      'asset_ref',
-      'company_ref',
-      'trial_ref',
-      'marker_ref',
-      'sponsor_ref',
-      'moa',
-      'roa',
-      'trial_refs',
-      'tags',
-      'anchor',
-    ]);
-    const out: FieldEdit[] = [];
-    for (const [k, v] of Object.entries(entity)) {
-      if (skip.has(k)) continue;
-      if (typeof v === 'string' && v.length < 200) {
-        out.push({ field: k, value: v });
-      }
-    }
-    return out;
   }
 
   protected fuzzyAlternatesFor(type: EntityType, index: number): FuzzyAlternate[] {
@@ -1504,21 +1011,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return p.ctgov_candidates[`trials_${index}`] ?? [];
   }
 
-  protected trialCtgovStatus(index: number): 'matched' | 'no_matches' | 'failed' | 'skipped' {
-    const entity = this.entitiesOf('trials')[index];
-    if (!entity) return 'skipped';
-    const match = entity['match'] as { kind: string } | undefined;
-    if (match?.kind === 'existing') return 'skipped';
-
-    const p = this.proposal();
-    if (!p) return 'skipped';
-
-    const hasFailed = p.warnings.some((w) => w === `ctgov_partial:trial_${index}`);
-    if (hasFailed) return 'failed';
-
-    const candidates = p.ctgov_candidates[`trials_${index}`] ?? [];
-    return candidates.length > 0 ? 'matched' : 'no_matches';
-  }
 
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
     // Delegate to the pure logic module so the grid's no-asset flag and the
@@ -1546,69 +1038,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const items = this.entitiesOf(type);
     const sel = this.selections();
     return items.every((_, i) => sel[`${type}_${i}`] !== false);
-  }
-
-  protected getMatchOverride(key: string): string | undefined {
-    return this.matchOverrides()[key];
-  }
-
-  protected setMatchOverride(key: string, id: string): void {
-    this.matchOverrides.update((prev) => ({ ...prev, [key]: id }));
-  }
-
-  protected clearMatchOverride(key: string): void {
-    this.matchOverrides.update((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  }
-
-  protected getTrialNctOverride(index: number): string | undefined {
-    return this.nctOverrides()[index];
-  }
-
-  protected setTrialNctOverride(index: number, nctId: string): void {
-    this.nctOverrides.update((prev) => ({ ...prev, [index]: nctId }));
-  }
-
-  protected getFieldEdit(key: string, field: string): string | undefined {
-    return this.fieldEdits()[key]?.[field];
-  }
-
-  protected onFieldEdit(key: string, field: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.fieldEdits.update((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? {}), [field]: value },
-    }));
-  }
-
-  protected isCollapsed(key: string): boolean {
-    return this.collapsedRows()[key] === true;
-  }
-
-  protected toggleCollapsed(key: string): void {
-    this.collapsedRows.update((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  protected isObservationalTrial(index: number): boolean {
-    const entity = this.entitiesOf('trials')[index];
-    return String(entity?.['study_type'] ?? '').toLowerCase().includes('observational');
-  }
-
-  protected nctIdFromEvidence(type: EntityType, index: number): string | null {
-    const evidence = this.entityEvidence(type, index);
-    if (!evidence) return null;
-    const match = evidence.match(/^CT\.gov:\s*(NCT\d{8}(?:,\s*NCT\d{8})*)$/i);
-    return match ? match[1] : null;
-  }
-
-  protected clearHighlightIfNotPinned(): void {
-    const current = this.highlightedEvidence();
-    if (current && !current.pinned) {
-      this.highlightedEvidence.set(null);
-    }
   }
 
   protected downloadProposal(): void {
@@ -1743,15 +1172,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         this.nctOverrides.set(nctDefaults);
       }
     }
-
-    if (this.isNctImport()) {
-      const collapsed: Record<string, boolean> = {};
-      const trials = p.trials ?? [];
-      for (let i = 0; i < trials.length; i++) {
-        collapsed[`trials_${i}`] = true;
-      }
-      this.collapsedRows.set(collapsed);
-    }
   }
 
   private buildCommitPayload(): {
@@ -1763,6 +1183,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const overrides = this.matchOverrides();
     const edits = this.fieldEdits();
     const nctOvr = this.nctOverrides();
+    const assetRefsOvr = this.assetRefsOverrides();
+    const primaryRefOvr = this.primaryRefOverrides();
 
     const filteredProposals: Record<string, unknown[]> = {};
     for (const type of ENTITY_ORDER) {
@@ -1785,6 +1207,15 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
             const nctId = nctOvr[i] ?? p.resolved_identifiers?.[`trials_${i}`];
             if (nctId) {
               patched['nct_id'] = nctId;
+            }
+            // Apply analyst edits to asset membership / primary, if any.
+            const arOvr = assetRefsOvr[i];
+            if (arOvr) {
+              patched['asset_refs'] = arOvr;
+            }
+            const pOvr = primaryRefOvr[i];
+            if (pOvr != null) {
+              patched['primary_asset_ref'] = pOvr;
             }
           }
 

@@ -25,27 +25,35 @@ export function computeTimelineStats(companies: Company[], today?: string): Time
 
   let companyCount = 0;
   let assetCount = 0;
-  let trialCount = 0;
-  let catalystCount90d = 0;
+  // A trial can be nested under more than one asset (master protocols), so count
+  // DISTINCT trials and catalysts by id; otherwise the totals double-count a
+  // multi-asset trial and its markers once per asset it appears under.
+  const seenTrials = new Set<string>();
+  const seenCatalysts = new Set<string>();
 
   for (const co of companies) {
     companyCount++;
     for (const asset of co.assets ?? []) {
       assetCount++;
       for (const trial of asset.trials ?? []) {
-        trialCount++;
+        seenTrials.add(trial.id);
         for (const marker of trial.markers ?? []) {
           if (
             marker.event_date &&
             marker.event_date >= todayStr &&
             marker.event_date <= cutoffStr
           ) {
-            catalystCount90d++;
+            seenCatalysts.add(marker.id);
           }
         }
       }
     }
   }
 
-  return { companyCount, assetCount, trialCount, catalystCount90d };
+  return {
+    companyCount,
+    assetCount,
+    trialCount: seenTrials.size,
+    catalystCount90d: seenCatalysts.size,
+  };
 }

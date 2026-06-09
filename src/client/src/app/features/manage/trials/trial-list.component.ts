@@ -10,8 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
-import { FormsModule } from '@angular/forms';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -37,7 +35,8 @@ import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.co
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../../shared/grids';
-import { confirmDelete } from '../../../shared/utils/confirm-delete';
+import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
+import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 
@@ -56,8 +55,6 @@ interface TrialRow {
   standalone: true,
   imports: [
     RouterLink,
-    FormsModule,
-    SelectModule,
     TableModule,
     ButtonModule,
     MessageModule,
@@ -183,22 +180,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
     columns: [
       { field: 'trial.name', header: 'Trial', filter: { kind: 'text' } },
       { field: 'trial.identifier', header: 'NCT ID', filter: { kind: 'text' } },
-      {
-        field: 'trial.asset_id',
-        header: 'Asset',
-        filter: {
-          kind: 'select',
-          options: () => this.products().map((p) => ({ label: p.name, value: p.id })),
-        },
-      },
-      {
-        field: 'companyId',
-        header: 'Company',
-        filter: {
-          kind: 'select',
-          options: () => this.companies().map((c) => ({ label: c.name, value: c.id })),
-        },
-      },
+      { field: 'assetName', header: 'Asset', filter: { kind: 'text' } },
+      { field: 'companyName', header: 'Company', filter: { kind: 'text' } },
       {
         field: 'trial.status',
         header: 'Status',
@@ -246,29 +229,19 @@ export class TrialListComponent implements OnInit, OnDestroy {
   rowMenu(row: TrialRow): MenuItem[] {
     const cached = this.menuCache.get(row.trial.id);
     if (cached) return cached;
-    const items: MenuItem[] = [
-      {
-        label: 'Open detail',
-        icon: 'fa-solid fa-arrow-up-right-from-square',
-        command: () => this.openDetail(row.trial),
-      },
-    ];
-    if (this.spaceRole.canEdit()) {
-      items.push(
+    const items = buildEntityActionMenu({
+      canEdit: this.spaceRole.canEdit(),
+      editLabel: 'Edit',
+      onEdit: () => this.openDetail(row.trial),
+      onDelete: () => void this.confirmDelete(row.trial),
+      extras: [
         {
-          label: 'Edit',
-          icon: 'fa-solid fa-pen',
+          label: 'Open detail',
+          icon: 'fa-solid fa-arrow-up-right-from-square',
           command: () => this.openDetail(row.trial),
         },
-        { separator: true },
-        {
-          label: 'Delete',
-          icon: 'fa-solid fa-trash',
-          styleClass: 'row-actions-danger',
-          command: () => this.confirmDelete(row.trial),
-        }
-      );
-    }
+      ],
+    });
     this.menuCache.set(row.trial.id, items);
     return items;
   }
@@ -294,40 +267,22 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(trial: Trial): Promise<void> {
-    // Preview the cascade so the dialog renders honest counts (trial_notes,
-    // events, marker_assignments, marker orphan-split, PI / PIL, etc).
-    let counts;
-    try {
-      counts = await this.trialService.previewDelete(trial.id);
-    } catch (err) {
-      this.error.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not load delete preview. Check your connection and try again.'
-      );
-      return;
-    }
-
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete trial',
-      entityLabel: trial.acronym ?? trial.name,
-      message: `Delete "${trial.acronym ?? trial.name}"? This will permanently remove:`,
-      counts,
-      requireTypedConfirmation: true,
-    });
-    if (!ok) return;
     this.error.set(null);
-    try {
-      await this.trialService.delete(trial.id);
-      await this.loadData();
-      this.messageService.add({ severity: 'success', summary: 'Trial deleted.', life: 3000 });
-    } catch (err) {
-      this.error.set(
-        err instanceof Error
-          ? err.message
-          : 'Could not delete trial. Check your connection and try again.'
-      );
-    }
+    await runEntityDelete({
+      confirmation: this.confirmation,
+      messageService: this.messageService,
+      confirm: {
+        header: 'Delete trial',
+        entityLabel: trial.acronym ?? trial.name,
+        message: `Delete "${trial.acronym ?? trial.name}"? This will permanently remove:`,
+        requireTypedConfirmation: true,
+      },
+      preview: () => this.trialService.previewDelete(trial.id),
+      delete: () => this.trialService.delete(trial.id),
+      successSummary: 'Trial deleted.',
+      onSuccess: () => this.loadData(),
+      errorFallback: 'Could not delete trial. Check your connection and try again.',
+    });
   }
 
   private async loadData(): Promise<void> {

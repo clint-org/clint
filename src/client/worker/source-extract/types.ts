@@ -58,7 +58,16 @@ const TrialSchema = z.object({
     .default(null),
   sample_size: z.number().int().nullable().optional().default(null),
   sponsor_ref: z.number().int(),
-  asset_ref: z.number().int().nullable().optional().default(null),
+  // A trial can test multiple assets (e.g. a master-protocol NCT with separate
+  // experimental arms). asset_refs holds every asset it tests (zero-based indices
+  // into the assets array; empty for observational studies with no intervention).
+  // primary_asset_ref is the headline asset and must be one of asset_refs.
+  asset_refs: z.array(z.number().int()).optional().default([]),
+  primary_asset_ref: z.number().int().nullable().optional().default(null),
+  // A trial can study more than one indication. `indications` is the canonical
+  // multi-value field; the scalar `indication` is kept for back-compat with
+  // older proposals and is folded into `indications` downstream.
+  indications: z.array(z.string()).optional().default([]),
   indication: z.string().nullable().optional().default(null),
   evidence: z.string(),
 });

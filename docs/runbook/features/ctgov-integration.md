@@ -85,9 +85,10 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
   role: viewer
   status: active
 - id: ctgov-field-mapping
-  summary: 35-plus CT.gov dimensions mapped onto trial columns, including logistics, design, clinical context, eligibility, timeline, and regulatory fields.
+  summary: 35-plus CT.gov dimensions mapped onto trial columns, including logistics, design, clinical context, eligibility, timeline, and regulatory fields. A BEFORE trigger guards CT.gov-locked phase fields from analyst overwrites.
   routes: []
-  rpcs: []
+  rpcs:
+    - _guard_ctgov_locked_phase_fields
   tables:
     - trials
   related:

@@ -39,10 +39,31 @@ export function createCookieStorage(options: CookieStorageOptions) {
     document.cookie = parts.join('; ');
   }
 
+  // Domain scopes to target when expiring a cookie. A cookie can only be
+  // deleted by a Set-Cookie whose Domain matches the one it was written with, so
+  // to defensively clear a value that may have been written at a parent domain
+  // -- e.g. a session cookie from a parent environment (Domain=.clintapp.com)
+  // that leaks down into a child subdomain (dev.clintapp.com) and which the
+  // child's own scoped delete cannot reach -- we expire at the host-only scope,
+  // the configured domain, and every registrable ancestor of it. Expiring a
+  // cookie that does not exist at a given scope is a harmless no-op.
+  function deleteDomains(): (string | undefined)[] {
+    const domains: (string | undefined)[] = [undefined];
+    if (!options.domain) return domains;
+    const labels = options.domain.replace(/^\./, '').split('.');
+    // Walk from the configured domain up to (but not including) the bare TLD.
+    for (let i = 0; i + 2 <= labels.length; i++) {
+      domains.push('.' + labels.slice(i).join('.'));
+    }
+    return domains;
+  }
+
   function deleteCookie(key: string): void {
-    const parts: string[] = [`${key}=`, 'Max-Age=0', `Path=${options.path}`];
-    if (options.domain) parts.push(`Domain=${options.domain}`);
-    document.cookie = parts.join('; ');
+    for (const domain of deleteDomains()) {
+      const parts: string[] = [`${key}=`, 'Max-Age=0', `Path=${options.path}`];
+      if (domain) parts.push(`Domain=${domain}`);
+      document.cookie = parts.join('; ');
+    }
   }
 
   function clearChunks(key: string): void {

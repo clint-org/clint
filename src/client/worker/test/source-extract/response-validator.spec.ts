@@ -57,7 +57,8 @@ function validJson(): string {
         status: 'Active',
         sample_size: null,
         sponsor_ref: 0,
-        asset_ref: 0,
+        asset_refs: [0],
+        primary_asset_ref: 0,
         indication: null,
         evidence: 'ATTAIN-1',
       },
@@ -216,7 +217,8 @@ describe('validateExtraction', () => {
         status: null,
         sample_size: null,
         sponsor_ref: 0,
-        asset_ref: null,
+        asset_refs: [],
+        primary_asset_ref: null,
         indication: null,
         evidence: 'phantom',
       },
@@ -262,6 +264,102 @@ describe('validateExtraction', () => {
     if (r.ok) {
       const drop = r.dropped.find((d) => d.type === 'event' && d.name === 'Invisible conf');
       expect(drop).toBeDefined();
+    }
+  });
+
+  const twoAssets = [
+    { match: { kind: 'existing', id: A1 }, name: 'Paxlovid', generic_name: null, company_ref: 0, moa: [], roa: [], evidence: 'Paxlovid' },
+    { match: { kind: 'new', name: 'ETX-101' }, name: 'ETX-101', generic_name: null, company_ref: 1, moa: [], roa: [], evidence: 'ETX-101' },
+  ];
+
+  function trialWith(assetRefs: number[], primary: number | null) {
+    return {
+      match: { kind: 'existing', id: T1 },
+      name: 'ATTAIN-1',
+      phase: 'P3',
+      phase_start_date: null,
+      phase_end_date: null,
+      status: 'Active',
+      sample_size: null,
+      sponsor_ref: 0,
+      asset_refs: assetRefs,
+      primary_asset_ref: primary,
+      indication: null,
+      evidence: 'ATTAIN-1',
+    };
+  }
+
+  it('drops a trial whose asset_refs contains an out-of-bounds index', () => {
+    const json = JSON.parse(validJson());
+    json.trials = [trialWith([5], null)];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const drop = r.dropped.find((d) => d.type === 'trial' && d.name === 'ATTAIN-1');
+      expect(drop?.reason).toContain('asset_refs contains out-of-bounds');
+    }
+  });
+
+  it('drops a trial whose primary_asset_ref is not one of asset_refs', () => {
+    const json = JSON.parse(validJson());
+    json.assets = twoAssets;
+    json.trials = [trialWith([0], 1)];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const drop = r.dropped.find((d) => d.type === 'trial' && d.name === 'ATTAIN-1');
+      expect(drop?.reason).toContain('primary_asset_ref');
+    }
+  });
+
+  it('keeps a master-protocol trial that tests multiple valid assets', () => {
+    const json = JSON.parse(validJson());
+    json.assets = twoAssets;
+    json.trials = [trialWith([0, 1], 1)];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.dropped.find((d) => d.type === 'trial')).toBeUndefined();
+      expect(r.result.trials).toHaveLength(1);
+      expect((r.result.trials[0] as { asset_refs: number[] }).asset_refs).toEqual([0, 1]);
+    }
+  });
+
+  it('carries a multi-value indications array through validation', () => {
+    const json = JSON.parse(validJson());
+    const trial = trialWith([0], null) as Record<string, unknown>;
+    delete trial['indication'];
+    trial['indications'] = ['MASLD', 'NASH'];
+    json.trials = [trial];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect((r.result.trials[0] as { indications: string[] }).indications).toEqual([
+        'MASLD',
+        'NASH',
+      ]);
+    }
+  });
+
+  it('defaults indications to [] when omitted', () => {
+    const json = JSON.parse(validJson());
+    const trial = trialWith([0], null) as Record<string, unknown>;
+    delete trial['indication'];
+    json.trials = [trial];
+    json.markers = [];
+    json.events = [];
+    const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect((r.result.trials[0] as { indications: string[] }).indications).toEqual([]);
     }
   });
 });

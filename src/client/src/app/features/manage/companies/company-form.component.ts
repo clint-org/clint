@@ -9,28 +9,18 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { InputText } from 'primeng/inputtext';
-import { InputNumber } from 'primeng/inputnumber';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../../core/services/company.service';
-import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { CompanyEditFormComponent } from './company-edit-form.component';
 
 @Component({
   selector: 'app-company-form',
   standalone: true,
-  imports: [
-    FormsModule,
-    InputText,
-    InputNumber,
-    ButtonModule,
-    MessageModule,
-    FormFieldComponent,
-    FormActionsComponent,
-  ],
+  imports: [FormsModule, ButtonModule, MessageModule, FormActionsComponent, CompanyEditFormComponent],
   templateUrl: './company-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -42,7 +32,7 @@ export class CompanyFormComponent implements OnInit {
 
   readonly name = signal('');
   readonly logoUrl = signal('');
-  readonly displayOrder = signal(0);
+  readonly displayOrder = signal<number | null>(0);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameBlurred = signal(false);
@@ -78,7 +68,7 @@ export class CompanyFormComponent implements OnInit {
       const payload: Partial<Company> = {
         name: this.name().trim(),
         logo_url: this.logoUrl().trim() || null,
-        display_order: this.displayOrder(),
+        display_order: this.displayOrder() ?? 0,
       };
 
       let result: Company;

@@ -826,12 +826,49 @@
         color: var(--slate-700);
         font-weight: 600;
       }
+      /* Slide 7 (pricing): a quiet closing line set off by a divider, sitting
+         under the three plain pricing points. */
+      .close-note {
+        margin-top: 22px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-200);
+        font-size: 14px;
+        color: var(--slate-600);
+      }
+      /* Slide 7: a quiet, click-to-open link to the pricing detail page, pinned
+         to the top-right corner. The numbers live behind this deliberate click,
+         never on the slide itself. */
+      .reveal-link {
+        position: absolute;
+        top: 56px;
+        right: 72px;
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--brand-700);
+        text-decoration: none;
+        border-bottom: 1px solid var(--brand-200);
+        padding-bottom: 2px;
+        transition: border-color 0.15s ease;
+        z-index: 2;
+      }
+      .reveal-link:hover,
+      .reveal-link:focus-visible {
+        border-bottom-color: var(--brand-600);
+      }
       @media (max-width: 768px) {
         .deck {
           height: 100dvh;
         }
         .slide {
           padding: 36px 20px 64px;
+        }
+        .reveal-link {
+          top: 36px;
+          right: 20px;
+          font-size: 9px;
         }
         .slide-inner {
           max-width: 100%;
@@ -1317,12 +1354,13 @@
             ><span class="meta">Presentation</span>
           </div>
           <h2 class="slide-title">
-            Clint is the working surface, the deliverable layer, and the system of record for an
-            engagement.
+            Clint is where the whole engagement lives: the work your team does, the deliverables you
+            file, and the live view your client sees.
           </h2>
           <p class="lede">
-            Clint sits on top of the data Stout already consumes and produces. It's where the CI
-            work lives, where deliverables get filed, and where the client sees it all in real time.
+            It doesn't replace the data tools Stout already runs. It's the layer where Stout's read
+            sits on top of them: where the CI work lives, where deliverables get filed, and where the
+            client sees it all in real time.
           </p>
           <div class="body">
             <div class="grid-2">
@@ -1400,10 +1438,11 @@
                 </button>
                 <h3>Always current, without the busywork</h3>
                 <p>
-                  A daily automatic sync pulls the latest from ClinicalTrials.gov, and the edits
-                  Stout's analysts make sit right alongside it. It all flows through to the landing
-                  page, the activity feed, and every trial, so the picture keeps itself current and
-                  no one has to rewrite it by hand.
+                  A daily automatic sync pulls the latest trials from ClinicalTrials.gov. On top of
+                  that, every catalyst, regulatory action, approval, label change, and deal is kept
+                  as a typed, dated, sourced record, with the edits Stout's analysts make sitting
+                  right alongside. It all flows through to the landing page, the activity feed, and
+                  every trial, so the picture keeps itself current and no one rewrites it by hand.
                 </p>
               </div>
               <div class="card">
@@ -1682,10 +1721,16 @@
                 <div class="shift-before">Each one starts from zero.</div>
                 <div class="shift-after">
                   <strong>Analysis, its full history, and filed deliverables accumulate.</strong>
-                  Each quarter builds on the last, and the account gets harder to replace over time.
+                  The watchlist and annotations from Q1 carry into Q2; a year in, the account holds a
+                  full year of Stout's thinking, and that is hard to walk away from.
                 </div>
               </div>
             </div>
+            <p class="shift-foot">
+              <strong>And the client seeing it doesn't make Stout any less needed.</strong>
+              Assembling the picture was never the value; Stout's read is. A live, annotated view
+              puts that read in front of the client every week, not just at the readout.
+            </p>
             <p class="shift-foot">
               <strong>And no engineering investment.</strong> Clint runs the syncs, the
               infrastructure, and the security. Stout uses the platform; Clint runs it.
@@ -1946,11 +1991,76 @@
           </div>
         </div>
       </section>
+
+      <!-- ============ SLIDE 7: HOW IT'S PRICED ============ -->
+      <section class="slide">
+        <div class="accent-bar"></div>
+        <div class="slide-inner">
+          <div class="wordmark">
+            <svg class="logo" viewBox="0 0 140 140" fill="none">
+              <polyline
+                points="112,24 24,24 24,116 112,116"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="96,40 40,40 40,100 96,100"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                points="80,56 56,56 56,84 80,84"
+                stroke="#0d9488"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="name">Clint</span>
+            <span class="sep"></span>
+            <svg class="stout-mini" viewBox="0 0 257.09 107.51" aria-label="Stout">
+              <use href="#stout-logo" /></svg
+            ><span class="meta">Presentation</span>
+          </div>
+          <h2 class="slide-title">Pricing, kept simple.</h2>
+          <p class="lede">
+            Priced per engagement, with a cap, and meant to be flexible. Right now the goal is just
+            to get Clint in front of your team on a live engagement and shape it around how you
+            work.
+          </p>
+          <div class="body">
+            <ul class="points">
+              <li>
+                <strong>Per engagement.</strong> Priced per client engagement, not a platform fee.
+                Straightforward and predictable.
+              </li>
+              <li>
+                <strong>Capped.</strong> There's a ceiling on the total, so it stays predictable
+                however widely you use it.
+              </li>
+            </ul>
+            <p class="close-note">
+              The first step is simply putting Clint in your team's hands on a live engagement, and
+              building it out together from there.
+            </p>
+          </div>
+        </div>
+        <a class="reveal-link" href="stout-pricing.html" target="_blank" rel="noopener"
+          >Pricing detail &rarr;</a
+        >
+      </section>
     </div>
     <!-- /deck -->
 
     <div class="chrome">
-      <span class="counter" id="counter">01 / 06</span>
+      <span class="counter" id="counter">01 / 07</span>
       <span class="hint">&larr; &rarr; &middot; SPACE to advance &middot; P to print</span>
       <div class="nav-btns">
         <button class="nav-btn" id="prev">&larr;</button>

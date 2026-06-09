@@ -10,6 +10,8 @@
 
 `docs/brand.md` is the authoritative brand guide. This section is the short form that should shape every design decision.
 
+`docs/design-system.md` is the engineering contract beneath the brand guide -- the concrete *how* (tokens, primitives, controls, label/copy and form/dialog rules). Consult it for any UI implementation decision.
+
 ### Product positioning
 **Competitive intelligence for pharma.** The product covers pipeline intelligence, catalyst tracking, clinical trial timelines, and portfolio analysis -- the four cuts that pharma CI professionals use most. Sub-disciplines it serves: pipeline intelligence, asset/scientific intelligence, catalyst tracking, portfolio intelligence, early signal analysis.
 
@@ -100,6 +102,10 @@ supabase db advisors --local --type all
 ```
 
 CI and `npm run lint` both gate on `--fail-on warn` (see `.github/workflows/ci.yml` and `src/client/scripts/check-supabase-rls.sh`). Set `CHECK_SUPABASE_RLS_RELAX=1` to downgrade the local gate to ERROR-level for an emergency fix; CI does not honor that flag. The two dashboard CRITICAL classes (`auth_users_exposed`, `security_definer_view`) only fire against `--linked`; treat the dashboard as the canonical view for those after deploy.
+
+## Database Backups
+
+Prod and dev Postgres are backed up off-site daily (plus a snapshot before every prod migration) to Cloudflare R2 + Backblaze B2, encrypted with `age`, GFS retention (7/4/12). Restores target a Supabase project (the `auth`/`storage`/`extensions` schemas are platform-managed). See `docs/runbook/13-backup-and-restore.md`, `.github/workflows/backup-db.yml`, and `.github/workflows/backup-verify.yml`.
 
 ## Documentation Conventions
 

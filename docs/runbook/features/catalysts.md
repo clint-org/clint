@@ -40,12 +40,13 @@ The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Future
     - /t/:tenantId/s/:spaceId/catalysts
   rpcs:
     - get_dashboard_data
+    - get_key_catalysts
   tables:
     - markers
     - marker_types
     - marker_categories
     - trials
-    - products
+    - assets
     - companies
   related:
     - catalysts-detail-panel
@@ -89,8 +90,8 @@ The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Future
     - get_dashboard_data
   tables:
     - companies
-    - products
-    - therapeutic_areas
+    - assets
+    - indications
     - mechanisms_of_action
     - routes_of_administration
   related:
