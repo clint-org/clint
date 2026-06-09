@@ -123,7 +123,7 @@ interface CtgovProvenanceBlock {
                     'companies',
                     d.catalyst.company_id,
                   ]"
-                  class="font-semibold uppercase text-brand-700 hover:underline"
+                  class="font-semibold uppercase text-slate-900 hover:text-brand-700"
                 >
                   {{ d.catalyst.company_name }}
                 </a>
@@ -143,7 +143,7 @@ interface CtgovProvenanceBlock {
                       'assets',
                       d.catalyst.asset_id,
                     ]"
-                    class="text-brand-700 hover:underline"
+                    class="text-slate-900 hover:text-brand-700"
                   >
                     {{ d.catalyst.asset_name }}
                   </a>
