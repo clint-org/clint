@@ -156,3 +156,18 @@ per-shape SVG icons              OOXML shapes (ellipse/diamond/rect/triangle/lin
 - Any change to the on-screen dashboard appearance (web rendering must stay
   pixel-identical).
 - Marker type schema / DB changes.
+
+## Known approximations
+
+- The PPTX glyph renders inner marks shape-agnostically (any inner mark on any
+  non-flag/non-dashed shape), whereas the on-screen SVG couples inner marks to
+  specific shapes (circle: dot/dash; diamond: dot/check; square: x). This is not
+  user-reachable today because the marker-type form does not expose `inner_mark`
+  (only seed/system data sets it, always with valid shape+mark pairings). If the
+  form later exposes `inner_mark`, encode the shape→valid-mark coupling in
+  `resolveMarkerVisual` so both renderers agree.
+- The flag glyph in PPTX is a plain rectangle banner (OOXML has no Bezier path);
+  the SVG uses a curved banner. Acceptable approximation.
+- NLE dimming uses per-element `transparency: 70` in PPTX vs a single group
+  `opacity: 0.3` on screen, so overlapping elements composite slightly darker.
+  Cosmetic.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { drawMarkerGlyph, type GlyphSurface } from './pptx-marker-glyph';
+import { GLYPH_RATIOS } from '../models/marker-visual';
 import type { MarkerVisual } from '../models/marker-visual';
 
 interface Recorded {
@@ -84,6 +85,25 @@ describe('drawMarkerGlyph', () => {
     const { surface, rec } = fakeSurface();
     drawMarkerGlyph(surface, visual({ shape: 'square', innerMark: 'x' }), 0, 0, 0.12);
     expect(rec.shapes.filter((s) => s.shape === 'line')).toHaveLength(2);
+  });
+
+  it('inner dot radius is pinned to GLYPH_RATIOS.innerDotR', () => {
+    const { surface, rec } = fakeSurface();
+    const size = 0.2;
+    drawMarkerGlyph(surface, visual({ shape: 'circle', innerMark: 'dot' }), 0, 0, size);
+    const dot = rec.shapes.filter((s) => s.shape === 'ellipse')[1];
+    // inner dot is drawn as an ellipse of diameter 2 * innerDotR * size
+    expect(dot.opts['w']).toBeCloseTo(2 * GLYPH_RATIOS.innerDotR * size, 6);
+    expect(dot.opts['h']).toBeCloseTo(2 * GLYPH_RATIOS.innerDotR * size, 6);
+  });
+
+  it('square glyph inset is pinned to GLYPH_RATIOS.squareInset', () => {
+    const { surface, rec } = fakeSurface();
+    const size = 0.2;
+    drawMarkerGlyph(surface, visual({ shape: 'square' }), 0, 0, size);
+    const rect = rec.shapes.find((s) => s.shape === 'rect')!;
+    expect(rect.opts['x']).toBeCloseTo(GLYPH_RATIOS.squareInset * size, 6);
+    expect(rect.opts['w']).toBeCloseTo((1 - 2 * GLYPH_RATIOS.squareInset) * size, 6);
   });
 
   it('filled inner mark uses white, outline inner mark uses the color', () => {
