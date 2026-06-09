@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BrandContextService } from '../../core/services/brand-context.service';
-import { PLATFORM_LEGAL_EMAIL, PLATFORM_OPERATOR } from '../../core/models/legal-content';
+import { PLATFORM_SUPPORT_EMAIL, PLATFORM_OPERATOR } from '../../core/models/legal-content';
 
 @Component({
   selector: 'app-public-footer',
@@ -31,7 +31,7 @@ import { PLATFORM_LEGAL_EMAIL, PLATFORM_OPERATOR } from '../../core/models/legal
 export class PublicFooterComponent {
   protected readonly brand = inject(BrandContextService);
   protected readonly year = new Date().getFullYear();
-  protected readonly mailto = `mailto:${PLATFORM_LEGAL_EMAIL}`;
+  protected readonly mailto = `mailto:${PLATFORM_SUPPORT_EMAIL}`;
   protected readonly platform = PLATFORM_OPERATOR;
 
   // Copyright owner: the agency where there is one -- an agency-provisioned

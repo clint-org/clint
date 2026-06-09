@@ -11,6 +11,8 @@
  */
 export const PLATFORM_OPERATOR = 'Clint';
 export const PLATFORM_LEGAL_EMAIL = 'privacy@clintapp.com';
+/** General contact / support mailbox (distinct from the legal/privacy one). */
+export const PLATFORM_SUPPORT_EMAIL = 'support@clintapp.com';
 export const LAST_UPDATED = 'June 7, 2026';
 
 export interface LegalSection {
