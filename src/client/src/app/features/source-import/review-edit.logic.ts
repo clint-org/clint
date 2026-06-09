@@ -125,7 +125,7 @@ export function applyAssetForm(value: AssetFormValue, idx: number, p: Proposal):
           company_ref: value.companyId != null ? Number(value.companyId) : null,
           moa: value.moa,
           roa: value.roa,
-        },
+        }
   );
   return { ...p, proposals: { ...p.proposals, assets } };
 }
@@ -142,7 +142,7 @@ export function proposalCompanyToForm(idx: number, p: Proposal): CompanyFormValu
 
 export function applyCompanyForm(value: CompanyFormValue, idx: number, p: Proposal): Proposal {
   const companies = p.proposals.companies.map((c, i) =>
-    i !== idx ? c : { ...c, name: value.name, website: value.website },
+    i !== idx ? c : { ...c, name: value.name, website: value.website }
   );
   return { ...p, proposals: { ...p.proposals, companies } };
 }
@@ -182,11 +182,35 @@ export function currentMatchId(type: EntityType, idx: number, p: ProposalWithFuz
   return m?.kind === 'existing' && m.id ? m.id : '__new__';
 }
 
+/** A match id other than the create-new sentinel links to an existing record. */
+export function isExistingMatch(matchId: string): boolean {
+  return matchId !== '__new__';
+}
+
+/**
+ * Explainer shown when an entity is linked to an existing record. The import
+ * commit ignores the proposal's identity fields for existing matches (it links
+ * by id), so those inputs are disabled; this note says so. Assets are the lone
+ * partial case: MOA/ROA are additively merged into the matched asset, so we call
+ * that out. Returns null when creating a new record (nothing is locked).
+ */
+export function lockNoteFor(type: EntityType | null, matchId: string): string | null {
+  if (!type || !isExistingMatch(matchId)) return null;
+  switch (type) {
+    case 'assets':
+      return 'Linked to an existing asset. Its name, generic name, and company are kept as-is; only mechanisms and routes are merged in.';
+    case 'companies':
+      return 'Linked to an existing company. Its details are not changed by this import.';
+    case 'trials':
+      return 'Linked to an existing trial. Its details are not changed by this import.';
+  }
+}
+
 export function applyMatchOverride(
   type: EntityType,
   idx: number,
   optionId: string,
-  p: ProposalWithFuzzy,
+  p: ProposalWithFuzzy
 ): ProposalWithFuzzy {
   const list = p.proposals[type].map((e, i) => {
     if (i !== idx) return e;

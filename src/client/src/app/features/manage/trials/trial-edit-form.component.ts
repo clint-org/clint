@@ -29,7 +29,15 @@ interface SelectOption {
   selector: 'app-trial-edit-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, InputTextModule, Select, MultiSelect, DatePicker, Tooltip, FormFieldComponent],
+  imports: [
+    FormsModule,
+    InputTextModule,
+    Select,
+    MultiSelect,
+    DatePicker,
+    Tooltip,
+    FormFieldComponent,
+  ],
   templateUrl: './trial-edit-form.component.html',
 })
 export class TrialEditFormComponent {
@@ -50,6 +58,10 @@ export class TrialEditFormComponent {
   readonly phaseOptions = input<SelectOption[]>([]);
 
   readonly identifierReadonly = input<boolean>(false);
+  // Locks every field when the host has linked this trial to an existing record.
+  // The import commit ignores all proposal fields for an existing-match trial
+  // (it links by id), so editing them here would be a no-op.
+  readonly disabled = input<boolean>(false);
   readonly phaseTypeLocked = input<boolean>(false);
   readonly phaseStartLocked = input<boolean>(false);
   readonly phaseEndLocked = input<boolean>(false);

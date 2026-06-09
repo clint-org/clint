@@ -33,5 +33,9 @@ export class AssetEditFormComponent {
   readonly nameInvalid = input<boolean>(false);
   readonly showDisplayOrder = input<boolean>(true);
   readonly showLogoUrl = input<boolean>(true);
+  // Locks the identity fields (name / generic name / company) when the host has
+  // linked this asset to an existing record, whose details the import does not
+  // change. MOA/ROA stay editable because the commit merges them into the match.
+  readonly disabled = input<boolean>(false);
   readonly nameBlur = output<void>();
 }
