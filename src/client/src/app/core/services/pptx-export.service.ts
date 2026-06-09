@@ -14,11 +14,13 @@ import {
   computeLeftColumns,
   type ColumnLayout,
   formatDateShort,
-  type LegendEntry,
   type MarkerRow,
   paginate,
 } from './pptx-export.util';
 import { TimelineService } from './timeline.service';
+import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual';
+import { drawMarkerGlyph } from './pptx-marker-glyph';
+import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 
 export interface ExportOptions {
   zoomLevel: ZoomLevel;
@@ -723,26 +725,9 @@ export class PptxExportService {
       const centerX = timelineX + (mx / totalPx) * timelineW;
       const x = centerX - markerSize / 2;
       const y = rowY + rowH * 0.1;
-      const color = (marker.marker_types!.color ?? '3b82f6').replace('#', '');
-      const shape = marker.marker_types!.shape;
-      const fill = marker.marker_types!.fill_style;
-      const isFilled = fill === 'filled';
 
-      this.renderMarkerShape(
-        slide,
-        shape,
-        isFilled,
-        x,
-        y,
-        markerSize,
-        color,
-        marker.end_date,
-        startYear,
-        endYear,
-        totalPx,
-        timelineX,
-        timelineW
-      );
+      const visual = resolveMarkerVisual(marker);
+      drawMarkerGlyph(slide, visual, x, y, markerSize);
 
       // Only show date label if far enough from previous label
       if (centerX - lastLabelX > 0.4) {
@@ -754,113 +739,11 @@ export class PptxExportService {
           h: 0.1,
           fontSize: Math.max(3, fontSize - 3),
           fontFace: 'Consolas',
-          color,
+          color: visual.color.replace('#', ''),
           align: 'center',
         });
         lastLabelX = centerX;
       }
-    }
-  }
-
-  private renderMarkerShape(
-    slide: PptxGenJS.Slide,
-    shape: string,
-    isFilled: boolean,
-    x: number,
-    y: number,
-    size: number,
-    color: string,
-    endDate: string | null,
-    startYear: number,
-    endYear: number,
-    totalPx: number,
-    timelineX: number,
-    timelineW: number
-  ): void {
-    if (shape === 'circle') {
-      slide.addShape('ellipse', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'diamond') {
-      slide.addShape('diamond', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'flag') {
-      const flagX = x + size * 0.3;
-      slide.addShape('line', {
-        x: flagX,
-        y,
-        w: 0,
-        h: size,
-        line: { color, width: 1 },
-      });
-      slide.addShape('rect', {
-        x: flagX,
-        y,
-        w: size * 0.7,
-        h: size * 0.5,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 0.5 },
-      });
-    } else if (shape === 'arrow') {
-      // Render as a simple up-pointing triangle
-      slide.addShape('triangle', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'x') {
-      // Two diagonal lines forming an X
-      const pad = size * 0.15;
-      slide.addShape('rect', {
-        x: x + pad,
-        y: y + pad,
-        w: size - pad * 2,
-        h: size - pad * 2,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1.5 },
-      });
-      // Draw X lines on top
-      slide.addText('X', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fontSize: Math.round(size * 50),
-        fontFace: 'Arial',
-        bold: true,
-        color,
-        align: 'center',
-        valign: 'middle',
-      });
-    } else if (shape === 'bar' && endDate) {
-      const startPx = x + size / 2;
-      const endPx =
-        timelineX +
-        (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * timelineW;
-      const barW = Math.max(0.1, endPx - startPx);
-      slide.addShape('roundRect', {
-        x: startPx,
-        y: y + size * 0.2,
-        w: barW,
-        h: size * 0.6,
-        rectRadius: 0.01,
-        fill: { color, transparency: 50 },
-        line: { color, width: 0.5 },
-      });
     }
   }
 
@@ -992,54 +875,22 @@ export class PptxExportService {
       for (const it of g.items) {
         const w = s + 0.04 + it.name.length * CHAR + 0.16;
         const { px, py } = place(w);
-        this.renderLegendShape(slide, it, px, py, s);
+        drawMarkerGlyph(
+          slide,
+          {
+            shape: it.shape as MarkerShape,
+            color: it.color,
+            fillStyle: it.fill_style as FillStyle,
+            innerMark: it.inner_mark as InnerMark,
+            isNle: false,
+          } satisfies MarkerVisual,
+          px,
+          py,
+          s
+        );
         label(it.name, px + s + 0.03, py, it.name.length * CHAR, false);
       }
     }
   }
 
-  private renderLegendShape(
-    slide: PptxGenJS.Slide,
-    entry: LegendEntry,
-    x: number,
-    y: number,
-    s: number
-  ): void {
-    const color = entry.color.replace('#', '');
-    const filled = entry.fill_style === 'filled';
-    const fill = filled ? { color } : undefined;
-    const cx = x + s / 2;
-    const cy = y + s / 2;
-
-    if (entry.shape === 'flag') {
-      slide.addShape('line', { x: x + s * 0.18, y, w: 0, h: s, line: { color, width: 0.75 } });
-      slide.addShape('rect', { x: x + s * 0.18, y, w: s * 0.6, h: s * 0.45, fill: { color }, line: { color, width: 0.5 } });
-      return;
-    }
-    if (entry.shape === 'dashed-line') {
-      slide.addShape('line', { x: cx, y, w: 0, h: s, line: { color, width: 1, dashType: 'dash' } });
-      return;
-    }
-    if (entry.shape === 'diamond') {
-      slide.addShape('diamond', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    } else if (entry.shape === 'triangle') {
-      slide.addShape('triangle', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    } else if (entry.shape === 'square') {
-      slide.addShape('rect', { x: x + s * 0.08, y: y + s * 0.08, w: s * 0.84, h: s * 0.84, fill, line: { color, width: 0.75 } });
-    } else {
-      slide.addShape('ellipse', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    }
-
-    // Inner marks (dot / dash / x / check). Use white on filled shapes.
-    const ink = filled ? 'ffffff' : color;
-    const a = s * 0.18;
-    if (entry.inner_mark === 'dot' || entry.inner_mark === 'check') {
-      slide.addShape('ellipse', { x: cx - s * 0.12, y: cy - s * 0.12, w: s * 0.24, h: s * 0.24, fill: { color: ink } });
-    } else if (entry.inner_mark === 'dash') {
-      slide.addShape('line', { x: cx - s * 0.2, y: cy, w: s * 0.4, h: 0, line: { color: ink, width: 1 } });
-    } else if (entry.inner_mark === 'x') {
-      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, line: { color: ink, width: 0.75 } });
-      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, flipV: true, line: { color: ink, width: 0.75 } });
-    }
-  }
 }

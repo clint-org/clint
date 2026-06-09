@@ -23,7 +23,7 @@ export function drawMarkerGlyph(
   const color = visual.color.replace('#', '');
   const filled = visual.fillStyle === 'filled';
   const t = visual.isNle ? NLE_TRANSPARENCY : 0;
-  const maybeT = t > 0 ? { transparency: t } : {};
+  const maybeT: Record<string, number> = t > 0 ? { transparency: t } : {};
   const fill = filled ? { color, ...maybeT } : { color: 'FFFFFF', ...maybeT };
   const line = (w: number) => ({ color, width: w, ...maybeT });
   const cx = x + size / 2;
