@@ -21,9 +21,11 @@ jobs:
           - environment: prod
             project_ref_secret: SUPABASE_PROD_PROJECT_REF
             db_password_secret: SUPABASE_PROD_DB_PASSWORD
+            db_url_secret: SUPABASE_PROD_DB_POOLER_URL
           - environment: dev
             project_ref_secret: SUPABASE_DEV_PROJECT_REF
             db_password_secret: SUPABASE_DEV_DB_PASSWORD
+            db_url_secret: SUPABASE_DEV_DB_POOLER_URL
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
@@ -35,6 +37,7 @@ jobs:
           environment: ${{ matrix.environment }}
           project_ref: ${{ secrets[matrix.project_ref_secret] }}
           db_password: ${{ secrets[matrix.db_password_secret] }}
+          db_url: ${{ secrets[matrix.db_url_secret] }}
           age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
           r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
           r2_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
