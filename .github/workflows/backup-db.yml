@@ -11,33 +11,48 @@ concurrency:
   group: backup-db
   cancel-in-progress: false
 
+# Two explicit jobs (not a matrix) so every secret is referenced statically.
+# Indexing `secrets[...]` with a dynamic key forces GitHub to pass the entire
+# secrets context to the runner (CodeQL: actions/excessive-secrets-exposure).
 jobs:
-  backup:
+  prod:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - environment: prod
-            project_ref_secret: SUPABASE_PROD_PROJECT_REF
-            db_password_secret: SUPABASE_PROD_DB_PASSWORD
-            db_url_secret: SUPABASE_PROD_DB_POOLER_URL
-          - environment: dev
-            project_ref_secret: SUPABASE_DEV_PROJECT_REF
-            db_password_secret: SUPABASE_DEV_DB_PASSWORD
-            db_url_secret: SUPABASE_DEV_DB_POOLER_URL
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Backup ${{ matrix.environment }}
+      - name: Backup prod
         uses: ./.github/actions/db-backup
         with:
-          environment: ${{ matrix.environment }}
-          project_ref: ${{ secrets[matrix.project_ref_secret] }}
-          db_password: ${{ secrets[matrix.db_password_secret] }}
-          db_url: ${{ secrets[matrix.db_url_secret] }}
+          environment: prod
+          project_ref: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          db_password: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          db_url: ${{ secrets.SUPABASE_PROD_DB_POOLER_URL }}
+          age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+          r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
+          r2_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          r2_key_id: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          r2_secret: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          b2_bucket: ${{ secrets.B2_BACKUP_BUCKET }}
+          b2_endpoint: ${{ secrets.B2_S3_ENDPOINT }}
+          b2_key_id: ${{ secrets.B2_BACKUP_KEY_ID }}
+          b2_app_key: ${{ secrets.B2_BACKUP_APP_KEY }}
+
+  dev:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Backup dev
+        uses: ./.github/actions/db-backup
+        with:
+          environment: dev
+          project_ref: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          db_password: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          db_url: ${{ secrets.SUPABASE_DEV_DB_POOLER_URL }}
           age_recipient: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
           r2_bucket: ${{ secrets.R2_BACKUP_BUCKET }}
           r2_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
