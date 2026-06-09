@@ -37,6 +37,7 @@ import {
   resolveTrialAssetIndexes,
   resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
+  countFilterMatches,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
@@ -232,6 +233,9 @@ interface GridRow {
                 (click)="gridFilter.set(opt.value)"
               >
                 {{ opt.label }}
+                <span class="ml-1 font-mono text-[10px] tabular-nums opacity-60"
+                  >{{ filterCounts()[opt.countKey] }}</span
+                >
               </button>
             }
           </div>
@@ -336,6 +340,13 @@ interface GridRow {
                     >
                       <i class="fa-solid fa-pen text-[11px]"></i>
                     </button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="9" class="px-4 py-10 text-center text-sm text-slate-500">
+                    {{ emptyFilterMessage() }}
                   </td>
                 </tr>
               </ng-template>
@@ -861,10 +872,23 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       .filter((n): n is TreeNode => n !== null);
   });
 
+  protected readonly filterCounts = computed(() => countFilterMatches(this.gridNodes()));
+
+  protected readonly emptyFilterMessage = computed(() => {
+    switch (this.gridFilter()) {
+      case 'flagged':
+        return 'Nothing needs review. Every proposal in this batch is complete and matched.';
+      case 'new':
+        return 'No new records. Every proposal in this batch matched an existing record.';
+      default:
+        return 'No proposals in this batch.';
+    }
+  });
+
   protected readonly filterOptions = [
-    { value: 'all' as const, label: 'All' },
-    { value: 'flagged' as const, label: 'Needs review' },
-    { value: 'new' as const, label: 'New' },
+    { value: 'all' as const, label: 'All', countKey: 'all' as const },
+    { value: 'flagged' as const, label: 'Needs review', countKey: 'flagged' as const },
+    { value: 'new' as const, label: 'New', countKey: 'new' as const },
   ];
 
   readonly highlightedSourceText = computed(() => {

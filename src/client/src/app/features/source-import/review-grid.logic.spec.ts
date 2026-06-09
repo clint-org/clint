@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes } from './review-grid.logic';
+import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes, countFilterMatches } from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -237,5 +237,50 @@ describe('trialMissingAsset with asset_refs', () => {
   });
   it('is not missing for an existing match even with empty asset_refs', () => {
     expect(trialMissingAsset({ match: { kind: 'existing', id: 'x' }, asset_refs: [] })).toBe(false);
+  });
+});
+
+describe('countFilterMatches', () => {
+  const flag = { id: 'no-asset', tier: 'blocking' as const, label: 'No asset' };
+
+  it('counts every row in the tree for all', () => {
+    const nodes = [
+      { data: { flags: [], state: 'existing' }, children: [
+        { data: { flags: [], state: 'existing' }, children: [
+          { data: { flags: [], state: 'new' } },
+        ] },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).all).toBe(3);
+  });
+
+  it('counts flagged rows at any depth', () => {
+    const nodes = [
+      { data: { flags: [flag], state: 'existing' }, children: [
+        { data: { flags: [], state: 'existing' }, children: [
+          { data: { flags: [flag], state: 'new' } },
+        ] },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).flagged).toBe(2);
+  });
+
+  it('counts new rows at any depth', () => {
+    const nodes = [
+      { data: { flags: [], state: 'new' }, children: [
+        { data: { flags: [], state: 'existing' } },
+        { data: { flags: [], state: 'new' } },
+      ] },
+    ];
+    expect(countFilterMatches(nodes).new).toBe(2);
+  });
+
+  it('returns all-zero counts for an empty tree', () => {
+    expect(countFilterMatches([])).toEqual({ all: 0, flagged: 0, new: 0 });
+  });
+
+  it('handles nodes with no children array', () => {
+    const nodes = [{ data: { flags: [flag], state: 'new' } }];
+    expect(countFilterMatches(nodes)).toEqual({ all: 1, flagged: 1, new: 1 });
   });
 });
