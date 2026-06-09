@@ -14,6 +14,7 @@ const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
  * uses the unified vocabulary.
  */
 export interface SpaceLandingStats {
+  trials: number;
   active_trials: number;
   companies: number;
   assets: number;
@@ -25,6 +26,7 @@ export interface SpaceLandingStats {
 }
 
 interface RawSpaceLandingStats {
+  trials: number;
   active_trials: number;
   companies: number;
   programs: number;
@@ -78,6 +80,7 @@ export class EngagementLandingService {
           const raw = data as RawSpaceLandingStats | null;
           if (!raw) return null;
           return {
+            trials: raw.trials,
             active_trials: raw.active_trials,
             companies: raw.companies,
             assets: raw.programs,

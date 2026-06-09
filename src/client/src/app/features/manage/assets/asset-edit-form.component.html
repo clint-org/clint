@@ -12,6 +12,7 @@
     [ngModel]="name()"
     (ngModelChange)="name.set($event)"
     (blur)="nameBlur.emit()"
+    [disabled]="disabled()"
     [attr.aria-required]="true"
     [attr.aria-invalid]="nameInvalid()"
     [attr.aria-describedby]="nameInvalid() ? 'asset-name-error' : null"
@@ -27,6 +28,7 @@
     [ngModel]="genericName()"
     (ngModelChange)="genericName.set($event)"
     placeholder="e.g. pembrolizumab"
+    [disabled]="disabled()"
   />
 </app-form-field>
 
@@ -41,6 +43,7 @@
     optionValue="id"
     placeholder="Select company"
     styleClass="w-full"
+    [disabled]="disabled()"
     [attr.aria-required]="true"
   />
 </app-form-field>

@@ -37,6 +37,7 @@ import {
   resolveTrialAssetIndexes,
   resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
+  countFilterMatches,
   type ReviewFlag,
 } from './review-grid.logic';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
@@ -130,7 +131,7 @@ interface GridRow {
         <div class="flex items-center gap-2">
           <p-button
             label="Download JSON"
-            icon="pi pi-download"
+            icon="fa-solid fa-download"
             size="small"
             [text]="true"
             severity="secondary"
@@ -140,7 +141,7 @@ interface GridRow {
           />
           <p-button
             label="Back"
-            icon="pi pi-arrow-left"
+            icon="fa-solid fa-arrow-left"
             size="small"
             [outlined]="true"
             severity="secondary"
@@ -204,7 +205,7 @@ interface GridRow {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-green-700"
             >
-              <i class="pi pi-check-circle text-[10px]"></i>
+              <i class="fa-solid fa-circle-check text-[10px]"></i>
               CT.gov: {{ ctgovSummaryVal.matchedCount }}
               {{ ctgovSummaryVal.matchedCount === 1 ? 'trial' : 'trials' }} enriched
             </div>
@@ -212,7 +213,7 @@ interface GridRow {
             <div
               class="mb-3 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-amber-700"
             >
-              <i class="pi pi-exclamation-triangle text-[10px]"></i>
+              <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
               CT.gov: lookup failed
             </div>
           }
@@ -232,12 +233,15 @@ interface GridRow {
                 (click)="gridFilter.set(opt.value)"
               >
                 {{ opt.label }}
+                <span class="ml-1 font-mono text-[10px] tabular-nums opacity-60"
+                  >{{ filterCounts()[opt.countKey] }}</span
+                >
               </button>
             }
           </div>
 
           <div class="overflow-x-auto">
-            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem]">
+            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem] review-grid">
               <ng-template pTemplate="header">
                 <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                   <th class="w-10"></th>
@@ -334,8 +338,15 @@ interface GridRow {
                       tooltipPosition="left"
                       [attr.aria-label]="'Edit ' + row.name"
                     >
-                      <i class="pi pi-pencil text-[11px]"></i>
+                      <i class="fa-solid fa-pen text-[11px]"></i>
                     </button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="9" class="px-4 py-10 text-center text-sm text-slate-500">
+                    {{ emptyFilterMessage() }}
                   </td>
                 </tr>
               </ng-template>
@@ -378,7 +389,7 @@ interface GridRow {
                   tooltipPosition="left"
                   [attr.aria-label]="'Edit ' + entityName(type, idx)"
                 >
-                  <i class="pi pi-pencil text-[11px]"></i>
+                  <i class="fa-solid fa-pen text-[11px]"></i>
                 </button>
               }
             </div>
@@ -861,10 +872,23 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       .filter((n): n is TreeNode => n !== null);
   });
 
+  protected readonly filterCounts = computed(() => countFilterMatches(this.gridNodes()));
+
+  protected readonly emptyFilterMessage = computed(() => {
+    switch (this.gridFilter()) {
+      case 'flagged':
+        return 'Nothing needs review. Every proposal in this batch is complete and matched.';
+      case 'new':
+        return 'No new records. Every proposal in this batch matched an existing record.';
+      default:
+        return 'No proposals in this batch.';
+    }
+  });
+
   protected readonly filterOptions = [
-    { value: 'all' as const, label: 'All' },
-    { value: 'flagged' as const, label: 'Needs review' },
-    { value: 'new' as const, label: 'New' },
+    { value: 'all' as const, label: 'All', countKey: 'all' as const },
+    { value: 'flagged' as const, label: 'Needs review', countKey: 'flagged' as const },
+    { value: 'new' as const, label: 'New', countKey: 'new' as const },
   ];
 
   readonly highlightedSourceText = computed(() => {

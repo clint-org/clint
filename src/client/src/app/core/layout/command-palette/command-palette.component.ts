@@ -4,7 +4,7 @@ import {
   OnInit,
   effect,
   inject,
-  signal,
+  input,
   computed,
 } from '@angular/core';
 import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
@@ -14,7 +14,6 @@ import { PaletteHotkeyService } from '../../services/palette-hotkey.service';
 import { PaletteCommandRegistry } from '../../services/palette-command.registry';
 import { PaletteRecentsService } from '../../services/palette-recents.service';
 import { PalettePinService } from '../../services/palette-pin.service';
-import { SpaceService } from '../../services/space.service';
 import { PaletteSearchInputComponent } from './palette-search-input.component';
 import { PaletteEmptyStateComponent } from './palette-empty-state.component';
 import { PaletteResultListComponent } from './palette-result-list.component';
@@ -47,7 +46,7 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
             [query]="palette.query()"
             [parsed]="palette.parsedQuery()"
             [scope]="palette.scope()"
-            [scopeName]="spaceShortName()"
+            [scopeName]="spaceName()"
             [activeDescendantId]="activeDescendantId()"
             (queryChange)="palette.setQuery($event)"
             (arrow)="onArrow($event)"
@@ -69,7 +68,7 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
                 [items]="palette.results()"
                 [selectedIndex]="palette.selectedIndex()"
                 [loading]="palette.isLoading()"
-                [scopeLabel]="spaceShortName()"
+                [scopeLabel]="spaceName()"
                 (indexSelect)="palette.selectIndex($event)"
                 (activated)="onActivate($event)"
               />
@@ -87,11 +86,10 @@ export class CommandPaletteComponent implements OnInit {
   private readonly registry = inject(PaletteCommandRegistry);
   private readonly recents = inject(PaletteRecentsService);
   private readonly pins = inject(PalettePinService);
-  private readonly spaceSvc = inject(SpaceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly spaceShortName = signal<string>('');
+  readonly spaceName = input<string>('');
   private spaceId: string | null = null;
   private tenantId: string | null = null;
 
@@ -142,8 +140,6 @@ export class CommandPaletteComponent implements OnInit {
     }
     this.tenantId = tenantId;
     this.spaceId = spaceId;
-    // Look up space short name if your space service exposes it; otherwise leave blank.
-    this.spaceShortName.set('');
   }
 
   close() {

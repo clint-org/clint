@@ -15,6 +15,7 @@
     name="name"
     required
     aria-required="true"
+    [disabled]="disabled()"
   />
 </app-form-field>
 
@@ -29,6 +30,7 @@
     name="identifier"
     placeholder="NCT12345678"
     [readonly]="identifierReadonly()"
+    [disabled]="disabled()"
   />
   @if (!identifierReadonly()) {
     <p class="mt-1 text-[11px] text-slate-500">
@@ -50,6 +52,7 @@
     [filter]="true"
     styleClass="w-full"
     appendTo="body"
+    [disabled]="disabled()"
     [attr.aria-required]="true"
   />
   <p class="mt-1 text-[11px] text-slate-500">
@@ -70,6 +73,7 @@
       placeholder="Select primary asset"
       styleClass="w-full"
       appendTo="body"
+      [disabled]="disabled()"
       [attr.aria-required]="true"
     />
   </app-form-field>
@@ -89,6 +93,7 @@
     [showClear]="true"
     styleClass="w-full"
     appendTo="body"
+    [disabled]="disabled()"
   />
 </app-form-field>
 
@@ -110,7 +115,7 @@
     [ngModel]="phaseType()"
     (ngModelChange)="phaseType.set($event)"
     name="phaseType"
-    [disabled]="phaseTypeLocked()"
+    [disabled]="phaseTypeLocked() || disabled()"
     placeholder="Select a phase"
     [showClear]="true"
     styleClass="w-full"
@@ -141,7 +146,7 @@
       name="phaseStart"
       dateFormat="yy-mm-dd"
       styleClass="w-full"
-      [disabled]="phaseStartLocked()"
+      [disabled]="phaseStartLocked() || disabled()"
       [showIcon]="true"
       appendTo="body"
       [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
@@ -165,7 +170,7 @@
       name="phaseEnd"
       dateFormat="yy-mm-dd"
       styleClass="w-full"
-      [disabled]="phaseEndLocked()"
+      [disabled]="phaseEndLocked() || disabled()"
       [showIcon]="true"
       appendTo="body"
       [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"

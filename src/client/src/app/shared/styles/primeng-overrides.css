@@ -315,3 +315,18 @@
 p-treetable {
   display: block;
 }
+
+/* Denser review grid: the import-review grid is a data-dense instrument, so
+   tighten cell padding and body type well below PrimeNG's roomy default
+   (12px/16px, 16px font -> ~73px rows). Selectors mirror PrimeNG's internal
+   structure (.p-treetable-tbody/.p-treetable-thead) so they outrank the theme.
+   Header keeps its small mono styling from the template. */
+.review-grid.p-treetable .p-treetable-thead > tr > th,
+.review-grid.p-treetable .p-treetable-tbody > tr > td {
+  padding-block: 0.3125rem; /* 5px */
+  padding-inline: 0.625rem; /* 10px */
+}
+.review-grid.p-treetable .p-treetable-tbody > tr > td {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.2rem;
+}

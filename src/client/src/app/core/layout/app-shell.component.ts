@@ -192,7 +192,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         </ng-template>
       </p-dialog>
 
-      <app-command-palette />
+      <app-command-palette [spaceName]="currentSpaceName()" />
     </div>
   `,
   styles: [

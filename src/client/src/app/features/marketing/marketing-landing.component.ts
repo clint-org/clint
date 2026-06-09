@@ -88,7 +88,7 @@ import { isExistingWorkspace } from './workspace-finder';
               Find your workspace
             </h2>
             <p class="mt-1 text-xs text-slate-500">Enter your workspace subdomain to sign in.</p>
-            <form class="mt-4 flex gap-2" (submit)="goToWorkspace($event)">
+            <form class="mt-4 flex flex-col gap-2 sm:flex-row" (submit)="goToWorkspace($event)">
               <div class="flex flex-1 items-stretch border border-slate-300 bg-white">
                 <input
                   pInputText
@@ -96,7 +96,7 @@ import { isExistingWorkspace } from './workspace-finder';
                   [value]="subdomain()"
                   (input)="onInput($event)"
                   placeholder="your-workspace"
-                  class="flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                  class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
                   aria-label="Workspace subdomain"
                 />
                 <span
@@ -107,6 +107,7 @@ import { isExistingWorkspace } from './workspace-finder';
               </div>
               <p-button
                 label="Go"
+                styleClass="w-full sm:w-auto"
                 [disabled]="!subdomain() || checking()"
                 [loading]="checking()"
                 type="submit"

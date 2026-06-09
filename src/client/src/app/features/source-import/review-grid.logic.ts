@@ -183,6 +183,35 @@ export function readableSummary(counts: SelectionCounts): string {
   return parts.length ? parts.join(', ') : 'nothing selected';
 }
 
+export interface FilterCounts {
+  all: number;
+  flagged: number;
+  new: number;
+}
+
+// A minimal shape matching the PrimeNG TreeNode tree the review grid renders:
+// each node carries a row in `data` and may have nested `children`. `data` is
+// optional to stay structurally compatible with PrimeNG's TreeNode.
+interface CountableNode {
+  data?: { flags: ReviewFlag[]; state: EntityState };
+  children?: CountableNode[];
+}
+
+// Counts how many rows across the whole tree match each grid filter, so the
+// tabs can show "Needs review (N)" / "New (N)" before the user clicks. Mirrors
+// the keep() predicate in the component's filteredNodes computed.
+export function countFilterMatches(nodes: CountableNode[]): FilterCounts {
+  const counts: FilterCounts = { all: 0, flagged: 0, new: 0 };
+  const walk = (node: CountableNode): void => {
+    counts.all += 1;
+    if ((node.data?.flags?.length ?? 0) > 0) counts.flagged += 1;
+    if (node.data?.state === 'new') counts.new += 1;
+    (node.children ?? []).forEach(walk);
+  };
+  nodes.forEach(walk);
+  return counts;
+}
+
 export function blockingReason(b: { noAsset: number; duplicates: number }): string | null {
   if (b.noAsset > 0) {
     return `${b.noAsset} ${b.noAsset === 1 ? 'trial needs' : 'trials need'} an asset`;

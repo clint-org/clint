@@ -256,7 +256,7 @@ export class EngagementLandingComponent implements OnInit {
   readonly inventoryTotals = computed<InventoryTotals | null>(() => {
     const s = this.stats();
     if (!s) return null;
-    return { trials: s.active_trials, companies: s.companies, assets: s.assets };
+    return { trials: s.trials, companies: s.companies, assets: s.assets };
   });
 
   readonly briefVisible = computed(() => this.brief() !== null);

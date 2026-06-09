@@ -29,6 +29,8 @@ import {
   matchOptionsFor,
   currentMatchId,
   applyMatchOverride,
+  isExistingMatch,
+  lockNoteFor,
   proposalCompanyToForm,
   applyCompanyForm,
   proposalAssetToForm,
@@ -100,6 +102,10 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
             </app-form-field>
           }
 
+          @if (lockNote(); as note) {
+            <p class="mb-4 -mt-1 text-[11px] text-slate-500">{{ note }}</p>
+          }
+
           @switch (t) {
             @case ('companies') {
               <app-form-field
@@ -116,6 +122,7 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                   [ngModel]="companyName()"
                   (ngModelChange)="companyName.set($event)"
                   (blur)="companyNameBlurred.set(true)"
+                  [disabled]="matchedExisting()"
                 />
               </app-form-field>
               <app-form-field label="Website" fieldId="review-edit-company-website">
@@ -127,6 +134,7 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                   [ngModel]="companyWebsite()"
                   (ngModelChange)="companyWebsite.set($event)"
                   placeholder="https://..."
+                  [disabled]="matchedExisting()"
                 />
               </app-form-field>
             }
@@ -142,6 +150,7 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                 [roaOptions]="roaOptions()"
                 [showDisplayOrder]="false"
                 [showLogoUrl]="false"
+                [disabled]="matchedExisting()"
               />
             }
             @case ('trials') {
@@ -158,6 +167,7 @@ const ENTITY_LABEL: Record<ReviewEntityType, string> = {
                 [indicationOptions]="indicationOptions()"
                 [phaseOptions]="phaseOptions"
                 [identifierReadonly]="true"
+                [disabled]="matchedExisting()"
               />
             }
           }
@@ -187,12 +197,17 @@ export class ReviewEditDialogComponent {
 
   protected readonly matchId = signal<string>('__new__');
 
+  // When linked to an existing record, the import commit ignores this entity's
+  // identity fields (it links by id), so the dialog locks them and explains why.
+  protected readonly matchedExisting = computed(() => isExistingMatch(this.matchId()));
+  protected readonly lockNote = computed(() => lockNoteFor(this.type(), this.matchId()));
+
   // Company form fields.
   protected readonly companyName = signal<string>('');
   protected readonly companyWebsite = signal<string | null>(null);
   protected readonly companyNameBlurred = signal(false);
   protected readonly companyNameInvalid = computed(
-    () => this.companyNameBlurred() && this.companyName().trim().length === 0,
+    () => this.companyNameBlurred() && this.companyName().trim().length === 0
   );
 
   // Asset form fields.
@@ -245,15 +260,15 @@ export class ReviewEditDialogComponent {
   });
 
   protected readonly indicationOptions = computed<FormOption[]>(() =>
-    this.nameOptions(this.spaceIndications(), this.trialIndications()),
+    this.nameOptions(this.spaceIndications(), this.trialIndications())
   );
 
   protected readonly moaOptions = computed<FormOption[]>(() =>
-    this.nameOptions(this.spaceMoa(), this.assetMoa()),
+    this.nameOptions(this.spaceMoa(), this.assetMoa())
   );
 
   protected readonly roaOptions = computed<FormOption[]>(() =>
-    this.nameOptions(this.spaceRoa(), this.assetRoa()),
+    this.nameOptions(this.spaceRoa(), this.assetRoa())
   );
 
   /** Union of space names and currently selected names, as {id:name, name} options. */
@@ -342,7 +357,7 @@ export class ReviewEditDialogComponent {
       next = applyCompanyForm(
         { name: this.companyName().trim(), website: this.companyWebsite() },
         i,
-        next,
+        next
       ) as unknown as SourceImportProposal;
     } else if (t === 'assets') {
       next = applyAssetForm(
@@ -354,7 +369,7 @@ export class ReviewEditDialogComponent {
           roa: this.assetRoa(),
         },
         i,
-        next,
+        next
       ) as unknown as SourceImportProposal;
     } else {
       next = applyTrialForm(
@@ -369,7 +384,7 @@ export class ReviewEditDialogComponent {
           phaseEnd: this.trialPhaseEnd(),
         },
         i,
-        next,
+        next
       ) as unknown as SourceImportProposal;
     }
 

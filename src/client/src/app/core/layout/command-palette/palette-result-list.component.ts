@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { PaletteResultRowComponent } from './palette-result-row.component';
 import { PaletteItem } from '../../models/palette.model';
+import { noMatchesLabel } from './no-matches-label';
 
 @Component({
   selector: 'app-palette-result-list',
@@ -13,7 +14,7 @@ import { PaletteItem } from '../../models/palette.model';
     }
     @if (!loading() && items().length === 0) {
       <div class="px-4 py-8 text-center text-sm text-slate-400">
-        No matches in {{ scopeLabel() }}.
+        {{ emptyMessage() }}
       </div>
     }
     <ul role="listbox" id="palette-results" class="max-h-[60vh] overflow-y-auto">
@@ -38,6 +39,8 @@ export class PaletteResultListComponent {
   readonly scopeLabel = input<string>('');
   readonly indexSelect = output<number>();
   readonly activated = output<{ index: number; item: PaletteItem }>();
+
+  readonly emptyMessage = computed(() => noMatchesLabel(this.scopeLabel()));
 
   trackKey(item: PaletteItem, index: number) {
     return item.kind === 'command' ? `cmd:${item.command.id}` : `${item.kind}:${item.id}:${index}`;

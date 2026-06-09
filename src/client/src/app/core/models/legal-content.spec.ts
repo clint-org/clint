@@ -4,6 +4,7 @@ import {
   TERMS_SECTIONS,
   PLATFORM_OPERATOR,
   PLATFORM_LEGAL_EMAIL,
+  PLATFORM_SUPPORT_EMAIL,
 } from './legal-content';
 
 const allText = [...PRIVACY_SECTIONS, ...TERMS_SECTIONS]
@@ -19,6 +20,11 @@ describe('legal content', () => {
   it('exposes the platform legal contact email', () => {
     expect(PLATFORM_LEGAL_EMAIL).toBe('privacy@clintapp.com');
     expect(allText).toContain('privacy@clintapp.com');
+  });
+
+  it('exposes a distinct general support email (not the legal mailbox)', () => {
+    expect(PLATFORM_SUPPORT_EMAIL).toBe('support@clintapp.com');
+    expect(PLATFORM_SUPPORT_EMAIL).not.toBe(PLATFORM_LEGAL_EMAIL);
   });
 
   it('is platform-owned, not brand-swapped to a tenant name', () => {
