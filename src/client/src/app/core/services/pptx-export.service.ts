@@ -48,7 +48,7 @@ interface FlatRow {
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
-const HEADER_Y = 0.06;
+const HEADER_Y = 0;
 const HEADER_H = 0.28;
 const HEADER_BAND = '1e293b';
 const LEGEND_H = 0.85;
