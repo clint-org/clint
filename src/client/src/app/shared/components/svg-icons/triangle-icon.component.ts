@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle } from '../../../core/models/marker.model';
+import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-triangle-icon]',
@@ -22,12 +23,13 @@ export class TriangleIconComponent {
 
   readonly trianglePoints = computed(() => {
     const s = this.size();
-    const x1 = s * 0.15;
-    const y1 = s * 0.1;
-    const x2 = s * 0.9;
-    const y2 = s / 2;
-    const x3 = s * 0.15;
-    const y3 = s * 0.9;
+    const [x1f, y1f, x2f, y2f, x3f, y3f] = GLYPH_RATIOS.trianglePoints;
+    const x1 = s * x1f;
+    const y1 = s * y1f;
+    const x2 = s * x2f;
+    const y2 = s * y2f;
+    const x3 = s * x3f;
+    const y3 = s * y3f;
     return `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
   });
 }

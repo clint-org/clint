@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
+import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
@@ -56,11 +57,11 @@ export class MarkerComponent {
     )
   );
 
-  readonly effectiveFillStyle = computed<FillStyle>(() => {
-    return this.marker().projection === 'actual' ? 'filled' : 'outline';
-  });
+  readonly visual = computed(() => resolveMarkerVisual(this.marker()));
 
-  readonly isNle = computed(() => this.marker().no_longer_expected);
+  readonly effectiveFillStyle = computed<FillStyle>(() => this.visual().fillStyle);
+
+  readonly isNle = computed(() => this.visual().isNle);
 
   readonly isDashedLine = computed(() => this.markerType()?.shape === 'dashed-line');
 

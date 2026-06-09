@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle, InnerMark } from '../../../core/models/marker.model';
+import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-square-icon]',
@@ -16,19 +17,19 @@ import { FillStyle, InnerMark } from '../../../core/models/marker.model';
     />
     @if (innerMark() === 'x') {
       <svg:line
-        [attr.x1]="size() * 0.3"
-        [attr.y1]="size() * 0.3"
-        [attr.x2]="size() * 0.7"
-        [attr.y2]="size() * 0.7"
+        [attr.x1]="size() * R.squareXMin"
+        [attr.y1]="size() * R.squareXMin"
+        [attr.x2]="size() * R.squareXMax"
+        [attr.y2]="size() * R.squareXMax"
         [attr.stroke]="markColor()"
         stroke-width="2.5"
         stroke-linecap="round"
       />
       <svg:line
-        [attr.x1]="size() * 0.7"
-        [attr.y1]="size() * 0.3"
-        [attr.x2]="size() * 0.3"
-        [attr.y2]="size() * 0.7"
+        [attr.x1]="size() * R.squareXMax"
+        [attr.y1]="size() * R.squareXMin"
+        [attr.x2]="size() * R.squareXMin"
+        [attr.y2]="size() * R.squareXMax"
         [attr.stroke]="markColor()"
         stroke-width="2.5"
         stroke-linecap="round"
@@ -43,7 +44,9 @@ export class SquareIconComponent {
   readonly fillStyle = input<FillStyle>('filled');
   readonly innerMark = input<InnerMark>('none');
 
-  readonly padding = computed(() => this.size() * 0.1);
-  readonly innerSize = computed(() => this.size() * 0.8);
+  protected readonly R = GLYPH_RATIOS;
+
+  readonly padding = computed(() => this.size() * this.R.squareInset);
+  readonly innerSize = computed(() => this.size() * (1 - 2 * this.R.squareInset));
   readonly markColor = computed(() => (this.fillStyle() === 'outline' ? this.color() : 'white'));
 }
