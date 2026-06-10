@@ -10,9 +10,6 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # Dedicated environment with NO required reviewers: scopes the decrypt key
-    # (BACKUP_AGE_PRIVATE_KEY) to this job while letting the weekly cron run
-    # unattended. (The `production` environment requires approval on every run.)
     environment: backup-verify
     steps:
       - uses: actions/checkout@v4
@@ -20,55 +17,25 @@ jobs:
       - name: Install tools
         run: sudo apt-get update -qq && sudo apt-get install -y -qq age zstd jq
 
-      - name: Download newest prod backup from R2
+      # Each provider runs in its own step with that provider's STATIC secrets.
+      # Deliberately not a matrix: dynamic secrets[...] indexing trips CodeQL's
+      # actions/excessive-secrets-exposure.
+      - name: Verify newest backup in R2
         env:
+          PROVIDER: R2
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
           ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
           BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
-        run: |
-          set -euo pipefail
-          # Only consider bundles. The sibling .manifest.json is uploaded after
-          # the bundle, so an unfiltered newest-by-LastModified picks the manifest.
-          newest="$(aws s3api list-objects-v2 --bucket "$BUCKET" \
-            --prefix clint/prod/daily/ --endpoint-url "$ENDPOINT" \
-            --query "sort_by(Contents[?ends_with(Key, '.tar.zst.age')], &LastModified)[-1].Key" --output text)"
-          echo "newest=$newest"
-          [ "$newest" != "None" ] || { echo "no prod backups found"; exit 1; }
-          case "$newest" in *.tar.zst.age) ;; *) echo "newest is not a bundle: $newest"; exit 1 ;; esac
-          lm="$(aws s3api head-object --bucket "$BUCKET" --key "$newest" --endpoint-url "$ENDPOINT" --query LastModified --output text)"
-          age_h=$(( ( $(date -u +%s) - $(date -u -d "$lm" +%s) ) / 3600 ))
-          echo "backup age: ${age_h}h"
-          [ "$age_h" -le 26 ] || { echo "stale backup (${age_h}h > 26h)"; exit 1; }
-          aws s3 cp "s3://$BUCKET/$newest"                         ./bundle.tar.zst.age --endpoint-url "$ENDPOINT" --only-show-errors
-          aws s3 cp "s3://$BUCKET/${newest%.tar.zst.age}.manifest.json" ./remote.manifest.json --endpoint-url "$ENDPOINT" --only-show-errors
-
-      - name: Decrypt and verify capture integrity
-        env:
           AGE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          printf '%s' "$AGE_KEY" > key.txt
-          want="$(jq -r .sha256 remote.manifest.json)"
-          got="$(sha256sum bundle.tar.zst.age | awk '{print $1}')"
-          [ "$want" = "$got" ] || { echo "FAIL: bundle sha256 $got != manifest $want"; rm -f key.txt; exit 1; }
-          age -d -i key.txt -o bundle.tar.zst bundle.tar.zst.age
-          zstd -d bundle.tar.zst -o bundle.tar
-          mkdir unpacked && tar -xf bundle.tar -C unpacked
-          rm -f key.txt
+        run: scripts/backup/verify-remote.sh
 
-          for f in roles.sql schema.sql data.sql auth_storage.sql manifest.json; do
-            [ -s "unpacked/$f" ] || { echo "FAIL: $f missing or empty"; exit 1; }
-          done
-          grep -Eq 'CREATE TABLE (IF NOT EXISTS )?("?public"?\.)?"?marker_types"?' unpacked/schema.sql \
-            || { echo "FAIL: schema.sql missing core public DDL"; exit 1; }
-
-          for tbl in auth.users auth.identities storage.buckets storage.objects; do
-            grep -q "COPY ${tbl} " unpacked/auth_storage.sql \
-              || { echo "FAIL: $tbl not captured in auth_storage.sql"; exit 1; }
-            dumped="$(awk -v t="COPY ${tbl} " 'index($0,t)==1 {f=1; next} f && $0=="\\." {f=0} f {c++} END{print c+0}' unpacked/auth_storage.sql)"
-            recorded="$(jq -r --arg t "$tbl" '.auth_storage_row_counts[$t]' unpacked/manifest.json)"
-            [ "$dumped" = "$recorded" ] || { echo "FAIL: $tbl dump rows $dumped != manifest $recorded"; exit 1; }
-            echo "ok: $tbl captured ($dumped rows, matches manifest)"
-          done
-          echo "ALL PASS"
+      - name: Verify newest backup in B2
+        env:
+          PROVIDER: B2
+          AWS_ACCESS_KEY_ID: ${{ secrets.B2_BACKUP_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_BACKUP_APP_KEY }}
+          ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
+          BUCKET: ${{ secrets.B2_BACKUP_BUCKET }}
+          AGE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+        run: scripts/backup/verify-remote.sh
