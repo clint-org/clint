@@ -58,6 +58,7 @@ Auto-generated. Lists top-level dependencies declared in `src/client/package.jso
 - `@supabase/supabase-js`
 - `@types/diff`
 - `diff`
+- `exceljs`
 - `jaro-winkler`
 - `primeng`
 - `prosemirror-commands`
