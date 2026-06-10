@@ -25,7 +25,6 @@ import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
 
-export type { ExportOptions } from './export-common.util';
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;

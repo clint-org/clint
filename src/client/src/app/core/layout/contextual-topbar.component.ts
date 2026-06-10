@@ -311,10 +311,17 @@ export interface TopbarTab {
               [outlined]="action.outlined ?? false"
               [text]="action.text ?? false"
               size="small"
-              [pt]="{ root: { 'aria-haspopup': 'menu', 'aria-expanded': actionMenu.visible } }"
+              [pt]="{ root: { 'aria-haspopup': 'menu', 'aria-expanded': openActionMenu() === action.label } }"
               (onClick)="actionMenu.toggle($event)"
             />
-            <p-menu #actionMenu [model]="action.items" [popup]="true" appendTo="body" />
+            <p-menu
+              #actionMenu
+              [model]="action.items"
+              [popup]="true"
+              appendTo="body"
+              (onShow)="openActionMenu.set(action.label)"
+              (onHide)="openActionMenu.set(null)"
+            />
           } @else {
             <p-button
               [label]="action.label"
@@ -895,6 +902,8 @@ export class ContextualTopbarComponent {
   // ---- Internal state ----
   readonly tenantDropdownOpen = signal(false);
   readonly spaceDropdownOpen = signal(false);
+  /** Label of the currently open action menu, for aria-expanded on its trigger. */
+  protected readonly openActionMenu = signal<string | null>(null);
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
