@@ -90,6 +90,92 @@ environment.
    `select count(*) from auth.users;` (matches the manifest's recorded count).
 8. Repoint the app's Supabase connection / DNS to the restored instance.
 
+## Disaster scenarios and response
+
+The procedure above is the *how*. This section is the *which and when*: in a real
+incident the hard part is the decision, not the keystrokes. We have three restore
+sources, freshest first; always prefer the one that loses the least data and is
+actually intact:
+
+1. **Supabase PITR** (where enabled): rolls the live project to a specific second.
+   RPO ~seconds. First choice when the project itself is healthy.
+2. **Pre-migration snapshot** (`pre-migration` tier, taken before every prod
+   deploy): the prod state seconds before a deploy ran. The off-site system's
+   answer to "a migration broke prod."
+3. **Daily off-site bundle** in R2, or B2 if R2 is the thing that is down. RPO
+   ~24h. Last resort, and the only source if the project is gone.
+
+```mermaid
+flowchart TD
+  A[Incident detected] --> B[Freeze writes:<br/>maintenance/read-only mode]
+  B --> C{Is the Supabase<br/>project itself<br/>up and intact?}
+  C -->|Yes, data is just wrong| D{PITR enabled<br/>and intact?}
+  D -->|Yes| E[Roll back via PITR<br/>to just before the event]
+  D -->|No| F[Restore pre-migration or<br/>daily bundle into a NEW project]
+  C -->|No, project lost/corrupt| F
+  F --> G{Is R2 reachable?}
+  G -->|Yes| H[Pull newest suitable<br/>bundle from R2]
+  G -->|No| I[Pull from B2<br/>cross-cloud copy]
+  H --> J[Restore procedure:<br/>verify sha256, decrypt,<br/>roles/schema/data/auth]
+  I --> J
+  E --> K[Sanity-check the<br/>specific broken data]
+  J --> K
+  K --> L[Cut over: repoint app<br/>Supabase URL/keys + DNS]
+  L --> M[Lift maintenance mode]
+  M --> N[Post-incident: root cause,<br/>re-enable writes, verify backups resume]
+```
+
+### Scenario A - bad migration corrupts prod data (most common)
+Symptom: the project is healthy but a deploy wrote wrong values (e.g. a bad
+backfill nulls a column). Customers see garbage.
+1. Freeze writes (pause the writing worker / maintenance mode) so you restore to a
+   stable point.
+2. **Prefer PITR** to the second before the migration; if PITR is off, use the
+   **pre-migration snapshot** from that deploy (same effect, ~seconds of loss).
+3. If restoring a bundle, follow the Restore procedure into a fresh project, then
+   verify the *specific* broken thing, not just generic counts (e.g.
+   `select count(*) from markers where end_date is not null` is healthy again).
+4. Cut over and lift maintenance.
+
+### Scenario B - whole Supabase project lost or corrupt (the dramatic case)
+PITR and the pre-migration snapshot may be gone with the project. The off-site
+**daily** bundle is now the only source (RPO ~24h).
+1. Provision a brand-new Supabase project.
+2. Pull the newest daily bundle. If the outage *is* Cloudflare R2, pull the
+   identical copy from **B2** instead (this is the exact path the quarterly drill
+   exercises).
+3. Full Restore procedure, then repoint app + DNS.
+4. Remember the materials blobs (below) are a separate recovery.
+
+### Scenario C - accidental delete of a few rows/tables, caught fast
+Do not cut over the whole DB. Restore the bundle into a *throwaway* project,
+extract just the affected rows, and copy them back into live prod. Far less
+disruptive than a full cutover.
+
+### Scenario D - malicious actor / ransomware with DB access
+This is why the backup job holds **write-only** credentials and the buckets use
+Object Lock / Bucket Lock: an attacker who compromises the pipeline still cannot
+delete or overwrite existing backups. Restore from the immutable copy into a new,
+clean project; rotate all credentials and the `age` keypair afterward.
+
+### What the DB backup does NOT cover
+Uploaded **materials file blobs** live in Cloudflare R2 separately; this backup
+restores only the Postgres *pointers* (`storage.objects` rows). A whole-project
+loss needs both this restore and a materials-bucket restore. Data-corruption
+scenarios (A, C) leave the blobs untouched.
+
+### Critical dependencies to internalize before an incident
+- **The `age` private key is the single point of failure.** No key, no restore,
+  for any scenario. Both custodians must be able to produce it from the vault; the
+  drill checklist re-confirms this quarterly.
+- **Use the session-mode pooler URL**, not the direct `db.<ref>` host: GitHub
+  runners and some networks cannot reach the IPv6-only direct endpoint.
+- **Readiness gap (as of the 2026-06-10 drill):** the bundle restore is proven
+  against a *local* Supabase stack, not a live *cloud* project. The mechanics
+  (decrypt, schema build, data load, FK handling, count match) hold; the untested
+  cloud specifics are project provisioning, the pooler under load, and DNS
+  repoint. Close this with one cloud-target drill when a project slot is free.
+
 ## Quarterly restore drill (checklist)
 - [ ] Pull the latest prod bundle and run the full restore procedure into a fresh
       throwaway Supabase project (including `auth_storage.sql`).
