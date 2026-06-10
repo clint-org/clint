@@ -98,3 +98,40 @@ environment.
 - [ ] Time the restore; record against the RTO target.
 - [ ] Confirm the offline private key is still accessible to both custodians.
 - [ ] Tear down the throwaway project.
+
+## Drill log
+
+### 2026-06-10 - full restore from the B2 copy (PASS)
+- **Source:** newest prod daily bundle in **Backblaze B2** (secondary cloud),
+  `clint/prod/daily/clint-prod-daily-20260610T122205Z.tar.zst.age` (1.26 MB
+  encrypted; ~6h old at drill time). Downloaded via the B2 S3 endpoint with the
+  backup key id / app key.
+- **Integrity:** `sha256` matched the sibling manifest; `age`-decrypted and
+  unpacked all five artifacts cleanly.
+- **Target:** an **isolated local Supabase stack** (separate `supabase start`
+  instance on a +100 port range), not a cloud project - the free-tier project
+  quota was exhausted. This validates the restore mechanics, ordering, and
+  capture completeness against a real Supabase environment (auth/storage/
+  extensions schemas present); it does not exercise cloud-platform specifics
+  (PITR, platform role provisioning). Substitute a fresh cloud project when a
+  slot is available.
+- **Procedure:** `roles.sql` -> `schema.sql` -> (`data.sql` + `auth_storage.sql`
+  wrapped in `session_replication_role = replica`), each with `ON_ERROR_STOP=1`.
+  All phases exited 0 on a pristine target.
+- **Sanity:** `public.marker_types` = 13 (> 0); `auth.users` = 14, matching the
+  manifest. `auth.identities` = 14, `storage.buckets` = 1, `storage.objects` = 1
+  all matched the manifest. 51 public tables, 4808 live rows restored (markers
+  708, trials 144, materials 304, ...).
+- **Timing:** download + verify + decrypt + unpack and the full restore each
+  completed in seconds (well under the 30-60 min RTO target; the prod dataset is
+  small).
+- **Findings:**
+  - `roles.sql` uses `CREATE ROLE "audit_writer"` without `IF NOT EXISTS`, so it
+    is not idempotent: clean on a truly fresh target, but errors `role
+    "audit_writer" already exists` on a re-run against the same target. Expected
+    per the restore procedure's "benign role exists" note; only matters if you
+    re-restore into a non-pristine target.
+  - A fresh `supabase start` provisions `pg_net`/`pgcrypto`/`uuid-ossp` but not
+    `pg_trgm`; `schema.sql` self-creates all required extensions with `CREATE
+    EXTENSION IF NOT EXISTS ... WITH SCHEMA "extensions"`, so no manual
+    pre-provisioning was needed.
