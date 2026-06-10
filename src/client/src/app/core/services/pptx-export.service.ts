@@ -1,12 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import PptxGenJS from 'pptxgenjs';
 
-import { environment } from '../../../environments/environment';
-import { resolveBrandLogoSrc } from '../../shared/components/brand-logo-url';
 import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
+import { loadImageElement } from './load-image.util';
 import { MarkerTypeService } from './marker-type.service';
 import {
   buildLegendGroups,
@@ -62,10 +61,12 @@ export class PptxExportService {
     const appDisplayName = this.brand.appDisplayName();
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
-    const logoData = logoUrl ? await this.loadLogoAsPng(logoUrl) : null;
     const agency = this.brand.agency();
     const agencyName = agency?.name ?? null;
-    const agencyLogo = agency?.logo_url ? await this.loadLogoAsPng(agency.logo_url) : null;
+    const [logoData, agencyLogo] = await Promise.all([
+      this.loadLogoAsPng(logoUrl),
+      this.loadLogoAsPng(agency?.logo_url ?? null),
+    ]);
     const dateStr = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -290,50 +291,28 @@ export class PptxExportService {
 
   /**
    * Loads a logo URL and returns a base64 PNG data URI suitable for
-   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Brandfetch
-   * URLs are enriched the same way the app renders them (client id + fallback),
-   * then the image is rasterized through a canvas so SVG / webp logos become
-   * PNG. Returns null on any failure (cross-origin taint, 404, timeout) so the
-   * deck falls back to the brand name text.
+   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Uses the
+   * shared loadImageElement loader (Brandfetch enrichment, 8 s timeout, null
+   * on any failure), then rasterizes the returned element through a canvas so
+   * SVG / webp logos become PNG. Returns null so the deck falls back to the
+   * brand name text.
    */
-  private async loadLogoAsPng(rawUrl: string): Promise<string | null> {
-    const url = resolveBrandLogoSrc(rawUrl, environment.brandfetchClientId) ?? rawUrl;
-    return new Promise<string | null>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      let settled = false;
-      const finish = (v: string | null): void => {
-        if (!settled) {
-          settled = true;
-          resolve(v);
-        }
-      };
-      const timer = setTimeout(() => finish(null), 8000);
-      img.onload = (): void => {
-        clearTimeout(timer);
-        try {
-          const w = img.naturalWidth || 256;
-          const h = img.naturalHeight || 256;
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            finish(null);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, w, h);
-          finish(canvas.toDataURL('image/png'));
-        } catch {
-          finish(null);
-        }
-      };
-      img.onerror = (): void => {
-        clearTimeout(timer);
-        finish(null);
-      };
-      img.src = url;
-    });
+  private async loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
+    const img = await loadImageElement(rawUrl);
+    if (!img) return null;
+    try {
+      const w = img.naturalWidth || 256;
+      const h = img.naturalHeight || 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, w, h);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
   }
 
   private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {
