@@ -15,8 +15,8 @@ The `PptxExportService` generates a `.pptx` file replicating the dashboard view 
 Export details:
 - Fixed slide dimensions: 13.33" x 7.5" (widescreen)
 - Label column width: 2.8" (Company / Asset / Trial names)
-- Phase bars rendered with exact colors matching the dashboard
-- Markers rendered with shape/fill/color matching their type definitions
+- Phase bars rendered as a tinted wash (12% fill) with a colored border and short phase labels (PH 3), using the canonical phase colors, matching the dashboard
+- Markers rendered via a shared visual descriptor (`resolveMarkerVisual` in `core/models/marker-visual.ts`): shape and color come from the marker type, fill is driven by projection (actual = filled, projected = outline), plus inner marks (dot/dash/check/x) and a strike overlay for no-longer-expected. The timeline and the legend share one `drawMarkerGlyph` renderer (`core/services/pptx-marker-glyph.ts`), so they cannot drift; the same descriptor and `GLYPH_RATIOS` drive the on-screen SVG icons
 - Date labels on markers with overlap detection
 - Alternating row backgrounds for readability
 - Legend showing all marker types
@@ -51,7 +51,7 @@ Export details:
   role: viewer
   status: active
 - id: pptx-export-rendering
-  summary: Phase-bar fills and marker shapes use exact dashboard colors, with marker date-label overlap detection and alternating row backgrounds.
+  summary: Phase bars render as a 12% tinted wash with colored border and short labels (PH 3); markers render via the shared resolveMarkerVisual descriptor (projection-driven fill, inner marks, NLE strike) through one drawMarkerGlyph shared by timeline and legend. Includes marker date-label overlap detection and alternating row backgrounds.
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
