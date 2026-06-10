@@ -43,14 +43,16 @@ environment.
 - Bundles are `age`-encrypted. Public key: `BACKUP_AGE_PUBLIC_KEY` (CI secret).
 - PRIVATE key (`clint-backup-age.key`) is held offline in <password manager /
   vault>. Custodians: <NAME 1>, <NAME 2>. It is also stored as the
-  `production`-environment secret `BACKUP_AGE_PRIVATE_KEY` for the verification
-  workflow only.
+  `backup-verify`-environment secret `BACKUP_AGE_PRIVATE_KEY` (no reviewers, so
+  the weekly verify runs unattended) for the verification workflow only.
 
 ## Verification
-- Weekly `backup-verify.yml`: freshness (newest daily <= 26h) + capture integrity
-  (checksum matches manifest; all five artifacts present; core public DDL present;
-  auth/storage dump row counts match the manifest). It does NOT run a live restore
-  (a generic runner lacks the Supabase environment).
+- Weekly `backup-verify.yml`: for BOTH object stores (R2 and B2, in separate
+  steps), pulls the newest bundle and checks freshness (newest daily <= 26h) +
+  capture integrity (checksum matches manifest; all five artifacts present; core
+  public DDL present; auth/storage dump row counts match the manifest). The shared
+  per-store logic lives in `scripts/backup/verify-remote.sh`. It does NOT run a
+  live restore (a generic runner lacks the Supabase environment).
 - Quarterly manual drill (below): the true end-to-end restore into a real
   Supabase project.
 
