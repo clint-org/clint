@@ -43,6 +43,7 @@
     "@supabase/supabase-js": "^2.49.0",
     "@types/diff": "^7.0.2",
     "diff": "^9.0.0",
+    "exceljs": "^4.4.0",
     "jaro-winkler": "^0.2.8",
     "pptxgenjs": "^4.0.1",
     "primeng": "^21.1.6",

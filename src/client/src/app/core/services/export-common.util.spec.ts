@@ -257,6 +257,49 @@ describe('flattenTrials', () => {
     expect(rows[0].isFirstInCompany).toBe(true);
     expect(rows[0].isFirstInAsset).toBe(true);
   });
+
+  it('resets isFirstInCompany and isFirstInAsset correctly across two assets', () => {
+    const twoAssetFixture = [
+      {
+        id: 'c1',
+        name: 'BioCo',
+        space_id: 's1',
+        assets: [
+          {
+            id: 'a1',
+            name: 'Drug-A',
+            mechanisms_of_action: [],
+            routes_of_administration: [],
+            trials: [
+              { id: 't1', name: 'Trial One', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+              { id: 't2', name: 'Trial Two', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+            ],
+          },
+          {
+            id: 'a2',
+            name: 'Drug-B',
+            mechanisms_of_action: [],
+            routes_of_administration: [],
+            trials: [
+              { id: 't3', name: 'Trial Three', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+            ],
+          },
+        ],
+      },
+    ] as unknown as Parameters<typeof flattenTrials>[0];
+
+    const rows = flattenTrials(twoAssetFixture);
+    expect(rows).toHaveLength(3);
+    // row0: first trial of first asset
+    expect(rows[0].isFirstInCompany).toBe(true);
+    expect(rows[0].isFirstInAsset).toBe(true);
+    // row1: second trial of same asset
+    expect(rows[1].isFirstInCompany).toBe(false);
+    expect(rows[1].isFirstInAsset).toBe(false);
+    // row2: first trial of second asset (still same company)
+    expect(rows[2].isFirstInCompany).toBe(false);
+    expect(rows[2].isFirstInAsset).toBe(true);
+  });
 });
 
 describe('buildTrialExportRows', () => {
