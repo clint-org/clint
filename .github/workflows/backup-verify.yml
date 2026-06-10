@@ -10,7 +10,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    environment: production
+    # Dedicated environment with NO required reviewers: scopes the decrypt key
+    # (BACKUP_AGE_PRIVATE_KEY) to this job while letting the weekly cron run
+    # unattended. (The `production` environment requires approval on every run.)
+    environment: backup-verify
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +32,7 @@ jobs:
           # the bundle, so an unfiltered newest-by-LastModified picks the manifest.
           newest="$(aws s3api list-objects-v2 --bucket "$BUCKET" \
             --prefix clint/prod/daily/ --endpoint-url "$ENDPOINT" \
-            --query 'sort_by(Contents[?ends_with(Key, `.tar.zst.age`)], &LastModified)[-1].Key' --output text)"
+            --query "sort_by(Contents[?ends_with(Key, '.tar.zst.age')], &LastModified)[-1].Key" --output text)"
           echo "newest=$newest"
           [ "$newest" != "None" ] || { echo "no prod backups found"; exit 1; }
           case "$newest" in *.tar.zst.age) ;; *) echo "newest is not a bundle: $newest"; exit 1 ;; esac
