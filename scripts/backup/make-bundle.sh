@@ -28,9 +28,13 @@ trap 'rm -rf "$stage"' EXIT
 auth_storage_tables=(auth.users auth.identities storage.buckets storage.objects)
 
 echo "[make-bundle] dumping roles / public schema+data / auth+storage data for env=$env ..." >&2
-supabase db dump --db-url "$db_url" --role-only           -f "$stage/roles.sql"
-supabase db dump --db-url "$db_url"                       -f "$stage/schema.sql"
-supabase db dump --db-url "$db_url" --data-only -s public -f "$stage/data.sql"
+supabase db dump --db-url "$db_url" --role-only -f "$stage/roles.sql"
+supabase db dump --db-url "$db_url"             -f "$stage/schema.sql"
+
+# Public data via direct pg_dump (not `supabase db dump --data-only`): the CLI's
+# data path re-connects as bare "postgres", which fails against the session
+# pooler whose user is "postgres.<ref>". Direct pg_dump honors the URL verbatim.
+pg_dump "$db_url" --data-only --schema=public --no-owner --no-privileges -f "$stage/data.sql"
 
 pg_dump_args=(--data-only --no-owner --no-privileges)
 for t in "${auth_storage_tables[@]}"; do pg_dump_args+=(--table="$t"); done
