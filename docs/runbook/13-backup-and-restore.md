@@ -1,5 +1,9 @@
 # Backup and Restore
 
+This document owns the Postgres database specifics. For project-wide disaster
+recovery beyond the database (files, secrets, DNS, auth, vendors), see
+[14-disaster-recovery.md](14-disaster-recovery.md).
+
 ## What is backed up
 Per backup (per environment) the bundle holds four SQL artifacts:
 - `roles.sql` - database roles and grants.

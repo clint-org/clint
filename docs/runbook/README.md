@@ -37,6 +37,7 @@ The dashboard replaces static PowerPoint-based tracking workflows with a live, c
 | [Developer Guide](11-developer-guide.md) | Local setup, conventions, adding features |
 | [Deployment](12-deployment.md) | Cloudflare Workers config, environment variables, schema deployment |
 | [Backup & Restore](13-backup-and-restore.md) | Off-site encrypted DB backups: retention, restore procedure, drill |
+| [Disaster Recovery](14-disaster-recovery.md) | Project-wide DR plan: failure domains beyond the DB (files, secrets, DNS, auth, vendors), recovery procedures, action register |
 | [Backup Policy](policy-db-backup.md) | Client-facing database backup policy statement |
 
 ---
