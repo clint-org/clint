@@ -152,6 +152,60 @@ Do not cut over the whole DB. Restore the bundle into a *throwaway* project,
 extract just the affected rows, and copy them back into live prod. Far less
 disruptive than a full cutover.
 
+#### Worked example: recover a single hard-deleted space (no PITR)
+Deleting a space cascades `ON DELETE CASCADE` into ~29 `space_id`-scoped tables
+(companies, assets, trials, markers, marker_changes, materials, members, invites,
+...), so a hard delete wipes the whole subtree in one transaction. We do not have
+PITR, so the side copy comes from the freshest off-site bundle, not a
+second-precise clone. Steps:
+
+1. **Confirm it was a hard delete, not an archive.** The app has both
+   `archive_space()` (soft: sets a flag, rows still present) and `delete_space()`
+   (hard: cascades). Check `audit_events` for the space. If it was archived,
+   STOP - just clear the archive flag in live prod; no restore needed.
+2. **Pin the space id and timing** from `audit_events` (space lifecycle is
+   Tier-1 audited). Note this restores the space as of the **bundle's**
+   timestamp, so any edits to it after the last backup are not recoverable. If
+   the delete coincided with a prod deploy, prefer that deploy's
+   **pre-migration** snapshot (fresher than the daily).
+3. **Restore the bundle into a throwaway target** (the standard Restore
+   procedure). Call its connection string `$CLONE`.
+4. **Extract just that space's subtree** from the clone. Most child tables carry
+   `space_id` directly, so filter on it rather than walking the FK tree by hand:
+   ```bash
+   SPACE='00000000-0000-0000-0000-000000000000'   # the deleted space id
+   # one COPY per space_id-scoped table, plus the spaces row itself
+   psql "$CLONE" -tAc "select table_name from information_schema.columns
+       where table_schema='public' and column_name='space_id' order by 1" \
+   | while read t; do
+       psql "$CLONE" -c "\copy (select * from public.$t where space_id='$SPACE')
+                         to 'space_$t.csv' csv header"
+     done
+   psql "$CLONE" -c "\copy (select * from public.spaces where id='$SPACE')
+                     to 'space_spaces.csv' csv header"
+   ```
+   A few tables hang off a parent rather than the space directly (e.g.
+   `marker_changes` via its marker); extract those filtered on the parent ids you
+   just pulled.
+5. **Re-insert into live prod with checks deferred and triggers off** so circular
+   FKs load, original UUIDs are preserved, and audit columns keep their historical
+   values (do NOT route this through the `create_*` RPCs - load rows raw):
+   ```
+   psql "$PROD" -v ON_ERROR_STOP=1 <<'SQL'
+   set session_replication_role = replica;
+   -- \copy each space_*.csv back into its table, parents before children
+   set session_replication_role = default;
+   SQL
+   ```
+   Load `spaces` first, then the `space_id`-scoped tables. If a user recreated the
+   same space id in the interim you will hit PK conflicts - decide per row whether
+   to skip or overwrite.
+6. **Materials blobs are separate.** This restores the `materials` /
+   `storage.objects` *pointers*; if the underlying files were also purged, restore
+   them from the materials R2 bucket's own versioning.
+7. **Verify** the space is back (visible, members present, per-table row counts
+   match the clone), then **tear down the throwaway.**
+
 ### Scenario D - malicious actor / ransomware with DB access
 This is why the backup job holds **write-only** credentials and the buckets use
 Object Lock / Bucket Lock: an attacker who compromises the pipeline still cannot
