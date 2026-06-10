@@ -70,9 +70,20 @@ environment.
    - `psql "$URL" -f roles.sql` (skip or expect benign "role exists" notices if
      the target manages its own roles)
    - `psql "$URL" -f schema.sql` (public schema DDL)
-   - `psql "$URL" -f data.sql` (public data)
-   - `psql "$URL" -f auth_storage.sql` (auth/storage data; the auth/storage
-     schemas already exist on a Supabase target)
+   - Restore the data with FK checks deferred. `data.sql` and `auth_storage.sql`
+     are `--data-only` (COPY) dumps and some tables have circular foreign keys
+     (e.g. `indications`), so the load order can violate constraints. Wrap them in
+     `session_replication_role = replica` (Supabase's `postgres` role may set it;
+     otherwise use pg_dump's `--disable-triggers` or temporarily drop the
+     constraints):
+     ```
+     psql "$URL" -v ON_ERROR_STOP=1 <<'SQL'
+     set session_replication_role = replica;
+     \i data.sql
+     \i auth_storage.sql
+     set session_replication_role = default;
+     SQL
+     ```
 7. Sanity-check: `select count(*) from public.marker_types;` (> 0) and
    `select count(*) from auth.users;` (matches the manifest's recorded count).
 8. Repoint the app's Supabase connection / DNS to the restored instance.
