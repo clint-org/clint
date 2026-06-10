@@ -1,5 +1,8 @@
 import type { MarkerType } from '../models/marker.model';
 import type { Company } from '../models/company.model';
+import type { Trial } from '../models/trial.model';
+import { phaseShortLabel } from '../models/phase-colors';
+import type { ZoomLevel } from '../models/dashboard.model';
 
 export interface ColumnVisibility {
   showMoa: boolean;
@@ -18,6 +21,91 @@ export interface ColumnDef {
 export interface ColumnLayout {
   columns: ColumnDef[];
   labelColW: number;
+}
+
+export type ExportFormat = 'pptx' | 'png' | 'xlsx';
+
+export interface ExportOptions {
+  zoomLevel: ZoomLevel;
+  startYear: number;
+  endYear: number;
+  showMoaColumn: boolean;
+  showRoaColumn: boolean;
+  showNotesColumn: boolean;
+}
+
+export interface FlatRow {
+  companyName: string;
+  companyId: string;
+  assetName: string;
+  trialName: string;
+  nctId: string | null;
+  moa: string;
+  roa: string;
+  hasNotes: boolean;
+  trial: Trial;
+  isFirstInCompany: boolean;
+  isFirstInAsset: boolean;
+}
+
+export function flattenTrials(companies: Company[]): FlatRow[] {
+  const rows: FlatRow[] = [];
+  for (const company of companies) {
+    let isFirstInCompany = true;
+    for (const asset of company.assets ?? []) {
+      let isFirstInAsset = true;
+      const moa = (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', ');
+      const roa = (asset.routes_of_administration ?? [])
+        .map((r) => r.abbreviation ?? r.name)
+        .join(', ');
+      for (const trial of asset.trials ?? []) {
+        rows.push({
+          companyName: company.name,
+          companyId: company.id,
+          assetName: asset.name,
+          trialName: trial.acronym ?? trial.name,
+          nctId: trial.identifier ?? null,
+          moa,
+          roa,
+          hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
+          trial,
+          isFirstInCompany,
+          isFirstInAsset,
+        });
+        isFirstInCompany = false;
+        isFirstInAsset = false;
+      }
+    }
+  }
+  return rows;
+}
+
+export interface TrialExportRow {
+  company: string;
+  asset: string;
+  moa: string;
+  roa: string;
+  trial: string;
+  nctId: string;
+  phase: string;
+  phaseStart: string | null;
+  phaseEnd: string | null;
+  notes: string;
+}
+
+export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
+  return flattenTrials(companies).map((r) => ({
+    company: r.companyName,
+    asset: r.assetName,
+    moa: r.moa,
+    roa: r.roa,
+    trial: r.trialName,
+    nctId: r.nctId ?? '',
+    phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
+    phaseStart: r.trial.phase_start_date ?? null,
+    phaseEnd: r.trial.phase_end_date ?? null,
+    notes: r.trial.notes ?? '',
+  }));
 }
 
 const COLUMN_WIDTHS: Record<ColumnKey, number> = {
@@ -99,6 +187,10 @@ export interface MarkerRow {
   trial: string;
   marker: string;
   date: string;
+  /** Raw ISO event date (yyyy-mm-dd), for renderers that need real dates (Excel). */
+  eventDate: string;
+  /** Raw ISO end date or null. */
+  endDate: string | null;
   status: MarkerStatus;
   detail: string;
 }
@@ -140,6 +232,8 @@ export function buildMarkerTableRows(companies: Company[]): MarkerRow[] {
             trial: trial.acronym ?? trial.name,
             marker: m.marker_types!.name,
             date: formatMarkerDate(m.event_date, m.end_date),
+            eventDate: m.event_date,
+            endDate: m.end_date ?? null,
             status,
             detail: truncate(m.title ?? m.description ?? '', NOTE_MAX),
           });

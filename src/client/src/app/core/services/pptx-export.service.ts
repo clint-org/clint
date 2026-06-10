@@ -13,6 +13,9 @@ import {
   buildMarkerTableRows,
   computeLeftColumns,
   type ColumnLayout,
+  type ExportOptions,
+  flattenTrials,
+  type FlatRow,
   formatDateShort,
   type MarkerRow,
   paginate,
@@ -23,28 +26,7 @@ import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
 
-export interface ExportOptions {
-  zoomLevel: ZoomLevel;
-  startYear: number;
-  endYear: number;
-  showMoaColumn: boolean;
-  showRoaColumn: boolean;
-  showNotesColumn: boolean;
-}
-
-interface FlatRow {
-  companyName: string;
-  companyId: string;
-  assetName: string;
-  trialName: string;
-  nctId: string | null;
-  moa: string;
-  roa: string;
-  hasNotes: boolean;
-  trial: Trial;
-  isFirstInCompany: boolean;
-  isFirstInAsset: boolean;
-}
+export type { ExportOptions } from './export-common.util';
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
@@ -91,7 +73,7 @@ export class PptxExportService {
     });
     const footer: FooterBrand = { appDisplayName, dateStr, tenantLogo: logoData, agencyName, agencyLogo };
 
-    const rows = this.flattenTrials(companies);
+    const rows = flattenTrials(companies);
     if (rows.length === 0) return;
 
     const markerRows = buildMarkerTableRows(companies);
@@ -370,38 +352,6 @@ export class PptxExportService {
   private normalizeHex(value: string | null | undefined): string {
     if (!value) return '';
     return value.replace('#', '').trim().toLowerCase();
-  }
-
-  private flattenTrials(companies: Company[]): FlatRow[] {
-    const rows: FlatRow[] = [];
-    for (const company of companies) {
-      let isFirstInCompany = true;
-      for (const asset of company.assets ?? []) {
-        let isFirstInAsset = true;
-        const moa = (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', ');
-        const roa = (asset.routes_of_administration ?? [])
-          .map((r) => r.abbreviation ?? r.name)
-          .join(', ');
-        for (const trial of asset.trials ?? []) {
-          rows.push({
-            companyName: company.name,
-            companyId: company.id,
-            assetName: asset.name,
-            trialName: trial.acronym ?? trial.name,
-            nctId: trial.identifier ?? null,
-            moa,
-            roa,
-            hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
-            trial,
-            isFirstInCompany,
-            isFirstInAsset,
-          });
-          isFirstInCompany = false;
-          isFirstInAsset = false;
-        }
-      }
-    }
-    return rows;
   }
 
   private renderHeader(
