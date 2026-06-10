@@ -25,9 +25,11 @@ jobs:
           BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
         run: |
           set -euo pipefail
+          # Only consider bundles. The sibling .manifest.json is uploaded after
+          # the bundle, so an unfiltered newest-by-LastModified picks the manifest.
           newest="$(aws s3api list-objects-v2 --bucket "$BUCKET" \
             --prefix clint/prod/daily/ --endpoint-url "$ENDPOINT" \
-            --query 'sort_by(Contents,&LastModified)[-1].Key' --output text)"
+            --query 'sort_by(Contents[?ends_with(Key, `.tar.zst.age`)], &LastModified)[-1].Key' --output text)"
           echo "newest=$newest"
           [ "$newest" != "None" ] || { echo "no prod backups found"; exit 1; }
           case "$newest" in *.tar.zst.age) ;; *) echo "newest is not a bundle: $newest"; exit 1 ;; esac
