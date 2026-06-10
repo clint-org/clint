@@ -18,6 +18,9 @@ interface CapturedBlob {
 }
 
 test.describe('Timeline export formats', () => {
+  // Tests share one page and the accumulated __exportBlobs array; order matters.
+  test.describe.configure({ mode: 'serial' });
+
   let page: Page;
   let tenantId: string;
   let spaceId: string;
@@ -78,8 +81,8 @@ test.describe('Timeline export formats', () => {
     await page.getByRole('button', { name: 'Export', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Image (PNG)' }).click();
 
-    // The p-dialog host element is always in the DOM; the rendered overlay
-    // panel (.p-dialog) only exists while the dialog is open.
+    // <app-export-dialog> is always in the DOM; PrimeNG appends the rendered
+    // overlay panel (.p-dialog) to the body only while the dialog is open.
     const dialog = page.locator('.p-dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Export image')).toBeVisible();
