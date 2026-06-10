@@ -117,44 +117,47 @@ function drawInnerMark(
       const [x1, y1, x2, y2, x3, y3] = r.checkPoints;
       const ox = cx - size / 2;
       const oy = cy - size / 2;
-      surface.addShape('line', {
-        x: ox + size * x1,
-        y: oy + size * y1,
-        w: size * (x2 - x1),
-        h: size * (y2 - y1),
-        line: { color: markColor, width: 1.25, ...maybeT },
-      });
-      surface.addShape('line', {
-        x: ox + size * x2,
-        y: oy + size * y2,
-        w: size * (x3 - x2),
-        h: size * (y3 - y2),
-        line: { color: markColor, width: 1.25, ...maybeT },
-      });
+      const opts = { color: markColor, width: 1.25, ...maybeT };
+      drawSegment(surface, ox + size * x1, oy + size * y1, ox + size * x2, oy + size * y2, opts);
+      drawSegment(surface, ox + size * x2, oy + size * y2, ox + size * x3, oy + size * y3, opts);
       break;
     }
     case 'x': {
       const a = (size * (r.squareXMax - r.squareXMin)) / 2;
-      surface.addShape('line', {
-        x: cx - a,
-        y: cy - a,
-        w: 2 * a,
-        h: 2 * a,
-        line: { color: markColor, width: 1.25, ...maybeT },
-      });
-      surface.addShape('line', {
-        x: cx - a,
-        y: cy - a,
-        w: 2 * a,
-        h: 2 * a,
-        flipV: true,
-        line: { color: markColor, width: 1.25, ...maybeT },
-      });
+      const opts = { color: markColor, width: 1.25, ...maybeT };
+      drawSegment(surface, cx - a, cy - a, cx + a, cy + a, opts);
+      drawSegment(surface, cx + a, cy - a, cx - a, cy + a, opts);
       break;
     }
     default:
       break;
   }
+}
+
+/**
+ * Draw a straight line between two arbitrary points. OOXML shape extents
+ * (`a:ext cx/cy`) must be non-negative, so we normalize to a non-negative
+ * bounding box and use `flipV` for segments whose direction reverses. Passing a
+ * negative width/height straight to pptxgenjs emits a negative extent, which
+ * PowerPoint treats as corrupt and strips ("repaired and removed it").
+ */
+function drawSegment(
+  surface: GlyphSurface,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  lineOpts: Record<string, unknown>
+): void {
+  const x = Math.min(x1, x2);
+  const y = Math.min(y1, y2);
+  const w = Math.abs(x2 - x1);
+  const h = Math.abs(y2 - y1);
+  // pptx draws a line from the top-left to the bottom-right corner of its box by
+  // default. When the segment runs along the other diagonal (dx and dy have
+  // opposite signs), flip vertically so it connects the correct corners.
+  const flip = (x2 - x1) * (y2 - y1) < 0 ? { flipV: true } : {};
+  surface.addShape('line', { x, y, w, h, ...flip, line: lineOpts });
 }
 
 function drawNle(

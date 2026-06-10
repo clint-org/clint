@@ -106,6 +106,23 @@ describe('drawMarkerGlyph', () => {
     expect(rect.opts['w']).toBeCloseTo((1 - 2 * GLYPH_RATIOS.squareInset) * size, 6);
   });
 
+  it('never emits a shape with negative width or height (OOXML a:ext must be >= 0)', () => {
+    const shapes = ['circle', 'diamond', 'flag', 'triangle', 'square', 'dashed-line'] as const;
+    const marks = ['dot', 'dash', 'check', 'x', 'none'] as const;
+    for (const shape of shapes) {
+      for (const innerMark of marks) {
+        for (const isNle of [false, true]) {
+          const { surface, rec } = fakeSurface();
+          drawMarkerGlyph(surface, visual({ shape, innerMark, isNle }), 0.5, 0.5, 0.2);
+          for (const s of rec.shapes) {
+            expect(Number(s.opts['w']), `${shape}/${innerMark}/nle=${isNle} width`).toBeGreaterThanOrEqual(0);
+            expect(Number(s.opts['h']), `${shape}/${innerMark}/nle=${isNle} height`).toBeGreaterThanOrEqual(0);
+          }
+        }
+      }
+    }
+  });
+
   it('filled inner mark uses white, outline inner mark uses the color', () => {
     const filledRec = fakeSurface();
     drawMarkerGlyph(filledRec.surface, visual({ innerMark: 'dot', fillStyle: 'filled' }), 0, 0, 0.12);
