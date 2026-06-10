@@ -26,7 +26,10 @@ runs:
         curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
         sudo apt-get update -qq
         sudo apt-get install -y -qq postgresql-client-17 age zstd
-        pg_dump --version
+        # The runner ships pg_dump 16 first on PATH; the 17 client installs to a
+        # versioned dir. Put it first so direct pg_dump matches the 17.x server.
+        echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+        /usr/lib/postgresql/17/bin/pg_dump --version
 
     - name: Build encrypted bundle
       id: bundle
