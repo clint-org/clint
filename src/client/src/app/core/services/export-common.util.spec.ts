@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { computeLeftColumns, buildLegendGroups } from './pptx-export.util';
+import { computeLeftColumns, buildLegendGroups } from './export-common.util';
 import type { MarkerType } from '../models/marker.model';
 import {
   buildMarkerTableRows,
   paginate,
   formatDateShort,
   formatMarkerDate,
-} from './pptx-export.util';
+} from './export-common.util';
 import type { Company } from '../models/company.model';
 
 describe('computeLeftColumns', () => {

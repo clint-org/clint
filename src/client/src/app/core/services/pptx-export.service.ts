@@ -16,7 +16,7 @@ import {
   formatDateShort,
   type MarkerRow,
   paginate,
-} from './pptx-export.util';
+} from './export-common.util';
 import { TimelineService } from './timeline.service';
 import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual';
 import { drawMarkerGlyph } from './pptx-marker-glyph';
