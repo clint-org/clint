@@ -17,11 +17,6 @@ export class XlsxExportService {
     const wb = buildXlsxWorkbook(companies, {
       appDisplayName: this.brand.appDisplayName(),
       primaryColorHex: (this.brand.primaryColor() || '#0d9488').replace('#', ''),
-      dateStr: new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
     });
     const buffer = await wb.xlsx.writeBuffer();
     saveBlob(new Blob([buffer as ArrayBuffer], { type: XLSX_MIME }), 'clinical-trial-dashboard.xlsx');

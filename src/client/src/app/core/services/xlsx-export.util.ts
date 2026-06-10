@@ -1,16 +1,15 @@
 import ExcelJS from 'exceljs';
 
 import type { Company } from '../models/company.model';
-import { buildMarkerTableRows, buildTrialExportRows } from './export-common.util';
+import { buildMarkerTableRows, buildTrialExportRows, type MarkerStatus } from './export-common.util';
 
 export interface XlsxMeta {
   appDisplayName: string;
   /** Brand primary color, hex without '#', for the header row fill. */
   primaryColorHex: string;
-  dateStr: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS: Record<MarkerStatus, string> = {
   Actual: 'Actual',
   Projected: 'Projected',
   NLE: 'No longer expected',
@@ -24,12 +23,15 @@ function isoToDate(iso: string): Date {
 
 function styleHeaderRow(sheet: ExcelJS.Worksheet, primaryColorHex: string): void {
   const header = sheet.getRow(1);
-  header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  header.fill = {
+  const fill: ExcelJS.Fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: `FF${primaryColorHex.toUpperCase()}` },
   };
+  header.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = fill;
+  });
 }
 
 /**
@@ -61,7 +63,7 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
     });
   }
   styleHeaderRow(trials, meta.primaryColorHex);
-  trials.autoFilter = 'A1:J1';
+  trials.autoFilter = `A1:J${trials.rowCount}`;
 
   const markers = wb.addWorksheet('Markers', { views: [{ state: 'frozen', ySplit: 1 }] });
   markers.columns = [
@@ -69,6 +71,7 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
     { header: 'Asset', key: 'asset', width: 20 },
     { header: 'Trial', key: 'trial', width: 22 },
     { header: 'Marker', key: 'marker', width: 20 },
+    { header: 'Category', key: 'category', width: 16 },
     { header: 'Date', key: 'date', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
     { header: 'End Date', key: 'endDate', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
     { header: 'Status', key: 'status', width: 18 },
@@ -80,14 +83,15 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
       asset: r.asset,
       trial: r.trial,
       marker: r.marker,
+      category: r.category,
       date: isoToDate(r.eventDate),
       endDate: r.endDate ? isoToDate(r.endDate) : null,
-      status: STATUS_LABELS[r.status] ?? r.status,
-      detail: r.detail,
+      status: STATUS_LABELS[r.status],
+      detail: r.detailFull,
     });
   }
   styleHeaderRow(markers, meta.primaryColorHex);
-  markers.autoFilter = 'A1:H1';
+  markers.autoFilter = `A1:I${markers.rowCount}`;
 
   return wb;
 }

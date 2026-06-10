@@ -186,6 +186,8 @@ export interface MarkerRow {
   asset: string;
   trial: string;
   marker: string;
+  /** Category name for the marker type (e.g. "Clinical Trial", "Regulatory"). */
+  category: string;
   date: string;
   /** Raw ISO event date (yyyy-mm-dd), for renderers that need real dates (Excel). */
   eventDate: string;
@@ -193,6 +195,8 @@ export interface MarkerRow {
   endDate: string | null;
   status: MarkerStatus;
   detail: string;
+  /** Untruncated detail text for data exports (Excel); `detail` stays truncated for the PPTX table. */
+  detailFull: string;
 }
 
 const NOTE_MAX = 80;
@@ -226,16 +230,19 @@ export function buildMarkerTableRows(companies: Company[]): MarkerRow[] {
             : m.is_projected || m.projection !== 'actual'
               ? 'Projected'
               : 'Actual';
+          const rawDetail = m.title ?? m.description ?? '';
           rows.push({
             company: company.name,
             asset: asset.name,
             trial: trial.acronym ?? trial.name,
             marker: m.marker_types!.name,
+            category: m.marker_types!.marker_categories?.name ?? '',
             date: formatMarkerDate(m.event_date, m.end_date),
             eventDate: m.event_date,
             endDate: m.end_date ?? null,
             status,
-            detail: truncate(m.title ?? m.description ?? '', NOTE_MAX),
+            detail: truncate(rawDetail, NOTE_MAX),
+            detailFull: rawDetail,
           });
         }
       }

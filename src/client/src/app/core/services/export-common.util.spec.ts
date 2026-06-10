@@ -174,6 +174,47 @@ describe('buildMarkerTableRows', () => {
     const approval = rows.find((r) => r.marker === 'Approval');
     expect(approval?.status).toBe('NLE');
   });
+
+  it('detailFull carries the full untruncated title while detail is truncated with ellipsis for long titles', () => {
+    const longTitle = 'X'.repeat(100);
+    const companies: Company[] = [
+      {
+        id: 'c1', space_id: 's1', created_by: 'u', name: 'Pharma Co', logo_url: null,
+        display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+        assets: [
+          {
+            id: 'a1', space_id: 's1', created_by: 'u', company_id: 'c1', name: 'Drug-A',
+            generic_name: null, logo_url: null, display_order: 0,
+            created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+            trials: [
+              {
+                id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'TRIAL-1',
+                acronym: 'TRIAL-1', identifier: null, status: null, notes: null,
+                display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01',
+                updated_by: null, phase_type: null, phase_start_date: null, phase_end_date: null,
+                markers: [
+                  {
+                    id: 'm1', space_id: 's1', created_by: 'u', marker_type_id: 'mt1',
+                    title: longTitle, projection: 'actual', event_date: '2024-01-01',
+                    end_date: null, description: null, source_url: null, metadata: null,
+                    is_projected: false, no_longer_expected: false,
+                    created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                    marker_types: { id: 'mt1', name: 'Data readout' } as never,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as never,
+    ];
+    const rows = buildMarkerTableRows(companies);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].detailFull).toBe(longTitle);
+    expect(rows[0].detailFull.length).toBe(100);
+    expect(rows[0].detail.length).toBeLessThanOrEqual(80);
+    expect(rows[0].detail.endsWith('…')).toBe(true);
+  });
 });
 
 describe('paginate', () => {

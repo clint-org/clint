@@ -41,6 +41,7 @@ const fixtureCompanies = [
                   shape: 'circle',
                   fill_style: 'filled',
                   inner_mark: 'none',
+                  marker_categories: { name: 'Clinical', display_order: 1 },
                 },
               },
             ],
@@ -54,7 +55,6 @@ const fixtureCompanies = [
 const meta = {
   appDisplayName: 'Test App',
   primaryColorHex: '0d9488',
-  dateStr: 'June 10, 2026',
 };
 
 describe('buildXlsxWorkbook', () => {
@@ -79,11 +79,13 @@ describe('buildXlsxWorkbook', () => {
   it('writes marker rows with Date cells and a readable NLE status', () => {
     const wb = buildXlsxWorkbook(fixtureCompanies, meta);
     const sheet = wb.getWorksheet('Markers')!;
+    // D=Marker, E=Category, F=Date, G=End Date, H=Status, I=Detail
     expect(sheet.getCell('D2').value).toBe('Data readout');
-    expect(sheet.getCell('E2').value).toBeInstanceOf(Date);
-    expect(sheet.getCell('F2').value).toBeNull();
-    expect(sheet.getCell('G2').value).toBe('No longer expected');
-    expect(sheet.getCell('H2').value).toBe('Topline readout');
+    expect(sheet.getCell('E2').value).toBe('Clinical');
+    expect(sheet.getCell('F2').value).toBeInstanceOf(Date);
+    expect(sheet.getCell('G2').value).toBeNull();
+    expect(sheet.getCell('H2').value).toBe('No longer expected');
+    expect(sheet.getCell('I2').value).toBe('Topline readout');
   });
 
   it('freezes the header row and sets the autofilter on both sheets', () => {
@@ -93,5 +95,49 @@ describe('buildXlsxWorkbook', () => {
       expect(sheet.views[0]).toMatchObject({ state: 'frozen', ySplit: 1 });
       expect(sheet.autoFilter).toBeTruthy();
     }
+  });
+
+  it('applies the brand fill color per-cell on header row A1 (not row-level)', () => {
+    const wb = buildXlsxWorkbook(fixtureCompanies, meta);
+    const sheet = wb.getWorksheet('Markers')!;
+    const cellA1 = sheet.getCell('A1');
+    expect(cellA1.fill).toMatchObject({
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0D9488' },
+    });
+    expect(cellA1.font).toMatchObject({ bold: true, color: { argb: 'FFFFFFFF' } });
+    // Row-level fill must not be relied on: the row object itself should have no fill set
+    expect(sheet.getRow(1).fill).toBeUndefined();
+  });
+
+  it('writes the full untruncated detail text in the Detail column', () => {
+    const longTitle = 'A'.repeat(100);
+    const companiesWithLongTitle = [
+      {
+        ...fixtureCompanies[0],
+        assets: [
+          {
+            ...fixtureCompanies[0].assets![0],
+            trials: [
+              {
+                ...fixtureCompanies[0].assets![0].trials![0],
+                markers: [
+                  {
+                    ...fixtureCompanies[0].assets![0].trials![0].markers![0],
+                    title: longTitle,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ] as unknown as Company[];
+    const wb = buildXlsxWorkbook(companiesWithLongTitle, meta);
+    const sheet = wb.getWorksheet('Markers')!;
+    // I=Detail column should carry the full 100-char string (not truncated to 80)
+    expect(sheet.getCell('I2').value).toBe(longTitle);
+    expect((sheet.getCell('I2').value as string).length).toBe(100);
   });
 });
