@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { MarkerVisual } from '../models/marker-visual';
+import { GLYPH_RATIOS, type MarkerVisual } from '../models/marker-visual';
 import { type CanvasGlyphSurface, drawMarkerGlyphCanvas } from './canvas-marker-glyph';
 
 type Op = [string, ...unknown[]];
@@ -150,5 +150,19 @@ describe('drawMarkerGlyphCanvas', () => {
     const strikeIdx = ops.findIndex((o) => o[0] === 'moveTo' && o[1] === -1);
     expect(restoreIdx).toBeGreaterThan(-1);
     expect(strikeIdx).toBeGreaterThan(restoreIdx);
+    // strike block is wrapped in its own save/restore so callers see no state leak
+    expect(ops.at(-1)?.[0]).toBe('restore');
+  });
+
+  it('draws the flag pole and banner using shared GLYPH_RATIOS banner dimensions', () => {
+    const { ctx, ops } = surface();
+    const r = GLYPH_RATIOS;
+    // size=20, x=0,y=0: poleX = 20*0.15 = 3
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'flag' }), 0, 0, 20);
+    const poleX = 20 * r.flagPoleX; // 3
+    expect(ops).toContainEqual(['moveTo', poleX, 0]);
+    expect(ops).toContainEqual(['lineTo', poleX, 20]);
+    // banner: rect(poleX, 0, flagBannerW*20, flagBannerH*20) = rect(3, 0, 14, 9)
+    expect(ops).toContainEqual(['rect', poleX, 0, r.flagBannerW * 20, r.flagBannerH * 20]);
   });
 });

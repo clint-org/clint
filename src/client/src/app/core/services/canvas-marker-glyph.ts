@@ -69,11 +69,12 @@ export function drawMarkerGlyphCanvas(
       ctx.lineTo(poleX, y + size);
       ctx.stroke();
       ctx.beginPath();
-      ctx.rect(poleX, y, size * 0.7, size * 0.45);
+      ctx.rect(poleX, y, size * r.flagBannerW, size * r.flagBannerH);
       ctx.fill();
       ctx.stroke();
       break;
     }
+    // Full-box vertices to match the pptx native diamond shape, not the SVG 0.42/0.48 ratios.
     case 'diamond':
       ctx.beginPath();
       ctx.moveTo(cx, y);
@@ -122,12 +123,14 @@ export function drawMarkerGlyphCanvas(
   ctx.restore();
 
   if (visual.isNle) {
+    ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = STRIKE_COLOR;
     ctx.lineWidth = 1;
     ctx.moveTo(x - size * 0.05, cy);
     ctx.lineTo(x + size * 1.05, cy);
     ctx.stroke();
+    ctx.restore();
   }
 }
 
