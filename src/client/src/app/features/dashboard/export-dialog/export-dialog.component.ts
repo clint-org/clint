@@ -54,7 +54,7 @@ import { PngExportService } from '../../../core/services/png-export.service';
             <p-progressspinner
               strokeWidth="4"
               styleClass="w-[1.25rem] h-[1.25rem]"
-              [attr.aria-label]="generatingLabel()"
+              [ariaLabel]="generatingLabel()"
             />
             <span class="text-[11px] uppercase tracking-wider text-slate-400">
               {{ generatingLabel() }}
