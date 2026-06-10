@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Company } from '../models/company.model';
+import { computeLeftColumns } from './export-common.util';
 import {
   PNG_H,
   PNG_W,
@@ -224,5 +225,26 @@ describe('renderTimelinePng', () => {
     expect(texts).toContain('Test App');
     expect(texts).toContain('Intelligence delivered by Test Agency');
     expect(texts).toContain('June 10, 2026');
+  });
+
+  it('places the 2020 grid line at the correct x coordinate', () => {
+    // With all columns shown the left-column block is 4.5 in wide.
+    const IN = 144;
+    const labelColWPx = computeLeftColumns({ showMoa: true, showRoa: true, showNotes: true }).labelColW * IN;
+    // The fixture has columns at startX 0, 200, 400, 600, 800 with totalPx = 1000.
+    // The 2020 column has startX = 200, so its grid line sits at:
+    const expectedX = labelColWPx + (200 / 1000) * (PNG_W - labelColWPx);
+
+    const ops = render();
+    // Grid lines are 1px-wide fillRects painted after the header band.
+    const gridLines = ops.filter((o) => o[0] === 'fillRect' && o[3] === 1);
+    const xs = gridLines.map((o) => o[1] as number);
+    expect(xs.some((x) => Math.abs(x - expectedX) < 0.5)).toBe(true);
+  });
+
+  it('produces zero drawing ops when companies is empty', () => {
+    const rec = new RecordingCtx();
+    renderTimelinePng(rec as unknown as PngSurface, { ...renderContext(), companies: [] });
+    expect(rec.ops).toHaveLength(0);
   });
 });

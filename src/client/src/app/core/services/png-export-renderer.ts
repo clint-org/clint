@@ -72,6 +72,9 @@ export function renderTimelinePng(ctx: PngSurface, rc: PngRenderContext): void {
   };
   const rowH = Math.min(0.28 * IN, (PNG_H - DATA_Y - LEGEND_H) / rows.length);
 
+  // Ambient text-state convention: all drawing sections assume textBaseline = 'middle'
+  // and textAlign = 'left'. Any section that temporarily sets textAlign to 'center'
+  // or 'right' MUST reset it to 'left' before returning.
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   ctx.fillStyle = '#ffffff';
@@ -374,6 +377,11 @@ function drawLegend(ctx: PngSurface, rc: PngRenderContext): void {
       ctx.arc(px + s / 2, cy, s / 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+      // Stroke the circle outline at full alpha to match the PPTX 0.5pt outline.
+      ctx.beginPath();
+      ctx.strokeStyle = '#64748b';
+      ctx.arc(px + s / 2, cy, s / 2, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.beginPath();
       ctx.strokeStyle = '#64748b';
       ctx.moveTo(px - 1, cy);
