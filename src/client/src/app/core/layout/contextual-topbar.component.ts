@@ -311,8 +311,8 @@ export interface TopbarTab {
               [outlined]="action.outlined ?? false"
               [text]="action.text ?? false"
               size="small"
-              aria-haspopup="menu"
-              (click)="actionMenu.toggle($event)"
+              [pt]="{ root: { 'aria-haspopup': 'menu', 'aria-expanded': actionMenu.visible } }"
+              (onClick)="actionMenu.toggle($event)"
             />
             <p-menu #actionMenu [model]="action.items" [popup]="true" appendTo="body" />
           } @else {
