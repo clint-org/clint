@@ -1,5 +1,11 @@
 # Disaster Recovery Remediation Plan
 
+> SUPERSEDED by `docs/superpowers/specs/2026-06-10-dr-program-design.md` (the
+> approved program design, foundations-first). This first cut assumed a hybrid
+> two-track sequencing. Kept for history; the program design and per-workstream
+> specs are authoritative. The completed early items (Phase 0.2 alerting) still
+> stand and are reflected in runbook 14.
+
 Program to close the gaps in `docs/runbook/14-disaster-recovery.md`. This is the
 execution plan behind that runbook's action register. Each task maps back to a
 failure domain and an action-register row. As tasks land, update the runbook
