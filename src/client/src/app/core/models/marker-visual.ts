@@ -62,7 +62,7 @@ export const GLYPH_RATIOS = {
   flagWidth: 0.8,
   flagHeight: 0.6,
   /**
-   * Flag banner rect approximation shared by the PPTX and canvas renderers
+   * Flag banner rect approximation used by the PPTX renderer
    * (the SVG icon draws a Bezier banner via flagWidth/flagHeight instead).
    */
   flagBannerW: 0.7,
