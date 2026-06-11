@@ -57,10 +57,10 @@ Out of scope:
 Foundations-first means WS3 itself ships before the resilience workstreams, but it
 is still built in small, verifiable phases.
 
-- **Phase A - thin learning slice (first).** Local state. (1) Create then destroy a
-  throwaway R2 bucket (`clint-iac-smoke`) to learn create/plan/apply/destroy on
-  something disconnected from the app. (2) Import one existing real bucket
-  (`clint-db-backups`) and reach a no-op `plan`. Success: the user can run the loop,
+- **Phase A - first real slice.** Local state. Import one existing real bucket
+  (`clint-db-backups`, chosen for low blast radius) and reach a no-op `plan`,
+  learning import/plan on a real resource. (Throwaway create/destroy step dropped
+  per user: go straight to real resources.) Success: the user can run the loop,
   read a plan, and a real resource is managed with no changes pending.
 - **Phase B - remote state backend.** Choose and migrate state to a durable,
   encrypted remote backend (decision deferred to the start of this phase, when state

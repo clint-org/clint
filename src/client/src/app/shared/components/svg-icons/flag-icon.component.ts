@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle } from '../../../core/models/marker.model';
-import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
+import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-flag-icon]',
@@ -12,14 +12,14 @@ import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
       [attr.x2]="poleX()"
       [attr.y2]="size() - 1"
       [attr.stroke]="color()"
-      stroke-width="1.5"
+      [attr.stroke-width]="S.shape"
       stroke-linecap="round"
     />
     <svg:path
       [attr.d]="flagPath()"
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.2 : 0.5"
+      [attr.stroke-width]="fillStyle() === 'outline' ? S.flagBannerOutline : S.flagBannerFilled"
     />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +28,8 @@ export class FlagIconComponent {
   readonly size = input<number>(16);
   readonly color = input<string>('#000000');
   readonly fillStyle = input<FillStyle>('filled');
+
+  protected readonly S = GLYPH_STROKES;
 
   readonly poleX = computed(() => this.size() * GLYPH_RATIOS.flagPoleX);
 

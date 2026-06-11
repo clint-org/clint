@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { GLYPH_STROKES } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-nle-overlay]',
@@ -10,11 +11,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       [attr.x2]="size()"
       [attr.y2]="size() / 2"
       stroke="#64748b"
-      stroke-width="2.5"
+      [attr.stroke-width]="S.nleStrike"
     />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NleOverlayComponent {
   readonly size = input<number>(16);
+
+  protected readonly S = GLYPH_STROKES;
 }

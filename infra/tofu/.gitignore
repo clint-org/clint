@@ -1,0 +1,22 @@
+# Never commit state: it is the tool's source of truth and can contain secrets
+# in plaintext. It lives locally now, and in an encrypted remote backend from
+# Phase B onward.
+*.tfstate
+*.tfstate.*
+
+# Local provider cache and plan output.
+.terraform/
+*.tfplan
+
+# Variable files may hold real values; commit only the .example template.
+*.tfvars
+!*.tfvars.example
+
+# Generated config is reviewed then folded into a permanent file, not committed
+# as-is from a generate run.
+generated.tf
+
+crash.log
+crash.*.log
+
+# NOTE: .terraform.lock.hcl IS committed (it pins exact provider versions).
