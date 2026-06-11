@@ -68,14 +68,22 @@ No dependency on Infisical or OpenTofu. Highest value per unit effort.
 - Upgrade path (later): swap the GitHub-issue sink for Slack/email/PagerDuty once a
   channel is chosen.
 
-### 0.3 r2_pending_deletes drain guardrail (domain 2, action P3 pulled forward)
-- In `worker/r2-drain/queue.ts`, cap deletes per run (configurable max) and, if the
-  pending count exceeds the cap, process up to the cap and emit an alert signal
-  rather than draining the whole queue. Prevents a faulty or malicious enqueue from
-  emptying the live bucket in a single 07:00 fire and buys detection time.
-- Pair with a Vitest unit test asserting the cap holds and the overage alerts.
-- Acceptance: test proves a 10k-item queue drains at most the cap and signals.
-  Update runbook domain 2 (remove the unguarded-drain note).
+### 0.3 r2_pending_deletes drain circuit breaker (domain 2, action P3)
+- Correction from code review: `drainR2DeleteQueue` already claims a single
+  `BATCH_SIZE` (default 50) batch per fire and does not loop, so a single 07:00 fire
+  cannot empty the bucket. `BATCH_SIZE` paces throughput; it does NOT catch an
+  abnormally deep queue (a mass-enqueue from a trigger bug or malicious writer),
+  which would otherwise drain 50 real files/day for weeks, silently.
+- Real guardrail: an opt-in queue-depth circuit breaker. Add a SECURITY DEFINER
+  `count_pending_r2_deletes(secret)` RPC and an opt-in `DRAIN_SAFETY_THRESHOLD` env;
+  when set, the drain counts pending rows first and, if the total exceeds the
+  threshold, performs zero deletes and returns a `circuit_open` summary for the
+  scheduler to alert on. Off by default (no behavior change) until wired in
+  `wrangler.jsonc`.
+- Pair with Vitest tests (breaker open aborts without deleting; breaker closed
+  drains normally) and keep the existing drain tests green.
+- Acceptance: test proves an over-threshold queue deletes nothing and signals.
+  Sequenced after 0.2 (lower priority; needs a migration).
 
 ---
 

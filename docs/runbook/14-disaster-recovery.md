@@ -43,7 +43,7 @@ goal, "actual" is what evidence supports today.
 | 7 | Cloudflare account and Workers | bad deploy, wrangler config loss, account compromise/suspension | bad deploy: all tenants briefly. Account loss: app + DNS + materials + primary DB backups | none (no uptime check) | n/a / minutes (deploy) to days (account) | GHA deploy with prod approval gate; rollback via redeploy | account is the largest single blast radius; B2 is the only DB backup outside it |
 | 8 | CI/CD and source (GitHub) | repo/account loss, GHA secrets loss | cannot deploy via the normal path | push failures, workflow errors | n/a / minutes to hours | local `wrangler deploy` + `supabase db push` work without GitHub | deploy secrets live in GHA; partial offline copy only |
 | 9 | Third-party vendors and billing | vendor outage, account termination, billing lapse, free-tier auto-pause | degrade (most) to hard-down (Supabase, Cloudflare) | in-app `/api/ai/health` for Anthropic only | varies | feature gates; non-blocking design for Brandfetch/Resend/CT.gov | Supabase free-tier auto-pause and project quota are live failure modes |
-| 10| Detection and monitoring | a failure goes unnoticed | every domain above | this is the gap | n/a | weekly `backup-verify`; in-app AI health poll | no alerting on backup failure, uptime, or cert expiry; you learn of disasters late |
+| 10| Detection and monitoring | a failure goes unnoticed | every domain above | backup/verify failures + 6-hourly uptime/cert check open GitHub issues (Phase 0.2); in-app AI health poll | n/a | issue-based alerting on backup, edge reachability, cert expiry | no app-level error monitoring (Sentry); no materials/pointer reconciliation; issue sink is baseline |
 | 11| People and process | bus factor, no reachable runbook, no comms plan | recovery stalls regardless of tooling | n/a | n/a | runbook in repo | single-operator risk; no confirmed contact tree or status page |
 | 12| Security incident | credential leak, RLS bypass / exfiltration, ransomware | data breach or destructive action | none active | n/a / hours | write-only backup creds; Object Lock on backups; Tier-1 audit log | no intrusion detection; materials bucket has no immutable copy to restore from |
 
@@ -332,17 +332,20 @@ How would we know each domain failed? Today, mostly we would not. This is the
 highest-leverage cross-cutting gap.
 - Exists: the weekly `backup-verify.yml` checks both R2 and B2 bundles (freshness,
   checksum, artifact presence, row-count match); the in-app `/api/ai/health`
-  endpoint polls Anthropic status.
-- Missing: there is no alert when `backup-verify` or `backup-db` fails (a failed
-  run is silent unless someone reads the Actions tab); no uptime check on
-  `clintapp.com` or a representative tenant host; no TLS cert-expiry alert; no error
-  monitoring (no Sentry or equivalent) in the Worker or the Angular app; no
-  reconciliation of `public.materials` rows against R2 objects; no alarm on the
-  `r2_pending_deletes` drain removing more than a threshold.
-- Consequence: a disaster in domains 2, 4, 7, or 12 would likely be discovered by a
-  customer report, not by us. Closing this (action register P1) is cheap relative to
-  its value: it is the difference between an RTO clock that starts at failure and one
-  that starts hours later.
+  endpoint polls Anthropic status. As of the DR remediation Phase 0.2: `backup-db`
+  and `backup-verify` open a deduplicated GitHub issue on failure, and
+  `uptime-check.yml` runs a 6-hourly synthetic reachability + TLS-expiry check on
+  the apex hosts (`clintapp.com`, `dev.clintapp.com`) that also opens an issue on
+  failure.
+- Missing: error monitoring (no Sentry or equivalent) in the Worker or the Angular
+  app; no reconciliation of `public.materials` rows against R2 objects; no alarm on
+  an abnormally deep `r2_pending_deletes` queue (the circuit breaker in 0.3
+  addresses the deletion side; queue-depth alerting is still open). The
+  issue-based alert sink is a baseline; richer routing (Slack/PagerDuty) is a later
+  upgrade. Tenant custom domains are not yet covered by the synthetic check.
+- Consequence: backup and edge failures now surface as issues rather than silent
+  Actions-tab failures. The remaining blind spots are app-level errors and silent
+  materials/pointer divergence (action register, lowered priority).
 
 ### 11. People and process
 - Bus factor: roles in this document are largely UNKNOWN - needs owner confirmation,
@@ -393,7 +396,8 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | Priority | Gap | Domain | Likelihood x impact | Effort / cost | Free-tier constrained? | Owner | Status |
 |----------|-----|--------|---------------------|---------------|------------------------|-------|--------|
 | 1 | Materials bucket has no backup, versioning, or Object Lock; single copy in one account. Permanent customer data loss on delete or account loss. | 2 | medium x catastrophic | low for versioning + Object Lock; medium for B2 cross-cloud copy | no (R2 feature) | UNKNOWN | open |
-| 1 | No alerting on `backup-verify`/`backup-db` failure, no uptime check, no cert-expiry alert. Disasters discovered late, RTO clock starts hours after failure. | 10 | high x high | low | no | UNKNOWN | open |
+| done | Backup/verify failure alerting + synthetic uptime/cert check. Landed in Phase 0.2 (`backup-db.yml`/`backup-verify.yml` notify-on-failure, `uptime-check.yml`). | 10 | high x high | low | no | UNKNOWN | done |
+| 3 | No app-level error monitoring (Sentry/Logpush) and no `public.materials`-to-R2 reconciliation; issue-based alert sink is a baseline, no Slack/PagerDuty routing. | 10 | medium x medium | medium | no | UNKNOWN | open |
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
 | 2 | Secrets escrow is partial and unaudited (password manager); only the age key is confirmed offline. Slow, error-prone re-provision after account loss. | 3 | medium x high | low | no | UNKNOWN | open |
 | 2 | Supabase project config (provider secrets, live redirect allow-list, pooler, edge secrets, invite webhook) is dashboard-only, not version controlled. | 6 | medium x medium | medium: `supabase config push`, document the webhook and edge secrets | no | UNKNOWN | open |
