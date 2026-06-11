@@ -46,12 +46,20 @@ Out of scope:
 - The Supabase dashboard-only residue the provider cannot manage (documented, not
   codified).
 
-## 3. Repository layout
-- `infra/tofu/` holds the OpenTofu project (committed config).
-- State is never committed. `.gitignore` excludes `*.tfstate*`, `.terraform/`, and
-  any `*.auto.tfvars` holding values.
-- Environment separation (dev vs prod) decided in Phase B; the thin slice starts
-  single-config.
+## 3. Repository layout (decided)
+One root config per environment, each with its own state and Scalr workspace, so a
+change's blast radius is one environment:
+- `infra/tofu/shared/` - account-level and cross-env resources (`clint-db-backups`,
+  later the `clintapp.com` DNS zone, account settings). Scalr workspace
+  `clint-shared`.
+- `infra/tofu/dev/` - dev-only resources. Scalr workspace `clint-dev` (Phase C).
+- `infra/tofu/prod/` - prod-only resources. Scalr workspace `clint-prod` (Phase C).
+
+We did NOT use `terraform workspace` (CLI workspaces) for env separation: separate
+root configs isolate blast radius and avoid wrong-target applies. Modules are
+factored out later, only when dev and prod have near-identical resources worth
+sharing. State is never committed (`.gitignore` excludes `*.tfstate*`,
+`.terraform/`, `*.tfvars`); the provider lock is committed.
 
 ## 4. Phased delivery (within WS3)
 Foundations-first means WS3 itself ships before the resilience workstreams, but it
@@ -62,9 +70,12 @@ is still built in small, verifiable phases.
   learning import/plan on a real resource. (Throwaway create/destroy step dropped
   per user: go straight to real resources.) Success: the user can run the loop,
   read a plan, and a real resource is managed with no changes pending.
-- **Phase B - remote state backend.** Choose and migrate state to a durable,
-  encrypted remote backend (decision deferred to the start of this phase, when state
-  is concrete; options previewed in section 5). Migrate the Phase A state into it.
+- **Phase B - remote state backend (decided: Scalr).** State moves to Scalr, off
+  Cloudflare so the recovery map does not live inside the thing it rebuilds. Used
+  CLI-driven for now (runs stay local, Scalr stores state); flip to VCS-driven
+  remote execution later to unlock run history, drift detection, and prod approval
+  gates (a workspace setting, not a redo). The `shared` workspace migrates the
+  Phase A state in first.
 - **Phase C - widen Cloudflare.** Import, one resource type at a time with a no-op
   plan after each: the other R2 buckets, rate limiters, DNS records, Workers and
   routes, tenant custom domains. Each type is its own small change set.
@@ -73,17 +84,16 @@ is still built in small, verifiable phases.
 - **Phase E - drift gate.** A `tofu plan` check (local script, later CI) that fails
   on unexpected drift, so reality and config stay in sync going forward.
 
-## 5. State backend options (previewed; decided in Phase B)
-Surfaced now for context; chosen once state is concrete. Cost/benefit per the
-decide-cost-per-item principle.
-- Backblaze B2 (S3-compatible backend): already used for backups, lives outside the
-  Cloudflare account so it survives the single-account concentration risk; no new
-  vendor.
-- Cloudflare R2: simplest, already present, supports the native lockfile; but state
-  would live in the same account it manages (mild concentration smell, mitigated
-  because config in git can rebuild state via re-import).
-- Managed backend (HCP Terraform / Scalr / env0 free tier): adds locking and run
-  history and isolates state from Cloudflare; a new vendor account.
+## 5. State backend decision (Scalr)
+Chosen: Scalr (managed, OpenTofu-native, free tier), CLI-driven for now. Rationale:
+isolates state from Cloudflare (the #1 concentration risk), and the managed platform
+gives a path to run history, drift detection, and prod approval gates when we flip
+to VCS-driven execution. Options considered and rejected for now:
+- Cloudflare R2: simplest, but state would live in the same account it manages
+  (storing the recovery map inside the thing it rebuilds).
+- Backblaze B2 (S3 backend): outside Cloudflare and no new vendor, but state-locking
+  via the S3 backend is finicky and it offers no run history or drift detection.
+- HCP Terraform: OpenTofu compatibility not guaranteed since the fork.
 
 ## 6. Secrets in state (boundary with WS4)
 Some imported resources expose sensitive attributes that land in state. Until WS4
