@@ -61,6 +61,12 @@ export const GLYPH_RATIOS = {
   flagPoleX: 0.15,
   flagWidth: 0.8,
   flagHeight: 0.6,
+  /**
+   * Flag banner rect approximation shared by the PPTX and canvas renderers
+   * (the SVG icon draws a Bezier banner via flagWidth/flagHeight instead).
+   */
+  flagBannerW: 0.7,
+  flagBannerH: 0.45,
   /** Triangle vertices (x1,y1,x2,y2,x3,y3). */
   trianglePoints: [0.15, 0.1, 0.9, 0.5, 0.15, 0.9] as const,
   /** Diamond 'check' polyline points (x1,y1,x2,y2,x3,y3). */

@@ -48,10 +48,10 @@ export function drawMarkerGlyph(
       const poleX = x + size * r.flagPoleX;
       surface.addShape('line', { x: poleX, y, w: 0, h: size, line: line(1) });
       // The SVG flag is a curved banner (Bezier path) bounded by flagWidth/flagHeight.
-      // OOXML has no equivalent path here, so we approximate with a rect trimmed to
-      // ~0.7w x 0.45h of the box so it reads as a banner without overrunning the pole.
-      const bannerW = size * 0.7;
-      const bannerH = size * 0.45;
+      // OOXML has no equivalent path, so we approximate with a rect using the shared
+      // flagBannerW/flagBannerH ratios so the canvas and PPTX renderers stay in sync.
+      const bannerW = size * r.flagBannerW;
+      const bannerH = size * r.flagBannerH;
       surface.addShape('rect', { x: poleX, y, w: bannerW, h: bannerH, fill, line: line(0.5) });
       drawNle(surface, visual, x, y, size);
       return;

@@ -25,6 +25,7 @@ import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import type { ExportFormat } from '../../core/services/export-common.util';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 @Component({
@@ -85,11 +86,27 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     if (this.viewMode() === 'timeline') {
       this.topbarState.actions.set([
         {
-          label: '',
-          icon: 'fa-solid fa-file-powerpoint',
+          label: 'Export',
+          icon: 'fa-solid fa-file-export',
           text: true,
           severity: 'secondary',
-          callback: () => this.onExportClick(),
+          items: [
+            {
+              label: 'PowerPoint',
+              icon: 'fa-solid fa-file-powerpoint',
+              command: () => this.onExportClick('pptx'),
+            },
+            {
+              label: 'Image (PNG)',
+              icon: 'fa-solid fa-image',
+              command: () => this.onExportClick('png'),
+            },
+            {
+              label: 'Excel (XLSX)',
+              icon: 'fa-solid fa-file-excel',
+              command: () => this.onExportClick('xlsx'),
+            },
+          ],
         },
       ]);
     } else {
@@ -178,8 +195,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     });
   }
 
-  onExportClick(): void {
-    document.dispatchEvent(new CustomEvent('landscape:export'));
+  onExportClick(format: ExportFormat): void {
+    document.dispatchEvent(new CustomEvent('landscape:export', { detail: { format } }));
   }
 
   private spaceBase(): string[] {

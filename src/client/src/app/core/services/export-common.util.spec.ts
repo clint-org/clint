@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { computeLeftColumns, buildLegendGroups } from './pptx-export.util';
+import { computeLeftColumns, buildLegendGroups } from './export-common.util';
 import type { MarkerType } from '../models/marker.model';
 import {
   buildMarkerTableRows,
+  buildTrialExportRows,
+  flattenTrials,
   paginate,
   formatDateShort,
   formatMarkerDate,
-} from './pptx-export.util';
+} from './export-common.util';
 import type { Company } from '../models/company.model';
 
 describe('computeLeftColumns', () => {
@@ -172,6 +174,47 @@ describe('buildMarkerTableRows', () => {
     const approval = rows.find((r) => r.marker === 'Approval');
     expect(approval?.status).toBe('NLE');
   });
+
+  it('detailFull carries the full untruncated title while detail is truncated with ellipsis for long titles', () => {
+    const longTitle = 'X'.repeat(100);
+    const companies: Company[] = [
+      {
+        id: 'c1', space_id: 's1', created_by: 'u', name: 'Pharma Co', logo_url: null,
+        display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+        assets: [
+          {
+            id: 'a1', space_id: 's1', created_by: 'u', company_id: 'c1', name: 'Drug-A',
+            generic_name: null, logo_url: null, display_order: 0,
+            created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+            trials: [
+              {
+                id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'TRIAL-1',
+                acronym: 'TRIAL-1', identifier: null, status: null, notes: null,
+                display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01',
+                updated_by: null, phase_type: null, phase_start_date: null, phase_end_date: null,
+                markers: [
+                  {
+                    id: 'm1', space_id: 's1', created_by: 'u', marker_type_id: 'mt1',
+                    title: longTitle, projection: 'actual', event_date: '2024-01-01',
+                    end_date: null, description: null, source_url: null, metadata: null,
+                    is_projected: false, no_longer_expected: false,
+                    created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                    marker_types: { id: 'mt1', name: 'Data readout' } as never,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as never,
+    ];
+    const rows = buildMarkerTableRows(companies);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].detailFull).toBe(longTitle);
+    expect(rows[0].detailFull.length).toBe(100);
+    expect(rows[0].detail.length).toBeLessThanOrEqual(80);
+    expect(rows[0].detail.endsWith('…')).toBe(true);
+  });
 });
 
 describe('paginate', () => {
@@ -192,5 +235,137 @@ describe('date formatting', () => {
   });
   it('formats a single event when end_date is null', () => {
     expect(formatMarkerDate('2021-10-01', null)).toBe("Oct ‘21");
+  });
+});
+
+const fixtureCompanies = [
+  {
+    id: 'c1',
+    name: 'Acme Pharma',
+    space_id: 's1',
+    assets: [
+      {
+        id: 'a1',
+        name: 'ACM-101',
+        mechanisms_of_action: [{ name: 'GLP-1 agonist' }],
+        routes_of_administration: [{ name: 'Subcutaneous', abbreviation: 'SC' }],
+        trials: [
+          {
+            id: 't1',
+            name: 'Acme Trial One',
+            acronym: 'ACME-1',
+            identifier: 'NCT00000001',
+            notes: 'Pivotal readout expected H2.',
+            trial_notes: [],
+            phase_type: 'P3',
+            phase_start_date: '2020-01-01',
+            phase_end_date: '2022-06-30',
+            markers: [
+              {
+                id: 'm1',
+                event_date: '2021-06-15',
+                end_date: null,
+                projection: 'actual',
+                is_projected: false,
+                no_longer_expected: false,
+                title: 'Topline readout',
+                description: null,
+                marker_types: {
+                  name: 'Data readout',
+                  color: '#16a34a',
+                  shape: 'circle',
+                  fill_style: 'filled',
+                  inner_mark: 'none',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+] as unknown as Parameters<typeof flattenTrials>[0];
+
+describe('flattenTrials', () => {
+  it('flattens companies into one row per trial with first-in-group flags', () => {
+    const rows = flattenTrials(fixtureCompanies);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].companyName).toBe('Acme Pharma');
+    expect(rows[0].trialName).toBe('ACME-1');
+    expect(rows[0].nctId).toBe('NCT00000001');
+    expect(rows[0].moa).toBe('GLP-1 agonist');
+    expect(rows[0].roa).toBe('SC');
+    expect(rows[0].isFirstInCompany).toBe(true);
+    expect(rows[0].isFirstInAsset).toBe(true);
+  });
+
+  it('resets isFirstInCompany and isFirstInAsset correctly across two assets', () => {
+    const twoAssetFixture = [
+      {
+        id: 'c1',
+        name: 'BioCo',
+        space_id: 's1',
+        assets: [
+          {
+            id: 'a1',
+            name: 'Drug-A',
+            mechanisms_of_action: [],
+            routes_of_administration: [],
+            trials: [
+              { id: 't1', name: 'Trial One', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+              { id: 't2', name: 'Trial Two', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+            ],
+          },
+          {
+            id: 'a2',
+            name: 'Drug-B',
+            mechanisms_of_action: [],
+            routes_of_administration: [],
+            trials: [
+              { id: 't3', name: 'Trial Three', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, phase_start_date: null, phase_end_date: null, markers: [] },
+            ],
+          },
+        ],
+      },
+    ] as unknown as Parameters<typeof flattenTrials>[0];
+
+    const rows = flattenTrials(twoAssetFixture);
+    expect(rows).toHaveLength(3);
+    // row0: first trial of first asset
+    expect(rows[0].isFirstInCompany).toBe(true);
+    expect(rows[0].isFirstInAsset).toBe(true);
+    // row1: second trial of same asset
+    expect(rows[1].isFirstInCompany).toBe(false);
+    expect(rows[1].isFirstInAsset).toBe(false);
+    // row2: first trial of second asset (still same company)
+    expect(rows[2].isFirstInCompany).toBe(false);
+    expect(rows[2].isFirstInAsset).toBe(true);
+  });
+});
+
+describe('buildTrialExportRows', () => {
+  it('produces flat trial rows with short phase label and raw ISO dates', () => {
+    const rows = buildTrialExportRows(fixtureCompanies);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual({
+      company: 'Acme Pharma',
+      asset: 'ACM-101',
+      moa: 'GLP-1 agonist',
+      roa: 'SC',
+      trial: 'ACME-1',
+      nctId: 'NCT00000001',
+      phase: 'PH 3',
+      phaseStart: '2020-01-01',
+      phaseEnd: '2022-06-30',
+      notes: 'Pivotal readout expected H2.',
+    });
+  });
+});
+
+describe('buildMarkerTableRows raw dates', () => {
+  it('carries raw ISO event and end dates alongside the formatted date', () => {
+    const rows = buildMarkerTableRows(fixtureCompanies);
+    expect(rows[0].eventDate).toBe('2021-06-15');
+    expect(rows[0].endDate).toBeNull();
   });
 });

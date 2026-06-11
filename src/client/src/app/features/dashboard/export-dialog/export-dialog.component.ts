@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -17,6 +18,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { PptxExportService } from '../../../core/services/pptx-export.service';
+import { PngExportService } from '../../../core/services/png-export.service';
 
 @Component({
   selector: 'app-export-dialog',
@@ -24,7 +26,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
   imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, ProgressSpinner],
   template: `
     <p-dialog
-      header="Export to PowerPoint"
+      [header]="headerLabel()"
       [(visible)]="visible"
       [modal]="true"
       styleClass="!w-[24rem]"
@@ -52,10 +54,10 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
             <p-progressspinner
               strokeWidth="4"
               styleClass="w-[1.25rem] h-[1.25rem]"
-              aria-label="Exporting to PowerPoint"
+              [ariaLabel]="generatingLabel()"
             />
             <span class="text-[11px] uppercase tracking-wider text-slate-400">
-              Generating PowerPoint
+              {{ generatingLabel() }}
             </span>
           </div>
         }
@@ -75,7 +77,7 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
         />
         <p-button
           label="Export"
-          icon="fa-solid fa-file-powerpoint"
+          [icon]="exportIcon()"
           [outlined]="true"
           size="small"
           (onClick)="doExport()"
@@ -88,6 +90,20 @@ import { PptxExportService } from '../../../core/services/pptx-export.service';
 })
 export class ExportDialogComponent {
   private pptxService = inject(PptxExportService);
+  private pngService = inject(PngExportService);
+
+  /** Which renderer this dialog drives. Excel bypasses the dialog entirely. */
+  readonly format = input<'pptx' | 'png'>('pptx');
+
+  protected readonly headerLabel = computed(() =>
+    this.format() === 'png' ? 'Export image' : 'Export to PowerPoint'
+  );
+  protected readonly generatingLabel = computed(() =>
+    this.format() === 'png' ? 'Generating image' : 'Generating PowerPoint'
+  );
+  protected readonly exportIcon = computed(() =>
+    this.format() === 'png' ? 'fa-solid fa-image' : 'fa-solid fa-file-powerpoint'
+  );
 
   readonly companies = input.required<Company[]>();
   readonly startYear = input.required<number>();
@@ -118,22 +134,28 @@ export class ExportDialogComponent {
     this.exporting.set(true);
     this.error.set(null);
 
+    const options = {
+      zoomLevel: this.selectedZoom(),
+      startYear: this.startYear(),
+      endYear: this.endYear(),
+      showMoaColumn: this.showMoaColumn(),
+      showRoaColumn: this.showRoaColumn(),
+      showNotesColumn: this.showNotesColumn(),
+    };
+
     try {
-      await this.pptxService.exportDashboard(this.companies(), {
-        zoomLevel: this.selectedZoom(),
-        startYear: this.startYear(),
-        endYear: this.endYear(),
-        showMoaColumn: this.showMoaColumn(),
-        showRoaColumn: this.showRoaColumn(),
-        showNotesColumn: this.showNotesColumn(),
-      });
+      if (this.format() === 'png') {
+        await this.pngService.exportDashboard(this.companies(), options);
+      } else {
+        await this.pptxService.exportDashboard(this.companies(), options);
+      }
       this.visible.set(false);
       this.closed.emit();
     } catch (e) {
       this.error.set(
         e instanceof Error
           ? e.message
-          : 'Could not generate PowerPoint file. Check your connection and try again.'
+          : 'Could not generate the export. Check your connection and try again.'
       );
     } finally {
       this.exporting.set(false);
