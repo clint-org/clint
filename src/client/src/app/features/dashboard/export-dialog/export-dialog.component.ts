@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  Injector,
   input,
   output,
   signal,
@@ -18,7 +19,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { PptxExportService } from '../../../core/services/pptx-export.service';
-import { PngExportService } from '../../../core/services/png-export.service';
+import { PngExportService, type PngExportSnapshot } from '../export/png-export.service';
 
 @Component({
   selector: 'app-export-dialog',
@@ -33,21 +34,27 @@ import { PngExportService } from '../../../core/services/png-export.service';
       (onHide)="closed.emit()"
     >
       <div class="flex flex-col gap-4">
-        <div>
-          <span
-            class="mb-2 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500"
-          >
-            Zoom level
-          </span>
-          <p-selectbutton
-            [options]="zoomOptions"
-            [ngModel]="selectedZoom()"
-            (ngModelChange)="selectedZoom.set($event)"
-            optionLabel="label"
-            optionValue="value"
-            [allowEmpty]="false"
-          />
-        </div>
+        @if (showsPptxOptions()) {
+          <div>
+            <span
+              class="mb-2 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500"
+            >
+              Zoom level
+            </span>
+            <p-selectbutton
+              [options]="zoomOptions"
+              [ngModel]="selectedZoom()"
+              (ngModelChange)="selectedZoom.set($event)"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+            />
+          </div>
+        } @else {
+          <p class="text-xs leading-5 text-slate-500">
+            The image matches the timeline exactly as shown on screen, at full extent.
+          </p>
+        }
 
         @if (exporting()) {
           <div class="flex items-center justify-center gap-2 py-2">
@@ -91,6 +98,11 @@ import { PngExportService } from '../../../core/services/png-export.service';
 export class ExportDialogComponent {
   private pptxService = inject(PptxExportService);
   private pngService = inject(PngExportService);
+  /**
+   * Handed to PngExportService so the off-screen grid resolves the same
+   * LandscapeStateService instance (providedIn: 'any') as the live view.
+   */
+  private readonly injector = inject(Injector);
 
   /** Which renderer this dialog drives. Excel bypasses the dialog entirely. */
   readonly format = input<'pptx' | 'png'>('pptx');
@@ -111,6 +123,19 @@ export class ExportDialogComponent {
   readonly showMoaColumn = input(true);
   readonly showRoaColumn = input(true);
   readonly showNotesColumn = input(true);
+
+  /** Live grid state, forwarded untouched into the PNG snapshot (capture as-is). */
+  readonly liveZoomLevel = input<ZoomLevel>('yearly');
+  readonly spaceId = input('');
+  readonly hideCompanyColumn = input(false);
+  readonly hideAssetColumn = input(false);
+  readonly hideTrialColumn = input(false);
+  readonly hideMoaColumn = input(false);
+  readonly hideRoaColumn = input(false);
+  readonly hideNotesColumn = input(false);
+
+  readonly showsPptxOptions = computed(() => this.format() === 'pptx');
+
   readonly open = input(false);
   readonly visible = signal(false);
   readonly closed = output<void>();
@@ -134,20 +159,31 @@ export class ExportDialogComponent {
     this.exporting.set(true);
     this.error.set(null);
 
-    const options = {
-      zoomLevel: this.selectedZoom(),
-      startYear: this.startYear(),
-      endYear: this.endYear(),
-      showMoaColumn: this.showMoaColumn(),
-      showRoaColumn: this.showRoaColumn(),
-      showNotesColumn: this.showNotesColumn(),
-    };
-
     try {
       if (this.format() === 'png') {
-        await this.pngService.exportDashboard(this.companies(), options);
+        const snapshot: PngExportSnapshot = {
+          companies: this.companies(),
+          zoomLevel: this.liveZoomLevel(),
+          startYear: this.startYear(),
+          endYear: this.endYear(),
+          hideCompanyColumn: this.hideCompanyColumn(),
+          hideAssetColumn: this.hideAssetColumn(),
+          hideTrialColumn: this.hideTrialColumn(),
+          hideMoaColumn: this.hideMoaColumn(),
+          hideRoaColumn: this.hideRoaColumn(),
+          hideNotesColumn: this.hideNotesColumn(),
+          spaceId: this.spaceId(),
+        };
+        await this.pngService.exportDashboard(snapshot, this.injector);
       } else {
-        await this.pptxService.exportDashboard(this.companies(), options);
+        await this.pptxService.exportDashboard(this.companies(), {
+          zoomLevel: this.selectedZoom(),
+          startYear: this.startYear(),
+          endYear: this.endYear(),
+          showMoaColumn: this.showMoaColumn(),
+          showRoaColumn: this.showRoaColumn(),
+          showNotesColumn: this.showNotesColumn(),
+        });
       }
       this.visible.set(false);
       this.closed.emit();
