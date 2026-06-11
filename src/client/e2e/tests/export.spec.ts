@@ -42,12 +42,17 @@ test.describe('Timeline export formats', () => {
     // saveBlob revokes the object URL immediately, but the captured
     // type/size snapshot is unaffected by revocation.
     await page.addInitScript(() => {
-      const w = window as unknown as { __exportBlobs: { type: string; size: number }[] };
+      const w = window as unknown as {
+        __exportBlobs: { type: string; size: number }[];
+        __exportBlobObjects: Blob[];
+      };
       w.__exportBlobs = [];
+      w.__exportBlobObjects = [];
       const orig = URL.createObjectURL.bind(URL);
       URL.createObjectURL = (obj: Blob | MediaSource): string => {
         if (obj instanceof Blob) {
           w.__exportBlobs.push({ type: obj.type, size: obj.size });
+          w.__exportBlobObjects.push(obj);
         }
         return orig(obj);
       };
@@ -86,12 +91,37 @@ test.describe('Timeline export formats', () => {
     const dialog = page.locator('.p-dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Export image')).toBeVisible();
+    // PNG is capture-as-is: no deck options, just the explanatory line.
+    await expect(dialog.getByText('matches the timeline exactly')).toBeVisible();
+    await expect(dialog.getByText('Zoom level')).toBeHidden();
 
     await dialog.getByRole('button', { name: 'Export', exact: true }).click();
     await expect
       .poll(async () => (await lastBlob())?.type, { timeout: 30000 })
       .toBe('image/png');
     expect((await lastBlob())!.size).toBeGreaterThan(10000);
+
+    // Decode the actual PNG: dimensions must be sane and the top-left region
+    // must be the grid's slate-800 header band. The capture is the app
+    // surface itself, not a framed deck slide.
+    const probe = await page.evaluate(async () => {
+      const w = window as unknown as { __exportBlobObjects: Blob[] };
+      const bmp = await createImageBitmap(w.__exportBlobObjects.at(-1)!);
+      const canvas = document.createElement('canvas');
+      canvas.width = bmp.width;
+      canvas.height = bmp.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bmp, 0, 0);
+      const px = ctx.getImageData(40, 40, 1, 1).data;
+      return { width: bmp.width, height: bmp.height, sample: [px[0], px[1], px[2]] };
+    });
+    expect(probe.width).toBeGreaterThan(1000);
+    expect(probe.width).toBeLessThanOrEqual(16384);
+    expect(probe.height).toBeGreaterThan(200);
+    // slate-800 is rgb(30, 41, 59); allow small codec tolerance
+    expect(Math.abs(probe.sample[0] - 30)).toBeLessThanOrEqual(3);
+    expect(Math.abs(probe.sample[1] - 41)).toBeLessThanOrEqual(3);
+    expect(Math.abs(probe.sample[2] - 59)).toBeLessThanOrEqual(3);
 
     // Successful export closes the dialog.
     await expect(dialog).toBeHidden();
