@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle, InnerMark } from '../../../core/models/marker.model';
-import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
+import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-circle-icon]',
@@ -12,7 +12,7 @@ import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
       [attr.r]="size() / 2 - 1"
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="1.5"
+      [attr.stroke-width]="S.shape"
     />
     @if (innerMark() === 'dot') {
       <svg:circle
@@ -29,7 +29,7 @@ import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
         [attr.x2]="size() * R.circleDashX2"
         [attr.y2]="size() / 2"
         [attr.stroke]="markColor()"
-        stroke-width="2.5"
+        [attr.stroke-width]="S.innerMark"
         stroke-linecap="round"
       />
     }
@@ -43,6 +43,7 @@ export class CircleIconComponent {
   readonly innerMark = input<InnerMark>('none');
 
   protected readonly R = GLYPH_RATIOS;
+  protected readonly S = GLYPH_STROKES;
 
   readonly markColor = computed(() => (this.fillStyle() === 'outline' ? this.color() : 'white'));
 }
