@@ -83,6 +83,9 @@ export function drawMarkerGlyphCanvas(
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+  // Per-op alpha approximates the screen's group opacity (the SVG fades the
+  // composed glyph); overlapping primitives composite slightly differently,
+  // which is negligible at 0.3 on glyph-sized shapes.
   if (visual.isNle) ctx.globalAlpha = NLE_ALPHA;
   ctx.strokeStyle = color;
   ctx.fillStyle = filled ? color : WHITE;
@@ -172,6 +175,9 @@ export function drawMarkerGlyphCanvas(
 
   if (visual.isNle) {
     ctx.save();
+    // Butt cap like the SVG overlay default, so the strike spans exactly the
+    // glyph regardless of ambient caller state.
+    ctx.lineCap = 'butt';
     ctx.strokeStyle = STRIKE_COLOR;
     ctx.lineWidth = s.nleStrike;
     ctx.beginPath();

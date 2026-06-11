@@ -175,6 +175,19 @@ describe('drawMarkerGlyphCanvas (screen parity)', () => {
     expect(ops.filter((o) => o[0] === 'set strokeStyle' && o[1] === '#64748b')).toHaveLength(0);
   });
 
+  it('NLE wins over projected slate on dashed-line markers', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(
+      ctx,
+      visual({ shape: 'dashed-line', fillStyle: 'outline', isNle: true }),
+      0,
+      0,
+      16
+    );
+    expect(ops).toContainEqual(['set strokeStyle', '#16a34a']);
+    expect(ops.filter((o) => o[0] === 'set strokeStyle' && o[1] === '#cbd5e1')).toHaveLength(0);
+  });
+
   it('renders inner dot in white on filled glyphs', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({ innerMark: 'dot' }), 0, 0, 20);
