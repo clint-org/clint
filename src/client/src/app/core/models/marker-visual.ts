@@ -36,10 +36,11 @@ export function resolveMarkerVisual(marker: Marker): MarkerVisual {
 }
 
 /**
- * Fractional glyph geometry shared by the SVG icon components and the PPTX
- * glyph. All values are fractions of the glyph's box size, so each renderer
- * scales to its own coordinate system. Stroke widths are NOT shared -- they are
- * unit-specific (px on screen, pt in OOXML) and stay in each renderer.
+ * Fractional glyph geometry shared by the SVG icon components, the canvas PNG
+ * glyph, and the PPTX glyph. All values are fractions of the glyph's box size,
+ * so each renderer scales to its own coordinate system. Pixel stroke widths
+ * live in GLYPH_STROKES below (shared by the SVG and canvas renderers); the
+ * PPTX renderer keeps its own pt-based widths (OOXML units).
  *
  * Values mirror the on-screen SVG icons (the visual reference).
  */
@@ -62,8 +63,9 @@ export const GLYPH_RATIOS = {
   flagWidth: 0.8,
   flagHeight: 0.6,
   /**
-   * Flag banner rect approximation shared by the PPTX and canvas renderers
-   * (the SVG icon draws a Bezier banner via flagWidth/flagHeight instead).
+   * Flag banner rect approximation used by the PPTX renderer only (OOXML has
+   * no quadratic path here). The SVG icon and the canvas PNG glyph draw the
+   * Bezier banner via flagWidth/flagHeight.
    */
   flagBannerW: 0.7,
   flagBannerH: 0.45,
@@ -71,4 +73,25 @@ export const GLYPH_RATIOS = {
   trianglePoints: [0.15, 0.1, 0.9, 0.5, 0.15, 0.9] as const,
   /** Diamond 'check' polyline points (x1,y1,x2,y2,x3,y3). */
   checkPoints: [0.32, 0.5, 0.45, 0.65, 0.68, 0.38] as const,
+} as const;
+
+/**
+ * Stroke widths shared by the SVG icon components and the canvas PNG glyph.
+ * Values are absolute px regardless of glyph size (SVG stroke-width does not
+ * scale with the viewBox), so both renderers read identically at any size.
+ * The PPTX renderer keeps its own pt-based widths (OOXML units).
+ */
+export const GLYPH_STROKES = {
+  /** Main shape outline (circle, diamond always; triangle, square only when outline). */
+  shape: 1.5,
+  /** Inner marks: dash, check, x. */
+  innerMark: 2.5,
+  /** NLE strike-through line. */
+  nleStrike: 2.5,
+  /** Flag banner outline width by fill style. */
+  flagBannerOutline: 1.2,
+  flagBannerFilled: 0.5,
+  /** Dashed-line marker stroke width and dash pattern. */
+  dashedLine: 1.5,
+  dashedLinePattern: [4, 3],
 } as const;

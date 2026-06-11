@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FillStyle } from '../../../core/models/marker.model';
-import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
+import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual';
 
 @Component({
   selector: 'g[app-triangle-icon]',
@@ -10,7 +10,7 @@ import { GLYPH_RATIOS } from '../../../core/models/marker-visual';
       [attr.points]="trianglePoints()"
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
-      [attr.stroke-width]="fillStyle() === 'outline' ? 1.5 : 0"
+      [attr.stroke-width]="fillStyle() === 'outline' ? S.shape : 0"
       stroke-linejoin="round"
     />
   `,
@@ -20,6 +20,8 @@ export class TriangleIconComponent {
   readonly size = input<number>(16);
   readonly color = input<string>('#000000');
   readonly fillStyle = input<FillStyle>('filled');
+
+  protected readonly S = GLYPH_STROKES;
 
   readonly trianglePoints = computed(() => {
     const s = this.size();

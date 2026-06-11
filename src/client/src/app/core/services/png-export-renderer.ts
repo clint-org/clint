@@ -29,6 +29,15 @@ const HEADER_BAND = '#1e293b';
 const SANS = 'Arial, sans-serif';
 const MONO = 'Consolas, monospace';
 
+// Screen phase-bar metrics (phase-bar.component.ts): fixed height, border,
+// radius, and label rules. Bars shrink below 14px only when rows are tighter
+// than the screen ever gets.
+const PHASE_BAR_H = 14;
+const PHASE_BAR_RADIUS = 3;
+const PHASE_BAR_STROKE = 1.2;
+const PHASE_LABEL_MIN_W = 40;
+const PHASE_LABEL_OUTSIDE_COLOR = '#64748b';
+
 export type PngSurface = CanvasGlyphSurface &
   Pick<
     CanvasRenderingContext2D,
@@ -237,7 +246,7 @@ function drawRows(
       ctx.fill();
     }
 
-    drawPhaseBar(ctx, row, layout, rc, y, rowH, fontPt);
+    drawPhaseBar(ctx, row, layout, rc, y, rowH);
     drawMarkers(ctx, row, layout, rc, y, rowH, fontPt);
   }
 }
@@ -248,36 +257,46 @@ function drawPhaseBar(
   layout: ColumnLayout,
   rc: PngRenderContext,
   rowY: number,
-  rowH: number,
-  fontPt: number
+  rowH: number
 ): void {
   const trial = row.trial;
-  if (!trial.phase_type || !trial.phase_start_date) return;
+  // The screen collapses end-date-less phases to a zero-width bar with no
+  // label (phase-bar.component barWidth()); mirror that by drawing nothing.
+  if (!trial.phase_type || !trial.phase_start_date || !trial.phase_end_date) return;
 
   const sx = rc.dateToX(trial.phase_start_date);
-  const ex = rc.dateToX(trial.phase_end_date ?? trial.phase_start_date);
+  const ex = rc.dateToX(trial.phase_end_date);
   const barX = timelineX(layout, rc, sx);
   const barW = Math.max(0.05 * IN, ((ex - sx) / rc.totalPx) * (PNG_W - layout.labelColW));
-  const barH = rowH * 0.45;
+  const barH = Math.min(PHASE_BAR_H, rowH * 0.45);
   const barY = rowY + (rowH - barH) / 2;
   const color = PHASE_COLORS[trial.phase_type] ?? PHASE_FALLBACK_COLOR;
 
-  roundRectPath(ctx, barX, barY, barW, barH, 0.02 * IN);
+  roundRectPath(ctx, barX, barY, barW, barH, PHASE_BAR_RADIUS);
   ctx.save();
-  ctx.globalAlpha = 0.12; // same wash as the web and the deck
+  ctx.globalAlpha = 0.12; // same wash as the web
   ctx.fillStyle = color;
   ctx.fill();
   ctx.restore();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
+  ctx.lineWidth = PHASE_BAR_STROKE;
   ctx.stroke();
 
-  if (barW > 0.4 * IN) {
-    ctx.font = `bold ${Math.max(4, fontPt - 2) * PT}px ${SANS}`;
+  // Label mirrors phase-bar.component.ts: always rendered; centered inside in
+  // the phase color when the bar is wide enough, otherwise just right of the
+  // bar, left-anchored, in slate. Font shrinks only when rows get tighter
+  // than the screen's fixed layout.
+  const labelPx = Math.min(9, Math.max(6, rowH * 0.5));
+  ctx.font = `600 ${labelPx}px ${SANS}`;
+  const label = phaseShortLabel(trial.phase_type);
+  if (barW >= PHASE_LABEL_MIN_W) {
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
-    ctx.fillText(phaseShortLabel(trial.phase_type), barX + barW / 2, barY + barH / 2);
+    ctx.fillText(label, barX + barW / 2, barY + barH / 2);
     ctx.textAlign = 'left';
+  } else {
+    ctx.fillStyle = PHASE_LABEL_OUTSIDE_COLOR;
+    ctx.fillText(label, barX + barW + 4, barY + barH / 2);
   }
 }
 

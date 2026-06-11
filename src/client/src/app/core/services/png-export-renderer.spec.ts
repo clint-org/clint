@@ -86,6 +86,15 @@ class RecordingCtx {
   measureText(text: string): TextMetrics {
     return { width: text.length * 6 } as TextMetrics;
   }
+  set lineCap(v: unknown) {
+    this.ops.push(['set lineCap', v]);
+  }
+  set lineJoin(v: unknown) {
+    this.ops.push(['set lineJoin', v]);
+  }
+  quadraticCurveTo(...a: unknown[]): void {
+    this.ops.push(['quadraticCurveTo', ...a]);
+  }
 }
 
 const companies = [
@@ -246,5 +255,55 @@ describe('renderTimelinePng', () => {
     const rec = new RecordingCtx();
     renderTimelinePng(rec as unknown as PngSurface, { ...renderContext(), companies: [] });
     expect(rec.ops).toHaveLength(0);
+  });
+
+  it('draws the phase bar 14px tall with a 1.2px border (screen metrics)', () => {
+    const ops = render();
+    expect(ops).toContainEqual(['set lineWidth', 1.2]);
+    // single-row fixture: rowH = min(0.28*144, available) = 40.32, so barH = min(14, 18.14) = 14
+    const rowH = Math.min(0.28 * 144, (1080 - 0.28 * 144 - 0.85 * 144) / 1);
+    const barY = 0.28 * 144 + (rowH - 14) / 2;
+    const arcs = ops.filter((o) => o[0] === 'arcTo');
+    expect(arcs.length).toBeGreaterThan(0);
+    // the bar's rounded-rect path starts at its top edge
+    expect(arcs.some((o) => Math.abs((o[2] as number) - barY) < 0.01)).toBe(true);
+  });
+
+  it('centers the phase label inside wide bars at 9px semibold', () => {
+    const ops = render();
+    const labelOps = ops.filter((o) => o[0] === 'fillText' && o[1] === 'PH 3');
+    expect(labelOps).toHaveLength(1);
+    const fontOps = ops.filter((o) => o[0] === 'set font');
+    expect(fontOps.some((o) => (o[1] as string).startsWith('600 9px'))).toBe(true);
+  });
+
+  it('places the label outside narrow bars, left-anchored in slate', () => {
+    const rec = new RecordingCtx();
+    const rc = renderContext();
+    const narrowCompanies = JSON.parse(JSON.stringify(companies)) as typeof companies;
+    (narrowCompanies[0].assets![0].trials![0] as unknown as { phase_end_date: string }).phase_end_date =
+      '2020-01-10';
+    rc.companies = narrowCompanies;
+    renderTimelinePng(rec as unknown as PngSurface, rc);
+    const ops = rec.ops;
+    const labelIdx = ops.findIndex((o) => o[0] === 'fillText' && o[1] === 'PH 3');
+    expect(labelIdx).toBeGreaterThan(-1);
+    const priorFills = ops.slice(0, labelIdx).filter((o) => o[0] === 'set fillStyle');
+    expect(priorFills.at(-1)).toEqual(['set fillStyle', '#64748b']);
+  });
+
+  it('draws no bar and no label when the phase has no end date (screen parity)', () => {
+    const rec = new RecordingCtx();
+    const rc = renderContext();
+    const openEnded = JSON.parse(JSON.stringify(companies)) as typeof companies;
+    (openEnded[0].assets![0].trials![0] as unknown as { phase_end_date: string | null }).phase_end_date =
+      null;
+    rc.companies = openEnded;
+    renderTimelinePng(rec as unknown as PngSurface, rc);
+    const ops = rec.ops;
+    expect(ops.filter((o) => o[0] === 'fillText' && o[1] === 'PH 3')).toHaveLength(0);
+    expect(ops.filter((o) => o[0] === 'arcTo')).toHaveLength(0);
+    // the marker glyph still renders
+    expect(ops.some((o) => o[0] === 'arc')).toBe(true);
   });
 });
