@@ -26,7 +26,7 @@ jobs:
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.105.0 # pinned: 2.106.0 (2026-06-11) breaks migration smokes with "permission denied" on fresh resets
 
       - name: Link dev Supabase project
         run: supabase link --project-ref ${{ secrets.SUPABASE_DEV_PROJECT_REF }}

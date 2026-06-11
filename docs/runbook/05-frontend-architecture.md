@@ -317,6 +317,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | `TherapeuticAreaService` | (Removed) Replaced by `IndicationService` |
 | `TimelineService` | Date-to-pixel calculations, column generation, zoom config |
 | `PptxExportService` | Client-side PowerPoint generation via pptxgenjs |
+| `PngExportService` | PNG export as a DOM capture: renders `ExportSnapshotHostComponent` (the real dashboard grid + legend + app-styled footer) off-screen and rasterizes it with modern-screenshot at a clamped 2x scale. Capture-as-is: the image shows the timeline exactly as configured on screen (no deck framing, no export options). Lives in `features/dashboard/export/` next to its host component. |
 | `CatalystService` | Calls `get_catalyst_detail()` RPC for marker detail panels (used by events page and landscape state service) |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 | `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
@@ -417,7 +418,8 @@ DashboardComponent               # Orchestrates state, filters, loading
   FilterPanelComponent           # Collapsible filter sidebar (PrimeNG MultiSelect)
   ZoomControlComponent           # Yearly/quarterly/monthly/daily toggle
   LegendComponent                # Marker type reference grouped by category
-  ExportDialogComponent          # PowerPoint export dialog
+  ExportDialogComponent          # PowerPoint + PNG export dialog (PNG hides deck options; capture-as-is)
+  ExportSnapshotHostComponent    # Off-screen capture root for PNG export (real grid + legend + footer; created dynamically by PngExportService)
   DashboardGridComponent         # The timeline table (scrollable container, gear icon toggles MOA/ROA/Notes columns)
     GridHeaderComponent          # Column headers (date labels, sticky)
     RowLabel                     # Left column: company/asset/trial labels (sticky)
@@ -737,7 +739,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `PalettePinService`
 - `PaletteRecentsService`
 - `PaletteService`
-- `PngExportService`
 - `PrimaryIntelligenceService`
 - `ProseMirrorService`
 - `RouteOfAdministrationService`
