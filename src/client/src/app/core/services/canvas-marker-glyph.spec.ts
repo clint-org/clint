@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { GLYPH_RATIOS, type MarkerVisual } from '../models/marker-visual';
+import type { MarkerVisual } from '../models/marker-visual';
+import { GLYPH_STROKES } from '../models/marker-visual';
 import { type CanvasGlyphSurface, drawMarkerGlyphCanvas } from './canvas-marker-glyph';
 
 type Op = [string, ...unknown[]];
@@ -25,6 +26,12 @@ class RecordingCtx {
   set globalAlpha(v: unknown) {
     this.record('set globalAlpha', v);
   }
+  set lineCap(v: unknown) {
+    this.record('set lineCap', v);
+  }
+  set lineJoin(v: unknown) {
+    this.record('set lineJoin', v);
+  }
 
   beginPath(): void {
     this.record('beginPath');
@@ -40,6 +47,9 @@ class RecordingCtx {
   }
   lineTo(...args: unknown[]): void {
     this.record('lineTo', ...args);
+  }
+  quadraticCurveTo(...args: unknown[]): void {
+    this.record('quadraticCurveTo', ...args);
   }
   rect(...args: unknown[]): void {
     this.record('rect', ...args);
@@ -79,90 +89,132 @@ function visual(overrides: Partial<MarkerVisual>): MarkerVisual {
 
 const has = (ops: Op[], name: string): Op[] => ops.filter((o) => o[0] === name);
 
-describe('drawMarkerGlyphCanvas', () => {
-  it('draws a filled circle: fill color set to marker color, arc at center with r=size/2', () => {
+describe('drawMarkerGlyphCanvas (screen parity)', () => {
+  it('draws the circle with a 1px-inset radius and ALWAYS strokes it at shape width', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({}), 10, 20, 16);
     expect(ops).toContainEqual(['set fillStyle', '#16a34a']);
-    expect(ops).toContainEqual(['arc', 18, 28, 8, 0, Math.PI * 2]);
-    expect(has(ops, 'fill').length).toBeGreaterThan(0);
+    expect(ops).toContainEqual(['arc', 18, 28, 7, 0, Math.PI * 2]);
+    expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.shape]);
     expect(has(ops, 'stroke').length).toBeGreaterThan(0);
   });
 
-  it('draws an outline circle with white fill', () => {
+  it('uses round line caps and joins', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(ctx, visual({}), 0, 0, 16);
+    expect(ops).toContainEqual(['set lineCap', 'round']);
+    expect(ops).toContainEqual(['set lineJoin', 'round']);
+  });
+
+  it('draws outline glyphs with white fill', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({ fillStyle: 'outline' }), 0, 0, 16);
     expect(ops).toContainEqual(['set fillStyle', '#ffffff']);
     expect(ops).toContainEqual(['set strokeStyle', '#16a34a']);
   });
 
-  it('insets the square by GLYPH_RATIOS.squareInset', () => {
+  it('draws the diamond at GLYPH_RATIOS half-extents and always strokes it', () => {
     const { ctx, ops } = surface();
-    drawMarkerGlyphCanvas(ctx, visual({ shape: 'square' }), 0, 0, 10);
-    // inset 0.1 of size 10 => rect(1, 1, 8, 8)
-    expect(ops).toContainEqual(['rect', 1, 1, 8, 8]);
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'diamond' }), 0, 0, 100);
+    expect(ops).toContainEqual(['moveTo', 50, 2]);
+    expect(ops).toContainEqual(['lineTo', 92, 50]);
+    expect(ops).toContainEqual(['lineTo', 50, 98]);
+    expect(ops).toContainEqual(['lineTo', 8, 50]);
+    expect(has(ops, 'stroke').length).toBeGreaterThan(0);
   });
 
-  it('draws the diamond as a 4-point path', () => {
-    const { ctx, ops } = surface();
-    drawMarkerGlyphCanvas(ctx, visual({ shape: 'diamond' }), 0, 0, 10);
-    expect(ops).toContainEqual(['moveTo', 5, 0]);
-    expect(ops).toContainEqual(['lineTo', 10, 5]);
-    expect(ops).toContainEqual(['lineTo', 5, 10]);
-    expect(ops).toContainEqual(['lineTo', 0, 5]);
+  it('does NOT stroke filled triangles and squares, but strokes their outline variants', () => {
+    for (const shape of ['triangle', 'square'] as const) {
+      const filled = surface();
+      drawMarkerGlyphCanvas(filled.ctx, visual({ shape }), 0, 0, 16);
+      expect(has(filled.ops, 'stroke')).toHaveLength(0);
+
+      const outline = surface();
+      drawMarkerGlyphCanvas(outline.ctx, visual({ shape, fillStyle: 'outline' }), 0, 0, 16);
+      expect(has(outline.ops, 'stroke').length).toBeGreaterThan(0);
+    }
   });
 
-  it('uses a dashed vertical line for dashed-line markers', () => {
+  it('draws the flag banner as the wavy quadratic-bezier path from the SVG icon', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'flag' }), 0, 0, 20);
+    expect(ops).toContainEqual(['moveTo', 3, 1]);
+    expect(ops).toContainEqual(['lineTo', 3, 19]);
+    expect(ops).toContainEqual(['quadraticCurveTo', 11, 4.6, 19, 1]);
+    expect(ops).toContainEqual(['lineTo', 19, 13]);
+    expect(ops).toContainEqual(['quadraticCurveTo', 11, 9.4, 3, 13]);
+    expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.flagBannerFilled]);
+  });
+
+  it('strokes the outline flag banner at the outline width', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'flag', fillStyle: 'outline' }), 0, 0, 20);
+    expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.flagBannerOutline]);
+  });
+
+  it('draws dashed-line markers with the screen dash pattern and width', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({ shape: 'dashed-line' }), 0, 0, 16);
-    expect(has(ops, 'setLineDash').length).toBeGreaterThanOrEqual(2); // set + reset
+    expect(ops).toContainEqual(['setLineDash', [4, 3]]);
+    expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.dashedLine]);
     expect(ops).toContainEqual(['moveTo', 8, 0]);
     expect(ops).toContainEqual(['lineTo', 8, 16]);
+  });
+
+  it('renders projected (outline) dashed-line markers in slate', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'dashed-line', fillStyle: 'outline' }), 0, 0, 16);
+    expect(ops).toContainEqual(['set strokeStyle', '#cbd5e1']);
+  });
+
+  it('dims NLE dashed-line markers to 0.25 in their own color, with no strike', () => {
+    const { ctx, ops } = surface();
+    drawMarkerGlyphCanvas(ctx, visual({ shape: 'dashed-line', isNle: true }), 0, 0, 16);
+    expect(ops).toContainEqual(['set globalAlpha', 0.25]);
+    expect(ops).toContainEqual(['set strokeStyle', '#16a34a']);
+    expect(ops.filter((o) => o[0] === 'set strokeStyle' && o[1] === '#64748b')).toHaveLength(0);
   });
 
   it('renders inner dot in white on filled glyphs', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({ innerMark: 'dot' }), 0, 0, 20);
-    // innerDotR 0.15 of 20 => r=3 at center 10,10
     expect(ops).toContainEqual(['arc', 10, 10, 3, 0, Math.PI * 2]);
     expect(ops).toContainEqual(['set fillStyle', '#ffffff']);
   });
 
-  it('renders the check inner mark as two segments', () => {
-    const { ctx, ops } = surface();
-    drawMarkerGlyphCanvas(ctx, visual({ shape: 'diamond', innerMark: 'check' }), 0, 0, 100);
-    // checkPoints [0.32,0.5, 0.45,0.65, 0.68,0.38] on size 100
-    expect(ops).toContainEqual(['moveTo', 32, 50]);
-    expect(ops).toContainEqual(['lineTo', 45, 65]);
-    expect(ops).toContainEqual(['lineTo', 68, 38]);
+  it('renders inner dash, check, and x at the inner-mark stroke width', () => {
+    const dash = surface();
+    drawMarkerGlyphCanvas(dash.ctx, visual({ innerMark: 'dash' }), 0, 0, 100);
+    expect(dash.ops).toContainEqual(['moveTo', 28, 50]);
+    expect(dash.ops).toContainEqual(['lineTo', 72, 50]);
+    expect(dash.ops).toContainEqual(['set lineWidth', GLYPH_STROKES.innerMark]);
+
+    const check = surface();
+    drawMarkerGlyphCanvas(check.ctx, visual({ shape: 'diamond', innerMark: 'check' }), 0, 0, 100);
+    expect(check.ops).toContainEqual(['moveTo', 32, 50]);
+    expect(check.ops).toContainEqual(['lineTo', 45, 65]);
+    expect(check.ops).toContainEqual(['lineTo', 68, 38]);
+    expect(check.ops).toContainEqual(['set lineWidth', GLYPH_STROKES.innerMark]);
+
+    const x = surface();
+    drawMarkerGlyphCanvas(x.ctx, visual({ shape: 'square', innerMark: 'x' }), 0, 0, 100);
+    expect(x.ops).toContainEqual(['moveTo', 30, 30]);
+    expect(x.ops).toContainEqual(['lineTo', 70, 70]);
+    expect(x.ops).toContainEqual(['set lineWidth', GLYPH_STROKES.innerMark]);
   });
 
-  it('dims NLE glyphs to 0.3 alpha and draws a full-alpha slate strike', () => {
+  it('dims NLE glyphs to 0.3 and draws a full-alpha 2.5px slate strike spanning exactly the glyph', () => {
     const { ctx, ops } = surface();
     drawMarkerGlyphCanvas(ctx, visual({ isNle: true }), 0, 0, 20);
     expect(ops).toContainEqual(['set globalAlpha', 0.3]);
     expect(ops).toContainEqual(['set strokeStyle', '#64748b']);
-    // strike spans size*1.1 centered: from x-1 to x+21 at mid-height
-    expect(ops).toContainEqual(['moveTo', -1, 10]);
-    expect(ops).toContainEqual(['lineTo', 21, 10]);
-    // glyph alpha is restored before the strike
+    expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.nleStrike]);
+    expect(ops).toContainEqual(['moveTo', 0, 10]);
+    expect(ops).toContainEqual(['lineTo', 20, 10]);
     const restoreIdx = ops.findIndex((o) => o[0] === 'restore');
-    const strikeIdx = ops.findIndex((o) => o[0] === 'moveTo' && o[1] === -1);
+    const strikeIdx = ops.findIndex((o) => o[0] === 'moveTo' && o[1] === 0 && o[2] === 10);
     expect(restoreIdx).toBeGreaterThan(-1);
     expect(strikeIdx).toBeGreaterThan(restoreIdx);
-    // strike block is wrapped in its own save/restore so callers see no state leak
     expect(ops.at(-1)?.[0]).toBe('restore');
-  });
-
-  it('draws the flag pole and banner using shared GLYPH_RATIOS banner dimensions', () => {
-    const { ctx, ops } = surface();
-    const r = GLYPH_RATIOS;
-    // size=20, x=0,y=0: poleX = 20*0.15 = 3
-    drawMarkerGlyphCanvas(ctx, visual({ shape: 'flag' }), 0, 0, 20);
-    const poleX = 20 * r.flagPoleX; // 3
-    expect(ops).toContainEqual(['moveTo', poleX, 0]);
-    expect(ops).toContainEqual(['lineTo', poleX, 20]);
-    // banner: rect(poleX, 0, flagBannerW*20, flagBannerH*20) = rect(3, 0, 14, 9)
-    expect(ops).toContainEqual(['rect', poleX, 0, r.flagBannerW * 20, r.flagBannerH * 20]);
   });
 });
