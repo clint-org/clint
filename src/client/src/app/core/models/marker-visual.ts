@@ -36,13 +36,14 @@ export function resolveMarkerVisual(marker: Marker): MarkerVisual {
 }
 
 /**
- * Fractional glyph geometry shared by the SVG icon components, the canvas PNG
- * glyph, and the PPTX glyph. All values are fractions of the glyph's box size,
- * so each renderer scales to its own coordinate system. Pixel stroke widths
- * live in GLYPH_STROKES below (shared by the SVG and canvas renderers); the
- * PPTX renderer keeps its own pt-based widths (OOXML units).
+ * Fractional glyph geometry shared by the SVG icon components and the PPTX
+ * glyph. All values are fractions of the glyph's box size, so each renderer
+ * scales to its own coordinate system. Pixel stroke widths live in
+ * GLYPH_STROKES below (used by the SVG icons); the PPTX renderer keeps its
+ * own pt-based widths (OOXML units).
  *
- * Values mirror the on-screen SVG icons (the visual reference).
+ * Values mirror the on-screen SVG icons (the visual reference). The PNG
+ * export captures the rendered DOM directly and needs no glyph constants.
  */
 export const GLYPH_RATIOS = {
   /** Circle / diamond inner dot radius. */
@@ -64,8 +65,8 @@ export const GLYPH_RATIOS = {
   flagHeight: 0.6,
   /**
    * Flag banner rect approximation used by the PPTX renderer only (OOXML has
-   * no quadratic path here). The SVG icon and the canvas PNG glyph draw the
-   * Bezier banner via flagWidth/flagHeight.
+   * no quadratic path here). The SVG icon draws the Bezier banner via
+   * flagWidth/flagHeight.
    */
   flagBannerW: 0.7,
   flagBannerH: 0.45,
@@ -76,10 +77,9 @@ export const GLYPH_RATIOS = {
 } as const;
 
 /**
- * Stroke widths shared by the SVG icon components and the canvas PNG glyph.
- * Values are absolute px regardless of glyph size (SVG stroke-width does not
- * scale with the viewBox), so both renderers read identically at any size.
- * The PPTX renderer keeps its own pt-based widths (OOXML units).
+ * Stroke widths for the SVG icon components. Values are absolute px
+ * regardless of glyph size (SVG stroke-width does not scale with the
+ * viewBox). The PPTX renderer keeps its own pt-based widths (OOXML units).
  */
 export const GLYPH_STROKES = {
   /** Main shape outline (circle, diamond always; triangle, square only when outline). */

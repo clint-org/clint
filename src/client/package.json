@@ -45,6 +45,7 @@
     "diff": "^9.0.0",
     "exceljs": "^4.4.0",
     "jaro-winkler": "^0.2.8",
+    "modern-screenshot": "^4.7.0",
     "pptxgenjs": "^4.0.1",
     "primeng": "^21.1.6",
     "prosemirror-commands": "^1.7.1",
