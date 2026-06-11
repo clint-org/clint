@@ -222,6 +222,7 @@ describe('drawMarkerGlyphCanvas (screen parity)', () => {
     expect(ops).toContainEqual(['set globalAlpha', 0.3]);
     expect(ops).toContainEqual(['set strokeStyle', '#64748b']);
     expect(ops).toContainEqual(['set lineWidth', GLYPH_STROKES.nleStrike]);
+    expect(ops).toContainEqual(['set lineCap', 'butt']);
     expect(ops).toContainEqual(['moveTo', 0, 10]);
     expect(ops).toContainEqual(['lineTo', 20, 10]);
     const restoreIdx = ops.findIndex((o) => o[0] === 'restore');

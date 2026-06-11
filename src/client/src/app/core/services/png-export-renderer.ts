@@ -260,10 +260,12 @@ function drawPhaseBar(
   rowH: number
 ): void {
   const trial = row.trial;
-  if (!trial.phase_type || !trial.phase_start_date) return;
+  // The screen collapses end-date-less phases to a zero-width bar with no
+  // label (phase-bar.component barWidth()); mirror that by drawing nothing.
+  if (!trial.phase_type || !trial.phase_start_date || !trial.phase_end_date) return;
 
   const sx = rc.dateToX(trial.phase_start_date);
-  const ex = rc.dateToX(trial.phase_end_date ?? trial.phase_start_date);
+  const ex = rc.dateToX(trial.phase_end_date);
   const barX = timelineX(layout, rc, sx);
   const barW = Math.max(0.05 * IN, ((ex - sx) / rc.totalPx) * (PNG_W - layout.labelColW));
   const barH = Math.min(PHASE_BAR_H, rowH * 0.45);

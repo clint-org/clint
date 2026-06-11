@@ -36,10 +36,11 @@ export function resolveMarkerVisual(marker: Marker): MarkerVisual {
 }
 
 /**
- * Fractional glyph geometry shared by the SVG icon components and the PPTX
- * glyph. All values are fractions of the glyph's box size, so each renderer
- * scales to its own coordinate system. Stroke widths are NOT shared -- they are
- * unit-specific (px on screen, pt in OOXML) and stay in each renderer.
+ * Fractional glyph geometry shared by the SVG icon components, the canvas PNG
+ * glyph, and the PPTX glyph. All values are fractions of the glyph's box size,
+ * so each renderer scales to its own coordinate system. Pixel stroke widths
+ * live in GLYPH_STROKES below (shared by the SVG and canvas renderers); the
+ * PPTX renderer keeps its own pt-based widths (OOXML units).
  *
  * Values mirror the on-screen SVG icons (the visual reference).
  */
@@ -62,8 +63,9 @@ export const GLYPH_RATIOS = {
   flagWidth: 0.8,
   flagHeight: 0.6,
   /**
-   * Flag banner rect approximation shared by the PPTX and canvas renderers
-   * (the SVG icon draws a Bezier banner via flagWidth/flagHeight instead).
+   * Flag banner rect approximation used by the PPTX renderer only (OOXML has
+   * no quadratic path here). The SVG icon and the canvas PNG glyph draw the
+   * Bezier banner via flagWidth/flagHeight.
    */
   flagBannerW: 0.7,
   flagBannerH: 0.45,

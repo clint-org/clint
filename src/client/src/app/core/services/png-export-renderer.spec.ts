@@ -291,4 +291,19 @@ describe('renderTimelinePng', () => {
     const priorFills = ops.slice(0, labelIdx).filter((o) => o[0] === 'set fillStyle');
     expect(priorFills.at(-1)).toEqual(['set fillStyle', '#64748b']);
   });
+
+  it('draws no bar and no label when the phase has no end date (screen parity)', () => {
+    const rec = new RecordingCtx();
+    const rc = renderContext();
+    const openEnded = JSON.parse(JSON.stringify(companies)) as typeof companies;
+    (openEnded[0].assets![0].trials![0] as unknown as { phase_end_date: string | null }).phase_end_date =
+      null;
+    rc.companies = openEnded;
+    renderTimelinePng(rec as unknown as PngSurface, rc);
+    const ops = rec.ops;
+    expect(ops.filter((o) => o[0] === 'fillText' && o[1] === 'PH 3')).toHaveLength(0);
+    expect(ops.filter((o) => o[0] === 'arcTo')).toHaveLength(0);
+    // the marker glyph still renders
+    expect(ops.some((o) => o[0] === 'arc')).toBe(true);
+  });
 });
