@@ -1,6 +1,6 @@
 # Timeline Image (PNG) and Excel (XLSX) Export
 
-- **Status:** Design approved, pending spec review
+- **Status:** Implemented
 - **Date:** 2026-06-10
 - **Related:** `docs/specs/export-to-powerpoint/spec.md`, `docs/superpowers/specs/2026-06-08-pptx-export-marker-fidelity-design.md`
 

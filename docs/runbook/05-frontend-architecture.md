@@ -737,12 +737,14 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `PalettePinService`
 - `PaletteRecentsService`
 - `PaletteService`
+- `PngExportService`
 - `PrimaryIntelligenceService`
 - `ProseMirrorService`
 - `RouteOfAdministrationService`
 - `RpcCacheService`
 - `SpaceFieldVisibilityService`
 - `SpaceSettingsService`
+- `XlsxExportService`
 
 **Models:**
 - `AuditEvent`

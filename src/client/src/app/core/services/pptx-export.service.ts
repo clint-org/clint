@@ -1,50 +1,30 @@
 import { inject, Injectable } from '@angular/core';
 import PptxGenJS from 'pptxgenjs';
 
-import { environment } from '../../../environments/environment';
-import { resolveBrandLogoSrc } from '../../shared/components/brand-logo-url';
 import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
+import { loadImageElement } from './load-image.util';
 import { MarkerTypeService } from './marker-type.service';
 import {
   buildLegendGroups,
   buildMarkerTableRows,
   computeLeftColumns,
   type ColumnLayout,
+  type ExportOptions,
+  flattenTrials,
+  type FlatRow,
   formatDateShort,
   type MarkerRow,
   paginate,
-} from './pptx-export.util';
+} from './export-common.util';
 import { TimelineService } from './timeline.service';
 import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual';
 import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
 
-export interface ExportOptions {
-  zoomLevel: ZoomLevel;
-  startYear: number;
-  endYear: number;
-  showMoaColumn: boolean;
-  showRoaColumn: boolean;
-  showNotesColumn: boolean;
-}
-
-interface FlatRow {
-  companyName: string;
-  companyId: string;
-  assetName: string;
-  trialName: string;
-  nctId: string | null;
-  moa: string;
-  roa: string;
-  hasNotes: boolean;
-  trial: Trial;
-  isFirstInCompany: boolean;
-  isFirstInAsset: boolean;
-}
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
@@ -80,10 +60,12 @@ export class PptxExportService {
     const appDisplayName = this.brand.appDisplayName();
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
-    const logoData = logoUrl ? await this.loadLogoAsPng(logoUrl) : null;
     const agency = this.brand.agency();
     const agencyName = agency?.name ?? null;
-    const agencyLogo = agency?.logo_url ? await this.loadLogoAsPng(agency.logo_url) : null;
+    const [logoData, agencyLogo] = await Promise.all([
+      this.loadLogoAsPng(logoUrl),
+      this.loadLogoAsPng(agency?.logo_url ?? null),
+    ]);
     const dateStr = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -91,7 +73,7 @@ export class PptxExportService {
     });
     const footer: FooterBrand = { appDisplayName, dateStr, tenantLogo: logoData, agencyName, agencyLogo };
 
-    const rows = this.flattenTrials(companies);
+    const rows = flattenTrials(companies);
     if (rows.length === 0) return;
 
     const markerRows = buildMarkerTableRows(companies);
@@ -308,50 +290,28 @@ export class PptxExportService {
 
   /**
    * Loads a logo URL and returns a base64 PNG data URI suitable for
-   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Brandfetch
-   * URLs are enriched the same way the app renders them (client id + fallback),
-   * then the image is rasterized through a canvas so SVG / webp logos become
-   * PNG. Returns null on any failure (cross-origin taint, 404, timeout) so the
-   * deck falls back to the brand name text.
+   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Uses the
+   * shared loadImageElement loader (Brandfetch enrichment, 8 s timeout, null
+   * on any failure), then rasterizes the returned element through a canvas so
+   * SVG / webp logos become PNG. Returns null so the deck falls back to the
+   * brand name text.
    */
-  private async loadLogoAsPng(rawUrl: string): Promise<string | null> {
-    const url = resolveBrandLogoSrc(rawUrl, environment.brandfetchClientId) ?? rawUrl;
-    return new Promise<string | null>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      let settled = false;
-      const finish = (v: string | null): void => {
-        if (!settled) {
-          settled = true;
-          resolve(v);
-        }
-      };
-      const timer = setTimeout(() => finish(null), 8000);
-      img.onload = (): void => {
-        clearTimeout(timer);
-        try {
-          const w = img.naturalWidth || 256;
-          const h = img.naturalHeight || 256;
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            finish(null);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, w, h);
-          finish(canvas.toDataURL('image/png'));
-        } catch {
-          finish(null);
-        }
-      };
-      img.onerror = (): void => {
-        clearTimeout(timer);
-        finish(null);
-      };
-      img.src = url;
-    });
+  private async loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
+    const img = await loadImageElement(rawUrl);
+    if (!img) return null;
+    try {
+      const w = img.naturalWidth || 256;
+      const h = img.naturalHeight || 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, w, h);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return null;
+    }
   }
 
   private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {
@@ -370,38 +330,6 @@ export class PptxExportService {
   private normalizeHex(value: string | null | undefined): string {
     if (!value) return '';
     return value.replace('#', '').trim().toLowerCase();
-  }
-
-  private flattenTrials(companies: Company[]): FlatRow[] {
-    const rows: FlatRow[] = [];
-    for (const company of companies) {
-      let isFirstInCompany = true;
-      for (const asset of company.assets ?? []) {
-        let isFirstInAsset = true;
-        const moa = (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', ');
-        const roa = (asset.routes_of_administration ?? [])
-          .map((r) => r.abbreviation ?? r.name)
-          .join(', ');
-        for (const trial of asset.trials ?? []) {
-          rows.push({
-            companyName: company.name,
-            companyId: company.id,
-            assetName: asset.name,
-            trialName: trial.acronym ?? trial.name,
-            nctId: trial.identifier ?? null,
-            moa,
-            roa,
-            hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
-            trial,
-            isFirstInCompany,
-            isFirstInAsset,
-          });
-          isFirstInCompany = false;
-          isFirstInAsset = false;
-        }
-      }
-    }
-    return rows;
   }
 
   private renderHeader(
