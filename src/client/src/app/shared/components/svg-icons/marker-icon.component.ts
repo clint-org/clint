@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { GLYPH_STROKES } from '../../../core/models/marker-visual';
 import { FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.model';
 import { CircleIconComponent } from './circle-icon.component';
 import { DiamondIconComponent } from './diamond-icon.component';
@@ -39,8 +40,8 @@ import { TriangleIconComponent } from './triangle-icon.component';
           x2="3"
           [attr.y2]="size()"
           [attr.stroke]="dashedStroke()"
-          stroke-width="1.5"
-          stroke-dasharray="4,3"
+          [attr.stroke-width]="S.dashedLine"
+          [attr.stroke-dasharray]="dashPattern"
           stroke-linecap="round"
           [attr.opacity]="isNle() ? 0.25 : 1"
         />
@@ -104,6 +105,9 @@ export class MarkerIconComponent {
   readonly fillStyle = input<FillStyle>('filled');
   readonly innerMark = input<InnerMark>('none');
   readonly isNle = input<boolean>(false);
+
+  protected readonly S = GLYPH_STROKES;
+  protected readonly dashPattern = GLYPH_STROKES.dashedLinePattern.join(',');
 
   protected readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 

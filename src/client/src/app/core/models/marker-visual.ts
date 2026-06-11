@@ -72,3 +72,24 @@ export const GLYPH_RATIOS = {
   /** Diamond 'check' polyline points (x1,y1,x2,y2,x3,y3). */
   checkPoints: [0.32, 0.5, 0.45, 0.65, 0.68, 0.38] as const,
 } as const;
+
+/**
+ * Stroke widths shared by the SVG icon components and the canvas PNG glyph.
+ * Values are absolute px regardless of glyph size (SVG stroke-width does not
+ * scale with the viewBox), so both renderers read identically at any size.
+ * The PPTX renderer keeps its own pt-based widths (OOXML units).
+ */
+export const GLYPH_STROKES = {
+  /** Main shape outline (circle, diamond always; triangle, square only when outline). */
+  shape: 1.5,
+  /** Inner marks: dash, check, x. */
+  innerMark: 2.5,
+  /** NLE strike-through line. */
+  nleStrike: 2.5,
+  /** Flag banner outline width by fill style. */
+  flagBannerOutline: 1.2,
+  flagBannerFilled: 0.5,
+  /** Dashed-line marker stroke width and dash pattern. */
+  dashedLine: 1.5,
+  dashedLinePattern: [4, 3],
+} as const;
