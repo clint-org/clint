@@ -21,11 +21,20 @@ infra/tofu/
 Reusable resource templates (modules) get factored out only once dev and prod have
 near-identical resources worth sharing. Not needed yet.
 
-## State backend: Scalr (CLI-driven for now)
+## State backend: Scalr (CLI-driven, local execution)
 State lives in Scalr (off Cloudflare, so the recovery map does not sit inside the
-thing it would help rebuild). We run `tofu` locally and Scalr stores state. We will
-flip these workspaces to VCS-driven remote execution later to unlock run history,
-drift detection, and prod approval gates (a workspace setting, not a redo).
+thing it would help rebuild). Host `clintapp.scalr.io`, environment `clint`,
+workspace `clint-shared` (later `clint-dev`, `clint-prod`).
+
+Each workspace must be set to **Local execution mode** (workspace Settings ->
+Source -> Execution mode). Local mode means: runs execute on your machine using
+your **shell env vars** (`CLOUDFLARE_API_TOKEN`, `TF_VAR_cloudflare_account_id`),
+and Scalr only stores state. The default is Remote, which runs on Scalr's infra and
+ignores your local vars (it would need the variables set in Scalr instead).
+
+To unlock run history, drift detection, and prod approval gates later, flip a
+workspace to Remote execution and move its variables into Scalr (a setting change,
+not a redo).
 
 ## Prerequisites
 - OpenTofu (`tofu version`).
