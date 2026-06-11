@@ -1,6 +1,6 @@
 # PNG Export Screen Parity (Markers and Phase Bars)
 
-- **Status:** Design approved, pending spec review
+- **Status:** Implemented
 - **Date:** 2026-06-10
 - **Related:** `docs/superpowers/specs/2026-06-10-timeline-image-excel-export-design.md`, `docs/superpowers/specs/2026-06-08-pptx-export-marker-fidelity-design.md`
 
@@ -22,10 +22,10 @@ Match `src/client/src/app/shared/components/svg-icons/*` exactly:
 
 - **Flag:** replace the rectangle banner with the pole + wavy-banner quadratic-bezier path from `flag-icon.component.ts` (pole at `flagPoleX`, banner `flagWidth` x `flagHeight` = 0.8 x 0.6, same control points). The `flagBannerW`/`flagBannerH` ratios remain for the PPTX renderer only; update their comment.
 - **Diamond:** draw with `diamondHalfW`/`diamondHalfH` (0.42/0.48) instead of full-box vertices.
-- **Fill/stroke rule:** filled glyphs get no outline; outline glyphs get a 1.5px stroke with white fill, matching the icons' `stroke-width: outline ? 1.5 : 0`.
+- **Fill/stroke rule per shape, matching the icons:** circles and diamonds always stroke at 1.5px; triangles and squares stroke only their outline variant; flag banners stroke at 1.2px (outline) or 0.5px (filled); outline glyphs fill white.
 - **Stroke weights and caps:** 1.5px for shape strokes, 2.5px for inner marks (dot is a fill, unaffected), 2.5px for the NLE strike, which spans exactly the glyph width (0 to size, no overhang). Round line caps and joins. Circle radius is `size / 2 - 1` so the stroke stays inside the box.
 - **Absolute stroke widths at any glyph size.** The SVG icons use absolute px stroke-widths regardless of icon size, so the canvas does the same (no proportional scaling). The PNG legend's smaller glyphs therefore match the screen legend's look.
-- **Dashed-line markers:** dash pattern 4,3 and the screen component's stroke width.
+- **Dashed-line markers:** dash pattern 4,3 at the screen's 1.5px width; projected (outline) dashed lines render slate (#cbd5e1); NLE dashed lines dim to 0.25 opacity in their own color and get no strike.
 - **Single source of truth:** stroke numbers move into a shared `GLYPH_STROKES` constant in `core/models/marker-visual.ts`; the SVG icon components (circle, diamond, triangle, square, flag, plus the NLE overlay) switch to reading it. Zero visual change on screen; pure de-hardcoding.
 
 ### Phase bars (`png-export-renderer.ts`)
@@ -34,7 +34,7 @@ Match `phase-bar.component.*`:
 
 - Bar height `min(14, rowH * 0.45)` logical px: normal exports get the screen's fixed 14px bar; crowded exports still shrink to fit.
 - Border 1.2px, corner radius 3px.
-- Label copied from the component: 9px semibold, same color, alignment, and padding, shown from 40px bar width (currently ~58px).
+- Label always rendered, copied from the component: 9px semibold, centered inside in the phase color when the bar is at least 40px wide, otherwise placed just right of the bar, left-anchored, in slate (#64748b).
 
 ### What does not change
 
