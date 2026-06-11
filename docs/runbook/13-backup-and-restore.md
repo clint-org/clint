@@ -1,5 +1,9 @@
 # Backup and Restore
 
+This document owns the Postgres database specifics. For project-wide disaster
+recovery beyond the database (files, secrets, DNS, auth, vendors), see
+[14-disaster-recovery.md](14-disaster-recovery.md).
+
 ## What is backed up
 Per backup (per environment) the bundle holds four SQL artifacts:
 - `roles.sql` - database roles and grants.
@@ -240,6 +244,33 @@ scenarios (A, C) leave the blobs untouched.
 - [ ] Tear down the throwaway project.
 
 ## Drill log
+
+### 2026-06-10 - full restore from the R2 copy into a CLOUD project (PASS)
+Closes the cloud-target gap left open by the local drill below.
+- **Source:** newest prod daily bundle in **Cloudflare R2** (primary),
+  `clint/prod/daily/clint-prod-daily-20260610T122205Z.tar.zst.age`. `sha256`
+  matched the manifest; `age`-decrypted and unpacked cleanly. Download + verify +
+  decrypt took ~2s over the network.
+- **Target:** a **fresh throwaway Supabase cloud project** (free-tier second slot,
+  freed by pausing the dev project). PostgreSQL 17.6, reached over the
+  **session-mode pooler** (`...pooler.supabase.com:5432`), confirming the IPv4
+  pooler path works from outside the GH runners too.
+- **Procedure:** `roles.sql` -> `schema.sql` -> (`data.sql` + `auth_storage.sql`
+  under `session_replication_role = replica`), `ON_ERROR_STOP=1`. All phases
+  exited 0.
+- **Timing:** roles + schema 26s (cloud round-trip latency on the DDL), data 3s,
+  **total ~29s** - still far under the 30-60 min RTO.
+- **Sanity:** `public.marker_types` = 13; `auth.users` = 14, `auth.identities`
+  = 14, `storage.buckets` = 1, `storage.objects` = 1, all matching the manifest.
+  51 public tables, 4808 rows.
+- **New vs the local drill:** a real Supabase platform **provisioned all nine
+  extensions** from `schema.sql` on its own (`hypopg`, `index_advisor`,
+  `pg_graphql`, `pg_stat_statements`, `pg_trgm`, `pgcrypto`, `supabase_vault`,
+  `uuid-ossp`, plus `plpgsql`), platform roles lined up, and the pooler handled
+  the bulk restore. The cloud-specifics readiness gap is now closed; DNS repoint
+  was out of scope (throwaway project, torn down after).
+- **Teardown:** decrypted artifacts scrubbed locally; operator deletes the
+  throwaway project and resumes the dev project as the closing step.
 
 ### 2026-06-10 - full restore from the B2 copy (PASS)
 - **Source:** newest prod daily bundle in **Backblaze B2** (secondary cloud),

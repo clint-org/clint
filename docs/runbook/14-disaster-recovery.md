@@ -34,7 +34,7 @@ goal, "actual" is what evidence supports today.
 
 | # | Domain | What fails | Blast radius | Detection | RPO / RTO | Current mitigation | Top gap |
 |---|--------|-----------|--------------|-----------|-----------|--------------------|---------|
-| 1 | Database (Postgres) | data loss or corruption | all prod data | weekly `backup-verify` (no failure alert); no live uptime check | ~24h / ~1h (drill: seconds) | off-site R2 + B2, pre-migration snapshot, proven restore. See `13-backup-and-restore.md` | no live cloud-target restore drill yet; verify failures are silent |
+| 1 | Database (Postgres) | data loss or corruption | all prod data | weekly `backup-verify` (no failure alert); no live uptime check | ~24h / ~1h (cloud drill 2026-06-10: ~29s) | off-site R2 + B2, pre-migration snapshot, restore proven into a cloud project. See `13-backup-and-restore.md` | DNS repoint to a restored project still untested; verify failures are silent |
 | 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | none | unrecoverable today / unrecoverable today | none. DB backup stores only the pointers | single copy: no versioning, no Object Lock, no off-cloud copy |
 | 3 | Secrets and encryption keys | key lost or leaked | varies by secret; age key loss blocks all DB restores | none | n/a / hours to rotate | partial inventory in a password manager; age key offline | escrow is partial and unaudited; only the age key is confirmed offline |
 | 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; manual, no IaC |
@@ -321,11 +321,11 @@ Behavior per vendor when it degrades or goes hard-down, and the billing failure 
 | Resend | invite emails (edge fn) | degrade: invite email fails, invite code still generated in-app | non-blocking; deliver code out-of-band |
 | Google / Azure AD | OAuth login | degrade: one provider down, the other still works | client deletion = provider-scoped login outage (domain 5) |
 
-- Known gap: Supabase free-tier auto-pause and exhausted project quota are live
-  failure modes, not hypotheticals (the quota already forced the last restore drill
-  onto a local stack). UNKNOWN - needs owner confirmation: whether prod Supabase is
-  on a paid plan; if it stays free-tier, RPO is floored at ~24h (no PITR) and the
-  project can auto-pause.
+- Known gap: Supabase free-tier auto-pause and tight project quota are live
+  failure modes, not hypotheticals (the 2026-06-10 cloud restore drill had to pause
+  the dev project to free a slot for the throwaway target). UNKNOWN - needs owner
+  confirmation: whether prod Supabase is on a paid plan; if it stays free-tier, RPO
+  is floored at ~24h (no PITR) and the project can auto-pause.
 
 ### 10. Detection and monitoring
 How would we know each domain failed? Today, mostly we would not. This is the
@@ -397,7 +397,7 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
 | 2 | Secrets escrow is partial and unaudited (password manager); only the age key is confirmed offline. Slow, error-prone re-provision after account loss. | 3 | medium x high | low | no | UNKNOWN | open |
 | 2 | Supabase project config (provider secrets, live redirect allow-list, pooler, edge secrets, invite webhook) is dashboard-only, not version controlled. | 6 | medium x medium | medium: `supabase config push`, document the webhook and edge secrets | no | UNKNOWN | open |
-| 2 | No live cloud-target restore drill (carried from `13-backup-and-restore.md`); cloud provisioning + DNS repoint untimed, so DB RTO is partly unproven. | 1 | medium x medium | low, but needs a free Supabase project slot | yes: project quota exhausted blocks it | UNKNOWN | open |
+| 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
 | 3 | Tenant DNS / Cloudflare custom-domain config is manual with no IaC; full zone rebuild is a hand walk of the DB domain list. | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
