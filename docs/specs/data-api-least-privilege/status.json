@@ -1,7 +1,7 @@
 {
   "specId": "spec-2026-data-api-least-privilege",
-  "status": "approved",
-  "branch": null,
+  "status": "in-progress",
+  "branch": "spec/data-api-least-privilege",
   "tasks": {
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
@@ -10,5 +10,5 @@
     "T5": { "status": "pending", "agent": null, "attempts": 0, "error": null },
     "T6": { "status": "pending", "agent": null, "attempts": 0, "error": null }
   },
-  "updatedAt": "2026-06-11T20:30:00-07:00"
+  "updatedAt": "2026-06-11T21:58:00-07:00"
 }
