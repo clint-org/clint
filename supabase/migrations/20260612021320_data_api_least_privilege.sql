@@ -84,18 +84,18 @@ revoke all on all sequences in schema public
 grant select on public.agencies to authenticated;
 grant select, insert, update, delete on public.agency_members to authenticated;
 grant select on public.ai_config to authenticated;
-grant insert on public.asset_indications to authenticated;
+grant select, insert on public.asset_indications to authenticated;
 grant select, insert on public.asset_mechanisms_of_action to authenticated;
 grant select, insert on public.asset_routes_of_administration to authenticated;
 grant select, insert, update, delete on public.assets to authenticated;
 grant select on public.audit_events to authenticated;
-grant select on public.change_event_annotations to authenticated;
+grant select, insert, update, delete on public.change_event_annotations to authenticated;
 grant select, insert, update, delete on public.companies to authenticated;
-grant insert on public.condition_indication_map to authenticated;
+grant select, insert on public.condition_indication_map to authenticated;
 grant select, insert on public.conditions to authenticated;
 grant select on public.event_categories to authenticated;
-grant insert on public.event_links to authenticated;
-grant insert on public.event_sources to authenticated;
+grant select, insert on public.event_links to authenticated;
+grant select, insert on public.event_sources to authenticated;
 grant select, insert, delete on public.event_threads to authenticated;
 grant select, insert, update, delete on public.events to authenticated;
 grant select, insert, update, delete on public.indications to authenticated;
@@ -107,6 +107,7 @@ grant select on public.material_links to authenticated;
 grant select, update on public.materials to authenticated;
 grant select, insert, update, delete on public.mechanisms_of_action to authenticated;
 grant select on public.primary_intelligence to authenticated;
+grant select on public.primary_intelligence_links to authenticated;
 grant select on public.retired_hostnames to authenticated;
 grant select, insert, update, delete on public.routes_of_administration to authenticated;
 grant select, delete on public.space_invites to authenticated;
@@ -116,7 +117,8 @@ grant select, insert on public.tenant_invites to authenticated;
 grant select, delete on public.tenant_members to authenticated;
 grant select, update, delete on public.tenants to authenticated;
 grant select on public.trial_assets to authenticated;
-grant insert on public.trial_conditions to authenticated;
+grant select on public.trial_change_events to authenticated;
+grant select, insert on public.trial_conditions to authenticated;
 grant select on public.trial_ctgov_snapshots to authenticated;
 grant select, insert, update, delete on public.trial_notes to authenticated;
 grant select, insert, update, delete on public.trials to authenticated;
@@ -173,6 +175,15 @@ begin
 
   if has_table_privilege('anon', 'public.companies', 'select') then
     raise exception 'least privilege smoke: anon can select companies';
+  end if;
+
+  -- role-access.spec asserts these two as 42501 (previously RLS-empty).
+  if has_table_privilege('anon', 'public.tenants', 'select') then
+    raise exception 'least privilege smoke: anon can select tenants';
+  end if;
+
+  if has_table_privilege('anon', 'public.spaces', 'select') then
+    raise exception 'least privilege smoke: anon can select spaces';
   end if;
 
   -- service_role deny-list holds.
