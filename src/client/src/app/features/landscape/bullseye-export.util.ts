@@ -2,7 +2,8 @@ import type { BullseyeData } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import type { SheetColumn } from '../../shared/export/xlsx-sheet.util';
 
-export interface BullseyeExportRow {
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type BullseyeExportRow = {
   spoke: string;
   company: string;
   asset: string;
@@ -11,9 +12,7 @@ export interface BullseyeExportRow {
   moa: string;
   roa: string;
   indication: string;
-  /** Index signature so rows satisfy SheetSpec.rows (Record<string, unknown>). */
-  [key: string]: string;
-}
+};
 
 /**
  * Flatten the bullseye spoke→asset structure into one row per asset occurrence,
