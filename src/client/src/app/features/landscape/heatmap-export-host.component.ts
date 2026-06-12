@@ -54,7 +54,7 @@ export class HeatmapExportHostComponent {
   readonly sortField = input.required<SortField>();
   readonly sortDir = input.required<'asc' | 'desc'>();
   readonly latestEventDate = input<string | null>(null);
-  readonly showPreclinical = input(false);
+  readonly showPreclinical = input(true);
   readonly tenantName = input('');
   /** Pre-rasterized PNG data URIs (or null), supplied by BrandedPngExportService. */
   readonly tenantLogoUrl = input<string | null>(null);
