@@ -21,12 +21,16 @@ import { Tooltip } from 'primeng/tooltip';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import {
   BullseyeDimension,
+  clampTimePeriod,
   COUNT_UNIT_OPTIONS,
   EMPTY_LANDSCAPE_FILTERS,
+  formatTimePeriod,
   LandscapeFilters,
+  Quarter,
   RingPhase,
   SPOKE_GROUPING_OPTIONS,
   SpokeGrouping,
+  TimePeriodFilter,
   ViewMode,
   visibleRingOrder,
 } from '../../core/models/landscape.model';
@@ -147,6 +151,48 @@ export class LandscapeFilterBarComponent implements OnInit {
     { label: 'Withdrawn', value: 'Withdrawn' },
   ];
 
+  readonly quarterOptions: { label: string; value: Quarter }[] = [
+    { label: 'Q1', value: 1 },
+    { label: 'Q2', value: 2 },
+    { label: 'Q3', value: 3 },
+    { label: 'Q4', value: 4 },
+  ];
+
+  /**
+   * Year options for the time period selects: min..max year present in the
+   * loaded data (phase dates and marker dates), padded by one year each side.
+   * Falls back to the timeline's default 2016-2026 range when no data.
+   */
+  readonly yearOptions = computed<{ label: string; value: number }[]>(() => {
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    const consider = (iso: string | null | undefined) => {
+      const year = iso ? Number(iso.slice(0, 4)) : NaN;
+      if (!Number.isFinite(year)) return;
+      if (year < min) min = year;
+      if (year > max) max = year;
+    };
+    for (const company of this.state.rawData()?.companies ?? []) {
+      for (const asset of company.assets ?? []) {
+        for (const trial of asset.trials ?? []) {
+          consider(trial.phase_start_date);
+          consider(trial.phase_end_date);
+          for (const marker of trial.markers ?? []) {
+            consider(marker.event_date);
+            consider(marker.end_date);
+          }
+        }
+      }
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      min = 2016;
+      max = 2026;
+    }
+    const years: { label: string; value: number }[] = [];
+    for (let y = min - 1; y <= max + 1; y++) years.push({ label: String(y), value: y });
+    return years;
+  });
+
   readonly activeChips = computed<FilterChip[]>(() => {
     const f = this.state.filters();
     const chips: FilterChip[] = [];
@@ -179,6 +225,15 @@ export class LandscapeFilterBarComponent implements OnInit {
       chips.push({ field: 'recruitmentStatuses', header: 'Status', value: status, id: status });
     }
 
+    if (f.timePeriod) {
+      chips.push({
+        field: 'timePeriod',
+        header: 'Period',
+        value: formatTimePeriod(f.timePeriod),
+        id: 'timePeriod',
+      });
+    }
+
     return chips;
   });
 
@@ -193,7 +248,8 @@ export class LandscapeFilterBarComponent implements OnInit {
       f.routeOfAdministrationIds.length > 0 ||
       f.phases.length > 0 ||
       f.recruitmentStatuses.length > 0 ||
-      f.markerCategoryIds.length > 0
+      f.markerCategoryIds.length > 0 ||
+      !!f.timePeriod
     );
   });
 
@@ -245,7 +301,34 @@ export class LandscapeFilterBarComponent implements OnInit {
     this.state.filters.update((f) => ({ ...f, [key]: safe }));
   }
 
+  /**
+   * Patch the time period. Clearing a year clears its quarter; if From ends
+   * up after To, To is clamped up to From; an all-null period collapses back
+   * to null so chips, clear-all, and persistence see "no filter".
+   */
+  updateTimePeriod(patch: Partial<TimePeriodFilter>): void {
+    this.state.filters.update((f) => {
+      const merged: TimePeriodFilter = {
+        startYear: null,
+        startQuarter: null,
+        endYear: null,
+        endQuarter: null,
+        ...(f.timePeriod ?? {}),
+        ...patch,
+      };
+      if (merged.startYear === null) merged.startQuarter = null;
+      if (merged.endYear === null) merged.endQuarter = null;
+      const clamped = clampTimePeriod(merged);
+      const empty = clamped.startYear === null && clamped.endYear === null;
+      return { ...f, timePeriod: empty ? null : clamped };
+    });
+  }
+
   removeChip(chip: FilterChip): void {
+    if (chip.field === 'timePeriod') {
+      this.state.filters.update((f) => ({ ...f, timePeriod: null }));
+      return;
+    }
     this.state.filters.update((f) => {
       const arr = [...(f[chip.field] as string[])];
       const idx = arr.indexOf(chip.id);
@@ -268,6 +351,7 @@ export class LandscapeFilterBarComponent implements OnInit {
       recruitmentStatuses: [...before.recruitmentStatuses],
       studyTypes: [...before.studyTypes],
       markerCategoryIds: [...before.markerCategoryIds],
+      timePeriod: before.timePeriod ? { ...before.timePeriod } : null,
     };
     this.state.filters.set({ ...EMPTY_LANDSCAPE_FILTERS });
 
