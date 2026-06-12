@@ -39,7 +39,8 @@ const FOOTER_H = 0.26;
 const FALLBACK_PRIMARY = '0d9488';
 
 interface FooterBrand {
-  appDisplayName: string;
+  /** Artifact label (not the brand name, which duplicated the tenant segment). */
+  title: string;
   dateStr: string;
   /** Rasterized Clint mark PNG (product identity, leads the footer). */
   productMark: string | null;
@@ -89,7 +90,7 @@ export class PptxExportService {
       day: 'numeric',
     });
     const footer: FooterBrand = {
-      appDisplayName,
+      title: 'Timeline',
       dateStr,
       productMark,
       tenantName: tenant?.name ?? null,
@@ -184,8 +185,8 @@ export class PptxExportService {
       });
       x += glyph + 0.07;
     }
-    slide.addText(footer.appDisplayName, { ...partyName, x, w: 1.4 });
-    x += footer.appDisplayName.length * 0.065 + 0.3;
+    slide.addText(footer.title, { ...partyName, x, w: 1.4 });
+    x += footer.title.length * 0.065 + 0.3;
 
     // 2. Agency: DELIVERED BY + logo (or name). Hidden when no agency.
     if (footer.agencyName) {

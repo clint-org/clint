@@ -79,7 +79,7 @@ Opt-in on the major visualization empty states, which are centered flex containe
 
 Both export footers carry the same ordered segments:
 
-1. Clint mark (16px) + `appDisplayName()` in bold. The leading slot is always the product identity; it no longer uses the host brand `logo_url` (that produced a double-agency footer on agency hosts).
+1. Clint mark (16px) + the artifact label "Timeline" in bold (revised 2026-06-12: the leading slot first used `appDisplayName()`, which on tenant-named hosts duplicated the PREPARED FOR tenant segment). It never uses the host brand `logo_url` (that produced a double-agency footer on agency hosts).
 2. Divider, "DELIVERED BY" microlabel + agency logo (name text fallback). Hidden when no agency.
 3. Divider, "PREPARED FOR" microlabel + tenant logo (initial-badge fallback) + tenant name, truncated with ellipsis at a max width. Hidden if tenant context is somehow absent.
 4. Export date right-aligned (PPTX also keeps page numbers).

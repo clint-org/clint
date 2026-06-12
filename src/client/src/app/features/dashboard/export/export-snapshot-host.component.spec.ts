@@ -43,7 +43,7 @@ describe('ExportSnapshotHostComponent template contract', () => {
   });
 
   it('carries the three-party footer: product, agency, tenant, date', () => {
-    expect(src).toContain('{{ appDisplayName() }}');
+    expect(src).toContain('>Timeline</span>');
     expect(src).toContain('Delivered by');
     expect(src).toContain('Prepared for');
     expect(src).toContain('{{ exportDate }}');
