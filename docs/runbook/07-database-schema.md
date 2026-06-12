@@ -920,4 +920,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260608120000_add_total_trials_to_landing_stats.sql`
 - `20260611120000_restore_data_api_table_grants.sql`
 - `20260612021320_data_api_least_privilege.sql`
+- `20260612190000_fix_search_palette_phase_label.sql`
 <!-- /AUTO-GEN:DRIFT -->

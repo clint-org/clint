@@ -31,11 +31,41 @@ beforeAll(async () => {
 
   // A company whose name is a clean trgm match target for the search below.
   const admin = adminClient();
-  await admin
+  const { data: company } = await admin
     .from('companies')
     .insert({ space_id: p.org.spaceId, name: 'Zentech Bio', created_by: p.ids.tenant_owner })
     .select('id')
     .single();
+
+  // Trials for the phase-label cases: one with only the raw CT.gov string
+  // ("Phase 3", the input that used to render "PhPhase 3") and one with the
+  // canonical phase_type enum.
+  const { data: asset } = await admin
+    .from('assets')
+    .insert({
+      space_id: p.org.spaceId,
+      company_id: company!.id,
+      name: 'Zentide',
+      created_by: p.ids.tenant_owner,
+    })
+    .select('id')
+    .single();
+  await admin.from('trials').insert([
+    {
+      space_id: p.org.spaceId,
+      asset_id: asset!.id,
+      name: 'ZENITH-RAWPHASE',
+      phase: 'Phase 3',
+      created_by: p.ids.tenant_owner,
+    },
+    {
+      space_id: p.org.spaceId,
+      asset_id: asset!.id,
+      name: 'ZENITH-TYPED',
+      phase_type: 'P2',
+      created_by: p.ids.tenant_owner,
+    },
+  ]);
 }, 90_000);
 
 describe('rpc search_palette', () => {
@@ -59,6 +89,31 @@ describe('rpc search_palette', () => {
     });
     const rows = expectOk(r) as PaletteRow[];
     expect(rows.every((row) => row.kind === 'company')).toBe(true);
+  });
+
+  it('formats the raw CT.gov phase string without doubling the prefix', async () => {
+    const r = await as(p, 'reader').rpc('search_palette', {
+      p_space_id: p.org.spaceId,
+      p_query: 'ZENITH-RAWPHASE',
+      p_kind: 'trial',
+    });
+    const rows = expectOk(r) as PaletteRow[];
+    const trial = rows.find((row) => row.name === 'ZENITH-RAWPHASE');
+    expect(trial).toBeDefined();
+    expect(trial!.secondary).toContain('Ph 3');
+    expect(trial!.secondary).not.toContain('PhPhase');
+  });
+
+  it('formats phase_type via the canonical enum mapping', async () => {
+    const r = await as(p, 'reader').rpc('search_palette', {
+      p_space_id: p.org.spaceId,
+      p_query: 'ZENITH-TYPED',
+      p_kind: 'trial',
+    });
+    const rows = expectOk(r) as PaletteRow[];
+    const trial = rows.find((row) => row.name === 'ZENITH-TYPED');
+    expect(trial).toBeDefined();
+    expect(trial!.secondary).toContain('Ph 2');
   });
 
   it('short queries (< 2 chars) return empty without error', async () => {
