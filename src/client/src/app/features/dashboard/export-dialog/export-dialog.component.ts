@@ -193,6 +193,7 @@ export class ExportDialogComponent {
           showMoaColumn: this.showMoaColumn(),
           showRoaColumn: this.showRoaColumn(),
           showNotesColumn: this.showNotesColumn(),
+          tenant,
         });
       }
       this.visible.set(false);
