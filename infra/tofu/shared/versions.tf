@@ -21,5 +21,12 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5"
     }
+    # Backblaze B2 holds the cross-cloud (off-Cloudflare) copy of the encrypted DB
+    # backups. Its bucket + Object Lock / lifecycle live here alongside the R2 backup
+    # bucket they mirror.
+    b2 = {
+      source  = "Backblaze/b2"
+      version = "~> 0.10"
+    }
   }
 }

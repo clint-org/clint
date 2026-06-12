@@ -2,9 +2,9 @@
 id: spec-2026-data-api-least-privilege
 title: Data API Least-Privilege Grants
 slug: data-api-least-privilege
-status: approved
+status: completed
 created: 2026-06-11
-updated: 2026-06-11
+updated: 2026-06-12
 design_doc: docs/superpowers/specs/2026-06-11-data-api-least-privilege-design.md
 ---
 
