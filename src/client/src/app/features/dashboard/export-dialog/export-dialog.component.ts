@@ -97,7 +97,7 @@ export class ExportDialogComponent {
    * LandscapeStateService instance (providedIn: 'any') as the live view.
    */
   private readonly injector = inject(Injector);
-  private tenantService = inject(TenantService);
+  private readonly tenantService = inject(TenantService);
 
   /** Which renderer this dialog drives. Excel bypasses the dialog entirely. */
   readonly format = input<'pptx' | 'png'>('pptx');
