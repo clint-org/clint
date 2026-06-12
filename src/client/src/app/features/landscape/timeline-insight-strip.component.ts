@@ -20,7 +20,7 @@ import { LandscapeStateService } from './landscape-state.service';
       @if (!columnsOnly()) {
         <div class="flex flex-col gap-1 flex-1 min-w-0">
           <span
-            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
             >READ</span
           >
           @if (read().text; as text) {
@@ -35,7 +35,7 @@ import { LandscapeStateService } from './landscape-state.service';
 
         <div class="flex flex-col gap-1 flex-shrink-0">
           <span
-            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
             >STATS</span
           >
           <div class="flex gap-3">
@@ -43,19 +43,19 @@ import { LandscapeStateService } from './landscape-state.service';
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().companyCount
               }}</span>
-              <span class="text-[11px] text-slate-400">co</span>
+              <span class="text-[11px] text-slate-500">co</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().assetCount
               }}</span>
-              <span class="text-[11px] text-slate-400">assets</span>
+              <span class="text-[11px] text-slate-500">assets</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().trialCount
               }}</span>
-              <span class="text-[11px] text-slate-400">trials</span>
+              <span class="text-[11px] text-slate-500">trials</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span
@@ -67,7 +67,7 @@ import { LandscapeStateService } from './landscape-state.service';
                 [class.text-slate-800]="stats().catalystCount90d === 0"
                 >{{ stats().catalystCount90d }}</span
               >
-              <span class="text-[11px] text-slate-400">cat/90d</span>
+              <span class="text-[11px] text-slate-500">cat/90d</span>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@ import { LandscapeStateService } from './landscape-state.service';
       }
 
       <div class="flex flex-col gap-1 flex-shrink-0">
-        <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400"
+        <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
           >COLUMNS</span
         >
         <div class="flex gap-2.5 pt-px">
@@ -126,7 +126,7 @@ import { LandscapeStateService } from './landscape-state.service';
       font-weight: 600;
     }
     :host ::ng-deep .read-content strong.leader-name {
-      color: var(--teal-600, #0d9488);
+      color: var(--brand-600, #0d9488);
     }
   `,
 })

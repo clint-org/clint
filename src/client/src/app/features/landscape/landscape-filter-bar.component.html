@@ -201,7 +201,7 @@
 
       <!-- Time period: From/To year with optional quarter -->
       <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-      <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-400"
+      <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
         >Period</span
       >
       <p-select
@@ -277,7 +277,7 @@
 
       @if (state.lastSyncedAt(); as ts) {
         <span
-          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-400"
+          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
           [pTooltip]="'Most recent CT.gov sync across all trials. Individual trials may be older or not yet synced.'"
           tooltipPosition="left"
         >
@@ -333,7 +333,7 @@
           <span>{{ chip.value }}</span>
           <button
             type="button"
-            class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            class="-mr-0.5 ml-0.5 rounded text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
             [attr.aria-label]="'Remove ' + chip.header + ' ' + chip.value + ' filter'"
             (click)="removeChip(chip)"
           >

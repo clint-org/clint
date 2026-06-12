@@ -10,6 +10,7 @@ import {
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
 import { resolveMarkerVisual } from '../../../core/models/marker-visual';
+import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
@@ -70,6 +71,13 @@ export class MarkerComponent {
   readonly isNle = computed(() => this.visual().isNle);
 
   readonly isDashedLine = computed(() => this.markerType()?.shape === 'dashed-line');
+
+  /**
+   * Date caption color: the marker type's color darkened (if needed) to the
+   * AA 4.5:1 normal-text ratio on white. The icon keeps the raw color; only
+   * the 8px text needs the boost.
+   */
+  readonly captionColor = computed(() => textColorOnWhite(this.markerType()?.color ?? '#475569'));
 
   readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
