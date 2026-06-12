@@ -16,7 +16,7 @@ export type FilterValue =
 export interface ColumnDef<T> {
   /** Dotted path into the row view-model, e.g. 'asset.company_id' or 'companyName'. */
   field: string;
-  /** Display header — also used as the chip label prefix. */
+  /** Display header, also used as the chip label prefix. */
   header: string;
   /** Omit to mean "no filter on this column". */
   filter?:
@@ -31,7 +31,7 @@ export interface ColumnDef<T> {
 }
 
 /**
- * Full grid state — serializable to/from URL query params.
+ * Full grid state, serializable to/from URL query params.
  */
 export interface FilterState {
   globalSearch: string;
@@ -85,7 +85,7 @@ export interface GridState<T> {
   readonly debouncedGlobalSearch: Signal<string>;
   readonly filters: WritableSignal<Record<string, FilterValue>>;
   readonly sort: WritableSignal<{ field: string; order: 1 | -1 } | null>;
-  /** The column defs this grid was created with — reused by Excel export. */
+  /** The column defs this grid was created with, reused by Excel export. */
   readonly columns: ColumnDef<T>[];
   readonly page: WritableSignal<{ first: number; rows: number }>;
 
