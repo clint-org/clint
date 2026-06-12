@@ -60,7 +60,9 @@ import { LegendComponent } from '../legend/legend.component';
           stroke-linejoin="round"
         />
       </svg>
-      <span class="text-xs font-bold text-slate-600">{{ appDisplayName() }}</span>
+      <!-- Artifact label, not the brand name: tenant-named hosts made the
+           brand name duplicate the PREPARED FOR tenant segment. -->
+      <span class="text-xs font-bold text-slate-600">Timeline</span>
       @if (agencyName(); as agency) {
         <span class="h-3.5 w-px bg-slate-200" aria-hidden="true"></span>
         <span class="text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -113,7 +115,6 @@ export class ExportSnapshotHostComponent {
   readonly tenantLogoUrl = input<string | null>(null);
   readonly agencyLogoUrl = input<string | null>(null);
 
-  protected readonly appDisplayName = computed(() => this.brand.appDisplayName());
   protected readonly agencyName = computed(() => this.brand.agency()?.name ?? null);
 
   protected readonly mark = CLINT_MARK_POINTS;

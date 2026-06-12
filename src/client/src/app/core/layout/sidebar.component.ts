@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { Tooltip } from 'primeng/tooltip';
+import { PLATFORM_OPERATOR } from '../models/legal-content';
 import { ClintLogoComponent } from '../../shared/components/clint-logo.component';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { BrandContextService } from '../services/brand-context.service';
@@ -100,59 +101,27 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       (mouseenter)="onMouseEnter()"
       (mouseleave)="onMouseLeave()"
     >
-      <!-- Logo row: product identity lockup. Clint (or the renamed product)
-           leads; an agency rides along as "delivered by" rather than
-           replacing the mark (lockup B in the brand-presence spec). -->
+      <!-- Logo row: the product identity is always Clint (the platform name,
+           never the tenant: the tenant lives in the topbar chooser). The
+           agency credit is a colophon at the sidebar's bottom edge. -->
       <div class="sidebar__logo">
-        <div class="sidebar__identity">
-          <button
-            type="button"
-            class="logo-btn"
-            [attr.aria-label]="logoLabel()"
-            [pTooltip]="isExpanded() ? '' : logoTooltip()"
-            tooltipPosition="right"
-            (click)="logoClick.emit()"
-          >
-            @if (isExpanded()) {
-              <span class="identity-lockup">
-                <app-clint-logo [size]="20" [dark]="true" />
-                <span class="identity-wordmark">{{ wordmark() }}</span>
-              </span>
-            } @else if (agencyBrand(); as ag) {
-              @if (ag.logo_url) {
-                <img
-                  [ngSrc]="ag.logo_url"
-                  [alt]="ag.name"
-                  width="48"
-                  height="48"
-                  class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
-                />
-              } @else {
-                <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
-              }
-            } @else {
-              <app-clint-logo [size]="24" [dark]="true" />
-            }
-          </button>
+        <button
+          type="button"
+          class="logo-btn"
+          [attr.aria-label]="logoLabel()"
+          [pTooltip]="isExpanded() ? '' : logoTooltip()"
+          tooltipPosition="right"
+          (click)="logoClick.emit()"
+        >
           @if (isExpanded()) {
-            @if (agencyBrand(); as ag) {
-              <div class="delivered-by">
-                <span class="delivered-by__label">Delivered by</span>
-                @if (ag.logo_url) {
-                  <img
-                    [ngSrc]="ag.logo_url"
-                    [alt]="ag.name"
-                    width="140"
-                    height="28"
-                    class="delivered-by__logo"
-                  />
-                } @else {
-                  <span class="delivered-by__name">{{ ag.name }}</span>
-                }
-              </div>
-            }
+            <span class="identity-lockup">
+              <app-clint-logo [size]="20" [dark]="true" />
+              <span class="identity-wordmark">{{ wordmark }}</span>
+            </span>
+          } @else {
+            <app-clint-logo [size]="24" [dark]="true" />
           }
-        </div>
+        </button>
 
         @if (isExpanded()) {
           <div class="flex-1"></div>
@@ -281,6 +250,28 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
           <span class="avatar-email">{{ userEmail() }}</span>
         }
       </div>
+
+      <!-- Agency colophon: passive signage at the true bottom edge, on every
+           page (the sidebar is global chrome). Expanded only: the 52px rail
+           has no room for a third bottom row. -->
+      @if (isExpanded()) {
+        @if (agencyBrand(); as ag) {
+          <div class="agency-credit">
+            <span class="agency-credit__label">Intelligence by</span>
+            @if (ag.logo_url) {
+              <img
+                [ngSrc]="ag.logo_url"
+                [alt]="ag.name"
+                width="140"
+                height="28"
+                class="agency-credit__logo"
+              />
+            } @else {
+              <span class="agency-credit__name">{{ ag.name }}</span>
+            }
+          </div>
+        }
+      }
     </div>
   `,
   styles: [
@@ -362,14 +353,6 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 8px;
       }
 
-      .sidebar__identity {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        min-width: 0;
-      }
-
       .identity-lockup {
         display: inline-flex;
         align-items: center;
@@ -386,17 +369,19 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         white-space: nowrap;
       }
 
-      /* Agency credit under the product lockup. Agency wordmarks tend to be
+      /* Agency colophon at the bottom edge. Agency wordmarks tend to be
          dark-on-light, so the logo sits on a near-white tile to stay legible
          against the slate-900 sidebar. */
-      .delivered-by {
+      .agency-credit {
         display: flex;
         align-items: center;
         gap: 6px;
-        padding-left: 2px;
+        border-top: 1px solid #1e293b;
+        margin-top: 8px;
+        padding: 10px 12px 14px;
       }
 
-      .delivered-by__label {
+      .agency-credit__label {
         color: #64748b;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 8.5px;
@@ -406,7 +391,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         white-space: nowrap;
       }
 
-      .delivered-by__logo {
+      .agency-credit__logo {
         height: 16px;
         max-width: 104px;
         width: auto;
@@ -417,30 +402,11 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         box-sizing: content-box;
       }
 
-      .delivered-by__name {
+      .agency-credit__name {
         color: #cbd5e1;
         font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
-      }
-
-      /* Collapsed-state badge (and fallback when an agency has no logo).
-         Initial letter on a brand-tinted square -- the same visual idiom
-         tenant badges use elsewhere in the app. */
-      .agency-initial {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 5px;
-        background: rgb(from var(--brand-on-dark) r g b / 0.15);
-        color: var(--brand-on-dark);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        user-select: none;
       }
 
       .pin-btn {
@@ -696,23 +662,15 @@ export class SidebarComponent {
   readonly userAvatarUrl = input<string | null>(null);
 
   /**
-   * On a tenant host whose tenant was provisioned by an agency, the agency
-   * occupies the platform-brand slot (this sidebar) -- they whitelabeled
-   * Clint, so they should sit where Clint would. Null on tenant hosts
-   * without an agency, and on default / super-admin hosts (the agency
-   * portal itself uses its own shell).
+   * Agency for the bottom-edge colophon ("Intelligence by ..."). Null on
+   * tenant hosts without an agency, and on default / super-admin hosts.
+   * The top identity slot is always the Clint lockup: the tenant lives in
+   * the topbar chooser, never in the sidebar.
    */
   readonly agencyBrand = this.brandContext.agency;
-  readonly agencyInitial = computed(() => {
-    const name = this.agencyBrand()?.name?.trim() ?? '';
-    return name ? name.charAt(0).toUpperCase() : '?';
-  });
-  /** Product wordmark: the brand display name, tracked uppercase via CSS. */
-  readonly wordmark = computed(() => this.brandContext.appDisplayName());
-  readonly logoLabel = computed(() => {
-    const ag = this.agencyBrand();
-    return ag ? `${ag.name} -- go to home` : 'Go to home';
-  });
+  /** Product wordmark: the platform name, tracked uppercase via CSS. */
+  protected readonly wordmark = PLATFORM_OPERATOR;
+  readonly logoLabel = computed(() => 'Go to home');
   readonly logoTooltip = computed(() => (this.hasSpace() ? 'Engagement home' : 'Spaces'));
 
   readonly pinToggle = output<void>();

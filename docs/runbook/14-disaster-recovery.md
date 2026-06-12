@@ -37,7 +37,7 @@ goal, "actual" is what evidence supports today.
 | 1 | Database (Postgres) | data loss or corruption | all prod data | weekly `backup-verify` (no failure alert); no live uptime check | ~24h / ~1h (cloud drill 2026-06-10: ~29s) | off-site R2 + B2, pre-migration snapshot, restore proven into a cloud project. See `13-backup-and-restore.md` | DNS repoint to a restored project still untested; verify failures are silent |
 | 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | none | unrecoverable today / unrecoverable today | none. DB backup stores only the pointers | single copy: no versioning, no Object Lock, no off-cloud copy |
 | 3 | Secrets and encryption keys | key lost or leaked | varies by secret; age key loss blocks all DB restores | none | n/a / hours to rotate | partial inventory in a password manager; age key offline | escrow is partial and unaudited; only the age key is confirmed offline |
-| 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; manual, no IaC |
+| 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; zone/records + prod platform domains/route now in IaC, per-tenant custom domains still manual |
 | 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; config in `supabase/config.toml` | cloud provider secrets and redirect URLs live only in the dashboard |
 | 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | none | n/a / hours | schema/RLS/extensions in migrations; auth shape in `config.toml` | cloud-only settings (provider secrets, redirect URLs, pooler, edge secrets) not captured as code |
 | 7 | Cloudflare account and Workers | bad deploy, wrangler config loss, account compromise/suspension | bad deploy: all tenants briefly. Account loss: app + DNS + materials + primary DB backups | none (no uptime check) | n/a / minutes (deploy) to days (account) | GHA deploy with prod approval gate; rollback via redeploy | account is the largest single blast radius; B2 is the only DB backup outside it |
@@ -203,15 +203,21 @@ Inventory by where it lives:
      still points at the Worker. Re-add the Cloudflare custom domain if missing
      (see `12-deployment.md`).
   4. Full zone rebuild after account loss: the `clintapp.com` zone and its records
-     are codified in OpenTofu (`infra/tofu/shared/dns.tf`, Scalr `clint-shared`
-     state). Point the provider at the new account (update `TF_VAR_cloudflare_account_id`
-     and mint a token), then `tofu apply` recreates the zone and all records. Re-add
-     the apex and wildcard Workers routes, then walk every `custom_domain` in
-     `tenants` and `agencies` and re-add each as a Cloudflare Custom Domain (the
-     tenant custom-domain side is not yet codified).
-- Known gap: the apex zone and its records are now captured as code; the tenant
-  custom-domain / custom-hostname side is still manual, so that part of a rebuild is
-  a walk of the DB domain list. No cert-expiry monitoring.
+     are codified in OpenTofu (`infra/tofu/shared/dns.tf`, Scalr `clint-shared`). The
+     prod Worker's platform custom domains (`clintapp.com`, `www.clintapp.com`) and
+     the `*.clintapp.com` tenant-wildcard route are codified in
+     `infra/tofu/prod/workers.tf` (Scalr `clint-prod`), and the dev routes
+     (`dev.clintapp.com/*`, `*.dev.clintapp.com/*`) plus the `clint-materials-dev`
+     bucket in `infra/tofu/dev/` (Scalr `clint-dev`). Point the provider at the new
+     account (update
+     `TF_VAR_cloudflare_account_id` and mint a token), then `tofu apply` in each root
+     recreates the zone, records, and routing. Then walk every per-tenant
+     `custom_domain` in `tenants` and `agencies` and re-add each as a Cloudflare
+     Custom Domain (the per-tenant custom-domain side is not yet codified).
+- Known gap: the apex zone, its records, the prod platform custom domains, and the
+  tenant-wildcard route are now captured as code; the per-tenant custom-domain /
+  custom-hostname side is still manual, so that part of a rebuild is a walk of the DB
+  domain list. No cert-expiry monitoring.
 
 ### 5. Identity and auth (Google + Microsoft OAuth via Supabase Auth)
 - What can fail: an OAuth client is deleted or its secret expires (Google or Azure),
@@ -281,12 +287,15 @@ the edge function and its secrets, and OAuth setup.
   bindings, R2 buckets, rate limiters, and the cron, so it rebuilds the Worker shape
   exactly.
 - Recovery procedure (account loss): this is a multi-day rebuild. Stand up a new
-  Cloudflare account, recreate the `clintapp.com` zone and the apex+wildcard routes,
-  recreate both materials buckets and the backup bucket, re-add every tenant custom
-  domain (domain 4), reissue `CLOUDFLARE_API_TOKEN` and re-deploy both Workers,
-  re-add Worker runtime secrets via `wrangler secret put`, and restore the DB from
-  B2. Materials are not recoverable in this path under the current single-copy
-  posture. Engage Cloudflare support for account recovery in parallel.
+  Cloudflare account, mint a token and update `TF_VAR_cloudflare_account_id`, then
+  `tofu apply` the `infra/tofu/` roots to recreate the `clintapp.com` zone + records,
+  both materials buckets and the backup bucket, and the prod Worker custom domains +
+  tenant-wildcard route (shared / prod / dev roots). Re-add every per-tenant custom
+  domain (domain 4, still manual), re-deploy both Workers via wrangler, re-add Worker
+  runtime secrets via `wrangler secret put`, and restore the DB from B2. The buckets
+  recreate empty: materials contents are not recoverable in this path under the
+  current single-copy posture. Engage Cloudflare support for account recovery in
+  parallel.
 - Known gap: the account is the largest single blast radius; account-recovery
   contacts, MFA/hardware-key enrollment, and a break-glass second-admin are
   UNKNOWN - needs owner confirmation.
@@ -408,6 +417,6 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
-| 3 | Tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: the `clintapp.com` zone + records are now codified in `infra/tofu/shared/dns.tf`; tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
+| 3 | Per-tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: `clintapp.com` zone + records in `infra/tofu/shared/dns.tf`, the prod Worker platform custom domains + `*.clintapp.com` route + `clint-materials` in `infra/tofu/prod/`, and the dev routes + `clint-materials-dev` in `infra/tofu/dev/`; per-tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
 | 3 | No defined incident roles, contact tree, or status-comms channel; likely single-operator. | 11 | medium x high | low: name roles, write a contact tree, pick an out-of-band status channel | no | UNKNOWN | open |
 | 3 | `roles.sql` is not idempotent (`CREATE ROLE` without `IF NOT EXISTS`); benign on a fresh target, errors on re-run (carried from `13-backup-and-restore.md`). | 1 | low x low | low | no | UNKNOWN | open |

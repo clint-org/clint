@@ -54,7 +54,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
             <div
               class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
             >
-              <app-loader [size]="28" />
+              <app-loader [size]="36" />
             </div>
           } @else {
             <app-marker-detail-panel
