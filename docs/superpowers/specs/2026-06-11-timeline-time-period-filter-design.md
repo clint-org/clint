@@ -47,7 +47,7 @@ Pass rules (interval overlap, inclusive):
 
 ## UI
 
-One labeled "Time period" group in `landscape-filter-bar.component.html`, placed after the existing entity filters and before the zoom toggle:
+One labeled "Period" group in `landscape-filter-bar.component.html`, placed after the existing entity filters (Category) and before the Clear-filters button; the zoom toggle sits at the start of the bar:
 
 - Two PrimeNG Selects for From year and To year. Options are derived from the loaded data's min and max year, padded by one year on each side.
 - Two small PrimeNG Selects for From quarter and To quarter (Q1 to Q4), each clearable back to a full-year state and disabled until its year is set.
