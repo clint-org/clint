@@ -74,15 +74,19 @@ import type { GridState } from '../grids/filter-types';
             </button>
           }
 
-          <p-button
-            [label]="clearLabel()"
-            severity="secondary"
-            [text]="true"
-            size="small"
-            [disabled]="!state().isFiltered()"
-            (onClick)="state().clearAll()"
-            [attr.aria-label]="clearLabel() + ' (filters only)'"
-          />
+          <!-- Render only when there is something to clear: a permanently
+               visible disabled button reads as broken chrome on unfiltered
+               lists (UI review 2026-06-12, item 8). -->
+          @if (state().isFiltered()) {
+            <p-button
+              [label]="clearLabel()"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              (onClick)="state().clearAll()"
+              [attr.aria-label]="clearLabel() + ' (filters only)'"
+            />
+          }
         </div>
       </div>
 
