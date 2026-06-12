@@ -19,6 +19,7 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { PptxExportService } from '../../../core/services/pptx-export.service';
+import { TenantService } from '../../../core/services/tenant.service';
 import { PngExportService, type PngExportSnapshot } from '../export/png-export.service';
 
 @Component({
@@ -96,6 +97,7 @@ export class ExportDialogComponent {
    * LandscapeStateService instance (providedIn: 'any') as the live view.
    */
   private readonly injector = inject(Injector);
+  private tenantService = inject(TenantService);
 
   /** Which renderer this dialog drives. Excel bypasses the dialog entirely. */
   readonly format = input<'pptx' | 'png'>('pptx');
@@ -120,6 +122,7 @@ export class ExportDialogComponent {
   /** Live grid state, forwarded untouched into the PNG snapshot (capture as-is). */
   readonly liveZoomLevel = input<ZoomLevel>('yearly');
   readonly spaceId = input('');
+  readonly tenantId = input('');
   readonly hideCompanyColumn = input(false);
   readonly hideAssetColumn = input(false);
   readonly hideTrialColumn = input(false);
@@ -153,6 +156,18 @@ export class ExportDialogComponent {
     this.error.set(null);
 
     try {
+      // Resolve the workspace tenant for the export footer's "Prepared for"
+      // segment. Failure degrades the footer to two parties; never block export.
+      let tenant: { name: string; logoUrl: string | null } | null = null;
+      if (this.tenantId()) {
+        try {
+          const t = await this.tenantService.getTenant(this.tenantId());
+          tenant = { name: t.name, logoUrl: t.logo_url ?? null };
+        } catch {
+          tenant = null;
+        }
+      }
+
       if (this.format() === 'png') {
         const snapshot: PngExportSnapshot = {
           companies: this.companies(),
@@ -166,6 +181,8 @@ export class ExportDialogComponent {
           hideRoaColumn: this.hideRoaColumn(),
           hideNotesColumn: this.hideNotesColumn(),
           spaceId: this.spaceId(),
+          tenantName: tenant?.name ?? '',
+          tenantLogoUrl: tenant?.logoUrl ?? null,
         };
         await this.pngService.exportDashboard(snapshot, this.injector);
       } else {

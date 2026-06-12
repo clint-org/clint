@@ -28,6 +28,8 @@ export interface PngExportSnapshot {
   hideRoaColumn: boolean;
   hideNotesColumn: boolean;
   spaceId: string;
+  tenantName: string;
+  tenantLogoUrl: string | null;
 }
 
 const TARGET_SCALE = 2;
@@ -69,6 +71,8 @@ export class PngExportService {
     ref.setInput('hideRoaColumn', snapshot.hideRoaColumn);
     ref.setInput('hideNotesColumn', snapshot.hideNotesColumn);
     ref.setInput('spaceId', snapshot.spaceId);
+    ref.setInput('tenantName', snapshot.tenantName);
+    ref.setInput('tenantLogoUrl', snapshot.tenantLogoUrl);
 
     const el = ref.location.nativeElement as HTMLElement;
     // Off-viewport, not display:none; layout must run for the capture.
