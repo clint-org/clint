@@ -33,6 +33,7 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { COMPANY_EXPORT_COLUMNS } from './companies-export.util';
 
 @Component({
   selector: 'app-company-list',
@@ -107,7 +108,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
         this.excel.export({
           sheetName: 'Companies',
           filename: 'companies',
-          columns: this.grid.columns,
+          columns: COMPANY_EXPORT_COLUMNS,
           rows: this.visibleCompanies(),
         }),
     },

@@ -47,6 +47,7 @@ import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
+import { buildEventsExportColumns } from './events-export.util';
 
 @Component({
   selector: 'app-events-page',
@@ -209,7 +210,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         this.excel.export({
           sheetName: 'Events',
           filename: 'events',
-          columns: this.grid.columns,
+          columns: buildEventsExportColumns({
+            title: (i) => this.getTitleDisplay(i),
+            entity: (i) => this.getEntityDisplay(i),
+          }),
           rows: this.feedItems(),
         }),
     },

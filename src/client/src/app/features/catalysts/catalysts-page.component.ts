@@ -17,6 +17,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LandscapeStateService } from '../landscape/landscape-state.service';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
+import { CATALYST_EXPORT_COLUMNS } from './catalysts-export.util';
 
 @Component({
   selector: 'app-catalysts-page',
@@ -85,7 +86,7 @@ export class CatalystsPageComponent {
         this.excel.export({
           sheetName: 'Catalysts',
           filename: 'catalysts',
-          columns: this.grid.columns,
+          columns: CATALYST_EXPORT_COLUMNS,
           rows: this.flatCatalysts(),
         }),
     },

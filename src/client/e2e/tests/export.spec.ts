@@ -335,6 +335,8 @@ test.describe('Export surfaces audit', () => {
   });
 
   test('bullseye Excel carries asset rows plus the detail-pane trial fields', async () => {
+    await page.goto(surfaceUrl('bullseye'), { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('svg.bullseye-svg', { timeout: 30000 });
     await runExport(page, 'Excel');
     await saveLastBlob(page, auditPath('bullseye.xlsx'));
 
@@ -380,6 +382,8 @@ test.describe('Export surfaces audit', () => {
   });
 
   test('heatmap Excel carries matrix, cells, and the detail-pane asset list', async () => {
+    await page.goto(surfaceUrl('heatmap/by-company'), { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('table.matrix', { timeout: 30000 });
     await runExport(page, 'Excel');
     await saveLastBlob(page, auditPath('heatmap.xlsx'));
 
@@ -489,7 +493,7 @@ test.describe('Export surfaces audit', () => {
     expect(Number(az!['Assets'])).toBeGreaterThan(0);
   });
 
-  test('assets Excel includes indications from the detail view', async () => {
+  test('assets Excel uses domain headers and carries MOA, ROA, generic', async () => {
     await page.goto(surfaceUrl('manage/assets'), { waitUntil: 'domcontentloaded' });
     await page.getByText('Farxiga').first().waitFor({ timeout: 30000 });
     await page.screenshot({ path: auditPath('assets-live.png'), fullPage: true });
@@ -501,13 +505,17 @@ test.describe('Export surfaces audit', () => {
     const sheet = wb.getWorksheet('Assets');
     expect(sheet).toBeTruthy();
     const headers = sheetHeaders(sheet!);
-    for (const h of ['Asset', 'Generic', 'Company', 'MOA', 'ROA', 'Indications', 'Trials', 'Order']) {
+    // The asset detail surface shows logo, generic, MOA/ROA, and trials; the
+    // grid already carries every data field, so the export contract is the
+    // visible column set with domain-vocabulary headers.
+    for (const h of ['Asset', 'Generic', 'Company', 'MOA', 'ROA', 'Trials', 'Order']) {
       expect(headers, `Assets header ${h}`).toContain(h);
     }
     const rows = sheetRows(sheet!);
     const farxiga = rows.find((r) => r['Asset'] === 'Farxiga');
     expect(farxiga).toBeTruthy();
-    expect(String(farxiga!['Indications'])).toContain('Heart Failure');
+    expect(String(farxiga!['MOA'])).toContain('SGLT2 inhibitor');
+    expect(String(farxiga!['Generic'])).toBe('dapagliflozin');
   });
 
   test('timeline PNG and Excel export directly from the header menu', async () => {

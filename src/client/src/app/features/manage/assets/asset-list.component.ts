@@ -36,6 +36,7 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { ASSET_EXPORT_COLUMNS } from './assets-export.util';
 
 interface AssetRow {
   readonly asset: Asset;
@@ -146,7 +147,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
         this.excel.export({
           sheetName: 'Assets',
           filename: 'assets',
-          columns: this.grid.columns,
+          columns: ASSET_EXPORT_COLUMNS,
           rows: this.visibleRows(),
         }),
     },

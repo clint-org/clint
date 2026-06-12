@@ -44,6 +44,7 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { buildTrialExportColumns } from './trials-export.util';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -226,7 +227,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
         this.excel.export({
           sheetName: 'Trials',
           filename: 'trials',
-          columns: this.grid.columns,
+          columns: buildTrialExportColumns(this.extraColumns(), (trialId, path) =>
+            this.extraValue(trialId, path)
+          ),
           rows: this.visibleRows(),
         }),
     },

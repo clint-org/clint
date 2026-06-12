@@ -42,7 +42,7 @@ import {
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
 import { BullseyeExportHostComponent } from './bullseye-export-host.component';
-import { buildBullseyeRows, BULLSEYE_EXPORT_COLUMNS } from './bullseye-export.util';
+import { buildBullseyeSheets } from './bullseye-export.util';
 import { BrandContextService } from '../../core/services/brand-context.service';
 
 @Component({
@@ -155,11 +155,7 @@ export class LandscapeComponent implements OnInit {
       {
         label: 'Excel',
         format: 'xlsx',
-        run: () =>
-          this.sheetExcel.export(
-            [{ name: 'Bullseye', columns: BULLSEYE_EXPORT_COLUMNS, rows: buildBullseyeRows(data) }],
-            'bullseye'
-          ),
+        run: () => this.sheetExcel.export(buildBullseyeSheets(data), 'bullseye'),
       },
     ];
   });
