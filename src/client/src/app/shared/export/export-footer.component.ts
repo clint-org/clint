@@ -21,7 +21,7 @@ import {
       <svg width="16" height="16" [attr.viewBox]="markViewBox" fill="none" aria-hidden="true">
         <polyline [attr.points]="mark.outer" stroke="#cbd5e1" [attr.stroke-width]="markStrokes.outer" stroke-linecap="round" stroke-linejoin="round" />
         <polyline [attr.points]="mark.middle" stroke="#94a3b8" [attr.stroke-width]="markStrokes.middle" stroke-linecap="round" stroke-linejoin="round" />
-        <polyline [attr.points]="mark.inner" stroke="var(--brand-600)" [attr.stroke-width]="markStrokes.inner" stroke-linecap="round" stroke-linejoin="round" />
+        <polyline [attr.points]="mark.inner" stroke="#0d9488" [attr.stroke-width]="markStrokes.inner" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       <span class="text-xs font-bold text-slate-600">{{ artifactLabel() }}</span>
       @if (agencyName(); as agency) {
