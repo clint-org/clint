@@ -59,7 +59,7 @@ import { PngExportService, type PngExportSnapshot } from '../export/png-export.s
 
         @if (exporting()) {
           <div class="flex items-center justify-center py-2">
-            <app-loader [size]="20" [label]="generatingLabel()" />
+            <app-loader [size]="28" [label]="generatingLabel()" />
           </div>
         }
 

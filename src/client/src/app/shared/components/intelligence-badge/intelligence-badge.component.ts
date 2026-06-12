@@ -7,8 +7,9 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
  * Sub-brand lockup for AI-powered surfaces: "Clint Intelligence". The AI
  * engine is the platform operator's capability, not the tenant's product, so
  * this badge is always Clint (PLATFORM_OPERATOR) in Clint teal, never the host
- * brand name or color, even on whitelabel hosts. (The generic app-loader still
- * tints to the host brand; that is functional UI, not a Clint signature.)
+ * brand name or color, even on whitelabel hosts. (The generic app-loader is
+ * likewise drawn in the Clint logo teal -- the loading mark is a Clint
+ * signature, not host-tinted brand chrome.)
  * At rest the mark is static at full strength. While the AI is actively
  * working (active=true) the mark runs the draw-through animation, so the
  * badge doubles as the loading indicator for the surface it signs.
@@ -16,7 +17,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
 @Component({
   selector: 'app-intelligence-badge',
   template: `
-    <svg width="14" height="14" [attr.viewBox]="viewBox" fill="none" aria-hidden="true">
+    <svg width="16" height="16" [attr.viewBox]="viewBox" fill="none" aria-hidden="true">
       <polyline
         [class.clint-mark-track]="active()"
         [attr.points]="points.outer"
@@ -95,5 +96,5 @@ export class IntelligenceBadgeComponent {
   protected readonly platform = PLATFORM_OPERATOR;
   protected readonly viewBox = CLINT_MARK_VIEWBOX;
   protected readonly points = CLINT_MARK_POINTS;
-  protected readonly strokes = clintMarkStrokes(14);
+  protected readonly strokes = clintMarkStrokes(16);
 }

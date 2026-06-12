@@ -140,15 +140,15 @@ function looksLikeUrl(s: string): boolean {
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
-                          <span class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[9px] text-white"></i>
+                          <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
+                            <i class="pi pi-check text-[10px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
-                          <app-loader [size]="16" />
+                          <app-loader [size]="20" />
                           <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
                         } @else {
-                          <span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
+                          <span class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
                           <span class="text-xs text-slate-400">{{ extractStepLabels[s] }}</span>
                         }
                       </div>
@@ -235,15 +235,15 @@ function looksLikeUrl(s: string): boolean {
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
-                          <span class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[9px] text-white"></i>
+                          <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
+                            <i class="pi pi-check text-[10px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
-                          <app-loader [size]="16" />
+                          <app-loader [size]="20" />
                           <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
                         } @else {
-                          <span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
+                          <span class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
                           <span class="text-xs text-slate-400">{{ extractStepLabels[s] }}</span>
                         }
                       </div>

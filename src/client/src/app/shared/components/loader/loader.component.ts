@@ -8,6 +8,11 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
  * never animates at rest. Draw classes live in shared/styles/animations.css
  * and degrade to a static mark under prefers-reduced-motion.
  *
+ * The mark renders in the Clint logo colors (slate-300/400 tracks, inner ring
+ * Clint teal #0d9488) on every host, including whitelabel ones -- it is the
+ * Clint loading signature, so it never tints to the host brand. Keep the inner
+ * ring in sync with ClintLogoComponent and IntelligenceBadgeComponent.
+ *
  * Replaces p-progressspinner, whose unlayered CSS ignores Tailwind sizing
  * and whose keyframes ignore stroke overrides (see spec, Known issues).
  */
@@ -44,7 +49,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
       <polyline
         class="clint-mark-track"
         [attr.points]="points.inner"
-        stroke="var(--brand-600)"
+        stroke="#0d9488"
         [attr.stroke-width]="strokes().inner"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -71,7 +76,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
         class="clint-mark-draw clint-mark-draw--i"
         pathLength="1"
         [attr.points]="points.inner"
-        stroke="var(--brand-600)"
+        stroke="#0d9488"
         [attr.stroke-width]="strokes().inner"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -94,8 +99,8 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoaderComponent {
-  /** Rendered square size in px. 16 inline, 20 dialogs, 28 panels. */
-  readonly size = input<number>(20);
+  /** Rendered square size in px. 20 inline, 28 dialogs, 36 panels. */
+  readonly size = input<number>(28);
   /** Optional caption, rendered uppercase tracked beside the mark. */
   readonly label = input<string>('');
 
