@@ -61,13 +61,13 @@ Today the stretch between the OAuth redirect and Angular rendering (including th
 - Angular replaces it on bootstrap (it lives inside `<app-root>` as projected placeholder content).
 - Reduced motion: static mark.
 
-### 5. Sidebar identity lockup
+### 5. Sidebar identity lockup (revised 2026-06-12)
 
-`core/layout/sidebar.component.ts`, expanded state:
+`core/layout/sidebar.component.ts`:
 
-- Row 1: Clint mark (20px, dark variant) + tracked uppercase wordmark driven by `appDisplayName()` (so a renamed whitelabel host shows its own name).
-- Row 2 (only when `agencyBrand()` exists): "DELIVERED BY" microlabel + agency logo in a small white chip (agency wordmarks are designed for light backgrounds), falling back to the agency name as text when the agency has no logo. This replaces today's behavior where the agency logo evicts the Clint mark entirely.
-- Collapsed rail: unchanged (agency logo chip when an agency exists, otherwise the mark).
+- Top identity slot, expanded: Clint mark (20px, dark variant) + tracked uppercase CLINT wordmark (`PLATFORM_OPERATOR`, never the brand display name: the first cut used `appDisplayName()`, which rendered the tenant's name, duplicated the topbar tenant chooser, and tracked badly on long names).
+- Agency credit, expanded only: an "INTELLIGENCE BY" colophon pinned at the sidebar's very bottom edge, below the account row (microlabel + agency logo in a small white chip, agency name text fallback). Passive signage on every page, since the sidebar is global chrome.
+- Collapsed rail: the Clint mark only, top slot; no agency chip (a 52px rail has no room for a third bottom row, and the agency keeps its presence in the expanded state, login, and exports).
 
 ### 6. Empty-state watermark
 
@@ -79,7 +79,7 @@ Opt-in on the major visualization empty states, which are centered flex containe
 
 Both export footers carry the same ordered segments:
 
-1. Clint mark (16px) + `appDisplayName()` in bold. The leading slot is always the product identity; it no longer uses the host brand `logo_url` (that produced a double-agency footer on agency hosts).
+1. Clint mark (16px) + the artifact label "Timeline" in bold (revised 2026-06-12: the leading slot first used `appDisplayName()`, which on tenant-named hosts duplicated the PREPARED FOR tenant segment). It never uses the host brand `logo_url` (that produced a double-agency footer on agency hosts).
 2. Divider, "DELIVERED BY" microlabel + agency logo (name text fallback). Hidden when no agency.
 3. Divider, "PREPARED FOR" microlabel + tenant logo (initial-badge fallback) + tenant name, truncated with ellipsis at a max width. Hidden if tenant context is somehow absent.
 4. Export date right-aligned (PPTX also keeps page numbers).
