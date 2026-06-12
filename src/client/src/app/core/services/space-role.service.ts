@@ -26,6 +26,11 @@ export class SpaceRoleService {
   private readonly _spaceId = signal<string | null>(null);
   private readonly _role = signal<SpaceRole>(null);
 
+  /** In-flight fetch for the current space; lets guards await the result. */
+  private pending: Promise<void> | null = null;
+  /** Space id whose role fetch has completed (success or error). */
+  private fetchedSpaceId: string | null = null;
+
   readonly spaceId = this._spaceId.asReadonly();
   readonly currentUserRole = this._role.asReadonly();
 
@@ -48,10 +53,29 @@ export class SpaceRoleService {
     if (id === this._spaceId()) return;
     this._spaceId.set(id);
     if (id) {
-      this.fetchRole(id);
+      this.pending = this.fetchRole(id);
     } else {
       this._role.set(null);
+      this.pending = null;
+      this.fetchedSpaceId = null;
     }
+  }
+
+  /**
+   * Resolve the role for a space, fetching if needed. Route guards run
+   * before NavigationEnd, so reading `canEdit()` synchronously there races
+   * the fetch and misreads members as role-less (bounced a space owner off
+   * /import; UI review 2026-06-12, item 3). Guards await this instead.
+   */
+  async ensureRole(spaceId: string): Promise<SpaceRole> {
+    if (this._spaceId() === spaceId) {
+      if (this.pending) await this.pending;
+      if (this.fetchedSpaceId === spaceId) return this._role();
+    }
+    this._spaceId.set(spaceId);
+    this.pending = this.fetchRole(spaceId);
+    await this.pending;
+    return this._role();
   }
 
   private extractSpaceId(url: string): string | null {
@@ -62,21 +86,26 @@ export class SpaceRoleService {
   }
 
   private async fetchRole(spaceId: string): Promise<void> {
-    const userId = this.supabase.currentUser()?.id;
-    if (!userId) {
-      this._role.set(null);
-      return;
+    try {
+      const userId = this.supabase.currentUser()?.id;
+      if (!userId) {
+        this._role.set(null);
+        return;
+      }
+      const { data, error } = await this.supabase.client
+        .from('space_members')
+        .select('role')
+        .eq('space_id', spaceId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error || !data) {
+        this._role.set(null);
+        return;
+      }
+      this._role.set(data.role as SpaceRole);
+    } finally {
+      this.fetchedSpaceId = spaceId;
+      this.pending = null;
     }
-    const { data, error } = await this.supabase.client
-      .from('space_members')
-      .select('role')
-      .eq('space_id', spaceId)
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (error || !data) {
-      this._role.set(null);
-      return;
-    }
-    this._role.set(data.role as SpaceRole);
   }
 }
