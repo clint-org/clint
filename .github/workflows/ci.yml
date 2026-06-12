@@ -70,6 +70,14 @@ jobs:
         # blocks the build and surfaces the rule code + remediation link.
         run: supabase db advisors --local --type all --fail-on warn
 
+      - name: Check Data API grants drift
+        # Compares information_schema.role_table_grants and the postgres
+        # default ACLs against supabase/data-api-grants.json. Fails on
+        # missing AND excess grants for anon/authenticated and on
+        # service_role deny-list violations. Keeps the live grant surface
+        # equal to the reviewed matrix in both directions.
+        run: cd src/client && npm run grants:check
+
       - name: Run features-drift check
         run: cd src/client && npm run features:check
 
