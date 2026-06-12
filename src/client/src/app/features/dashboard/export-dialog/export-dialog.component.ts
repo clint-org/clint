@@ -82,7 +82,7 @@ import { PngExportService, type PngExportSnapshot } from '../export/png-export.s
           [outlined]="true"
           size="small"
           (onClick)="doExport()"
-          [loading]="exporting()"
+          [disabled]="exporting()"
         />
       </ng-template>
     </p-dialog>

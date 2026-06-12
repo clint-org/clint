@@ -90,7 +90,9 @@ inline-override colors with Tailwind utilities.
 **Loading states.** Three patterns, by scope: `app-skeleton` / `app-table-skeleton-body`
 preserve layout while row or table content loads; `app-loader` covers operations and
 panel loads (exports, drawers, filter hydration); the `p-button` `[loading]` state covers
-button-scoped actions. The mark animates only while something is actually loading;
+button-scoped actions. One loader per operation: a surface that shows `app-loader`
+disables its trigger button (`[disabled]`) instead of also running the button
+`[loading]` spinner. The mark animates only while something is actually loading;
 it is static everywhere at rest. All draw animations disable under
 `prefers-reduced-motion: reduce`.
 
