@@ -61,13 +61,13 @@ Today the stretch between the OAuth redirect and Angular rendering (including th
 - Angular replaces it on bootstrap (it lives inside `<app-root>` as projected placeholder content).
 - Reduced motion: static mark.
 
-### 5. Sidebar identity lockup
+### 5. Sidebar identity lockup (revised 2026-06-12)
 
-`core/layout/sidebar.component.ts`, expanded state:
+`core/layout/sidebar.component.ts`:
 
-- Row 1: Clint mark (20px, dark variant) + tracked uppercase wordmark driven by `appDisplayName()` (so a renamed whitelabel host shows its own name).
-- Row 2 (only when `agencyBrand()` exists): "DELIVERED BY" microlabel + agency logo in a small white chip (agency wordmarks are designed for light backgrounds), falling back to the agency name as text when the agency has no logo. This replaces today's behavior where the agency logo evicts the Clint mark entirely.
-- Collapsed rail: unchanged (agency logo chip when an agency exists, otherwise the mark).
+- Top identity slot, expanded: Clint mark (20px, dark variant) + tracked uppercase CLINT wordmark (`PLATFORM_OPERATOR`, never the brand display name: the first cut used `appDisplayName()`, which rendered the tenant's name, duplicated the topbar tenant chooser, and tracked badly on long names).
+- Agency credit, expanded only: an "INTELLIGENCE BY" colophon pinned at the sidebar's very bottom edge, below the account row (microlabel + agency logo in a small white chip, agency name text fallback). Passive signage on every page, since the sidebar is global chrome.
+- Collapsed rail: the Clint mark only, top slot; no agency chip (a 52px rail has no room for a third bottom row, and the agency keeps its presence in the expanded state, login, and exports).
 
 ### 6. Empty-state watermark
 
