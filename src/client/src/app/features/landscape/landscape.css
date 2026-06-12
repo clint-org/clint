@@ -132,6 +132,27 @@
   display: block;
 }
 
+/* Off-screen export render: the live .bullseye-chart-frame sizes itself with
+ * container-query units, which resolve against nothing when the chart is
+ * mounted in the parked export host. The export frame pins a definite square
+ * so the SVG renders at deck size instead of its intrinsic fallback. */
+.bullseye-export-frame {
+  width: 960px;
+  height: 960px;
+}
+
+.bullseye-export-frame app-bullseye-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bullseye-export-frame svg.bullseye-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .landscape-panel-wrap {
   position: absolute;
   top: 0;
