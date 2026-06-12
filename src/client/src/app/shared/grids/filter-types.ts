@@ -85,6 +85,8 @@ export interface GridState<T> {
   readonly debouncedGlobalSearch: Signal<string>;
   readonly filters: WritableSignal<Record<string, FilterValue>>;
   readonly sort: WritableSignal<{ field: string; order: 1 | -1 } | null>;
+  /** The column defs this grid was created with — reused by Excel export. */
+  readonly columns: ColumnDef<T>[];
   readonly page: WritableSignal<{ first: number; rows: number }>;
 
   readonly activeFilters: Signal<ActiveFilterChip[]>;
