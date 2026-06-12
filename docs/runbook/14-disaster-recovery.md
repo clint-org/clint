@@ -202,12 +202,16 @@ Inventory by where it lives:
      Custom Domain and cert are present and active, and that the customer's CNAME
      still points at the Worker. Re-add the Cloudflare custom domain if missing
      (see `12-deployment.md`).
-  4. Full zone rebuild after account loss: recreate the `clintapp.com` zone in the
-     recovered or new Cloudflare account, re-add the apex and wildcard routes to the
-     Workers, then walk every `custom_domain` in `tenants` and `agencies` and
-     re-add each as a Cloudflare Custom Domain.
-- Known gap: the Cloudflare-side domain config is not captured as code, so a full
-  rebuild is a manual walk of the DB domain list. No cert-expiry monitoring.
+  4. Full zone rebuild after account loss: the `clintapp.com` zone and its records
+     are codified in OpenTofu (`infra/tofu/shared/dns.tf`, Scalr `clint-shared`
+     state). Point the provider at the new account (update `TF_VAR_cloudflare_account_id`
+     and mint a token), then `tofu apply` recreates the zone and all records. Re-add
+     the apex and wildcard Workers routes, then walk every `custom_domain` in
+     `tenants` and `agencies` and re-add each as a Cloudflare Custom Domain (the
+     tenant custom-domain side is not yet codified).
+- Known gap: the apex zone and its records are now captured as code; the tenant
+  custom-domain / custom-hostname side is still manual, so that part of a rebuild is
+  a walk of the DB domain list. No cert-expiry monitoring.
 
 ### 5. Identity and auth (Google + Microsoft OAuth via Supabase Auth)
 - What can fail: an OAuth client is deleted or its secret expires (Google or Azure),
@@ -404,6 +408,6 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
-| 3 | Tenant DNS / Cloudflare custom-domain config is manual with no IaC; full zone rebuild is a hand walk of the DB domain list. | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
+| 3 | Tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: the `clintapp.com` zone + records are now codified in `infra/tofu/shared/dns.tf`; tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
 | 3 | No defined incident roles, contact tree, or status-comms channel; likely single-operator. | 11 | medium x high | low: name roles, write a contact tree, pick an out-of-band status channel | no | UNKNOWN | open |
 | 3 | `roles.sql` is not idempotent (`CREATE ROLE` without `IF NOT EXISTS`); benign on a fresh target, errors on re-run (carried from `13-backup-and-restore.md`). | 1 | low x low | low | no | UNKNOWN | open |
