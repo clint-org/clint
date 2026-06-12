@@ -24,6 +24,8 @@ import {
   AiStatusStrip,
   computeStatusStrip,
 } from './ai-status';
+import { IntelligenceBadgeComponent } from '../../shared/components/intelligence-badge/intelligence-badge.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { NctInputComponent } from './nct-input/nct-input.component';
 
 type ImportTab = 'nct' | 'url' | 'text';
@@ -72,6 +74,8 @@ function looksLikeUrl(s: string): boolean {
     TabPanels,
     TabPanel,
     NctInputComponent,
+    LoaderComponent,
+    IntelligenceBadgeComponent,
   ],
   template: `
     <div class="mx-auto max-w-4xl px-6 py-8">
@@ -129,6 +133,9 @@ function looksLikeUrl(s: string): boolean {
 
               @if (extracting()) {
                 <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <div class="mb-2.5">
+                    <app-intelligence-badge [active]="true" />
+                  </div>
                   <div class="flex flex-col gap-2">
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
@@ -138,10 +145,7 @@ function looksLikeUrl(s: string): boolean {
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
-                          <span class="relative flex h-4 w-4">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"></span>
-                            <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
-                          </span>
+                          <app-loader [size]="16" />
                           <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
                         } @else {
                           <span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
@@ -224,6 +228,9 @@ function looksLikeUrl(s: string): boolean {
 
               @if (extracting()) {
                 <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <div class="mb-2.5">
+                    <app-intelligence-badge [active]="true" />
+                  </div>
                   <div class="flex flex-col gap-2">
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
@@ -233,10 +240,7 @@ function looksLikeUrl(s: string): boolean {
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
-                          <span class="relative flex h-4 w-4">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"></span>
-                            <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
-                          </span>
+                          <app-loader [size]="16" />
                           <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
                         } @else {
                           <span class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
