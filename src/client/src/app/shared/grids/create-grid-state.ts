@@ -327,6 +327,7 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     filters,
     sort,
     page,
+    columns: config.columns,
     activeFilters,
     isFiltered,
     totalRecords,

@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  Injector,
   OnInit,
   resource,
   signal,
@@ -34,6 +35,15 @@ import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../shared/export/export-button.component';
+import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
+import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { BullseyeExportHostComponent } from './bullseye-export-host.component';
+import { buildBullseyeRows, BULLSEYE_EXPORT_COLUMNS } from './bullseye-export.util';
+import { BrandContextService } from '../../core/services/brand-context.service';
 
 @Component({
   selector: 'app-landscape',
@@ -48,6 +58,7 @@ import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-w
     MessageModule,
     SkeletonComponent,
     Tooltip,
+    ExportButtonComponent,
   ],
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],
@@ -61,6 +72,10 @@ export class LandscapeComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   protected readonly state = inject(LandscapeStateService);
+  private readonly png = inject(BrandedPngExportService);
+  private readonly sheetExcel = inject(SheetExcelExportService);
+  private readonly injector = inject(Injector);
+  private readonly brand = inject(BrandContextService);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -111,6 +126,43 @@ export class LandscapeComponent implements OnInit {
   readonly duplicatedAssetIds = computed<Set<string>>(
     () => this.groupedResult()?.duplicatedAssetIds ?? new Set()
   );
+
+  readonly exportActions = computed<ExportAction[]>(() => {
+    const data = this.chartData();
+    if (!data || data.spokes.length === 0) return [];
+    const title = `Bullseye: ${data.spoke_label}`;
+    const dupes = this.duplicatedAssetIds();
+    return [
+      {
+        label: 'PNG',
+        format: 'png',
+        run: () =>
+          this.png.capture({
+            component: BullseyeExportHostComponent,
+            elementInjector: this.injector,
+            agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
+            tenantLogoUrl: null,
+            filename: 'bullseye.png',
+            setInputs: (ref, logos) => {
+              ref.setInput('title', title);
+              ref.setInput('data', data);
+              ref.setInput('duplicatedAssetIds', dupes);
+              ref.setInput('tenantLogoUrl', logos.tenantLogoUrl);
+              ref.setInput('agencyLogoUrl', logos.agencyLogoUrl);
+            },
+          }),
+      },
+      {
+        label: 'Excel',
+        format: 'xlsx',
+        run: () =>
+          this.sheetExcel.export(
+            [{ name: 'Bullseye', columns: BULLSEYE_EXPORT_COLUMNS, rows: buildBullseyeRows(data) }],
+            'bullseye'
+          ),
+      },
+    ];
+  });
 
   readonly selectedAsset = computed<BullseyeAsset | null>(() => {
     const id = this.selectedAssetId();

@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  Injector,
   OnInit,
   resource,
   signal,
@@ -21,6 +22,15 @@ import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.comp
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../shared/export/export-button.component';
+import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
+import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { BrandContextService } from '../../core/services/brand-context.service';
+import { HeatmapExportHostComponent } from './heatmap-export-host.component';
+import { buildHeatmapSheets } from './heatmap-export.util';
 
 @Component({
   selector: 'app-heatmap-view',
@@ -32,6 +42,7 @@ import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-w
     SkeletonComponent,
     MessageModule,
     ButtonModule,
+    ExportButtonComponent,
   ],
   animations: [slidePanelAnimation],
   template: `
@@ -66,7 +77,12 @@ import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-w
             [grouping]="state.heatmapGrouping()"
             [countUnit]="state.countUnit()"
           />
-          <div class="flex-1 min-w-0 overflow-hidden landscape-layout">
+          <div class="flex-1 min-w-0 overflow-hidden landscape-layout flex flex-col">
+            @if (exportActions().length > 0) {
+              <div class="relative z-20 flex shrink-0 justify-end pb-2">
+                <app-export-button [actions]="exportActions()" />
+              </div>
+            }
             <div class="flex-1 min-w-0 min-h-0 overflow-auto">
               <app-heatmap
                 [bubbles]="data.bubbles"
@@ -113,6 +129,10 @@ export class HeatmapViewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   readonly state = inject(LandscapeStateService);
   private readonly router = inject(Router);
+  private readonly png = inject(BrandedPngExportService);
+  private readonly sheetExcel = inject(SheetExcelExportService);
+  private readonly injector = inject(Injector);
+  private readonly brand = inject(BrandContextService);
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
@@ -123,10 +143,61 @@ export class HeatmapViewComponent implements OnInit {
   /**
    * The detail panel is an absolute-positioned overlay that covers the
    * right ~340px of the matrix (including the APP/LAUNCHED columns). Only
-   * mount it once a row is selected so the full phase span — Launched
-   * included — is visible on first visit and whenever the panel is closed.
+   * mount it once a row is selected so the full phase span (Launched
+   * included) is visible on first visit and whenever the panel is closed.
    */
   protected readonly showPanel = computed(() => this.selectedBubble() !== null);
+
+  private heatmapTitle(): string {
+    const labels: Record<HeatmapGrouping, string> = {
+      moa: 'Heatmap: MOA',
+      indication: 'Heatmap: Indication',
+      'moa+indication': 'Heatmap: MOA x Indication',
+      company: 'Heatmap: Company',
+      roa: 'Heatmap: ROA',
+    };
+    return labels[this.state.heatmapGrouping()] ?? 'Heatmap';
+  }
+
+  readonly exportActions = computed<ExportAction[]>(() => {
+    const data = this.heatmapData.value();
+    if (!data || data.bubbles.length === 0) return [];
+    const title = this.heatmapTitle();
+    return [
+      {
+        label: 'PNG',
+        format: 'png',
+        run: () =>
+          this.png.capture({
+            component: HeatmapExportHostComponent,
+            elementInjector: this.injector,
+            agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
+            tenantLogoUrl: null,
+            filename: 'heatmap.png',
+            setInputs: (ref, logos) => {
+              ref.setInput('title', title);
+              ref.setInput('bubbles', data.bubbles);
+              ref.setInput('countUnit', this.state.countUnit());
+              ref.setInput('sortField', this.sortField());
+              ref.setInput('sortDir', this.sortDir());
+              ref.setInput('latestEventDate', data.latest_event_date ?? null);
+              ref.setInput('showPreclinical', this.state.showPreclinical());
+              ref.setInput('tenantLogoUrl', logos.tenantLogoUrl);
+              ref.setInput('agencyLogoUrl', logos.agencyLogoUrl);
+            },
+          }),
+      },
+      {
+        label: 'Excel',
+        format: 'xlsx',
+        run: () =>
+          this.sheetExcel.export(
+            buildHeatmapSheets(data.bubbles, String(this.state.countUnit())),
+            'heatmap'
+          ),
+      },
+    ];
+  });
 
   constructor() {
     // Clear selection when grouping, count unit, or filters change

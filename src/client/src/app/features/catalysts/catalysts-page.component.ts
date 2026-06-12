@@ -15,16 +15,18 @@ import { createGridState } from '../../shared/grids';
 import { CatalystTableComponent } from './catalyst-table.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LandscapeStateService } from '../landscape/landscape-state.service';
+import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
+import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
 
 @Component({
   selector: 'app-catalysts-page',
-  standalone: true,
   imports: [
     ManagePageShellComponent,
     GridToolbarComponent,
     CatalystTableComponent,
     RouterLink,
     Tooltip,
+    ExportButtonComponent,
   ],
   templateUrl: './catalysts-page.component.html',
   styles: [
@@ -58,6 +60,7 @@ export class CatalystsPageComponent {
   private readonly topbarState = inject(TopbarStateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly excel = inject(GridExcelExportService);
 
   readonly grid = createGridState<FlatCatalyst>({
     columns: [
@@ -73,6 +76,20 @@ export class CatalystsPageComponent {
   });
 
   readonly flatCatalysts = this.grid.filteredRows(computed(() => this.state.filteredCatalysts()));
+
+  readonly exportActions: ExportAction[] = [
+    {
+      label: 'Excel',
+      format: 'xlsx',
+      run: () =>
+        this.excel.export({
+          sheetName: 'Catalysts',
+          filename: 'catalysts',
+          columns: this.grid.columns,
+          rows: this.flatCatalysts(),
+        }),
+    },
+  ];
 
   readonly markersHelpLink = computed<string[] | null>(() => {
     const tenantId = this.route.snapshot.paramMap.get('tenantId');

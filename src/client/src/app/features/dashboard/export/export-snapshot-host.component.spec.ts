@@ -7,14 +7,17 @@ import { describe, expect, it } from 'vitest';
 // rendered-DOM assertions live in e2e/tests/export.spec.ts, which decodes the
 // actual exported PNG. These source-level assertions pin the structural
 // contract PngExportService depends on: the host stacks the real grid, the
-// real legend, and the footer, and shrink-wraps to content width.
+// real legend, and the branded footer, and shrink-wraps to content width. The
+// footer markup itself was extracted into the shared ExportFooterComponent;
+// its contract lives in shared/export/export-footer.component.spec.ts. Here we
+// only verify the host delegates to it correctly.
 describe('ExportSnapshotHostComponent template contract', () => {
   const src = readFileSync(join(__dirname, 'export-snapshot-host.component.ts'), 'utf8');
 
-  it('stacks the real grid, the real legend, and a footer', () => {
+  it('stacks the real grid, the real legend, and the footer', () => {
     const gridAt = src.indexOf('<app-dashboard-grid');
     const legendAt = src.indexOf('<app-legend');
-    const footerAt = src.indexOf('<footer');
+    const footerAt = src.indexOf('<app-export-footer');
     expect(gridAt).toBeGreaterThan(-1);
     expect(legendAt).toBeGreaterThan(gridAt);
     expect(footerAt).toBeGreaterThan(legendAt);
@@ -42,21 +45,18 @@ describe('ExportSnapshotHostComponent template contract', () => {
     expect(src).toMatch(/host:.*w-max/s);
   });
 
-  it('carries the three-party footer: product, agency, tenant, date', () => {
-    expect(src).toContain('>Timeline</span>');
-    expect(src).toContain('Delivered by');
-    expect(src).toContain('Prepared for');
-    expect(src).toContain('{{ exportDate }}');
+  it('delegates the branded footer to ExportFooterComponent with the Timeline label', () => {
+    expect(src).toContain(
+      `import { ExportFooterComponent } from '../../../shared/export/export-footer.component'`,
+    );
+    expect(src).toContain('ExportFooterComponent');
+    expect(src).toContain('<app-export-footer');
+    expect(src).toContain('artifactLabel="Timeline"');
   });
 
-  it('leads with the Clint mark, not the host brand logo', () => {
-    expect(src).toContain(`from '../../../shared/components/clint-mark'`);
-    expect(src).not.toContain('this.brand.logoUrl');
-  });
-
-  it('hides agency and tenant segments when absent and truncates long tenant names', () => {
-    expect(src).toContain('@if (agencyName()');
-    expect(src).toContain('@if (tenantName()');
-    expect(src).toContain('truncate');
+  it('forwards the tenant and agency context the footer needs', () => {
+    expect(src).toContain('[tenantName]="tenantName()"');
+    expect(src).toContain('[tenantLogoUrl]="tenantLogoUrl()"');
+    expect(src).toContain('[agencyLogoUrl]="agencyLogoUrl()"');
   });
 });

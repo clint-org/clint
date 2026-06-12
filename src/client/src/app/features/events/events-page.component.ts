@@ -45,10 +45,11 @@ import { formatEventDateSuffix } from './format-event-date-suffix';
 import { EntityScope, parseEntityScope } from './entity-scope';
 import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
+import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
+import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
 
 @Component({
   selector: 'app-events-page',
-  standalone: true,
   imports: [
     DatePipe,
     FormsModule,
@@ -66,6 +67,7 @@ import { entityCellParts, type EntityCellParts } from './entity-cell';
     EventFormComponent,
     HighlightPipe,
     EntityNounPipe,
+    ExportButtonComponent,
   ],
   templateUrl: './events-page.component.html',
   animations: [slidePanelAnimation],
@@ -81,6 +83,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
+  private readonly excel = inject(GridExcelExportService);
   protected spaceRole = inject(SpaceRoleService);
 
   private readonly topbarActionsEffect = effect(() => {
@@ -157,6 +160,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       {
         field: 'title',
         header: 'Title',
+        // Detected rows render a composed change summary in place of the raw
+        // title (see the #body template); mirror that text so the export cell
+        // matches the screen instead of showing the empty/internal title.
+        getValue: (row) => this.getTitleDisplay(row),
       },
       {
         field: 'category_name',
@@ -191,6 +198,22 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     defaultPageSize: 25,
     persistenceKey: 'events',
   });
+
+  // Events is server-paginated: the export captures the currently loaded page
+  // of feed rows (feedItems()), which is the "current view" by design.
+  readonly exportActions: ExportAction[] = [
+    {
+      label: 'Excel',
+      format: 'xlsx',
+      run: () =>
+        this.excel.export({
+          sheetName: 'Events',
+          filename: 'events',
+          columns: this.grid.columns,
+          rows: this.feedItems(),
+        }),
+    },
+  ];
 
   protected readonly serverTotal = signal(0);
 
@@ -302,6 +325,20 @@ export class EventsPageComponent implements OnInit, OnDestroy {
 
   protected formatEventDateSuffix(item: FeedItem): string {
     return formatEventDateSuffix(item);
+  }
+
+  /**
+   * Flat title text matching what the row renders: detected rows show the
+   * composed change-event summary, everything else shows the raw title. Shared
+   * by the Title column's export getValue so the Excel cell mirrors the screen.
+   */
+  getTitleDisplay(item: FeedItem): string {
+    if (item.source_type === 'detected' && item.change_event_type) {
+      return this.getDetectedSummary(item)
+        .segments.map((seg) => (seg.kind === 'arrow' ? '→' : seg.text))
+        .join('');
+    }
+    return item.title ?? '';
   }
 
   getEntityDisplay(item: FeedItem): string {

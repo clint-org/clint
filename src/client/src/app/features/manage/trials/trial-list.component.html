@@ -3,7 +3,9 @@
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
 
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search trials..." />
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search trials...">
+    <app-export-button gridToolbarStart [actions]="exportActions" />
+  </app-grid-toolbar>
 
   <p-table
     styleClass="data-table"

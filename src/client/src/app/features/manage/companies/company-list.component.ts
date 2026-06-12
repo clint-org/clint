@@ -28,10 +28,14 @@ import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-act
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../../shared/export/export-button.component';
+import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
 
 @Component({
   selector: 'app-company-list',
-  standalone: true,
   imports: [
     RouterLink,
     TableModule,
@@ -45,6 +49,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
     TableSkeletonBodyComponent,
     BrandLogoComponent,
     HighlightPipe,
+    ExportButtonComponent,
   ],
   templateUrl: './company-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,6 +68,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
+  private readonly excel = inject(GridExcelExportService);
 
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
@@ -92,6 +98,20 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   });
 
   readonly visibleCompanies = this.grid.filteredRows(this.companies);
+
+  readonly exportActions: ExportAction[] = [
+    {
+      label: 'Excel',
+      format: 'xlsx',
+      run: () =>
+        this.excel.export({
+          sheetName: 'Companies',
+          filename: 'companies',
+          columns: this.grid.columns,
+          rows: this.visibleCompanies(),
+        }),
+    },
+  ];
 
   private readonly countEffect = effect(() => {
     this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
