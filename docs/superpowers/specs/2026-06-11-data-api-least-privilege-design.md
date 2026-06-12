@@ -91,6 +91,42 @@ The matrix is evidence, not vibes:
 3. Every row carries a justification string (which consumer needs it). Rows
    without justification fail review.
 
+### Empirical loop record (2026-06-11)
+
+Four iterations on a throwaway stack (CLI 2.106.0, shifted ports): two triage
+passes, then the two required all-green runs from complete fresh wipes
+(volumes removed, fresh start, reset, advisors, drift gate, integration, e2e).
+
+The one surprising consumer class the static inventory missed: SECURITY
+INVOKER RPCs execute their reads and writes as the caller, so every table an
+invoker RPC touches needs the corresponding authenticated grant even when no
+client `.from()` chain addresses it. This added a third derivation rule to
+the matrix meta block and eight row changes, all select unless noted:
+asset_indications, condition_indication_map, trial_conditions (read by the
+analytic get_dashboard_data / get_bullseye_* / get_landscape_index* /
+get_positioning_data family, which the inventory had classed as RPC-only
+tables), event_links and event_sources (read back by get_event_detail),
+trial_change_events and primary_intelligence_links (new rows, read by the
+dashboard and events feed RPCs and by list_primary_intelligence /
+referenced_in_entity), and change_event_annotations
+(insert/update/delete: upsert_change_event_annotation and
+delete_change_event_annotation write as the caller, gated by RLS).
+ctgov_sync_runs and trial_field_changes are also read by invoker functions
+(get_latest_sync_run, recompute_trial_change_events) but no client, worker,
+or test calls those as authenticated, so both stay dark and the smoke keeps
+asserting it.
+
+Intentional denials surfaced by the loop: three anon rows in
+role-access.spec (direct tenants and spaces selects, and the anonymous
+get_dashboard_data call) previously asserted RLS-empty results and now
+assert 42501; the migration smoke gained matching anon denial assertions on
+tenants and spaces. Two e2e specs (trial-management, dashboard zoom) failed
+for reasons unrelated to grants: their selectors had drifted behind UI
+refactors that the browser e2e suite, which CI does not run, never caught.
+Both failures reproduced identically under the broad legacy baseline
+(rollback SQL applied to the throwaway), confirming they predate this
+project; the stale selectors were repaired in the same change.
+
 ## Artifacts
 
 - **`supabase/data-api-grants.json`**: the matrix. Shape:

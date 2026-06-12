@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "methodology": "Static inventory plus empirical refinement. Sources: (1) Angular client, every supabase-js .from('<table>') chain in src/client/src/app traced to its operation, including embedded-resource reads in select strings (companies embeds assets, trials embeds marker_assignments/markers/marker_types/marker_categories/trial_notes, materials embeds material_links); (2) integration suite (src/client/integration), counting only calls made through as(personas, ...) anon-key clients signed in as a user, which run as authenticated; adminClient()/svc calls use the service-role key and need no authenticated grant; (3) Playwright e2e suite (src/client/e2e), whose direct table access is all service-role via SUPABASE_SERVICE_ROLE_KEY (the browser side exercises the Angular client surface already inventoried); (4) supabase/seed.sql, which runs seed_demo_data under 'set local role authenticated', and the SECURITY INVOKER seed helpers (seed_demo_data, _seed_demo_indications, _seed_demo_assets, _seed_demo_moa_roa, _seed_demo_trials, _seed_demo_asset_indications); the SECURITY DEFINER helpers (_seed_demo_companies, _seed_demo_markers, _seed_demo_trial_notes, _seed_demo_events, _seed_demo_primary_intelligence, _seed_demo_materials, _seed_demo_recent_activity, _seed_demo_activity_variety) run as owner and need no grants; (5) Cloudflare Worker (src/client/worker): RPC-only with the anon apikey and shared secrets, except source-extract fetchTenantId which reads /rest/v1/spaces with the forwarded end-user JWT (authenticated select on spaces). Two derivation rules: any granted update or delete also needs select because PostgREST .eq() filters read columns in the WHERE clause, and any .insert().select() returning-representation chain needs select; tables only inserted with on conflict do update would get insert, update, select (none exist today in the invoker seed path). A third rule surfaced in the empirical loop: SECURITY INVOKER RPCs run their reads and writes as the caller, so every table referenced by an invoker RPC granted to authenticated needs the corresponding privilege; the analytic get_* family (get_dashboard_data, get_bullseye_*, get_landscape_index*, get_positioning_data, get_events_page_data, get_event_detail, list_primary_intelligence) contributes selects, and the change-event annotation RPCs (upsert_change_event_annotation, delete_change_event_annotation) contribute change_event_annotations writes. All cross-table trigger cascades (_cleanup_orphan_marker, _auto_derive_asset_indication_status, _set_created_by, audit triggers, etc.) are SECURITY DEFINER and need no caller grants; the only SECURITY INVOKER triggers (member_guard_mark_cascade_*, primary_intelligence version/state guards) touch no other table. The matrix is then refined empirically: reset, advisors, integration, e2e on a throwaway stack; every 42501 is either a missing row added here with justification or an intentional denial asserted in the migration smoke.",
+    "review_date": "2026-06-11",
+    "notes": "anon has zero table entries by construction; its pre-auth surface is exactly the explicitly granted SECURITY DEFINER RPCs. service_role is broad by default and only the deny-list below constrains it. Tables absent from the tables block are no-access for authenticated and that absence is the assertion. 52 public tables total; 41 granted, 11 omitted (agency_invites, ai_calls, ctgov_sync_runs, marker_changes, palette_pinned, palette_recents, platform_admins, r2_pending_deletes, source_documents, trial_field_changes, user_redactions), all reached only via SECURITY DEFINER RPCs or the service-role key. This tightens the 20260611120000 baseline: the unconsumed authenticated select on r2_pending_deletes and user_redactions is dropped, and nothing here exceeds that baseline. Privileges tracked are select/insert/update/delete only; sequences and function execute grants are out of scope for this file."
+  },
+  "tables": {
+    "agencies": {
+      "authenticated": ["select"],
+      "justification": "client: agency.service reads the agency record for the /admin portal; super-admin.service lists agencies. Provisioning and branding writes go through provision_agency / update_agency_branding RPCs."
+    },
+    "agency_members": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: agency.service addAgencyMember insert with returning .select(), updateAgencyMemberRole update, removeAgencyMember delete; select also covers the .eq() where-clause reads on update/delete."
+    },
+    "ai_config": {
+      "authenticated": ["select"],
+      "justification": "client: import.guard, engagement-landing, and tenant-settings read AI availability flags. Writes go through tenant-settings RPCs and service-role fixtures (source-import-rpc.spec uses the admin client)."
+    },
+    "asset_indications": {
+      "authenticated": ["select", "insert"],
+      "justification": "select: the analytic RPCs (get_dashboard_data, get_bullseye_*, get_landscape_index*, get_positioning_data) are SECURITY INVOKER and read asset_indications as the caller; integration preclinical-visibility.spec hit the 42501. insert: _seed_demo_asset_indications (SECURITY INVOKER, runs as authenticated via seed_demo_data) inserts development-status rows. Derived updates run in the SECURITY DEFINER trigger _auto_derive_asset_indication_status."
+    },
+    "asset_mechanisms_of_action": {
+      "authenticated": ["select", "insert"],
+      "justification": "client: mechanism-of-action.service reads per-asset MoA links; seed: _seed_demo_moa_roa (SECURITY INVOKER) inserts the demo links. Editing goes through update_asset_mechanisms RPC (asset-mechanisms-edit-flow.spec)."
+    },
+    "asset_routes_of_administration": {
+      "authenticated": ["select", "insert"],
+      "justification": "client: route-of-administration.service reads per-asset RoA links; seed: _seed_demo_moa_roa (SECURITY INVOKER) inserts the demo links. Editing goes through update_asset_routes RPC (asset-routes-edit-flow.spec)."
+    },
+    "assets": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: asset.service select/update/delete and linked-entities-picker reads; integration: entity-audit-columns.spec contributor insert/update with returning .select(); seed: _seed_demo_assets (SECURITY INVOKER) inserts demo assets."
+    },
+    "audit_events": {
+      "authenticated": ["select"],
+      "justification": "integration: audit-rls.spec persona reads and audit-redaction.spec platform_admin reads expect rows via RLS. Insert/update/delete stay revoked (20260510000100); record_audit_event() is the only write path and audit-lockdown.spec asserts the denials."
+    },
+    "change_event_annotations": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "select: event-detail-panel and get_events_page_data read the annotation for a change event. insert/update/delete: upsert_change_event_annotation and delete_change_event_annotation (annotation.service) are SECURITY INVOKER and write as the caller; RLS policies gate by space editor/owner role. integration unified-feed-annotations.spec hit the 42501."
+    },
+    "companies": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: company.service select (embeds assets), update, delete, linked-entities-picker reads; integration: entity-audit-columns.spec contributor insert/update; seed: seed_demo_data (SECURITY INVOKER) counts companies for its idempotency check."
+    },
+    "condition_indication_map": {
+      "authenticated": ["select", "insert"],
+      "justification": "select: get_dashboard_data, get_bullseye_by_company, and get_bullseye_data are SECURITY INVOKER and read the mapping as the caller. insert: _seed_demo_indications (SECURITY INVOKER) inserts the demo condition-to-indication mapping."
+    },
+    "conditions": {
+      "authenticated": ["select", "insert"],
+      "justification": "seed: _seed_demo_indications (SECURITY INVOKER) inserts demo conditions, and its condition_indication_map insert needs select because that table's RLS with-check subquery reads conditions as the calling role. App reads flow through RPCs; e2e fixtures use the service-role key."
+    },
+    "event_categories": {
+      "authenticated": ["select"],
+      "justification": "client: event-category.service lists categories for the events feature. Category management writes are RPC or service-role fixtures (entity-name-uniqueness.spec uses the admin client)."
+    },
+    "event_links": {
+      "authenticated": ["select", "insert"],
+      "justification": "select: get_event_detail is SECURITY INVOKER and reads event links as the caller. insert: event.service inserts event-to-event links when creating an event."
+    },
+    "event_sources": {
+      "authenticated": ["select", "insert"],
+      "justification": "select: get_event_detail is SECURITY INVOKER and reads source rows as the caller. insert: event.service inserts source rows when creating an event."
+    },
+    "event_threads": {
+      "authenticated": ["select", "insert", "delete"],
+      "justification": "client: event-thread.service list/create/delete threads directly."
+    },
+    "events": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: event.service select/update/delete; integration: role-access.spec contributor and space_owner insert expect ok, reader select expects rows, entity-audit-columns.spec contributor insert/update."
+    },
+    "indications": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: indication.service and therapeutic-area.service full CRUD; seed: _seed_demo_indications (SECURITY INVOKER) inserts demo indications."
+    },
+    "marker_assignments": {
+      "authenticated": ["select", "delete"],
+      "justification": "client: marker.service reads assignments for cache invalidation and trial detail embeds them via TRIAL_SELECT; integration: marker-edit-flow.spec contributor direct delete expects ok (orphan-cleanup contract). Assignment writes go through the update_marker_assignments SECURITY DEFINER RPC; the only direct authenticated insert test expects 42501."
+    },
+    "marker_categories": {
+      "authenticated": ["select"],
+      "justification": "client: marker-category.service lists categories; marker-type and trial selects embed marker_categories."
+    },
+    "marker_types": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: marker-type.service full CRUD (manage surface); trial and marker selects embed marker_types."
+    },
+    "markers": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: marker.service update/delete/getById (select embeds marker_types); integration: entity-audit-columns.spec contributor insert/update with returning .select(). Creation in the app goes through create_marker RPC but the audit-columns contract inserts directly."
+    },
+    "material_links": {
+      "authenticated": ["select"],
+      "justification": "client: material.service embeds material_links(entity_type, entity_id) in materials selects. Link writes go through register_material / update_material RPCs."
+    },
+    "materials": {
+      "authenticated": ["select", "update"],
+      "justification": "client: material.service reads materials (space_id plus embedded links) and updateFilePathDirect updates file_path after R2 upload; all other writes go through register_material / update_material / delete_material RPCs."
+    },
+    "mechanisms_of_action": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: mechanism-of-action.service full CRUD; seed: _seed_demo_moa_roa (SECURITY INVOKER) inserts demo MoAs."
+    },
+    "primary_intelligence": {
+      "authenticated": ["select"],
+      "justification": "client: primary-intelligence.service reads scope rows for cache invalidation and listing. Writes go through upsert_primary_intelligence and related RPCs; e2e fixtures use the service-role key."
+    },
+    "primary_intelligence_links": {
+      "authenticated": ["select"],
+      "justification": "client: list_primary_intelligence and referenced_in_entity (primary-intelligence.service, linked-entities surfaces) are SECURITY INVOKER and read the link rows as the caller. Link writes go through the upsert_primary_intelligence RPC family."
+    },
+    "retired_hostnames": {
+      "authenticated": ["select"],
+      "justification": "client: super-admin.service lists retired hostnames. Rows are written by the SECURITY DEFINER retire_hostname_on_change trigger."
+    },
+    "routes_of_administration": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: route-of-administration.service full CRUD; seed: _seed_demo_moa_roa (SECURITY INVOKER) inserts demo RoAs."
+    },
+    "space_invites": {
+      "authenticated": ["select", "delete"],
+      "justification": "client: space.service lists and revokes pending invites; integration: role-access.spec space_owner select expects the invite row. Invite creation goes through the invite_to_space RPC; direct inserts are denial-tested."
+    },
+    "space_members": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: space.service adds/updates/removes members and space-role.service reads the caller's role; seed: seed_demo_data (SECURITY INVOKER) selects space_members for its owner check."
+    },
+    "spaces": {
+      "authenticated": ["select", "update"],
+      "justification": "client: space.service, space-settings.service, space-field-visibility.service reads and space.service update (rename/archive); worker: source-extract fetchTenantId reads spaces with the forwarded end-user JWT; integration: role-access.spec reader and tenant_owner selects expect rows. Creation goes through create_space RPC."
+    },
+    "tenant_invites": {
+      "authenticated": ["select", "insert"],
+      "justification": "client: agency.service inserts a tenant-owner invite and tenant.service lists pending invites; integration: role-access.spec tenant_owner select expects the invite row."
+    },
+    "tenant_members": {
+      "authenticated": ["select", "delete"],
+      "justification": "client: agency.service and tenant.service read membership and tenant.service removes members; integration: role-access.spec tenant_owner delete must reach the enforce_tenant_member_guards trigger (asserts the trigger's message, which requires the table-level delete to be granted). Adds go through add_tenant_owner / self_join_tenant RPCs."
+    },
+    "tenants": {
+      "authenticated": ["select", "update", "delete"],
+      "justification": "client: tenant.service reads/updates/deletes the tenant record, agency.service and super-admin.service list tenants; integration: role-access.spec reader select expects the parent tenant row. Provisioning goes through provision_tenant RPC."
+    },
+    "trial_assets": {
+      "authenticated": ["select"],
+      "justification": "client: trial.service reads secondary asset links. Writes flow through trial RPCs and SECURITY DEFINER sync triggers (_trial_assets_bootstrap, _trial_assets_sync_*)."
+    },
+    "trial_change_events": {
+      "authenticated": ["select"],
+      "justification": "client: get_dashboard_data, get_events_page_data, and get_bullseye_assets are SECURITY INVOKER and read change events as the caller, and upsert/delete_change_event_annotation look up the change event's space the same way; integration unified-feed-annotations.spec hit the 42501. Writes happen in the ctgov sync path (service role and SECURITY DEFINER recompute)."
+    },
+    "trial_conditions": {
+      "authenticated": ["select", "insert"],
+      "justification": "select: get_dashboard_data, get_bullseye_by_company, get_bullseye_data, and get_positioning_data are SECURITY INVOKER and read trial-condition rows as the caller. insert: _seed_demo_trials (SECURITY INVOKER) inserts demo trial-condition rows."
+    },
+    "trial_ctgov_snapshots": {
+      "authenticated": ["select"],
+      "justification": "client: trial.service reads the latest ctgov snapshot for the trial detail surface. Snapshots are written by the ctgov sync worker through shared-secret RPCs."
+    },
+    "trial_notes": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: trial-note.service create/update/delete with returning .select(), and TRIAL_SELECT embeds trial_notes(*); integration: entity-audit-columns.spec contributor insert/update."
+    },
+    "trials": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: trial.service select/update/delete, nct-input and linked-entities-picker reads; integration: entity-audit-columns.spec contributor insert/update, preclinical-visibility.spec space_owner select; seed: _seed_demo_trials (SECURITY INVOKER) inserts and seed_demo_data updates phase-source columns."
+    }
+  },
+  "service_role_denied": {
+    "audit_events": {
+      "denied": ["insert", "update", "delete"],
+      "justification": "Writes only via the record_audit_event() SECURITY DEFINER RPC (20260510000100); audit-lockdown.spec asserts the service-role insert/update/delete denials. Select stays granted (audit-emission.spec and rpc-redaction.spec read with the service key)."
+    },
+    "r2_pending_deletes": {
+      "denied": ["insert", "update", "delete"],
+      "justification": "Rows are enqueued only by the _enqueue_r2_delete SECURITY DEFINER trigger and drained via the claim_pending_r2_deletes / mark_r2_delete_succeeded / mark_r2_delete_failed shared-secret RPCs (20260521121500). Select stays granted (rpc-destructive.spec and tenant-settings e2e read the queue with the service key)."
+    }
+  }
+}

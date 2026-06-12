@@ -44,20 +44,22 @@ describe('anonymous', () => {
     expectCode(r, '42501');
   });
 
-  it('rpc get_dashboard_data: ok with [] (RLS filters everything out)', async () => {
+  // anon holds zero table grants (data-api-least-privilege, 20260612021320):
+  // direct selects and SECURITY INVOKER RPC reads now fail with 42501 instead
+  // of returning RLS-filtered empty sets.
+  it('rpc get_dashboard_data: 42501 (SECURITY INVOKER reads tables anon cannot address)', async () => {
     const r = await as(p, 'anon').rpc('get_dashboard_data', { p_space_id: p.org.spaceId });
-    const data = expectOk(r);
-    expect(Array.isArray(data) ? data.length : -1).toBe(0);
+    expectCode(r, '42501', 'permission denied');
   });
 
-  it('select tenants: empty (RLS hides)', async () => {
+  it('select tenants: 42501 (anon holds zero table grants)', async () => {
     const r = await as(p, 'anon').from('tenants').select('id');
-    expectCount(r, 0);
+    expectCode(r, '42501', 'permission denied');
   });
 
-  it('select spaces: empty', async () => {
+  it('select spaces: 42501 (anon holds zero table grants)', async () => {
     const r = await as(p, 'anon').from('spaces').select('id');
-    expectCount(r, 0);
+    expectCode(r, '42501', 'permission denied');
   });
 });
 
