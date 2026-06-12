@@ -41,7 +41,7 @@ Consumers: `ClintLogoComponent` (refactored, no behavior change), the new loader
 
 ### 3. Spinner call-site replacements
 
-Replace all four `p-progressspinner` usages with `app-loader`:
+Replace all five `p-progressspinner` usages with `app-loader`:
 
 | Surface | File | Size |
 | --- | --- | --- |
@@ -49,6 +49,7 @@ Replace all four `p-progressspinner` usages with `app-loader`:
 | Landscape filter bar ("Loading filters...") | `features/landscape/landscape-filter-bar.component.html` | 16 |
 | Entity marker drawer | `features/landscape/entity-marker-drawer.component.ts` | 28 |
 | Marker detail panel | `features/landscape/landscape-shell.component.ts` | 28 |
+| Events page detail panel | `features/events/events-page.component.html` | 28 |
 
 Remove the dead `.p-progressspinner-circle` override from `primeng-overrides.css` and the `ProgressSpinner` imports. Button `[loading]` spinners and skeletons are unchanged.
 
@@ -72,7 +73,7 @@ Today the stretch between the OAuth redirect and Angular rendering (including th
 
 New `app-mark-watermark` presentational component (shared/components/watermark/): absolutely positioned, centered, the mark at ~100px and 7% opacity in slate-900, `aria-hidden="true"`, `pointer-events: none`. Parent supplies `position: relative`.
 
-Opt-in on the major browse/visualization empty states where an empty-state block already exists: timeline ("no companies match"), heatmap, catalysts, events. Static, never animated.
+Opt-in on the major visualization empty states, which are centered flex containers: timeline ("no clinical trial data"), bullseye ("no assets match"), heatmap ("no data matches"). The catalysts and events tables render their empty states as table rows where an absolutely positioned watermark does not fit; they stay text-only. Static, never animated.
 
 ### 7. Export footer: three parties (PNG and PPTX)
 

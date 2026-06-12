@@ -83,6 +83,16 @@ inline-override colors with Tailwind utilities.
 | Toolbar | `app-grid-toolbar` (`grid-toolbar.component.ts`) | Canonical table/grid toolbar. |
 | Row actions | `app-row-actions` (`row-actions.component.ts`) | Canonical per-row action cluster. |
 | Destructive confirm | `confirm-delete-dialog` | Always use for delete/permanent actions. |
+| Loading (operation) | `app-loader` (`loader.component.ts`) | Draw-through Clint mark + optional caption. Never `p-progressSpinner` (its unlayered CSS ignores Tailwind sizing). |
+| Empty-state watermark | `app-mark-watermark` (`mark-watermark.component.ts`) | Faded mark behind empty states. Decorative, never animated. |
+| AI badge | `app-intelligence-badge` (`intelligence-badge.component.ts`) | "{AppName} Intelligence" lockup; `active` animates the mark while the AI works. |
+
+**Loading states.** Three patterns, by scope: `app-skeleton` / `app-table-skeleton-body`
+preserve layout while row or table content loads; `app-loader` covers operations and
+panel loads (exports, drawers, filter hydration); the `p-button` `[loading]` state covers
+button-scoped actions. The mark animates only while something is actually loading;
+it is static everywhere at rest. All draw animations disable under
+`prefers-reduced-motion: reduce`.
 
 Mandatory shared wrappers: `app-form-field` (labeled fields), `form-actions` (form/dialog
 footers), `confirm-delete-dialog` (destructive confirmation). Reaching past these into raw
