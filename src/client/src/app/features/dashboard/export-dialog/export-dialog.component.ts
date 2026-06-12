@@ -14,7 +14,7 @@ import { Dialog } from 'primeng/dialog';
 import { SelectButton } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
@@ -24,7 +24,7 @@ import { PngExportService, type PngExportSnapshot } from '../export/png-export.s
 @Component({
   selector: 'app-export-dialog',
   standalone: true,
-  imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, ProgressSpinner],
+  imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, LoaderComponent],
   template: `
     <p-dialog
       [header]="headerLabel()"
@@ -57,15 +57,8 @@ import { PngExportService, type PngExportSnapshot } from '../export/png-export.s
         }
 
         @if (exporting()) {
-          <div class="flex items-center justify-center gap-2 py-2">
-            <p-progressspinner
-              strokeWidth="4"
-              styleClass="w-[1.25rem] h-[1.25rem]"
-              [ariaLabel]="generatingLabel()"
-            />
-            <span class="text-[11px] uppercase tracking-wider text-slate-400">
-              {{ generatingLabel() }}
-            </span>
+          <div class="flex items-center justify-center py-2">
+            <app-loader [size]="20" [label]="generatingLabel()" />
           </div>
         }
 

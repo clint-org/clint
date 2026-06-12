@@ -5,14 +5,7 @@
     aria-label="Landscape filters"
   >
     @if (loading()) {
-      <div class="flex items-center gap-2">
-        <p-progressspinner
-          strokeWidth="4"
-          styleClass="w-[0.875rem] h-[0.875rem]"
-          aria-hidden="true"
-        />
-        <span class="text-xs text-slate-400" aria-live="polite">Loading filters...</span>
-      </div>
+      <app-loader [size]="16" label="Loading filters..." />
     } @else {
       <!-- View-specific: zoom (timeline) -->
       @if (viewMode() === 'timeline') {
