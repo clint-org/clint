@@ -11,6 +11,8 @@ export interface BullseyeExportRow {
   moa: string;
   roa: string;
   indication: string;
+  /** Index signature so rows satisfy SheetSpec.rows (Record<string, unknown>). */
+  [key: string]: string;
 }
 
 /**
