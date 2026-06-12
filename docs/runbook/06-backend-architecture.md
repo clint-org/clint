@@ -73,8 +73,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -210,7 +210,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | Service | Purpose |
 |---|---|
 | PostgreSQL 15 | Primary data store for all application data |
-| PostgREST | Auto-generated REST API from the Postgres schema; used for CRUD operations |
+| PostgREST | Auto-generated REST API from the Postgres schema; the table surface is limited to the explicit per-role grants in `supabase/data-api-grants.json` plus RLS (`anon` reaches no tables, only granted RPCs) |
 | Supabase Auth | JWT-based auth with Google + Microsoft (Azure AD) OAuth providers; 1-hour JWT expiry with refresh token rotation |
 | Supabase Edge Functions (Deno) | `send-invite-email` only — triggered by a database webhook on `tenant_invites` INSERT; calls Resend |
 | Supabase Database Webhooks | Configured in the dashboard (cannot be expressed in `config.toml`); shared-secret `webhook-signature` header gates the function |
