@@ -50,8 +50,8 @@
       "justification": "seed: _seed_demo_indications (SECURITY INVOKER) inserts the demo condition-to-indication mapping. App reads flow through RPCs; e2e fixtures use the service-role key."
     },
     "conditions": {
-      "authenticated": ["insert"],
-      "justification": "seed: _seed_demo_indications (SECURITY INVOKER) inserts demo conditions. App reads flow through RPCs; e2e fixtures use the service-role key."
+      "authenticated": ["select", "insert"],
+      "justification": "seed: _seed_demo_indications (SECURITY INVOKER) inserts demo conditions, and its condition_indication_map insert needs select because that table's RLS with-check subquery reads conditions as the calling role. App reads flow through RPCs; e2e fixtures use the service-role key."
     },
     "event_categories": {
       "authenticated": ["select"],
