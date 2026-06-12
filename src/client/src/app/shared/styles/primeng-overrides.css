@@ -251,6 +251,20 @@
   color: rgb(203 213 225); /* slate-300 */
 }
 
+/* -- Solid button disabled ----------------------------------------------- */
+/* Aura's default keeps the brand hue at reduced opacity, so a disabled
+   primary reads as a different brand color that might be enabled (a
+   pristine form's Save looked violet on a blue-brand tenant, washed teal
+   on the agency portal). Neutralize to slate so disabled is unmistakable
+   regardless of tenant brand. */
+
+.p-button:disabled:not(.p-button-text):not(.p-button-outlined) {
+  background: rgb(226 232 240); /* slate-200 */
+  border-color: rgb(226 232 240);
+  color: rgb(71 85 105); /* slate-600 */
+  opacity: 1;
+}
+
 /* -- Input error state --------------------------------------------------- */
 
 .p-inputtext.p-invalid,
