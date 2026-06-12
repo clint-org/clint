@@ -19,8 +19,9 @@ describe('LoaderComponent template contract', () => {
     expect(src.match(/pathLength="1"/g)?.length).toBe(3);
   });
 
-  it('tints the inner ring with the host brand', () => {
-    expect(src).toContain('var(--brand-600)');
+  it('renders the inner ring in Clint teal (logo color), never the host brand', () => {
+    expect(src).toContain('#0d9488');
+    expect(src).not.toContain('var(--brand-600)');
   });
 
   it('derives stroke widths from the shared geometry', () => {

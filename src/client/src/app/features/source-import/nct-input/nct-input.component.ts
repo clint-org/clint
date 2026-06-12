@@ -159,16 +159,16 @@ const ERROR_MESSAGES: Record<string, string> = {
             @for (s of stepSequence; track s) {
               <div class="flex items-center gap-2.5">
                 @if (stepIndex() > $index) {
-                  <span class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600">
-                    <i class="pi pi-check text-[9px] text-white"></i>
+                  <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
+                    <i class="pi pi-check text-[10px] text-white"></i>
                   </span>
                   <span class="text-xs text-slate-500">{{ stepLabel(s) }}</span>
                 } @else if (stepIndex() === $index) {
-                  <app-loader [size]="16" />
+                  <app-loader [size]="20" />
                   <span class="text-xs font-medium text-slate-700">{{ stepLabel(s) }}</span>
                 } @else {
                   <span
-                    class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"
+                    class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"
                   ></span>
                   <span class="text-xs text-slate-400">{{ stepLabel(s) }}</span>
                 }

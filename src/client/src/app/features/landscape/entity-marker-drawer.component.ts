@@ -22,7 +22,7 @@ import { LandscapeStateService } from './landscape-state.service';
         <div
           class="fixed top-[42px] right-0 bottom-0 z-30 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
         >
-          <app-loader [size]="28" />
+          <app-loader [size]="36" />
         </div>
       } @else {
         <app-marker-detail-panel
