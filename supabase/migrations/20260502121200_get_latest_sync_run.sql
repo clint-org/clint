@@ -25,6 +25,17 @@ $$;
 revoke execute on function public.get_latest_sync_run() from public;
 grant execute on function public.get_latest_sync_run() to authenticated;
 
+-- The ctgov_sync_runs_select RLS policy (20260502120000) targets
+-- authenticated, but the table-level SELECT privilege itself came from the
+-- legacy Data API default ACLs. Supabase CLI 2.106.0+ revokes those default
+-- ACLs before applying migrations on fresh local databases, which made the
+-- smoke block below fail with 42501 at the get_latest_sync_run() call (the
+-- only statement in it that touches the table as authenticated). Grant
+-- explicitly so the migration is self-contained on fresh resets. Databases
+-- that applied this migration before the edit (dev, prod) already hold this
+-- grant via the legacy default ACLs and never re-run this file.
+grant select on public.ctgov_sync_runs to authenticated;
+
 comment on function public.get_latest_sync_run() is
   'Returns the most recent ctgov_sync_runs row as jsonb, or null. Used by the activity page footer.';
 
