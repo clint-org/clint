@@ -36,6 +36,11 @@ environment.
   (no delete). Retention is enforced by lifecycle rules, not the job. On R2 the
   lock window is <= the shortest tier (7 days) so lifecycle can still reclaim
   space (Bucket Lock takes precedence over lifecycle).
+- As code: both backup buckets are codified in OpenTofu (WS3) -- the R2 bucket in
+  `infra/tofu/shared/r2.tf`, the B2 bucket with its compliance-mode Object Lock
+  (7-day) and lifecycle rules in `infra/tofu/shared/b2.tf` (Scalr `clint-shared`).
+  A `tofu apply` rebuilds the buckets and their immutability rules from config. The
+  application keys themselves remain managed outside IaC until WS4 (Infisical).
 
 ## Schedule and retention (GFS)
 - Daily 09:00 UTC (`backup-db.yml`); kept 7 days.

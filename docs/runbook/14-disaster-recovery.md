@@ -289,8 +289,9 @@ the edge function and its secrets, and OAuth setup.
 - Recovery procedure (account loss): this is a multi-day rebuild. Stand up a new
   Cloudflare account, mint a token and update `TF_VAR_cloudflare_account_id`, then
   `tofu apply` the `infra/tofu/` roots to recreate the `clintapp.com` zone + records,
-  both materials buckets and the backup bucket, and the prod Worker custom domains +
-  tenant-wildcard route (shared / prod / dev roots). Re-add every per-tenant custom
+  both materials buckets and both backup buckets (R2 `clint-db-backups` + the B2
+  cross-cloud copy with its compliance Object Lock), and the prod Worker custom
+  domains + tenant-wildcard route (shared / prod / dev roots). Re-add every per-tenant custom
   domain (domain 4, still manual), re-deploy both Workers via wrangler, re-add Worker
   runtime secrets via `wrangler secret put`, and restore the DB from B2. The buckets
   recreate empty: materials contents are not recoverable in this path under the
