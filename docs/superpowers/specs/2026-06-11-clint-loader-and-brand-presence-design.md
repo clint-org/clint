@@ -100,17 +100,19 @@ The card hierarchy stays exactly as shipped: tenant logo leads, "Sign in to the 
 
 ### 10. Clint Intelligence sub-brand
 
-New `app-intelligence-badge` (shared/components/intelligence-badge/): mark (14px) + tracked mono label "{APPDISPLAYNAME} INTELLIGENCE", with "INTELLIGENCE" in `text-brand-600`. Input `active` (boolean): when true the badge's mark runs the draw-through animation (the badge becomes the loader); when false it is static.
+New `app-intelligence-badge` (shared/components/intelligence-badge/): mark (14px) + tracked mono label. Input `active` (boolean): when true the badge's mark runs the draw-through animation (the badge becomes the loader); when false it is static.
+
+**Revised 2026-06-13: always Clint, in Clint teal.** The badge first read "{APPDISPLAYNAME} INTELLIGENCE" with the accent in `text-brand-600`, which on a whitelabel host rendered the tenant's product name and brand color (e.g. "BI INTELLIGENCE" in blue). But the AI engine is the platform operator's capability, not the tenant's product, so the badge now always reads "{PLATFORM_OPERATOR} INTELLIGENCE" ("Clint Intelligence") with "INTELLIGENCE" and the mark's inner ring in fixed Clint teal `#0d9488` (matching `ClintLogoComponent`), never the host brand. This is the same "platform identity is always Clint" call as the sidebar lockup (section 5). The generic `app-loader` still tints its inner ring to `var(--brand-600)`: that is functional loading UI, not a Clint signature, and should feel host-themed.
 
 Surfaces:
 
-- **Source import** (`features/source-import/import-page.component.ts`): the extraction progress block gets the badge as its header (active while extracting), and the active step's pulsing dot is replaced by a 16px `app-loader`. Step labels unchanged.
+- **Source import**: both progress blocks get the badge as their header (active while working) with the active step's pulsing dot replaced by a 16px `app-loader`. Step labels unchanged. This covers `import-page.component.ts` (From URL / From text extraction) and, added 2026-06-13, `nct-input/nct-input.component.ts` (the NCT-list path, which has its own parallel progress block the first cut missed).
 - **Future "Ask Clint"**: panel header badge + loader while streaming. Nothing new to design when it ships.
 
 ### Whitelabel rules summary
 
-- Loader inner ring and badge accent: `var(--brand-600)` (host brand).
-- Wordmarks: `appDisplayName()`, never a hard-coded "Clint" string.
+- Loader inner ring: `var(--brand-600)` (host brand). The intelligence badge is the exception (revised 2026-06-13): it is always Clint in fixed Clint teal, since it signs Clint's own AI capability, not the host's product.
+- Tenant-facing wordmarks: `appDisplayName()`, never a hard-coded "Clint" string. Platform-identity wordmarks (sidebar lockup, public footer, intelligence badge) are the inverse: always `PLATFORM_OPERATOR` ("Clint"), never the host name.
 - Agency presence: "delivered by" treatment (sidebar, login foot, export footer).
 - Tenant presence: login card, topbar (existing), export "prepared for".
 - Boot splash: brand-neutral all-slate by design.
