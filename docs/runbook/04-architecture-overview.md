@@ -87,7 +87,7 @@ When a tenant or agency is decommissioned, its subdomain or custom domain is ins
 3. CSS vars + favicon + title + dynamic PrimeNG preset applied; Angular bootstraps
 4. User signs in with Google or Microsoft -- Supabase Auth issues a JWT, stored in a `Domain=.yourproduct.com` cookie
 5. All API calls from the Supabase JS client include the JWT automatically
-6. Supabase PostgREST validates the JWT and applies Row Level Security
+6. Supabase PostgREST validates the JWT, checks the role's explicit table grants (the least-privilege matrix), and applies Row Level Security
 7. RLS policies use `is_tenant_member`, `has_space_access`, `is_agency_member`, `is_platform_admin` helpers (never inline `auth.uid() = ...` against tenancy)
 8. Dashboard data is fetched via a single `get_dashboard_data()` RPC that returns nested JSON
 9. Angular components consume reactive signals derived from service state
@@ -96,7 +96,7 @@ When a tenant or agency is decommissioned, its subdomain or custom domain is ins
 
 - **No custom backend** -- Supabase provides auth, database, and auto-generated API. The only Edge Function is `send-invite-email` (Deno).
 - **Single RPC for dashboard** -- `get_dashboard_data()` returns the entire dashboard payload as nested JSON, eliminating N+1 queries.
-- **RLS for security** -- Row Level Security is enforced at the Postgres level. Even if the API layer is bypassed, data isolation holds.
+- **Two locks for security** -- explicit per-table grants (`supabase/data-api-grants.json`, enforced by the `grants:check` CI gate) plus Row Level Security, both at the Postgres level. Even if the API layer is bypassed, data isolation holds, and a single buggy policy cannot expose rows by itself.
 - **Host as identity** -- the user's tenant / agency / role is derived from the host before bootstrap, not from URL params or local state.
 - **Brand-as-data** -- per-tenant primary color + logo + favicon flow through CSS vars + a dynamic PrimeNG preset; data colors (slate, red, amber, green, cyan, violet) are never brand-driven.
 - **Cookie sessions on apex hosts** -- enables one-sign-in cross-subdomain UX without URL token handoff. Custom domains are intentionally separate trust boundaries.

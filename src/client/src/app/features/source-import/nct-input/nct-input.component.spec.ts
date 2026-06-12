@@ -1,5 +1,22 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import { parseNctIds } from './nct-parse';
+
+describe('NctInputComponent progress template contract', () => {
+  const src = readFileSync(join(__dirname, 'nct-input.component.ts'), 'utf8');
+
+  it('signs the progress block with the Clint Intelligence badge, active until done', () => {
+    expect(src).toContain('app-intelligence-badge');
+    expect(src).toContain(`[active]="phase() !== 'done'"`);
+  });
+
+  it('uses the branded loader on the active step instead of a pulsing dot', () => {
+    expect(src).toContain('app-loader');
+    expect(src).not.toContain('animate-ping');
+  });
+});
 
 describe('parseNctIds', () => {
   it('extracts valid NCT IDs from newline-separated input', () => {

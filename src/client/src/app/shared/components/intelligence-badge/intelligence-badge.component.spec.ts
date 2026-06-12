@@ -6,10 +6,14 @@ import { describe, expect, it } from 'vitest';
 describe('IntelligenceBadgeComponent template contract', () => {
   const src = readFileSync(join(__dirname, 'intelligence-badge.component.ts'), 'utf8');
 
-  it('labels as "{appDisplayName} Intelligence" with the brand accent', () => {
-    expect(src).toContain('appDisplayName()');
-    expect(src).toContain('text-brand-600');
+  it('always labels as "Clint Intelligence" in Clint teal, never the host brand', () => {
+    expect(src).toContain('PLATFORM_OPERATOR');
+    expect(src).toContain('{{ platform }}');
     expect(src).toContain('Intelligence');
+    // The AI engine is Clint's, so the badge never tints to the host brand.
+    expect(src).not.toContain('appDisplayName');
+    expect(src).not.toContain('text-brand-600');
+    expect(src).not.toContain('var(--brand-600)');
   });
 
   it('animates only when active', () => {

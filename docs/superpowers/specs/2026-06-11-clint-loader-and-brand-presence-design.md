@@ -34,8 +34,8 @@ Consumers: `ClintLogoComponent` (refactored, no behavior change), the new loader
 
 `src/client/src/app/shared/components/loader/loader.component.ts` (+ `.spec.ts`), standalone, OnPush.
 
-- **Inputs:** `size` (number, default 20), `label` (optional string; renders an uppercase tracked mono caption beside the mark, replacing the hand-rolled spans at today's call sites).
-- **Visuals:** two stacked copies of the mark in one SVG. Bottom: static track at 18% opacity. Top: animated polylines with `pathLength="1"`, `stroke-dasharray: 1`, keyframes `stroke-dashoffset 1 -> 0 -> -1` over 1.8s, `cubic-bezier(0.5, 0.05, 0.45, 0.95)`, ring delays 0 / 150ms / 300ms. Colors: outer slate-300, middle slate-400, inner `var(--brand-600)` so whitelabel hosts tint automatically.
+- **Inputs:** `size` (number, default 28), `label` (optional string; renders an uppercase tracked mono caption beside the mark, replacing the hand-rolled spans at today's call sites). Revised 2026-06-13: sizes bumped a tier across the board (inline 20, dialog 28, panel 36; default 28) -- the original 16/20/28 tiers read as undersized, again most visibly in the export dialog.
+- **Visuals:** two stacked copies of the mark in one SVG. Bottom: static track at 18% opacity. Top: animated polylines with `pathLength="1"`, `stroke-dasharray: 1`, keyframes `stroke-dashoffset 1 -> 0 -> -1` over 1.8s, `cubic-bezier(0.5, 0.05, 0.45, 0.95)`, ring delays 0 / 150ms / 300ms. Colors: outer slate-300, middle slate-400, inner Clint teal `#0d9488` (the `ClintLogoComponent` color) on every host. Revised 2026-06-13: this was originally `var(--brand-600)` so whitelabel hosts tinted automatically, but a host-blue loading mark next to the teal Clint logo and Intelligence badge read as broken (most visibly in the export dialog). The loading mark is a Clint signature, so it stays Clint teal everywhere, matching the logo and the badge.
 - **A11y:** host `role="status"`; `aria-label` falls back to `label` or "Loading". Caption is visible text; the SVG is `aria-hidden`.
 - **Reduced motion:** animation removed, track at full opacity (static mark).
 
@@ -100,17 +100,19 @@ The card hierarchy stays exactly as shipped: tenant logo leads, "Sign in to the 
 
 ### 10. Clint Intelligence sub-brand
 
-New `app-intelligence-badge` (shared/components/intelligence-badge/): mark (14px) + tracked mono label "{APPDISPLAYNAME} INTELLIGENCE", with "INTELLIGENCE" in `text-brand-600`. Input `active` (boolean): when true the badge's mark runs the draw-through animation (the badge becomes the loader); when false it is static.
+New `app-intelligence-badge` (shared/components/intelligence-badge/): mark (14px) + tracked mono label. Input `active` (boolean): when true the badge's mark runs the draw-through animation (the badge becomes the loader); when false it is static.
+
+**Revised 2026-06-13: always Clint, in Clint teal.** The badge first read "{APPDISPLAYNAME} INTELLIGENCE" with the accent in `text-brand-600`, which on a whitelabel host rendered the tenant's product name and brand color (e.g. "BI INTELLIGENCE" in blue). But the AI engine is the platform operator's capability, not the tenant's product, so the badge now always reads "{PLATFORM_OPERATOR} INTELLIGENCE" ("Clint Intelligence") with "INTELLIGENCE" and the mark's inner ring in fixed Clint teal `#0d9488` (matching `ClintLogoComponent`), never the host brand. This is the same "platform identity is always Clint" call as the sidebar lockup (section 5). Further revised 2026-06-13: the generic `app-loader` now also renders its inner ring in fixed Clint teal `#0d9488` (see section 2). The earlier "loader feels host-themed, badge is the exception" split produced a host-blue loading mark sitting next to the teal Clint logo and badge, which read as broken; the loading mark is a Clint signature, so logo, loader, and badge are now all Clint teal on every host.
 
 Surfaces:
 
-- **Source import** (`features/source-import/import-page.component.ts`): the extraction progress block gets the badge as its header (active while extracting), and the active step's pulsing dot is replaced by a 16px `app-loader`. Step labels unchanged.
+- **Source import**: both progress blocks get the badge as their header (active while working) with the active step's pulsing dot replaced by a 20px `app-loader` (the step status dots bump to match). Step labels unchanged. This covers `import-page.component.ts` (From URL / From text extraction) and, added 2026-06-13, `nct-input/nct-input.component.ts` (the NCT-list path, which has its own parallel progress block the first cut missed).
 - **Future "Ask Clint"**: panel header badge + loader while streaming. Nothing new to design when it ships.
 
 ### Whitelabel rules summary
 
-- Loader inner ring and badge accent: `var(--brand-600)` (host brand).
-- Wordmarks: `appDisplayName()`, never a hard-coded "Clint" string.
+- Loader inner ring and intelligence badge accent: fixed Clint teal `#0d9488` on every host (revised 2026-06-13), matching `ClintLogoComponent`. The loading mark and the badge both sign Clint's own capability, so neither tints to the host brand.
+- Tenant-facing wordmarks: `appDisplayName()`, never a hard-coded "Clint" string. Platform-identity wordmarks (sidebar lockup, public footer, intelligence badge) are the inverse: always `PLATFORM_OPERATOR` ("Clint"), never the host name.
 - Agency presence: "delivered by" treatment (sidebar, login foot, export footer).
 - Tenant presence: login card, topbar (existing), export "prepared for".
 - Boot splash: brand-neutral all-slate by design.

@@ -16,6 +16,7 @@
     "test:worker": "vitest run --config worker/vitest.config.mts",
     "lint": "ng lint && ./scripts/check-no-banana-ngmodel.sh && ./scripts/check-supabase-rls.sh",
     "docs:arch": "node scripts/gen-architecture.mjs",
+    "grants:check": "node scripts/check-data-api-grants.mjs",
     "og:image": "node scripts/og-image/render.mjs",
     "features:check": "node scripts/features-drift.mjs check",
     "features:stub": "node scripts/features-drift.mjs stub",

@@ -77,7 +77,7 @@ Conservative starting policy. Loosen if a specific integration breaks. `'unsafe-
 
 ## Row Level Security (RLS)
 
-Every data table has RLS enabled. Policies are enforced at the Postgres level — bypassing the API layer is not possible.
+Every data table has RLS enabled. Policies are enforced at the Postgres level; bypassing the API layer is not possible. RLS is the second of two locks: a role must first hold an explicit table grant from the least-privilege matrix (`supabase/data-api-grants.json`; see the developer guide's "Data API Grants" section). `anon` holds no table grants at all, and `authenticated` holds exactly the matrix, so a buggy or missing policy no longer exposes rows by itself.
 
 ### Data Tables
 
@@ -105,7 +105,7 @@ has_space_access(space_id)
 has_space_access(space_id, ARRAY['owner', 'editor'])
 ```
 
-Four policies total (SELECT, INSERT, UPDATE, DELETE). The `upsert_change_event_annotation` and `delete_change_event_annotation` RPCs are SECURITY INVOKER, so RLS is the access control.
+Four policies total (SELECT, INSERT, UPDATE, DELETE). The `upsert_change_event_annotation` and `delete_change_event_annotation` RPCs are SECURITY INVOKER, so the caller's own table grants plus RLS are the access control (the matrix grants `authenticated` full DML on this table for exactly that reason).
 
 ### Marker Types
 

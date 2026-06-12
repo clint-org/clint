@@ -50,9 +50,9 @@ test.describe('Trial Management CRUD', () => {
   test('edit trial basic info', async () => {
     // The "Edit details" topbar action opens the trial-edit dialog.
     await clickTopbarAction(page, 'Edit details');
-    await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#trial-form-name')).toBeVisible({ timeout: 5000 });
 
-    await clearAndFill(page, '#edit-trial-name', 'Updated Trial');
+    await clearAndFill(page, '#trial-form-name', 'Updated Trial');
     // Dialog submit button is labeled "Save".
     await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
@@ -212,10 +212,10 @@ test.describe('Trial List CRUD', () => {
     await expect(page).toHaveURL(/\/manage\/trials\/[0-9a-f-]+/, { timeout: 10000 });
 
     await clickTopbarAction(page, 'Edit details');
-    await expect(page.locator('#edit-trial-name')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('#edit-trial-name')).toHaveValue('KEYNOTE-001');
+    await expect(page.locator('#trial-form-name')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#trial-form-name')).toHaveValue('KEYNOTE-001');
 
-    await clearAndFill(page, '#edit-trial-name', 'KEYNOTE-002');
+    await clearAndFill(page, '#trial-form-name', 'KEYNOTE-002');
     await page.locator('.p-dialog').getByRole('button', { name: 'Save' }).click();
     await page.waitForTimeout(2000);
 
@@ -406,16 +406,16 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('#edit-trial-name')).toHaveValue('CTGOV-LOCK Trial');
+    await expect(dialog.locator('#trial-form-name')).toHaveValue('CTGOV-LOCK Trial');
 
     // PrimeNG p-select renders a host element with class `p-disabled` when
     // [disabled] is true; the combobox child carries inputId="phase-type"
     // and gets aria-disabled="true" in the same state.
-    await expect(dialog.locator('#phase-type')).toHaveAttribute('aria-disabled', 'true');
+    await expect(dialog.locator('#trial-form-phase-type')).toHaveAttribute('aria-disabled', 'true');
 
     // Date inputs are native <input type="date"> with the [disabled] attribute.
-    await expect(dialog.locator('#phase-start')).toBeDisabled();
-    await expect(dialog.locator('#phase-end')).toBeDisabled();
+    await expect(dialog.locator('#trial-form-phase-start')).toBeDisabled();
+    await expect(dialog.locator('#trial-form-phase-end')).toBeDisabled();
 
     // Lock badge text appears next to each phase label. The badge is a span
     // whose text is exactly "ct.gov"; the NCT hint copy mentions "CT.gov" in
@@ -432,11 +432,11 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
 
     const dialog = page.locator('.p-dialog', { hasText: 'Edit trial details' });
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.locator('#edit-trial-name')).toHaveValue('ANALYST-EDIT Trial');
+    await expect(dialog.locator('#trial-form-name')).toHaveValue('ANALYST-EDIT Trial');
 
-    await expect(dialog.locator('#phase-type')).toHaveAttribute('aria-disabled', 'false');
-    await expect(dialog.locator('#phase-start')).toBeEnabled();
-    await expect(dialog.locator('#phase-end')).toBeEnabled();
+    await expect(dialog.locator('#trial-form-phase-type')).toHaveAttribute('aria-disabled', 'false');
+    await expect(dialog.locator('#trial-form-phase-start')).toBeEnabled();
+    await expect(dialog.locator('#trial-form-phase-end')).toBeEnabled();
 
     // No ct.gov lock badge inside the dialog for an analyst-managed trial.
     // The badge text only renders when the matching *_source column is
