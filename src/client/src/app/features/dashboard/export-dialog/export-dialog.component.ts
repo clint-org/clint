@@ -14,17 +14,18 @@ import { Dialog } from 'primeng/dialog';
 import { SelectButton } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { PptxExportService } from '../../../core/services/pptx-export.service';
+import { TenantService } from '../../../core/services/tenant.service';
 import { PngExportService, type PngExportSnapshot } from '../export/png-export.service';
 
 @Component({
   selector: 'app-export-dialog',
   standalone: true,
-  imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, ProgressSpinner],
+  imports: [FormsModule, Dialog, SelectButton, ButtonModule, MessageModule, LoaderComponent],
   template: `
     <p-dialog
       [header]="headerLabel()"
@@ -57,15 +58,8 @@ import { PngExportService, type PngExportSnapshot } from '../export/png-export.s
         }
 
         @if (exporting()) {
-          <div class="flex items-center justify-center gap-2 py-2">
-            <p-progressspinner
-              strokeWidth="4"
-              styleClass="w-[1.25rem] h-[1.25rem]"
-              [ariaLabel]="generatingLabel()"
-            />
-            <span class="text-[11px] uppercase tracking-wider text-slate-400">
-              {{ generatingLabel() }}
-            </span>
+          <div class="flex items-center justify-center py-2">
+            <app-loader [size]="20" [label]="generatingLabel()" />
           </div>
         }
 
@@ -103,6 +97,7 @@ export class ExportDialogComponent {
    * LandscapeStateService instance (providedIn: 'any') as the live view.
    */
   private readonly injector = inject(Injector);
+  private readonly tenantService = inject(TenantService);
 
   /** Which renderer this dialog drives. Excel bypasses the dialog entirely. */
   readonly format = input<'pptx' | 'png'>('pptx');
@@ -127,6 +122,7 @@ export class ExportDialogComponent {
   /** Live grid state, forwarded untouched into the PNG snapshot (capture as-is). */
   readonly liveZoomLevel = input<ZoomLevel>('yearly');
   readonly spaceId = input('');
+  readonly tenantId = input('');
   readonly hideCompanyColumn = input(false);
   readonly hideAssetColumn = input(false);
   readonly hideTrialColumn = input(false);
@@ -160,6 +156,18 @@ export class ExportDialogComponent {
     this.error.set(null);
 
     try {
+      // Resolve the workspace tenant for the export footer's "Prepared for"
+      // segment. Failure degrades the footer to two parties; never block export.
+      let tenant: { name: string; logoUrl: string | null } | null = null;
+      if (this.tenantId()) {
+        try {
+          const t = await this.tenantService.getTenant(this.tenantId());
+          tenant = { name: t.name, logoUrl: t.logo_url ?? null };
+        } catch {
+          tenant = null;
+        }
+      }
+
       if (this.format() === 'png') {
         const snapshot: PngExportSnapshot = {
           companies: this.companies(),
@@ -173,6 +181,8 @@ export class ExportDialogComponent {
           hideRoaColumn: this.hideRoaColumn(),
           hideNotesColumn: this.hideNotesColumn(),
           spaceId: this.spaceId(),
+          tenantName: tenant?.name ?? '',
+          tenantLogoUrl: tenant?.logoUrl ?? null,
         };
         await this.pngService.exportDashboard(snapshot, this.injector);
       } else {
@@ -183,6 +193,7 @@ export class ExportDialogComponent {
           showMoaColumn: this.showMoaColumn(),
           showRoaColumn: this.showRoaColumn(),
           showNotesColumn: this.showNotesColumn(),
+          tenant,
         });
       }
       this.visible.set(false);

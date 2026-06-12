@@ -100,40 +100,59 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
       (mouseenter)="onMouseEnter()"
       (mouseleave)="onMouseLeave()"
     >
-      <!-- Logo row -->
+      <!-- Logo row: product identity lockup. Clint (or the renamed product)
+           leads; an agency rides along as "delivered by" rather than
+           replacing the mark (lockup B in the brand-presence spec). -->
       <div class="sidebar__logo">
-        <button
-          type="button"
-          class="logo-btn"
-          [attr.aria-label]="logoLabel()"
-          [pTooltip]="isExpanded() ? '' : logoTooltip()"
-          tooltipPosition="right"
-          (click)="logoClick.emit()"
-        >
-          @if (agencyBrand(); as ag) {
-            @if (isExpanded() && ag.logo_url) {
-              <img
-                [ngSrc]="ag.logo_url"
-                [alt]="ag.name"
-                width="312"
-                height="48"
-                class="agency-wordmark"
-              />
-            } @else if (ag.logo_url) {
-              <img
-                [ngSrc]="ag.logo_url"
-                [alt]="ag.name"
-                width="48"
-                height="48"
-                class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
-              />
+        <div class="sidebar__identity">
+          <button
+            type="button"
+            class="logo-btn"
+            [attr.aria-label]="logoLabel()"
+            [pTooltip]="isExpanded() ? '' : logoTooltip()"
+            tooltipPosition="right"
+            (click)="logoClick.emit()"
+          >
+            @if (isExpanded()) {
+              <span class="identity-lockup">
+                <app-clint-logo [size]="20" [dark]="true" />
+                <span class="identity-wordmark">{{ wordmark() }}</span>
+              </span>
+            } @else if (agencyBrand(); as ag) {
+              @if (ag.logo_url) {
+                <img
+                  [ngSrc]="ag.logo_url"
+                  [alt]="ag.name"
+                  width="48"
+                  height="48"
+                  class="size-6 rounded-[5px] bg-slate-50 object-contain box-content p-0.5"
+                />
+              } @else {
+                <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
+              }
             } @else {
-              <span class="agency-initial" aria-hidden="true">{{ agencyInitial() }}</span>
+              <app-clint-logo [size]="24" [dark]="true" />
             }
-          } @else {
-            <app-clint-logo [size]="24" [dark]="true" />
+          </button>
+          @if (isExpanded()) {
+            @if (agencyBrand(); as ag) {
+              <div class="delivered-by">
+                <span class="delivered-by__label">Delivered by</span>
+                @if (ag.logo_url) {
+                  <img
+                    [ngSrc]="ag.logo_url"
+                    [alt]="ag.name"
+                    width="140"
+                    height="28"
+                    class="delivered-by__logo"
+                  />
+                } @else {
+                  <span class="delivered-by__name">{{ ag.name }}</span>
+                }
+              </div>
+            }
           }
-        </button>
+        </div>
 
         @if (isExpanded()) {
           <div class="flex-1"></div>
@@ -343,19 +362,66 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         border-radius: 8px;
       }
 
-      /* Agency mark in expanded sidebar: agency-uploaded wordmarks tend to
-         be dark-on-light, so render them on a near-white tile to stay
-         legible against the slate-900 sidebar. Cap height + width so any
-         aspect ratio fits the column without crowding the pin button. */
-      .agency-wordmark {
-        height: 24px;
-        max-width: 156px;
+      .sidebar__identity {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .identity-lockup {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .identity-wordmark {
+        color: #e2e8f0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      /* Agency credit under the product lockup. Agency wordmarks tend to be
+         dark-on-light, so the logo sits on a near-white tile to stay legible
+         against the slate-900 sidebar. */
+      .delivered-by {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-left: 2px;
+      }
+
+      .delivered-by__label {
+        color: #64748b;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 8.5px;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .delivered-by__logo {
+        height: 16px;
+        max-width: 104px;
         width: auto;
         object-fit: contain;
         background: #f8fafc;
-        border-radius: 4px;
-        padding: 2px 6px;
+        border-radius: 3px;
+        padding: 1px 4px;
         box-sizing: content-box;
+      }
+
+      .delivered-by__name {
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
       }
 
       /* Collapsed-state badge (and fallback when an agency has no logo).
@@ -641,6 +707,8 @@ export class SidebarComponent {
     const name = this.agencyBrand()?.name?.trim() ?? '';
     return name ? name.charAt(0).toUpperCase() : '?';
   });
+  /** Product wordmark: the brand display name, tracked uppercase via CSS. */
+  readonly wordmark = computed(() => this.brandContext.appDisplayName());
   readonly logoLabel = computed(() => {
     const ag = this.agencyBrand();
     return ag ? `${ag.name} -- go to home` : 'Go to home';

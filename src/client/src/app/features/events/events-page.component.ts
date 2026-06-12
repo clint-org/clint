@@ -15,7 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
@@ -55,7 +55,7 @@ import { entityCellParts, type EntityCellParts } from './entity-cell';
     ButtonModule,
     Dialog,
     MessageModule,
-    ProgressSpinner,
+    LoaderComponent,
     SelectModule,
     TableModule,
     Tooltip,

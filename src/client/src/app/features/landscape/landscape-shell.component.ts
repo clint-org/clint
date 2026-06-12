@@ -26,12 +26,12 @@ import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import type { ExportFormat } from '../../core/services/export-common.util';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, ProgressSpinner],
+  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, LoaderComponent],
   animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
@@ -54,7 +54,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
             <div
               class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
             >
-              <p-progress-spinner strokeWidth="3" styleClass="w-[28px] h-[28px]" />
+              <app-loader [size]="28" />
             </div>
           } @else {
             <app-marker-detail-panel

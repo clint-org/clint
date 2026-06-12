@@ -2,20 +2,25 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { PLATFORM_SUPPORT_EMAIL, PLATFORM_OPERATOR } from '../../core/models/legal-content';
+import { ClintLogoComponent } from './clint-logo.component';
 
 @Component({
   selector: 'app-public-footer',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, ClintLogoComponent],
   template: `
     <footer class="border-t border-slate-200 bg-white">
       <div
         class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-5 text-xs text-slate-500 sm:flex-row"
       >
-        <p>
+        <p class="flex items-center gap-1.5">
           &copy; {{ year }} {{ ownerName() }}
           @if (showPlatform()) {
-            <span class="text-slate-400">&middot; Powered by {{ platform }}</span>
+            <span class="inline-flex items-center gap-1.5 text-slate-400">
+              &middot; Powered by
+              <app-clint-logo [size]="12" />
+              {{ platform }}
+            </span>
           }
         </p>
         <nav class="flex items-center gap-5" aria-label="Legal and contact">

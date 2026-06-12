@@ -59,8 +59,9 @@
         (assetClick)="onAssetClick($event)"
       />
     } @else {
-      <div class="flex items-center justify-center py-20">
-        <div class="flex flex-col items-center gap-3 text-center">
+      <div class="relative flex items-center justify-center py-20">
+        <app-mark-watermark />
+        <div class="relative flex flex-col items-center gap-3 text-center">
           <p-message severity="info" [closable]="false">
             No clinical trial data to display. Add companies, assets, and trials to see them on
             the dashboard.
@@ -97,6 +98,7 @@
   [hideRoaColumn]="hideRoaColumn()"
   [hideNotesColumn]="hideNotesColumn()"
   [format]="exportFormat()"
+  [tenantId]="tenantId()"
   [open]="exportDialogOpen()"
   (closed)="exportDialogOpen.set(false)"
 />
