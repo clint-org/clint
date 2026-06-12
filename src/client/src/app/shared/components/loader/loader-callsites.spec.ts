@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 const APP = join(__dirname, '../../..');
 
 const surfaces = [
-  'features/dashboard/export-dialog/export-dialog.component.ts',
   'features/landscape/landscape-filter-bar.component.html',
   'features/landscape/entity-marker-drawer.component.ts',
   'features/landscape/landscape-shell.component.ts',

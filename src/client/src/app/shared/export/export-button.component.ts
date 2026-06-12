@@ -5,7 +5,7 @@ import type { MenuItem } from 'primeng/api';
 
 export interface ExportAction {
   label: string;
-  format: 'png' | 'xlsx';
+  format: 'png' | 'pptx' | 'xlsx';
   run: () => Promise<void>;
 }
 

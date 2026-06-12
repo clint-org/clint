@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   OnDestroy,
   OnInit,
@@ -25,7 +24,6 @@ import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
-import type { ExportFormat } from '../../core/services/export-common.util';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
@@ -81,38 +79,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly landscapeService = inject(LandscapeService);
   readonly state = inject(LandscapeStateService);
   private readonly topbarState = inject(TopbarStateService);
-
-  private readonly exportEffect = effect(() => {
-    if (this.viewMode() === 'timeline') {
-      this.topbarState.actions.set([
-        {
-          label: 'Export',
-          icon: 'fa-solid fa-file-export',
-          text: true,
-          severity: 'secondary',
-          items: [
-            {
-              label: 'PowerPoint',
-              icon: 'fa-solid fa-file-powerpoint',
-              command: () => this.onExportClick('pptx'),
-            },
-            {
-              label: 'Image (PNG)',
-              icon: 'fa-solid fa-image',
-              command: () => this.onExportClick('png'),
-            },
-            {
-              label: 'Excel (XLSX)',
-              icon: 'fa-solid fa-file-excel',
-              command: () => this.onExportClick('xlsx'),
-            },
-          ],
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('indication');
@@ -193,10 +159,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-  }
-
-  onExportClick(format: ExportFormat): void {
-    document.dispatchEvent(new CustomEvent('landscape:export', { detail: { format } }));
   }
 
   private spaceBase(): string[] {

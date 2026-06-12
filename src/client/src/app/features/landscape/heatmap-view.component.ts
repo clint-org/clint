@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   Injector,
@@ -22,10 +23,9 @@ import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.comp
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
-import {
-  ExportButtonComponent,
-  type ExportAction,
-} from '../../shared/export/export-button.component';
+import { type ExportAction } from '../../shared/export/export-button.component';
+import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -42,7 +42,6 @@ import { buildHeatmapSheets } from './heatmap-export.util';
     SkeletonComponent,
     MessageModule,
     ButtonModule,
-    ExportButtonComponent,
   ],
   animations: [slidePanelAnimation],
   template: `
@@ -78,11 +77,6 @@ import { buildHeatmapSheets } from './heatmap-export.util';
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout flex flex-col">
-            @if (exportActions().length > 0) {
-              <div class="relative z-20 flex shrink-0 justify-end pb-2">
-                <app-export-button [actions]="exportActions()" />
-              </div>
-            }
             <div class="flex-1 min-w-0 min-h-0 overflow-auto">
               <app-heatmap
                 [bubbles]="data.bubbles"
@@ -133,6 +127,8 @@ export class HeatmapViewComponent implements OnInit {
   private readonly sheetExcel = inject(SheetExcelExportService);
   private readonly injector = inject(Injector);
   private readonly brand = inject(BrandContextService);
+  private readonly topbarState = inject(TopbarStateService);
+  private readonly exportSync = createTopbarExportSync(this.topbarState);
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
@@ -165,7 +161,7 @@ export class HeatmapViewComponent implements OnInit {
     const title = this.heatmapTitle();
     return [
       {
-        label: 'PNG',
+        label: 'Image (PNG)',
         format: 'png',
         run: () =>
           this.png.capture({
@@ -188,7 +184,7 @@ export class HeatmapViewComponent implements OnInit {
           }),
       },
       {
-        label: 'Excel',
+        label: 'Excel (XLSX)',
         format: 'xlsx',
         run: () =>
           this.sheetExcel.export(
@@ -200,6 +196,11 @@ export class HeatmapViewComponent implements OnInit {
   });
 
   constructor() {
+    // Visualization export lives in the page header (topbar), not the chart
+    // area; see the timeline for the same pattern.
+    effect(() => this.exportSync.push(this.exportActions()));
+    inject(DestroyRef).onDestroy(() => this.exportSync.teardown());
+
     // Clear selection when grouping, count unit, or filters change
     effect(() => {
       this.state.heatmapGrouping();

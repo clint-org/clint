@@ -81,24 +81,3 @@
     }
   </div>
 </div>
-
-<app-export-dialog
-  [companies]="companies()"
-  [startYear]="resolvedStartYear()"
-  [endYear]="resolvedEndYear()"
-  [showMoaColumn]="state.showMoaColumn()"
-  [showRoaColumn]="state.showRoaColumn()"
-  [showNotesColumn]="state.showNotesColumn()"
-  [liveZoomLevel]="state.zoomLevel()"
-  [spaceId]="spaceId()"
-  [hideCompanyColumn]="hideCompanyColumn()"
-  [hideAssetColumn]="hideAssetColumn()"
-  [hideTrialColumn]="hideTrialColumn()"
-  [hideMoaColumn]="hideMoaColumn()"
-  [hideRoaColumn]="hideRoaColumn()"
-  [hideNotesColumn]="hideNotesColumn()"
-  [format]="exportFormat()"
-  [tenantId]="tenantId()"
-  [open]="exportDialogOpen()"
-  (closed)="exportDialogOpen.set(false)"
-/>

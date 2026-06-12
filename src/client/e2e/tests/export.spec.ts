@@ -82,20 +82,12 @@ test.describe('Timeline export formats', () => {
     await expect(page.getByRole('menuitem', { name: 'PowerPoint' })).toBeHidden();
   });
 
-  test('PNG export produces an image blob via the dialog', async () => {
+  test('PNG export downloads directly from the menu, no dialog', async () => {
     await page.getByRole('button', { name: 'Export', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Image (PNG)' }).click();
 
-    // <app-export-dialog> is always in the DOM; PrimeNG appends the rendered
-    // overlay panel (.p-dialog) to the body only while the dialog is open.
-    const dialog = page.locator('.p-dialog');
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('Export image')).toBeVisible();
-    // PNG is capture-as-is: no deck options, just the explanatory line.
-    await expect(dialog.getByText('matches the timeline exactly')).toBeVisible();
-    await expect(dialog.getByText('Zoom level')).toBeHidden();
-
-    await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+    // The format dialog is retired: the menu action runs the capture directly.
+    await expect(page.locator('.p-dialog')).toBeHidden();
     await expect
       .poll(async () => (await lastBlob())?.type, { timeout: 30000 })
       .toBe('image/png');
@@ -123,8 +115,6 @@ test.describe('Timeline export formats', () => {
     expect(Math.abs(probe.sample[1] - 41)).toBeLessThanOrEqual(3);
     expect(Math.abs(probe.sample[2] - 59)).toBeLessThanOrEqual(3);
 
-    // Successful export closes the dialog.
-    await expect(dialog).toBeHidden();
   });
 
   test('Excel export downloads immediately without a dialog', async () => {
@@ -316,9 +306,19 @@ test.describe('Export surfaces audit', () => {
     await page.close();
   });
 
+
+  async function expectHeaderExportButton(): Promise<void> {
+    const exportButtons = page.getByRole('button', { name: /^Export(\s|$)/ });
+    await expect(exportButtons).toHaveCount(1);
+    await expect(
+      page.locator('.topbar').getByRole('button', { name: /^Export(\s|$)/ })
+    ).toHaveCount(1);
+  }
+
   test('bullseye PNG is crisp, framed, and never flickers on-screen', async () => {
     await page.goto(surfaceUrl('bullseye'), { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('svg.bullseye-svg', { timeout: 30000 });
+    await expectHeaderExportButton();
     await page.screenshot({ path: auditPath('bullseye-live.png'), fullPage: true });
 
     await runExport(page, 'PNG');
@@ -363,6 +363,7 @@ test.describe('Export surfaces audit', () => {
   test('heatmap PNG matches the live matrix and never flickers on-screen', async () => {
     await page.goto(surfaceUrl('heatmap/by-company'), { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('table.matrix', { timeout: 30000 });
+    await expectHeaderExportButton();
     await page.screenshot({ path: auditPath('heatmap-live.png'), fullPage: true });
 
     await runExport(page, 'PNG');
@@ -521,6 +522,7 @@ test.describe('Export surfaces audit', () => {
   test('timeline PNG and Excel export directly from the header menu', async () => {
     await page.goto(surfaceUrl('timeline'), { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });
+    await expectHeaderExportButton();
     await page.screenshot({ path: auditPath('timeline-live.png'), fullPage: true });
 
     await runExport(page, 'Image (PNG)');

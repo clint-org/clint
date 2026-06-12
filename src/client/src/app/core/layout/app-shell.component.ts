@@ -96,6 +96,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [entityContext]="topbarState.entityContext()"
           [entityTitle]="topbarState.entityTitle()"
           [actionButtons]="topbarState.actions()"
+          [exportActions]="topbarState.exportActions()"
           [overflowActions]="topbarState.overflowActions()"
           [tenantLogoUrl]="currentTenantLogoUrl()"
           [timelineHintVisible]="onboardingTooltip.visible()"

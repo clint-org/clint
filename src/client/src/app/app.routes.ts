@@ -231,6 +231,9 @@ export const routes: Routes = [
             children: [
               {
                 path: 'timeline',
+                // The routed timeline owns the topbar export menu; embedded
+                // entity-page timelines (no flag) do not publish it.
+                data: { publishExportActions: true },
                 loadComponent: () =>
                   import('./features/landscape/timeline-view.component').then(
                     (m) => m.TimelineViewComponent

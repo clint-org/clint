@@ -45,11 +45,6 @@
               [hasDuplicates]="duplicatedAssetIds().size > 0"
             />
             <div class="flex-1 min-w-[600px] overflow-hidden landscape-layout">
-              @if (exportActions().length > 0) {
-                <div class="flex justify-end px-4 pt-3">
-                  <app-export-button [actions]="exportActions()" />
-                </div>
-              }
               <div class="landscape-chart-wrap">
                 <div class="bullseye-chart-frame">
                   <app-bullseye-chart
