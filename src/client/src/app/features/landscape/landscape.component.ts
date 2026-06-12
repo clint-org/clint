@@ -33,6 +33,7 @@ import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component'
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
+import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 
 @Component({
   selector: 'app-landscape',
@@ -43,6 +44,7 @@ import { LandscapeStateService } from './landscape-state.service';
     BullseyeTooltipComponent,
     RouterLink,
     ButtonModule,
+    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     Tooltip,

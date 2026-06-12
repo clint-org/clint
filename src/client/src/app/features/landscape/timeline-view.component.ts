@@ -23,6 +23,7 @@ import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
+import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -31,6 +32,7 @@ import { TimelineInsightStripComponent } from './timeline-insight-strip.componen
     DashboardGridComponent,
     ExportDialogComponent,
     LegendComponent,
+    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     TimelineInsightStripComponent,
