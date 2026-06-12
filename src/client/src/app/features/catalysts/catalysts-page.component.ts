@@ -20,7 +20,6 @@ import { GridExcelExportService } from '../../shared/export/grid-excel-export.se
 
 @Component({
   selector: 'app-catalysts-page',
-  standalone: true,
   imports: [
     ManagePageShellComponent,
     GridToolbarComponent,

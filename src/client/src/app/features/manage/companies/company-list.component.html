@@ -1,5 +1,7 @@
 <app-manage-page-shell>
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search companies..." />
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search companies...">
+    <app-export-button gridToolbarStart [actions]="exportActions" />
+  </app-grid-toolbar>
 
   <p-table
     styleClass="data-table"

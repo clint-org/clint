@@ -39,6 +39,11 @@ import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-act
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../../shared/export/export-button.component';
+import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -52,7 +57,6 @@ interface TrialRow {
 
 @Component({
   selector: 'app-trial-list',
-  standalone: true,
   imports: [
     RouterLink,
     TableModule,
@@ -65,6 +69,7 @@ interface TrialRow {
     GridToolbarComponent,
     TableSkeletonBodyComponent,
     HighlightPipe,
+    ExportButtonComponent,
   ],
   templateUrl: './trial-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,6 +93,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
+  private readonly excel = inject(GridExcelExportService);
 
   // Surface "Add trial" only for space owners/editors. Effect re-runs when
   // canEdit() flips (initial role fetch resolves, or navigation between
@@ -211,6 +217,20 @@ export class TrialListComponent implements OnInit, OnDestroy {
   });
 
   readonly visibleRows = this.grid.filteredRows(this.rows);
+
+  readonly exportActions: ExportAction[] = [
+    {
+      label: 'Excel',
+      format: 'xlsx',
+      run: () =>
+        this.excel.export({
+          sheetName: 'Trials',
+          filename: 'trials',
+          columns: this.grid.columns,
+          rows: this.visibleRows(),
+        }),
+    },
+  ];
 
   private readonly countEffect = effect(() => {
     this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
