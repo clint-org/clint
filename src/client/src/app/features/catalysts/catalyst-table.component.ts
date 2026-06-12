@@ -166,15 +166,14 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
             }
           </td>
           <td>
+            <!-- Projected is the default state of a future catalyst; an
+                 amber pill on every row carried no signal. Quiet text for
+                 the default; the green pill marks confirmed exceptions. -->
             @if (catalyst.is_projected) {
-              <span
-                class="inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-600"
-              >
-                Projected
-              </span>
+              <span class="text-[9px] uppercase tracking-wide text-slate-500">Projected</span>
             } @else {
               <span
-                class="inline-block rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-600"
+                class="inline-block rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-700"
               >
                 Confirmed
               </span>

@@ -120,7 +120,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
               @if (tenant.suspended_at) {
                 <app-status-tag label="suspended" tone="amber" />
               } @else {
-                <app-status-tag label="active" tone="teal" />
+                <app-status-tag label="active" tone="brand" />
               }
             </td>
           </tr>

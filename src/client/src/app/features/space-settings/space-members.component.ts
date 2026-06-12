@@ -111,7 +111,7 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
               } @else {
                 <app-status-tag
                   [label]="roleLabel(member.role)"
-                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                  [tone]="member.role === 'owner' ? 'brand' : 'slate'"
                 />
               }
             </td>
@@ -171,7 +171,7 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
               <td>
                 <app-status-tag
                   [label]="roleLabel(invite.role)"
-                  [tone]="invite.role === 'owner' ? 'teal' : 'slate'"
+                  [tone]="invite.role === 'owner' ? 'brand' : 'slate'"
                 />
               </td>
               <td class="col-identifier">{{ invite.invite_code }}</td>

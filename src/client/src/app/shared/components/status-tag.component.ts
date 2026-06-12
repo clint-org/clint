@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-type TagTone = 'neutral' | 'teal' | 'amber' | 'slate';
+type TagTone = 'neutral' | 'brand' | 'amber' | 'slate' | 'red';
 
 interface TagStyle {
   readonly background: string;
@@ -14,10 +14,12 @@ const TONES: Record<TagTone, TagStyle> = {
     text: 'rgb(71 85 105)', // slate-600
     border: 'rgb(226 232 240)', // slate-200
   },
-  teal: {
-    background: 'rgb(240 253 250)', // teal-50
-    text: 'rgb(15 118 110)', // teal-700
-    border: 'rgb(153 246 228)', // teal-200
+  // Active/positive states track the tenant brand (whitelabel: never
+  // hard-coded teal). Fallbacks are the default teal preset.
+  brand: {
+    background: 'var(--brand-50, #f0fdfa)',
+    text: 'var(--brand-700, #0f766e)',
+    border: 'var(--brand-200, #99f6e4)',
   },
   amber: {
     background: 'rgb(254 243 199)', // amber-100
@@ -29,6 +31,11 @@ const TONES: Record<TagTone, TagStyle> = {
     text: 'rgb(100 116 139)', // slate-500
     border: 'rgb(226 232 240)', // slate-200
   },
+  red: {
+    background: 'rgb(254 242 242)', // red-50
+    text: 'rgb(185 28 28)', // red-700
+    border: 'rgb(254 202 202)', // red-200
+  },
 };
 
 /**
@@ -37,17 +44,17 @@ const TONES: Record<TagTone, TagStyle> = {
  * for active/pivotal states.
  */
 const TRIAL_STATUS_TONE: Record<string, TagTone> = {
-  recruiting: 'teal',
-  'active, not recruiting': 'teal',
-  active: 'teal',
-  enrolling: 'teal',
-  'enrolling by invitation': 'teal',
+  recruiting: 'brand',
+  'active, not recruiting': 'brand',
+  active: 'brand',
+  enrolling: 'brand',
+  'enrolling by invitation': 'brand',
   'not yet recruiting': 'amber',
   suspended: 'amber',
   'on hold': 'amber',
   completed: 'slate',
-  terminated: 'slate',
-  withdrawn: 'slate',
+  terminated: 'red',
+  withdrawn: 'red',
   'unknown status': 'slate',
   unknown: 'slate',
 };

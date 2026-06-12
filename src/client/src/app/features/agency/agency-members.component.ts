@@ -105,7 +105,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
               } @else {
                 <app-status-tag
                   [label]="member.role"
-                  [tone]="member.role === 'owner' ? 'teal' : 'slate'"
+                  [tone]="member.role === 'owner' ? 'brand' : 'slate'"
                 />
               }
             </td>
