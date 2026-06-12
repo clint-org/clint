@@ -1,6 +1,6 @@
 {
   "specId": "spec-2026-data-api-least-privilege",
-  "status": "draft",
+  "status": "approved",
   "branch": null,
   "tasks": {
     "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
