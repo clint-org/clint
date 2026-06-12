@@ -131,3 +131,17 @@ describe('formatTimePeriod', () => {
     expect(formatTimePeriod(tp({ endYear: 2027 }))).toBe('Through 2027');
   });
 });
+
+describe('degenerate inputs', () => {
+  it('treats an all-null period as fully open', () => {
+    expect(timePeriodToRange(tp({}))).toEqual({ start: null, end: null });
+  });
+
+  it('passes a fully dateless span against any range', () => {
+    expect(spanOverlapsRange(null, null, { start: '2025-01-01', end: '2026-12-31' })).toBe(true);
+  });
+
+  it('formats an all-null period as empty string', () => {
+    expect(formatTimePeriod(tp({}))).toBe('');
+  });
+});

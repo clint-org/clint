@@ -12,6 +12,8 @@ import {
   LandscapeFilters,
   SpokeGrouping,
   SpokeMode,
+  spanOverlapsRange,
+  timePeriodToRange,
 } from '../../core/models/landscape.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
@@ -273,7 +275,9 @@ export class LandscapeStateService {
       const raw = sessionStorage.getItem(this.storageKey);
       if (!raw) return;
       const saved: PersistedLandscapeState = JSON.parse(raw);
-      if (saved.filters) this.filters.set(saved.filters);
+      // Merge over EMPTY so filters persisted before a field existed (e.g.
+      // timePeriod) hydrate with their defaults instead of undefined.
+      if (saved.filters) this.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, ...saved.filters });
       if (saved.zoomLevel) this.zoomLevel.set(saved.zoomLevel);
       if (saved.spokeMode) this.spokeMode.set(saved.spokeMode);
       if (saved.spokeGrouping) this.spokeGrouping.set(saved.spokeGrouping);
@@ -293,6 +297,9 @@ export class LandscapeStateService {
 
 export function filterDashboardData(companies: Company[], filters: LandscapeFilters): Company[] {
   let result = companies;
+
+  const timeRange = timePeriodToRange(filters.timePeriod ?? null);
+  const hasTimeWindow = timeRange.start !== null || timeRange.end !== null;
 
   if (filters.companyIds.length > 0) {
     result = result.filter((c) => filters.companyIds.includes(c.id));
@@ -365,6 +372,25 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
                 return catId && filters.markerCategoryIds.includes(catId);
               }),
             }));
+          }
+
+          // Time period: prune markers outside the window, then keep trials
+          // whose phase span overlaps it. Trials with no phase dates pass
+          // only if at least one of their markers survived the pruning.
+          if (hasTimeWindow) {
+            trials = trials
+              .map((t) => ({
+                ...t,
+                markers: (t.markers ?? []).filter((m) =>
+                  spanOverlapsRange(m.event_date, m.end_date ?? m.event_date, timeRange)
+                ),
+              }))
+              .filter((t) => {
+                const start = t.phase_start_date ?? null;
+                const end = t.phase_end_date ?? null;
+                if (start === null && end === null) return (t.markers ?? []).length > 0;
+                return spanOverlapsRange(start, end, timeRange);
+              });
           }
 
           if (trials.length === 0) return null;
