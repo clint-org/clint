@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { BrandContextService } from '../../../core/services/brand-context.service';
-import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../../../shared/components/clint-mark';
 import { DashboardGridComponent } from '../grid/dashboard-grid.component';
 import { LegendComponent } from '../legend/legend.component';
@@ -21,7 +20,7 @@ import { LegendComponent } from '../legend/legend.component';
  */
 @Component({
   selector: 'app-export-snapshot-host',
-  imports: [BrandLogoComponent, DashboardGridComponent, LegendComponent],
+  imports: [DashboardGridComponent, LegendComponent],
   host: { class: 'block w-max bg-white' },
   template: `
     <app-dashboard-grid
@@ -67,14 +66,12 @@ import { LegendComponent } from '../legend/legend.component';
         <span class="text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">
           Delivered by
         </span>
-        @if (agencyLogo(); as alogo) {
-          <app-brand-logo
-            [url]="alogo"
-            alt=""
-            [width]="64"
-            [height]="16"
-            imgClass="h-4 w-auto max-w-[80px] object-contain"
-          />
+        <!-- Logos arrive as pre-rasterized PNG data URIs from PngExportService
+             (CORS-safe for the DOM capture); plain img because NgOptimizedImage
+             rejects base64 sources. -->
+        @if (agencyLogoUrl(); as alogo) {
+          <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -->
+          <img [src]="alogo" alt="" class="h-4 w-auto max-w-[80px] object-contain" />
         } @else {
           <span class="text-[11px] font-semibold text-slate-600">{{ agency }}</span>
         }
@@ -85,13 +82,8 @@ import { LegendComponent } from '../legend/legend.component';
           Prepared for
         </span>
         @if (tenantLogoUrl(); as tlogo) {
-          <app-brand-logo
-            [url]="tlogo"
-            alt=""
-            [width]="16"
-            [height]="16"
-            imgClass="h-4 w-4 rounded object-contain"
-          />
+          <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -->
+          <img [src]="tlogo" alt="" class="h-4 w-4 rounded object-contain" />
         }
         <span class="max-w-[160px] truncate text-[11px] font-semibold text-slate-600">
           {{ tname }}
@@ -117,11 +109,12 @@ export class ExportSnapshotHostComponent {
   readonly hideNotesColumn = input(false);
   readonly spaceId = input.required<string>();
   readonly tenantName = input('');
+  /** Pre-rasterized PNG data URIs (or null), supplied by PngExportService. */
   readonly tenantLogoUrl = input<string | null>(null);
+  readonly agencyLogoUrl = input<string | null>(null);
 
   protected readonly appDisplayName = computed(() => this.brand.appDisplayName());
   protected readonly agencyName = computed(() => this.brand.agency()?.name ?? null);
-  protected readonly agencyLogo = computed(() => this.brand.agency()?.logo_url ?? null);
 
   protected readonly mark = CLINT_MARK_POINTS;
   protected readonly markViewBox = CLINT_MARK_VIEWBOX;

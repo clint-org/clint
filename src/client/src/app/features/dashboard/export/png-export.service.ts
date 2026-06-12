@@ -10,7 +10,9 @@ import { domToCanvas } from 'modern-screenshot';
 
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { saveBlob } from '../../../core/services/download.util';
+import { logoToPngDataUrl } from '../../../core/services/load-image.util';
 import { clampExportScale } from '../../../core/services/export-scale.util';
 import { EXPORT_WAITING_SELECTOR, includeInCapture } from './export-capture.util';
 import { ExportSnapshotHostComponent } from './export-snapshot-host.component';
@@ -46,6 +48,7 @@ const LEGEND_TIMEOUT_MS = 5000;
 export class PngExportService {
   private readonly appRef = inject(ApplicationRef);
   private readonly envInjector = inject(EnvironmentInjector);
+  private readonly brand = inject(BrandContextService);
 
   /**
    * elementInjector must be the caller's Injector: the grid resolves
@@ -55,6 +58,16 @@ export class PngExportService {
    */
   async exportDashboard(snapshot: PngExportSnapshot, elementInjector: Injector): Promise<void> {
     if (snapshot.companies.length === 0) return;
+
+    // Footer logos are pre-rasterized to PNG data URIs: modern-screenshot has
+    // to re-fetch every <img> to inline it into the capture, and logo hosts
+    // without CORS headers silently rasterize as a blank gap. The canvas
+    // round-trip (crossOrigin=anonymous) either yields an embeddable data URI
+    // or null, in which case the footer falls back to name text.
+    const [agencyLogo, tenantLogo] = await Promise.all([
+      logoToPngDataUrl(this.brand.agency()?.logo_url ?? null),
+      logoToPngDataUrl(snapshot.tenantLogoUrl),
+    ]);
 
     const ref = createComponent(ExportSnapshotHostComponent, {
       environmentInjector: this.envInjector,
@@ -72,7 +85,8 @@ export class PngExportService {
     ref.setInput('hideNotesColumn', snapshot.hideNotesColumn);
     ref.setInput('spaceId', snapshot.spaceId);
     ref.setInput('tenantName', snapshot.tenantName);
-    ref.setInput('tenantLogoUrl', snapshot.tenantLogoUrl);
+    ref.setInput('tenantLogoUrl', tenantLogo);
+    ref.setInput('agencyLogoUrl', agencyLogo);
 
     const el = ref.location.nativeElement as HTMLElement;
     // Off-viewport, not display:none; layout must run for the capture.

@@ -5,7 +5,7 @@ import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
-import { loadImageElement } from './load-image.util';
+import { logoToPngDataUrl } from './load-image.util';
 import { MarkerTypeService } from './marker-type.service';
 import {
   buildLegendGroups,
@@ -335,29 +335,12 @@ export class PptxExportService {
   }
 
   /**
-   * Loads a logo URL and returns a base64 PNG data URI suitable for
-   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Uses the
-   * shared loadImageElement loader (Brandfetch enrichment, 8 s timeout, null
-   * on any failure), then rasterizes the returned element through a canvas so
-   * SVG / webp logos become PNG. Returns null so the deck falls back to the
-   * brand name text.
+   * PowerPoint only embeds raster formats; delegate to the shared
+   * canvas rasterizer (Brandfetch enrichment, CORS-safe, null on failure
+   * so the deck falls back to the brand name text).
    */
-  private async loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
-    const img = await loadImageElement(rawUrl);
-    if (!img) return null;
-    try {
-      const w = img.naturalWidth || 256;
-      const h = img.naturalHeight || 256;
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      ctx.drawImage(img, 0, 0, w, h);
-      return canvas.toDataURL('image/png');
-    } catch {
-      return null;
-    }
+  private loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
+    return logoToPngDataUrl(rawUrl);
   }
 
   private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {
