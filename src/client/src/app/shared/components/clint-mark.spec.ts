@@ -36,4 +36,12 @@ describe('clintMarkSvgDataUri', () => {
     expect(svg).toContain('#0d9488');
     expect(svg).toContain('stroke-linecap="round"');
   });
+
+  it('keeps display-size stroke weight when rasterizing at higher resolution', () => {
+    const uri = clintMarkSvgDataUri(64, { outer: '#cbd5e1', middle: '#94a3b8', inner: '#0d9488' }, 16);
+    const svg = decodeURIComponent(uri.slice('data:image/svg+xml;utf8,'.length));
+    expect(svg).toContain('stroke-width="7"');
+    expect(svg).toContain('stroke-width="11"');
+    expect(svg).toContain('width="64"');
+  });
 });

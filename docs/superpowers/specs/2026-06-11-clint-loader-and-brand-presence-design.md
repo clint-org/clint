@@ -66,7 +66,7 @@ Today the stretch between the OAuth redirect and Angular rendering (including th
 `core/layout/sidebar.component.ts`, expanded state:
 
 - Row 1: Clint mark (20px, dark variant) + tracked uppercase wordmark driven by `appDisplayName()` (so a renamed whitelabel host shows its own name).
-- Row 2 (only when `agencyBrand()` exists): "DELIVERED BY" microlabel + agency logo in a small white chip (agency wordmarks are designed for light backgrounds), falling back to the agency-initial badge when the agency has no logo. This replaces today's behavior where the agency logo evicts the Clint mark entirely.
+- Row 2 (only when `agencyBrand()` exists): "DELIVERED BY" microlabel + agency logo in a small white chip (agency wordmarks are designed for light backgrounds), falling back to the agency name as text when the agency has no logo. This replaces today's behavior where the agency logo evicts the Clint mark entirely.
 - Collapsed rail: unchanged (agency logo chip when an agency exists, otherwise the mark).
 
 ### 6. Empty-state watermark
@@ -90,7 +90,7 @@ Surfaces: `features/dashboard/export/export-snapshot-host.component.ts` (PNG) an
 
 The card hierarchy stays exactly as shipped: tenant logo leads, "Sign in to the {appName} workspace", provider buttons, agency credit foot ("Competitive intelligence by" + agency logo). Changes:
 
-- Page footer: a small static Clint mark (14px) joins the existing "Powered by Clint" line.
+- Page footer: a small static Clint mark (12px) joins the existing "Powered by Clint" line.
 - Default hosts without a tenant logo keep the Clint mark in the card (current fallback), now sourced from the shared geometry.
 
 ### 9. Marketing landing
@@ -104,7 +104,7 @@ New `app-intelligence-badge` (shared/components/intelligence-badge/): mark (14px
 
 Surfaces:
 
-- **Source import** (`features/source-import/import-page.component.ts`): the extraction progress block gets the badge as its header (active while extracting), and the active step's pulsing dot is replaced by a 15px `app-loader`. Step labels unchanged.
+- **Source import** (`features/source-import/import-page.component.ts`): the extraction progress block gets the badge as its header (active while extracting), and the active step's pulsing dot is replaced by a 16px `app-loader`. Step labels unchanged.
 - **Future "Ask Clint"**: panel header badge + loader while streaming. Nothing new to design when it ships.
 
 ### Whitelabel rules summary

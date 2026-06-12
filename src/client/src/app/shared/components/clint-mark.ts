@@ -37,9 +37,15 @@ export interface ClintMarkColors {
 /**
  * Standalone SVG as a data URI, for rasterization paths that cannot render
  * Angular templates (the PPTX footer loads this through an Image element).
+ * strokeSize lets callers rasterize at high resolution while keeping the
+ * stroke weight of the intended display size.
  */
-export function clintMarkSvgDataUri(size: number, colors: ClintMarkColors): string {
-  const s = clintMarkStrokes(size);
+export function clintMarkSvgDataUri(
+  size: number,
+  colors: ClintMarkColors,
+  strokeSize: number = size
+): string {
+  const s = clintMarkStrokes(strokeSize);
   const line = (points: string, stroke: string, width: number): string =>
     `<polyline points="${points}" stroke="${stroke}" stroke-width="${width}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   const svg =

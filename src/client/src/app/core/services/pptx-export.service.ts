@@ -72,11 +72,15 @@ export class PptxExportService {
       this.loadLogoAsPng(agency?.logo_url ?? null),
       this.loadLogoAsPng(tenant?.logoUrl ?? null),
       this.loadLogoAsPng(
-        clintMarkSvgDataUri(64, {
-          outer: '#cbd5e1',
-          middle: '#94a3b8',
-          inner: `#${primaryColorHex}`,
-        })
+        clintMarkSvgDataUri(
+          64,
+          {
+            outer: '#cbd5e1',
+            middle: '#94a3b8',
+            inner: `#${primaryColorHex}`,
+          },
+          16
+        )
       ),
     ]);
     const dateStr = new Date().toLocaleDateString('en-US', {
@@ -205,6 +209,8 @@ export class PptxExportService {
 
     // 3. Tenant: PREPARED FOR + logo + name. Hidden when absent.
     if (footer.tenantName) {
+      const tenantDisplayName =
+        footer.tenantName.length > 28 ? `${footer.tenantName.slice(0, 27)}...` : footer.tenantName;
       slide.addText('PREPARED FOR', { ...microLabel, x, w: 0.9 });
       x += 0.95;
       if (footer.tenantLogo) {
@@ -218,7 +224,7 @@ export class PptxExportService {
         });
         x += glyph + 0.07;
       }
-      slide.addText(footer.tenantName, { ...partyName, x, w: 1.8 });
+      slide.addText(tenantDisplayName, { ...partyName, x, w: 1.8 });
     }
 
     // Right cluster: date + page number (unchanged).
