@@ -19,6 +19,7 @@ import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { computeInitialScrollLeft } from './initial-scroll';
+import { visibleLabelMarkerIds } from './marker-label-layout';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { GridHeaderComponent } from './grid-header.component';
@@ -188,6 +189,35 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     }
     return rows;
   });
+
+  /**
+   * Marker date captions are 36px wide and centered on the icon; two captions
+   * closer than this overlap and turn to garble at year zoom. Suppressed
+   * captions remain available via the marker tooltip.
+   */
+  private static readonly DATE_LABEL_MIN_GAP_PX = 38;
+
+  /** Per trial row, the marker ids whose date caption may render. */
+  private readonly visibleDateLabels = computed<Map<string, Set<string>>>(() => {
+    const sy = this.startYear();
+    const ey = this.endYear();
+    const tw = this.totalWidth();
+    const map = new Map<string, Set<string>>();
+    for (const row of this.flattenedTrials()) {
+      const points = (row.trial.markers ?? [])
+        .filter((m) => this.isMarkerInWindow(m))
+        .map((m) => ({ id: m.id, x: this.timeline.dateToX(m.event_date, sy, ey, tw) }));
+      map.set(
+        row.trial.id,
+        visibleLabelMarkerIds(points, DashboardGridComponent.DATE_LABEL_MIN_GAP_PX)
+      );
+    }
+    return map;
+  });
+
+  protected dateLabelVisible(trialId: string, markerId: string): boolean {
+    return this.visibleDateLabels().get(trialId)?.has(markerId) ?? true;
+  }
 
   ngAfterViewInit(): void {
     const scrollEl = this.elRef.nativeElement.querySelector(

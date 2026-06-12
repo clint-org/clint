@@ -30,6 +30,12 @@ export class MarkerComponent {
   readonly endYear = input.required<number>();
   readonly totalWidth = input.required<number>();
 
+  /**
+   * Row layout decides which date captions fit (see marker-label-layout.ts);
+   * suppressed captions stay reachable via the hover tooltip.
+   */
+  readonly showDateLabel = input<boolean>(true);
+
   readonly trialName = input<string>('');
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');

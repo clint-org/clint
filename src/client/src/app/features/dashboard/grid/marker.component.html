@@ -29,14 +29,16 @@
       />
     </div>
 
-    <div
-      class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
-      [style.color]="mt.color"
-      [style.margin-left.px]="isDashedLine() ? -12 : -iconSize / 2"
-      [style.width.px]="isDashedLine() ? 30 : iconSize * 2"
-    >
-      {{ shortDate() }}
-    </div>
+    @if (showDateLabel()) {
+      <div
+        class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
+        [style.color]="mt.color"
+        [style.margin-left.px]="isDashedLine() ? -12 : -iconSize / 2"
+        [style.width.px]="isDashedLine() ? 30 : iconSize * 2"
+      >
+        {{ shortDate() }}
+      </div>
+    }
 
     @if (showTooltip()) {
       <app-marker-tooltip

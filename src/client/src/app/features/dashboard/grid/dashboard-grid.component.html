@@ -328,6 +328,7 @@
                       [startYear]="startYear()"
                       [endYear]="endYear()"
                       [totalWidth]="totalWidth()"
+                      [showDateLabel]="dateLabelVisible(row.trial.id, marker.id)"
                       [trialName]="row.trial.acronym ?? row.trial.name"
                       [trialPhase]="row.trial.phase_type ?? ''"
                       [recruitmentStatus]="row.trial.recruitment_status ?? ''"
