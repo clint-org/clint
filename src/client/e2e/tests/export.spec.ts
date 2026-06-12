@@ -534,5 +534,13 @@ test.describe('Export surfaces audit', () => {
 
     await runExport(page, 'Excel (XLSX)');
     await saveLastBlob(page, auditPath('timeline.xlsx'));
+
+    // PPTX runs directly at the on-screen zoom (the dialog and its zoom
+    // picker are retired). pptxgenjs writes through an object URL, so the
+    // capture hook sees the deck blob.
+    await runExport(page, 'PowerPoint');
+    const pptx = await lastBlob(page);
+    expect(pptx!.size).toBeGreaterThan(20000);
+    await saveLastBlob(page, auditPath('timeline.pptx'));
   });
 });

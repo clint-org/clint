@@ -418,7 +418,6 @@ DashboardComponent               # Orchestrates state, filters, loading
   FilterPanelComponent           # Collapsible filter sidebar (PrimeNG MultiSelect)
   ZoomControlComponent           # Yearly/quarterly/monthly/daily toggle
   LegendComponent                # Marker type reference grouped by category
-  ExportDialogComponent          # PowerPoint + PNG export dialog (PNG hides deck options; capture-as-is)
   ExportSnapshotHostComponent    # Off-screen capture root for PNG export (real grid + legend + footer; created dynamically by PngExportService)
   DashboardGridComponent         # The timeline table (scrollable container, gear icon toggles MOA/ROA/Notes columns)
     GridHeaderComponent          # Column headers (date labels, sticky)

@@ -5,12 +5,7 @@ spec: docs/specs/export-to-powerpoint/spec.md
 
 # PowerPoint Export
 
-The `PptxExportService` generates a `.pptx` file replicating the dashboard view using `pptxgenjs`. Users can configure:
-
-- Title slide content
-- Which trials to include
-- Date range for the export (start/end year)
-- Zoom level
+The `PptxExportService` generates a `.pptx` file replicating the dashboard view using `pptxgenjs`. The export runs directly from the timeline's header Export menu (shared `<app-export-button>` published via `TopbarStateService.exportActions`; there is no format dialog) and captures the current view: active filters, auto-fitted date range, and the on-screen zoom level.
 
 Export details:
 - Fixed slide dimensions: 13.33" x 7.5" (widescreen)
@@ -35,7 +30,7 @@ Export details:
 
 ```yaml
 - id: pptx-export-generation
-  summary: Client-side PPTX generation via pptxgenjs replicating the dashboard view, with configurable title slide, trial selection, date range, and zoom.
+  summary: Client-side PPTX generation via pptxgenjs replicating the dashboard view as shown, at the current on-screen zoom, directly from the header Export menu.
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
