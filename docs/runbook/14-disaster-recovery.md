@@ -206,8 +206,10 @@ Inventory by where it lives:
      are codified in OpenTofu (`infra/tofu/shared/dns.tf`, Scalr `clint-shared`). The
      prod Worker's platform custom domains (`clintapp.com`, `www.clintapp.com`) and
      the `*.clintapp.com` tenant-wildcard route are codified in
-     `infra/tofu/prod/workers.tf` (Scalr `clint-prod`); the dev routes land in
-     `infra/tofu/dev/`. Point the provider at the new account (update
+     `infra/tofu/prod/workers.tf` (Scalr `clint-prod`), and the dev routes
+     (`dev.clintapp.com/*`, `*.dev.clintapp.com/*`) plus the `clint-materials-dev`
+     bucket in `infra/tofu/dev/` (Scalr `clint-dev`). Point the provider at the new
+     account (update
      `TF_VAR_cloudflare_account_id` and mint a token), then `tofu apply` in each root
      recreates the zone, records, and routing. Then walk every per-tenant
      `custom_domain` in `tenants` and `agencies` and re-add each as a Cloudflare
@@ -415,6 +417,6 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
-| 3 | Per-tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: `clintapp.com` zone + records in `infra/tofu/shared/dns.tf`, and the prod Worker platform custom domains + `*.clintapp.com` route + `clint-materials` bucket in `infra/tofu/prod/`; per-tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
+| 3 | Per-tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: `clintapp.com` zone + records in `infra/tofu/shared/dns.tf`, the prod Worker platform custom domains + `*.clintapp.com` route + `clint-materials` in `infra/tofu/prod/`, and the dev routes + `clint-materials-dev` in `infra/tofu/dev/`; per-tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
 | 3 | No defined incident roles, contact tree, or status-comms channel; likely single-operator. | 11 | medium x high | low: name roles, write a contact tree, pick an out-of-band status channel | no | UNKNOWN | open |
 | 3 | `roles.sql` is not idempotent (`CREATE ROLE` without `IF NOT EXISTS`); benign on a fresh target, errors on re-run (carried from `13-backup-and-restore.md`). | 1 | low x low | low | no | UNKNOWN | open |
