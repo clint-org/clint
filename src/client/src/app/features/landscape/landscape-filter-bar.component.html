@@ -1,6 +1,11 @@
 <div class="border-b border-slate-200 bg-white">
+  <!--
+    flex-wrap, not overflow-x-auto: at laptop widths the Period group and the
+    sync caption were pushed past the right edge with no scroll affordance,
+    so they read as missing (UI review 2026-06-12, item 1).
+  -->
   <div
-    class="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto"
+    class="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-3 py-1.5"
     role="toolbar"
     aria-label="Landscape filters"
   >
