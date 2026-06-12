@@ -29,7 +29,7 @@ import { HeatmapComponent, type SortField } from './heatmap.component';
   host: { class: 'block w-max bg-white' },
   template: `
     <header class="px-6 pt-5 pb-2">
-      <h2 class="text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
+      <h2 class="whitespace-nowrap text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
     </header>
     <div class="w-[1100px] px-6 pb-4">
       <app-heatmap

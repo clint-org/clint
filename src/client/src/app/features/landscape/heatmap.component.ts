@@ -107,19 +107,23 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
       font-size: 14px;
       font-weight: 600;
       color: var(--slate-900);
+      white-space: nowrap;
     }
 
     .matrix-subtitle {
       font-size: 12px;
       color: var(--slate-400);
+      white-space: nowrap;
     }
 
     .matrix-freshness {
       margin-left: auto;
+      flex-shrink: 0;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 10px;
       color: var(--slate-400);
       letter-spacing: 0.06em;
+      white-space: nowrap;
     }
 
     .matrix-wrap {

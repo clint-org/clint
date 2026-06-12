@@ -23,27 +23,27 @@ import {
         <polyline [attr.points]="mark.middle" stroke="#94a3b8" [attr.stroke-width]="markStrokes.middle" stroke-linecap="round" stroke-linejoin="round" />
         <polyline [attr.points]="mark.inner" stroke="#0d9488" [attr.stroke-width]="markStrokes.inner" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-      <span class="text-xs font-bold text-slate-600">{{ artifactLabel() }}</span>
+      <span class="whitespace-nowrap text-xs font-bold text-slate-600">{{ artifactLabel() }}</span>
       @if (agencyName(); as agency) {
         <span class="h-3.5 w-px bg-slate-200" aria-hidden="true"></span>
-        <span class="text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">Delivered by</span>
+        <span class="whitespace-nowrap text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">Delivered by</span>
         @if (agencyLogoUrl(); as alogo) {
           <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -->
           <img [src]="alogo" alt="" class="h-4 w-auto max-w-[80px] object-contain" />
         } @else {
-          <span class="text-[11px] font-semibold text-slate-600">{{ agency }}</span>
+          <span class="whitespace-nowrap text-[11px] font-semibold text-slate-600">{{ agency }}</span>
         }
       }
       @if (tenantName(); as tname) {
         <span class="h-3.5 w-px bg-slate-200" aria-hidden="true"></span>
-        <span class="text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">Prepared for</span>
+        <span class="whitespace-nowrap text-[8px] font-semibold uppercase tracking-[0.18em] text-slate-400">Prepared for</span>
         @if (tenantLogoUrl(); as tlogo) {
           <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -->
           <img [src]="tlogo" alt="" class="h-4 w-4 rounded object-contain" />
         }
         <span class="max-w-[160px] truncate text-[11px] font-semibold text-slate-600">{{ tname }}</span>
       }
-      <span class="ml-auto text-[11px] text-slate-400">{{ exportDate }}</span>
+      <span class="ml-auto shrink-0 whitespace-nowrap text-[11px] text-slate-400">{{ exportDate }}</span>
     </footer>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

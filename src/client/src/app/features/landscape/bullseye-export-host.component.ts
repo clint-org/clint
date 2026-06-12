@@ -30,7 +30,7 @@ import { BullseyeChartComponent } from './bullseye-chart.component';
   host: { class: 'block w-max bg-white' },
   template: `
     <header class="px-6 pt-5 pb-2">
-      <h2 class="text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
+      <h2 class="whitespace-nowrap text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
     </header>
     <div class="px-6 pb-4">
       <div class="bullseye-export-frame">
