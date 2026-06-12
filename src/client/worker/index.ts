@@ -9,6 +9,7 @@ import { handleSourceExtract } from './source-extract/handler';
 import { handleNctResolve } from './source-extract/nct-handler';
 import { handleAiHealth } from './source-extract/ai-health';
 import { handleBrandfetchLookup } from './brandfetch';
+import { handleLogoProxy } from './logo-proxy';
 import { buildRobots } from './robots';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
@@ -47,7 +48,7 @@ export interface Env {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const apexes = env.ALLOWED_APEXES.split(',')
       .map((s) => s.trim())
@@ -80,6 +81,9 @@ export default {
     }
     if (url.pathname === '/api/ai/health' && request.method === 'GET') {
       return handleAiHealth(env, cors);
+    }
+    if (url.pathname === '/api/logo' && request.method === 'GET') {
+      return handleLogoProxy(request, cors, ctx);
     }
     if (url.pathname === '/api/brandfetch/lookup' && request.method === 'POST') {
       const auth = request.headers.get('Authorization');

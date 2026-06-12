@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { resolveBrandLogoSrc } from './brand-logo-url';
+import { proxyLogoUrl } from './logo-proxy-url';
 
 @Component({
   selector: 'app-brand-logo',
@@ -38,7 +39,15 @@ export class BrandLogoComponent {
     return false;
   });
 
-  protected readonly src = computed(() =>
-    this.failed() ? null : resolveBrandLogoSrc(this.url(), environment.brandfetchClientId)
-  );
+  // Logos load through the same-origin worker proxy (/api/logo) rather than
+  // hotlinking the third-party host directly. Live <img> rendering is identical,
+  // but the PNG export's DOM rasterizer can then inline the logo under CSP
+  // connect-src 'self' instead of having the cross-origin fetch refused. See
+  // logo-proxy-url.ts and worker/logo-proxy.ts.
+  protected readonly src = computed(() => {
+    if (this.failed()) return null;
+    const resolved = resolveBrandLogoSrc(this.url(), environment.brandfetchClientId);
+    const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
+    return proxyLogoUrl(resolved, apiBase);
+  });
 }

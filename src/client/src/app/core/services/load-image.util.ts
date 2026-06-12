@@ -1,5 +1,6 @@
 import { environment } from '../../../environments/environment';
 import { resolveBrandLogoSrc } from '../../shared/components/brand-logo-url';
+import { proxyLogoUrl } from '../../shared/components/logo-proxy-url';
 
 const LOAD_TIMEOUT_MS = 8000;
 
@@ -10,7 +11,13 @@ const LOAD_TIMEOUT_MS = 8000;
  */
 export function loadImageElement(rawUrl: string | null | undefined): Promise<HTMLImageElement | null> {
   if (!rawUrl) return Promise.resolve(null);
-  const url = resolveBrandLogoSrc(rawUrl, environment.brandfetchClientId) ?? rawUrl;
+  // Route through the same-origin worker proxy: it re-emits the bytes with
+  // Access-Control-Allow-Origin: *, so the canvas stays untainted even for
+  // self-hosted logo hosts (e.g. stout.com) that send no CORS headers. See
+  // worker/logo-proxy.ts.
+  const resolved = resolveBrandLogoSrc(rawUrl, environment.brandfetchClientId) ?? rawUrl;
+  const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
+  const url = proxyLogoUrl(resolved, apiBase) ?? resolved;
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
