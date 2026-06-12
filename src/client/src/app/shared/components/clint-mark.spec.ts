@@ -15,6 +15,12 @@ describe('clintMarkStrokes', () => {
     expect(clintMarkStrokes(28)).toEqual({ outer: 4, middle: 5.5, inner: 7.5 });
     expect(clintMarkStrokes(36)).toEqual({ outer: 2.5, middle: 3.5, inner: 5 });
     expect(clintMarkStrokes(96)).toEqual({ outer: 1.5, middle: 2.2, inner: 3 });
+    expect(clintMarkStrokes(24)).toEqual({ outer: 5, middle: 7, inner: 9 });
+    expect(clintMarkStrokes(25)).toEqual({ outer: 4, middle: 5.5, inner: 7.5 });
+    expect(clintMarkStrokes(32)).toEqual({ outer: 4, middle: 5.5, inner: 7.5 });
+    expect(clintMarkStrokes(33)).toEqual({ outer: 2.5, middle: 3.5, inner: 5 });
+    expect(clintMarkStrokes(48)).toEqual({ outer: 2.5, middle: 3.5, inner: 5 });
+    expect(clintMarkStrokes(49)).toEqual({ outer: 1.5, middle: 2.2, inner: 3 });
   });
 });
 

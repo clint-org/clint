@@ -8,7 +8,6 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from './clint
  */
 @Component({
   selector: 'app-clint-logo',
-  standalone: true,
   template: `
     <svg
       [attr.width]="size()"
@@ -63,9 +62,9 @@ export class ClintLogoComponent {
   protected readonly viewBox = CLINT_MARK_VIEWBOX;
   protected readonly points = CLINT_MARK_POINTS;
 
-  readonly outerColor = computed(() => (this.dark() ? '#475569' : '#cbd5e1'));
-  readonly middleColor = computed(() => (this.dark() ? '#64748b' : '#94a3b8'));
-  readonly innerColor = computed(() => (this.dark() ? '#14b8a6' : '#0d9488'));
+  protected readonly outerColor = computed(() => (this.dark() ? '#475569' : '#cbd5e1'));
+  protected readonly middleColor = computed(() => (this.dark() ? '#64748b' : '#94a3b8'));
+  protected readonly innerColor = computed(() => (this.dark() ? '#14b8a6' : '#0d9488'));
 
-  readonly strokes = computed(() => clintMarkStrokes(this.size()));
+  protected readonly strokes = computed(() => clintMarkStrokes(this.size()));
 }
