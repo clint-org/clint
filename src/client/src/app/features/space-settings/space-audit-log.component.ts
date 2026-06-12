@@ -8,9 +8,10 @@ import { AuditLogTableComponent } from '../../shared/components/audit-log-table/
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="p-6">
+      <!-- Page title renders in the topbar (app-shell titleMap), matching
+           the other settings pages; only the description lives here. -->
       <header class="mb-4">
-        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Audit log</h1>
-        <p class="mt-1 text-sm text-slate-600">
+        <p class="text-sm text-slate-600">
           Security and membership events for this space. Only space owners can view this log.
         </p>
       </header>
