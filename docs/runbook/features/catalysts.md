@@ -23,7 +23,7 @@ The 4th tab in the landscape shell (Timeline | Bullseye | Positioning | **Future
 | Category | Marker shape/color dot + category name (Data, Regulatory, Approval, Clinical Trial, LOE) |
 | Catalyst | Title, bold |
 | Company / Product | "COMPANY (uppercase) -- Product" |
-| Status | "CONFIRMED" (green badge) or "PROJECTED" (amber badge), derived from `is_projected` |
+| Status | "CONFIRMED" (green badge) or "PROJECTED" (quiet slate text -- the default state carries no badge), derived from `is_projected` |
 
 **Filtering:** Uses the shared landscape filter panel (company, product, therapeutic area, MOA, ROA, phase, recruitment status, study type, marker category). The table also has its own text search via `createGridState` for quick in-table filtering.
 
