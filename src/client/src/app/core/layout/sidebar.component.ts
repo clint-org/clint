@@ -378,7 +378,7 @@ const ORG_ONLY_SECTIONS: NavSection[] = [];
         gap: 6px;
         border-top: 1px solid #1e293b;
         margin-top: 8px;
-        padding: 10px 12px 2px;
+        padding: 10px 12px 14px;
       }
 
       .agency-credit__label {
