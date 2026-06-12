@@ -16,7 +16,7 @@ import { clampExportScale } from '../../core/services/export-scale.util';
 import {
   EXPORT_WAITING_SELECTOR,
   includeInCapture,
-} from '../../features/dashboard/export/export-capture.util';
+} from './export-capture.util';
 
 const TARGET_SCALE = 2;
 const READY_TIMEOUT_MS = 5000;
