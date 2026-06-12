@@ -268,6 +268,7 @@ export class LandscapeFilterBarComponent implements OnInit {
       recruitmentStatuses: [...before.recruitmentStatuses],
       studyTypes: [...before.studyTypes],
       markerCategoryIds: [...before.markerCategoryIds],
+      timePeriod: before.timePeriod ? { ...before.timePeriod } : null,
     };
     this.state.filters.set({ ...EMPTY_LANDSCAPE_FILTERS });
 
