@@ -42,8 +42,21 @@ describe('ExportSnapshotHostComponent template contract', () => {
     expect(src).toMatch(/host:.*w-max/s);
   });
 
-  it('carries the agency attribution and export date in the footer', () => {
-    expect(src).toContain('Intelligence delivered by');
-    expect(src).toContain('exportDate');
+  it('carries the three-party footer: product, agency, tenant, date', () => {
+    expect(src).toContain('{{ appDisplayName() }}');
+    expect(src).toContain('Delivered by');
+    expect(src).toContain('Prepared for');
+    expect(src).toContain('{{ exportDate }}');
+  });
+
+  it('leads with the Clint mark, not the host brand logo', () => {
+    expect(src).toContain(`from '../../../shared/components/clint-mark'`);
+    expect(src).not.toContain('this.brand.logoUrl');
+  });
+
+  it('hides agency and tenant segments when absent and truncates long tenant names', () => {
+    expect(src).toContain('@if (agencyName()');
+    expect(src).toContain('@if (tenantName()');
+    expect(src).toContain('truncate');
   });
 });

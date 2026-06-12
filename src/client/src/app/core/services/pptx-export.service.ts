@@ -5,7 +5,7 @@ import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
-import { loadImageElement } from './load-image.util';
+import { logoToPngDataUrl } from './load-image.util';
 import { MarkerTypeService } from './marker-type.service';
 import {
   buildLegendGroups,
@@ -24,6 +24,7 @@ import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual'
 import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
+import { clintMarkSvgDataUri } from '../../shared/components/clint-mark';
 
 
 const SLIDE_W = 13.33;
@@ -40,6 +41,9 @@ const FALLBACK_PRIMARY = '0d9488';
 interface FooterBrand {
   appDisplayName: string;
   dateStr: string;
+  /** Rasterized Clint mark PNG (product identity, leads the footer). */
+  productMark: string | null;
+  tenantName: string | null;
   tenantLogo: string | null;
   agencyName: string | null;
   agencyLogo: string | null;
@@ -62,16 +66,37 @@ export class PptxExportService {
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
     const agency = this.brand.agency();
     const agencyName = agency?.name ?? null;
-    const [logoData, agencyLogo] = await Promise.all([
+    const tenant = options.tenant ?? null;
+    const [logoData, agencyLogo, tenantLogo, productMark] = await Promise.all([
       this.loadLogoAsPng(logoUrl),
       this.loadLogoAsPng(agency?.logo_url ?? null),
+      this.loadLogoAsPng(tenant?.logoUrl ?? null),
+      this.loadLogoAsPng(
+        clintMarkSvgDataUri(
+          64,
+          {
+            outer: '#cbd5e1',
+            middle: '#94a3b8',
+            inner: `#${primaryColorHex}`,
+          },
+          16
+        )
+      ),
     ]);
     const dateStr = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const footer: FooterBrand = { appDisplayName, dateStr, tenantLogo: logoData, agencyName, agencyLogo };
+    const footer: FooterBrand = {
+      appDisplayName,
+      dateStr,
+      productMark,
+      tenantName: tenant?.name ?? null,
+      tenantLogo,
+      agencyName,
+      agencyLogo,
+    };
 
     const rows = flattenTrials(companies);
     if (rows.length === 0) return;
@@ -122,24 +147,20 @@ export class PptxExportService {
     const footerY = SLIDE_H - FOOTER_H;
     const glyph = 0.18;
     const glyphY = footerY + (FOOTER_H - glyph) / 2;
-
-    // Left cluster: tenant logo + name.
-    let tenantTextX = 0.1;
-    if (footer.tenantLogo) {
-      slide.addImage({
-        data: footer.tenantLogo,
-        x: 0.1,
-        y: glyphY,
-        w: glyph,
-        h: glyph,
-        sizing: { type: 'contain', w: glyph, h: glyph },
-      });
-      tenantTextX = 0.1 + glyph + 0.07;
-    }
-    slide.addText(footer.appDisplayName, {
-      x: tenantTextX,
+    const microLabel: PptxGenJS.TextPropsOptions = {
       y: footerY,
-      w: 3,
+      h: FOOTER_H,
+      fontSize: 6,
+      fontFace: 'Arial',
+      bold: true,
+      color: '94a3b8',
+      charSpacing: 2,
+      valign: 'middle',
+      wrap: false,
+      margin: 0,
+    };
+    const partyName: PptxGenJS.TextPropsOptions = {
+      y: footerY,
       h: FOOTER_H,
       fontSize: 8,
       fontFace: 'Arial',
@@ -148,40 +169,65 @@ export class PptxExportService {
       valign: 'middle',
       wrap: false,
       margin: 0,
-    });
+    };
 
-    // Agency attribution, left-aligned right after the tenant cluster.
+    // 1. Product identity: Clint mark + display name. Always present.
+    let x = 0.1;
+    if (footer.productMark) {
+      slide.addImage({
+        data: footer.productMark,
+        x,
+        y: glyphY,
+        w: glyph,
+        h: glyph,
+        sizing: { type: 'contain', w: glyph, h: glyph },
+      });
+      x += glyph + 0.07;
+    }
+    slide.addText(footer.appDisplayName, { ...partyName, x, w: 1.4 });
+    x += footer.appDisplayName.length * 0.065 + 0.3;
+
+    // 2. Agency: DELIVERED BY + logo (or name). Hidden when no agency.
     if (footer.agencyName) {
-      const tenantNameW = footer.appDisplayName.length * 0.065;
-      const agencyX = tenantTextX + tenantNameW + 0.3;
-      let agencyTextX = agencyX;
+      slide.addText('DELIVERED BY', { ...microLabel, x, w: 0.85 });
+      x += 0.9;
       if (footer.agencyLogo) {
         slide.addImage({
           data: footer.agencyLogo,
-          x: agencyX,
+          x,
+          y: glyphY,
+          w: glyph * 2.4,
+          h: glyph,
+          sizing: { type: 'contain', w: glyph * 2.4, h: glyph },
+        });
+        x += glyph * 2.4 + 0.3;
+      } else {
+        slide.addText(footer.agencyName, { ...partyName, x, w: 1.4 });
+        x += footer.agencyName.length * 0.065 + 0.3;
+      }
+    }
+
+    // 3. Tenant: PREPARED FOR + logo + name. Hidden when absent.
+    if (footer.tenantName) {
+      const tenantDisplayName =
+        footer.tenantName.length > 28 ? `${footer.tenantName.slice(0, 27)}...` : footer.tenantName;
+      slide.addText('PREPARED FOR', { ...microLabel, x, w: 0.9 });
+      x += 0.95;
+      if (footer.tenantLogo) {
+        slide.addImage({
+          data: footer.tenantLogo,
+          x,
           y: glyphY,
           w: glyph,
           h: glyph,
           sizing: { type: 'contain', w: glyph, h: glyph },
         });
-        agencyTextX = agencyX + glyph + 0.07;
+        x += glyph + 0.07;
       }
-      slide.addText(`Intelligence delivered by ${footer.agencyName}`, {
-        x: agencyTextX,
-        y: footerY,
-        w: 4.5,
-        h: FOOTER_H,
-        fontSize: 8,
-        fontFace: 'Arial',
-        italic: true,
-        color: '94a3b8',
-        valign: 'middle',
-        wrap: false,
-        margin: 0,
-      });
+      slide.addText(tenantDisplayName, { ...partyName, x, w: 1.8 });
     }
 
-    // Right cluster: date + page number.
+    // Right cluster: date + page number (unchanged).
     slide.addText(footer.dateStr, {
       x: SLIDE_W - 2.7,
       y: footerY,
@@ -289,29 +335,12 @@ export class PptxExportService {
   }
 
   /**
-   * Loads a logo URL and returns a base64 PNG data URI suitable for
-   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Uses the
-   * shared loadImageElement loader (Brandfetch enrichment, 8 s timeout, null
-   * on any failure), then rasterizes the returned element through a canvas so
-   * SVG / webp logos become PNG. Returns null so the deck falls back to the
-   * brand name text.
+   * PowerPoint only embeds raster formats; delegate to the shared
+   * canvas rasterizer (Brandfetch enrichment, CORS-safe, null on failure
+   * so the deck falls back to the brand name text).
    */
-  private async loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
-    const img = await loadImageElement(rawUrl);
-    if (!img) return null;
-    try {
-      const w = img.naturalWidth || 256;
-      const h = img.naturalHeight || 256;
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      ctx.drawImage(img, 0, 0, w, h);
-      return canvas.toDataURL('image/png');
-    } catch {
-      return null;
-    }
+  private loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
+    return logoToPngDataUrl(rawUrl);
   }
 
   private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {

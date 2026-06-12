@@ -15,10 +15,10 @@ import { ButtonModule } from 'primeng/button';
 import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Toast } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
 
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import {
   BullseyeDimension,
   clampTimePeriod,
@@ -66,7 +66,7 @@ interface FilterChip {
     Select,
     ButtonModule,
     SelectButton,
-    ProgressSpinner,
+    LoaderComponent,
     Toast,
     Tooltip,
   ],

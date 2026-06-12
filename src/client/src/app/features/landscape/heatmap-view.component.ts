@@ -20,6 +20,7 @@ import { LandscapeStateService } from './landscape-state.service';
 import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.component';
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
+import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 
 @Component({
   selector: 'app-heatmap-view',
@@ -27,6 +28,7 @@ import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
     HeatmapComponent,
     HeatmapControlsPanelComponent,
     HeatmapDetailPanelComponent,
+    MarkWatermarkComponent,
     SkeletonComponent,
     MessageModule,
     ButtonModule,
@@ -95,8 +97,9 @@ import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
           </div>
         </div>
       } @else if (data) {
-        <div class="flex items-center justify-center h-full">
-          <p-message severity="info" [closable]="false">
+        <div class="relative flex items-center justify-center h-full">
+          <app-mark-watermark />
+          <p-message class="relative" severity="info" [closable]="false">
             No data matches the current filters. Try adjusting your selections.
           </p-message>
         </div>

@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { isExistingWorkspace } from './workspace-finder';
+import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX } from '../../shared/components/clint-mark';
 
 @Component({
   selector: 'app-marketing-landing',
@@ -16,9 +17,9 @@ import { isExistingWorkspace } from './workspace-finder';
       <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div class="flex items-center gap-2.5">
-            <svg viewBox="0 0 140 140" fill="none" class="h-6 w-6" aria-hidden="true">
+            <svg [attr.viewBox]="markViewBox" fill="none" class="h-6 w-6" aria-hidden="true">
               <polyline
-                points="112,24 24,24 24,116 112,116"
+                [attr.points]="mark.outer"
                 stroke="#cbd5e1"
                 stroke-width="4"
                 fill="none"
@@ -26,7 +27,7 @@ import { isExistingWorkspace } from './workspace-finder';
                 stroke-linejoin="round"
               />
               <polyline
-                points="96,40 40,40 40,100 96,100"
+                [attr.points]="mark.middle"
                 stroke="#94a3b8"
                 stroke-width="5.5"
                 fill="none"
@@ -34,7 +35,7 @@ import { isExistingWorkspace } from './workspace-finder';
                 stroke-linejoin="round"
               />
               <polyline
-                points="80,56 56,56 56,84 80,84"
+                [attr.points]="mark.inner"
                 stroke="var(--p-primary-700, #0f766e)"
                 stroke-width="7.5"
                 fill="none"
@@ -51,9 +52,10 @@ import { isExistingWorkspace } from './workspace-finder';
       <main class="flex flex-1 items-center justify-center px-6 py-16">
         <div class="w-full max-w-md">
           <div class="flex flex-col items-center text-center">
-            <svg viewBox="0 0 140 140" fill="none" class="h-14 w-14" aria-hidden="true">
+            <svg [attr.viewBox]="markViewBox" fill="none" class="h-14 w-14" aria-hidden="true">
               <polyline
-                points="112,24 24,24 24,116 112,116"
+                class="clint-mark-track"
+                [attr.points]="mark.outer"
                 stroke="#cbd5e1"
                 stroke-width="4"
                 fill="none"
@@ -61,7 +63,8 @@ import { isExistingWorkspace } from './workspace-finder';
                 stroke-linejoin="round"
               />
               <polyline
-                points="96,40 40,40 40,100 96,100"
+                class="clint-mark-track"
+                [attr.points]="mark.middle"
                 stroke="#94a3b8"
                 stroke-width="5.5"
                 fill="none"
@@ -69,7 +72,38 @@ import { isExistingWorkspace } from './workspace-finder';
                 stroke-linejoin="round"
               />
               <polyline
-                points="80,56 56,56 56,84 80,84"
+                class="clint-mark-track"
+                [attr.points]="mark.inner"
+                stroke="var(--p-primary-700, #0f766e)"
+                stroke-width="7.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                class="clint-mark-draw-in"
+                pathLength="1"
+                [attr.points]="mark.outer"
+                stroke="#cbd5e1"
+                stroke-width="4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                class="clint-mark-draw-in clint-mark-draw-in--m"
+                pathLength="1"
+                [attr.points]="mark.middle"
+                stroke="#94a3b8"
+                stroke-width="5.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <polyline
+                class="clint-mark-draw-in clint-mark-draw-in--i"
+                pathLength="1"
+                [attr.points]="mark.inner"
                 stroke="var(--p-primary-700, #0f766e)"
                 stroke-width="7.5"
                 fill="none"
@@ -140,6 +174,8 @@ export class MarketingLandingComponent {
   readonly checking = signal<boolean>(false);
 
   protected readonly apexDisplay = environment.apexDomain || 'yourproduct.com';
+  protected readonly mark = CLINT_MARK_POINTS;
+  protected readonly markViewBox = CLINT_MARK_VIEWBOX;
 
   onInput(e: Event) {
     const v = (e.target as HTMLInputElement).value.toLowerCase().replace(/[^a-z0-9-]/g, '');

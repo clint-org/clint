@@ -93,3 +93,69 @@
     transition: none !important;
   }
 }
+
+/* Clint mark draw-through (loader, active intelligence badge) and one-shot
+   draw-in (marketing landing hero). Animated polylines carry pathLength="1"
+   so the dash math is size-independent. Static surfaces never use these
+   classes; the mark animates only while something is loading.
+   Spec: docs/superpowers/specs/2026-06-11-clint-loader-and-brand-presence-design.md */
+@keyframes clint-mark-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes clint-mark-draw-in {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.clint-mark-track {
+  opacity: 0.18;
+}
+
+.clint-mark-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: clint-mark-draw 1.8s cubic-bezier(0.5, 0.05, 0.45, 0.95) infinite;
+}
+
+.clint-mark-draw--m {
+  animation-delay: 0.15s;
+}
+
+.clint-mark-draw--i {
+  animation-delay: 0.3s;
+}
+
+.clint-mark-draw-in {
+  stroke-dasharray: 1;
+  animation: clint-mark-draw-in 0.9s cubic-bezier(0.5, 0.05, 0.45, 0.95) both;
+}
+
+.clint-mark-draw-in--m {
+  animation-delay: 0.12s;
+}
+
+.clint-mark-draw-in--i {
+  animation-delay: 0.24s;
+}
+
+/* Reduced motion: the animated copy rests fully drawn (static mark). */
+@media (prefers-reduced-motion: reduce) {
+  .clint-mark-draw,
+  .clint-mark-draw-in {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

@@ -32,6 +32,8 @@ export interface ExportOptions {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showNotesColumn: boolean;
+  /** Workspace tenant for the export footer's "Prepared for" segment. */
+  tenant?: { name: string; logoUrl: string | null } | null;
 }
 
 export interface FlatRow {

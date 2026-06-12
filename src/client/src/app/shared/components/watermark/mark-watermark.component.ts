@@ -1,43 +1,41 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from './clint-mark';
+import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clint-mark';
 
 /**
- * Triple C logo mark for Clint. Three nested open squares forming the letter C
- * with progressive stroke weight. Automatically adapts stroke widths to rendered size.
+ * Faded Clint mark behind empty states. Purely decorative: aria-hidden,
+ * click-through, never animated. The parent container must be positioned
+ * (add Tailwind "relative") and the visible empty-state content must also
+ * be positioned (add "relative") so it paints above the watermark.
  */
 @Component({
-  selector: 'app-clint-logo',
+  selector: 'app-mark-watermark',
   template: `
     <svg
       [attr.width]="size()"
       [attr.height]="size()"
       [attr.viewBox]="viewBox"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
       <polyline
         [attr.points]="points.outer"
-        [attr.stroke]="outerColor()"
+        stroke="#0f172a"
         [attr.stroke-width]="strokes().outer"
-        fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <polyline
         [attr.points]="points.middle"
-        [attr.stroke]="middleColor()"
+        stroke="#0f172a"
         [attr.stroke-width]="strokes().middle"
-        fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <polyline
         [attr.points]="points.inner"
-        [attr.stroke]="innerColor()"
+        stroke="#0f172a"
         [attr.stroke-width]="strokes().inner"
-        fill="none"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
@@ -46,25 +44,22 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from './clint
   styles: [
     `
       :host {
-        display: inline-flex;
+        position: absolute;
+        inset: 0;
+        display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
+        opacity: 0.07;
+        pointer-events: none;
       }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ClintLogoComponent {
-  readonly size = input<number>(28);
-  readonly dark = input<boolean>(false);
+export class MarkWatermarkComponent {
+  readonly size = input<number>(100);
 
   protected readonly viewBox = CLINT_MARK_VIEWBOX;
   protected readonly points = CLINT_MARK_POINTS;
-
-  protected readonly outerColor = computed(() => (this.dark() ? '#475569' : '#cbd5e1'));
-  protected readonly middleColor = computed(() => (this.dark() ? '#64748b' : '#94a3b8'));
-  protected readonly innerColor = computed(() => (this.dark() ? '#14b8a6' : '#0d9488'));
-
   protected readonly strokes = computed(() => clintMarkStrokes(this.size()));
 }
