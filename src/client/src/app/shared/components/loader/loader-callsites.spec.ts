@@ -21,6 +21,26 @@ describe('loader call sites', () => {
     });
   }
 
+  // events-page uses a separate html file: the loader element lives in the html
+  // and the LoaderComponent import lives in the ts -- assert each file separately.
+  it('features/events/events-page.component.html uses app-loader, not p-progressspinner', () => {
+    const html = readFileSync(
+      join(APP, 'features/events/events-page.component.html'),
+      'utf8',
+    );
+    expect(html).toContain('app-loader');
+    expect(html.toLowerCase()).not.toContain('p-progress');
+  });
+
+  it('features/events/events-page.component.ts imports LoaderComponent, not ProgressSpinner', () => {
+    const ts = readFileSync(
+      join(APP, 'features/events/events-page.component.ts'),
+      'utf8',
+    );
+    expect(ts).toContain('LoaderComponent');
+    expect(ts).not.toContain('ProgressSpinner');
+  });
+
   it('the dead progressspinner stroke override is gone', () => {
     const css = readFileSync(join(APP, 'shared/styles/primeng-overrides.css'), 'utf8');
     expect(css).not.toContain('p-progressspinner-circle');
