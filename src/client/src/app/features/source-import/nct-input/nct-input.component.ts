@@ -14,6 +14,8 @@ import { Textarea } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
 
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { IntelligenceBadgeComponent } from '../../../shared/components/intelligence-badge/intelligence-badge.component';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SourceImportProposal, SourceImportService } from '../source-import.service';
 import { parseNctIds } from './nct-parse';
 
@@ -57,7 +59,14 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 @Component({
   selector: 'app-nct-input',
-  imports: [FormsModule, ButtonModule, Textarea, MessageModule],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    Textarea,
+    MessageModule,
+    IntelligenceBadgeComponent,
+    LoaderComponent,
+  ],
   template: `
     @if (phase() === 'idle' || phase() === 'error') {
       <div class="flex flex-col gap-4 py-4">
@@ -143,6 +152,9 @@ const ERROR_MESSAGES: Record<string, string> = {
     } @else {
       <div class="flex flex-col gap-3 py-6">
         <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-4">
+          <div class="mb-2.5">
+            <app-intelligence-badge [active]="phase() !== 'done'" />
+          </div>
           <div class="flex flex-col gap-2.5">
             @for (s of stepSequence; track s) {
               <div class="flex items-center gap-2.5">
@@ -152,12 +164,7 @@ const ERROR_MESSAGES: Record<string, string> = {
                   </span>
                   <span class="text-xs text-slate-500">{{ stepLabel(s) }}</span>
                 } @else if (stepIndex() === $index) {
-                  <span class="relative flex h-4 w-4">
-                    <span
-                      class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"
-                    ></span>
-                    <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
-                  </span>
+                  <app-loader [size]="16" />
                   <span class="text-xs font-medium text-slate-700">{{ stepLabel(s) }}</span>
                 } @else {
                   <span

@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { BrandContextService } from '../../../core/services/brand-context.service';
+import { PLATFORM_OPERATOR } from '../../../core/models/legal-content';
 import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clint-mark';
 
 /**
- * Sub-brand lockup for AI-powered surfaces: "{AppName} Intelligence".
+ * Sub-brand lockup for AI-powered surfaces: "Clint Intelligence". The AI
+ * engine is the platform operator's capability, not the tenant's product, so
+ * this badge is always Clint (PLATFORM_OPERATOR) in Clint teal, never the host
+ * brand name or color, even on whitelabel hosts. (The generic app-loader still
+ * tints to the host brand; that is functional UI, not a Clint signature.)
  * At rest the mark is static at full strength. While the AI is actively
  * working (active=true) the mark runs the draw-through animation, so the
  * badge doubles as the loading indicator for the surface it signs.
@@ -32,7 +36,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
       <polyline
         [class.clint-mark-track]="active()"
         [attr.points]="points.inner"
-        stroke="var(--brand-600)"
+        stroke="#0d9488"
         [attr.stroke-width]="strokes.inner"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -60,7 +64,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
           class="clint-mark-draw clint-mark-draw--i"
           pathLength="1"
           [attr.points]="points.inner"
-          stroke="var(--brand-600)"
+          stroke="#0d9488"
           [attr.stroke-width]="strokes.inner"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -68,7 +72,7 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
       }
     </svg>
     <span class="font-mono text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-      {{ appDisplayName() }} <span class="text-brand-600">Intelligence</span>
+      {{ platform }} <span class="text-[#0d9488]">Intelligence</span>
     </span>
   `,
   styles: [
@@ -84,13 +88,12 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from '../clin
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceBadgeComponent {
-  private readonly brand = inject(BrandContextService);
-
   /** True while the AI is actively working; animates the mark. */
   readonly active = input<boolean>(false);
 
+  /** Always "Clint": the AI engine is the platform operator's capability. */
+  protected readonly platform = PLATFORM_OPERATOR;
   protected readonly viewBox = CLINT_MARK_VIEWBOX;
   protected readonly points = CLINT_MARK_POINTS;
   protected readonly strokes = clintMarkStrokes(14);
-  protected readonly appDisplayName = computed(() => this.brand.appDisplayName());
 }
