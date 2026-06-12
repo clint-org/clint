@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ProgressSpinner } from 'primeng/progressspinner';
-
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { LandscapeStateService } from './landscape-state.service';
 
@@ -16,14 +15,14 @@ import { LandscapeStateService } from './landscape-state.service';
  */
 @Component({
   selector: 'app-entity-marker-drawer',
-  imports: [MarkerDetailPanelComponent, ProgressSpinner],
+  imports: [MarkerDetailPanelComponent, LoaderComponent],
   template: `
     @if (state.selectedMarkerId()) {
       @if (state.detailLoading() && !state.selectedDetail()) {
         <div
           class="fixed top-[42px] right-0 bottom-0 z-30 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
         >
-          <p-progress-spinner strokeWidth="3" styleClass="w-[28px] h-[28px]" />
+          <app-loader [size]="36" />
         </div>
       } @else {
         <app-marker-detail-panel

@@ -53,8 +53,10 @@ test.describe('Dashboard', () => {
     const filterBar = page.locator('app-landscape-filter-bar');
     await expect(filterBar).toBeVisible();
 
-    const yearButton = filterBar.getByText('Y', { exact: true });
-    const quarterButton = filterBar.getByText('Q', { exact: true });
+    // Scope to role=button: the time-period quarter comboboxes in the filter
+    // bar also render a bare "Q" placeholder, which getByText would match.
+    const yearButton = filterBar.getByRole('button', { name: 'Y', exact: true });
+    const quarterButton = filterBar.getByRole('button', { name: 'Q', exact: true });
     await expect(yearButton).toBeVisible();
     await expect(quarterButton).toBeVisible();
 

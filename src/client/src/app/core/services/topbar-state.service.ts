@@ -22,7 +22,10 @@ export interface TopbarAction {
   severity?: TopbarActionSeverity;
   outlined?: boolean;
   text?: boolean;
-  callback: () => void;
+  /** Plain button click handler. Ignored when `items` is set. */
+  callback?: () => void;
+  /** When set, the action renders as a popup menu instead of a plain button. */
+  items?: MenuItem[];
 }
 
 @Injectable({ providedIn: 'root' })

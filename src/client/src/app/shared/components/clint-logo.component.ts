@@ -1,23 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX, clintMarkStrokes } from './clint-mark';
+
 /**
  * Triple C logo mark for Clint. Three nested open squares forming the letter C
  * with progressive stroke weight. Automatically adapts stroke widths to rendered size.
  */
 @Component({
   selector: 'app-clint-logo',
-  standalone: true,
   template: `
     <svg
       [attr.width]="size()"
       [attr.height]="size()"
-      viewBox="0 0 140 140"
+      [attr.viewBox]="viewBox"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
       <polyline
-        points="112,24 24,24 24,116 112,116"
+        [attr.points]="points.outer"
         [attr.stroke]="outerColor()"
         [attr.stroke-width]="strokes().outer"
         fill="none"
@@ -25,7 +26,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         stroke-linejoin="round"
       />
       <polyline
-        points="96,40 40,40 40,100 96,100"
+        [attr.points]="points.middle"
         [attr.stroke]="middleColor()"
         [attr.stroke-width]="strokes().middle"
         fill="none"
@@ -33,7 +34,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         stroke-linejoin="round"
       />
       <polyline
-        points="80,56 56,56 56,84 80,84"
+        [attr.points]="points.inner"
         [attr.stroke]="innerColor()"
         [attr.stroke-width]="strokes().inner"
         fill="none"
@@ -58,16 +59,12 @@ export class ClintLogoComponent {
   readonly size = input<number>(28);
   readonly dark = input<boolean>(false);
 
-  readonly outerColor = computed(() => (this.dark() ? '#475569' : '#cbd5e1'));
-  readonly middleColor = computed(() => (this.dark() ? '#64748b' : '#94a3b8'));
-  readonly innerColor = computed(() => (this.dark() ? '#14b8a6' : '#0d9488'));
+  protected readonly viewBox = CLINT_MARK_VIEWBOX;
+  protected readonly points = CLINT_MARK_POINTS;
 
-  readonly strokes = computed(() => {
-    const s = this.size();
-    if (s <= 16) return { outer: 7, middle: 9, inner: 11 };
-    if (s <= 24) return { outer: 5, middle: 7, inner: 9 };
-    if (s <= 32) return { outer: 4, middle: 5.5, inner: 7.5 };
-    if (s <= 48) return { outer: 2.5, middle: 3.5, inner: 5 };
-    return { outer: 1.5, middle: 2.2, inner: 3 };
-  });
+  protected readonly outerColor = computed(() => (this.dark() ? '#475569' : '#cbd5e1'));
+  protected readonly middleColor = computed(() => (this.dark() ? '#64748b' : '#94a3b8'));
+  protected readonly innerColor = computed(() => (this.dark() ? '#14b8a6' : '#0d9488'));
+
+  protected readonly strokes = computed(() => clintMarkStrokes(this.size()));
 }

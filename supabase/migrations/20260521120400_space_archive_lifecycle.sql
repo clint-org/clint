@@ -334,6 +334,17 @@ comment on function public.permanently_delete_space(uuid) is
   'as jsonb. SECURITY DEFINER.';
 
 
+-- The smoke below reads public.spaces directly while impersonating an
+-- authenticated user (select archived_at between the RPC calls). That
+-- table-level SELECT came from the legacy Data API default ACLs, which
+-- Supabase CLI 2.106.0+ revokes before applying migrations on fresh local
+-- databases, so the smoke failed there with 42501. Grant explicitly so the
+-- migration is self-contained on fresh resets; databases that applied it
+-- before this edit (dev, prod) already hold the grant via the legacy
+-- default ACLs and never re-run this file. Row access stays gated by the
+-- spaces RLS policies.
+grant select on public.spaces to authenticated;
+
 -- =============================================================================
 -- inline smoke test
 -- =============================================================================

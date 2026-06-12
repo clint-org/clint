@@ -62,3 +62,50 @@ jobs:
           b2_endpoint: ${{ secrets.B2_S3_ENDPOINT }}
           b2_key_id: ${{ secrets.B2_BACKUP_KEY_ID }}
           b2_app_key: ${{ secrets.B2_BACKUP_APP_KEY }}
+
+  # Domain 10 (detection) in docs/runbook/14-disaster-recovery.md: a failed
+  # backup must not be silent. On any failure open or update a deduplicated
+  # GitHub issue. Baseline sink with no new dependency or secret; swap for
+  # Slack/PagerDuty later. Least-privilege: only this job gets issues: write.
+  notify-failure:
+    needs: [prod, dev]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'backup-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The scheduled database backup workflow failed.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'Detection signal for domain 10 in docs/runbook/14-disaster-recovery.md.',
+              'Investigate before the next daily window so RPO does not silently grow.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'DB backup failed',
+                body,
+                labels: [label],
+              });
+            }

@@ -39,3 +39,52 @@ jobs:
           BUCKET: ${{ secrets.B2_BACKUP_BUCKET }}
           AGE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
         run: scripts/backup/verify-remote.sh
+
+  # Domain 10 (detection) in docs/runbook/14-disaster-recovery.md: a silent
+  # verify failure means a backup the restore drill assumes is good may be
+  # rotten. On failure open or update a deduplicated GitHub issue. Least
+  # privilege: only this job gets issues: write, and it has no access to the
+  # backup-verify environment secrets.
+  notify-failure:
+    needs: [verify]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'backup-verify-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The weekly backup-verify workflow failed.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'Detection signal for domain 10 in docs/runbook/14-disaster-recovery.md.',
+              'A backup may be stale, corrupt, or missing in R2 or B2. Confirm before',
+              'relying on it for a restore.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'DB backup verification failed',
+                body,
+                labels: [label],
+              });
+            }

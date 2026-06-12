@@ -25,8 +25,83 @@
       content="Pipeline intelligence, catalyst tracking, clinical trial timelines, and portfolio analysis for pharma CI teams."
     />
     <meta name="twitter:image" content="https://clintapp.com/og-image.png" />
+    <style>
+      /* Boot splash: shown until Angular bootstraps and replaces the
+         projected content of <app-root>. Brand-neutral all-slate on purpose:
+         it renders before get_brand_by_host resolves, so no color or name
+         can flash wrong on a whitelabel domain. Keep geometry in sync with
+         src/app/shared/components/clint-mark.ts (inline by necessity: no
+         bundle has loaded yet). */
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+      }
+      .boot-splash polyline {
+        stroke-dasharray: 1;
+        animation: boot-draw 1.8s cubic-bezier(0.5, 0.05, 0.45, 0.95) infinite;
+      }
+      .boot-splash polyline:nth-of-type(2) {
+        animation-delay: 0.15s;
+      }
+      .boot-splash polyline:nth-of-type(3) {
+        animation-delay: 0.3s;
+      }
+      @keyframes boot-draw {
+        0% {
+          stroke-dashoffset: 1;
+        }
+        50% {
+          stroke-dashoffset: 0;
+        }
+        100% {
+          stroke-dashoffset: -1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash polyline {
+          animation: none;
+          stroke-dashoffset: 0;
+        }
+      }
+    </style>
   </head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <div class="boot-splash" role="status" aria-label="Loading">
+        <svg width="36" height="36" viewBox="0 0 140 140" fill="none" aria-hidden="true">
+          <polyline
+            pathLength="1"
+            points="112,24 24,24 24,116 112,116"
+            stroke="#cbd5e1"
+            stroke-width="2.5"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <polyline
+            pathLength="1"
+            points="96,40 40,40 40,100 96,100"
+            stroke="#94a3b8"
+            stroke-width="3.5"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <polyline
+            pathLength="1"
+            points="80,56 56,56 56,84 80,84"
+            stroke="#64748b"
+            stroke-width="5"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    </app-root>
   </body>
 </html>

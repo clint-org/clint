@@ -126,6 +126,36 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- Explicit grants for the INVOKER chains the smoke below asserts authenticated
+-- keeps (seed_demo_data -> _seed_demo_* and build_intelligence_payload).
+-- seed_demo_data itself is included: supabase/seed.sql calls it as
+-- authenticated after every reset, and 20260607120000 revoked it from
+-- anon/public while relying on the legacy ACL for the authenticated grant.
+-- Before Supabase CLI 2.106.0 these grants came from the legacy Data API
+-- default ACLs at function creation, so no migration ever granted them
+-- explicitly. CLI 2.106.0+ revokes those default ACLs before applying
+-- migrations on fresh local databases, where this migration's smoke then
+-- failed. Granting here records the intended state explicitly; on databases
+-- that applied this migration before the edit (dev, prod) every statement is
+-- a no-op re-grant.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  proc record;
+begin
+  for proc in
+    select p.oid::regprocedure as sig
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and (p.proname like '\_seed\_demo\_%'
+           or p.proname in ('seed_demo_data', 'build_intelligence_payload'))
+  loop
+    execute format('grant execute on function %s to authenticated', proc.sig);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- In-migration smoke: assert the resulting EXECUTE surface is exactly intended.
 --   Fails the migration (and therefore reset / db push / CI) on any drift.
 -- ---------------------------------------------------------------------------

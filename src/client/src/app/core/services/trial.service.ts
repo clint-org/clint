@@ -28,7 +28,6 @@ const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 function normalizeTrial(raw: Record<string, unknown>): Trial {
   const assignments = (raw['marker_assignments'] as { markers: Marker }[] | null) ?? [];
   const markers: Marker[] = assignments.map((a) => a.markers).filter((m): m is Marker => !!m);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { marker_assignments: _unused, ...rest } = raw;
   return { ...rest, markers } as unknown as Trial;
 }

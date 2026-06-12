@@ -215,6 +215,72 @@ Required:
 - Permissions: `revoke execute ... from public; revoke ... from anon; grant execute ... to authenticated;` (or `to anon` only when explicitly intended)
 - A `comment on function` documenting purpose + SECURITY DEFINER rationale
 
+## Data API Grants (least privilege)
+
+Every table in `public` sits behind two locks: an explicit table grant and RLS. `20260612021320_data_api_least_privilege.sql` revoked the legacy auto-grant default ACLs and the blanket table grants (the broad local-vs-hosted parity baseline that `20260611120000_restore_data_api_table_grants.sql` had restored) and replaced them with a reviewed per-table matrix, on local and hosted alike. A single buggy or missing RLS policy no longer exposes rows by itself. Full rationale, replay analysis, and the prewritten rollback: `docs/superpowers/specs/2026-06-11-data-api-least-privilege-design.md`.
+
+The role posture:
+
+- **`anon`: zero table access.** Its pre-auth surface is exactly the explicitly granted SECURITY DEFINER RPCs (`get_brand_by_host`, `check_subdomain_available`, the shared-secret worker RPCs).
+- **`authenticated`: exactly the matrix.** Each (table, privilege) pair in `supabase/data-api-grants.json`, nothing else. Tables absent from the matrix are no-access, and that absence is the assertion.
+- **`service_role`: broad**, constrained only by the deny-list: `audit_events` and `r2_pending_deletes` writes, which must go through their SECURITY DEFINER RPCs even with the root key. Its default ACL survives, so new tables stay reachable with the service key without per-migration grants.
+
+Function execute grants are unchanged by this posture: `20260611120000` still reproduces the lockdown sweeps' end state (`service_role` executes everything, `authenticated` everything except trigger functions and the locked names, `anon` only its explicit per-function grants).
+
+### The matrix
+
+`supabase/data-api-grants.json` is the single source of truth and a reviewed artifact. Shape: a `meta` block (methodology, review date), a `tables` block mapping each table to its `authenticated` privilege list, and a `service_role_denied` block for the deny-list. Every entry carries a `justification` string naming the consumer (client service, integration spec, seed helper, or worker); rows without justification fail review. `anon` is absent by construction.
+
+Three derivation rules decide what a consumer implies:
+
+1. **Filters read.** Any granted `update` or `delete` also needs `select` (PostgREST `.eq()` filters read columns in the WHERE clause), and any `.insert().select()` returning-representation chain needs `select`.
+2. **The seed runs as `authenticated`.** `seed_demo_data` and the SECURITY INVOKER `_seed_demo_*` helpers insert as the caller, so seed-touched tables need `insert` even where the app itself only reads.
+3. **SECURITY INVOKER RPCs run as the caller.** Every table an invoker RPC granted to `authenticated` touches needs the corresponding privilege, even when no client `.from()` chain addresses it. The analytic `get_*` family contributes most of these selects; the change-event annotation RPCs contribute writes.
+
+### The drift gate
+
+```bash
+cd src/client && npm run grants:check   # requires supabase start
+```
+
+`src/client/scripts/check-data-api-grants.mjs` compares the live local database (`information_schema.role_table_grants` plus the postgres-scoped default ACLs) against the matrix. Both directions are fatal: a matrix privilege not granted in the database (missing) and a database grant not in the matrix (excess) each fail, as do any `anon` table grant, any service_role deny-list violation, and any anon/authenticated default-ACL regrowth. CI runs it in the tests job right after the advisor gate (`.github/workflows/ci.yml`), against a fresh `db reset`, so the database and the matrix stay equal on every reset, forever.
+
+### New tables start dark
+
+No default ACL grants `anon` or `authenticated` anything on new tables. Every `create table` migration declares its own access, all in one file:
+
+```sql
+create table public.widgets (
+  id uuid primary key default gen_random_uuid(),
+  space_id uuid not null references public.spaces (id) on delete cascade,
+  name text not null
+);
+
+alter table public.widgets enable row level security;
+
+create policy "Members can view widgets"
+  on public.widgets for select to authenticated
+  using (public.has_space_access(space_id));
+
+create policy "Editors can insert widgets"
+  on public.widgets for insert to authenticated
+  with check (public.has_space_access(space_id, array['owner','editor']));
+
+-- update/delete policies as the feature requires
+
+grant select, insert on public.widgets to authenticated;
+```
+
+Update `supabase/data-api-grants.json` in the same PR (table, privilege list, justification); otherwise `grants:check` goes red in CI. In-migration smokes that switch roles still need their grants in-file, since the least-privilege migration runs last in history; a fresh reset must be able to apply the earlier migration standalone.
+
+### When CI goes red on a new fixture or feature
+
+Add the (table, privilege) row with a justification to the matrix; regenerate the grant statements in the least-privilege migration from the matrix if it is still pre-merge (the generator one-liner lives in the migration's comments), or write a new grants migration if it has already been applied; rerun `npm run grants:check`.
+
+### Service-role key hygiene
+
+The service-role key is a root credential: it bypasses RLS and holds every table privilege outside the deny-list, which is the only grant-level constraint on it. Never ship it client-side; it lives only in CI secrets, GHA environment secrets, and local `.env` files. Rotate it via the Supabase dashboard (Settings -> API) and update every consumer (CI, workflows, local `.env`) in the same pass. Treat any leak as full data compromise: rotate first, audit after.
+
 ## Reserved Subdomain List Maintenance
 
 The reserved-subdomain blocklist lives inline in `provision_tenant` and `provision_agency`. Current entries:

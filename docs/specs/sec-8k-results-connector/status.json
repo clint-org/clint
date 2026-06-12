@@ -1,0 +1,19 @@
+{
+  "specId": "spec-2026-010",
+  "status": "draft",
+  "branch": null,
+  "tasks": {
+    "T0": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T1": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T2": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T3": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T4": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T5": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T6": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T7": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T8": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T9": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "T10": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+  },
+  "updatedAt": "2026-06-07T00:00:00Z"
+}

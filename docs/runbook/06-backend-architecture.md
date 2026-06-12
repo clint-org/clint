@@ -210,7 +210,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | Service | Purpose |
 |---|---|
 | PostgreSQL 15 | Primary data store for all application data |
-| PostgREST | Auto-generated REST API from the Postgres schema; used for CRUD operations |
+| PostgREST | Auto-generated REST API from the Postgres schema; the table surface is limited to the explicit per-role grants in `supabase/data-api-grants.json` plus RLS (`anon` reaches no tables, only granted RPCs) |
 | Supabase Auth | JWT-based auth with Google + Microsoft (Azure AD) OAuth providers; 1-hour JWT expiry with refresh token rotation |
 | Supabase Edge Functions (Deno) | `send-invite-email` only — triggered by a database webhook on `tenant_invites` INSERT; calls Resend |
 | Supabase Database Webhooks | Configured in the dashboard (cannot be expressed in `config.toml`); shared-secret `webhook-signature` header gates the function |

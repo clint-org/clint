@@ -9,17 +9,21 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
+import type { ExportFormat } from '../../core/services/export-common.util';
+import { XlsxExportService } from '../../core/services/xlsx-export.service';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
+import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 
 @Component({
   selector: 'app-timeline-view',
@@ -28,6 +32,7 @@ import { TimelineInsightStripComponent } from './timeline-insight-strip.componen
     DashboardGridComponent,
     ExportDialogComponent,
     LegendComponent,
+    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     TimelineInsightStripComponent,
@@ -63,16 +68,25 @@ export class TimelineViewComponent {
   readonly resolvedStartYear = computed(() => this.startYear() ?? this.autoStartYear());
   readonly resolvedEndYear = computed(() => this.endYear() ?? this.autoEndYear());
 
+  private readonly xlsxService = inject(XlsxExportService);
+  private readonly messageService = inject(MessageService);
+
   readonly exportDialogOpen = signal(false);
+  readonly exportFormat = signal<'pptx' | 'png'>('pptx');
   readonly companies = computed(() => this.state.filteredCompanies());
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
 
   constructor() {
     const destroyRef = inject(DestroyRef);
-    const exportHandler = () => {
-      if (this.companies().length > 0) {
-        this.exportDialogOpen.set(true);
+    const exportHandler = (e: Event): void => {
+      if (this.companies().length === 0) return;
+      const format = ((e as CustomEvent).detail?.format ?? 'pptx') as ExportFormat;
+      if (format === 'xlsx') {
+        void this.exportExcel();
+        return;
       }
+      this.exportFormat.set(format);
+      this.exportDialogOpen.set(true);
     };
     document.addEventListener('landscape:export', exportHandler);
     destroyRef.onDestroy(() => document.removeEventListener('landscape:export', exportHandler));
@@ -119,6 +133,18 @@ export class TimelineViewComponent {
         this.autoEndYear.set(Math.max(maxYear + 1, new Date().getFullYear() + 1));
       }
     });
+  }
+
+  private async exportExcel(): Promise<void> {
+    try {
+      await this.xlsxService.exportDashboard(this.companies());
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Export failed',
+        detail: 'Could not generate the Excel file. Try again.',
+      });
+    }
   }
 
   onPhaseClick(trial: Trial): void {

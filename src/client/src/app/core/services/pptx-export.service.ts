@@ -1,59 +1,35 @@
 import { inject, Injectable } from '@angular/core';
 import PptxGenJS from 'pptxgenjs';
 
-import { environment } from '../../../environments/environment';
-import { resolveBrandLogoSrc } from '../../shared/components/brand-logo-url';
 import { Company } from '../models/company.model';
 import { ZoomLevel } from '../models/dashboard.model';
 import { Trial } from '../models/trial.model';
 import { BrandContextService } from './brand-context.service';
+import { logoToPngDataUrl } from './load-image.util';
 import { MarkerTypeService } from './marker-type.service';
 import {
   buildLegendGroups,
   buildMarkerTableRows,
   computeLeftColumns,
   type ColumnLayout,
+  type ExportOptions,
+  flattenTrials,
+  type FlatRow,
   formatDateShort,
-  type LegendEntry,
   type MarkerRow,
   paginate,
-} from './pptx-export.util';
+} from './export-common.util';
 import { TimelineService } from './timeline.service';
+import { resolveMarkerVisual, type MarkerVisual } from '../models/marker-visual';
+import { drawMarkerGlyph } from './pptx-marker-glyph';
+import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
+import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
+import { clintMarkSvgDataUri } from '../../shared/components/clint-mark';
 
-export interface ExportOptions {
-  zoomLevel: ZoomLevel;
-  startYear: number;
-  endYear: number;
-  showMoaColumn: boolean;
-  showRoaColumn: boolean;
-  showNotesColumn: boolean;
-}
-
-interface FlatRow {
-  companyName: string;
-  companyId: string;
-  assetName: string;
-  trialName: string;
-  nctId: string | null;
-  moa: string;
-  roa: string;
-  hasNotes: boolean;
-  trial: Trial;
-  isFirstInCompany: boolean;
-  isFirstInAsset: boolean;
-}
-
-const PHASE_COLORS: Record<string, string> = {
-  P1: '94a3b8',
-  P2: '67e8f9',
-  P3: '2dd4bf',
-  P4: 'a78bfa',
-  OBS: 'fbbf24',
-};
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
-const HEADER_Y = 0.06;
+const HEADER_Y = 0;
 const HEADER_H = 0.28;
 const HEADER_BAND = '1e293b';
 const LEGEND_H = 0.85;
@@ -63,8 +39,12 @@ const FOOTER_H = 0.26;
 const FALLBACK_PRIMARY = '0d9488';
 
 interface FooterBrand {
-  appDisplayName: string;
+  /** Artifact label (not the brand name, which duplicated the tenant segment). */
+  title: string;
   dateStr: string;
+  /** Rasterized Clint mark PNG (product identity, leads the footer). */
+  productMark: string | null;
+  tenantName: string | null;
   tenantLogo: string | null;
   agencyName: string | null;
   agencyLogo: string | null;
@@ -85,18 +65,41 @@ export class PptxExportService {
     const appDisplayName = this.brand.appDisplayName();
     const logoUrl = this.brand.logoUrl();
     const primaryColorHex = this.normalizeHex(this.brand.primaryColor()) || FALLBACK_PRIMARY;
-    const logoData = logoUrl ? await this.loadLogoAsPng(logoUrl) : null;
     const agency = this.brand.agency();
     const agencyName = agency?.name ?? null;
-    const agencyLogo = agency?.logo_url ? await this.loadLogoAsPng(agency.logo_url) : null;
+    const tenant = options.tenant ?? null;
+    const [logoData, agencyLogo, tenantLogo, productMark] = await Promise.all([
+      this.loadLogoAsPng(logoUrl),
+      this.loadLogoAsPng(agency?.logo_url ?? null),
+      this.loadLogoAsPng(tenant?.logoUrl ?? null),
+      this.loadLogoAsPng(
+        clintMarkSvgDataUri(
+          64,
+          {
+            outer: '#cbd5e1',
+            middle: '#94a3b8',
+            inner: `#${primaryColorHex}`,
+          },
+          16
+        )
+      ),
+    ]);
     const dateStr = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const footer: FooterBrand = { appDisplayName, dateStr, tenantLogo: logoData, agencyName, agencyLogo };
+    const footer: FooterBrand = {
+      title: 'Timeline',
+      dateStr,
+      productMark,
+      tenantName: tenant?.name ?? null,
+      tenantLogo,
+      agencyName,
+      agencyLogo,
+    };
 
-    const rows = this.flattenTrials(companies);
+    const rows = flattenTrials(companies);
     if (rows.length === 0) return;
 
     const markerRows = buildMarkerTableRows(companies);
@@ -145,24 +148,20 @@ export class PptxExportService {
     const footerY = SLIDE_H - FOOTER_H;
     const glyph = 0.18;
     const glyphY = footerY + (FOOTER_H - glyph) / 2;
-
-    // Left cluster: tenant logo + name.
-    let tenantTextX = 0.1;
-    if (footer.tenantLogo) {
-      slide.addImage({
-        data: footer.tenantLogo,
-        x: 0.1,
-        y: glyphY,
-        w: glyph,
-        h: glyph,
-        sizing: { type: 'contain', w: glyph, h: glyph },
-      });
-      tenantTextX = 0.1 + glyph + 0.07;
-    }
-    slide.addText(footer.appDisplayName, {
-      x: tenantTextX,
+    const microLabel: PptxGenJS.TextPropsOptions = {
       y: footerY,
-      w: 3,
+      h: FOOTER_H,
+      fontSize: 6,
+      fontFace: 'Arial',
+      bold: true,
+      color: '94a3b8',
+      charSpacing: 2,
+      valign: 'middle',
+      wrap: false,
+      margin: 0,
+    };
+    const partyName: PptxGenJS.TextPropsOptions = {
+      y: footerY,
       h: FOOTER_H,
       fontSize: 8,
       fontFace: 'Arial',
@@ -171,40 +170,65 @@ export class PptxExportService {
       valign: 'middle',
       wrap: false,
       margin: 0,
-    });
+    };
 
-    // Agency attribution, left-aligned right after the tenant cluster.
+    // 1. Product identity: Clint mark + display name. Always present.
+    let x = 0.1;
+    if (footer.productMark) {
+      slide.addImage({
+        data: footer.productMark,
+        x,
+        y: glyphY,
+        w: glyph,
+        h: glyph,
+        sizing: { type: 'contain', w: glyph, h: glyph },
+      });
+      x += glyph + 0.07;
+    }
+    slide.addText(footer.title, { ...partyName, x, w: 1.4 });
+    x += footer.title.length * 0.065 + 0.3;
+
+    // 2. Agency: DELIVERED BY + logo (or name). Hidden when no agency.
     if (footer.agencyName) {
-      const tenantNameW = footer.appDisplayName.length * 0.065;
-      const agencyX = tenantTextX + tenantNameW + 0.3;
-      let agencyTextX = agencyX;
+      slide.addText('DELIVERED BY', { ...microLabel, x, w: 0.85 });
+      x += 0.9;
       if (footer.agencyLogo) {
         slide.addImage({
           data: footer.agencyLogo,
-          x: agencyX,
+          x,
+          y: glyphY,
+          w: glyph * 2.4,
+          h: glyph,
+          sizing: { type: 'contain', w: glyph * 2.4, h: glyph },
+        });
+        x += glyph * 2.4 + 0.3;
+      } else {
+        slide.addText(footer.agencyName, { ...partyName, x, w: 1.4 });
+        x += footer.agencyName.length * 0.065 + 0.3;
+      }
+    }
+
+    // 3. Tenant: PREPARED FOR + logo + name. Hidden when absent.
+    if (footer.tenantName) {
+      const tenantDisplayName =
+        footer.tenantName.length > 28 ? `${footer.tenantName.slice(0, 27)}...` : footer.tenantName;
+      slide.addText('PREPARED FOR', { ...microLabel, x, w: 0.9 });
+      x += 0.95;
+      if (footer.tenantLogo) {
+        slide.addImage({
+          data: footer.tenantLogo,
+          x,
           y: glyphY,
           w: glyph,
           h: glyph,
           sizing: { type: 'contain', w: glyph, h: glyph },
         });
-        agencyTextX = agencyX + glyph + 0.07;
+        x += glyph + 0.07;
       }
-      slide.addText(`Intelligence delivered by ${footer.agencyName}`, {
-        x: agencyTextX,
-        y: footerY,
-        w: 4.5,
-        h: FOOTER_H,
-        fontSize: 8,
-        fontFace: 'Arial',
-        italic: true,
-        color: '94a3b8',
-        valign: 'middle',
-        wrap: false,
-        margin: 0,
-      });
+      slide.addText(tenantDisplayName, { ...partyName, x, w: 1.8 });
     }
 
-    // Right cluster: date + page number.
+    // Right cluster: date + page number (unchanged).
     slide.addText(footer.dateStr, {
       x: SLIDE_W - 2.7,
       y: footerY,
@@ -312,51 +336,12 @@ export class PptxExportService {
   }
 
   /**
-   * Loads a logo URL and returns a base64 PNG data URI suitable for
-   * pptxgenjs `addImage` (PowerPoint only embeds raster formats). Brandfetch
-   * URLs are enriched the same way the app renders them (client id + fallback),
-   * then the image is rasterized through a canvas so SVG / webp logos become
-   * PNG. Returns null on any failure (cross-origin taint, 404, timeout) so the
-   * deck falls back to the brand name text.
+   * PowerPoint only embeds raster formats; delegate to the shared
+   * canvas rasterizer (Brandfetch enrichment, CORS-safe, null on failure
+   * so the deck falls back to the brand name text).
    */
-  private async loadLogoAsPng(rawUrl: string): Promise<string | null> {
-    const url = resolveBrandLogoSrc(rawUrl, environment.brandfetchClientId) ?? rawUrl;
-    return new Promise<string | null>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      let settled = false;
-      const finish = (v: string | null): void => {
-        if (!settled) {
-          settled = true;
-          resolve(v);
-        }
-      };
-      const timer = setTimeout(() => finish(null), 8000);
-      img.onload = (): void => {
-        clearTimeout(timer);
-        try {
-          const w = img.naturalWidth || 256;
-          const h = img.naturalHeight || 256;
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            finish(null);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, w, h);
-          finish(canvas.toDataURL('image/png'));
-        } catch {
-          finish(null);
-        }
-      };
-      img.onerror = (): void => {
-        clearTimeout(timer);
-        finish(null);
-      };
-      img.src = url;
-    });
+  private loadLogoAsPng(rawUrl: string | null | undefined): Promise<string | null> {
+    return logoToPngDataUrl(rawUrl);
   }
 
   private async loadCompanyLogos(companies: Company[]): Promise<Map<string, string>> {
@@ -375,38 +360,6 @@ export class PptxExportService {
   private normalizeHex(value: string | null | undefined): string {
     if (!value) return '';
     return value.replace('#', '').trim().toLowerCase();
-  }
-
-  private flattenTrials(companies: Company[]): FlatRow[] {
-    const rows: FlatRow[] = [];
-    for (const company of companies) {
-      let isFirstInCompany = true;
-      for (const asset of company.assets ?? []) {
-        let isFirstInAsset = true;
-        const moa = (asset.mechanisms_of_action ?? []).map((m) => m.name).join(', ');
-        const roa = (asset.routes_of_administration ?? [])
-          .map((r) => r.abbreviation ?? r.name)
-          .join(', ');
-        for (const trial of asset.trials ?? []) {
-          rows.push({
-            companyName: company.name,
-            companyId: company.id,
-            assetName: asset.name,
-            trialName: trial.acronym ?? trial.name,
-            nctId: trial.identifier ?? null,
-            moa,
-            roa,
-            hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
-            trial,
-            isFirstInCompany,
-            isFirstInAsset,
-          });
-          isFirstInCompany = false;
-          isFirstInAsset = false;
-        }
-      }
-    }
-    return rows;
   }
 
   private renderHeader(
@@ -666,7 +619,7 @@ export class PptxExportService {
       const barX = timelineX + (sx / totalPx) * timelineW;
       const barW = Math.max(0.05, ((ex - sx) / totalPx) * timelineW);
 
-      const color = (PHASE_COLORS[trial.phase_type] ?? '94a3b8').replace('#', '');
+      const color = (PHASE_COLORS[trial.phase_type] ?? PHASE_FALLBACK_COLOR).replace('#', '');
 
       slide.addShape('roundRect', {
         x: barX,
@@ -674,19 +627,19 @@ export class PptxExportService {
         w: barW,
         h: barH,
         rectRadius: 0.02,
-        fill: { color },
-        line: { color, width: 0.5 },
+        fill: { color, transparency: 88 }, // 12% opacity wash, matching the web
+        line: { color, width: 0.75 },
       });
 
       if (barW > 0.4) {
-        slide.addText(trial.phase_type, {
+        slide.addText(phaseShortLabel(trial.phase_type), {
           x: barX,
           y: barY,
           w: barW,
           h: barH,
           fontSize: Math.max(4, fontSize - 2),
           fontFace: 'Arial',
-          color: 'ffffff',
+          color,
           bold: true,
           align: 'center',
           valign: 'middle',
@@ -723,26 +676,9 @@ export class PptxExportService {
       const centerX = timelineX + (mx / totalPx) * timelineW;
       const x = centerX - markerSize / 2;
       const y = rowY + rowH * 0.1;
-      const color = (marker.marker_types!.color ?? '3b82f6').replace('#', '');
-      const shape = marker.marker_types!.shape;
-      const fill = marker.marker_types!.fill_style;
-      const isFilled = fill === 'filled';
 
-      this.renderMarkerShape(
-        slide,
-        shape,
-        isFilled,
-        x,
-        y,
-        markerSize,
-        color,
-        marker.end_date,
-        startYear,
-        endYear,
-        totalPx,
-        timelineX,
-        timelineW
-      );
+      const visual = resolveMarkerVisual(marker);
+      drawMarkerGlyph(slide, visual, x, y, markerSize);
 
       // Only show date label if far enough from previous label
       if (centerX - lastLabelX > 0.4) {
@@ -754,113 +690,11 @@ export class PptxExportService {
           h: 0.1,
           fontSize: Math.max(3, fontSize - 3),
           fontFace: 'Consolas',
-          color,
+          color: visual.color.replace('#', ''),
           align: 'center',
         });
         lastLabelX = centerX;
       }
-    }
-  }
-
-  private renderMarkerShape(
-    slide: PptxGenJS.Slide,
-    shape: string,
-    isFilled: boolean,
-    x: number,
-    y: number,
-    size: number,
-    color: string,
-    endDate: string | null,
-    startYear: number,
-    endYear: number,
-    totalPx: number,
-    timelineX: number,
-    timelineW: number
-  ): void {
-    if (shape === 'circle') {
-      slide.addShape('ellipse', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'diamond') {
-      slide.addShape('diamond', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'flag') {
-      const flagX = x + size * 0.3;
-      slide.addShape('line', {
-        x: flagX,
-        y,
-        w: 0,
-        h: size,
-        line: { color, width: 1 },
-      });
-      slide.addShape('rect', {
-        x: flagX,
-        y,
-        w: size * 0.7,
-        h: size * 0.5,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 0.5 },
-      });
-    } else if (shape === 'arrow') {
-      // Render as a simple up-pointing triangle
-      slide.addShape('triangle', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1 },
-      });
-    } else if (shape === 'x') {
-      // Two diagonal lines forming an X
-      const pad = size * 0.15;
-      slide.addShape('rect', {
-        x: x + pad,
-        y: y + pad,
-        w: size - pad * 2,
-        h: size - pad * 2,
-        fill: isFilled ? { color } : undefined,
-        line: { color, width: 1.5 },
-      });
-      // Draw X lines on top
-      slide.addText('X', {
-        x,
-        y,
-        w: size,
-        h: size,
-        fontSize: Math.round(size * 50),
-        fontFace: 'Arial',
-        bold: true,
-        color,
-        align: 'center',
-        valign: 'middle',
-      });
-    } else if (shape === 'bar' && endDate) {
-      const startPx = x + size / 2;
-      const endPx =
-        timelineX +
-        (this.timeline.dateToX(endDate, startYear, endYear, totalPx) / totalPx) * timelineW;
-      const barW = Math.max(0.1, endPx - startPx);
-      slide.addShape('roundRect', {
-        x: startPx,
-        y: y + size * 0.2,
-        w: barW,
-        h: size * 0.6,
-        rectRadius: 0.01,
-        fill: { color, transparency: 50 },
-        line: { color, width: 0.5 },
-      });
     }
   }
 
@@ -992,54 +826,22 @@ export class PptxExportService {
       for (const it of g.items) {
         const w = s + 0.04 + it.name.length * CHAR + 0.16;
         const { px, py } = place(w);
-        this.renderLegendShape(slide, it, px, py, s);
+        drawMarkerGlyph(
+          slide,
+          {
+            shape: it.shape as MarkerShape,
+            color: it.color,
+            fillStyle: it.fill_style as FillStyle,
+            innerMark: it.inner_mark as InnerMark,
+            isNle: false,
+          } satisfies MarkerVisual,
+          px,
+          py,
+          s
+        );
         label(it.name, px + s + 0.03, py, it.name.length * CHAR, false);
       }
     }
   }
 
-  private renderLegendShape(
-    slide: PptxGenJS.Slide,
-    entry: LegendEntry,
-    x: number,
-    y: number,
-    s: number
-  ): void {
-    const color = entry.color.replace('#', '');
-    const filled = entry.fill_style === 'filled';
-    const fill = filled ? { color } : undefined;
-    const cx = x + s / 2;
-    const cy = y + s / 2;
-
-    if (entry.shape === 'flag') {
-      slide.addShape('line', { x: x + s * 0.18, y, w: 0, h: s, line: { color, width: 0.75 } });
-      slide.addShape('rect', { x: x + s * 0.18, y, w: s * 0.6, h: s * 0.45, fill: { color }, line: { color, width: 0.5 } });
-      return;
-    }
-    if (entry.shape === 'dashed-line') {
-      slide.addShape('line', { x: cx, y, w: 0, h: s, line: { color, width: 1, dashType: 'dash' } });
-      return;
-    }
-    if (entry.shape === 'diamond') {
-      slide.addShape('diamond', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    } else if (entry.shape === 'triangle') {
-      slide.addShape('triangle', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    } else if (entry.shape === 'square') {
-      slide.addShape('rect', { x: x + s * 0.08, y: y + s * 0.08, w: s * 0.84, h: s * 0.84, fill, line: { color, width: 0.75 } });
-    } else {
-      slide.addShape('ellipse', { x, y, w: s, h: s, fill, line: { color, width: 0.75 } });
-    }
-
-    // Inner marks (dot / dash / x / check). Use white on filled shapes.
-    const ink = filled ? 'ffffff' : color;
-    const a = s * 0.18;
-    if (entry.inner_mark === 'dot' || entry.inner_mark === 'check') {
-      slide.addShape('ellipse', { x: cx - s * 0.12, y: cy - s * 0.12, w: s * 0.24, h: s * 0.24, fill: { color: ink } });
-    } else if (entry.inner_mark === 'dash') {
-      slide.addShape('line', { x: cx - s * 0.2, y: cy, w: s * 0.4, h: 0, line: { color: ink, width: 1 } });
-    } else if (entry.inner_mark === 'x') {
-      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, line: { color: ink, width: 0.75 } });
-      slide.addShape('line', { x: cx - a, y: cy - a, w: 2 * a, h: 2 * a, flipV: true, line: { color: ink, width: 0.75 } });
-    }
-  }
 }

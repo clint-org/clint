@@ -25,12 +25,13 @@ import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
-import { ProgressSpinner } from 'primeng/progressspinner';
+import type { ExportFormat } from '../../core/services/export-common.util';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, ProgressSpinner],
+  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, LoaderComponent],
   animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
@@ -53,7 +54,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
             <div
               class="absolute top-0 right-0 bottom-0 z-10 flex w-[340px] items-center justify-center border-l border-slate-200 bg-white"
             >
-              <p-progress-spinner strokeWidth="3" styleClass="w-[28px] h-[28px]" />
+              <app-loader [size]="36" />
             </div>
           } @else {
             <app-marker-detail-panel
@@ -85,11 +86,27 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     if (this.viewMode() === 'timeline') {
       this.topbarState.actions.set([
         {
-          label: '',
-          icon: 'fa-solid fa-file-powerpoint',
+          label: 'Export',
+          icon: 'fa-solid fa-file-export',
           text: true,
           severity: 'secondary',
-          callback: () => this.onExportClick(),
+          items: [
+            {
+              label: 'PowerPoint',
+              icon: 'fa-solid fa-file-powerpoint',
+              command: () => this.onExportClick('pptx'),
+            },
+            {
+              label: 'Image (PNG)',
+              icon: 'fa-solid fa-image',
+              command: () => this.onExportClick('png'),
+            },
+            {
+              label: 'Excel (XLSX)',
+              icon: 'fa-solid fa-file-excel',
+              command: () => this.onExportClick('xlsx'),
+            },
+          ],
         },
       ]);
     } else {
@@ -178,8 +195,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     });
   }
 
-  onExportClick(): void {
-    document.dispatchEvent(new CustomEvent('landscape:export'));
+  onExportClick(format: ExportFormat): void {
+    document.dispatchEvent(new CustomEvent('landscape:export', { detail: { format } }));
   }
 
   private spaceBase(): string[] {

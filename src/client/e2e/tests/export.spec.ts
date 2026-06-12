@@ -1,0 +1,137 @@
+import { test, expect, Page } from '@playwright/test';
+import { authenticatedPage } from '../helpers/auth.helper';
+import {
+  createTestTenant,
+  createTestSpace,
+  createTestCompany,
+  createTestProduct,
+  createTestTherapeuticArea,
+  createTestTrial,
+  createTestTrialPhase,
+} from '../helpers/test-data.helper';
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+interface CapturedBlob {
+  type: string;
+  size: number;
+}
+
+test.describe('Timeline export formats', () => {
+  // Tests share one page and the accumulated __exportBlobs array; order matters.
+  test.describe.configure({ mode: 'serial' });
+
+  let page: Page;
+  let tenantId: string;
+  let spaceId: string;
+
+  test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120000);
+
+    tenantId = await createTestTenant('Export Test Org');
+    spaceId = await createTestSpace(tenantId, 'Export Test Space');
+    const companyId = await createTestCompany(spaceId, 'Export Co');
+    const assetId = await createTestProduct(spaceId, companyId, 'Export Asset');
+    const taId = await createTestTherapeuticArea(spaceId, 'Export TA');
+    const trialId = await createTestTrial(spaceId, assetId, taId, 'EXPORT-1');
+    await createTestTrialPhase(spaceId, trialId, 'P3', '2022-01-01');
+
+    page = await authenticatedPage(browser);
+    // Capture every blob handed to URL.createObjectURL so the tests can
+    // assert on MIME type and size without relying on real downloads.
+    // saveBlob revokes the object URL immediately, but the captured
+    // type/size snapshot is unaffected by revocation.
+    await page.addInitScript(() => {
+      const w = window as unknown as {
+        __exportBlobs: { type: string; size: number }[];
+        __exportBlobObjects: Blob[];
+      };
+      w.__exportBlobs = [];
+      w.__exportBlobObjects = [];
+      const orig = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = (obj: Blob | MediaSource): string => {
+        if (obj instanceof Blob) {
+          w.__exportBlobs.push({ type: obj.type, size: obj.size });
+          w.__exportBlobObjects.push(obj);
+        }
+        return orig(obj);
+      };
+    });
+    await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });
+  });
+
+  test.afterAll(async () => {
+    await page.close();
+  });
+
+  async function lastBlob(): Promise<CapturedBlob | null> {
+    return page.evaluate(
+      () => (window as unknown as { __exportBlobs: CapturedBlob[] }).__exportBlobs.at(-1) ?? null
+    );
+  }
+
+  test('export menu lists all three formats', async () => {
+    // exact: true is required: seeded grid rows ("Export Co", "Export Asset")
+    // are role=button and match a substring name lookup.
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'PowerPoint' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Image (PNG)' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Excel (XLSX)' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menuitem', { name: 'PowerPoint' })).toBeHidden();
+  });
+
+  test('PNG export produces an image blob via the dialog', async () => {
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Image (PNG)' }).click();
+
+    // <app-export-dialog> is always in the DOM; PrimeNG appends the rendered
+    // overlay panel (.p-dialog) to the body only while the dialog is open.
+    const dialog = page.locator('.p-dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Export image')).toBeVisible();
+    // PNG is capture-as-is: no deck options, just the explanatory line.
+    await expect(dialog.getByText('matches the timeline exactly')).toBeVisible();
+    await expect(dialog.getByText('Zoom level')).toBeHidden();
+
+    await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+    await expect
+      .poll(async () => (await lastBlob())?.type, { timeout: 30000 })
+      .toBe('image/png');
+    expect((await lastBlob())!.size).toBeGreaterThan(10000);
+
+    // Decode the actual PNG: dimensions must be sane and the top-left region
+    // must be the grid's slate-800 header band. The capture is the app
+    // surface itself, not a framed deck slide.
+    const probe = await page.evaluate(async () => {
+      const w = window as unknown as { __exportBlobObjects: Blob[] };
+      const bmp = await createImageBitmap(w.__exportBlobObjects.at(-1)!);
+      const canvas = document.createElement('canvas');
+      canvas.width = bmp.width;
+      canvas.height = bmp.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bmp, 0, 0);
+      const px = ctx.getImageData(40, 40, 1, 1).data;
+      return { width: bmp.width, height: bmp.height, sample: [px[0], px[1], px[2]] };
+    });
+    expect(probe.width).toBeGreaterThan(1000);
+    expect(probe.width).toBeLessThanOrEqual(16384);
+    expect(probe.height).toBeGreaterThan(200);
+    // slate-800 is rgb(30, 41, 59); allow small codec tolerance
+    expect(Math.abs(probe.sample[0] - 30)).toBeLessThanOrEqual(3);
+    expect(Math.abs(probe.sample[1] - 41)).toBeLessThanOrEqual(3);
+    expect(Math.abs(probe.sample[2] - 59)).toBeLessThanOrEqual(3);
+
+    // Successful export closes the dialog.
+    await expect(dialog).toBeHidden();
+  });
+
+  test('Excel export downloads immediately without a dialog', async () => {
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Excel (XLSX)' }).click();
+    await expect.poll(async () => (await lastBlob())?.type, { timeout: 30000 }).toBe(XLSX_MIME);
+    expect((await lastBlob())!.size).toBeGreaterThan(1000);
+    await expect(page.locator('.p-dialog')).toBeHidden();
+  });
+});

@@ -918,4 +918,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260607130000_lock_down_read_rpc_and_helper_grants.sql`
 - `20260607140000_multi_indication_on_import.sql`
 - `20260608120000_add_total_trials_to_landing_stats.sql`
+- `20260611120000_restore_data_api_table_grants.sql`
+- `20260612021320_data_api_least_privilege.sql`
 <!-- /AUTO-GEN:DRIFT -->

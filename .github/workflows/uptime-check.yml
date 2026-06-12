@@ -1,0 +1,97 @@
+name: Uptime and cert check
+# Domain 4 + 10 in docs/runbook/14-disaster-recovery.md: nothing today tells us
+# the app stopped serving or a TLS cert is about to lapse. This is a baseline,
+# dependency-free synthetic check (reachability + cert expiry) for the known
+# apex hosts. It is NOT real uptime monitoring (GitHub cron is coarse and can be
+# delayed); swap in an external uptime service when one is chosen. Tenant custom
+# domains are dynamic and not covered here.
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check reachability and TLS expiry
+        env:
+          HOSTS: "clintapp.com dev.clintapp.com"
+          WARN_DAYS: "21"
+        run: |
+          set -uo pipefail
+          fail=0
+          for host in $HOSTS; do
+            # Edge reachability, not app status: Cloudflare answers an unbranded
+            # client with 403 (bot/WAF) even when healthy, so any HTTP response
+            # over TLS means the edge is serving. Fail only on no response (000:
+            # DNS, TLS, or connection failure) or a 5xx server error.
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://$host" || echo "000")
+            case "$code" in
+              000) echo "::error::$host unreachable (no HTTP response)"; fail=1 ;;
+              5*) echo "::error::$host returned server error $code"; fail=1 ;;
+              *) echo "$host HTTP $code (edge responding)" ;;
+            esac
+            enddate=$(echo | openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null \
+              | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || true)
+            if [ -z "$enddate" ]; then
+              echo "::error::$host could not read TLS certificate"
+              fail=1
+              continue
+            fi
+            end_epoch=$(date -d "$enddate" +%s)
+            now_epoch=$(date +%s)
+            days=$(( (end_epoch - now_epoch) / 86400 ))
+            echo "$host cert expires in $days days ($enddate)"
+            if [ "$days" -lt "$WARN_DAYS" ]; then
+              echo "::error::$host TLS cert expires in $days days (< $WARN_DAYS)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  notify-failure:
+    needs: [check]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'uptime-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The synthetic uptime / TLS cert check failed.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'Detection signal for domains 4 and 10 in docs/runbook/14-disaster-recovery.md.',
+              'A host is unreachable or a TLS cert is near expiry. See the run log for which.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Uptime / TLS cert check failed',
+                body,
+                labels: [label],
+              });
+            }

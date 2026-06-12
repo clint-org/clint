@@ -154,6 +154,21 @@ export interface BullseyeData {
   spoke_label: string;
 }
 
+export type Quarter = 1 | 2 | 3 | 4;
+
+/**
+ * Time window for the landscape time period filter. Each boundary is a year
+ * with an optional quarter. A null quarter means the boundary covers the
+ * whole year (Q1 on the From side, Q4 on the To side). A null year leaves
+ * that side open-ended.
+ */
+export interface TimePeriodFilter {
+  startYear: number | null;
+  startQuarter: Quarter | null;
+  endYear: number | null;
+  endQuarter: Quarter | null;
+}
+
 export interface LandscapeFilters {
   companyIds: string[];
   assetIds: string[];
@@ -165,6 +180,7 @@ export interface LandscapeFilters {
   recruitmentStatuses: string[];
   studyTypes: string[];
   markerCategoryIds: string[];
+  timePeriod: TimePeriodFilter | null;
 }
 
 export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
@@ -178,7 +194,68 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   recruitmentStatuses: [],
   studyTypes: [],
   markerCategoryIds: [],
+  timePeriod: null,
 };
+
+/** ISO date bounds derived from a TimePeriodFilter. Null bound = open-ended. */
+export interface TimePeriodRange {
+  start: string | null;
+  end: string | null;
+}
+
+const QUARTER_START: Record<Quarter, string> = { 1: '01-01', 2: '04-01', 3: '07-01', 4: '10-01' };
+const QUARTER_END: Record<Quarter, string> = { 1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31' };
+
+/**
+ * Converts a time period to inclusive ISO date bounds. The From boundary
+ * maps to the first day of its quarter (whole year = Jan 1); the To boundary
+ * maps to the last day of its quarter (whole year = Dec 31).
+ */
+export function timePeriodToRange(tp: TimePeriodFilter | null): TimePeriodRange {
+  if (!tp) return { start: null, end: null };
+  return {
+    start: tp.startYear === null ? null : `${tp.startYear}-${QUARTER_START[tp.startQuarter ?? 1]}`,
+    end: tp.endYear === null ? null : `${tp.endYear}-${QUARTER_END[tp.endQuarter ?? 4]}`,
+  };
+}
+
+/**
+ * Inclusive interval overlap on ISO date strings (YYYY-MM-DD compares
+ * correctly as plain strings). Null span or range bounds are open-ended.
+ */
+export function spanOverlapsRange(
+  spanStart: string | null,
+  spanEnd: string | null,
+  range: TimePeriodRange
+): boolean {
+  if (range.start !== null && spanEnd !== null && spanEnd < range.start) return false;
+  if (range.end !== null && spanStart !== null && spanStart > range.end) return false;
+  return true;
+}
+
+/**
+ * If From is after To, clamps To up to From so the window is never
+ * empty-by-construction. Open-ended periods pass through unchanged.
+ */
+export function clampTimePeriod(tp: TimePeriodFilter): TimePeriodFilter {
+  if (tp.startYear === null || tp.endYear === null) return tp;
+  const startKey = tp.startYear * 4 + ((tp.startQuarter ?? 1) - 1);
+  const endKey = tp.endYear * 4 + ((tp.endQuarter ?? 4) - 1);
+  if (startKey <= endKey) return tp;
+  return { ...tp, endYear: tp.startYear, endQuarter: tp.startQuarter };
+}
+
+/** Compact chip label, e.g. "Q2 2025 - Q4 2026", "From 2025", "Through Q2 2027". */
+export function formatTimePeriod(tp: TimePeriodFilter): string {
+  const label = (year: number, quarter: Quarter | null) =>
+    quarter ? `Q${quarter} ${year}` : `${year}`;
+  const from = tp.startYear === null ? null : label(tp.startYear, tp.startQuarter);
+  const to = tp.endYear === null ? null : label(tp.endYear, tp.endQuarter);
+  if (from && to) return `${from} - ${to}`;
+  if (from) return `From ${from}`;
+  if (to) return `Through ${to}`;
+  return '';
+}
 
 export interface LandscapeIndexEntry {
   entity: BullseyeScope;
