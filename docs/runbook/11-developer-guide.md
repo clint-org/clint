@@ -215,6 +215,18 @@ Required:
 - Permissions: `revoke execute ... from public; revoke ... from anon; grant execute ... to authenticated;` (or `to anon` only when explicitly intended)
 - A `comment on function` documenting purpose + SECURITY DEFINER rationale
 
+## Data API Grants Baseline (local vs hosted)
+
+The hosted projects (dev, prod) were provisioned before Supabase flipped `auto_expose_new_tables` off, so they carry the legacy Data API default ACLs: `anon`, `authenticated`, and `service_role` receive table DML, sequence usage, and function execute grants at object creation, with RLS as the row-level gate. Supabase CLI 2.106.0+ revokes those default ACLs on fresh local databases (`supabase start` / `db reset`) before any migration runs, which would leave a fresh local database with no table privileges for the API roles while dev and prod keep theirs.
+
+Two mechanisms keep local equal to hosted:
+
+1. **`20260611120000_restore_data_api_table_grants.sql`** restores the table and sequence baseline (default ACLs for future objects plus a catch-up grant), then re-applies the deliberate table lockdowns (`platform_admins`, `r2_pending_deletes`, `user_redactions`). For functions it reproduces the lockdown sweeps' end state directly: `service_role` executes everything, `authenticated` executes every public function except trigger functions and the locked names from `20260607130000` Block C plus the r2 drain worker RPCs, and `anon` keeps only its explicit per-function grants. Postgres's built-in `EXECUTE to PUBLIC` default still covers helpers that never revoked it (RLS policy helpers like `has_space_access` keep working for every role).
+
+2. **Inline smokes that switch roles must carry their own grants.** Because the restore migration runs last, any earlier migration whose smoke reads a table directly as `anon`/`authenticated`/`service_role` (directly or through a SECURITY INVOKER function) needs an explicit `grant` in the same file. Precedents: `20260502121200` (`ctgov_sync_runs` select), `20260521120400` (`spaces` select), `20260607130000` (seed-helper execute grants). Smokes that only call SECURITY DEFINER RPCs do not need this.
+
+When writing a new migration: tables created going forward get the legacy-style grants automatically via the restored default ACLs, but if the migration's own smoke exercises role-switched table access, grant explicitly inside the file so a fresh reset can apply it standalone. The deprecated `[api] auto_expose_new_tables = true` config flag was deliberately not used: CLIs older than 2.105.0 fail to parse it, and Supabase removes it on 2026-10-30.
+
 ## Reserved Subdomain List Maintenance
 
 The reserved-subdomain blocklist lives inline in `provision_tenant` and `provision_agency`. Current entries:
