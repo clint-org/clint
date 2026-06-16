@@ -36,7 +36,7 @@ goal, "actual" is what evidence supports today.
 |---|--------|-----------|--------------|-----------|-----------|--------------------|---------|
 | 1 | Database (Postgres) | data loss or corruption | all prod data | weekly `backup-verify` (no failure alert); no live uptime check | ~24h / ~1h (cloud drill 2026-06-10: ~29s) | off-site R2 + B2, pre-migration snapshot, restore proven into a cloud project. See `13-backup-and-restore.md` | DNS repoint to a restored project still untested; verify failures are silent |
 | 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | none | unrecoverable today / unrecoverable today | none. DB backup stores only the pointers | single copy: no versioning, no Object Lock, no off-cloud copy |
-| 3 | Secrets and encryption keys | key lost or leaked | varies by secret; age key loss blocks all DB restores | none | n/a / hours to rotate | partial inventory in a password manager; age key offline | escrow is partial and unaudited; only the age key is confirmed offline |
+| 3 | Secrets and encryption keys | key lost or leaked; Infisical unavailable | varies by secret; age key loss blocks all DB restores | weekly break-glass export (opens an issue on failure) | n/a / minutes (edit in Infisical) | Infisical Cloud is the source of truth, syncing to GHA + Workers + tofu; weekly age-encrypted break-glass export to R2 + B2 | automated rotation still manual (own spec); a few provider secrets (OAuth, Resend) not yet migrated |
 | 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; zone/records + prod platform domains/route now in IaC, per-tenant custom domains still manual |
 | 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; config in `supabase/config.toml` | cloud provider secrets and redirect URLs live only in the dashboard |
 | 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | none | n/a / hours | schema/RLS/extensions in migrations; auth shape in `config.toml` | cloud-only settings (provider secrets, redirect URLs, pooler, edge secrets) not captured as code |
@@ -84,7 +84,8 @@ flowchart TD
     B2[(B2: clint-db-backups<br/>cross-cloud copy)]
     SB[(Supabase project<br/>Postgres + Auth + config)]
     GH[GitHub repo<br/>migrations + deploy workflows]
-    AGE{{age private key<br/>offline, partial escrow}}
+    AGE{{age private key<br/>offline; decrypts backups + break-glass}}
+    INF{{Infisical Cloud<br/>secrets source of truth}}
   end
   W --> M
   W --> SB
@@ -92,6 +93,9 @@ flowchart TD
   RB -. mirror .-> B2
   GH -- deploy --> W
   GH -- db push --> SB
+  INF -- syncs secrets --> W
+  INF -- syncs secrets --> GH
+  INF -. weekly break-glass<br/>age-encrypted .-> RB
   AGE -- decrypts --> RB
   AGE -- decrypts --> B2
   M -. NO BACKUP .-> X[lost if CF account<br/>or bucket is lost]
@@ -144,35 +148,52 @@ every prod deploy), and the daily off-site bundle in R2 or B2. RPO ~24h, RTO ~1h
   drain guardrail, no pointer/object reconciliation. See action register P1 and P3.
 
 ### 3. Secrets and encryption keys
-Inventory by where it lives:
+As of WS4, **Infisical Cloud is the canonical source of truth** for every live
+secret (project `clint`; environments `dev` / `prod` / `shared`; folders by domain:
+`/cloudflare`, `/supabase`, `/backups`, `/ai`, `/iac`, `/ci`). Infisical **syncs/
+pushes** each secret out to the system that consumes it -- GitHub Actions secrets
+(GitHub App) and Cloudflare Worker secrets (`clint`, `clint-dev`) -- and the laptop
+injects tofu's provider creds with `infisical run --env=shared --path=/iac`. CI and
+the Workers read their native secret stores unchanged; Infisical keeps them in sync.
+Adding or rotating a secret is one edit in one place.
 
-| Secret | Lives in | Recover by | Blast radius if leaked |
-|--------|----------|-----------|------------------------|
-| age private key (`clint-backup-age.key`) | offline vault (custodians) + `backup-verify` env | cannot reissue; restore from custodian copy | attacker can decrypt every backup bundle |
-| `BACKUP_AGE_PUBLIC_KEY` | GHA secret | re-derive from private key | none (public) |
-| `R2_BACKUP_*`, `B2_BACKUP_*` | GHA secrets | reissue tokens in R2 / B2 dashboards | write-only by design; cannot delete backups |
-| `SUPABASE_*_DB_PASSWORD`, `_POOLER_URL`, `_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN` | GHA secrets | rotate in Supabase dashboard | full DB and management-API access |
-| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GHA secrets | reissue token in Cloudflare | deploy and account-scoped access |
-| `ANTHROPIC_API_KEY` | Worker runtime secret | reissue in Anthropic console | billable API use; exposure of extracted text |
-| `EXTRACT_SOURCE_WORKER_SECRET`, `CTGOV_WORKER_SECRET`, `R2_WORKER_SECRET` | Worker runtime secrets | regenerate and `wrangler secret put` | call internal RPC endpoints |
-| `BRANDFETCH_API_KEY` | Worker runtime secret | reissue in Brandfetch | billable lookups |
-| `GOOGLE_OAUTH_*`, `MICROSOFT_OAUTH_*` | Supabase project secrets | reissue in Google/Azure consoles | impersonate the OAuth app |
-| `RESEND_API_KEY`, `EMAIL_WEBHOOK_SECRET` | Supabase project secrets | reissue in Resend / regenerate | send mail as the app; forge webhooks |
+Inventory by Infisical location -> consumer:
 
-- Escrow status: partial, in a password manager (confirmed). Only the age key is
-  confirmed held offline. This is the gap: re-provisioning the project config after
-  an account loss means re-issuing each secret from its provider, which is slow and
-  error-prone without a complete inventory.
+| Secret(s) | Infisical (env/folder) | Synced to | Recover / rotate by |
+|-----------|------------------------|-----------|---------------------|
+| `CLOUDFLARE_API_TOKEN` (deploy), `CLOUDFLARE_ACCOUNT_ID` | shared/cloudflare | GHA | reissue "Edit Cloudflare Workers" token |
+| `CLOUDFLARE_API_TOKEN` (tofu), `TF_VAR_cloudflare_account_id`, `B2_APPLICATION_KEY*` | shared/iac | laptop via `infisical run` | reissue scoped DNS/zone/Workers + B2 mgmt keys |
+| `R2_BACKUP_*`, `B2_BACKUP_*`, `BACKUP_AGE_PUBLIC_KEY` | shared/backups | GHA | reissue tokens in R2 / B2; public key re-derives |
+| `SUPABASE_DEV_*` | dev/supabase | GHA | rotate in Supabase dashboard |
+| `SUPABASE_PROD_*`, `SUPABASE_ACCESS_TOKEN` | shared/supabase | GHA | rotate in Supabase dashboard |
+| Worker runtime set (`ANTHROPIC_API_KEY`, `BRANDFETCH_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET`, `CTGOV_WORKER_SECRET`, `R2_WORKER_SECRET`, `R2_ACCESS_KEY_ID/_SECRET_ACCESS_KEY/_ACCOUNT_ID`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) | dev/ai, prod/ai | Cloudflare Workers | reissue provider key; the three `*_WORKER_SECRET`s validate against `vault.secrets` rows -- rotate Worker + DB row together |
+| age **private** key (`clint-backup-age.key`) | **NOT in Infisical** (deliberate) -- offline vault + `backup-verify` GHA secret | n/a | restore from custodian copy; cannot reissue |
+| `GOOGLE_OAUTH_*`, `MICROSOFT_OAUTH_*`, `RESEND_API_KEY`, `EMAIL_WEBHOOK_SECRET` | not yet migrated (Supabase project secrets) | n/a | reissue in provider console |
+
+- **Break-glass export.** A weekly GitHub Actions workflow (`secrets-break-glass.yml`)
+  authenticates to a read-only Infisical machine identity (`github-break-glass`) via
+  GitHub OIDC -- no stored bootstrap secret -- exports every secret across all envs
+  and folders, age-encrypts the bundle to `BACKUP_AGE_PUBLIC_KEY`, and writes it to
+  R2 + B2 under `clint/secrets/` (same Object Lock immutability as DB backups). Only
+  the offline age private key decrypts it. This covers the residual "Infisical Cloud
+  is lost/unavailable" risk.
+- **Two deliberate boundaries.** (1) The age **private** key never enters Infisical;
+  its only homes are the offline custodian vault and the `backup-verify` GHA secret,
+  so the key that decrypts the break-glass copy is not stored inside the system it
+  protects. (2) **Automated rotation is out of scope** for WS4 (its own follow-on
+  spec); rotation today is the manual per-secret procedure below.
 - Recovery procedure (lost age key): if both custodians and the `backup-verify`
-  env copy are gone, every existing backup bundle is permanently undecryptable.
-  There is no workaround. Generate a new keypair, re-encrypt going forward, and
-  treat all prior bundles as lost. This is why the quarterly drill re-confirms
-  custodian access.
-- Recovery procedure (leaked credential): rotate the specific secret at its
-  provider, update the GHA / Worker / Supabase secret store, redeploy if it is a
-  Worker secret, and review audit/access logs for misuse. If the leak is broad
-  (for example a repo or CI compromise), rotate every secret in the table and the
-  age keypair, per scenario D in `13-backup-and-restore.md`.
+  env copy are gone, every existing backup bundle (DB and secrets) is permanently
+  undecryptable. Generate a new keypair, re-encrypt going forward, treat prior
+  bundles as lost. The quarterly drill re-confirms custodian access.
+- Recovery procedure (leaked credential): edit the secret in Infisical; the sync
+  propagates it to GitHub / the Worker, or `infisical run` picks it up for tofu. For
+  the three `*_WORKER_SECRET`s, also update the matching `vault.secrets` row. If the
+  leak is broad (repo or CI compromise), rotate every secret plus the age keypair,
+  per scenario D in `13-backup-and-restore.md`.
+- Recovery procedure (Infisical account lost): restore the latest `clint/secrets/`
+  break-glass bundle from R2 or B2, decrypt with the offline age key, then re-populate
+  a fresh Infisical project (or set the consumer secrets directly from the bundle).
 
 ### 4. DNS and domains
 - What can fail: registrar lapse (domain expiry), an accidental zone or record
@@ -413,7 +434,8 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | done | Backup/verify failure alerting + synthetic uptime/cert check. Landed in Phase 0.2 (`backup-db.yml`/`backup-verify.yml` notify-on-failure, `uptime-check.yml`). | 10 | high x high | low | no | UNKNOWN | done |
 | 3 | No app-level error monitoring (Sentry/Logpush) and no `public.materials`-to-R2 reconciliation; issue-based alert sink is a baseline, no Slack/PagerDuty routing. | 10 | medium x medium | medium | no | UNKNOWN | open |
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
-| 2 | Secrets escrow is partial and unaudited (password manager); only the age key is confirmed offline. Slow, error-prone re-provision after account loss. | 3 | medium x high | low | no | UNKNOWN | open |
+| done | Secrets escrow was partial and unaudited. WS4: Infisical Cloud is now the source of truth, syncing to GHA + Cloudflare Workers + tofu (`infisical run`), with a weekly read-only-OIDC break-glass export age-encrypted to R2 + B2. Re-provision after account loss is one restore + re-populate. | 3 | medium x high | done | no | UNKNOWN | done |
+| 3 | Automated secret rotation is still manual (WS4 deferred it to a follow-on spec), and a few provider secrets (Google/Microsoft OAuth, Resend) are not yet migrated into Infisical. | 3 | low x medium | medium: write the rotation spec; migrate the remaining provider secrets | no | UNKNOWN | open |
 | 2 | Supabase project config (provider secrets, live redirect allow-list, pooler, edge secrets, invite webhook) is dashboard-only, not version controlled. | 6 | medium x medium | medium: `supabase config push`, document the webhook and edge secrets | no | UNKNOWN | open |
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
