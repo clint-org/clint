@@ -114,6 +114,22 @@ export function markerPeriodLabel(
 }
 
 /**
+ * Compose a marker's temporal extent from pre-formatted endpoint labels:
+ * "Q3 '24 onwards" (ongoing), "Q4 '26 – Q1 '27" (bounded), or just the start
+ * (a point). Endpoint formatting (period label vs exact date) is the caller's
+ * job; this only assembles the extent string. Pure for unit testing.
+ */
+export function markerExtentLabel(
+  startLabel: string,
+  endLabel: string | null,
+  isOngoing: boolean
+): string {
+  if (isOngoing) return `${startLabel} onwards`;
+  if (endLabel) return `${startLabel} – ${endLabel}`;
+  return startLabel;
+}
+
+/**
  * Recover the {year, sub} period selectors from a stored midpoint, so the
  * marker form can repopulate its pickers when editing an approximate marker.
  */

@@ -6,6 +6,8 @@ export interface Catalyst {
   event_date: string;
   date_precision: DatePrecision;
   end_date: string | null;
+  end_date_precision: DatePrecision;
+  is_ongoing: boolean;
   category_name: string;
   category_id: string;
   marker_type_name: string;

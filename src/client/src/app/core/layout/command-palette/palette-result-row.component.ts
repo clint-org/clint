@@ -58,7 +58,7 @@ export class PaletteResultRowComponent {
     const it = this.item();
     switch (it.kind) {
       case 'trial':    return '#0f766e';
-      case 'product':  return '#0891b2';
+      case 'asset':    return '#0891b2';
       case 'company':  return '#475569';
       case 'event':    return '#ea580c';
       case 'catalyst': return '#16a34a';
@@ -69,7 +69,7 @@ export class PaletteResultRowComponent {
     const it = this.item();
     switch (it.kind) {
       case 'trial':    return 'fa-flask';
-      case 'product':  return 'fa-capsules';
+      case 'asset':    return 'fa-capsules';
       case 'company':  return 'fa-building';
       case 'event':    return 'fa-newspaper';
       case 'catalyst': return 'fa-bullseye';

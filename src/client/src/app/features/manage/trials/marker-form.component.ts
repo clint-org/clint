@@ -214,20 +214,96 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           }
         </div>
 
-        <!-- End Date -->
+        <!-- Extent: point, bounded end, or ongoing -->
         <div>
-          <label for="marker-end-date" class="block text-sm font-medium text-slate-700">
-            End Date
+          <label for="marker-extent" class="block text-sm font-medium text-slate-700">
+            Extent
           </label>
-          <input
-            type="date"
-            id="marker-end-date"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [ngModel]="endDate()"
-            (ngModelChange)="endDate.set($event)"
-            name="endDate"
+          <p-select
+            inputId="marker-extent"
+            [options]="extentOptions"
+            [ngModel]="extent()"
+            (ngModelChange)="onExtentChange($event)"
+            name="extent"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+            class="mt-1"
           />
+          @if (extent() === 'onwards') {
+            <p class="mt-1 text-[11px] text-slate-500">
+              Open-ended: a tail fades into the future from the start.
+            </p>
+          }
         </div>
+
+        @if (extent() === 'until') {
+          <!-- End precision -->
+          <div>
+            <label for="marker-end-precision" class="block text-sm font-medium text-slate-700">
+              End precision
+            </label>
+            <p-select
+              inputId="marker-end-precision"
+              [options]="precisionOptions"
+              [ngModel]="endDatePrecision()"
+              (ngModelChange)="onEndPrecisionChange($event)"
+              name="endDatePrecision"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full"
+              class="mt-1"
+            />
+          </div>
+
+          <!-- End date / period -->
+          <div>
+            <label
+              [attr.for]="endDatePrecision() === 'exact' ? 'marker-end-date' : null"
+              class="block text-sm font-medium text-slate-700"
+            >
+              Ends <span aria-hidden="true" class="text-red-600">*</span>
+            </label>
+            @if (endDatePrecision() === 'exact') {
+              <input
+                type="date"
+                id="marker-end-date"
+                class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                [ngModel]="endDate()"
+                (ngModelChange)="endDate.set($event)"
+                name="endDate"
+              />
+            } @else {
+              <div class="mt-1 flex gap-2">
+                @if (endDatePrecision() !== 'year') {
+                  <p-select
+                    [options]="endSubOptions()"
+                    [ngModel]="endPeriodSub()"
+                    (ngModelChange)="endPeriodSub.set($event)"
+                    name="endPeriodSub"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="flex-1"
+                    [attr.aria-label]="'End period within ' + endDatePrecision()"
+                  />
+                }
+                <input
+                  type="number"
+                  [ngModel]="endPeriodYear()"
+                  (ngModelChange)="endPeriodYear.set(+$event)"
+                  name="endPeriodYear"
+                  min="2000"
+                  max="2100"
+                  aria-label="End year"
+                  class="w-24 rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            }
+            @if (!rangeValid()) {
+              <p class="mt-1 text-[11px] text-red-700">End must be after the start.</p>
+            }
+          </div>
+        }
 
         <!-- Description -->
         <div class="sm:col-span-2">
@@ -408,6 +484,12 @@ export class MarkerFormComponent implements OnInit {
     { label: 'H2 (Jul-Dec)', value: 2 },
   ];
 
+  readonly extentOptions = [
+    { label: 'Point (single date)', value: 'point' },
+    { label: 'Until (ends on a date)', value: 'until' },
+    { label: 'Onwards (ongoing, no end)', value: 'onwards' },
+  ];
+
   // Form fields
   readonly categoryId = signal('');
   readonly markerTypeId = signal('');
@@ -418,6 +500,10 @@ export class MarkerFormComponent implements OnInit {
   readonly periodYear = signal<number>(new Date().getFullYear());
   readonly periodSub = signal<number>(1);
   readonly endDate = signal('');
+  readonly extent = signal<'point' | 'until' | 'onwards'>('point');
+  readonly endDatePrecision = signal<DatePrecision>('exact');
+  readonly endPeriodYear = signal<number>(new Date().getFullYear());
+  readonly endPeriodSub = signal<number>(1);
   readonly description = signal('');
   readonly sourceUrl = signal('');
   readonly regulatoryPathway = signal('');
@@ -452,14 +538,59 @@ export class MarkerFormComponent implements OnInit {
     return precisionMidpointISO(precision, year, this.periodSub());
   });
 
+  /** Sub-period options for the END precision (empty for exact/year). */
+  readonly endSubOptions = computed(() => {
+    switch (this.endDatePrecision()) {
+      case 'quarter':
+        return this.quarterOptions;
+      case 'month':
+        return this.monthOptions;
+      case 'half':
+        return this.halfOptions;
+      default:
+        return [];
+    }
+  });
+
+  readonly isOngoing = computed(() => this.extent() === 'onwards');
+
+  /** The stored end_date: null unless a bounded ("until") extent is set. */
+  readonly effectiveEndDate = computed(() => {
+    if (this.extent() !== 'until') return '';
+    const precision = this.endDatePrecision();
+    if (precision === 'exact') return this.endDate();
+    const year = this.endPeriodYear();
+    if (!year || year < 1900 || year > 2200) return '';
+    return precisionMidpointISO(precision, year, this.endPeriodSub());
+  });
+
+  /** A bounded end must resolve to a date strictly after the start. */
+  readonly rangeValid = computed(() => {
+    if (this.extent() !== 'until') return true;
+    const end = this.effectiveEndDate();
+    const start = this.effectiveEventDate();
+    if (!end || !start) return true; // incompleteness handled by canSubmit
+    return end > start;
+  });
+
   readonly canSubmit = computed(
     () =>
       !!this.categoryId() &&
       !!this.markerTypeId() &&
       this.title().trim().length > 0 &&
       !!this.effectiveEventDate() &&
-      this.selectedTrialIds().length > 0,
+      this.selectedTrialIds().length > 0 &&
+      (this.extent() !== 'until' || (!!this.effectiveEndDate() && this.rangeValid())),
   );
+
+  onExtentChange(extent: 'point' | 'until' | 'onwards'): void {
+    this.extent.set(extent);
+  }
+
+  onEndPrecisionChange(precision: DatePrecision): void {
+    this.endDatePrecision.set(precision);
+    this.endPeriodSub.set(1);
+  }
 
   onPrecisionChange(precision: DatePrecision): void {
     this.datePrecision.set(precision);
@@ -487,6 +618,21 @@ export class MarkerFormComponent implements OnInit {
         this.periodSub.set(sub);
       }
       this.endDate.set(existing.end_date ?? '');
+      // Extent: ongoing > bounded end > point.
+      if (existing.is_ongoing) {
+        this.extent.set('onwards');
+      } else if (existing.end_date) {
+        this.extent.set('until');
+        this.endDatePrecision.set(existing.end_date_precision ?? 'exact');
+        if (isApproximate(existing.end_date_precision)) {
+          const { year, sub } = markerPeriodFromDate(
+            existing.end_date,
+            existing.end_date_precision,
+          );
+          this.endPeriodYear.set(year);
+          this.endPeriodSub.set(sub);
+        }
+      }
       this.description.set(existing.description ?? '');
       this.sourceUrl.set(existing.source_url ?? '');
       this.regulatoryPathway.set(
@@ -611,7 +757,9 @@ export class MarkerFormComponent implements OnInit {
       projection: this.projection(),
       event_date: this.effectiveEventDate(),
       date_precision: this.datePrecision(),
-      end_date: this.endDate() || null,
+      end_date: this.effectiveEndDate() || null,
+      end_date_precision: this.extent() === 'until' ? this.endDatePrecision() : 'exact',
+      is_ongoing: this.isOngoing(),
       description: this.description() || null,
       source_url: this.sourceUrl() || null,
       metadata,

@@ -65,6 +65,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [activeRoute]="activeSpaceRoute()"
         [hasSpace]="!!spaceId()"
         [canEdit]="spaceRole.canEdit()"
+        [isOwner]="spaceRole.isOwner()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"

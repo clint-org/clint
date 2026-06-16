@@ -12,7 +12,7 @@ interface ParsedRoute {
 
 const PATTERNS: { re: RegExp; kind: PaletteKind }[] = [
   { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/trials\/([0-9a-f-]{36})/, kind: 'trial' },
-  { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/assets\/([0-9a-f-]{36})/, kind: 'product' },
+  { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/assets\/([0-9a-f-]{36})/, kind: 'asset' },
   { re: /\/t\/[^/]+\/s\/([^/]+)\/manage\/companies\/([0-9a-f-]{36})/, kind: 'company' },
 ];
 

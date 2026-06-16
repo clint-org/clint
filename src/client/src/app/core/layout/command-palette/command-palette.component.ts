@@ -216,7 +216,7 @@ export class CommandPaletteComponent implements OnInit {
         return `${base}/manage/trials/${item.id}`;
       case 'company':
         return `${base}/manage/companies/${item.id}`;
-      case 'product':
+      case 'asset':
         return `${base}/manage/assets/${item.id}`;
       case 'event':
         return `${base}/events?eventId=${item.id}`;

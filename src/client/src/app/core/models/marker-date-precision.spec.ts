@@ -2,10 +2,27 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isApproximate,
+  markerExtentLabel,
   markerPeriodFromDate,
   markerPeriodLabel,
   precisionMidpointISO,
 } from './marker-date-precision';
+
+describe('markerExtentLabel', () => {
+  it('appends "onwards" for an open-ended marker', () => {
+    expect(markerExtentLabel("Q3 '24", null, true)).toBe("Q3 '24 onwards");
+    // ongoing wins even if an end label is somehow present
+    expect(markerExtentLabel("H2 '26", "X", true)).toBe("H2 '26 onwards");
+  });
+
+  it('joins start and end for a bounded range', () => {
+    expect(markerExtentLabel("Q4 '26", "Q1 '27", false)).toBe("Q4 '26 – Q1 '27");
+  });
+
+  it('returns just the start for a point marker', () => {
+    expect(markerExtentLabel('March 5, 2026', null, false)).toBe('March 5, 2026');
+  });
+});
 
 describe('isApproximate', () => {
   it('is false for exact / null, true for fuzzy precisions', () => {
