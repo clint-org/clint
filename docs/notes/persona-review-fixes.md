@@ -130,9 +130,11 @@ Migration 75 (`20260429010000_owner_only_explicit_space_access.sql`) removed imp
 
 ## Data issues surfaced by the UI (fix in data; the UI made them visible)
 
-- `[ ]` **UI-38 Duplicate timeline rows.** SURPASS-2 twice (same NCT), SELECT twice under Wegovy. If per-indication rows are intended, disambiguate in the UI; else dedupe. **(S–M)**
-- `[ ]` **UI-39 Mounjaro MOA wrongly tags "SGLT2 inhibitor"** alongside "GIP/GLP-1 dual agonist" (wrong for tirzepatide). Seed fix. **(S)**
-- `[ ]` **UI-40 / P3.2 Test garbage + uneven demo depth.** "asdfdas"/"asdf" events; "test" + "sdf sdf sdf" in a published read; "Mounjaro!"; hero trials with empty sections. Clean seed so demos read credibly. **(S–M)**
+> **Verified against the local seed (after `supabase db reset`):** the seed is clean — Mounjaro carries only "GIP/GLP-1 dual agonist", there are no intra-space duplicate NCTs, and no "asdf"/"test" strings. All three issues below are therefore **dev-cloud runtime data** entered by hand on dev.clintapp.com, not reproducible from `seed.sql`. They are ops cleanups on the dev database (and any prod demo space), not code changes on this branch.
+
+- `[-]` **UI-38 Duplicate timeline rows.** Not in seed (no intra-space duplicate identifiers). Dev-data dedupe.
+- `[-]` **UI-39 Mounjaro MOA wrongly tags "SGLT2 inhibitor".** Not in seed (local Mounjaro is correctly tagged only "GIP/GLP-1 dual agonist"). Dev-data fix: remove the stray `asset_mechanisms_of_action` row on dev.
+- `[-]` **UI-40 / P3.2 Test garbage + uneven demo depth.** Not in seed (no garbage strings). Dev-data cleanup: delete the "asdf"/"test"/"Mounjaro!" rows and backfill hero-trial sections on dev.
 
 ---
 
