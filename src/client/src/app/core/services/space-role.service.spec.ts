@@ -47,7 +47,7 @@ function deferred<T>(): Deferred<T> {
   return { promise, resolve };
 }
 
-function makeHarness(result: { data: unknown; error: unknown }) {
+function makeHarness(result: { data: unknown; error: unknown }, isAgencyMember = false) {
   const events = new Subject<NavigationEnd>();
   const routerStub = { events, url: '/' } as unknown as Router;
 
@@ -57,9 +57,11 @@ function makeHarness(result: { data: unknown; error: unknown }) {
   const eq1 = vi.fn(() => ({ eq: eq2 }));
   const select = vi.fn(() => ({ eq: eq1 }));
   const from = vi.fn(() => ({ select }));
+  // is_agency_member_of_space is fetched in parallel with the role.
+  const rpc = vi.fn(() => Promise.resolve({ data: isAgencyMember, error: null }));
   const supabaseStub = {
     currentUser: () => ({ id: 'user-1' }),
-    client: { from },
+    client: { from, rpc },
   } as unknown as SupabaseService;
 
   const injector = Injector.create({
@@ -115,5 +117,21 @@ describe('SpaceRoleService.ensureRole', () => {
     h.resolveFetch();
     await expect(pending).resolves.toBeNull();
     expect(h.service.canEdit()).toBe(false);
+  });
+
+  it('tracks agency membership separately from the space role (P1.3b)', async () => {
+    // A space editor who is NOT an agency member: canEdit true, but
+    // isAgencyMember false (cannot author intelligence).
+    const editor = makeHarness({ data: { role: 'editor' }, error: null }, false);
+    editor.resolveFetch();
+    await editor.service.ensureRole(SPACE_ID);
+    expect(editor.service.canEdit()).toBe(true);
+    expect(editor.service.isAgencyMember()).toBe(false);
+
+    // An agency member resolves isAgencyMember true.
+    const agency = makeHarness({ data: { role: 'editor' }, error: null }, true);
+    agency.resolveFetch();
+    await agency.service.ensureRole(SPACE_ID);
+    expect(agency.service.isAgencyMember()).toBe(true);
   });
 });

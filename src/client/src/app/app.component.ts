@@ -21,6 +21,7 @@ import { environment } from '../environments/environment';
     <app-confirm-delete-dialog />
     <p-toast
       position="top-right"
+      styleClass="app-toast-below-header"
       [showTransformOptions]="'translateX(100%)'"
       [hideTransformOptions]="'translateX(100%)'"
       [showTransitionOptions]="'250ms cubic-bezier(0.25, 1, 0.5, 1)'"

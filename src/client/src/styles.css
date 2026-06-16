@@ -34,3 +34,12 @@ mark.search-hit {
   --color-brand-900: var(--brand-900, #134e4a);
   --color-brand-950: var(--brand-950, #042f2e);
 }
+
+/*
+ * UI-33: offset the global toast below the contextual topbar so success/error
+ * toasts no longer cover the page-header stats on Home. PrimeNG positions the
+ * toast container with an inline top; override it for the top-right channel.
+ */
+.app-toast-below-header.p-toast {
+  top: 4.5rem !important;
+}
