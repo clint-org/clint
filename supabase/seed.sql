@@ -81,9 +81,18 @@ on conflict (id) do update set
 -- =============================================================================
 
 -- bootstrap user owns the demo content (created_by FKs into auth.users).
-insert into auth.users (id, email)
-values ('00000000-0000-0000-0000-00000000000d', 'demo-bootstrap@clint.local')
-on conflict (id) do nothing;
+-- raw_user_meta_data.full_name gives the demo author a plausible analyst name
+-- so the intelligence contributors line reads "Daniel Reyes" rather than the
+-- UUID-prefix fallback the UI shows when no display name resolves (P1.2).
+insert into auth.users (id, email, raw_user_meta_data)
+values (
+  '00000000-0000-0000-0000-00000000000d',
+  'demo-bootstrap@clint.local',
+  jsonb_build_object('full_name', 'Daniel Reyes')
+)
+on conflict (id) do update
+  set raw_user_meta_data =
+    jsonb_set(coalesce(auth.users.raw_user_meta_data, '{}'::jsonb), '{full_name}', '"Daniel Reyes"');
 
 -- Demo agency that owns the demo tenant. Required so a real Google sign-in
 -- (auto-joined to the demo tenant via the trigger below) can also be added

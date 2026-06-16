@@ -10,6 +10,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
+import { resolveAuthorName, resolveContributorLine } from '../../utils/intelligence-authors';
 
 /**
  * Display-only presenter for a primary intelligence read. Shows the
@@ -96,12 +97,9 @@ export class IntelligenceBlockComponent {
     const c = this.current();
     if (!c) return '';
     const updated = formatDate(c.record.updated_at);
-    const map = this.authorMap();
-    const initials = (c.contributors ?? [])
-      .map((id) => map[id] ?? initialsFromId(id))
-      .filter((s) => !!s);
-    const contributors = initials.length ? initials.join(', ') : '--';
-    const publisher = map[c.record.last_edited_by] ?? initialsFromId(c.record.last_edited_by);
+    const override = this.authorMap();
+    const contributors = resolveContributorLine(c.contributors, c.authors, override);
+    const publisher = resolveAuthorName(c.record.last_edited_by, c.authors, override);
     return `Contributors: ${contributors} -- updated ${updated} by ${publisher}`;
   });
 
@@ -153,6 +151,3 @@ function formatDate(iso: string | null | undefined): string {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function initialsFromId(id: string): string {
-  return id.slice(0, 2).toUpperCase();
-}
