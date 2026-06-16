@@ -17,6 +17,7 @@ import { describe, expect, it } from 'vitest';
 import { SpaceLandingStats } from './engagement-landing.service';
 import { BriefResult, computeBrief } from './brief-window';
 import { shouldReloadEngagement } from './engagement-landing.nav';
+import { pluralize } from '../../shared/utils/pluralize';
 
 // ---------------------------------------------------------------------------
 // Helpers shared between tests
@@ -106,7 +107,7 @@ function buildComputeds(
     const cells: MotionCell[] = [
       {
         key: 'p3Readouts',
-        label: 'P3 readouts',
+        label: pluralize(s?.p3_readouts_90d, 'P3 readout'),
         windowLabel: 'next 90d',
         value: v(s?.p3_readouts_90d),
         display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
@@ -116,7 +117,7 @@ function buildComputeds(
       },
       {
         key: 'catalysts',
-        label: 'Catalysts',
+        label: pluralize(s?.catalysts_90d, 'Catalyst'),
         windowLabel: 'next 90d',
         value: v(s?.catalysts_90d),
         display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
@@ -126,7 +127,7 @@ function buildComputeds(
       },
       {
         key: 'newIntel',
-        label: 'New reads',
+        label: pluralize(s?.new_intel_7d, 'New read'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
@@ -136,7 +137,7 @@ function buildComputeds(
       },
       {
         key: 'trialMoves',
-        label: 'Trial moves',
+        label: pluralize(s?.trial_moves_30d, 'Trial move'),
         windowLabel: 'last 30d',
         value: v(s?.trial_moves_30d),
         display: s?.trial_moves_30d == null ? '' : String(s.trial_moves_30d),
@@ -209,6 +210,30 @@ describe('EngagementLandingComponent header computeds', () => {
     expect(byKey['catalysts'].warn).toBe(true);
     expect(byKey['trialMoves'].warn).toBe(false);
     expect(byKey['newIntel'].warn).toBe(false);
+  });
+
+  it('motionStats uses singular labels when a count is exactly 1 (UI-24)', () => {
+    const { stats, motionStats } = buildComputeds();
+    stats.set(
+      makeStats({ p3_readouts_90d: 1, catalysts_90d: 1, new_intel_7d: 1, trial_moves_30d: 1 }),
+    );
+    const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
+    expect(byKey['p3Readouts'].label).toBe('P3 readout');
+    expect(byKey['catalysts'].label).toBe('Catalyst');
+    expect(byKey['newIntel'].label).toBe('New read');
+    expect(byKey['trialMoves'].label).toBe('Trial move');
+  });
+
+  it('motionStats uses plural labels for counts other than 1 (UI-24)', () => {
+    const { stats, motionStats } = buildComputeds();
+    stats.set(
+      makeStats({ p3_readouts_90d: 3, catalysts_90d: 0, new_intel_7d: 2, trial_moves_30d: 5 }),
+    );
+    const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
+    expect(byKey['p3Readouts'].label).toBe('P3 readouts');
+    expect(byKey['catalysts'].label).toBe('Catalysts');
+    expect(byKey['newIntel'].label).toBe('New reads');
+    expect(byKey['trialMoves'].label).toBe('Trial moves');
   });
 
   it('motionStats clears warn on cells with zero values', () => {

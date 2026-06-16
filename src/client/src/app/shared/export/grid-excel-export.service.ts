@@ -2,8 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { saveBlob } from '../../core/services/download.util';
-import type { ColumnDef } from '../grids/filter-types';
-import { buildGridSheet } from './grid-sheet.util';
+import { buildExportSheet, type ExportColumn } from './grid-sheet.util';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -12,7 +11,8 @@ export interface GridExcelRequest<T> {
   sheetName: string;
   /** Download filename without extension, e.g. 'catalysts'. */
   filename: string;
-  columns: ColumnDef<T>[];
+  /** Explicit export surface: visible columns plus detail-pane fields. */
+  columns: ExportColumn<T>[];
   /** Current-view rows (post filter/sort), captured at click time. */
   rows: T[];
 }
@@ -25,7 +25,7 @@ export class GridExcelExportService {
   async export<T>(req: GridExcelRequest<T>): Promise<void> {
     if (req.rows.length === 0) return;
     const { buildSheetWorkbook } = await import('./xlsx-sheet.util');
-    const wb = buildSheetWorkbook([buildGridSheet(req.sheetName, req.columns, req.rows)], {
+    const wb = buildSheetWorkbook([buildExportSheet(req.sheetName, req.columns, req.rows)], {
       appDisplayName: this.brand.appDisplayName(),
       primaryColorHex: (this.brand.primaryColor() || '#0d9488').replace('#', ''),
     });

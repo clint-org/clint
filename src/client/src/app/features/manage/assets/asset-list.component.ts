@@ -36,6 +36,8 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../../shared/export/export-naming.service';
+import { ASSET_EXPORT_COLUMNS } from './assets-export.util';
 
 interface AssetRow {
   readonly asset: Asset;
@@ -84,6 +86,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
 
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
@@ -142,11 +145,11 @@ export class AssetListComponent implements OnInit, OnDestroy {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Assets',
-          filename: 'assets',
-          columns: this.grid.columns,
+          filename: await this.exportNaming.stem(this.spaceId, 'assets'),
+          columns: ASSET_EXPORT_COLUMNS,
           rows: this.visibleRows(),
         }),
     },

@@ -1,6 +1,7 @@
 // src/client/src/app/core/services/topbar-state.service.ts
 import { Injectable, signal } from '@angular/core';
 import { MenuItem } from 'primeng/api';
+import type { ExportAction } from '../../shared/export/export-button.component';
 
 /**
  * PrimeNG p-button severity union. Mirrors the values accepted by the
@@ -46,6 +47,14 @@ export class TopbarStateService {
   readonly actions = signal<TopbarAction[]>([]);
 
   /**
+   * Export actions for the current page, rendered as the shared
+   * <app-export-button> in the topbar-actions area. Visualization pages
+   * (timeline, bullseye, heatmap) publish these; grids keep their export
+   * button in the grid toolbar instead.
+   */
+  readonly exportActions = signal<ExportAction[]>([]);
+
+  /**
    * Entity edit/delete (+ nav) rendered as a shared overflow kebab on detail
    * pages -- the same `app-row-actions` idiom used in manage grid rows.
    */
@@ -58,6 +67,7 @@ export class TopbarStateService {
     this.entityTitle.set('');
     this.recordCount.set('');
     this.actions.set([]);
+    this.exportActions.set([]);
     this.overflowActions.set([]);
   }
 }

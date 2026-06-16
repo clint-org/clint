@@ -59,7 +59,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
               @if (t.suspended_at) {
                 <app-status-tag label="suspended" tone="amber" />
               } @else {
-                <app-status-tag label="active" tone="teal" />
+                <app-status-tag label="active" tone="brand" />
               }
             </div>
           }

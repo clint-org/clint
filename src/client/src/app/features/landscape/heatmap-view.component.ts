@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   Injector,
@@ -22,12 +23,12 @@ import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.comp
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
-import {
-  ExportButtonComponent,
-  type ExportAction,
-} from '../../shared/export/export-button.component';
+import { type ExportAction } from '../../shared/export/export-button.component';
+import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { HeatmapExportHostComponent } from './heatmap-export-host.component';
 import { buildHeatmapSheets } from './heatmap-export.util';
@@ -42,7 +43,6 @@ import { buildHeatmapSheets } from './heatmap-export.util';
     SkeletonComponent,
     MessageModule,
     ButtonModule,
-    ExportButtonComponent,
   ],
   animations: [slidePanelAnimation],
   template: `
@@ -78,11 +78,6 @@ import { buildHeatmapSheets } from './heatmap-export.util';
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout flex flex-col">
-            @if (exportActions().length > 0) {
-              <div class="relative z-20 flex shrink-0 justify-end pb-2">
-                <app-export-button [actions]="exportActions()" />
-              </div>
-            }
             <div class="flex-1 min-w-0 min-h-0 overflow-auto">
               <app-heatmap
                 [bubbles]="data.bubbles"
@@ -130,9 +125,12 @@ export class HeatmapViewComponent implements OnInit {
   readonly state = inject(LandscapeStateService);
   private readonly router = inject(Router);
   private readonly png = inject(BrandedPngExportService);
+  private readonly exportNaming = inject(ExportNamingService);
   private readonly sheetExcel = inject(SheetExcelExportService);
   private readonly injector = inject(Injector);
   private readonly brand = inject(BrandContextService);
+  private readonly topbarState = inject(TopbarStateService);
+  private readonly exportSync = createTopbarExportSync(this.topbarState);
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
@@ -165,15 +163,15 @@ export class HeatmapViewComponent implements OnInit {
     const title = this.heatmapTitle();
     return [
       {
-        label: 'PNG',
+        label: 'Image (PNG)',
         format: 'png',
-        run: () =>
+        run: async () =>
           this.png.capture({
             component: HeatmapExportHostComponent,
             elementInjector: this.injector,
             agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
             tenantLogoUrl: null,
-            filename: 'heatmap.png',
+            filename: await this.exportNaming.filename(this.spaceId(), 'heatmap', 'png'),
             setInputs: (ref, logos) => {
               ref.setInput('title', title);
               ref.setInput('bubbles', data.bubbles);
@@ -188,18 +186,23 @@ export class HeatmapViewComponent implements OnInit {
           }),
       },
       {
-        label: 'Excel',
+        label: 'Excel (XLSX)',
         format: 'xlsx',
-        run: () =>
+        run: async () =>
           this.sheetExcel.export(
             buildHeatmapSheets(data.bubbles, String(this.state.countUnit())),
-            'heatmap'
+            await this.exportNaming.stem(this.spaceId(), 'heatmap')
           ),
       },
     ];
   });
 
   constructor() {
+    // Visualization export lives in the page header (topbar), not the chart
+    // area; see the timeline for the same pattern.
+    effect(() => this.exportSync.push(this.exportActions()));
+    inject(DestroyRef).onDestroy(() => this.exportSync.teardown());
+
     // Clear selection when grouping, count unit, or filters change
     effect(() => {
       this.state.heatmapGrouping();

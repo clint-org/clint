@@ -755,6 +755,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `referenced_in_entity`
 - `register_material`
 - `reset_asset_indication_status`
+- `resolve_user_display_names`
 - `restore_space`
 - `search_palette`
 - `set_trial_assets`

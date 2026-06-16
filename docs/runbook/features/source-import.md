@@ -219,6 +219,6 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 
 | Guard | Type | Purpose |
 |---|---|---|
-| `importGuard` | CanActivate | Checks editor role + tenant AI enabled for the `/import` route |
+| `importGuard` | CanActivate | Checks editor-or-owner space role + tenant AI enabled for the `/import` route. Awaits `SpaceRoleService.ensureRole()` rather than reading the role signal synchronously, which raced the fetch and bounced owners on direct loads |
 | `sourceImportGuard` | CanActivate | Checks proposal exists in service for the route's aiCallId |
 | `sourceImportDeactivateGuard` | CanDeactivate | Prompts on unsaved changes |

@@ -10,8 +10,12 @@ import { HeatmapComponent, type SortField } from './heatmap.component';
  * BrandedPngExportService creates it, parks it off-viewport, rasterizes, and
  * destroys it.
  *
- * w-max matters: the host sizes to the matrix's natural width so the capture
- * isn't clipped.
+ * The chart wrapper carries a definite width: HeatmapComponent is built to
+ * fill its container (host width: 100%, table-layout: fixed), so inside this
+ * host's max-content sizing it has no width to resolve against and Chromium
+ * degenerates the layout to a ~1e6px-wide, few-px-tall table. A fixed frame
+ * width pins the matrix to a deck-friendly layout; the host (w-max) then
+ * shrink-wraps the header and footer to the same width.
  *
  * The matrix is a static snapshot. `selectedBubble` is pinned to null (no row
  * highlight) and the `(rowClick)` / `(sortChange)` outputs are never wired.
@@ -25,9 +29,9 @@ import { HeatmapComponent, type SortField } from './heatmap.component';
   host: { class: 'block w-max bg-white' },
   template: `
     <header class="px-6 pt-5 pb-2">
-      <h2 class="text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
+      <h2 class="whitespace-nowrap text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
     </header>
-    <div class="px-6 pb-4">
+    <div class="w-[1100px] px-6 pb-4">
       <app-heatmap
         [bubbles]="bubbles()"
         [countUnit]="countUnit()"

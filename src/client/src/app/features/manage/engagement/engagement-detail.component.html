@@ -16,7 +16,7 @@
       <app-intelligence-block
         [published]="intelligence()?.published ?? null"
         [draft]="intelligence()?.draft ?? null"
-        [agencyView]="spaceRole.canEdit()"
+        [agencyView]="spaceRole.isAgencyMember()"
         [tenantId]="tenantIdSig()"
         [spaceId]="spaceIdSig()"
         (edit)="onIntelligenceEdit()"
@@ -34,14 +34,14 @@
       />
     } @else {
       <app-intelligence-empty
-        [canEdit]="spaceRole.canEdit()"
+        [canEdit]="spaceRole.isAgencyMember()"
         entityLabel="engagement"
         (add)="onIntelligenceEdit()"
       />
     }
     <app-intelligence-history-panel
       [payload]="historyHost.payload()"
-      [currentUserCanEdit]="spaceRole.canEdit()"
+      [currentUserCanEdit]="spaceRole.isAgencyMember()"
       (withdraw)="withdrawDialogOpen.set(true)"
       (purgeVersion)="
         onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)

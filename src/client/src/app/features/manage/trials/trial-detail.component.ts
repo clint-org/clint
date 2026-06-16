@@ -24,6 +24,7 @@ import { Marker } from '../../../core/models/marker.model';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { phaseShortLabel } from '../../../core/models/phase-colors';
+import { shouldShowTrialSecondaryName } from '../../../core/utils/display-fallbacks';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
 import { TrialNoteService } from '../../../core/services/trial-note.service';
@@ -107,6 +108,8 @@ export class TrialDetailComponent implements OnDestroy {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
+
+  protected readonly showSecondaryName = shouldShowTrialSecondaryName;
 
   private location = inject(Location);
   private route = inject(ActivatedRoute);

@@ -136,7 +136,7 @@ export class PptxExportService {
       this.addFooter(tableSlide, footer, 3 + p, totalPages);
     }
 
-    await pptx.writeFile({ fileName: 'clinical-trial-dashboard.pptx' });
+    await pptx.writeFile({ fileName: options.filename ?? 'clinical-trial-dashboard.pptx' });
   }
 
   private addFooter(

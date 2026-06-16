@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChangeEvent } from '../../core/models/change-event.model';
-import { summarySegmentsFor } from './change-event-summary';
+import { summaryFor, summarySegmentsFor } from './change-event-summary';
 
 function baseEvent(overrides: Partial<ChangeEvent>): ChangeEvent {
   return {
@@ -245,5 +245,40 @@ describe('summarySegmentsFor marker-related events', () => {
     expect(text).toContain('Topline readout');
     expect(text).toContain('Jun 1, 2026');
     expect(text).toContain('Jul 15, 2026');
+  });
+});
+
+describe('status_changed enum humanization (P2.6)', () => {
+  it('humanizes raw CT.gov status enums in the plain summary', () => {
+    expect(
+      summaryFor(
+        baseEvent({
+          event_type: 'status_changed',
+          payload: { from: 'RECRUITING', to: 'ACTIVE_NOT_RECRUITING' },
+        }),
+      ),
+    ).toBe('Status: Recruiting → Active Not Recruiting');
+  });
+
+  it('humanizes raw status enums in the rich segments', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'status_changed',
+        payload: { from: 'RECRUITING', to: 'ACTIVE_NOT_RECRUITING' },
+      }),
+    );
+    const old = result.segments.find((s) => s.kind === 'old');
+    const next = result.segments.find((s) => s.kind === 'new');
+    expect(old?.text).toBe('Recruiting');
+    expect(next?.text).toBe('Active Not Recruiting');
+    expect(result.segments.some((s) => s.kind === 'arrow')).toBe(true);
+  });
+
+  it('tolerates a missing status value without throwing', () => {
+    expect(
+      summaryFor(
+        baseEvent({ event_type: 'status_changed', payload: { from: 'RECRUITING' } }),
+      ),
+    ).toContain('Recruiting');
   });
 });

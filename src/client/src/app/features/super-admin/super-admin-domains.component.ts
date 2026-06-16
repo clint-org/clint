@@ -87,7 +87,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
             <td>
               <app-status-tag
                 [label]="row.previous_kind"
-                [tone]="row.previous_kind === 'tenant' ? 'teal' : 'slate'"
+                [tone]="row.previous_kind === 'tenant' ? 'brand' : 'slate'"
               />
             </td>
             <td class="col-identifier text-xs">{{ row.retired_at | date: 'MMM d, y, HH:mm' }}</td>

@@ -29,6 +29,8 @@ Company
 - Blue flags/bars -- Approval/Launch events
 - Orange/red arrows/X -- Change/status events
 
+Each marker carries a `Mon 'YY` date caption. Captions decollide per trial row: `DashboardGridComponent` keeps a caption only when it sits at least 38 px right of the previously kept one (greedy left-to-right, `marker-label-layout.ts`), so clustered catalysts no longer overprint at year zoom. Suppressed dates remain available in the marker hover tooltip.
+
 **Notes** -- free-text annotations attached to trials, displayed inline.
 
 **Entity-page surfaces.** The timeline now mounts on trial, asset, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.

@@ -142,7 +142,7 @@ interface AgencyOption {
               @if (tenant.suspended_at) {
                 <app-status-tag label="suspended" tone="amber" />
               } @else {
-                <app-status-tag label="active" tone="teal" />
+                <app-status-tag label="active" tone="brand" />
               }
             </td>
             <td class="col-identifier text-xs">{{ tenant.created_at | date: 'MMM d, y' }}</td>

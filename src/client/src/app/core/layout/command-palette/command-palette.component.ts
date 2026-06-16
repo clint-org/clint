@@ -35,7 +35,7 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
         <button
           type="button"
           aria-label="Close palette"
-          class="absolute inset-0 cursor-default bg-slate-900/40"
+          class="absolute inset-0 cursor-default bg-slate-900/50 backdrop-blur-sm"
           (click)="close()"
         ></button>
         <div
@@ -55,25 +55,40 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
             (tab)="toggleScope()"
             (togglePin)="togglePinOnSelected()"
           />
-          <div class="min-h-0 flex-1 overflow-y-auto">
-            @if (palette.query().length === 0) {
-              <app-palette-empty-state
-                [state]="palette.emptyState()"
-                [selectedFlatIndex]="palette.selectedIndex()"
-                (indexSelect)="palette.selectIndex($event)"
-                (activated)="onActivate($event)"
-              />
-            } @else {
-              <app-palette-result-list
-                [items]="palette.results()"
-                [selectedIndex]="palette.selectedIndex()"
-                [loading]="palette.isLoading()"
-                [scopeLabel]="spaceName()"
-                (indexSelect)="palette.selectIndex($event)"
-                (activated)="onActivate($event)"
-              />
-            }
+          <div class="relative min-h-0 flex-1">
+            <div class="h-full overflow-y-auto">
+              @if (palette.query().length === 0) {
+                <app-palette-empty-state
+                  [state]="palette.emptyState()"
+                  [selectedFlatIndex]="palette.selectedIndex()"
+                  (indexSelect)="palette.selectIndex($event)"
+                  (activated)="onActivate($event)"
+                />
+              } @else {
+                <app-palette-result-list
+                  [items]="palette.results()"
+                  [selectedIndex]="palette.selectedIndex()"
+                  [loading]="palette.isLoading()"
+                  [scopeLabel]="spaceName()"
+                  (indexSelect)="palette.selectIndex($event)"
+                  (activated)="onActivate($event)"
+                />
+              }
+            </div>
+            <!-- Bottom scroll fade so the list dissolves instead of cutting a row flat. -->
+            <div
+              class="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white to-transparent"
+              aria-hidden="true"
+            ></div>
           </div>
+          <footer
+            class="flex items-center gap-x-4 gap-y-1 overflow-hidden border-t border-slate-100 px-4 py-2 font-mono text-[10px] uppercase tracking-wide text-slate-400"
+          >
+            <span class="whitespace-nowrap"><kbd class="text-slate-500">&uarr;&darr;</kbd> Navigate</span>
+            <span class="whitespace-nowrap"><kbd class="text-slate-500">&crarr;</kbd> Open</span>
+            <span class="whitespace-nowrap"><kbd class="text-slate-500">Tab</kbd> Scope</span>
+            <span class="ml-auto whitespace-nowrap"><kbd class="text-slate-500">Esc</kbd> Close</span>
+          </footer>
           <div class="sr-only" aria-live="polite">{{ liveMessage() }}</div>
         </div>
       </div>
@@ -201,7 +216,7 @@ export class CommandPaletteComponent implements OnInit {
         return `${base}/manage/trials/${item.id}`;
       case 'company':
         return `${base}/manage/companies/${item.id}`;
-      case 'product':
+      case 'asset':
         return `${base}/manage/assets/${item.id}`;
       case 'event':
         return `${base}/events?eventId=${item.id}`;

@@ -1,7 +1,7 @@
 # Data API Least-Privilege Grants: Design
 
 Date: 2026-06-11
-Status: draft
+Status: shipped (dev and prod, 2026-06-12)
 Spec: `docs/specs/data-api-least-privilege/spec.md`
 
 ## Context

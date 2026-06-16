@@ -5,21 +5,26 @@ import {
   DestroyRef,
   effect,
   inject,
+  Injector,
   input,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
-import type { ExportFormat } from '../../core/services/export-common.util';
+import { PptxExportService } from '../../core/services/pptx-export.service';
+import { TenantService } from '../../core/services/tenant.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { XlsxExportService } from '../../core/services/xlsx-export.service';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import type { ExportAction } from '../../shared/export/export-button.component';
+import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
-import { ExportDialogComponent } from '../dashboard/export-dialog/export-dialog.component';
+import { PngExportService } from '../dashboard/export/png-export.service';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
@@ -30,7 +35,6 @@ import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-w
   imports: [
     ButtonModule,
     DashboardGridComponent,
-    ExportDialogComponent,
     LegendComponent,
     MarkWatermarkComponent,
     MessageModule,
@@ -69,27 +73,44 @@ export class TimelineViewComponent {
   readonly resolvedEndYear = computed(() => this.endYear() ?? this.autoEndYear());
 
   private readonly xlsxService = inject(XlsxExportService);
-  private readonly messageService = inject(MessageService);
+  private readonly pptxService = inject(PptxExportService);
+  private readonly pngService = inject(PngExportService);
+  private readonly tenantService = inject(TenantService);
+  private readonly exportNaming = inject(ExportNamingService);
+  private readonly topbarState = inject(TopbarStateService);
+  /**
+   * Handed to PngExportService so the off-screen grid resolves the same
+   * LandscapeStateService instance (providedIn: 'any') as the live view.
+   */
+  private readonly injector = inject(Injector);
 
-  readonly exportDialogOpen = signal(false);
-  readonly exportFormat = signal<'pptx' | 'png'>('pptx');
   readonly companies = computed(() => this.state.filteredCompanies());
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
 
+  /**
+   * Header export menu: PNG and Excel capture the timeline as shown; PPTX
+   * renders at the current on-screen zoom (no format dialog, no zoom picker).
+   * Empty when there is nothing to export. Only the routed landscape timeline
+   * publishes these (route data flag); embedded entity-page timelines do not
+   * own the topbar.
+   */
+  readonly exportActions = computed<ExportAction[]>(() => {
+    if (this.companies().length === 0) return [];
+    return [
+      { label: 'PowerPoint', format: 'pptx', run: () => this.exportPptx() },
+      { label: 'Image (PNG)', format: 'png', run: () => this.exportPng() },
+      { label: 'Excel (XLSX)', format: 'xlsx', run: () => this.exportXlsx() },
+    ];
+  });
+
+  private readonly exportSync = createTopbarExportSync(this.topbarState);
+
   constructor() {
     const destroyRef = inject(DestroyRef);
-    const exportHandler = (e: Event): void => {
-      if (this.companies().length === 0) return;
-      const format = ((e as CustomEvent).detail?.format ?? 'pptx') as ExportFormat;
-      if (format === 'xlsx') {
-        void this.exportExcel();
-        return;
-      }
-      this.exportFormat.set(format);
-      this.exportDialogOpen.set(true);
-    };
-    document.addEventListener('landscape:export', exportHandler);
-    destroyRef.onDestroy(() => document.removeEventListener('landscape:export', exportHandler));
+    if (this.route.snapshot.data['publishExportActions']) {
+      effect(() => this.exportSync.push(this.exportActions()));
+      destroyRef.onDestroy(() => this.exportSync.teardown());
+    }
 
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
     while (snap) {
@@ -135,16 +156,63 @@ export class TimelineViewComponent {
     });
   }
 
-  private async exportExcel(): Promise<void> {
+  /**
+   * Workspace tenant for the export footer's "Prepared for" segment. Failure
+   * degrades the footer to two parties; it never blocks the export.
+   */
+  private async resolveTenant(): Promise<{ name: string; logoUrl: string | null } | null> {
+    if (!this.tenantId()) return null;
     try {
-      await this.xlsxService.exportDashboard(this.companies());
+      const t = await this.tenantService.getTenant(this.tenantId());
+      return { name: t.name, logoUrl: t.logo_url ?? null };
     } catch {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Export failed',
-        detail: 'Could not generate the Excel file. Try again.',
-      });
+      return null;
     }
+  }
+
+  private exportFilename(ext: 'png' | 'pptx' | 'xlsx'): Promise<string> {
+    return this.exportNaming.filename(this.spaceId(), 'timeline', ext);
+  }
+
+  private async exportPptx(): Promise<void> {
+    const tenant = await this.resolveTenant();
+    await this.pptxService.exportDashboard(this.companies(), {
+      zoomLevel: this.state.zoomLevel(),
+      startYear: this.resolvedStartYear(),
+      endYear: this.resolvedEndYear(),
+      showMoaColumn: this.state.showMoaColumn(),
+      showRoaColumn: this.state.showRoaColumn(),
+      showNotesColumn: this.state.showNotesColumn(),
+      tenant,
+      filename: await this.exportFilename('pptx'),
+    });
+  }
+
+  private async exportPng(): Promise<void> {
+    const tenant = await this.resolveTenant();
+    await this.pngService.exportDashboard(
+      {
+        companies: this.companies(),
+        zoomLevel: this.state.zoomLevel(),
+        startYear: this.resolvedStartYear(),
+        endYear: this.resolvedEndYear(),
+        hideCompanyColumn: this.hideCompanyColumn(),
+        hideAssetColumn: this.hideAssetColumn(),
+        hideTrialColumn: this.hideTrialColumn(),
+        hideMoaColumn: this.hideMoaColumn(),
+        hideRoaColumn: this.hideRoaColumn(),
+        hideNotesColumn: this.hideNotesColumn(),
+        spaceId: this.spaceId(),
+        tenantName: tenant?.name ?? '',
+        tenantLogoUrl: tenant?.logoUrl ?? null,
+        filename: await this.exportFilename('png'),
+      },
+      this.injector
+    );
+  }
+
+  private async exportXlsx(): Promise<void> {
+    await this.xlsxService.exportDashboard(this.companies(), await this.exportFilename('xlsx'));
   }
 
   onPhaseClick(trial: Trial): void {

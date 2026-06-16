@@ -279,9 +279,9 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /manage/engagement   EngagementDetailComponent
     /settings/marker-types   MarkerTypeListComponent
     /settings/taxonomies   TaxonomiesPageComponent
-    /settings/general   SpaceGeneralComponent
-    /settings/members   SpaceMembersComponent
-    /settings/fields   SpaceFieldVisibilitySettingsComponent
+    /settings/general   spaceOwnerGuard | SpaceGeneralComponent
+    /settings/members   spaceOwnerGuard | SpaceMembersComponent
+    /settings/fields   spaceOwnerGuard | SpaceFieldVisibilitySettingsComponent
     /settings/audit-log   auditSpaceGuard | SpaceAuditLogComponent
     /manage/marker-types   -> settings/marker-types
     /manage/therapeutic-areas   -> settings/taxonomies
@@ -321,7 +321,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
 | `CatalystService` | Calls `get_catalyst_detail()` RPC for marker detail panels (used by events page and landscape state service) |
 | `CtgovSyncService` | CT.gov API v2 fetch by NCT ID, maps to internal Trial fields |
 | `TopbarStateService` | Root-level service for page-to-topbar communication. Pages set `title`, `recordCount`, `entityContext`, `entityTitle`, `actions`, `subTabs`, and `onSubTabClick` signals; the shell reads them and renders in the topbar. Pages call `clear()` on destroy. |
-| `SpaceRoleService` | Resolves the current user's `space_members.role` for the current `:spaceId` URL segment. Watches `NavigationEnd`, refetches on space change, exposes `currentUserRole()`, `isOwner()`, `canEdit()` (owner or editor), `canRead()` signals. Drives role-aware UI gating: write controls render only when `canEdit()` or `isOwner()` is true (Save/Delete on space-general, Invite + role dropdown + remove on space-members, Add buttons on manage lists, row Edit/Delete menus, etc.). Server-side RLS remains the authoritative gate; this service prevents the UI from offering actions the caller cannot execute. |
+| `SpaceRoleService` | Resolves the current user's `space_members.role` for the current `:spaceId` URL segment. Watches `NavigationEnd`, refetches on space change, exposes `currentUserRole()`, `isOwner()`, `canEdit()` (owner or editor), `canRead()` signals. Drives role-aware UI gating: write controls render only when `canEdit()` or `isOwner()` is true (Save/Delete on space-general, Invite + role dropdown + remove on space-members, Add buttons on manage lists, row Edit/Delete menus, etc.). Server-side RLS remains the authoritative gate; this service prevents the UI from offering actions the caller cannot execute. Route guards must not read these signals synchronously (guards run before `NavigationEnd`, racing the fetch); they await `ensureRole(spaceId)`, which dedupes in-flight fetches and caches per space. |
 | `AnnotationService` | CRUD for analyst annotations on detected change events. Wraps `upsert_change_event_annotation` (insert or update) and `delete_change_event_annotation` RPCs. One annotation per change event (upsert semantics). Used by the event detail panel's detected-event branch. |
 
 ## Client-side caching
@@ -418,7 +418,6 @@ DashboardComponent               # Orchestrates state, filters, loading
   FilterPanelComponent           # Collapsible filter sidebar (PrimeNG MultiSelect)
   ZoomControlComponent           # Yearly/quarterly/monthly/daily toggle
   LegendComponent                # Marker type reference grouped by category
-  ExportDialogComponent          # PowerPoint + PNG export dialog (PNG hides deck options; capture-as-is)
   ExportSnapshotHostComponent    # Off-screen capture root for PNG export (real grid + legend + footer; created dynamically by PngExportService)
   DashboardGridComponent         # The timeline table (scrollable container, gear icon toggles MOA/ROA/Notes columns)
     GridHeaderComponent          # Column headers (date labels, sticky)
@@ -470,7 +469,7 @@ All non-timeline management pages (Companies, Assets, Trials, Marker Types, Indi
 - **`SectionCardComponent`** -- flat white card with a `bg-slate-50/60` header strip (shaded zone for the uppercase tracked section label) and a white body (content zone). Used for sections on trial detail and each group inside the trial edit form. Supports `<div actions>` content projection in the header.
 - **`manage-table.css`** (imported from `styles.css`) -- a single CSS layer that applies to any `<p-table>` opted in via `styleClass="manage-table"`. Produces a white card with slate-200 border, uppercase tracked 10px thead on a subtly-shaded slate-50/60 background, 13px dense rows with slate-100 row dividers, teal-50/55% row hover, and supports column modifiers `col-identifier` (mono tabular for NCT / generic names / codes), `col-num` (right-aligned tabular-nums), `col-secondary` (slate-500), and `col-actions` (narrow, right-aligned).
 - **`RowActionsComponent`** -- `<app-row-actions [items]="...">` renders an ellipsis trigger button and an anchored PrimeNG `p-menu` popup. Destructive items set `styleClass: 'row-actions-danger'` so the shared CSS colors them red. Used on every manage-table row; replaces the bootstrap-style Edit/Delete text link pair. **Callers MUST memoize the `MenuItem[]`** — typically via a `private readonly menuCache = new Map<string, MenuItem[]>()` keyed by row id, cleared in the list's load method. Returning a fresh array from a `rowMenu(row)` template-call causes `p-menu` to re-render between `pointerdown` and `click`, which swallows the first click and forces the user to click every menu option twice. All existing list components (companies / assets / trials / marker-types / indications / trial-detail / tenant-settings) use this pattern; copy it when adding a new list.
-- **`StatusTagComponent`** -- `<app-status-tag [label]="t.status" />` auto-maps trial status strings to brand-safe tones (teal for Active/Recruiting, amber for Suspended/Not yet recruiting, slate for Completed/Terminated). Accepts an explicit `[tone]="'teal'|'amber'|'slate'|'neutral'"` override.
+- **`StatusTagComponent`** -- `<app-status-tag [label]="t.status" />` auto-maps trial status strings to brand-safe tones (brand for Active/Recruiting -- tracks the tenant brand via `--brand-*` vars, teal in the default preset; amber for Suspended/Not yet recruiting; slate for Completed/Unknown; red for Terminated/Withdrawn). Accepts an explicit `[tone]="'brand'|'amber'|'slate'|'red'|'neutral'"` override.
 - **`CtgovSourceTagComponent`** -- `<app-ctgov-source-tag [metadata]="m.metadata" />` renders a small slate `CT.gov` chip when the marker's `metadata.source === 'ctgov'`, and nothing otherwise. Use `[variant]="'detailed'"` for the longer "Synced from CT.gov" pill in the marker detail panel header. Drop it next to any marker title (table cell, hover tooltip, panel header) without conditional `@if` -- it self-suppresses for analyst-created markers. The marker detail panel pairs the badge with a richer provenance block (source field path, anticipated/actual date type, last sync timestamp, link to clinicaltrials.gov) when the same metadata signal is present.
 
 The Assets list **no longer** renders its trials inline (the old chevron-expand + nested p-table pattern is removed). Instead, the Trials column shows a count that deep-links to the dedicated Trials list pre-filtered to that asset (a text-contains filter on the asset name; see "Deep-linking into a filtered grid" below). The "Add Trial" action moved with it: trials are created from the Trials list with an asset dropdown, or from an asset-filtered Trials view where the asset is preselected.
@@ -692,7 +691,7 @@ All manage-section list pages (companies, assets, trials, indications, marker-ty
 
 - `src/client/src/app/shared/grids/create-grid-state.ts` — a factory called from inside a component that owns filter/sort/page signals, encodes and decodes URL query params, and exposes `filteredRows(raw)` as a projection. Must be called in an Angular injection context (component field initializer or constructor). Uses `inject(ActivatedRoute, Router)` internally.
 - `src/client/src/app/shared/grids/url-codec.ts` and `filter-algebra.ts` — pure modules (no Angular imports) that the factory composes. Fully tested in `e2e/tests/grid-url-codec.spec.ts` and `e2e/tests/grid-filter-algebra.spec.ts` as Playwright pure-function specs that run via `npm run test:unit` with no browser or Supabase needed.
-- `src/client/src/app/shared/components/grid-toolbar.component.ts` — presenter that renders the slim toolbar: global search, active-filter chips, `Clear filters (N)` (count appended when filters are active), a `Showing X of Y` indicator when filtered, and a `Reset to defaults` link when `grid.isDirty()`. Takes the grid state as its only required input.
+- `src/client/src/app/shared/components/grid-toolbar.component.ts` — presenter that renders the slim toolbar: global search, active-filter chips, `Clear filters (N)` (rendered only while filters are active), a `Showing X of Y` indicator when filtered, and a `Reset to defaults` link when `grid.isDirty()`. Takes the grid state as its only required input.
 
 **Wiring a new grid:**
 

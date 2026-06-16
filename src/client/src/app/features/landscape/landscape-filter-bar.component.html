@@ -1,6 +1,11 @@
 <div class="border-b border-slate-200 bg-white">
+  <!--
+    flex-wrap, not overflow-x-auto: at laptop widths the Period group and the
+    sync caption were pushed past the right edge with no scroll affordance,
+    so they read as missing (UI review 2026-06-12, item 1).
+  -->
   <div
-    class="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto"
+    class="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-3 py-1.5"
     role="toolbar"
     aria-label="Landscape filters"
   >
@@ -194,65 +199,69 @@
         [selectedItemsLabel]="'Category (' + state.filters().markerCategoryIds.length + ')'"
       />
 
-      <!-- Time period: From/To year with optional quarter -->
-      <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-      <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-400"
-        >Period</span
-      >
-      <p-select
-        [options]="yearOptions()"
-        [ngModel]="state.filters().timePeriod?.startYear ?? null"
-        (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
-        placeholder="From"
-        ariaLabel="Time period start year"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="quarterOptions"
-        [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
-        (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
-        placeholder="Q"
-        ariaLabel="Time period start quarter"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        [disabled]="!state.filters().timePeriod?.startYear"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="yearOptions()"
-        [ngModel]="state.filters().timePeriod?.endYear ?? null"
-        (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
-        placeholder="To"
-        ariaLabel="Time period end year"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="quarterOptions"
-        [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
-        (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
-        placeholder="Q"
-        ariaLabel="Time period end quarter"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        [disabled]="!state.filters().timePeriod?.endYear"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
-        size="small"
-      />
+      <!-- Time period: From/To year with optional quarter. Hidden on the
+           bullseye, where get_bullseye_assets ignores the period entirely, so
+           the control would imply an effect it does not have. -->
+      @if (viewMode() !== 'bullseye') {
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+          >Period</span
+        >
+        <p-select
+          [options]="yearOptions()"
+          [ngModel]="state.filters().timePeriod?.startYear ?? null"
+          (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
+          placeholder="From"
+          ariaLabel="Time period start year"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="quarterOptions"
+          [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
+          (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
+          placeholder="Q"
+          ariaLabel="Time period start quarter"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          [disabled]="!state.filters().timePeriod?.startYear"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="yearOptions()"
+          [ngModel]="state.filters().timePeriod?.endYear ?? null"
+          (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
+          placeholder="To"
+          ariaLabel="Time period end year"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="quarterOptions"
+          [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
+          (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
+          placeholder="Q"
+          ariaLabel="Time period end quarter"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          [disabled]="!state.filters().timePeriod?.endYear"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
+          size="small"
+        />
+      }
 
       @if (hasAnyActive()) {
         <p-button
@@ -272,7 +281,7 @@
 
       @if (state.lastSyncedAt(); as ts) {
         <span
-          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-400"
+          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
           [pTooltip]="'Most recent CT.gov sync across all trials. Individual trials may be older or not yet synced.'"
           tooltipPosition="left"
         >
@@ -328,7 +337,7 @@
           <span>{{ chip.value }}</span>
           <button
             type="button"
-            class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            class="-mr-0.5 ml-0.5 rounded text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
             [attr.aria-label]="'Remove ' + chip.header + ' ' + chip.value + ' filter'"
             (click)="removeChip(chip)"
           >

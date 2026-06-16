@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   OnDestroy,
@@ -21,7 +22,9 @@ import {
 import { MaterialService } from '../../core/services/material.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { MaterialRowComponent } from '../../shared/components/material-row/material-row.component';
+import { MaterialUploadZoneComponent } from '../../shared/components/material-upload-zone/material-upload-zone.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { errorMessage } from '../../core/utils/error-message';
 
@@ -36,7 +39,13 @@ type EntityFilter = MaterialEntityType | 'all';
 @Component({
   selector: 'app-materials-browse-page',
   standalone: true,
-  imports: [FormsModule, ButtonModule, ManagePageShellComponent, MaterialRowComponent],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    ManagePageShellComponent,
+    MaterialRowComponent,
+    MaterialUploadZoneComponent,
+  ],
   template: `
     <app-manage-page-shell>
       <div
@@ -86,7 +95,38 @@ type EntityFilter = MaterialEntityType | 'all';
         <span class="ml-auto font-mono text-[10px] tabular-nums text-slate-400">
           {{ rows().length }} {{ rows().length === 1 ? 'material' : 'materials' }}
         </span>
+        @if (canUpload()) {
+          <p-button
+            label="Register material"
+            icon="fa-solid fa-cloud-arrow-up"
+            size="small"
+            [outlined]="registerOpen()"
+            (onClick)="toggleRegister()"
+          />
+        }
       </div>
+
+      <!--
+        Page-level register flow. Materials are entity-scoped, so we reuse the
+        per-entity upload zone in its space scope: the embedded linked-entities
+        picker (inside the zone's dialog) lets the user attach the file to a
+        trial / asset / company / marker. No parallel upload path, no
+        duplicated form.
+      -->
+      @if (canUpload() && registerOpen()) {
+        <div class="border border-t-0 border-slate-200 bg-slate-50/40 px-4 py-3">
+          <p class="mb-2 text-[11px] text-slate-500">
+            Drop or browse a file, then attach it to the trials, assets, companies, or markers it
+            covers.
+          </p>
+          <app-material-upload-zone
+            entityType="space"
+            [entityId]="spaceId()"
+            [spaceId]="spaceId()"
+            (uploaded)="onRegistered()"
+          />
+        </div>
+      }
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
@@ -94,7 +134,16 @@ type EntityFilter = MaterialEntityType | 'all';
         } @else if (error()) {
           <p class="px-4 py-4 text-xs text-red-600">{{ error() }}</p>
         } @else if (rows().length === 0) {
-          <p class="px-4 py-4 text-xs text-slate-400">No materials match the current filters.</p>
+          <p class="px-4 py-4 text-xs text-slate-400">
+            @if (isFiltered()) {
+              No materials match the current filters.
+            } @else if (canUpload()) {
+              No materials in this engagement yet. Register a briefing, conference report, or
+              priority notice and attach it to a trial, asset, company, or marker.
+            } @else {
+              No materials in this engagement yet. An owner or editor can register them.
+            }
+          </p>
         } @else {
           <ul class="divide-y divide-slate-100">
             @for (material of rows(); track material.id) {
@@ -120,6 +169,7 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   private readonly messageService = inject(MessageService);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly spaceRole = inject(SpaceRoleService);
 
   protected readonly spaceId = signal('');
   protected readonly typeFilter = signal<MaterialFilter>('all');
@@ -128,6 +178,13 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+
+  /** Owners and editors register materials; mirrors the per-entity gate. */
+  protected readonly canUpload = computed(() => this.spaceRole.canEdit());
+  protected readonly isFiltered = computed(
+    () => this.typeFilter() !== 'all' || this.entityFilter() !== 'all'
+  );
+  protected readonly registerOpen = signal(false);
 
   protected readonly typeFilters: { label: string; value: MaterialFilter }[] = [
     { label: 'All', value: 'all' },
@@ -193,6 +250,16 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
 
   protected setEntityFilter(next: EntityFilter): void {
     this.entityFilter.set(next);
+  }
+
+  protected toggleRegister(): void {
+    this.registerOpen.update((open) => !open);
+  }
+
+  protected async onRegistered(): Promise<void> {
+    this.registerOpen.set(false);
+    const sid = this.spaceId();
+    if (sid) await this.load(sid, this.typeFilter(), this.entityFilter());
   }
 
   protected async onDownloadClick(material: Material): Promise<void> {

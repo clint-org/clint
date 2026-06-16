@@ -17,6 +17,7 @@ import { MessageModule } from 'primeng/message';
 import { Trial } from '../../../core/models/trial.model';
 import { Asset } from '../../../core/models/asset.model';
 import { Company } from '../../../core/models/company.model';
+import { phaseOrder, phaseShortLabel } from '../../../core/models/phase-colors';
 import {
   CTGOV_FIELD_CATALOGUE,
   CTGOV_TRIAL_LIST_DEFAULT_PATHS,
@@ -44,6 +45,8 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../../shared/export/export-naming.service';
+import { buildTrialExportColumns } from './trials-export.util';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -51,7 +54,8 @@ interface TrialRow {
   readonly assetId: string;
   readonly companyName: string;
   readonly companyId: string;
-  readonly phaseCount: number;
+  readonly phaseLabel: string;
+  readonly phaseRank: number;
   readonly markerCount: number;
 }
 
@@ -94,6 +98,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
 
   // Surface "Add trial" only for space owners/editors. Effect re-runs when
   // canEdit() flips (initial role fetch resolves, or navigation between
@@ -176,7 +181,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
         assetId: product?.id ?? '',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
-        phaseCount: trial.phase_type ? 1 : 0,
+        phaseLabel: trial.phase_type ? phaseShortLabel(trial.phase_type) : '--',
+        phaseRank: phaseOrder(trial.phase_type),
         markerCount: trial.markers?.length ?? 0,
       };
     });
@@ -202,7 +208,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
           },
         },
       },
-      { field: 'phaseCount', header: 'Phases', filter: { kind: 'numeric' } },
+      { field: 'phaseLabel', header: 'Phase', filter: { kind: 'text' } },
       { field: 'markerCount', header: 'Markers', filter: { kind: 'numeric' } },
     ],
     globalSearchFields: [
@@ -222,11 +228,13 @@ export class TrialListComponent implements OnInit, OnDestroy {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Trials',
-          filename: 'trials',
-          columns: this.grid.columns,
+          filename: await this.exportNaming.stem(this.spaceId(), 'trials'),
+          columns: buildTrialExportColumns(this.extraColumns(), (trialId, path) =>
+            this.extraValue(trialId, path)
+          ),
           rows: this.visibleRows(),
         }),
     },

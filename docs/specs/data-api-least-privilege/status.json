@@ -1,6 +1,6 @@
 {
   "specId": "spec-2026-data-api-least-privilege",
-  "status": "in-progress",
+  "status": "completed",
   "branch": "spec/data-api-least-privilege",
   "tasks": {
     "T1": { "status": "completed", "agent": "a4543346a5a29d98d", "attempts": 1, "error": null },
@@ -8,7 +8,7 @@
     "T3": { "status": "completed", "agent": "a576177ae5e3d949e", "attempts": 1, "error": null },
     "T4": { "status": "completed", "agent": "adb38543ba25708b0", "attempts": 1, "error": null },
     "T5": { "status": "completed", "agent": "ad2033360d5616cc9", "attempts": 1, "error": null },
-    "T6": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+    "T6": { "status": "completed", "agent": "orchestrator", "attempts": 1, "error": null }
   },
-  "updatedAt": "2026-06-11T21:58:00-07:00"
+  "updatedAt": "2026-06-12T05:08:00Z"
 }

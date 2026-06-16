@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = 'http://localhost:4201';
+// PW_BASE_URL points the suite at an already-running dev server (e.g. a
+// worktree's ng serve on another port) instead of spawning one on 4201.
+const externalBaseURL = process.env['PW_BASE_URL'];
+const baseURL = externalBaseURL ?? 'http://localhost:4201';
 
 // Pure-logic specs that live under e2e/tests/ but never drive a browser.
 // They run via the test:unit script (playwright.unit.config.ts) and must be
@@ -29,11 +32,13 @@ export default defineConfig({
     navigationTimeout: 30_000,
     actionTimeout: 15_000,
   },
-  webServer: {
-    command: 'ng serve --port 4201',
-    port: 4201,
-    reuseExistingServer: !process.env['CI'],
-  },
+  webServer: externalBaseURL
+    ? undefined
+    : {
+        command: 'ng serve --port 4201',
+        port: 4201,
+        reuseExistingServer: !process.env['CI'],
+      },
   projects: [
     {
       name: 'chromium',

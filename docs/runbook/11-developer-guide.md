@@ -193,11 +193,11 @@ There are three membership tables. Pay attention to the role constraints:
 
 | Table | Roles | Purpose |
 |---|---|---|
-| `agency_members` | `owner` \| `member` | Cross-tenant access. Owners do all writes and provisioning; members get read-only across the agency's tenants |
-| `tenant_members` | `owner` \| `member` (NOT `viewer`) | Tenant-level membership. Tenant members get implicit editor/viewer space access via `has_space_access` |
-| `space_members` | `owner` \| `editor` \| `viewer` | Per-space role. Where `viewer` actually lives. Explicit space rows take precedence over implicit tenant-member access |
+| `agency_members` | `owner`-only | Agency ownership for provisioning/branding. The `member` tier was removed in migration `20260429010000`; it grants no space access on its own |
+| `tenant_members` | `owner`-only | Tenant-level ownership. The `member` tier was removed in migration `20260429010000`. Confers no implicit space access — access requires an explicit `space_members` row |
+| `space_members` | `owner` \| `editor` \| `viewer` | Per-space role. The only path to space access: `has_space_access` checks for an explicit row here (platform admin keeps a read-only support bypass) |
 
-If you find yourself wanting to write `tenant_members.role = 'viewer'`, use `space_members.role = 'viewer'` instead, and add the user to `tenant_members` at `member` role.
+Space access is explicit-only. To give a user access to a space, add a `space_members` row at the appropriate role (`owner`/`editor`/`viewer`); there is no tenant-level shortcut. Tenant owners are backfilled as space owners when a tenant is provisioned, but the access still resolves through the explicit row.
 
 ## Adding a New SECURITY DEFINER RPC
 

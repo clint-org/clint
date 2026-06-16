@@ -1,10 +1,12 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { SupabaseService } from '../services/supabase.service';
 
 export const spaceGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) => {
   const supabase = inject(SupabaseService);
   const router = inject(Router);
+  const messageService = inject(MessageService);
 
   // Walk up the route tree to collect both ids -- the guard runs on the
   // s/:spaceId block whose params include :spaceId, but :tenantId lives on
@@ -33,5 +35,13 @@ export const spaceGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) =
   if (!error && data === true) {
     return true;
   }
+  // Never bounce silently: the redirect lands on the spaces list (often the
+  // page the user just left), so explain why. (Persona fix P1.3a.)
+  messageService.add({
+    severity: 'info',
+    summary: 'No access to this engagement',
+    detail: 'Ask an engagement owner to add you as a member.',
+    life: 6000,
+  });
   return router.createUrlTree(['/t', tenantId, 'spaces']);
 };

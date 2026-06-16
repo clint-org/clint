@@ -18,6 +18,13 @@ import { AgencyService } from '../../core/services/agency.service';
 import { Agency, AgencyBrandingUpdate, BrandfetchResult } from '../../core/models/agency.model';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
+import {
+  displayContactEmail,
+  normalizeContactEmailForSave,
+  previewBrandScale,
+  readableForeground,
+} from './agency-branding-util';
 
 @Component({
   selector: 'app-agency-branding',
@@ -30,6 +37,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
     ColorPicker,
     MessageModule,
     ManagePageShellComponent,
+    BrandLogoComponent,
   ],
   template: `
     <app-manage-page-shell>
@@ -52,7 +60,9 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
       }
 
       @if (agency(); as a) {
-        <div class="mb-6 max-w-2xl rounded border border-slate-200 bg-slate-50 px-4 py-3">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div>
+        <div class="mb-6 rounded border border-slate-200 bg-slate-50 px-4 py-3">
           <label
             for="brandfetch-domain"
             class="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
@@ -116,7 +126,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           }
         </div>
 
-        <div class="grid grid-cols-1 gap-4 max-w-2xl sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="sm:col-span-2">
             <label
               for="agency-display-name"
@@ -192,6 +202,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               [ngModel]="contactEmail()"
               (ngModelChange)="contactEmail.set($event)"
               name="contactEmail"
+              placeholder="contact@youragency.com"
             />
           </div>
 
@@ -219,7 +230,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           </div>
         </div>
 
-        <div class="mt-6 max-w-2xl flex items-center gap-3 pt-4 border-t border-slate-200">
+        <div class="mt-6 flex items-center gap-3 pt-4 border-t border-slate-200">
           <p-button
             label="Save"
             size="small"
@@ -232,7 +243,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           }
         </div>
 
-        <div class="mt-10 max-w-2xl border-t border-slate-200 pt-6 text-xs text-slate-500">
+        <div class="mt-10 border-t border-slate-200 pt-6 text-xs text-slate-500">
           <h2 class="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Identity
           </h2>
@@ -250,6 +261,74 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
               <dd>{{ a.custom_domain }}</dd>
             }
           </dl>
+        </div>
+        </div>
+
+        <div class="lg:sticky lg:top-6 lg:self-start">
+          <h2 class="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Live preview
+          </h2>
+          <p class="mb-3 text-[11px] text-slate-500">
+            How the agency portal applies the brand color and logo above. Updates as you edit.
+          </p>
+
+          <div class="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+            <!-- Tinted header bar. The background is the agency's chosen brand
+                 color (the value being edited), so an inline style binding is the
+                 correct mechanism for this dynamic, user-controlled CSS color. -->
+            <div
+              class="flex items-center gap-2.5 px-4 py-3"
+              [style.background-color]="previewHeaderBg()"
+            >
+              <app-brand-logo
+                [url]="previewLogoUrl()"
+                [alt]="previewName() + ' logo'"
+                [width]="22"
+                [height]="22"
+                imgClass="h-[22px] w-auto max-w-[120px] object-contain"
+              >
+                <span
+                  class="grid h-[22px] w-[22px] place-items-center rounded-sm text-[11px] font-semibold"
+                  [style.background-color]="previewMarkBg()"
+                  [style.color]="previewHeaderFg()"
+                >
+                  {{ previewInitial() }}
+                </span>
+              </app-brand-logo>
+              <span
+                class="truncate text-[13px] font-semibold tracking-tight"
+                [style.color]="previewHeaderFg()"
+              >
+                {{ previewName() }}
+              </span>
+            </div>
+
+            <div class="space-y-3 px-4 py-4">
+              <p class="text-xs text-slate-500">
+                Active states, links, and primary actions use the brand color.
+              </p>
+              <button
+                type="button"
+                tabindex="-1"
+                aria-hidden="true"
+                class="inline-flex cursor-default items-center rounded-none px-3 py-1.5 text-[12px] font-medium"
+                [style.background-color]="previewButtonBg()"
+                [style.color]="previewHeaderFg()"
+              >
+                Primary action
+              </button>
+              <div class="flex items-center gap-1.5 pt-1">
+                <span
+                  class="inline-block h-3 w-3 rounded-sm border border-slate-300"
+                  [style.background-color]="previewSwatch()"
+                ></span>
+                <span class="font-mono text-[10px] uppercase text-slate-400">{{
+                  previewSwatch()
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
       }
     </app-manage-page-shell>
@@ -278,6 +357,27 @@ export class AgencyBrandingComponent implements OnInit {
   readonly fetchError = signal<string | null>(null);
   readonly fetchPreview = signal<BrandfetchResult | null>(null);
 
+  // Live brand preview. Derived purely from the form signals above, so editing
+  // the primary color or logo URL recomputes the preview immediately.
+  private readonly previewScale = computed(() => previewBrandScale(this.primaryColorHash()));
+  protected readonly previewHeaderBg = computed(() => this.previewScale()[600]);
+  protected readonly previewButtonBg = computed(() => this.previewScale()[600]);
+  protected readonly previewSwatch = computed(() => this.previewScale()[600]);
+  // White stays legible on most brand-600 tints; for a light seed where it would
+  // fail AA, drop to the scale's darkest stop instead.
+  protected readonly previewHeaderFg = computed(() => {
+    const scale = this.previewScale();
+    return readableForeground(scale[600], scale[950]);
+  });
+  protected readonly previewMarkBg = computed(() => this.previewScale()[700]);
+  protected readonly previewLogoUrl = computed(() => this.logoUrl().trim() || null);
+  protected readonly previewName = computed(
+    () => this.appDisplayName().trim() || this.agency()?.name || 'Agency'
+  );
+  protected readonly previewInitial = computed(
+    () => (this.previewName().trim()[0] || 'A').toUpperCase()
+  );
+
   onPrimaryColorRawChange(raw: string): void {
     const stripped = (raw || '').replace(/^#/, '').toLowerCase();
     this.primaryColorHash.set(stripped ? `#${stripped}` : '');
@@ -288,10 +388,14 @@ export class AgencyBrandingComponent implements OnInit {
     if (!a) return false;
     const primary = '#' + this.primaryColorHash().replace(/^#/, '').toLowerCase();
     const domain = (this.emailDomain() || '').trim().toLowerCase() || null;
+    // Compare normalized-to-normalized so the sentinel (treated as empty in the
+    // form) does not register as a pending change against the stored sentinel.
+    const contact = normalizeContactEmailForSave(this.contactEmail());
+    const storedContact = normalizeContactEmailForSave(a.contact_email);
     return (
       this.appDisplayName() !== a.app_display_name ||
       (this.logoUrl() || null) !== (a.logo_url ?? null) ||
-      this.contactEmail() !== a.contact_email ||
+      contact !== storedContact ||
       primary !== (a.primary_color || '#0d9488').toLowerCase() ||
       domain !== (a.email_domain ?? null)
     );
@@ -313,7 +417,9 @@ export class AgencyBrandingComponent implements OnInit {
       }
       this.agency.set(current);
       this.appDisplayName.set(current.app_display_name);
-      this.contactEmail.set(current.contact_email);
+      // Neutralize the provision-time sentinel ('unknown@unknown.invalid') so
+      // the field renders empty (with its placeholder), never the literal value.
+      this.contactEmail.set(displayContactEmail(current.contact_email));
       this.logoUrl.set(current.logo_url ?? '');
       this.emailDomain.set(current.email_domain ?? '');
       this.primaryColorHash.set((current.primary_color ?? '#0d9488').toLowerCase());
@@ -376,9 +482,11 @@ export class AgencyBrandingComponent implements OnInit {
       if (newLogo !== (a.logo_url ?? null)) {
         branding.logo_url = newLogo;
       }
-      const newContact = this.contactEmail();
-      if (newContact !== a.contact_email) {
-        branding.contact_email = newContact.trim();
+      // Persist the normalized value: an empty field or the sentinel typed back
+      // in is written as '' (a clear), never the literal 'unknown@unknown.invalid'.
+      const newContact = normalizeContactEmailForSave(this.contactEmail());
+      if (newContact !== normalizeContactEmailForSave(a.contact_email)) {
+        branding.contact_email = newContact;
       }
       const domain = (this.emailDomain() || '').trim().toLowerCase() || null;
       if (domain !== (a.email_domain ?? null)) {

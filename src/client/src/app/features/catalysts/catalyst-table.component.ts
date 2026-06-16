@@ -5,10 +5,13 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { markerPeriodLabel } from '../../core/models/marker-date-precision';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
+import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
+import { catalystContextLine } from './group-catalysts';
 
 @Component({
   selector: 'app-catalyst-table',
@@ -120,11 +123,15 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           (keydown.enter)="rowSelect.emit(catalyst.marker_id)"
           tabindex="0"
           role="button"
-          [attr.aria-label]="'View details for ' + catalyst.title"
+          [attr.aria-label]="viewDetailsLabel(catalyst.title)"
           [attr.aria-pressed]="catalyst.marker_id === selectedId()"
         >
           <td class="font-mono text-xs tabular-nums text-slate-500">
-            {{ catalyst.event_date | date: 'MMM dd' }}
+            @if (periodLabel(catalyst); as label) {
+              ~{{ label }}
+            } @else {
+              {{ catalyst.event_date | date: 'MMM dd' }}
+            }
           </td>
           <td>
             <span class="inline-flex items-center gap-1.5">
@@ -137,7 +144,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                 [isNle]="catalyst.no_longer_expected"
               />
               <span
-                class="text-xs text-slate-500"
+                class="whitespace-nowrap text-xs text-slate-500"
                 [innerHTML]="catalyst.category_name | highlight: query()"
               ></span>
             </span>
@@ -151,6 +158,12 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
                 [eventId]="catalyst.trial_most_recent_change_event_id ?? null"
               />
             </span>
+            @if (catalystContextLine(catalyst); as context) {
+              <span
+                class="mt-0.5 block text-xs font-normal text-slate-500"
+                [innerHTML]="context | highlight: query()"
+              ></span>
+            }
           </td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
@@ -166,15 +179,14 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
             }
           </td>
           <td>
+            <!-- Projected is the default state of a future catalyst; an
+                 amber pill on every row carried no signal. Quiet text for
+                 the default; the green pill marks confirmed exceptions. -->
             @if (catalyst.is_projected) {
-              <span
-                class="inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-600"
-              >
-                Projected
-              </span>
+              <span class="text-[9px] uppercase tracking-wide text-slate-500">Projected</span>
             } @else {
               <span
-                class="inline-block rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-600"
+                class="inline-block rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-700"
               >
                 Confirmed
               </span>
@@ -206,6 +218,13 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystTableComponent {
+  protected readonly viewDetailsLabel = viewDetailsLabel;
+  protected readonly catalystContextLine = catalystContextLine;
+
+  /** Approximate period label ("Q4 '26") for a fuzzy-dated catalyst, else null. */
+  protected periodLabel(catalyst: FlatCatalyst): string | null {
+    return markerPeriodLabel(catalyst.event_date, catalyst.date_precision);
+  }
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);

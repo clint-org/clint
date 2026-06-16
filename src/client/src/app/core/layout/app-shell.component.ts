@@ -65,6 +65,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [activeRoute]="activeSpaceRoute()"
         [hasSpace]="!!spaceId()"
         [canEdit]="spaceRole.canEdit()"
+        [isOwner]="spaceRole.isOwner()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"
@@ -96,6 +97,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
           [entityContext]="topbarState.entityContext()"
           [entityTitle]="topbarState.entityTitle()"
           [actionButtons]="topbarState.actions()"
+          [exportActions]="topbarState.exportActions()"
           [overflowActions]="topbarState.overflowActions()"
           [tenantLogoUrl]="currentTenantLogoUrl()"
           [timelineHintVisible]="onboardingTooltip.visible()"
@@ -395,6 +397,10 @@ export class AppShellComponent implements OnInit {
   // Determine which section is active from the route
   readonly activeSection = computed<Section>(() => {
     const route = this.activeSpaceRoute();
+    // Engagement lives under /manage for routing history but belongs to the
+    // Intelligence group (matches the nav rail); without this it rendered
+    // the Manage tab set with no tab marked active.
+    if (route === 'manage/engagement') return 'intelligence';
     if (route.startsWith('manage/')) return 'manage';
     if (route.startsWith('settings/')) return 'settings';
     if (route === 'events' || route === 'intelligence' || route === 'materials')
@@ -486,6 +492,12 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         return [
           {
+            label: 'Engagement',
+            value: 'manage/engagement',
+            active: route === 'manage/engagement',
+            icon: NAV_ICONS['engagement'],
+          },
+          {
             label: 'Intelligence Feed',
             value: 'intelligence',
             active: route === 'intelligence',
@@ -546,6 +558,7 @@ export class AppShellComponent implements OnInit {
       'settings/general': 'General',
       'settings/members': 'Members',
       'settings/fields': 'Fields',
+      'settings/audit-log': 'Audit log',
     };
     return titleMap[route] ?? this.topbarState.title();
   });

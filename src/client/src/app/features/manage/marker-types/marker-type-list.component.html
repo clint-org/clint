@@ -15,7 +15,7 @@
     [tableStyle]="{ 'min-width': '48rem' }"
     [lazy]="true"
     (onLazyLoad)="grid.onLazyLoad($event)"
-    [paginator]="true"
+    [paginator]="grid.totalRecords() > grid.page().rows"
     [rows]="grid.page().rows"
     [first]="grid.page().first"
     [totalRecords]="grid.totalRecords()"
@@ -55,7 +55,7 @@
         </td>
         <td>
           <span
-            class="inline-flex items-center"
+            class="inline-flex h-7 w-7 items-center justify-center rounded bg-white ring-1 ring-slate-200"
             role="img"
             [attr.aria-label]="mt.fill_style + ' ' + mt.shape + ' marker'"
           >
@@ -64,7 +64,7 @@
               [color]="mt.color"
               [fillStyle]="mt.fill_style"
               [innerMark]="mt.inner_mark"
-              [size]="18"
+              [size]="20"
             />
           </span>
         </td>
@@ -72,7 +72,7 @@
           @if (mt.is_system) {
             <app-status-tag label="System" tone="slate" />
           } @else {
-            <app-status-tag label="Custom" tone="teal" />
+            <app-status-tag label="Custom" tone="brand" />
           }
         </td>
         <td class="col-actions">

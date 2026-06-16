@@ -491,3 +491,22 @@ describe('list_tenant_members.is_agency_backed', () => {
     expect(rows).toHaveLength(0);
   });
 });
+
+// ============================================================================
+// Accessible-space marking (P1.3a): the spaces picker marks no-access cards
+// from the caller's own space_members rows. The SELECT policy is
+// has_space_access(space_id), so a caller only reads rows for spaces they can
+// enter -- the distinct space_ids are exactly the accessible set.
+// ============================================================================
+describe('accessible space ids (space_members self-read)', () => {
+  it('space member reads their membership row for the org space', async () => {
+    const r = await as(p, 'reader').from('space_members').select('space_id').eq('space_id', p.org.spaceId);
+    const rows = expectOk(r) as { space_id: string }[];
+    expect(rows.map((x) => x.space_id)).toContain(p.org.spaceId);
+  });
+
+  it('a non-member reads zero rows for the org space (card marked no-access)', async () => {
+    const r = await as(p, 'no_memberships').from('space_members').select('space_id').eq('space_id', p.org.spaceId);
+    expectCount(r, 0);
+  });
+});

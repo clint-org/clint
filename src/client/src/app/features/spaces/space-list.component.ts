@@ -16,6 +16,7 @@ import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { MessageService } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
@@ -35,6 +36,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     InputText,
     Textarea,
     MessageModule,
+    TooltipModule,
     ManagePageShellComponent,
   ],
   template: `
@@ -62,25 +64,50 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
         </div>
       } @else {
         <div
-          class="grid grid-cols-1 gap-px bg-slate-200 border border-slate-200 sm:grid-cols-2 lg:grid-cols-3 animate-stagger"
+          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger"
         >
           @for (space of spaces(); track space.id) {
             <button
               type="button"
-              class="group bg-white p-5 text-left transition-colors hover:bg-brand-50/40 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-brand-500"
+              class="group border border-slate-200 bg-white p-5 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-inset focus:ring-brand-500"
+              [class.hover:bg-brand-50/40]="canOpen(space)"
+              [class.cursor-not-allowed]="!canOpen(space)"
+              [attr.aria-disabled]="!canOpen(space)"
+              [pTooltip]="canOpen(space) ? '' : 'You are not a member of this engagement. Ask an owner to add you.'"
+              tooltipPosition="top"
               (click)="openSpace(space)"
             >
               <div class="flex items-start justify-between gap-3">
-                <h3 class="text-sm font-semibold text-slate-900">{{ space.name }}</h3>
-                <i
-                  class="fa-solid fa-arrow-right text-[11px] text-slate-400 transition-colors group-hover:text-brand-600"
-                ></i>
+                <h3
+                  class="text-sm font-semibold"
+                  [class.text-slate-900]="canOpen(space)"
+                  [class.text-slate-400]="!canOpen(space)"
+                >
+                  {{ space.name }}
+                </h3>
+                @if (canOpen(space)) {
+                  <i
+                    class="fa-solid fa-arrow-right text-[11px] text-slate-400 transition-colors group-hover:text-brand-600"
+                  ></i>
+                } @else {
+                  <i class="fa-solid fa-lock text-[11px] text-slate-300" aria-hidden="true"></i>
+                }
               </div>
               @if (space.description) {
-                <p class="mt-2 line-clamp-2 text-xs text-slate-500">{{ space.description }}</p>
+                <p
+                  class="mt-2 line-clamp-2 text-xs"
+                  [class.text-slate-500]="canOpen(space)"
+                  [class.text-slate-400]="!canOpen(space)"
+                >
+                  {{ space.description }}
+                </p>
               }
               <p class="mt-4 font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                Created {{ space.created_at | date: 'MMM d, y' }}
+                @if (canOpen(space)) {
+                  Created {{ space.created_at | date: 'MMM d, y' }}
+                } @else {
+                  No access
+                }
               </p>
             </button>
           }
@@ -158,6 +185,7 @@ export class SpaceListComponent implements OnInit, OnDestroy {
 
   readonly tenant = signal<Tenant | null>(null);
   readonly spaces = signal<Space[]>([]);
+  readonly accessibleIds = signal<Set<string>>(new Set());
   readonly loading = signal(true);
   readonly createDialogOpen = signal(false);
   readonly creating = signal(false);
@@ -207,15 +235,21 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   private async loadData(): Promise<void> {
     this.loading.set(true);
     try {
-      const [tenant, spaces] = await Promise.all([
+      const [tenant, spaces, accessibleIds] = await Promise.all([
         this.tenantService.getTenant(this.tenantId),
         this.spaceService.listSpaces(this.tenantId),
+        this.spaceService.listAccessibleSpaceIds(),
       ]);
       this.tenant.set(tenant);
       this.spaces.set(spaces);
+      this.accessibleIds.set(accessibleIds);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected canOpen(space: Space): boolean {
+    return this.accessibleIds().has(space.id);
   }
 
   ngOnDestroy(): void {
@@ -223,6 +257,15 @@ export class SpaceListComponent implements OnInit, OnDestroy {
   }
 
   openSpace(space: Space): void {
+    if (!this.canOpen(space)) {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'No access to this engagement',
+        detail: `Ask an owner of "${space.name}" to add you as a member.`,
+        life: 6000,
+      });
+      return;
+    }
     localStorage.setItem('lastSpaceId', space.id);
     this.router.navigate(['/t', this.tenantId, 's', space.id]);
   }

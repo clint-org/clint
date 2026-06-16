@@ -17,6 +17,8 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LandscapeStateService } from '../landscape/landscape-state.service';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
+import { CATALYST_EXPORT_COLUMNS } from './catalysts-export.util';
 
 @Component({
   selector: 'app-catalysts-page',
@@ -61,6 +63,7 @@ export class CatalystsPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
 
   readonly grid = createGridState<FlatCatalyst>({
     columns: [
@@ -81,11 +84,14 @@ export class CatalystsPageComponent {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Catalysts',
-          filename: 'catalysts',
-          columns: this.grid.columns,
+          filename: await this.exportNaming.stem(
+            this.route.snapshot.paramMap.get('spaceId') ?? '',
+            'catalysts',
+          ),
+          columns: CATALYST_EXPORT_COLUMNS,
           rows: this.flatCatalysts(),
         }),
     },

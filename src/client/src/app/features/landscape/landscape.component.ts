@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   Injector,
@@ -20,6 +21,7 @@ import {
   BullseyeData,
   BullseyeSpoke,
   LandscapeFilters,
+  hasActiveLandscapeFilters,
   visibleRingOrder,
   RingPhase,
   SPOKE_GROUPING_OPTIONS,
@@ -35,14 +37,14 @@ import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
-import {
-  ExportButtonComponent,
-  type ExportAction,
-} from '../../shared/export/export-button.component';
+import { type ExportAction } from '../../shared/export/export-button.component';
+import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
+import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { BullseyeExportHostComponent } from './bullseye-export-host.component';
-import { buildBullseyeRows, BULLSEYE_EXPORT_COLUMNS } from './bullseye-export.util';
+import { buildBullseyeSheets } from './bullseye-export.util';
 import { BrandContextService } from '../../core/services/brand-context.service';
 
 @Component({
@@ -58,7 +60,6 @@ import { BrandContextService } from '../../core/services/brand-context.service';
     MessageModule,
     SkeletonComponent,
     Tooltip,
-    ExportButtonComponent,
   ],
   templateUrl: './landscape.component.html',
   animations: [slidePanelAnimation],
@@ -74,8 +75,11 @@ export class LandscapeComponent implements OnInit {
   protected readonly state = inject(LandscapeStateService);
   private readonly png = inject(BrandedPngExportService);
   private readonly sheetExcel = inject(SheetExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
   private readonly injector = inject(Injector);
   private readonly brand = inject(BrandContextService);
+  private readonly topbarState = inject(TopbarStateService);
+  private readonly exportSync = createTopbarExportSync(this.topbarState);
 
   readonly tenantId = signal('');
   readonly spaceId = signal('');
@@ -113,7 +117,16 @@ export class LandscapeComponent implements OnInit {
     if (!result) return null;
     return {
       dimension: this.state.spokeGrouping() as BullseyeData['dimension'],
-      scope: { id: 'scope', name: 'Filtered' },
+      // Center label tells the unfiltered truth ("All assets") unless a filter
+      // genuinely narrows the set, in which case it reads "Filtered".
+      scope: {
+        id: 'scope',
+        // The bullseye RPC ignores timePeriod, so a leftover period from another
+        // view must not mark this view as filtered.
+        name: hasActiveLandscapeFilters(this.state.filters(), { ignoreTimePeriod: true })
+          ? 'Filtered'
+          : 'All assets',
+      },
       ring_order: visibleRingOrder(this.state.showPreclinical()) as unknown as RingPhase[],
       spokes: result.spokes,
       spoke_label:
@@ -134,15 +147,15 @@ export class LandscapeComponent implements OnInit {
     const dupes = this.duplicatedAssetIds();
     return [
       {
-        label: 'PNG',
+        label: 'Image (PNG)',
         format: 'png',
-        run: () =>
+        run: async () =>
           this.png.capture({
             component: BullseyeExportHostComponent,
             elementInjector: this.injector,
             agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
             tenantLogoUrl: null,
-            filename: 'bullseye.png',
+            filename: await this.exportNaming.filename(this.spaceId(), 'bullseye', 'png'),
             setInputs: (ref, logos) => {
               ref.setInput('title', title);
               ref.setInput('data', data);
@@ -153,12 +166,12 @@ export class LandscapeComponent implements OnInit {
           }),
       },
       {
-        label: 'Excel',
+        label: 'Excel (XLSX)',
         format: 'xlsx',
-        run: () =>
+        run: async () =>
           this.sheetExcel.export(
-            [{ name: 'Bullseye', columns: BULLSEYE_EXPORT_COLUMNS, rows: buildBullseyeRows(data) }],
-            'bullseye'
+            buildBullseyeSheets(data),
+            await this.exportNaming.stem(this.spaceId(), 'bullseye'),
           ),
       },
     ];
@@ -202,6 +215,11 @@ export class LandscapeComponent implements OnInit {
   });
 
   constructor() {
+    // Visualization export lives in the page header (topbar), not the chart
+    // area; see the timeline for the same pattern.
+    effect(() => this.exportSync.push(this.exportActions()));
+    inject(DestroyRef).onDestroy(() => this.exportSync.teardown());
+
     effect(() => {
       const assets = this.bullseyeAssets.value();
       const currentSelected = this.selectedAssetId();

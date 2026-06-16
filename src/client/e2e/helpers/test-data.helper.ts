@@ -415,3 +415,108 @@ export async function navigateToSpace(
 ): Promise<void> {
   await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'domcontentloaded' });
 }
+
+/** Link an asset to a mechanism of action (asset_mechanisms_of_action join row). */
+export async function linkAssetMoa(assetId: string, moaId: string): Promise<void> {
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from('asset_mechanisms_of_action')
+    .insert({ asset_id: assetId, moa_id: moaId });
+  if (error) throw new Error(`Failed to link asset MOA: ${error.message}`);
+}
+
+/** Link an asset to a route of administration (asset_routes_of_administration join row). */
+export async function linkAssetRoa(assetId: string, roaId: string): Promise<void> {
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from('asset_routes_of_administration')
+    .insert({ asset_id: assetId, roa_id: roaId });
+  if (error) throw new Error(`Failed to link asset ROA: ${error.message}`);
+}
+
+/**
+ * Create a marker (optionally assigned to a trial). Catalysts are markers with
+ * a future event_date, so tests seed those by passing a future date here.
+ */
+export async function createTestMarker(
+  spaceId: string,
+  markerTypeId: string,
+  title: string,
+  eventDate: string,
+  opts?: {
+    trialId?: string;
+    projection?: string;
+    description?: string;
+    sourceUrl?: string;
+  }
+): Promise<string> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from('markers')
+    .insert({
+      space_id: spaceId,
+      created_by: getUserId(),
+      marker_type_id: markerTypeId,
+      title,
+      event_date: eventDate,
+      projection: opts?.projection ?? 'actual',
+      description: opts?.description ?? null,
+      source_url: opts?.sourceUrl ?? null,
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create marker: ${error.message}`);
+
+  if (opts?.trialId) {
+    const { error: aErr } = await admin
+      .from('marker_assignments')
+      .insert({ marker_id: data.id, trial_id: opts.trialId });
+    if (aErr) throw new Error(`Failed to assign marker: ${aErr.message}`);
+  }
+
+  return data.id;
+}
+
+/** Create an analyst event row. Category is looked up by name (system seed data). */
+export async function createTestEvent(
+  spaceId: string,
+  title: string,
+  eventDate: string,
+  opts?: {
+    categoryName?: string;
+    priority?: 'high' | 'low';
+    companyId?: string;
+    assetId?: string;
+    trialId?: string;
+    description?: string;
+    tags?: string[];
+  }
+): Promise<string> {
+  const admin = getAdminClient();
+  const { data: cat, error: catErr } = await admin
+    .from('event_categories')
+    .select('id')
+    .eq('name', opts?.categoryName ?? 'Clinical')
+    .single();
+  if (catErr) throw new Error(`Event category lookup failed: ${catErr.message}`);
+
+  const { data, error } = await admin
+    .from('events')
+    .insert({
+      space_id: spaceId,
+      created_by: getUserId(),
+      category_id: cat.id,
+      title,
+      event_date: eventDate,
+      priority: opts?.priority ?? 'low',
+      company_id: opts?.companyId ?? null,
+      asset_id: opts?.assetId ?? null,
+      trial_id: opts?.trialId ?? null,
+      description: opts?.description ?? null,
+      tags: opts?.tags ?? [],
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`Failed to create event: ${error.message}`);
+  return data.id;
+}

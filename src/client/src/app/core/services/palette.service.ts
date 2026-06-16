@@ -11,6 +11,7 @@ import {
 } from '../models/palette.model';
 import { parsePrefixToken } from '../util/parse-prefix-token';
 import { coalesceQuery } from '../util/coalesce-query';
+import { capForEmptyState } from '../util/filter-commands';
 
 export { coalesceQuery } from '../util/coalesce-query';
 
@@ -113,7 +114,7 @@ export class PaletteService {
     this.emptyState.set({
       pinned: payload.pinned ?? [],
       recents: payload.recents ?? [],
-      commands: this.commandsProvider?.() ?? [],
+      commands: capForEmptyState(this.commandsProvider?.() ?? []),
     });
     // Mirror flat list into results so arrow nav and Enter work in the empty state.
     if (this.query().length === 0) {

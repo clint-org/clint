@@ -9,8 +9,11 @@ import { BullseyeChartComponent } from './bullseye-chart.component';
  * branded footer. Never routed; BrandedPngExportService creates it, parks it
  * off-viewport, rasterizes, and destroys it.
  *
- * w-max matters: the host sizes to the chart's natural width so the capture
- * isn't clipped.
+ * The chart sits in .bullseye-export-frame (landscape.css), a definite
+ * 960px square: the chart's live sizing rules are container-query-driven and
+ * collapse to the SVG's intrinsic fallback inside this host's max-content
+ * sizing, which exported a tiny, soft PNG. The host (w-max) shrink-wraps the
+ * header and footer to the frame width.
  *
  * The chart is bound as a static snapshot. Of its inputs only `data` is
  * required; every interaction input (selectedAssetId, hoveredAssetId,
@@ -27,10 +30,12 @@ import { BullseyeChartComponent } from './bullseye-chart.component';
   host: { class: 'block w-max bg-white' },
   template: `
     <header class="px-6 pt-5 pb-2">
-      <h2 class="text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
+      <h2 class="whitespace-nowrap text-sm font-bold tracking-tight text-slate-800">{{ title() }}</h2>
     </header>
     <div class="px-6 pb-4">
-      <app-bullseye-chart [data]="data()" [duplicatedAssetIds]="duplicatedAssetIds()" />
+      <div class="bullseye-export-frame">
+        <app-bullseye-chart [data]="data()" [duplicatedAssetIds]="duplicatedAssetIds()" />
+      </div>
     </div>
     <app-export-footer
       artifactLabel="Bullseye"

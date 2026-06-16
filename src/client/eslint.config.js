@@ -13,6 +13,14 @@ module.exports = tseslint.config(
       ...angular.configs.tsRecommended,
     ],
     processor: angular.processInlineTemplates,
+    // Typed linting: required by no-uncalled-signals. projectService resolves
+    // each file's tsconfig automatically (tsconfig.app.json / tsconfig.spec.json).
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
       // Allow _-prefixed identifiers as intentional unused stubs / ignored params.
       "@typescript-eslint/no-unused-vars": [
@@ -52,10 +60,11 @@ module.exports = tseslint.config(
       "@angular-eslint/prefer-signals": "error",
       "@angular-eslint/prefer-output-readonly": "error",
       // Ratcheted to error (zero violations at ratchet time).
-      // no-uncalled-signals requires typed linting (parserOptions.project);
-      // revisit once typed linting is enabled workspace-wide.
       "@angular-eslint/prefer-inject": "error",
       "@angular-eslint/prefer-output-emitter-ref": "error",
+      // Requires typed linting (projectService above). Catches signal reads
+      // missing the call parens, e.g. `if (loading)` instead of `if (loading())`.
+      "@angular-eslint/no-uncalled-signals": "error",
     },
   },
   {

@@ -15,13 +15,20 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
 import { PaginatorModule } from 'primeng/paginator';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { MessageService } from 'primeng/api';
 
 import {
   IntelligenceEntityType,
   IntelligenceFeedRow,
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
+import { IntelligenceDrawerComponent } from '../intelligence-drawer/intelligence-drawer.component';
+import {
+  ComposeTarget,
+  IntelligenceComposeDialogComponent,
+} from '../intelligence-compose-dialog/intelligence-compose-dialog.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { parseDayOffset } from '../../utils/parse-day-offset';
 
@@ -65,6 +72,8 @@ const DRAFTS_LIMIT = 200;
     PaginatorModule,
     SelectButtonModule,
     IntelligenceFeedComponent,
+    IntelligenceComposeDialogComponent,
+    IntelligenceDrawerComponent,
     SkeletonComponent,
   ],
   template: `
@@ -74,6 +83,14 @@ const DRAFTS_LIMIT = 200;
           <h1 class="text-lg font-semibold text-slate-900">{{ headingTitle() }}</h1>
           <p class="text-xs text-slate-500">{{ headingSubtitle() }}</p>
         </div>
+        @if (spaceRole.isAgencyMember() && spaceId()) {
+          <p-button
+            label="Publish intelligence"
+            icon="fa-solid fa-pen-nib"
+            size="small"
+            (onClick)="composeDialogOpen.set(true)"
+          />
+        }
       </header>
 
       <div
@@ -200,6 +217,25 @@ const DRAFTS_LIMIT = 200;
           />
         </div>
       }
+
+      @if (spaceId(); as sid) {
+        <app-intelligence-compose-dialog
+          [visible]="composeDialogOpen()"
+          [spaceId]="sid"
+          (cancelled)="composeDialogOpen.set(false)"
+          (chosen)="onComposeChosen($event)"
+        />
+        @if (composeTarget(); as target) {
+          <app-intelligence-drawer
+            [visible]="drawerOpen()"
+            [spaceId]="sid"
+            [entityType]="target.entityType"
+            [entityId]="target.entityId"
+            (closed)="onDrawerClosed()"
+            (published)="onIntelligencePublished()"
+          />
+        }
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -208,6 +244,8 @@ export class IntelligenceBrowseComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly intelligence = inject(PrimaryIntelligenceService);
+  private readonly messageService = inject(MessageService);
+  protected readonly spaceRole = inject(SpaceRoleService);
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
   protected readonly entityTypeOptions = ENTITY_TYPES;
@@ -226,6 +264,13 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly total = signal<number>(0);
   protected readonly offset = signal<number>(0);
   protected readonly loading = signal<boolean>(false);
+
+  // Compose flow: agency members pick an anchor entity, then author the read
+  // in the shared IntelligenceDrawerComponent. The feed itself is not
+  // entity-scoped, so the anchor must be chosen before the drawer opens.
+  protected readonly composeDialogOpen = signal<boolean>(false);
+  protected readonly drawerOpen = signal<boolean>(false);
+  protected readonly composeTarget = signal<ComposeTarget | null>(null);
 
   protected readonly totalLabel = computed(() => {
     const t = this.total();
@@ -310,6 +355,22 @@ export class IntelligenceBrowseComponent implements OnInit {
     this.entityTypes.set([]);
     this.since.set(null);
     this.resetAndLoad();
+  }
+
+  protected onComposeChosen(target: ComposeTarget): void {
+    this.composeDialogOpen.set(false);
+    this.composeTarget.set(target);
+    this.drawerOpen.set(true);
+  }
+
+  protected onDrawerClosed(): void {
+    this.drawerOpen.set(false);
+  }
+
+  protected async onIntelligencePublished(): Promise<void> {
+    this.drawerOpen.set(false);
+    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
+    await this.load();
   }
 
   private async load(): Promise<void> {

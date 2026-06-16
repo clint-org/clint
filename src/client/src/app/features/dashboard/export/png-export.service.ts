@@ -21,6 +21,8 @@ export interface PngExportSnapshot {
   spaceId: string;
   tenantName: string;
   tenantLogoUrl: string | null;
+  /** Download filename; defaults to the generic dashboard name when omitted. */
+  filename?: string;
 }
 
 /**
@@ -51,7 +53,7 @@ export class PngExportService {
       elementInjector,
       agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
       tenantLogoUrl: snapshot.tenantLogoUrl,
-      filename: 'clinical-trial-dashboard.png',
+      filename: snapshot.filename ?? 'clinical-trial-dashboard.png',
       setInputs: (ref, logos) => {
         ref.setInput('companies', snapshot.companies);
         ref.setInput('zoomLevel', snapshot.zoomLevel);

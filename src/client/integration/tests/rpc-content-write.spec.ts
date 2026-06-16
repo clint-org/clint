@@ -161,8 +161,11 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
       state: 'draft' | 'published';
       headline: string;
       publish_note: string | null;
+      last_edited_by: string;
     };
     links: (Link & { id: string; entity_name: string | null })[];
+    contributors: string[];
+    authors: Record<string, string>;
   };
 
   async function read(state: 'draft' | 'published'): Promise<Payload | null> {
@@ -307,6 +310,17 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
     expect(published!.links).toHaveLength(2);
     // First publish on a brand-new anchor: no change_note required, none stored.
     expect(published!.record.publish_note).toBeNull();
+  });
+
+  it('payload carries an authors map resolving editor ids to display names (P1.2)', async () => {
+    const published = await read('published');
+    expect(published).not.toBeNull();
+    const editorId = p.ids.agency_only;
+    // The editor must appear in contributors and resolve to a real display
+    // name (the persona's full_name), never a UUID-prefix fallback.
+    expect(published!.contributors).toContain(editorId);
+    expect(published!.authors[editorId]).toBe('agency_only');
+    expect(published!.authors[published!.record.last_edited_by]).toBe('agency_only');
   });
 
   it('change relationship_type only: link update round-trips', async () => {

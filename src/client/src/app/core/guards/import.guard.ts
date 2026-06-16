@@ -28,7 +28,11 @@ export const importGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) 
     return router.createUrlTree(['/login']);
   }
 
-  if (!spaceRole.canEdit()) {
+  // Await the role rather than reading canEdit() synchronously: this guard
+  // runs before NavigationEnd, so the role fetch may not have started yet
+  // (direct loads of /import bounced legitimate owners).
+  const role = await spaceRole.ensureRole(spaceId);
+  if (role !== 'owner' && role !== 'editor') {
     messages.add({
       severity: 'warn',
       summary: 'Editor access required to import data.',

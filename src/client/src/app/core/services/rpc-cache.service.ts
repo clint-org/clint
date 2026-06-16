@@ -151,6 +151,7 @@ export class RpcCache {
     const inflight = opts.fetch();
     const existing = this.entries.get(key) as CacheEntry<T> | undefined;
     const sig: WritableSignal<T | undefined> =
+      // eslint-disable-next-line @angular-eslint/no-uncalled-signals -- reusing the stored signal reference itself, not reading its value
       existing?.signal ?? (signal<T | undefined>(undefined) as WritableSignal<T | undefined>);
     this.generationCounter += 1;
     const gen = this.generationCounter;

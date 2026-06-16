@@ -35,6 +35,9 @@ export class MarkerService {
         p_source_url: marker.source_url ?? null,
         p_trial_ids: trialIds.length > 0 ? trialIds : null,
         p_change_source: 'analyst',
+        p_date_precision: marker.date_precision ?? 'exact',
+        p_end_date_precision: marker.end_date_precision ?? 'exact',
+        p_is_ongoing: marker.is_ongoing ?? false,
       })
       .throwOnError();
 

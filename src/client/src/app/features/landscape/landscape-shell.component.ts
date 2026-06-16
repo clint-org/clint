@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   OnDestroy,
   OnInit,
@@ -25,7 +24,6 @@ import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
-import type { ExportFormat } from '../../core/services/export-common.util';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
@@ -62,11 +60,13 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
               [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
+              [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
+              (editMarkerClick)="onEditMarker($event)"
             />
           }
         }
@@ -81,38 +81,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   private readonly landscapeService = inject(LandscapeService);
   readonly state = inject(LandscapeStateService);
   private readonly topbarState = inject(TopbarStateService);
-
-  private readonly exportEffect = effect(() => {
-    if (this.viewMode() === 'timeline') {
-      this.topbarState.actions.set([
-        {
-          label: 'Export',
-          icon: 'fa-solid fa-file-export',
-          text: true,
-          severity: 'secondary',
-          items: [
-            {
-              label: 'PowerPoint',
-              icon: 'fa-solid fa-file-powerpoint',
-              command: () => this.onExportClick('pptx'),
-            },
-            {
-              label: 'Image (PNG)',
-              icon: 'fa-solid fa-image',
-              command: () => this.onExportClick('png'),
-            },
-            {
-              label: 'Excel (XLSX)',
-              icon: 'fa-solid fa-file-excel',
-              command: () => this.onExportClick('xlsx'),
-            },
-          ],
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   readonly viewMode = signal<ViewMode>('timeline');
   readonly dimension = signal<BullseyeDimension>('indication');
@@ -195,10 +163,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     });
   }
 
-  onExportClick(format: ExportFormat): void {
-    document.dispatchEvent(new CustomEvent('landscape:export', { detail: { format } }));
-  }
-
   private spaceBase(): string[] {
     return ['/t', this.tenantId(), 's', this.spaceId()];
   }
@@ -209,6 +173,19 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   onTrialClick(trialId: string): void {
     this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+  }
+
+  /**
+   * "Edit marker" on the detail panel: navigate to the marker's parent trial
+   * with `?marker=<id>`. trial-detail reads that query param to open the
+   * inline marker editor and scroll to the markers section (markers have no
+   * standalone detail page). Role-gating happens in the panel; only owners
+   * and editors ever emit this.
+   */
+  onEditMarker(target: { trialId: string; markerId: string }): void {
+    this.router.navigate([...this.spaceBase(), 'manage', 'trials', target.trialId], {
+      queryParams: { marker: target.markerId },
+    });
   }
 
   private extractRouteParams(): void {

@@ -39,3 +39,18 @@ function labelFor(col: string, columnLabels: Record<string, string>): string {
   const humanized = col.replace(/_id$/, '').replace(/_/g, ' ');
   return humanized.charAt(0).toUpperCase() + humanized.slice(1);
 }
+
+/**
+ * True when an error is a Postgres insufficient-privilege failure (SQLSTATE
+ * 42501) -- i.e. an RLS policy or a SECURITY DEFINER RPC's authorization gate
+ * rejected the write. Callers use this to phrase a "you don't have permission"
+ * toast instead of leaking the raw Postgres message. (Persona fix P1.3b.)
+ */
+export function isPermissionDenied(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: unknown; message?: unknown };
+  if (e.code === '42501') return true;
+  return (
+    typeof e.message === 'string' && /permission denied|not authoriz|\b42501\b/i.test(e.message)
+  );
+}

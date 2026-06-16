@@ -18,6 +18,10 @@ import { TopbarAction } from '../services/topbar-state.service';
 import { PaletteHotkeyService } from '../services/palette-hotkey.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../shared/export/export-button.component';
 
 export interface TopbarTab {
   label: string;
@@ -30,7 +34,7 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule, Menu, NgOptimizedImage, Tooltip, RowActionsComponent],
+  imports: [ButtonModule, Menu, NgOptimizedImage, Tooltip, RowActionsComponent, ExportButtonComponent],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -333,6 +337,9 @@ export interface TopbarTab {
               (click)="action.callback?.()"
             />
           }
+        }
+        @if (exportActions().length > 0) {
+          <app-export-button [actions]="exportActions()" />
         }
         @if (overflowActions().length > 0) {
           <app-row-actions [items]="overflowActions()" ariaLabel="Entity actions" />
@@ -870,6 +877,8 @@ export class ContextualTopbarComponent {
 
   // ---- Actions ----
   readonly actionButtons = input<TopbarAction[]>([]);
+  /** Shared export trigger for visualization pages (timeline, bullseye, heatmap). */
+  readonly exportActions = input<ExportAction[]>([]);
   readonly overflowActions = input<MenuItem[]>([]);
 
   // ---- Onboarding tooltip pinned to Timeline tab ----

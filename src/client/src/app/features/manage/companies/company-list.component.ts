@@ -33,6 +33,8 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../../shared/export/export-naming.service';
+import { COMPANY_EXPORT_COLUMNS } from './companies-export.util';
 
 @Component({
   selector: 'app-company-list',
@@ -69,6 +71,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
 
   private readonly topbarActionsEffect = effect(() => {
     if (this.spaceRole.canEdit()) {
@@ -103,11 +106,11 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Companies',
-          filename: 'companies',
-          columns: this.grid.columns,
+          filename: await this.exportNaming.stem(this.spaceId, 'companies'),
+          columns: COMPANY_EXPORT_COLUMNS,
           rows: this.visibleCompanies(),
         }),
     },
