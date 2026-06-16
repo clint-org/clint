@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
-import { markerPeriodLabel } from '../../../core/models/marker-date-precision';
+import { isApproximate, markerPeriodLabel } from '../../../core/models/marker-date-precision';
 import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -63,6 +63,44 @@ export class MarkerComponent {
         this.totalWidth()
       )
     )
+  );
+
+  /** This marker spans time: a bounded end, or an open-ended "onwards". */
+  readonly isRange = computed(() => {
+    const m = this.marker();
+    return m.is_ongoing || !!m.end_date;
+  });
+
+  /**
+   * Right edge of the range tail in px. A bounded marker ends at its end_date;
+   * an "onwards" marker runs to the window's right edge (continuing into the
+   * future) where it fades out.
+   */
+  private readonly rangeEndX = computed(() => {
+    const m = this.marker();
+    if (m.is_ongoing) return this.totalWidth();
+    if (!m.end_date) return this.markerX();
+    return Math.min(
+      this.totalWidth(),
+      this.timeline.dateToX(m.end_date, this.startYear(), this.endYear(), this.totalWidth())
+    );
+  });
+
+  /** Tail width in px (0 when the bar is a point). */
+  readonly tailWidth = computed(() =>
+    this.isRange() ? Math.max(0, this.rangeEndX() - this.markerX()) : 0
+  );
+
+  readonly isOngoing = computed(() => this.marker().is_ongoing);
+
+  /** Period label for a fuzzy bounded end ("Q1 '27"), else null. */
+  readonly endPeriodLabel = computed(() =>
+    markerPeriodLabel(this.marker().end_date, this.marker().end_date_precision)
+  );
+
+  /** A bounded end exists and is itself approximate (render a hollow end cap). */
+  readonly endIsFuzzy = computed(
+    () => !this.marker().is_ongoing && isApproximate(this.marker().end_date_precision)
   );
 
   readonly visual = computed(() => resolveMarkerVisual(this.marker()));

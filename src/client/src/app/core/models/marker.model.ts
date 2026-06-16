@@ -45,6 +45,8 @@ export interface Marker {
   event_date: string;
   date_precision: DatePrecision;
   end_date: string | null;
+  end_date_precision: DatePrecision;
+  is_ongoing: boolean;
   description: string | null;
   source_url: string | null;
   metadata: Record<string, unknown> | null;
