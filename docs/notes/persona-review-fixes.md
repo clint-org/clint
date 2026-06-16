@@ -108,9 +108,9 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 - `[ ]` **UI-29 Trials list columns.** BRIEF TITLE "--" for all but one row, wide; PHASES header ambiguous; header sort+filter icons wrap on narrow columns. **(S)**
 - `[ ]` **UI-30 Companies table layout.** Tiny inconsistent logos mid-table; ORDER far right with kebab; full pagination chrome for 12 rows (also Marker Types at 13). **(S)**
 - `[ ]` **UI-31 Marker Types: Trial Start/End glyphs nearly invisible** in the MARKER column. **(S)**
-- `[ ]` **UI-32 Archived spaces: "Back to spaces" appears three times.** One/two max. **(S)**
+- `[x]` **UI-32 Archived spaces: "Back to spaces" appears three times.** One/two max. **(S)**
 - `[x]` **UI-33 Toast placement overlaps header stats** (top-right toast covered the counts on Home). Offset below the page header. *Relates to P1.3/P1.4 error toasts.* **(S)**
-- `[ ]` **UI-34 DEV badge overlaps content** bottom-right (timeline legend, last catalyst row). Nudge or make dismissible. **(S)**
+- `[x]` **UI-34 DEV badge overlaps content** bottom-right (timeline legend, last catalyst row). Nudge or make dismissible. **(S)**
 - `[ ]` **UI-35 User menu is sparse** (email + sign out + version only; no account/help/tenant switch). Decide intent. **(S)**
 - `[ ]` **UI-36 Empty-table chrome.** Pending invites renders full column headers above "No pending invites." Collapse to the message. **(S)**
 - `[ ]` **UI-37 Asset detail EVENTS double-frames its empty state** (section header card + separate empty box). Tighten to one block. **(S)**

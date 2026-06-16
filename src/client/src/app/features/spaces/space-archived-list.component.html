@@ -2,11 +2,6 @@
   <p class="mb-4 max-w-2xl text-[11px] text-slate-500">
     Archived spaces are hidden from the picker and read-only-locked. A space owner can restore at
     any time. Tenant owners and platform admins can permanently delete an archived space.
-    <a
-      [routerLink]="['/t', tenantId, 'spaces']"
-      class="ml-1 text-brand-700 hover:underline"
-      >Back to spaces</a
-    >.
   </p>
 
   @if (loading()) {
