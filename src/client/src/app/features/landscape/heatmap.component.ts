@@ -13,7 +13,7 @@ import {
 // stay in lockstep with the asset-indication badges and dropdowns. RingPhase
 // keys (PRECLIN | P1-P4 | APPROVED | LAUNCHED) match DevelopmentStatus exactly.
 import { DEVELOPMENT_STATUS_LABELS } from '../../core/models/phase-colors';
-import { cellTint, formatFreshness, heatmapStep } from './heatmap-cell';
+import { cellTint, formatFreshness } from './heatmap-cell';
 
 const PHASE_SHORT: Record<RingPhase, string> = {
   PRECLIN: 'Pre',

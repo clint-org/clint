@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 import { Select } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { SpaceMember, SpaceInvite } from '../../core/models/space.model';
 import { SpaceRoleService } from '../../core/services/space-role.service';
@@ -61,6 +62,7 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
     Select,
     InputText,
     MessageModule,
+    TooltipModule,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -109,10 +111,21 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
                   styleClass="min-w-[8rem]"
                 />
               } @else {
-                <app-status-tag
-                  [label]="roleLabel(member.role)"
-                  [tone]="member.role === 'owner' ? 'brand' : 'slate'"
-                />
+                <span class="inline-flex items-center gap-2">
+                  <app-status-tag
+                    [label]="roleLabel(member.role)"
+                    [tone]="member.role === 'owner' ? 'brand' : 'slate'"
+                  />
+                  @if (isSelf(member)) {
+                    <span
+                      class="text-[10px] font-medium uppercase tracking-wider text-slate-400"
+                      pTooltip="You can't change your own role; another owner can."
+                      tooltipPosition="top"
+                    >
+                      You
+                    </span>
+                  }
+                </span>
               }
             </td>
             <td class="col-actions">

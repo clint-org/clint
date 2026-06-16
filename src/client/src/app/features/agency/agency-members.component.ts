@@ -14,6 +14,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { AgencyService } from '../../core/services/agency.service';
@@ -37,6 +38,7 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
     InputText,
     Select,
     MessageModule,
+    TooltipModule,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -103,10 +105,21 @@ import { confirmDelete } from '../../shared/utils/confirm-delete';
                   styleClass="min-w-[7rem]"
                 />
               } @else {
-                <app-status-tag
-                  [label]="member.role"
-                  [tone]="member.role === 'owner' ? 'brand' : 'slate'"
-                />
+                <span class="inline-flex items-center gap-2">
+                  <app-status-tag
+                    [label]="member.role"
+                    [tone]="member.role === 'owner' ? 'brand' : 'slate'"
+                  />
+                  @if (isSelf(member)) {
+                    <span
+                      class="text-[10px] font-medium uppercase tracking-wider text-slate-400"
+                      pTooltip="You can't change your own role; another owner can."
+                      tooltipPosition="top"
+                    >
+                      You
+                    </span>
+                  }
+                </span>
               }
             </td>
             <td class="col-identifier text-xs">
