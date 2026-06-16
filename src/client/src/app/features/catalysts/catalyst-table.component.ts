@@ -5,6 +5,7 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { markerPeriodLabel } from '../../core/models/marker-date-precision';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -126,7 +127,11 @@ import { catalystContextLine } from './group-catalysts';
           [attr.aria-pressed]="catalyst.marker_id === selectedId()"
         >
           <td class="font-mono text-xs tabular-nums text-slate-500">
-            {{ catalyst.event_date | date: 'MMM dd' }}
+            @if (periodLabel(catalyst); as label) {
+              ~{{ label }}
+            } @else {
+              {{ catalyst.event_date | date: 'MMM dd' }}
+            }
           </td>
           <td>
             <span class="inline-flex items-center gap-1.5">
@@ -215,6 +220,11 @@ import { catalystContextLine } from './group-catalysts';
 export class CatalystTableComponent {
   protected readonly viewDetailsLabel = viewDetailsLabel;
   protected readonly catalystContextLine = catalystContextLine;
+
+  /** Approximate period label ("Q4 '26") for a fuzzy-dated catalyst, else null. */
+  protected periodLabel(catalyst: FlatCatalyst): string | null {
+    return markerPeriodLabel(catalyst.event_date, catalyst.date_precision);
+  }
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);

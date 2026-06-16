@@ -69,7 +69,7 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 ## P2 — Workflow blockers + design consistency
 
 ### Analyst workflow (persona, single-session but block daily use)
-- `[ ]` **P2.1 No fuzzy/quarter marker dates.** Event Date is a required exact date; "Q4 2026" forced inventing Nov 15 with an apology in the description. Core gap for a forward-catalyst tracker. Model change. **(M)**
+- `[x]` **P2.1 No fuzzy/quarter marker dates.** Added a `markers.date_precision` enum (`exact | month | quarter | half | year`); `event_date` now stores the period MIDPOINT (Q4 2026 -> Nov 15) and the precision records how precise it is. Pure midpoint/label math in `marker-date-precision.ts` (8 specs). The marker form gains a "Date precision" picker that swaps the exact-date input for Year + Quarter/Month/Half selectors and shows the live midpoint. `create_marker` takes `p_date_precision`; `get_dashboard_data` exposes it so the timeline caption ("~Q4 '26"), the marker tooltip ("Q4 2026 (estimated)"), and the Future Catalysts date cell all render the period instead of a false day. Verified in-browser end to end (form + catalyst list). *Deferred follow-ups: the catalyst-detail panel date and the audit/event-title humanization of fuzzy dates still show the midpoint.*
 - `[x]` **P2.2 "Projection" field mislabeled.** Options are Stout / Company / Primary / Actual — that's *provenance/source*, not projected-vs-actual. Rename/relabel. **(S)**
 - `[ ]` **P2.3 Catalyst detail panel has no edit affordance** (Future Catalysts) — must navigate into the trial's markers table. **(S)**
 - `[ ]` **P2.4 Intelligence Feed has no compose entry point** — authoring is only reachable from an entity's primary-intelligence drawer. **(S)**

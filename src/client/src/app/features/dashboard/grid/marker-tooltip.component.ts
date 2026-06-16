@@ -15,7 +15,8 @@ import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamo
 import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
 import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
 import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
-import { FillStyle, InnerMark } from '../../../core/models/marker.model';
+import { DatePrecision, FillStyle, InnerMark } from '../../../core/models/marker.model';
+import { markerPeriodLabel } from '../../../core/models/marker-date-precision';
 
 @Component({
   selector: 'app-marker-tooltip',
@@ -195,6 +196,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly typeName = input.required<string>();
   readonly typeColor = input.required<string>();
   readonly date = input.required<string>();
+  readonly datePrecision = input<DatePrecision>('exact');
   readonly projection = input<string>('actual');
   readonly categoryName = input<string>('');
   readonly description = input<string | null>(null);
@@ -232,6 +234,8 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   readonly formattedDate = computed(() => {
     if (!this.date()) return '';
+    const period = markerPeriodLabel(this.date(), this.datePrecision());
+    if (period) return `${period} (estimated)`;
     const d = new Date(this.date());
     return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   });

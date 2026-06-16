@@ -18,6 +18,14 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Marker, MarkerCategory, MarkerType, Projection } from '../../../core/models/marker.model';
+import {
+  type DatePrecision,
+  DATE_PRECISION_LABELS,
+  DATE_PRECISIONS,
+  isApproximate,
+  markerPeriodFromDate,
+  precisionMidpointISO,
+} from '../../../core/models/marker-date-precision';
 import { PROJECTION_LABEL } from '../../../shared/utils/marker-fields';
 import { Trial } from '../../../core/models/trial.model';
 import { MarkerService } from '../../../core/services/marker.service';
@@ -132,21 +140,78 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           </p>
         </div>
 
-        <!-- Event Date -->
+        <!-- Date precision -->
         <div>
-          <label for="marker-event-date" class="block text-sm font-medium text-slate-700">
-            Event Date <span aria-hidden="true" class="text-red-600">*</span>
+          <label for="marker-precision" class="block text-sm font-medium text-slate-700">
+            Date precision
           </label>
-          <input
-            type="date"
-            id="marker-event-date"
-            class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [ngModel]="eventDate()"
-            (ngModelChange)="eventDate.set($event)"
-            name="eventDate"
-            required
-            aria-required="true"
+          <p-select
+            inputId="marker-precision"
+            [options]="precisionOptions"
+            [ngModel]="datePrecision()"
+            (ngModelChange)="onPrecisionChange($event)"
+            name="datePrecision"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+            class="mt-1"
           />
+        </div>
+
+        <!-- Event Date / period -->
+        <div>
+          <label
+            [attr.for]="datePrecision() === 'exact' ? 'marker-event-date' : null"
+            class="block text-sm font-medium text-slate-700"
+          >
+            @if (datePrecision() === 'exact') {
+              Event Date
+            } @else {
+              Period
+            }
+            <span aria-hidden="true" class="text-red-600">*</span>
+          </label>
+          @if (datePrecision() === 'exact') {
+            <input
+              type="date"
+              id="marker-event-date"
+              class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              [ngModel]="eventDate()"
+              (ngModelChange)="eventDate.set($event)"
+              name="eventDate"
+              required
+              aria-required="true"
+            />
+          } @else {
+            <div class="mt-1 flex gap-2">
+              @if (datePrecision() !== 'year') {
+                <p-select
+                  [options]="subOptions()"
+                  [ngModel]="periodSub()"
+                  (ngModelChange)="periodSub.set($event)"
+                  name="periodSub"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="flex-1"
+                  [attr.aria-label]="'Period within ' + datePrecision()"
+                />
+              }
+              <input
+                type="number"
+                [ngModel]="periodYear()"
+                (ngModelChange)="periodYear.set(+$event)"
+                name="periodYear"
+                min="2000"
+                max="2100"
+                aria-label="Year"
+                class="w-24 rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500">
+              Marked as approximate. Placed at the period midpoint
+              ({{ effectiveEventDate() }}) on the timeline.
+            </p>
+          }
         </div>
 
         <!-- End Date -->
@@ -318,12 +383,40 @@ export class MarkerFormComponent implements OnInit {
   );
   readonly showRegulatoryPathway = signal(false);
 
+  readonly precisionOptions = DATE_PRECISIONS.map((value) => ({
+    value,
+    label: DATE_PRECISION_LABELS[value],
+  }));
+
+  private readonly quarterOptions = [1, 2, 3, 4].map((n) => ({ label: `Q${n}`, value: n }));
+  private readonly monthOptions = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ].map((label, i) => ({ label, value: i + 1 }));
+  private readonly halfOptions = [
+    { label: 'H1 (Jan-Jun)', value: 1 },
+    { label: 'H2 (Jul-Dec)', value: 2 },
+  ];
+
   // Form fields
   readonly categoryId = signal('');
   readonly markerTypeId = signal('');
   readonly title = signal('');
   readonly projection = signal<Projection>('actual');
   readonly eventDate = signal('');
+  readonly datePrecision = signal<DatePrecision>('exact');
+  readonly periodYear = signal<number>(new Date().getFullYear());
+  readonly periodSub = signal<number>(1);
   readonly endDate = signal('');
   readonly description = signal('');
   readonly sourceUrl = signal('');
@@ -333,14 +426,47 @@ export class MarkerFormComponent implements OnInit {
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
 
+  /** Sub-period options for the active precision (empty for exact/year). */
+  readonly subOptions = computed(() => {
+    switch (this.datePrecision()) {
+      case 'quarter':
+        return this.quarterOptions;
+      case 'month':
+        return this.monthOptions;
+      case 'half':
+        return this.halfOptions;
+      default:
+        return [];
+    }
+  });
+
+  /**
+   * The date actually stored in event_date: the user's exact date, or the
+   * period midpoint for an approximate precision.
+   */
+  readonly effectiveEventDate = computed(() => {
+    const precision = this.datePrecision();
+    if (precision === 'exact') return this.eventDate();
+    const year = this.periodYear();
+    if (!year || year < 1900 || year > 2200) return '';
+    return precisionMidpointISO(precision, year, this.periodSub());
+  });
+
   readonly canSubmit = computed(
     () =>
       !!this.categoryId() &&
       !!this.markerTypeId() &&
       this.title().trim().length > 0 &&
-      !!this.eventDate() &&
+      !!this.effectiveEventDate() &&
       this.selectedTrialIds().length > 0,
   );
+
+  onPrecisionChange(precision: DatePrecision): void {
+    this.datePrecision.set(precision);
+    // The previous sub-index may be out of range for the new precision
+    // (e.g. month 12 -> quarter), so reset to the first period.
+    this.periodSub.set(1);
+  }
 
   ngOnInit(): void {
     this.loadData();
@@ -351,6 +477,15 @@ export class MarkerFormComponent implements OnInit {
       this.title.set(existing.title);
       this.projection.set(existing.projection);
       this.eventDate.set(existing.event_date);
+      this.datePrecision.set(existing.date_precision ?? 'exact');
+      if (isApproximate(existing.date_precision) && existing.event_date) {
+        const { year, sub } = markerPeriodFromDate(
+          existing.event_date,
+          existing.date_precision,
+        );
+        this.periodYear.set(year);
+        this.periodSub.set(sub);
+      }
       this.endDate.set(existing.end_date ?? '');
       this.description.set(existing.description ?? '');
       this.sourceUrl.set(existing.source_url ?? '');
@@ -474,7 +609,8 @@ export class MarkerFormComponent implements OnInit {
       marker_type_id: this.markerTypeId(),
       title: this.title(),
       projection: this.projection(),
-      event_date: this.eventDate(),
+      event_date: this.effectiveEventDate(),
+      date_precision: this.datePrecision(),
       end_date: this.endDate() || null,
       description: this.description() || null,
       source_url: this.sourceUrl() || null,

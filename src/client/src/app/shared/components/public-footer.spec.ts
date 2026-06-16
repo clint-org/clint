@@ -23,8 +23,10 @@ describe('marketing landing mark', () => {
     expect(src).not.toContain('points="112,24 24,24 24,116 112,116"');
   });
 
-  it('hero mark draws in once on load', () => {
-    expect(src).toContain('clint-mark-draw-in');
-    expect(src).toContain('clint-mark-track');
+  it('shows the product (static timeline render) beside the workspace finder', () => {
+    // UI-19: the landing leads with the instrument, not a centered animated
+    // logo in dead space. It renders the static timeline preview component.
+    expect(src).toContain('app-marketing-timeline-preview');
+    expect(src).toContain('MarketingTimelinePreviewComponent');
   });
 });
