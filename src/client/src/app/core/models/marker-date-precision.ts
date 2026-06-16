@@ -130,6 +130,37 @@ export function markerExtentLabel(
 }
 
 /**
+ * A single endpoint's display label: the period label for a fuzzy date
+ * ("Q4 '26"), or the caller-formatted exact date otherwise. `formatExact`
+ * lets each surface choose its exact-date format (short date, ISO, etc.).
+ */
+export function markerEndpointLabel(
+  iso: string,
+  precision: DatePrecision,
+  formatExact: (iso: string) => string
+): string {
+  return markerPeriodLabel(iso, precision) ?? formatExact(iso);
+}
+
+/**
+ * Full temporal extent of a marker for exports and any text surface: a fuzzy
+ * point ("Q4 '26"), an exact day, a bounded range ("Q4 '26 – Q1 '27"), or an
+ * open-ended "Q3 '24 onwards". Never emits a false exact day for a fuzzy date.
+ */
+export function formatMarkerExtent(
+  eventDate: string,
+  datePrecision: DatePrecision,
+  endDate: string | null,
+  endDatePrecision: DatePrecision,
+  isOngoing: boolean,
+  formatExact: (iso: string) => string
+): string {
+  const start = markerEndpointLabel(eventDate, datePrecision, formatExact);
+  const end = endDate ? markerEndpointLabel(endDate, endDatePrecision, formatExact) : null;
+  return markerExtentLabel(start, end, isOngoing);
+}
+
+/**
  * Recover the {year, sub} period selectors from a stored midpoint, so the
  * marker form can repopulate its pickers when editing an approximate marker.
  */

@@ -1,12 +1,45 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatMarkerExtent,
   isApproximate,
+  markerEndpointLabel,
   markerExtentLabel,
   markerPeriodFromDate,
   markerPeriodLabel,
   precisionMidpointISO,
 } from './marker-date-precision';
+
+// Exact-date formatter stub for the extent tests (identity-ish, deterministic).
+const fmt = (iso: string) => `D(${iso})`;
+
+describe('markerEndpointLabel', () => {
+  it('uses the period label for a fuzzy date and the exact formatter otherwise', () => {
+    expect(markerEndpointLabel('2026-11-15', 'quarter', fmt)).toBe("Q4 '26");
+    expect(markerEndpointLabel('2026-03-15', 'exact', fmt)).toBe('D(2026-03-15)');
+  });
+});
+
+describe('formatMarkerExtent', () => {
+  it('formats a fuzzy point with no false exact day', () => {
+    expect(formatMarkerExtent('2026-11-15', 'quarter', null, 'exact', false, fmt)).toBe("Q4 '26");
+  });
+  it('formats a bounded fuzzy range', () => {
+    expect(formatMarkerExtent('2026-11-15', 'quarter', '2027-02-15', 'quarter', false, fmt)).toBe(
+      "Q4 '26 – Q1 '27"
+    );
+  });
+  it('formats an open-ended onwards marker', () => {
+    expect(formatMarkerExtent('2024-08-15', 'quarter', null, 'exact', true, fmt)).toBe(
+      "Q3 '24 onwards"
+    );
+  });
+  it('formats an exact point via the formatter', () => {
+    expect(formatMarkerExtent('2026-03-05', 'exact', null, 'exact', false, fmt)).toBe(
+      'D(2026-03-05)'
+    );
+  });
+});
 
 describe('markerExtentLabel', () => {
   it('appends "onwards" for an open-ended marker', () => {
