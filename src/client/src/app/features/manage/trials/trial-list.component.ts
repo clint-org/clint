@@ -44,6 +44,7 @@ import {
   type ExportAction,
 } from '../../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../../shared/export/export-naming.service';
 import { buildTrialExportColumns } from './trials-export.util';
 
 interface TrialRow {
@@ -95,6 +96,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
 
   // Surface "Add trial" only for space owners/editors. Effect re-runs when
   // canEdit() flips (initial role fetch resolves, or navigation between
@@ -223,10 +225,10 @@ export class TrialListComponent implements OnInit, OnDestroy {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Trials',
-          filename: 'trials',
+          filename: await this.exportNaming.stem(this.spaceId(), 'trials'),
           columns: buildTrialExportColumns(this.extraColumns(), (trialId, path) =>
             this.extraValue(trialId, path)
           ),

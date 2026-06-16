@@ -39,9 +39,9 @@ Both personas. MD found it by blind-clicking; analyst (literal task "produce som
 - ~~Extend export to Bullseye / Future Catalysts~~ → **already present.** Bullseye (export host), Heatmap, and Catalysts (grid export) all expose export. No change needed.
 
 **Genuinely open:**
-- `[ ]` **Palette entry for export.** No export command in `core/services/palette-command.registry.ts` (only `go-*` nav). Add an "Export…" command, enabled when the active view publishes `topbarState.exportActions()`, that triggers the current view's export. **(S)**
-- `[ ]` **Stamp the export filename** with space + date. Currently generic: `png-export.service.ts:54` → `clinical-trial-dashboard.png`; `landscape.component.ts:146` → `bullseye.png`; pptx likewise generic. Build `{spaceSlug}-{view}-{YYYY-MM-DD}.{ext}`. **(S)**
-- `[ ]` **UI-21 (folded): export placement + menu-item icons.** Export sits top-right on Landscape but in-content top-left on Events/Companies/Assets/Trials; search box right-aligned on Catalysts, left on Events; heatmap export menu items (Image PNG / Excel XLSX) lack the file-type icons Materials rows have. Normalize placement and add format icons to the menu. **(S)**
+- `[x]` **Palette entry for export.** Added per-format "Export current view: <format>" commands sourced from `topbarState.exportActions()` (present only when the active view publishes them). Also split the command cap so search matches the full set (the old hard slice dropped later commands, including export, from search).
+- `[x]` **Stamp the export filename** with space + date. Added `buildExportFilename`/`buildExportStem` + `ExportNamingService` (resolves the space name, degrades gracefully). Threaded `{space}-{view}-{YYYY-MM-DD}.{ext}` through timeline (png/pptx/xlsx), bullseye, heatmap, and the catalysts/events/trials/assets/companies grid exports.
+- `[~]` **UI-21 (folded): export placement + menu-item icons.** Menu-item file-type icons done (`export-button` maps format → fa-file-image/powerpoint/excel). *Placement normalization (export top-right vs in-content top-left; Catalysts vs Events search alignment) deferred:* it is a shared grid-toolbar layout change that needs visual verification across pages — flagged for a focused pass.
 
 ### P1.2 — Author identity is broken in the judgment layer
 Both personas + **UI-26** (same bug). Positioning is "the platform makes the firm's judgment visible," but judgment is attributed to placeholder garbage. Three surfaces, two root causes (locations re-verified on current `develop`):

@@ -41,6 +41,7 @@ import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { BullseyeExportHostComponent } from './bullseye-export-host.component';
 import { buildBullseyeSheets } from './bullseye-export.util';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -73,6 +74,7 @@ export class LandscapeComponent implements OnInit {
   protected readonly state = inject(LandscapeStateService);
   private readonly png = inject(BrandedPngExportService);
   private readonly sheetExcel = inject(SheetExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
   private readonly injector = inject(Injector);
   private readonly brand = inject(BrandContextService);
   private readonly topbarState = inject(TopbarStateService);
@@ -137,13 +139,13 @@ export class LandscapeComponent implements OnInit {
       {
         label: 'Image (PNG)',
         format: 'png',
-        run: () =>
+        run: async () =>
           this.png.capture({
             component: BullseyeExportHostComponent,
             elementInjector: this.injector,
             agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
             tenantLogoUrl: null,
-            filename: 'bullseye.png',
+            filename: await this.exportNaming.filename(this.spaceId(), 'bullseye', 'png'),
             setInputs: (ref, logos) => {
               ref.setInput('title', title);
               ref.setInput('data', data);
@@ -156,7 +158,11 @@ export class LandscapeComponent implements OnInit {
       {
         label: 'Excel (XLSX)',
         format: 'xlsx',
-        run: () => this.sheetExcel.export(buildBullseyeSheets(data), 'bullseye'),
+        run: async () =>
+          this.sheetExcel.export(
+            buildBullseyeSheets(data),
+            await this.exportNaming.stem(this.spaceId(), 'bullseye'),
+          ),
       },
     ];
   });

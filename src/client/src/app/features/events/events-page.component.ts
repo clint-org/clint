@@ -48,6 +48,7 @@ import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { buildEventsExportColumns } from './events-export.util';
 
 @Component({
@@ -86,6 +87,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private readonly topbarState = inject(TopbarStateService);
   private readonly excel = inject(GridExcelExportService);
+  private readonly exportNaming = inject(ExportNamingService);
   protected spaceRole = inject(SpaceRoleService);
 
   private readonly topbarActionsEffect = effect(() => {
@@ -207,10 +209,10 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     {
       label: 'Excel',
       format: 'xlsx',
-      run: () =>
+      run: async () =>
         this.excel.export({
           sheetName: 'Events',
-          filename: 'events',
+          filename: await this.exportNaming.stem(this.spaceId(), 'events'),
           columns: buildEventsExportColumns({
             title: (i) => this.getTitleDisplay(i),
             entity: (i) => this.getEntityDisplay(i),

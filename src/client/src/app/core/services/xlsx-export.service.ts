@@ -10,7 +10,7 @@ const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
 export class XlsxExportService {
   private brand = inject(BrandContextService);
 
-  async exportDashboard(companies: Company[]): Promise<void> {
+  async exportDashboard(companies: Company[], filename?: string): Promise<void> {
     if (companies.length === 0) return;
     // Lazy: pulls ExcelJS into its own chunk, loaded only on first Excel export.
     const { buildXlsxWorkbook } = await import('./xlsx-export.util');
@@ -19,6 +19,9 @@ export class XlsxExportService {
       primaryColorHex: (this.brand.primaryColor() || '#0d9488').replace('#', ''),
     });
     const buffer = await wb.xlsx.writeBuffer();
-    saveBlob(new Blob([buffer as ArrayBuffer], { type: XLSX_MIME }), 'clinical-trial-dashboard.xlsx');
+    saveBlob(
+      new Blob([buffer as ArrayBuffer], { type: XLSX_MIME }),
+      filename ?? 'clinical-trial-dashboard.xlsx',
+    );
   }
 }
