@@ -2,6 +2,11 @@ import type { MarkerType } from '../models/marker.model';
 import type { Company } from '../models/company.model';
 import type { Trial } from '../models/trial.model';
 import { phaseShortLabel } from '../models/phase-colors';
+import {
+  formatMarkerExtent,
+  markerEndpointLabel,
+  type DatePrecision,
+} from '../models/marker-date-precision';
 import type { ZoomLevel } from '../models/dashboard.model';
 
 export interface ColumnVisibility {
@@ -192,11 +197,16 @@ export interface MarkerRow {
   marker: string;
   /** Category name for the marker type (e.g. "Clinical Trial", "Regulatory"). */
   category: string;
+  /** Full human extent: fuzzy point, exact day, range, or "... onwards" (PPTX). */
   date: string;
-  /** Raw ISO event date (yyyy-mm-dd), for renderers that need real dates (Excel). */
+  /** Raw ISO event date (yyyy-mm-dd), for renderers that need real dates. */
   eventDate: string;
   /** Raw ISO end date or null. */
   endDate: string | null;
+  /** Honest start-endpoint label (period label when fuzzy), for spreadsheet cells. */
+  startLabel: string;
+  /** Honest end-endpoint label: period/exact, "onwards", or '' for a point. */
+  endLabel: string;
   status: MarkerStatus;
   detail: string;
   /** Untruncated detail text for data exports (Excel); `detail` stays truncated for the PPTX table. */
@@ -211,9 +221,21 @@ export function formatDateShort(dateStr: string): string {
   return `${MONTHS[month - 1]} ‘${String(year).slice(2)}`;
 }
 
-export function formatMarkerDate(eventDate: string, endDate: string | null): string {
-  if (endDate) return `${formatDateShort(eventDate)}-${formatDateShort(endDate)}`;
-  return formatDateShort(eventDate);
+export function formatMarkerDate(
+  eventDate: string,
+  endDate: string | null,
+  datePrecision: DatePrecision = 'exact',
+  endDatePrecision: DatePrecision = 'exact',
+  isOngoing = false
+): string {
+  return formatMarkerExtent(
+    eventDate,
+    datePrecision,
+    endDate,
+    endDatePrecision,
+    isOngoing,
+    formatDateShort
+  );
 }
 
 function truncate(value: string, max: number): string {
@@ -241,9 +263,21 @@ export function buildMarkerTableRows(companies: Company[]): MarkerRow[] {
             trial: trial.acronym ?? trial.name,
             marker: m.marker_types!.name,
             category: m.marker_types!.marker_categories?.name ?? '',
-            date: formatMarkerDate(m.event_date, m.end_date),
+            date: formatMarkerDate(
+              m.event_date,
+              m.end_date,
+              m.date_precision,
+              m.end_date_precision,
+              m.is_ongoing
+            ),
             eventDate: m.event_date,
             endDate: m.end_date ?? null,
+            startLabel: markerEndpointLabel(m.event_date, m.date_precision, formatDateShort),
+            endLabel: m.is_ongoing
+              ? 'onwards'
+              : m.end_date
+                ? markerEndpointLabel(m.end_date, m.end_date_precision, formatDateShort)
+                : '',
             status,
             detail: truncate(rawDetail, NOTE_MAX),
             detailFull: rawDetail,

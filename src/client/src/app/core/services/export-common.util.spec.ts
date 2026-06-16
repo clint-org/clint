@@ -230,11 +230,15 @@ describe('date formatting', () => {
   it("formats a single date as Mon ‘99", () => {
     expect(formatDateShort('2021-10-01')).toBe("Oct ‘21");
   });
-  it('formats a range with a hyphen', () => {
-    expect(formatMarkerDate('2021-10-01', '2021-12-01')).toBe("Oct ‘21-Dec ‘21");
+  it('formats a bounded range with an en-dash', () => {
+    expect(formatMarkerDate('2021-10-01', '2021-12-01')).toBe("Oct ‘21 – Dec ‘21");
   });
   it('formats a single event when end_date is null', () => {
     expect(formatMarkerDate('2021-10-01', null)).toBe("Oct ‘21");
+  });
+  it('formats a fuzzy point and an onwards marker honestly', () => {
+    expect(formatMarkerDate('2026-11-15', null, 'quarter')).toBe("Q4 '26");
+    expect(formatMarkerDate('2024-08-15', null, 'quarter', 'exact', true)).toBe("Q3 '24 onwards");
   });
 });
 
