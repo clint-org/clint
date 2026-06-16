@@ -33,7 +33,7 @@
         [loading]="loading()"
         [lazy]="true"
         (onLazyLoad)="grid.onLazyLoad($event)"
-        [paginator]="true"
+        [paginator]="serverTotal() > grid.page().rows"
         [rows]="grid.page().rows"
         [first]="grid.page().first"
         [totalRecords]="serverTotal()"
@@ -78,7 +78,7 @@
                 </ng-template>
               </p-column-filter>
             </th>
-            <th pSortableColumn="title">
+            <th pSortableColumn="title" class="w-full min-w-[18rem]">
               Title <p-sortIcon field="title" />
             </th>
             <th pSortableColumn="category_name" class="col-secondary">
@@ -180,8 +180,8 @@
                 {{ item.source_type === 'detected' ? 'Detected' : item.source_type }}
               </span>
             </td>
-            <td class="max-w-xs">
-              <div class="flex items-center gap-1.5">
+            <td class="min-w-[18rem]">
+              <div class="flex min-w-0 items-center gap-1.5">
                 @if (item.source_type === 'detected' && item.change_event_type) {
                   <span class="truncate text-sm text-slate-900">
                     @for (seg of getDetectedSummary(item).segments; track $index) {
@@ -228,7 +228,7 @@
                 [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
               ></span>
             </td>
-            <td class="col-secondary text-xs">
+            <td class="col-secondary whitespace-nowrap text-xs">
               @let ec = entityCell(item);
               <span class="inline-flex items-center gap-1.5 align-middle">
                 <span

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { HeatmapBubble, RingPhase } from '../../core/models/landscape.model';
-import { cellTint, heatmapStep, formatFreshness } from './heatmap.component';
+import { cellTint, heatmapStep, formatFreshness } from './heatmap-cell';
 
 function makeBubble(
   label: string,

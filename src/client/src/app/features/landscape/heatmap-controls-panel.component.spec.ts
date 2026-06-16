@@ -8,7 +8,7 @@ import {
   PHASE_COLOR,
   type RingPhase,
 } from '../../core/models/landscape.model';
-import { cellTint } from './heatmap.component';
+import { cellTint } from './heatmap-cell';
 
 function makeBubble(overrides: Partial<HeatmapBubble> = {}): HeatmapBubble {
   return {

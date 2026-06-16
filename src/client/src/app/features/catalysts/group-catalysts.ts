@@ -1,6 +1,43 @@
 import { Catalyst, CatalystGroup, FlatCatalyst } from '../../core/models/catalyst.model';
 
 /**
+ * Derives the trial/asset context line shown under a catalyst title.
+ *
+ * Some rows carry a specific title (e.g. "DELIVER topline readout") that
+ * already names the trial; others carry only the generic marker-type name
+ * (e.g. "Trial End", "Trial Start", "Topline Data") and would read as
+ * contextless next to their siblings. For those generic rows we surface the
+ * trial (acronym preferred, then full name) and/or asset so no row is
+ * anchorless. Returns null when the title already carries its own context or
+ * when there is no trial/asset to anchor it to.
+ *
+ * Pure function -- unit-tested in group-catalysts.spec.ts. The company/asset
+ * column already shows company + asset, so this line leads with the trial and
+ * only adds the asset when there is no trial to name.
+ */
+export function catalystContextLine(
+  c: Pick<
+    Catalyst,
+    'title' | 'marker_type_name' | 'trial_acronym' | 'trial_name' | 'asset_name'
+  >,
+): string | null {
+  const title = (c.title ?? '').trim();
+  const markerType = (c.marker_type_name ?? '').trim();
+
+  // Only annotate rows whose title is the bare marker-type name; a specific
+  // title is assumed to already carry its own context.
+  if (!title || title.toLowerCase() !== markerType.toLowerCase()) {
+    return null;
+  }
+
+  const trial = (c.trial_acronym ?? c.trial_name ?? '').trim();
+  if (trial) return trial;
+
+  const asset = (c.asset_name ?? '').trim();
+  return asset || null;
+}
+
+/**
  * Groups a chronologically-sorted list of catalysts into adaptive time buckets.
  * - Current ISO week -> "This Week"
  * - Next ISO week -> "Next Week"

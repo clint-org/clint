@@ -13,7 +13,7 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
-import { cellTint } from './heatmap.component';
+import { cellTint } from './heatmap-cell';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({

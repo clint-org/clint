@@ -78,9 +78,9 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 - `[ ]` **P2.7 Materials page is download-only at page level** — upload/create only exists per-entity via drag-drop. **(S–M)**
 
 ### Design consistency (UI review)
-- `[ ]` **UI-10 Events table readability.** Title truncates mid-word ("Primary Completion Date (P…"); ENTITY wraps trial codes badly ("SURPASS-"/"2"). Give the title column priority, no-wrap trial codes; consider showing sort+filter glyphs on hover/active only. **(S)**
+- `[x]` **UI-10 Events table readability.** Title column is now the flex/widest column with an 18rem floor (`w-full min-w-[18rem]`), ellipsizing cleanly instead of cutting mid-word; ENTITY cell is `whitespace-nowrap` so trial codes stay intact. Header sort+filter glyphs no longer wrap (global `data-table th { white-space: nowrap }`).
 - `[ ]` **UI-12 Heatmap left-panel idiom mismatch.** GROUP BY is stacked full-width buttons; COUNT right below is a segmented control. Bullseye has the same stacked GROUP BY. Unify the idiom. **(S)**
-- `[ ]` **UI-13 Heatmap labels.** Row labels ellipsize with no tooltip ("GIPR antagonist + GLP-1 a…"); "LNCH"/"APP" headers cryptic next to P1–P4. Add tooltips, spell out headers. **(S)**
+- `[x]` **UI-13 Heatmap labels.** Row labels carry a `pTooltip` with the full text; phase/status column headers (incl. APP/LNCH) carry a `pTooltip` + `aria-label` sourced from `DEVELOPMENT_STATUS_LABELS` (Approved, Launched, ...) so the short forms stay dense but legible.
 - `[ ]` **UI-14 Bullseye.** PH 2/PH 3 ring labels collide with dots; center reads "Filtered" when nothing is; "12 spokes" jargon; unclear Period relevance. **(S–M)**
 - `[x]` **UI-15 Spaces page ghost cell.** Empty grid column renders as a gray slab (`gap-px` + `bg-slate-200` hairline technique). Fill empty cells white / dashed "New space" ghost card / cap grid width. *Pairs with P1.3(a).* **(S)**
 - `[ ]` **UI-16 Super-admin agency rows: bare red trash as the only action.** One click from the most destructive tier-1 op. Move into kebab/detail with type-to-confirm. Also tighten "MAX TENANTS"/"TENANTS" columns. **(S–M)**
@@ -104,16 +104,16 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 - `[x]` **UI-24 Plural/abbreviation copy glitches.** "1 P3 READOUTS", "1 TRIAL MOVES", "+1 NEW READS"; "12 co" vs "21 assets"; company detail STATS "1 co" (redundant). **(S)**
 - `[x]` **UI-26** → folded into **P1.2** (contributors/byline now resolve real display names).
 - `[~]` **UI-27 Audit log date format.** Date now renders `MMM d, y, h:mm a` ("Jun 12, 2026, 12:02 AM") and a null actor renders `--` (app convention), in the shared `audit-log-table`. *Apply/Clear left as-is by design:* the audit log is server-queried, so manual apply avoids one request per keystroke — the divergence from auto-apply client lists is intentional.
-- `[ ]` **UI-28 Catalysts list details.** Bare "Trial End" title lacks context; trailing gray dot unexplained; "Clinical Trial" category wraps inconsistently. *Overlaps P2.3 catalyst panel.* **(S)**
-- `[ ]` **UI-29 Trials list columns.** BRIEF TITLE "--" for all but one row, wide; PHASES header ambiguous; header sort+filter icons wrap on narrow columns. **(S)**
-- `[ ]` **UI-30 Companies table layout.** Tiny inconsistent logos mid-table; ORDER far right with kebab; full pagination chrome for 12 rows (also Marker Types at 13). **(S)**
-- `[ ]` **UI-31 Marker Types: Trial Start/End glyphs nearly invisible** in the MARKER column. **(S)**
+- `[x]` **UI-28 Catalysts list details.** Generic marker-name titles now surface a trial/asset context subtitle (`catalystContextLine()` pure helper + spec); category cell is `whitespace-nowrap`. The trailing dot was the `app-change-badge` (a real recent-change indicator that already has a tooltip + deep link) — kept by design. *Overlaps P2.3 catalyst panel.*
+- `[~]` **UI-29 Trials list columns.** PHASES column was a meaningless `phase_type ? 1 : 0` count reading as a phase number; replaced with a "Phase" column showing the short label (PH 3), sorted in clinical-progression order via `phaseOrder()` (pure helper + spec). Header icons no longer wrap (global th nowrap). *BRIEF TITLE empty is a user-configured CT.gov extra column (data/config, like UI-38/39/40), not a code default — left as-is.*
+- `[~]` **UI-30 Companies table layout.** Pagination chrome now only renders when rows exceed one page (`[paginator]="grid.totalRecords() > grid.page().rows"`), applied across all grid tables — so 12-row Companies and 13-row Marker Types show no paginator at the 25-row default. Logo/order columns left as-is (logo inconsistency is intrinsic to source assets).
+- `[x]` **UI-31 Marker Types: Trial Start/End glyphs nearly invisible** in the MARKER column. Each glyph now sits in a 28px white swatch with a slate-200 ring (size bumped 18→20), so the faint slate dashed-line markers are locatable and framed consistently with the shape glyphs.
 - `[x]` **UI-32 Archived spaces: "Back to spaces" appears three times.** One/two max. **(S)**
 - `[x]` **UI-33 Toast placement overlaps header stats** (top-right toast covered the counts on Home). Offset below the page header. *Relates to P1.3/P1.4 error toasts.* **(S)**
 - `[x]` **UI-34 DEV badge overlaps content** bottom-right (timeline legend, last catalyst row). Nudge or make dismissible. **(S)**
 - `[ ]` **UI-35 User menu is sparse** (email + sign out + version only; no account/help/tenant switch). Decide intent. **(S)**
 - `[x]` **UI-36 Empty-table chrome.** Pending invites renders full column headers above "No pending invites." Collapse to the message. **(S)**
-- `[ ]` **UI-37 Asset detail EVENTS double-frames its empty state** (section header card + separate empty box). Tighten to one block. **(S)**
+- `[x]` **UI-37 Asset detail EVENTS double-frames its empty state.** Removed the redundant outer `border` from `entity-events-panel` (it is always embedded as a nested sub-block under the timeline via a `border-t` divider in trial/asset/company detail), tightening all three to one block.
 
 ---
 
@@ -152,9 +152,15 @@ Migration 75 (`20260429010000_owner_only_explicit_space_access.sql`) removed imp
 ## Open questions (need direction before building)
 
 - **P1.2 byline:** firm display-name vs authoring-analyst for the intelligence-feed byline? (Recommend firm for the feed, analyst names on the block.)
-- **UI-19 landing:** show the product (static or live timeline render) behind the workspace finder?
 - **Filters affordance:** collapse the Landscape filter row into one "Filters" control with applied-filter chips (the READ line already summarizes editorially)?
 - **Events/Catalysts:** lead with a one-line READ like Home/Timeline?
+
+## Locked decisions — stream-2 (2026-06-15)
+
+- **P2.1 fuzzy dates → midpoint + approx marker.** Precision enum `exact | month | quarter | half | year` drives midpoint math; quarter/month/etc. markers render with a hollow ring fill, a `~` prefix on the date caption, and "(estimated)" in tooltip + detail. Point semantics kept everywhere (no range bands). Rejected: range band (structural rendering change, heavy on dense rows), plain midpoint (reproduces the original complaint).
+- **UI-19 landing → static product still + copy polish.** A single high-quality static timeline SVG/image as backdrop behind the workspace finder, plus tagline + "Go" button copy polish. Rejected live render: drags in an anon data path on the marketing host, curated demo dataset, and CLS/perf risk on the screen that must load instantly. Static is a clean swap-point if it later goes live.
+- **UI-14 bullseye → targeted fixes only.** De-collide ring labels from dots, fix/hide the "Filtered" center label when unfiltered, replace "12 spokes" jargon, clarify/remove Period. No structural redesign (a separate `bullseye-chart-redesign` worktree owns that).
+- **UI-22 phase-bar edges → feathered open edge, both sides.** One consistent grammar for "boundary outside/unknown": left edge clipped at viewport → fade-in "starts earlier"; right edge with no end date → fade-out "ongoing" (never a hard cap, which reads as completed). A *projected* end (distinct from null) is the dashed/hollow-to-projected variant, kept separate.
 
 ## Verification
 

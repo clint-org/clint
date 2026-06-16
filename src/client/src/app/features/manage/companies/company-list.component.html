@@ -10,7 +10,7 @@
     [tableStyle]="{ 'min-width': '48rem' }"
     [lazy]="true"
     (onLazyLoad)="grid.onLazyLoad($event)"
-    [paginator]="true"
+    [paginator]="grid.totalRecords() > grid.page().rows"
     [rows]="grid.page().rows"
     [first]="grid.page().first"
     [totalRecords]="grid.totalRecords()"

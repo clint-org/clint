@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
   type CountUnit,
@@ -7,6 +8,12 @@ import {
   type RingPhase,
   visibleRingOrder,
 } from '../../core/models/landscape.model';
+// Full development-status names (Preclinical, Phase 1, ..., Approved, Launched)
+// are sourced from the canonical descriptor map so the column-header tooltips
+// stay in lockstep with the asset-indication badges and dropdowns. RingPhase
+// keys (PRECLIN | P1-P4 | APPROVED | LAUNCHED) match DevelopmentStatus exactly.
+import { DEVELOPMENT_STATUS_LABELS } from '../../core/models/phase-colors';
+import { cellTint, formatFreshness, heatmapStep } from './heatmap-cell';
 
 const PHASE_SHORT: Record<RingPhase, string> = {
   PRECLIN: 'Pre',
@@ -38,55 +45,10 @@ export interface MatrixCell {
   background: string | null;
 }
 
-/**
- * Absolute shade step (0-6) for a cell's count. Independent of the rest of
- * the heatmap and of the active count unit, so a given count always renders at
- * the same shade across the Assets / Trials / Companies toggle.
- */
-export function heatmapStep(count: number): number {
-  if (count <= 0) return 0;
-  if (count <= 3) return count; // 1, 2, 3 map one-to-one
-  if (count <= 5) return 4;
-  if (count <= 9) return 5;
-  return 6;
-}
-
-// Mix percentage of the phase hue over white per step. Capped well below full
-// saturation so dark cell text keeps WCAG AA contrast on every phase color.
-const STEP_MIX_PCT = [0, 14, 22, 30, 38, 46, 54];
-
-/**
- * Background tint for a cell: the cell's own phase color mixed over white,
- * deeper as the count rises. Returns null for an empty cell. Color comes from
- * the fixed phase palette (data color), never the tenant brand color.
- */
-export function cellTint(phaseColor: string, count: number): string | null {
-  const step = heatmapStep(count);
-  if (step === 0) return null;
-  return `color-mix(in srgb, ${phaseColor} ${STEP_MIX_PCT[step]}%, white)`;
-}
-
-export function formatFreshness(isoDate: string | null, now: Date): string | null {
-  if (!isoDate) return null;
-  const then = new Date(isoDate);
-  const diffMs = now.getTime() - then.getTime();
-  if (diffMs < 0) return 'Updated just now';
-
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (hours < 1) return 'Updated just now';
-  if (hours < 24) return `Updated ${hours}h ago`;
-
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (days < 7) return `Updated ${days}d ago`;
-
-  const month = then.toLocaleString('en-US', { month: 'short' });
-  const day = then.getDate();
-  return `Updated ${month} ${day}`;
-}
-
 @Component({
   selector: 'app-heatmap',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TooltipModule],
   host: {
     '(keydown.escape)': 'onEscape()',
   },
@@ -349,7 +311,12 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
               }
             </th>
             @for (phase of phases(); track phase) {
-              <th role="columnheader">
+              <th
+                role="columnheader"
+                [pTooltip]="phaseFull(phase)"
+                tooltipPosition="top"
+                [attr.aria-label]="phaseFull(phase)"
+              >
                 <span class="phase-dot" [style.background]="phaseColor(phase)"></span
                 >{{ phaseShort(phase) }}
               </th>
@@ -385,7 +352,12 @@ export function formatFreshness(isoDate: string | null, now: Date): string | nul
               (keydown.space)="onRowClick(row.bubble); $event.preventDefault()"
             >
               <td>
-                <span class="row-label-text">{{ row.bubble.label }}</span>
+                <span
+                  class="row-label-text"
+                  [pTooltip]="row.bubble.label"
+                  tooltipPosition="top"
+                  >{{ row.bubble.label }}</span
+                >
                 <div class="row-label-sub">
                   {{ row.bubble.competitor_count }}
                   {{ row.bubble.competitor_count === 1 ? 'company' : 'companies' }}
@@ -474,6 +446,11 @@ export class HeatmapComponent {
 
   protected phaseShort(phase: RingPhase): string {
     return PHASE_SHORT[phase];
+  }
+
+  /** Full development-status name for the column-header tooltip (e.g. APP -> "Approved"). */
+  protected phaseFull(phase: RingPhase): string {
+    return DEVELOPMENT_STATUS_LABELS[phase] ?? phase;
   }
 
   protected onRowClick(bubble: HeatmapBubble): void {

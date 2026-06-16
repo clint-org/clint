@@ -10,6 +10,7 @@ import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/tab
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
+import { catalystContextLine } from './group-catalysts';
 
 @Component({
   selector: 'app-catalyst-table',
@@ -138,7 +139,7 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
                 [isNle]="catalyst.no_longer_expected"
               />
               <span
-                class="text-xs text-slate-500"
+                class="whitespace-nowrap text-xs text-slate-500"
                 [innerHTML]="catalyst.category_name | highlight: query()"
               ></span>
             </span>
@@ -152,6 +153,12 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
                 [eventId]="catalyst.trial_most_recent_change_event_id ?? null"
               />
             </span>
+            @if (catalystContextLine(catalyst); as context) {
+              <span
+                class="mt-0.5 block text-xs font-normal text-slate-500"
+                [innerHTML]="context | highlight: query()"
+              ></span>
+            }
           </td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
@@ -207,6 +214,7 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 })
 export class CatalystTableComponent {
   protected readonly viewDetailsLabel = viewDetailsLabel;
+  protected readonly catalystContextLine = catalystContextLine;
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);
