@@ -34,6 +34,8 @@ export interface ExportOptions {
   showNotesColumn: boolean;
   /** Workspace tenant for the export footer's "Prepared for" segment. */
   tenant?: { name: string; logoUrl: string | null } | null;
+  /** Download filename; defaults to the generic dashboard name when omitted. */
+  filename?: string;
 }
 
 export interface FlatRow {

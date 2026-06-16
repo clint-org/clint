@@ -91,7 +91,7 @@ has_space_access(space_id, ARRAY['owner', 'editor', 'viewer'])
 has_space_access(space_id, ARRAY['owner', 'editor'])
 ```
 
-`has_space_access` was extended during the whitelabel rollout with disjuncts for tenant ownership, tenant membership (implicit editor/viewer), agency ownership (write-eligible), agency membership (read-only), and platform admin (read-only). It also short-circuits to `false` for write-role checks when `tenants.suspended_at IS NOT NULL`.
+`has_space_access` was collapsed to an explicit-only model in migration `20260429010000_owner_only_explicit_space_access`: the only path to access is an explicit `space_members` row whose role matches `p_roles`. The earlier whitelabel cascade (tenant ownership, tenant membership as implicit editor/viewer, agency ownership/membership) was removed so engagements are firewalled — an agency consultant on engagement A cannot see engagement B just because their agency parent owns both tenants. Platform admin keeps a read-only bypass for support (write-role checks never bypass). It also short-circuits to `false` for write-role checks when `tenants.suspended_at IS NOT NULL`.
 
 ### Change Event Annotations
 

@@ -17,6 +17,7 @@ import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
 import { PptxExportService } from '../../core/services/pptx-export.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { XlsxExportService } from '../../core/services/xlsx-export.service';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
@@ -75,6 +76,7 @@ export class TimelineViewComponent {
   private readonly pptxService = inject(PptxExportService);
   private readonly pngService = inject(PngExportService);
   private readonly tenantService = inject(TenantService);
+  private readonly exportNaming = inject(ExportNamingService);
   private readonly topbarState = inject(TopbarStateService);
   /**
    * Handed to PngExportService so the off-screen grid resolves the same
@@ -97,7 +99,7 @@ export class TimelineViewComponent {
     return [
       { label: 'PowerPoint', format: 'pptx', run: () => this.exportPptx() },
       { label: 'Image (PNG)', format: 'png', run: () => this.exportPng() },
-      { label: 'Excel (XLSX)', format: 'xlsx', run: () => this.xlsxService.exportDashboard(this.companies()) },
+      { label: 'Excel (XLSX)', format: 'xlsx', run: () => this.exportXlsx() },
     ];
   });
 
@@ -168,6 +170,10 @@ export class TimelineViewComponent {
     }
   }
 
+  private exportFilename(ext: 'png' | 'pptx' | 'xlsx'): Promise<string> {
+    return this.exportNaming.filename(this.spaceId(), 'timeline', ext);
+  }
+
   private async exportPptx(): Promise<void> {
     const tenant = await this.resolveTenant();
     await this.pptxService.exportDashboard(this.companies(), {
@@ -178,6 +184,7 @@ export class TimelineViewComponent {
       showRoaColumn: this.state.showRoaColumn(),
       showNotesColumn: this.state.showNotesColumn(),
       tenant,
+      filename: await this.exportFilename('pptx'),
     });
   }
 
@@ -198,9 +205,14 @@ export class TimelineViewComponent {
         spaceId: this.spaceId(),
         tenantName: tenant?.name ?? '',
         tenantLogoUrl: tenant?.logoUrl ?? null,
+        filename: await this.exportFilename('png'),
       },
       this.injector
     );
+  }
+
+  private async exportXlsx(): Promise<void> {
+    await this.xlsxService.exportDashboard(this.companies(), await this.exportFilename('xlsx'));
   }
 
   onPhaseClick(trial: Trial): void {

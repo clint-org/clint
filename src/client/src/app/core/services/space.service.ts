@@ -48,6 +48,22 @@ export class SpaceService {
   }
 
   /**
+   * The set of space ids the current user can actually enter. The
+   * space_members SELECT policy is `has_space_access(space_id)`, so any row
+   * the caller can read belongs to a space they can access -- the distinct
+   * space_ids are exactly the accessible set. A tenant owner who can *see* a
+   * space in listSpaces (via the spaces-table policy) but has no membership
+   * row will not appear here, which is the firewall by design (runbook 09).
+   */
+  async listAccessibleSpaceIds(): Promise<Set<string>> {
+    const { data } = await this.supabase.client
+      .from('space_members')
+      .select('space_id')
+      .throwOnError();
+    return new Set((data ?? []).map((r) => r.space_id as string));
+  }
+
+  /**
    * Lists archived spaces for the tenant. Archived spaces are still
    * subject to RLS, so the caller must have at least space access (or be
    * a tenant owner / platform admin) to see them.

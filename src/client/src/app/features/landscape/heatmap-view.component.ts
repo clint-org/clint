@@ -28,6 +28,7 @@ import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { BrandedPngExportService } from '../../shared/export/branded-png-export.service';
 import { SheetExcelExportService } from '../../shared/export/sheet-excel-export.service';
+import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { HeatmapExportHostComponent } from './heatmap-export-host.component';
 import { buildHeatmapSheets } from './heatmap-export.util';
@@ -124,6 +125,7 @@ export class HeatmapViewComponent implements OnInit {
   readonly state = inject(LandscapeStateService);
   private readonly router = inject(Router);
   private readonly png = inject(BrandedPngExportService);
+  private readonly exportNaming = inject(ExportNamingService);
   private readonly sheetExcel = inject(SheetExcelExportService);
   private readonly injector = inject(Injector);
   private readonly brand = inject(BrandContextService);
@@ -163,13 +165,13 @@ export class HeatmapViewComponent implements OnInit {
       {
         label: 'Image (PNG)',
         format: 'png',
-        run: () =>
+        run: async () =>
           this.png.capture({
             component: HeatmapExportHostComponent,
             elementInjector: this.injector,
             agencyLogoUrl: this.brand.agency()?.logo_url ?? null,
             tenantLogoUrl: null,
-            filename: 'heatmap.png',
+            filename: await this.exportNaming.filename(this.spaceId(), 'heatmap', 'png'),
             setInputs: (ref, logos) => {
               ref.setInput('title', title);
               ref.setInput('bubbles', data.bubbles);
@@ -186,10 +188,10 @@ export class HeatmapViewComponent implements OnInit {
       {
         label: 'Excel (XLSX)',
         format: 'xlsx',
-        run: () =>
+        run: async () =>
           this.sheetExcel.export(
             buildHeatmapSheets(data.bubbles, String(this.state.countUnit())),
-            'heatmap'
+            await this.exportNaming.stem(this.spaceId(), 'heatmap')
           ),
       },
     ];

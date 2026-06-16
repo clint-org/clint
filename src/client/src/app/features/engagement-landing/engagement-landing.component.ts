@@ -35,6 +35,7 @@ import {
 } from '../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../shared/utils/markdown-render';
 import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
+import { pluralize } from '../../shared/utils/pluralize';
 import {
   EngagementLandingService,
   SpaceLandingStats,
@@ -198,7 +199,7 @@ export class EngagementLandingComponent implements OnInit {
     const cells: MotionCell[] = [
       {
         key: 'p3Readouts',
-        label: 'P3 readouts',
+        label: pluralize(s?.p3_readouts_90d, 'P3 readout'),
         windowLabel: 'next 90d',
         value: v(s?.p3_readouts_90d),
         display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
@@ -208,7 +209,7 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'catalysts',
-        label: 'Catalysts',
+        label: pluralize(s?.catalysts_90d, 'Catalyst'),
         windowLabel: 'next 90d',
         value: v(s?.catalysts_90d),
         display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
@@ -218,7 +219,7 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'newIntel',
-        label: 'New reads',
+        label: pluralize(s?.new_intel_7d, 'New read'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
@@ -228,7 +229,7 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'trialMoves',
-        label: 'Trial moves',
+        label: pluralize(s?.trial_moves_30d, 'Trial move'),
         windowLabel: 'last 30d',
         value: v(s?.trial_moves_30d),
         display: s?.trial_moves_30d == null ? '' : String(s.trial_moves_30d),

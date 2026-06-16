@@ -68,6 +68,23 @@ export function resolveTherapeuticAreaLabel(ta: TherapeuticAreaRefInput): string
 }
 
 /**
+ * Whether the trial-detail header should render the raw `name` as a secondary
+ * line beside the primary `acronym`. The header shows `acronym ?? name` as the
+ * title, so the secondary line is only meaningful when `name` adds information:
+ * it must exist, differ from the acronym already shown, and differ from the
+ * NCT identifier (which has its own affordance). Prevents the "ATTAIN-1
+ * ATTAIN-1" duplication when acronym === name (UI-23).
+ */
+export function shouldShowTrialSecondaryName(
+  acronym: string | null | undefined,
+  name: string | null | undefined,
+  identifier: string | null | undefined,
+): boolean {
+  if (!isNonEmpty(acronym) || !isNonEmpty(name)) return false;
+  return name.trim() !== acronym.trim() && name.trim() !== (identifier ?? '').trim();
+}
+
+/**
  * Resolve a badge for a space reference. Returns null when no badge is
  * needed (active space, or no reference). Archived spaces return a
  * single "(archived)" badge with the 'archived' tone.

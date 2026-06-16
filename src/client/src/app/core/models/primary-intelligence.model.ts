@@ -52,6 +52,8 @@ export interface IntelligencePayload {
   record: PrimaryIntelligence;
   links: PrimaryIntelligenceLink[];
   contributors: string[];
+  /** Map of user_id -> display name for every contributor/editor in this payload. */
+  authors?: Record<string, string>;
 }
 
 /** Compact row used by the Referenced-in section. */
@@ -192,4 +194,6 @@ export interface IntelligenceHistoryPayload {
   draft: PrimaryIntelligence | null;
   versions: IntelligenceVersionRow[];
   events: IntelligenceHistoryEvent[];
+  /** Map of user_id -> display name for every actor in events/versions. */
+  authors?: Record<string, string>;
 }

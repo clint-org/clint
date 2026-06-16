@@ -43,19 +43,25 @@ import { LandscapeStateService } from './landscape-state.service';
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().companyCount
               }}</span>
-              <span class="text-[11px] text-slate-500">co</span>
+              <span class="text-[11px] text-slate-500">{{
+                stats().companyCount === 1 ? 'company' : 'companies'
+              }}</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().assetCount
               }}</span>
-              <span class="text-[11px] text-slate-500">assets</span>
+              <span class="text-[11px] text-slate-500">{{
+                stats().assetCount === 1 ? 'asset' : 'assets'
+              }}</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span class="font-mono text-sm font-semibold text-slate-800">{{
                 stats().trialCount
               }}</span>
-              <span class="text-[11px] text-slate-500">trials</span>
+              <span class="text-[11px] text-slate-500">{{
+                stats().trialCount === 1 ? 'trial' : 'trials'
+              }}</span>
             </div>
             <div class="flex items-baseline gap-1 whitespace-nowrap">
               <span

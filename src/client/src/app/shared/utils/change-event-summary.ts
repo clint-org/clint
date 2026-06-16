@@ -95,7 +95,7 @@ export function summaryFor(e: ChangeEvent): string {
   const p = e.payload;
   switch (e.event_type) {
     case 'status_changed':
-      return `Status: ${p['from']} → ${p['to']}`;
+      return `Status: ${formatEnum(p['from']) ?? p['from']} → ${formatEnum(p['to']) ?? p['to']}`;
     case 'date_moved': {
       const which = String(p['which_date'] ?? '');
       const direction = p['direction'] === 'accelerate' ? 'pulled forward' : 'delayed';
@@ -304,9 +304,9 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
         color,
         segments: [
           { kind: 'plain', text: 'Status: ' },
-          { kind: 'old', text: String(p['from'] ?? '') },
+          { kind: 'old', text: formatEnum(p['from']) ?? String(p['from'] ?? '') },
           { kind: 'arrow' },
-          { kind: 'new', text: String(p['to'] ?? '') },
+          { kind: 'new', text: formatEnum(p['to']) ?? String(p['to'] ?? '') },
         ],
       };
     case 'date_moved': {
