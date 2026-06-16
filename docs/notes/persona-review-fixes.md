@@ -73,11 +73,11 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 
 ### Analyst workflow (persona, single-session but block daily use)
 - `[ ]` **P2.1 No fuzzy/quarter marker dates.** Event Date is a required exact date; "Q4 2026" forced inventing Nov 15 with an apology in the description. Core gap for a forward-catalyst tracker. Model change. **(M)**
-- `[ ]` **P2.2 "Projection" field mislabeled.** Options are Stout / Company / Primary / Actual — that's *provenance/source*, not projected-vs-actual. Rename/relabel. **(S)**
+- `[x]` **P2.2 "Projection" field mislabeled.** Options are Stout / Company / Primary / Actual — that's *provenance/source*, not projected-vs-actual. Rename/relabel. **(S)**
 - `[ ]` **P2.3 Catalyst detail panel has no edit affordance** (Future Catalysts) — must navigate into the trial's markers table. **(S)**
 - `[ ]` **P2.4 Intelligence Feed has no compose entry point** — authoring is only reachable from an entity's primary-intelligence drawer. **(S)**
-- `[ ]` **P2.5 Events row accessible name "View details for null"** despite correct visible titles. **(S)**
-- `[ ]` **P2.6 Raw enum casing leaks into event titles**, e.g. "Status: RECRUITING→ACTIVE_NOT_RECRUITING". Humanize. **(S)** *Related to UI-29 trials columns.*
+- `[x]` **P2.5 Events row accessible name "View details for null"** despite correct visible titles. **(S)**
+- `[x]` **P2.6 Raw enum casing leaks into event titles**, e.g. "Status: RECRUITING→ACTIVE_NOT_RECRUITING". Humanize. **(S)** *Related to UI-29 trials columns.*
 - `[ ]` **P2.7 Materials page is download-only at page level** — upload/create only exists per-entity via drag-drop. **(S–M)**
 
 ### Design consistency (UI review)

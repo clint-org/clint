@@ -42,6 +42,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
 import { EntityNounPipe } from '../../shared/pipes/entity-noun.pipe';
 import { formatEventDateSuffix } from './format-event-date-suffix';
+import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 import { EntityScope, parseEntityScope } from './entity-scope';
 import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
@@ -330,6 +331,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   protected formatEventDateSuffix(item: FeedItem): string {
     return formatEventDateSuffix(item);
   }
+
+  protected readonly viewDetailsLabel = viewDetailsLabel;
 
   /**
    * Flat title text matching what the row renders: detected rows show the

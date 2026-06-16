@@ -18,6 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { Marker, MarkerCategory, MarkerType, Projection } from '../../../core/models/marker.model';
+import { PROJECTION_LABEL } from '../../../shared/utils/marker-fields';
 import { Trial } from '../../../core/models/trial.model';
 import { MarkerService } from '../../../core/services/marker.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
@@ -108,10 +109,10 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           />
         </div>
 
-        <!-- Projection -->
+        <!-- Projection source -->
         <div>
           <label for="marker-projection" class="block text-sm font-medium text-slate-700">
-            Projection
+            Projection source
           </label>
           <p-select
             inputId="marker-projection"
@@ -121,10 +122,14 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             name="projection"
             optionLabel="label"
             optionValue="value"
-            placeholder="Select projection"
+            placeholder="Select source"
             styleClass="w-full"
             class="mt-1"
           />
+          <p class="mt-1 text-xs text-slate-500">
+            Where the date comes from. "Confirmed actual" renders filled; every projected source
+            renders as an outline.
+          </p>
         </div>
 
         <!-- Event Date -->
@@ -293,10 +298,10 @@ export class MarkerFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   readonly projectionOptions: { label: string; value: Projection }[] = [
-    { label: 'Stout', value: 'stout' },
-    { label: 'Company', value: 'company' },
-    { label: 'Primary', value: 'primary' },
-    { label: 'Actual', value: 'actual' },
+    { label: PROJECTION_LABEL['actual'], value: 'actual' },
+    { label: PROJECTION_LABEL['stout'], value: 'stout' },
+    { label: PROJECTION_LABEL['company'], value: 'company' },
+    { label: PROJECTION_LABEL['primary'], value: 'primary' },
   ];
 
   readonly regulatoryPathwayOptions = [

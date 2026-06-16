@@ -153,7 +153,7 @@
             (keydown.enter)="onRowClick(item)"
             tabindex="0"
             role="button"
-            [attr.aria-label]="'View details for ' + item.title"
+            [attr.aria-label]="viewDetailsLabel(getTitleDisplay(item))"
             [attr.aria-pressed]="selectedItem()?.id === item.id"
           >
             <td class="col-date text-xs tabular-nums text-slate-500">

@@ -9,6 +9,7 @@ import { ChangeBadgeComponent } from '../../shared/components/change-badge/chang
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
+import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 
 @Component({
   selector: 'app-catalyst-table',
@@ -120,7 +121,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
           (keydown.enter)="rowSelect.emit(catalyst.marker_id)"
           tabindex="0"
           role="button"
-          [attr.aria-label]="'View details for ' + catalyst.title"
+          [attr.aria-label]="viewDetailsLabel(catalyst.title)"
           [attr.aria-pressed]="catalyst.marker_id === selectedId()"
         >
           <td class="font-mono text-xs tabular-nums text-slate-500">
@@ -205,6 +206,7 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalystTableComponent {
+  protected readonly viewDetailsLabel = viewDetailsLabel;
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);
