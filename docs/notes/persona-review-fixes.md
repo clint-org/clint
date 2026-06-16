@@ -124,9 +124,9 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 
 Migration 75 (`20260429010000_owner_only_explicit_space_access.sql`) removed implicit tenant→space access; `has_space_access` now requires an explicit `space_members` row. Per the docs-no-drift rule, fix in the same change set as related code (ideally alongside P1.3).
 
-- `[ ]` **P4.1** `CLAUDE.md:136` — "Tenant members get implicit editor/viewer space access via `has_space_access()`." Stale — correct. Also `tenant_members.role` is now `owner`-only (mig 75); the "`owner | member`" framing is stale too.
-- `[ ]` **P4.2** `docs/runbook/08-authentication-security.md:94` — "…tenant membership (implicit editor/viewer)…". Stale.
-- `[ ]` **P4.3** `docs/runbook/11-developer-guide.md:197` — "Tenant members get implicit editor/viewer space access via `has_space_access`" + `owner | member`. Stale.
+- `[x]` **P4.1** `CLAUDE.md:136` — "Tenant members get implicit editor/viewer space access via `has_space_access()`." Stale — correct. Also `tenant_members.role` is now `owner`-only (mig 75); the "`owner | member`" framing is stale too.
+- `[x]` **P4.2** `docs/runbook/08-authentication-security.md:94` — "…tenant membership (implicit editor/viewer)…". Stale.
+- `[x]` **P4.3** `docs/runbook/11-developer-guide.md:197` — "Tenant members get implicit editor/viewer space access via `has_space_access`" + `owner | member`. Stale.
 - `[-]` `docs/runbook/07-database-schema.md:165` (migration-42 row) — historical migration-log entry; leave as history (mig-75 row at :175 records the reversal).
 
 ---
