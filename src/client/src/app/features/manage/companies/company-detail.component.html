@@ -119,7 +119,8 @@
           Referenced in
         </h2>
         <span class="font-mono text-[10px] text-slate-400">
-          {{ (intelligence()?.referenced_in ?? []).length }} reads
+          {{ (intelligence()?.referenced_in ?? []).length }}
+          {{ (intelligence()?.referenced_in ?? []).length === 1 ? 'read' : 'reads' }}
         </span>
       </header>
       <div class="px-4 py-3">

@@ -104,9 +104,9 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 ### UI review polish
 - `[ ]` **UI-19 Default-host landing is the weakest screen.** Centered logo + tagline + one card in dead space; doesn't show the product. Consider a product-render/live-timeline backdrop; "Go" button label terse. *Decision-heavy — confirm direction before building.* **(M)**
 - `[ ]` **UI-20 Command palette polish.** No backdrop scrim; entity rows use plain color squares as icons; no footer keyboard hints; list cuts off mid-row with no scroll fade. **(S–M)**
-- `[ ]` **UI-24 Plural/abbreviation copy glitches.** "1 P3 READOUTS", "1 TRIAL MOVES", "+1 NEW READS"; "12 co" vs "21 assets"; company detail STATS "1 co" (redundant). **(S)**
+- `[x]` **UI-24 Plural/abbreviation copy glitches.** "1 P3 READOUTS", "1 TRIAL MOVES", "+1 NEW READS"; "12 co" vs "21 assets"; company detail STATS "1 co" (redundant). **(S)**
 - `[ ]` **UI-26** → folded into **P1.2**.
-- `[ ]` **UI-27 Audit log date format.** "6/12/26, 12:02 AM" vs "Jun 12, 2026" elsewhere; "(none)" actor vs "--" convention; Apply/Clear manual filter pattern differs from auto-apply lists. **(S)**
+- `[~]` **UI-27 Audit log date format.** Date now renders `MMM d, y, h:mm a` ("Jun 12, 2026, 12:02 AM") and a null actor renders `--` (app convention), in the shared `audit-log-table`. *Apply/Clear left as-is by design:* the audit log is server-queried, so manual apply avoids one request per keystroke — the divergence from auto-apply client lists is intentional.
 - `[ ]` **UI-28 Catalysts list details.** Bare "Trial End" title lacks context; trailing gray dot unexplained; "Clinical Trial" category wraps inconsistently. *Overlaps P2.3 catalyst panel.* **(S)**
 - `[ ]` **UI-29 Trials list columns.** BRIEF TITLE "--" for all but one row, wide; PHASES header ambiguous; header sort+filter icons wrap on narrow columns. **(S)**
 - `[ ]` **UI-30 Companies table layout.** Tiny inconsistent logos mid-table; ORDER far right with kebab; full pagination chrome for 12 rows (also Marker Types at 13). **(S)**
