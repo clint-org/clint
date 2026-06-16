@@ -924,4 +924,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260615120000_intelligence_author_display_names.sql`
 - `20260615130000_marker_date_precision.sql`
 - `20260615131000_dashboard_data_marker_precision.sql`
+- `20260616120000_marker_ranges.sql`
+- `20260616120100_dashboard_data_marker_range_fields.sql`
 <!-- /AUTO-GEN:DRIFT -->

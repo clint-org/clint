@@ -16,7 +16,7 @@ import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-ico
 import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
 import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
 import { DatePrecision, FillStyle, InnerMark } from '../../../core/models/marker.model';
-import { markerPeriodLabel } from '../../../core/models/marker-date-precision';
+import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marker-date-precision';
 
 @Component({
   selector: 'app-marker-tooltip',
@@ -197,6 +197,9 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly typeColor = input.required<string>();
   readonly date = input.required<string>();
   readonly datePrecision = input<DatePrecision>('exact');
+  readonly endDate = input<string | null>(null);
+  readonly endDatePrecision = input<DatePrecision>('exact');
+  readonly isOngoing = input<boolean>(false);
   readonly projection = input<string>('actual');
   readonly categoryName = input<string>('');
   readonly description = input<string | null>(null);
@@ -232,12 +235,31 @@ export class MarkerTooltipComponent implements AfterViewInit {
     [this.trialPhase(), this.recruitmentStatus()].filter((v) => !!v).join(' \u00b7 ')
   );
 
+  private formatPoint(iso: string, precision: DatePrecision): string {
+    const period = markerPeriodLabel(iso, precision);
+    if (period) return period;
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+  }
+
   readonly formattedDate = computed(() => {
     if (!this.date()) return '';
-    const period = markerPeriodLabel(this.date(), this.datePrecision());
-    if (period) return `${period} (estimated)`;
-    const d = new Date(this.date());
-    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    const start = this.formatPoint(this.date(), this.datePrecision());
+    const end = this.endDate();
+    if (this.isOngoing() || end) {
+      return markerExtentLabel(
+        start,
+        end ? this.formatPoint(end, this.endDatePrecision()) : null,
+        this.isOngoing()
+      );
+    }
+    // Point marker: flag an approximate single date.
+    return markerPeriodLabel(this.date(), this.datePrecision()) ? `${start} (estimated)` : start;
   });
 
   readonly projectionLabel = computed(() => {
