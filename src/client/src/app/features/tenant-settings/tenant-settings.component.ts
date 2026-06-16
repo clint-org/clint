@@ -236,32 +236,31 @@ import { extractErrorMessage } from '../../core/util/error-message';
         </h2>
         <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
       </div>
-      <p-table
-        styleClass="data-table"
-        [value]="invites()"
-        [tableStyle]="{ 'min-width': '40rem' }"
-        aria-label="Pending owner invites"
-      >
-        <ng-template #header>
-          <tr>
-            <th>Email</th>
-            <th>Code</th>
-            <th>Expires</th>
-          </tr>
-        </ng-template>
-        <ng-template #body let-invite>
-          <tr>
-            <td>{{ invite.email }}</td>
-            <td class="col-identifier">{{ invite.invite_code }}</td>
-            <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
-          </tr>
-        </ng-template>
-        <ng-template #emptymessage>
-          <tr>
-            <td colspan="3">No pending invites.</td>
-          </tr>
-        </ng-template>
-      </p-table>
+      @if (invites().length === 0) {
+        <p class="text-sm text-slate-400">No pending invites.</p>
+      } @else {
+        <p-table
+          styleClass="data-table"
+          [value]="invites()"
+          [tableStyle]="{ 'min-width': '40rem' }"
+          aria-label="Pending owner invites"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Email</th>
+              <th>Code</th>
+              <th>Expires</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-invite>
+            <tr>
+              <td>{{ invite.email }}</td>
+              <td class="col-identifier">{{ invite.invite_code }}</td>
+              <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
 
       <!-- Material upload limits (owner-only) -->
       @if (currentUserIsOwner()) {

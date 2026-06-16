@@ -112,7 +112,7 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 - `[x]` **UI-33 Toast placement overlaps header stats** (top-right toast covered the counts on Home). Offset below the page header. *Relates to P1.3/P1.4 error toasts.* **(S)**
 - `[x]` **UI-34 DEV badge overlaps content** bottom-right (timeline legend, last catalyst row). Nudge or make dismissible. **(S)**
 - `[ ]` **UI-35 User menu is sparse** (email + sign out + version only; no account/help/tenant switch). Decide intent. **(S)**
-- `[ ]` **UI-36 Empty-table chrome.** Pending invites renders full column headers above "No pending invites." Collapse to the message. **(S)**
+- `[x]` **UI-36 Empty-table chrome.** Pending invites renders full column headers above "No pending invites." Collapse to the message. **(S)**
 - `[ ]` **UI-37 Asset detail EVENTS double-frames its empty state** (section header card + separate empty box). Tighten to one block. **(S)**
 
 ---

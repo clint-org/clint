@@ -150,46 +150,45 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
           </h2>
           <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
         </div>
-        <p-table
-          styleClass="data-table"
-          [value]="invites()"
-          [tableStyle]="{ 'min-width': '40rem' }"
-          aria-label="Pending invites"
-        >
-          <ng-template #header>
-            <tr>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Code</th>
-              <th>Expires</th>
-              <th class="col-actions"></th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-invite>
-            <tr>
-              <td>{{ invite.email }}</td>
-              <td>
-                <app-status-tag
-                  [label]="roleLabel(invite.role)"
-                  [tone]="invite.role === 'owner' ? 'brand' : 'slate'"
-                />
-              </td>
-              <td class="col-identifier">{{ invite.invite_code }}</td>
-              <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
-              <td class="col-actions">
-                <app-row-actions
-                  [items]="inviteMenu(invite)"
-                  [ariaLabel]="'Actions for invite ' + invite.email"
-                />
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template #emptymessage>
-            <tr>
-              <td colspan="5">No pending invites.</td>
-            </tr>
-          </ng-template>
-        </p-table>
+        @if (invites().length === 0) {
+          <p class="text-sm text-slate-400">No pending invites.</p>
+        } @else {
+          <p-table
+            styleClass="data-table"
+            [value]="invites()"
+            [tableStyle]="{ 'min-width': '40rem' }"
+            aria-label="Pending invites"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Code</th>
+                <th>Expires</th>
+                <th class="col-actions"></th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-invite>
+              <tr>
+                <td>{{ invite.email }}</td>
+                <td>
+                  <app-status-tag
+                    [label]="roleLabel(invite.role)"
+                    [tone]="invite.role === 'owner' ? 'brand' : 'slate'"
+                  />
+                </td>
+                <td class="col-identifier">{{ invite.invite_code }}</td>
+                <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
+                <td class="col-actions">
+                  <app-row-actions
+                    [items]="inviteMenu(invite)"
+                    [ariaLabel]="'Actions for invite ' + invite.email"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
       }
     </app-manage-page-shell>
 
