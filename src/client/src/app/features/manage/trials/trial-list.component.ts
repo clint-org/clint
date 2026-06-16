@@ -17,6 +17,7 @@ import { MessageModule } from 'primeng/message';
 import { Trial } from '../../../core/models/trial.model';
 import { Asset } from '../../../core/models/asset.model';
 import { Company } from '../../../core/models/company.model';
+import { phaseOrder, phaseShortLabel } from '../../../core/models/phase-colors';
 import {
   CTGOV_FIELD_CATALOGUE,
   CTGOV_TRIAL_LIST_DEFAULT_PATHS,
@@ -53,7 +54,8 @@ interface TrialRow {
   readonly assetId: string;
   readonly companyName: string;
   readonly companyId: string;
-  readonly phaseCount: number;
+  readonly phaseLabel: string;
+  readonly phaseRank: number;
   readonly markerCount: number;
 }
 
@@ -179,7 +181,8 @@ export class TrialListComponent implements OnInit, OnDestroy {
         assetId: product?.id ?? '',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
-        phaseCount: trial.phase_type ? 1 : 0,
+        phaseLabel: trial.phase_type ? phaseShortLabel(trial.phase_type) : '--',
+        phaseRank: phaseOrder(trial.phase_type),
         markerCount: trial.markers?.length ?? 0,
       };
     });
@@ -205,7 +208,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
           },
         },
       },
-      { field: 'phaseCount', header: 'Phases', filter: { kind: 'numeric' } },
+      { field: 'phaseLabel', header: 'Phase', filter: { kind: 'text' } },
       { field: 'markerCount', header: 'Markers', filter: { kind: 'numeric' } },
     ],
     globalSearchFields: [

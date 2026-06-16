@@ -81,6 +81,24 @@ export const SPOKE_GROUPING_OPTIONS: { label: string; value: SpokeGrouping }[] =
   { label: 'Asset', value: 'asset' },
 ];
 
+/**
+ * Domain noun for what a bullseye "spoke" represents under the active grouping.
+ * A spoke is a company / indication / mechanism / route / asset group, so STATS
+ * names the real thing instead of the internal "spokes" term. `count` selects
+ * singular vs plural.
+ */
+export function spokeGroupingNoun(grouping: SpokeGrouping, count: number): string {
+  const nouns: Record<SpokeGrouping, [singular: string, plural: string]> = {
+    company: ['company', 'companies'],
+    indication: ['indication', 'indications'],
+    moa: ['mechanism', 'mechanisms'],
+    roa: ['route', 'routes'],
+    asset: ['asset', 'assets'],
+  };
+  const [singular, plural] = nouns[grouping];
+  return count === 1 ? singular : plural;
+}
+
 export interface BullseyeScope {
   id: string;
   name: string;
@@ -196,6 +214,35 @@ export const EMPTY_LANDSCAPE_FILTERS: LandscapeFilters = {
   markerCategoryIds: [],
   timePeriod: null,
 };
+
+/**
+ * True when any landscape filter narrows the result set. Used to decide
+ * whether a surface should say "Filtered" vs report the unfiltered truth.
+ * Every list field counts as active when non-empty; timePeriod counts when set.
+ *
+ * `opts.ignoreTimePeriod` excludes the period from the check for surfaces that
+ * ignore it (the bullseye's get_bullseye_assets has no period parameter), so a
+ * leftover period from another view does not falsely mark the bullseye as
+ * filtered.
+ */
+export function hasActiveLandscapeFilters(
+  filters: LandscapeFilters,
+  opts: { ignoreTimePeriod?: boolean } = {}
+): boolean {
+  return (
+    filters.companyIds.length > 0 ||
+    filters.assetIds.length > 0 ||
+    filters.trialIds.length > 0 ||
+    filters.indicationIds.length > 0 ||
+    filters.mechanismOfActionIds.length > 0 ||
+    filters.routeOfAdministrationIds.length > 0 ||
+    filters.phases.length > 0 ||
+    filters.recruitmentStatuses.length > 0 ||
+    filters.studyTypes.length > 0 ||
+    filters.markerCategoryIds.length > 0 ||
+    (!opts.ignoreTimePeriod && filters.timePeriod !== null)
+  );
+}
 
 /** ISO date bounds derived from a TimePeriodFilter. Null bound = open-ended. */
 export interface TimePeriodRange {

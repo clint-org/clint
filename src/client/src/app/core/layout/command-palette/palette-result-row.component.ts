@@ -16,7 +16,9 @@ import { PaletteItem } from '../../models/palette.model';
       (mouseenter)="hover.emit()"
       (click)="activated.emit()"
     >
-      <span class="h-3.5 w-3.5 shrink-0 rounded-sm" [style.background-color]="kindColor()"></span>
+      <span class="flex h-4 w-4 shrink-0 items-center justify-center">
+        <i class="fa-solid {{ kindIcon() }} text-[13px]" [style.color]="kindColor()" aria-hidden="true"></i>
+      </span>
       <span class="min-w-0 flex-1">
         <span class="block truncate text-slate-900">{{ primary() }}</span>
         @if (secondary()) {
@@ -61,6 +63,17 @@ export class PaletteResultRowComponent {
       case 'event':    return '#ea580c';
       case 'catalyst': return '#16a34a';
       case 'command':  return '#7c3aed';
+    }
+  }
+  kindIcon() {
+    const it = this.item();
+    switch (it.kind) {
+      case 'trial':    return 'fa-flask';
+      case 'product':  return 'fa-capsules';
+      case 'company':  return 'fa-building';
+      case 'event':    return 'fa-newspaper';
+      case 'catalyst': return 'fa-bullseye';
+      case 'command':  return 'fa-terminal';
     }
   }
 }

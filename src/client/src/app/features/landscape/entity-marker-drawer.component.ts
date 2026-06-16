@@ -30,11 +30,13 @@ import { LandscapeStateService } from './landscape-state.service';
           [detail]="state.selectedDetail()"
           [spaceId]="state.spaceIdSig()"
           surfaceKey="timeline_detail"
+          [showEditAction]="true"
           [open]="!!state.selectedMarkerId()"
           (panelClose)="state.clearSelection()"
           (markerClick)="state.selectMarker($event)"
           (eventClick)="onEventClick($event)"
           (trialClick)="onTrialClick($event)"
+          (editMarkerClick)="onEditMarker($event)"
         />
       }
     }
@@ -66,6 +68,19 @@ export class EntityMarkerDrawerComponent {
       'trials',
       trialId,
     ]);
+  }
+
+  /**
+   * "Edit marker": navigate to the marker's parent trial with `?marker=<id>`,
+   * which opens the inline marker editor on the trial's manage page. Only
+   * owners/editors emit this (gated in the panel).
+   */
+  protected onEditMarker(target: { trialId: string; markerId: string }): void {
+    if (!target.trialId) return;
+    this.router.navigate(
+      ['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', target.trialId],
+      { queryParams: { marker: target.markerId } },
+    );
   }
 
   private findRouteParam(key: string): string | null {

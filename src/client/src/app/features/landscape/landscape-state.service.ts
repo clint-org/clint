@@ -422,6 +422,7 @@ function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
             marker_id: marker.id,
             title: marker.title ?? '',
             event_date: marker.event_date,
+            date_precision: marker.date_precision ?? 'exact',
             end_date: marker.end_date ?? null,
             category_name: mt?.marker_categories?.name ?? '',
             category_id: mt?.category_id ?? '',

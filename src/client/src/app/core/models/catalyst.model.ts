@@ -1,9 +1,10 @@
-import type { InnerMark, MarkerShape } from './marker.model';
+import type { DatePrecision, InnerMark, MarkerShape } from './marker.model';
 
 export interface Catalyst {
   marker_id: string;
   title: string;
   event_date: string;
+  date_precision: DatePrecision;
   end_date: string | null;
   category_name: string;
   category_id: string;

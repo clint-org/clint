@@ -1,3 +1,7 @@
+import type { DatePrecision } from './marker-date-precision';
+
+export type { DatePrecision } from './marker-date-precision';
+
 export interface MarkerCategory {
   id: string;
   space_id: string | null;
@@ -39,6 +43,7 @@ export interface Marker {
   title: string;
   projection: Projection;
   event_date: string;
+  date_precision: DatePrecision;
   end_date: string | null;
   description: string | null;
   source_url: string | null;

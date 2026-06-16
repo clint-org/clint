@@ -21,6 +21,7 @@ import {
   BullseyeData,
   BullseyeSpoke,
   LandscapeFilters,
+  hasActiveLandscapeFilters,
   visibleRingOrder,
   RingPhase,
   SPOKE_GROUPING_OPTIONS,
@@ -116,7 +117,16 @@ export class LandscapeComponent implements OnInit {
     if (!result) return null;
     return {
       dimension: this.state.spokeGrouping() as BullseyeData['dimension'],
-      scope: { id: 'scope', name: 'Filtered' },
+      // Center label tells the unfiltered truth ("All assets") unless a filter
+      // genuinely narrows the set, in which case it reads "Filtered".
+      scope: {
+        id: 'scope',
+        // The bullseye RPC ignores timePeriod, so a leftover period from another
+        // view must not mark this view as filtered.
+        name: hasActiveLandscapeFilters(this.state.filters(), { ignoreTimePeriod: true })
+          ? 'Filtered'
+          : 'All assets',
+      },
       ring_order: visibleRingOrder(this.state.showPreclinical()) as unknown as RingPhase[],
       spokes: result.spokes,
       spoke_label:

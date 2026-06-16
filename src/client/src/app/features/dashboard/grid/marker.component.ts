@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
+import { markerPeriodLabel } from '../../../core/models/marker-date-precision';
 import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -82,7 +83,11 @@ export class MarkerComponent {
   readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
   readonly shortDate = computed(() => {
-    const d = new Date(this.marker().event_date);
+    const m = this.marker();
+    // Approximate markers show the period ("~Q4 '26"), not a false exact day.
+    const period = markerPeriodLabel(m.event_date, m.date_precision);
+    if (period) return `~${period}`;
+    const d = new Date(m.event_date);
     const months = [
       'Jan',
       'Feb',

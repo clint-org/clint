@@ -7,6 +7,7 @@ import {
   RingPhase,
   SpokeGrouping,
   SPOKE_GROUPING_OPTIONS,
+  spokeGroupingNoun,
 } from '../../core/models/landscape.model';
 import { LandscapeStateService } from './landscape-state.service';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
@@ -46,7 +47,7 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
         <div class="stats-grid">
           <div class="stat">
             <span class="stat-value">{{ spokeCount() }}</span>
-            <span class="stat-label">spokes</span>
+            <span class="stat-label">{{ spokeNoun() }}</span>
           </div>
           <div class="stat">
             <span class="stat-value">{{ assetCount() }}</span>
@@ -244,6 +245,9 @@ export class BullseyeControlsPanelComponent {
   readonly hasDuplicates = input(false);
 
   protected readonly groupingOptions = SPOKE_GROUPING_OPTIONS;
+
+  /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
+  protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
 
   // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
   // the space does not track preclinical, matching the rings the server returns.

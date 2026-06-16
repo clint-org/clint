@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  EMPTY_LANDSCAPE_FILTERS,
   clampTimePeriod,
   formatTimePeriod,
+  hasActiveLandscapeFilters,
   spanOverlapsRange,
+  spokeGroupingNoun,
   timePeriodToRange,
+  type LandscapeFilters,
   type TimePeriodFilter,
 } from './landscape.model';
 
@@ -143,5 +147,70 @@ describe('degenerate inputs', () => {
 
   it('formats an all-null period as empty string', () => {
     expect(formatTimePeriod(tp({}))).toBe('');
+  });
+});
+
+describe('hasActiveLandscapeFilters', () => {
+  function f(partial: Partial<LandscapeFilters>): LandscapeFilters {
+    return { ...EMPTY_LANDSCAPE_FILTERS, ...partial };
+  }
+
+  it('is false for the empty filter set', () => {
+    expect(hasActiveLandscapeFilters({ ...EMPTY_LANDSCAPE_FILTERS })).toBe(false);
+  });
+
+  it('is true when any id list is non-empty', () => {
+    expect(hasActiveLandscapeFilters(f({ companyIds: ['c1'] }))).toBe(true);
+    expect(hasActiveLandscapeFilters(f({ assetIds: ['a1'] }))).toBe(true);
+    expect(hasActiveLandscapeFilters(f({ phases: ['P3'] }))).toBe(true);
+    expect(hasActiveLandscapeFilters(f({ markerCategoryIds: ['m1'] }))).toBe(true);
+  });
+
+  it('is true when a time period is set', () => {
+    expect(
+      hasActiveLandscapeFilters(
+        f({ timePeriod: { startYear: 2025, startQuarter: null, endYear: null, endQuarter: null } })
+      )
+    ).toBe(true);
+  });
+
+  it('is false when timePeriod is explicitly null', () => {
+    expect(hasActiveLandscapeFilters(f({ timePeriod: null }))).toBe(false);
+  });
+
+  it('ignores a set timePeriod when ignoreTimePeriod is passed', () => {
+    const period = f({
+      timePeriod: { startYear: 2025, startQuarter: null, endYear: null, endQuarter: null },
+    });
+    expect(hasActiveLandscapeFilters(period)).toBe(true);
+    expect(hasActiveLandscapeFilters(period, { ignoreTimePeriod: true })).toBe(false);
+  });
+
+  it('still reports active when a non-period filter is set under ignoreTimePeriod', () => {
+    const both = f({
+      companyIds: ['c1'],
+      timePeriod: { startYear: 2025, startQuarter: null, endYear: null, endQuarter: null },
+    });
+    expect(hasActiveLandscapeFilters(both, { ignoreTimePeriod: true })).toBe(true);
+  });
+});
+
+describe('spokeGroupingNoun', () => {
+  it('returns the plural noun for each grouping', () => {
+    expect(spokeGroupingNoun('company', 12)).toBe('companies');
+    expect(spokeGroupingNoun('indication', 5)).toBe('indications');
+    expect(spokeGroupingNoun('moa', 3)).toBe('mechanisms');
+    expect(spokeGroupingNoun('roa', 4)).toBe('routes');
+    expect(spokeGroupingNoun('asset', 22)).toBe('assets');
+  });
+
+  it('returns the singular noun when count is exactly 1', () => {
+    expect(spokeGroupingNoun('company', 1)).toBe('company');
+    expect(spokeGroupingNoun('moa', 1)).toBe('mechanism');
+    expect(spokeGroupingNoun('roa', 1)).toBe('route');
+  });
+
+  it('uses plural for zero', () => {
+    expect(spokeGroupingNoun('company', 0)).toBe('companies');
   });
 });

@@ -87,6 +87,20 @@ export function phaseShortLabel(key: string): string {
   return PHASE_SHORT_LABELS[key] ?? key;
 }
 
+const PHASE_ORDER: Record<string, number> = Object.fromEntries(
+  PHASE_DESCRIPTORS.map((d, i) => [d.key, i])
+);
+
+/**
+ * Numeric rank for sorting trials by clinical-phase progression
+ * (PRECLIN < P1 < P2 < P3 < P4 < OBS). Unknown or unset phases sort last so a
+ * "Phase" column groups classified trials ahead of the unclassified ones.
+ */
+export function phaseOrder(key: string | null | undefined): number {
+  if (!key) return Number.MAX_SAFE_INTEGER;
+  return PHASE_ORDER[key] ?? Number.MAX_SAFE_INTEGER;
+}
+
 export const PHASE_FALLBACK_COLOR = '#64748b';
 
 // ---------------------------------------------------------------------------

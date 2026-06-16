@@ -5,11 +5,13 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { markerPeriodLabel } from '../../core/models/marker-date-precision';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
+import { catalystContextLine } from './group-catalysts';
 
 @Component({
   selector: 'app-catalyst-table',
@@ -125,7 +127,11 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
           [attr.aria-pressed]="catalyst.marker_id === selectedId()"
         >
           <td class="font-mono text-xs tabular-nums text-slate-500">
-            {{ catalyst.event_date | date: 'MMM dd' }}
+            @if (periodLabel(catalyst); as label) {
+              ~{{ label }}
+            } @else {
+              {{ catalyst.event_date | date: 'MMM dd' }}
+            }
           </td>
           <td>
             <span class="inline-flex items-center gap-1.5">
@@ -138,7 +144,7 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
                 [isNle]="catalyst.no_longer_expected"
               />
               <span
-                class="text-xs text-slate-500"
+                class="whitespace-nowrap text-xs text-slate-500"
                 [innerHTML]="catalyst.category_name | highlight: query()"
               ></span>
             </span>
@@ -152,6 +158,12 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
                 [eventId]="catalyst.trial_most_recent_change_event_id ?? null"
               />
             </span>
+            @if (catalystContextLine(catalyst); as context) {
+              <span
+                class="mt-0.5 block text-xs font-normal text-slate-500"
+                [innerHTML]="context | highlight: query()"
+              ></span>
+            }
           </td>
           <td class="text-xs text-slate-500">
             @if (catalyst.company_name) {
@@ -207,6 +219,12 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 })
 export class CatalystTableComponent {
   protected readonly viewDetailsLabel = viewDetailsLabel;
+  protected readonly catalystContextLine = catalystContextLine;
+
+  /** Approximate period label ("Q4 '26") for a fuzzy-dated catalyst, else null. */
+  protected periodLabel(catalyst: FlatCatalyst): string | null {
+    return markerPeriodLabel(catalyst.event_date, catalyst.date_precision);
+  }
   readonly catalysts = input.required<FlatCatalyst[]>();
   readonly loading = input<boolean>(false);
   readonly selectedId = input<string | null>(null);

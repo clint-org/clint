@@ -41,6 +41,9 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgb(100 116 139); /* slate-500 */
+  /* Keep the column label + sort/filter glyphs on a single line; tables set a
+     min-width and scroll horizontally, so headers never need to wrap. */
+  white-space: nowrap;
 }
 
 .data-table .p-datatable-tbody > tr {

@@ -4,7 +4,7 @@
   }
 
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search trials...">
-    <app-export-button gridToolbarStart [actions]="exportActions" />
+    <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
 
   <p-table
@@ -14,7 +14,7 @@
     [tableStyle]="{ 'min-width': '72rem' }"
     [lazy]="true"
     (onLazyLoad)="grid.onLazyLoad($event)"
-    [paginator]="true"
+    [paginator]="grid.totalRecords() > grid.page().rows"
     [rows]="grid.page().rows"
     [first]="grid.page().first"
     [totalRecords]="grid.totalRecords()"
@@ -61,9 +61,9 @@
             </ng-template>
           </p-column-filter>
         </th>
-        <th class="col-num" pSortableColumn="phaseCount">
-          Phases <p-sortIcon field="phaseCount" />
-          <p-column-filter type="numeric" field="phaseCount" display="menu" />
+        <th pSortableColumn="phaseRank">
+          Phase <p-sortIcon field="phaseRank" />
+          <p-column-filter type="text" field="phaseLabel" display="menu" />
         </th>
         <th class="col-num" pSortableColumn="markerCount">
           Markers <p-sortIcon field="markerCount" />
@@ -134,7 +134,7 @@
         <td>
           <app-status-tag [label]="row.trial.status" />
         </td>
-        <td class="col-num">{{ row.phaseCount }}</td>
+        <td class="col-secondary">{{ row.phaseLabel }}</td>
         <td class="col-num">{{ row.markerCount }}</td>
         @for (col of extraColumns(); track col.path) {
           <td class="col-secondary">{{ extraValue(row.trial.id, col.path) || '--' }}</td>
