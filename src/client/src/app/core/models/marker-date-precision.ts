@@ -114,6 +114,22 @@ export function markerPeriodLabel(
 }
 
 /**
+ * The compact caption printed under a marker on the timeline: the approximate
+ * period prefixed with '~' ("~Q4 '26"), or the exact "Mon 'YY" for a precise
+ * date. Pure (no Date/timezone) so the node unit runner and the row-decollision
+ * width math share one source of truth with the rendered caption.
+ */
+export function markerStartCaption(
+  eventDateISO: string,
+  precision: DatePrecision | null | undefined
+): string {
+  const period = markerPeriodLabel(eventDateISO, precision);
+  if (period) return `~${period}`;
+  const { y, m } = isoParts(eventDateISO);
+  return `${MONTHS[m - 1]} '${String(y).slice(-2)}`;
+}
+
+/**
  * Compose a marker's temporal extent from pre-formatted endpoint labels:
  * "Q3 '24 onwards" (ongoing), "Q4 '26 – Q1 '27" (bounded), or just the start
  * (a point). Endpoint formatting (period label vs exact date) is the caller's

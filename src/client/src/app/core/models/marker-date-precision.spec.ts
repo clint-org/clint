@@ -7,6 +7,7 @@ import {
   markerExtentLabel,
   markerPeriodFromDate,
   markerPeriodLabel,
+  markerStartCaption,
   precisionMidpointISO,
 } from './marker-date-precision';
 
@@ -107,6 +108,18 @@ describe('markerPeriodLabel', () => {
     expect(markerPeriodLabel('2026-10-01', 'half')).toBe("H2 '26");
     expect(markerPeriodLabel('2026-01-10', 'half')).toBe("H1 '26");
     expect(markerPeriodLabel('2026-07-01', 'year')).toBe('2026');
+  });
+});
+
+describe('markerStartCaption', () => {
+  it('prefixes the fuzzy period with a tilde', () => {
+    expect(markerStartCaption('2026-11-15', 'quarter')).toBe("~Q4 '26");
+    expect(markerStartCaption('2026-07-01', 'year')).toBe('~2026');
+  });
+
+  it('renders an exact date as plain "Mon \'YY" with no tilde', () => {
+    expect(markerStartCaption('2026-03-15', 'exact')).toBe("Mar '26");
+    expect(markerStartCaption('2028-09-30', 'exact')).toBe("Sep '28");
   });
 });
 
