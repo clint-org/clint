@@ -88,6 +88,11 @@ import type { GridState } from '../grids/filter-types';
             />
           }
         </div>
+
+        <!-- Trailing slot, pinned to the right edge of the toolbar. Hosts the
+             export trigger so list pages match the Landscape top-right export
+             convention. Empty on pages that don't project into it. -->
+        <ng-content select="[gridToolbarEnd]" />
       </div>
 
       @if (state().activeFilters().length > 0) {

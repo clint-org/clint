@@ -65,26 +65,6 @@
     {{ productCountSummary() }}
   </text>
 
-  <!-- ring labels at 12 o'clock gutter. LAUNCHED is omitted — the center
-       disc with the scope name is a clearer visual anchor for the innermost
-       position than a redundant ring label. Each label is colored by its
-       phase so the legend matches the dot color. -->
-  @for (ring of rings(); track 'label-' + ring.devRank) {
-    @if (ring.phase !== 'LAUNCHED') {
-      <text
-        [attr.x]="cx + 8"
-        [attr.y]="ringLabelY(ring.radius)"
-        [attr.fill]="ringLabelFill(ring.phase)"
-        font-size="13"
-        font-weight="600"
-        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
-        letter-spacing="1.2"
-      >
-        {{ ringLabel(ring.phase) }}
-      </text>
-    }
-  }
-
   <!-- spoke labels outside outer rim -->
   @for (label of spokeLabels(); track label.id) {
     <text
@@ -186,6 +166,39 @@
         (blur)="isAssetMatched(dot.product.id) && onDotMouseLeave()"
         (keydown)="isAssetMatched(dot.product.id) && onDotKeydown($event, dot.product.id)"
       />
+    </g>
+  }
+
+  <!-- ring labels at the 12 o'clock gutter, drawn last so they sit above the
+       dots that share that gutter. LAUNCHED is omitted — the center disc with
+       the scope name is the clearer anchor for the innermost position. Each
+       label gets a semi-opaque slate-tinted halo so the phase-colored monospace
+       text stays legible over any dot it overlaps; the dots are never moved. -->
+  @for (label of ringLabels(); track 'label-' + label.phase) {
+    <g class="ring-label-group">
+      <rect
+        [attr.x]="label.haloX"
+        [attr.y]="label.haloY"
+        [attr.width]="label.haloW"
+        [attr.height]="label.haloH"
+        rx="3"
+        fill="rgba(255, 255, 255, 0.82)"
+        stroke="rgba(148, 163, 184, 0.45)"
+        stroke-width="0.75"
+        pointer-events="none"
+      />
+      <text
+        [attr.x]="label.x"
+        [attr.y]="label.y"
+        [attr.fill]="label.fill"
+        font-size="13"
+        font-weight="600"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        letter-spacing="1.2"
+        pointer-events="none"
+      >
+        {{ label.text }}
+      </text>
     </g>
   }
 </svg>

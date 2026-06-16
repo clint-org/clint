@@ -60,11 +60,13 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
               [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
+              [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
+              (editMarkerClick)="onEditMarker($event)"
             />
           }
         }
@@ -171,6 +173,19 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   onTrialClick(trialId: string): void {
     this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+  }
+
+  /**
+   * "Edit marker" on the detail panel: navigate to the marker's parent trial
+   * with `?marker=<id>`. trial-detail reads that query param to open the
+   * inline marker editor and scroll to the markers section (markers have no
+   * standalone detail page). Role-gating happens in the panel; only owners
+   * and editors ever emit this.
+   */
+  onEditMarker(target: { trialId: string; markerId: string }): void {
+    this.router.navigate([...this.spaceBase(), 'manage', 'trials', target.trialId], {
+      queryParams: { marker: target.markerId },
+    });
   }
 
   private extractRouteParams(): void {

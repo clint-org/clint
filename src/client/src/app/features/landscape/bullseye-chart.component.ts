@@ -16,6 +16,7 @@ import {
   INNER_RADIUS,
   OUTER_RADIUS,
   annularBandPath,
+  ringLabelHalo,
   spokeAngle,
   spokeLabelTransform,
   jitterAngles,
@@ -61,6 +62,26 @@ interface DotSpec {
   x: number;
   y: number;
 }
+
+interface RingLabelSpec {
+  phase: RingPhase;
+  text: string;
+  fill: string;
+  x: number;
+  y: number;
+  haloX: number;
+  haloY: number;
+  haloW: number;
+  haloH: number;
+}
+
+/** Left edge of the ring label text in the 12 o'clock gutter. */
+const RING_LABEL_X = CX + 8;
+/** Horizontal padding baked into ringLabelHalo, mirrored to place the halo. */
+const RING_LABEL_HALO_PAD_X = 5;
+/** Cap height + top padding used to lift the halo above the text baseline. */
+const RING_LABEL_HALO_CAP = 13;
+const RING_LABEL_HALO_PAD_Y = 3;
 
 const LABEL_SHRINK_THRESHOLD = 12;
 const ABBREVIATION_MAX_LENGTH = 14;
@@ -247,6 +268,31 @@ export class BullseyeChartComponent {
     });
 
     return out;
+  });
+
+  // Ring labels live in the 12 o'clock gutter, where spoke-0 dots also land.
+  // Each label carries a semi-opaque halo rect drawn behind it so the colored
+  // monospace text stays legible over any dot it overlaps. LAUNCHED is omitted
+  // (the center disc is the clearer anchor for the innermost position).
+  protected readonly ringLabels = computed<RingLabelSpec[]>(() => {
+    return this.rings()
+      .filter((ring) => ring.phase !== 'LAUNCHED')
+      .map((ring) => {
+        const text = this.ringLabel(ring.phase);
+        const halo = ringLabelHalo(text);
+        const baselineY = this.ringLabelY(ring.radius);
+        return {
+          phase: ring.phase,
+          text,
+          fill: this.ringLabelFill(ring.phase),
+          x: RING_LABEL_X,
+          y: baselineY,
+          haloX: RING_LABEL_X - RING_LABEL_HALO_PAD_X,
+          haloY: baselineY - RING_LABEL_HALO_CAP - RING_LABEL_HALO_PAD_Y,
+          haloW: halo.width,
+          haloH: halo.height,
+        };
+      });
   });
 
   protected readonly ariaLabel = computed(() => {

@@ -199,65 +199,69 @@
         [selectedItemsLabel]="'Category (' + state.filters().markerCategoryIds.length + ')'"
       />
 
-      <!-- Time period: From/To year with optional quarter -->
-      <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-      <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
-        >Period</span
-      >
-      <p-select
-        [options]="yearOptions()"
-        [ngModel]="state.filters().timePeriod?.startYear ?? null"
-        (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
-        placeholder="From"
-        ariaLabel="Time period start year"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="quarterOptions"
-        [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
-        (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
-        placeholder="Q"
-        ariaLabel="Time period start quarter"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        [disabled]="!state.filters().timePeriod?.startYear"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="yearOptions()"
-        [ngModel]="state.filters().timePeriod?.endYear ?? null"
-        (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
-        placeholder="To"
-        ariaLabel="Time period end year"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
-        size="small"
-      />
-      <p-select
-        [options]="quarterOptions"
-        [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
-        (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
-        placeholder="Q"
-        ariaLabel="Time period end quarter"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        [disabled]="!state.filters().timePeriod?.endYear"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
-        size="small"
-      />
+      <!-- Time period: From/To year with optional quarter. Hidden on the
+           bullseye, where get_bullseye_assets ignores the period entirely, so
+           the control would imply an effect it does not have. -->
+      @if (viewMode() !== 'bullseye') {
+        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+          >Period</span
+        >
+        <p-select
+          [options]="yearOptions()"
+          [ngModel]="state.filters().timePeriod?.startYear ?? null"
+          (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
+          placeholder="From"
+          ariaLabel="Time period start year"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="quarterOptions"
+          [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
+          (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
+          placeholder="Q"
+          ariaLabel="Time period start quarter"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          [disabled]="!state.filters().timePeriod?.startYear"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="yearOptions()"
+          [ngModel]="state.filters().timePeriod?.endYear ?? null"
+          (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
+          placeholder="To"
+          ariaLabel="Time period end year"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
+          size="small"
+        />
+        <p-select
+          [options]="quarterOptions"
+          [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
+          (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
+          placeholder="Q"
+          ariaLabel="Time period end quarter"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          [disabled]="!state.filters().timePeriod?.endYear"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
+          size="small"
+        />
+      }
 
       @if (hasAnyActive()) {
         <p-button
