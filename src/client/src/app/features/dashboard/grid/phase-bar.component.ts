@@ -6,7 +6,9 @@ import {
   phaseShortLabel,
 } from '../../../core/models/phase-colors';
 import { TimelineService } from '../../../core/services/timeline.service';
-import { phaseOutlinePath } from './phase-bar-outline';
+import { phaseFadeStops } from './phase-bar-fade';
+
+let phaseBarUid = 0;
 
 const BAR_HEIGHT = 14;
 const CORNER_RADIUS = 3;
@@ -67,16 +69,12 @@ export class PhaseBarComponent {
    * is left without a cap so the bar reads as continuing beyond the window. The
    * faint fill rect carries the body; this path carries the edges.
    */
-  protected readonly outlinePath = computed(() =>
-    phaseOutlinePath(
-      this.barX(),
-      this.barWidth(),
-      8,
-      this.barHeight,
-      this.cornerRadius,
-      this.openLeft(),
-      this.openRight()
-    )
+  /** Unique mask id so each bar's edge fade is independent. */
+  protected readonly maskId = `phase-fade-${phaseBarUid++}`;
+
+  /** Mask gradient stops for the edge fade, or null when the bar is solid. */
+  protected readonly fadeStops = computed(() =>
+    phaseFadeStops(this.barWidth(), this.openLeft(), this.openRight())
   );
 
   protected readonly barColor = computed(
