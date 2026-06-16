@@ -3,6 +3,7 @@ import {
   resolveSpaceBadge,
   resolveTherapeuticAreaLabel,
   resolveUserDisplay,
+  shouldShowTrialSecondaryName,
 } from './display-fallbacks';
 
 describe('resolveUserDisplay', () => {
@@ -110,5 +111,38 @@ describe('resolveSpaceBadge', () => {
       label: '(archived)',
       tone: 'archived',
     });
+  });
+});
+
+describe('shouldShowTrialSecondaryName', () => {
+  it('suppresses the secondary line when acronym equals name (UI-23)', () => {
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', 'ATTAIN-1', 'NCT12345678')).toBe(false);
+  });
+
+  it('shows the secondary line when name differs from both acronym and identifier', () => {
+    expect(
+      shouldShowTrialSecondaryName('ATTAIN-1', 'A Study of Tirzepatide', 'NCT12345678'),
+    ).toBe(true);
+  });
+
+  it('suppresses when name equals the identifier', () => {
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', 'NCT12345678', 'NCT12345678')).toBe(false);
+  });
+
+  it('returns false when there is no acronym', () => {
+    expect(shouldShowTrialSecondaryName(null, 'Some Name', 'NCT12345678')).toBe(false);
+  });
+
+  it('returns false when the name is empty or whitespace', () => {
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', '   ', 'NCT12345678')).toBe(false);
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', null, 'NCT12345678')).toBe(false);
+  });
+
+  it('ignores surrounding whitespace when comparing', () => {
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', '  ATTAIN-1 ', 'NCT12345678')).toBe(false);
+  });
+
+  it('tolerates a null identifier', () => {
+    expect(shouldShowTrialSecondaryName('ATTAIN-1', 'A Study of Tirzepatide', null)).toBe(true);
   });
 });

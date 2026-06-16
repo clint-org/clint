@@ -65,7 +65,7 @@ Both personas lost real time. Both violate the repo's own empty-state audit rule
 MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel shows "(not set)" directly under a header asserting "PH 3".
 
 - `[~]` **Error toast already exists in code.** `trial-detail.component.ts` `syncCtgov()` wraps in try/catch with `messageService.add({severity:'error'})`; `change-event.service.ts triggerSingleTrialSync()` throws on `!res.ok`. The missing toast was almost certainly **the local Worker not running** (no `/api/*` in the bare dev server), not a defect. **Action:** verify with the Worker up; if it fires, no change. If it still swallows, check the post-success `Promise.all([loadTrial, loadSnapshot, loadTrialActivity])` for a throw path bypassing the catch.
-- `[ ]` **Contradictory phase display is a real UX issue.** Header uses `phase_type || phase` (`trial-detail.component.html:102`); CT.gov panel uses only `phase` (`:363`). Intentionally separate fields (analyst-owned `phase_type` vs CT.gov-synced `phase`), but "PH 3" above "(not set)" reads as a data bug. **Fix:** label the panel phase "CT.gov registry phase (as reported)" and/or show `phase_type_source` so the analyst override is legible. **(S)**
+- `[x]` **Contradictory phase display is a real UX issue.** Header uses `phase_type || phase` (`trial-detail.component.html:102`); CT.gov panel uses only `phase` (`:363`). Intentionally separate fields (analyst-owned `phase_type` vs CT.gov-synced `phase`), but "PH 3" above "(not set)" reads as a data bug. **Fixed:** CT.gov panel field relabeled "Registry phase (as reported)"; header phase carries a tooltip distinguishing the analyst's assessed phase from the registry phase.
 
 ---
 
@@ -90,7 +90,7 @@ MD clicked "Sync from CT.gov" (500 from `/api/ctgov/sync-trial`); registry panel
 - `[~]` **UI-17 Members role column treatment mismatch.** Color half done. Still open: self shows a static badge, others a dropdown — same column, two visuals, no explanation. **(S)**
 - `[ ]` **UI-18 Agency Branding form.** Raw "unknown@unknown.invalid" default surfaced in contact email; empty right half wants a live brand preview (color + logo on a mini header). *Save-disabled half resolved by UI-6.* **(S–M)**
 - `[ ]` **UI-22 Detail mini-timelines clip phase bars flat at the left edge** with no "starts earlier" affordance. **(S)**
-- `[ ]` **UI-23 Trial detail header repeats the name** ("ATTAIN-1  ATTAIN-1" when display name == raw name). Suppress the duplicate. **(S)**
+- `[x]` **UI-23 Trial detail header repeats the name** ("ATTAIN-1  ATTAIN-1" when display name == raw name). Suppress the duplicate. **(S)**
 
 ---
 
