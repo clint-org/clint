@@ -18,6 +18,7 @@ import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
 import { environment } from '../../../environments/environment';
 import { APP_VERSION } from '../../../environments/version';
+import { userDisplayName } from '../../shared/utils/user-display-name';
 import { CommandPaletteComponent } from './command-palette/command-palette.component';
 import { SidebarComponent } from './sidebar.component';
 import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.component';
@@ -125,14 +126,25 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         <div class="account-backdrop" @backdropFade (click)="accountOpen.set(false)"></div>
         <div class="account-menu" @menuSlideUp role="menu">
           <div class="account-menu__header">
-            <p class="account-menu__label">Signed in as</p>
-            <p class="account-menu__email">{{ user()?.email }}</p>
+            @if (avatarUrl(); as url) {
+              <img class="account-menu__avatar" [src]="url" alt="" />
+            } @else {
+              <span class="account-menu__avatar account-menu__avatar--initials">{{ initials() }}</span>
+            }
+            <div class="account-menu__who">
+              <p class="account-menu__name">{{ displayName() }}</p>
+              <p class="account-menu__email">{{ user()?.email }}</p>
+            </div>
           </div>
+          <button type="button" class="account-menu__item" (click)="goToHelp()" role="menuitem">
+            Help &amp; roles
+          </button>
           <button type="button" class="account-menu__item" (click)="onSignOut()" role="menuitem">
             Sign out
           </button>
           <div class="account-menu__footer">
             <span>v{{ appVersion }}</span>
+            <span>{{ currentTenantName() }}</span>
           </div>
         </div>
       }
@@ -271,23 +283,49 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       }
 
       .account-menu__header {
-        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
         border-bottom: 1px solid #334155;
       }
 
-      .account-menu__label {
-        font-size: 9px;
+      .account-menu__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        object-fit: cover;
+      }
+
+      .account-menu__avatar--initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #334155;
+        color: #e2e8f0;
+        font-size: 12px;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #475569;
+      }
+
+      .account-menu__who {
+        min-width: 0;
+      }
+
+      .account-menu__name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #f1f5f9;
         margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .account-menu__email {
-        font-size: 12px;
-        color: #e2e8f0;
-        margin: 4px 0 0;
+        font-size: 11px;
+        color: #94a3b8;
+        margin: 2px 0 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -314,12 +352,23 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
       }
 
       .account-menu__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
         padding: 6px 14px;
         border-top: 1px solid #334155;
         font-size: 10px;
         font-family: monospace;
         color: #475569;
         letter-spacing: 0.5px;
+      }
+
+      .account-menu__footer span:last-child {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
       }
     `,
   ],
@@ -374,6 +423,15 @@ export class AppShellComponent implements OnInit {
   readonly avatarUrl = computed(() => {
     const meta = this.user()?.user_metadata;
     return (meta?.['avatar_url'] as string) ?? (meta?.['picture'] as string) ?? null;
+  });
+
+  readonly displayName = computed(() => {
+    const meta = this.user()?.user_metadata;
+    return userDisplayName(
+      meta?.['full_name'] as string,
+      meta?.['name'] as string,
+      this.user()?.email
+    );
   });
 
   readonly currentTenantName = computed(() => {
@@ -743,6 +801,11 @@ export class AppShellComponent implements OnInit {
     if (this.accountOpen()) {
       this.accountOpen.set(false);
     }
+  }
+
+  goToHelp(): void {
+    this.accountOpen.set(false);
+    this.router.navigate(['/t', this.tenantId(), 'help', 'roles']);
   }
 
   async onSignOut(): Promise<void> {
