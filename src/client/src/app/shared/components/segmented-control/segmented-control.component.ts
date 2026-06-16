@@ -30,8 +30,8 @@ export interface SegmentedOption {
   selector: 'app-segmented-control',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="segmented" role="radiogroup" [attr.aria-label]="ariaLabel()" (keydown)="onKeydown($event)">
-      @for (opt of options(); track opt.value; let i = $index) {
+    <div class="segmented" role="radiogroup" [attr.aria-label]="ariaLabel()">
+      @for (opt of options(); track opt.value) {
         <button
           #seg
           type="button"
@@ -39,8 +39,9 @@ export interface SegmentedOption {
           class="segmented__option"
           [class.active]="opt.value === value()"
           [attr.aria-checked]="opt.value === value()"
-          [attr.tabindex]="i === focusIndex() ? 0 : -1"
+          [attr.tabindex]="$index === focusIndex() ? 0 : -1"
           (click)="select(opt.value)"
+          (keydown)="onKeydown($event)"
         >
           {{ opt.label }}
         </button>

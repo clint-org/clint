@@ -17,6 +17,8 @@ import { TenantService } from '../services/tenant.service';
 import { Space } from '../models/space.model';
 import { Tenant } from '../models/tenant.model';
 import { environment } from '../../../environments/environment';
+import { NgOptimizedImage } from '@angular/common';
+
 import { APP_VERSION } from '../../../environments/version';
 import { userDisplayName } from '../../shared/utils/user-display-name';
 import { CommandPaletteComponent } from './command-palette/command-palette.component';
@@ -44,6 +46,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
   selector: 'app-shell',
   standalone: true,
   imports: [
+    NgOptimizedImage,
     RouterOutlet,
     CommandPaletteComponent,
     SidebarComponent,
@@ -127,7 +130,14 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         <div class="account-menu" @menuSlideUp role="menu">
           <div class="account-menu__header">
             @if (avatarUrl(); as url) {
-              <img class="account-menu__avatar" [src]="url" alt="" />
+              <img
+                class="account-menu__avatar"
+                [ngSrc]="url"
+                [alt]="displayName()"
+                width="32"
+                height="32"
+                referrerpolicy="no-referrer"
+              />
             } @else {
               <span class="account-menu__avatar account-menu__avatar--initials">{{ initials() }}</span>
             }

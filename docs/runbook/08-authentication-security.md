@@ -339,4 +339,5 @@ Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` 
 - `sourceImportDeactivateGuard`
 - `sourceImportGuard`
 - `spaceOwnerGuard`
+- `tenantRootRedirectGuard`
 <!-- /AUTO-GEN:DRIFT -->

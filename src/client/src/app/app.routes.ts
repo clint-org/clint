@@ -13,7 +13,7 @@ import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
-import { tenantRootRedirectGuard } from './core/guards/tenant-root.guard';
+import { tenantRootRedirectGuard } from './core/guards/tenant-root-redirect.guard';
 import { importGuard } from './core/guards/import.guard';
 import { editGuard } from './core/guards/edit.guard';
 
