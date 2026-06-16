@@ -155,6 +155,11 @@ Migration 75 (`20260429010000_owner_only_explicit_space_access.sql`) removed imp
 - **Filters affordance:** collapse the Landscape filter row into one "Filters" control with applied-filter chips (the READ line already summarizes editorially)?
 - **Events/Catalysts:** lead with a one-line READ like Home/Timeline?
 
+## Post-merge follow-ups — stream-2 (2026-06-16)
+
+- `[x]` **Settings section leaked to non-owners (security/affordance).** The sidebar only filtered the `manage` section for non-editors, so the whole `settings` section (General, Members, Fields, Taxonomies, Marker Types, Audit log) showed to viewers, and only `settings/audit-log` had a route guard. Audit *data* was already safe server-side (RLS `audit_events_select_strict_scope_owners` = space owners only), but the nav/affordance was open. Fix: `filterNavSections` (pure + spec) hides owner-only settings items (General/Members/Fields/Audit log) for non-owners; Marker Types + Taxonomies stay visible (read-only reference). New `spaceOwnerGuard` on `settings/general|members|fields` (audit-log keeps `auditSpaceGuard`); redirects non-owners to the space root with an info toast (matching the P1.3 `space.guard` pattern). Verified: a viewer is redirected from `settings/members`.
+- `[x]` **Command palette asset entries broken (UI-20 follow-up).** See UI-20 above -- client kind `product` -> `asset`.
+
 ## Locked decisions — stream-2 (2026-06-15)
 
 - **P2.1 fuzzy dates → midpoint + approx marker.** Precision enum `exact | month | quarter | half | year` drives midpoint math; quarter/month/etc. markers render with a hollow ring fill, a `~` prefix on the date caption, and "(estimated)" in tooltip + detail. Point semantics kept everywhere (no range bands). Rejected: range band (structural rendering change, heavy on dense rows), plain midpoint (reproduces the original complaint).

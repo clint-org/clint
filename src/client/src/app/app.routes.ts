@@ -8,6 +8,7 @@ import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
 import { auditTenantGuard } from './core/guards/audit-tenant.guard';
 import { auditAgencyGuard } from './core/guards/audit-agency.guard';
 import { auditSpaceGuard } from './core/guards/audit-space.guard';
+import { spaceOwnerGuard } from './core/guards/space-owner.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
@@ -422,6 +423,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/general',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-general.component').then(
                 (m) => m.SpaceGeneralComponent
@@ -429,6 +431,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/members',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-members.component').then(
                 (m) => m.SpaceMembersComponent
@@ -436,6 +439,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/fields',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-field-visibility-settings.component').then(
                 (m) => m.SpaceFieldVisibilitySettingsComponent
