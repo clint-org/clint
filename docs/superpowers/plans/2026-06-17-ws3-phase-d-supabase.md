@@ -10,6 +10,15 @@
 
 ---
 
+> **Execution outcome (2026-06-17) -- read this first; it supersedes parts of the tasks below.**
+> - **Method changed from import to the create path.** Using an `import {}` block (Tasks 3/5 as written) pulls the full settings blob into state and forces managing platform-managed fields that drift. The provider does clean partial management on the *create* path: declare only the chosen fields, **no import block**; create PATCHes just those current values and `pickConfig` keeps the rest out of state. All `import {}` steps below were dropped.
+> - **Scope settled to auth only.** Only the redirect allow-list and OAuth/auth setup were ever moved off Supabase defaults, so Task 4 (api/database/network/pooler/storage) was descoped; those blocks are left at defaults and documented as residue (runbook domain 6).
+> - **Dropped provider-gated fields.** `rate_limit_email_sent` / `rate_limit_sms_sent` are not writable without custom SMTP / SMS (default mailer); `password_required_characters` is empty. All omitted.
+> - **Result:** `infra/tofu/{dev,prod}/supabase.tf` each manage one `supabase_settings` with 24 non-secret auth fields; both roots plan `No changes`. Prod apply needed one retry after a transient `pg_bouncer` health-check timeout.
+> - Full rationale: section 10 of `docs/superpowers/specs/2026-06-17-ws3-phase-d-supabase-design.md`.
+
+---
+
 ## Conventions used in every task
 
 - **Work happens in the worktree** `/Users/aadityamadala/Documents/code/clint-v2/.worktrees/ws3-finish` on branch `infra/ws3-finish`. Verify with `git -C /Users/aadityamadala/Documents/code/clint-v2/.worktrees/ws3-finish branch --show-current` before any commit.

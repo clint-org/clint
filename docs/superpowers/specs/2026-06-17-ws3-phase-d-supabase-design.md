@@ -185,3 +185,32 @@ file.
 Write the Phase D implementation plan (provider scaffold, then per-block import to a
 quiet plan, dev before prod) and execute it inline. Phase E (the drift gate,
 including the config.toml policy comparison) gets its own spec afterward.
+
+## 10. Implementation outcome (2026-06-17)
+Two design assumptions changed during execution; recorded here so the doc matches
+what shipped:
+
+- **Method: create path, not import.** `supabase_settings`' `ImportState` reads the
+  *entire* settings blob into state, which then forces managing every field --
+  including platform-managed storage fields (`databasePoolMode`, `migrationVersion`,
+  `external.upstreamTarget`) that Supabase mutates on its own and would drift every
+  plan. The provider does true partial management on the *create* path instead: list
+  only the chosen fields, no `import` block; create issues a partial PATCH of those
+  (current) values, and `pickConfig` keeps unspecified fields out of state. Verified
+  on the provider source and empirically (clean `1 to add` then `No changes`). The
+  plan's import-block steps were superseded by this.
+- **Scope: auth only.** The only settings actually moved off Supabase defaults are
+  the redirect allow-list and the OAuth/auth setup. The api/database/network/pooler/
+  storage blocks are at or near defaults, so codifying them would add drift surface
+  for no recovery value; they are left unmanaged and documented as default (runbook
+  domain 6). "Codify everything we can" resolved to "the auth fields that are
+  non-secret and writable."
+- **Provider-gated fields dropped.** The create path PATCHes the live project, and
+  the Management API rejects writing `rate_limit_email_sent` / `rate_limit_sms_sent`
+  unless custom SMTP / an SMS provider is configured (these projects use the default
+  mailer). They read back fine but are not writable, so they are omitted.
+  `password_required_characters` is empty on both projects, so it is omitted too.
+- **Result.** `infra/tofu/{dev,prod}/supabase.tf` each manage one `supabase_settings`
+  resource with 24 non-secret auth fields; both roots reach `No changes`. The prod
+  apply hit a transient `pg_bouncer` health-check timeout once and succeeded on
+  retry (the project was healthy; no config issue).

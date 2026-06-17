@@ -1,8 +1,9 @@
 # Clint infrastructure as code (OpenTofu)
 
-Codifies Clint's Cloudflare and (later) Supabase infrastructure. Part of WS3 of
-the DR remediation program. See
-`docs/superpowers/specs/2026-06-10-ws3-iac-foundation-design.md`.
+Codifies Clint's Cloudflare and Supabase infrastructure. Part of WS3 of the DR
+remediation program. See
+`docs/superpowers/specs/2026-06-10-ws3-iac-foundation-design.md` and the Supabase
+piece `docs/superpowers/specs/2026-06-17-ws3-phase-d-supabase-design.md`.
 
 ## Layout: one root config per environment
 Each folder is an independent OpenTofu root with its own state and its own Scalr
@@ -10,12 +11,12 @@ workspace, so the blast radius of any change is one environment.
 
 ```
 infra/tofu/
-  shared/   account-level + cross-env resources (clint-db-backups, later the
-            clintapp.com DNS zone, account settings)   -> Scalr workspace clint-shared
-  dev/      dev-only resources (clint-dev, clint-materials-dev, dev Supabase)
-                                                        -> clint-dev   (to be built)
-  prod/     prod-only resources (clint, clint-materials, prod Supabase)
-                                                        -> clint-prod  (to be built)
+  shared/   account-level + cross-env resources (clint-db-backups, clint-db-backups
+            B2 mirror, the clintapp.com DNS zone + records)  -> Scalr workspace clint-shared
+  dev/      dev-only resources (clint-materials-dev, dev Worker routes,
+            clint-dev Supabase auth settings)             -> clint-dev
+  prod/     prod-only resources (clint-materials, prod Worker custom domains +
+            tenant-wildcard route, clint Supabase auth settings)  -> clint-prod
 ```
 
 Reusable resource templates (modules) get factored out only once dev and prod have
