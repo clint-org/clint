@@ -22,5 +22,9 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5"
     }
+    supabase = {
+      source  = "supabase/supabase"
+      version = "~> 1"
+    }
   }
 }

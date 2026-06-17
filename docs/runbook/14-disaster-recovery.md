@@ -38,8 +38,8 @@ goal, "actual" is what evidence supports today.
 | 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | none | unrecoverable today / unrecoverable today | none. DB backup stores only the pointers | single copy: no versioning, no Object Lock, no off-cloud copy |
 | 3 | Secrets and encryption keys | key lost or leaked; Infisical unavailable | varies by secret; age key loss blocks all DB restores | weekly break-glass export (opens an issue on failure) | n/a / minutes (edit in Infisical) | Infisical Cloud is the source of truth, syncing to GHA + Workers + tofu; weekly age-encrypted break-glass export to R2 + B2 | automated rotation still manual (own spec); a few provider secrets (OAuth, Resend) not yet migrated |
 | 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; zone/records + prod platform domains/route now in IaC, per-tenant custom domains still manual |
-| 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; config in `supabase/config.toml` | cloud provider secrets and redirect URLs live only in the dashboard |
-| 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | none | n/a / hours | schema/RLS/extensions in migrations; auth shape in `config.toml` | cloud-only settings (provider secrets, redirect URLs, pooler, edge secrets) not captured as code |
+| 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; live redirect allow-list codified in `infra/tofu/{dev,prod}/supabase.tf` | provider client secrets stay console-only by design (API returns them hashed) |
+| 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | none | n/a / hours | schema/RLS/extensions in migrations; live auth (redirect allow-list + OAuth setup) codified in `infra/tofu/{dev,prod}/supabase.tf` | residue: OAuth client secrets (regenerate from Google/Azure console), edge secrets, invite webhook; pooler/storage left at Supabase defaults |
 | 7 | Cloudflare account and Workers | bad deploy, wrangler config loss, account compromise/suspension | bad deploy: all tenants briefly. Account loss: app + DNS + materials + primary DB backups | none (no uptime check) | n/a / minutes (deploy) to days (account) | GHA deploy with prod approval gate; rollback via redeploy | account is the largest single blast radius; B2 is the only DB backup outside it |
 | 8 | CI/CD and source (GitHub) | repo/account loss, GHA secrets loss | cannot deploy via the normal path | push failures, workflow errors | n/a / minutes to hours | local `wrangler deploy` + `supabase db push` work without GitHub | deploy secrets live in GHA; partial offline copy only |
 | 9 | Third-party vendors and billing | vendor outage, account termination, billing lapse, free-tier auto-pause | degrade (most) to hard-down (Supabase, Cloudflare) | in-app `/api/ai/health` for Anthropic only | varies | feature gates; non-blocking design for Brandfetch/Resend/CT.gov | Supabase free-tier auto-pause and project quota are live failure modes |
@@ -256,42 +256,57 @@ Inventory by Infisical location -> consumer:
      or Azure AD console, set the redirect URL to the Supabase callback, and update
      `GOOGLE_OAUTH_*` / `MICROSOFT_OAUTH_*` in the Supabase project secrets.
   2. Redirect drift: align the provider console redirect URLs and the Supabase Auth
-     redirect allow-list (`additional_redirect_urls` in `config.toml` documents the
-     intended set; the cloud project's list is the live source of truth).
-  3. Auth config lost with the project: see domain 6; the provider shape is in
-     `config.toml`, the secrets are not.
-- Known gap: the cloud provider secrets and the live redirect allow-list exist only
-  in the Supabase dashboard, not in version control.
+     redirect allow-list. The allow-list is codified in
+     `infra/tofu/{dev,prod}/supabase.tf`; `tofu apply` restores it and `tofu plan`
+     detects drift from it.
+  3. Auth config lost with the project: see domain 6; the live auth settings are in
+     tofu, the client secrets are not (regenerate from the provider console).
+- Known gap: the live redirect allow-list and OAuth setup are now codified in
+  `infra/tofu/{dev,prod}/supabase.tf` (WS3 Phase D); the provider client secrets
+  remain dashboard-only by design (the Management API returns them hashed, so they
+  cannot be managed as code), recoverable from the Google Cloud / Azure AD console.
 
 ### 6. Supabase project (configuration, not data)
 The DB restore (domain 1) recovers DATA. This domain recovers the PROJECT around
 it: Auth providers and redirect URLs, Storage config, RLS, extensions, the pooler,
 the edge function and its secrets, and OAuth setup.
 - Captured as code: the `public` schema, all RLS policies, all RPCs, and the
-  required extensions are in `supabase/migrations/`. The intended Auth shape, the
-  redirect allow-list, and the edge runtime config are in `supabase/config.toml`.
+  required extensions are in `supabase/migrations/`. The intended Auth shape and the
+  edge runtime config are in `supabase/config.toml` (which configures the local
+  stack). The live cloud auth settings -- the redirect allow-list, the Google and
+  Microsoft enabled flags and client ids, and the auth policy (JWT/refresh expiry,
+  MFA, password length, IP rate limits) -- are codified in
+  `infra/tofu/{dev,prod}/supabase.tf` (WS3 Phase D, create-path partial management).
   The one edge function, `send-invite-email`, is in `supabase/functions/`.
-- Not captured as code (dashboard only): which providers are toggled on in the
-  cloud project, the live OAuth client secrets, the live redirect allow-list, the
-  pooler connection settings, the edge function secrets (`RESEND_API_KEY`,
-  `EMAIL_WEBHOOK_SECRET`, `EMAIL_FROM`, `EMAIL_BASE_URL`,
-  `MICROSOFT_OAUTH_*`), and the DB webhook that triggers the invite email.
+- Not captured as code (dashboard only): the live OAuth client secrets (excluded by
+  design -- the Management API returns them hashed; regenerate from the Google Cloud
+  / Azure AD console), the edge function secrets (`RESEND_API_KEY`,
+  `EMAIL_WEBHOOK_SECRET`, `EMAIL_FROM`, `EMAIL_BASE_URL`), and the DB webhook that
+  triggers the invite email. The pooler, storage, network, and API settings are left
+  at Supabase defaults (nothing was changed from them, so there is nothing to restore).
 - Recovery procedure (re-provision from scratch):
   1. Create a fresh Supabase project. Record its session-mode pooler URL.
   2. `supabase db push` (or restore a bundle per domain 1) to rebuild the schema,
      RLS, RPCs, and extensions.
   3. Restore the data (domain 1) including `auth_storage.sql`.
-  4. Recreate Auth providers (Google, Azure) from `config.toml`, pasting the
-     reissued client secrets (domain 5). Set the redirect allow-list to match.
+  4. Restore Auth settings with IaC: set the new project ref in
+     `infra/tofu/{dev,prod}/supabase.tf`, then `tofu apply` (via
+     `infisical run --env=shared --path=/iac -- tofu apply`) to re-apply the redirect
+     allow-list, the Google/Microsoft enabled flags and client ids, and the auth
+     policy. Then paste the reissued OAuth client secrets from the Google Cloud /
+     Azure AD console (tofu does not manage secrets; domain 5).
   5. Deploy the edge function and set its secrets.
   6. Recreate the DB webhook that fires `send-invite-email` on insert into the
      invites table (shared secret `EMAIL_WEBHOOK_SECRET`).
   7. Update `SUPABASE_*` GHA secrets and the app's environment config to the new
      project ref, pooler URL, and keys; repoint DNS (domain 4).
-- Known gap: steps 4 to 6 depend on dashboard-only config that is not version
-  controlled. Consider `supabase config push` and documenting the webhook so this
-  becomes reproducible. UNKNOWN - needs owner confirmation: whether the DB webhook
-  definition is recorded anywhere outside the live project.
+- Known gap: the auth settings (step 4) are now codified in tofu; the residue is the
+  OAuth client secrets (step 4, intentional -- console-sourced), the edge function
+  secrets (step 5), and the invite DB webhook (step 6). Guardrail: tofu owns the
+  remote auth settings -- never run `supabase config push` against dev/prod, or it
+  would fight tofu for the same fields (`config.toml` configures the local stack
+  only). UNKNOWN - needs owner confirmation: whether the DB webhook definition is
+  recorded anywhere outside the live project.
 
 ### 7. Cloudflare account and Workers
 - What can fail: a bad Worker deploy; loss of `wrangler.jsonc`; or
@@ -436,7 +451,7 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
 | done | Secrets escrow was partial and unaudited. WS4: Infisical Cloud is now the source of truth, syncing to GHA + Cloudflare Workers + tofu (`infisical run`), with a weekly read-only-OIDC break-glass export age-encrypted to R2 + B2. Re-provision after account loss is one restore + re-populate. | 3 | medium x high | done | no | UNKNOWN | done |
 | 3 | Automated secret rotation is still manual (WS4 deferred it to a follow-on spec), and a few provider secrets (Google/Microsoft OAuth, Resend) are not yet migrated into Infisical. | 3 | low x medium | medium: write the rotation spec; migrate the remaining provider secrets | no | UNKNOWN | open |
-| 2 | Supabase project config (provider secrets, live redirect allow-list, pooler, edge secrets, invite webhook) is dashboard-only, not version controlled. | 6 | medium x medium | medium: `supabase config push`, document the webhook and edge secrets | no | UNKNOWN | open |
+| 2 | Supabase auth config (redirect allow-list + OAuth setup) is now codified in `infra/tofu/{dev,prod}/supabase.tf` (WS3 Phase D, create-path partial management). Residual dashboard-only: OAuth client secrets (intentional -- API returns them hashed; from Google/Azure console), edge function secrets, and the invite DB webhook definition. | 6 | low x medium | low: document the edge secrets + webhook; secrets stay console-sourced by design | no | UNKNOWN | partial |
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
 | 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
