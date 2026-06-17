@@ -74,6 +74,9 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
                   (activated)="onActivate($event)"
                 />
               }
+              <!-- Clearance equal to the fade height so the last row can scroll
+                   fully clear of the dissolve instead of being washed into the footer. -->
+              <div class="h-6" aria-hidden="true"></div>
             </div>
             <!-- Bottom scroll fade so the list dissolves instead of cutting a row flat. -->
             <div
@@ -84,10 +87,14 @@ import { PaletteEntityItem, PaletteItem, PaletteKind } from '../../models/palett
           <footer
             class="flex items-center gap-x-4 gap-y-1 overflow-hidden border-t border-slate-100 px-4 py-2 font-mono text-[10px] uppercase tracking-wide text-slate-400"
           >
-            <span class="whitespace-nowrap"><kbd class="text-slate-500">&uarr;&darr;</kbd> Navigate</span>
+            <span class="whitespace-nowrap"
+              ><kbd class="text-slate-500">&uarr;&darr;</kbd> Navigate</span
+            >
             <span class="whitespace-nowrap"><kbd class="text-slate-500">&crarr;</kbd> Open</span>
             <span class="whitespace-nowrap"><kbd class="text-slate-500">Tab</kbd> Scope</span>
-            <span class="ml-auto whitespace-nowrap"><kbd class="text-slate-500">Esc</kbd> Close</span>
+            <span class="ml-auto whitespace-nowrap"
+              ><kbd class="text-slate-500">Esc</kbd> Close</span
+            >
           </footer>
           <div class="sr-only" aria-live="polite">{{ liveMessage() }}</div>
         </div>
