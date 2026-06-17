@@ -9,7 +9,11 @@ import {
 } from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
-import { isApproximate, markerPeriodLabel } from '../../../core/models/marker-date-precision';
+import {
+  isApproximate,
+  markerPeriodLabel,
+  markerStartCaption,
+} from '../../../core/models/marker-date-precision';
 import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -37,6 +41,13 @@ export class MarkerComponent {
    * suppressed captions stay reachable via the hover tooltip.
    */
   readonly showDateLabel = input<boolean>(true);
+
+  /**
+   * The end-cap caption is secondary to start captions; row layout suppresses it
+   * when it would collide (see marker-label-layout.ts). Suppressed end labels
+   * stay reachable via the hover tooltip's full range.
+   */
+  readonly showEndLabel = input<boolean>(true);
 
   readonly trialName = input<string>('');
   readonly trialPhase = input<string>('');
@@ -120,28 +131,10 @@ export class MarkerComponent {
 
   readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
-  readonly shortDate = computed(() => {
-    const m = this.marker();
-    // Approximate markers show the period ("~Q4 '26"), not a false exact day.
-    const period = markerPeriodLabel(m.event_date, m.date_precision);
-    if (period) return `~${period}`;
-    const d = new Date(m.event_date);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return `${months[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`;
-  });
+  // Approximate markers show the period ("~Q4 '26"), not a false exact day.
+  readonly shortDate = computed(() =>
+    markerStartCaption(this.marker().event_date, this.marker().date_precision)
+  );
 
   readonly ariaLabel = computed(() => {
     const m = this.marker();

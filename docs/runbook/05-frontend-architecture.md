@@ -220,6 +220,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
   /ai-usage   SuperAdminAiUsageComponent
 /onboarding   authGuard | OnboardingComponent
 /t/:tenantId   authGuard + tenantGuard | AppShellComponent
+  (empty)   tenantRootRedirectGuard | exact
   /spaces   SpaceListComponent
   /spaces/archived   SpaceArchivedListComponent
   /settings   tenantSettingsGuard | TenantSettingsComponent

@@ -58,7 +58,7 @@
           [style.border]="'1.5px solid ' + mt.color"
           aria-hidden="true"
         ></div>
-        @if (endPeriodLabel(); as el) {
+        @if (showEndLabel() && endPeriodLabel(); as el) {
           <div
             class="pointer-events-none absolute whitespace-nowrap font-mono leading-none text-[8px]"
             [style.left.px]="tailWidth() - 12"
