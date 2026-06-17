@@ -25,6 +25,7 @@ export class SpaceRoleService {
 
   private readonly _spaceId = signal<string | null>(null);
   private readonly _role = signal<SpaceRole>(null);
+  private readonly _isAgencyMember = signal(false);
 
   /** In-flight fetch for the current space; lets guards await the result. */
   private pending: Promise<void> | null = null;
@@ -41,6 +42,15 @@ export class SpaceRoleService {
   });
   readonly canRead = computed(() => this._role() !== null);
 
+  /**
+   * Whether the current user is an agency member of the active space's tenant
+   * (the `is_agency_member_of_space` gate). Primary intelligence is the
+   * agency's deliverable: only agency members can author/publish it, so its
+   * write affordances gate on this, NOT on `canEdit()` (a space editor can
+   * edit trial data but cannot publish intelligence). (Persona fix P1.3b.)
+   */
+  readonly isAgencyMember = this._isAgencyMember.asReadonly();
+
   constructor() {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
@@ -56,6 +66,7 @@ export class SpaceRoleService {
       this.pending = this.fetchRole(id);
     } else {
       this._role.set(null);
+      this._isAgencyMember.set(false);
       this.pending = null;
       this.fetchedSpaceId = null;
     }
@@ -90,19 +101,24 @@ export class SpaceRoleService {
       const userId = this.supabase.currentUser()?.id;
       if (!userId) {
         this._role.set(null);
+        this._isAgencyMember.set(false);
         return;
       }
-      const { data, error } = await this.supabase.client
-        .from('space_members')
-        .select('role')
-        .eq('space_id', spaceId)
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (error || !data) {
+      const [roleRes, agencyRes] = await Promise.all([
+        this.supabase.client
+          .from('space_members')
+          .select('role')
+          .eq('space_id', spaceId)
+          .eq('user_id', userId)
+          .maybeSingle(),
+        this.supabase.client.rpc('is_agency_member_of_space', { p_space_id: spaceId }),
+      ]);
+      this._isAgencyMember.set(!agencyRes.error && agencyRes.data === true);
+      if (roleRes.error || !roleRes.data) {
         this._role.set(null);
         return;
       }
-      this._role.set(data.role as SpaceRole);
+      this._role.set(roleRes.data.role as SpaceRole);
     } finally {
       this.fetchedSpaceId = spaceId;
       this.pending = null;

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { PaletteCommand } from '../models/palette.model';
 import { SupabaseService } from './supabase.service';
 import { SpaceRoleService } from './space-role.service';
+import { TopbarStateService } from './topbar-state.service';
 import { filterCommands } from '../util/filter-commands';
 
 export { filterCommands } from '../util/filter-commands';
@@ -12,6 +13,7 @@ export class PaletteCommandRegistry {
   private readonly router = inject(Router);
   private readonly supabase = inject(SupabaseService);
   private readonly spaceRole = inject(SpaceRoleService);
+  private readonly topbarState = inject(TopbarStateService);
 
   list(currentTenantId: string, currentSpaceId: string): PaletteCommand[] {
     const cmds: PaletteCommand[] = [
@@ -60,6 +62,12 @@ export class PaletteCommandRegistry {
         run: () =>
           void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/events`),
       },
+      ...this.topbarState.exportActions().map((action) => ({
+        id: `export-${action.format}`,
+        label: `Export current view: ${action.label}`,
+        hint: 'Export',
+        run: () => action.run(),
+      })),
       {
         id: 'go-spaces',
         label: 'Switch space...',

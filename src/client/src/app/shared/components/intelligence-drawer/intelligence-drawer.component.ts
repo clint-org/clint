@@ -23,6 +23,7 @@ import {
   UpsertIntelligenceInput,
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { isPermissionDenied } from '../../../core/util/db-error';
 import { ProseMirrorEditorComponent } from '../prose-mirror-editor/prose-mirror-editor.component';
 import { LinkedEntitiesPickerComponent } from '../linked-entities-picker/linked-entities-picker.component';
 
@@ -457,11 +458,16 @@ export class IntelligenceDrawerComponent implements OnDestroy {
       }
     } catch (error) {
       this.saveState.set('error');
+      const isPermission = isPermissionDenied(error);
       this.messageService.add({
         severity: 'error',
-        summary: 'Save failed',
-        detail: error instanceof Error ? error.message : 'Unknown error',
-        life: 5000,
+        summary: isPermission ? 'Not allowed to publish intelligence' : 'Save failed',
+        detail: isPermission
+          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this engagement to publish it.'
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error',
+        life: 6000,
       });
     }
   }

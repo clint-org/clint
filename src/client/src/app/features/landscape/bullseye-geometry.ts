@@ -158,6 +158,37 @@ export interface SpokeLabelTransform {
   anchor: 'start' | 'end';
 }
 
+/** Bounding box for a ring label's background halo (legibility over dots). */
+export interface RingLabelHalo {
+  width: number;
+  height: number;
+}
+
+/**
+ * Estimated bounding box for a ring label's background halo. Ring labels sit in
+ * the 12 o'clock gutter where spoke-0 dots also land, so a semi-opaque halo
+ * keeps the colored monospace text legible over any dot it overlaps. Width is
+ * estimated from the character count at the label's monospace metrics
+ * (13px glyphs advance ~7.8px, plus 1.2px letter-spacing between glyphs) with a
+ * small horizontal padding; height covers the cap height plus vertical padding.
+ *
+ * Pure + deterministic so it is unit-testable without a DOM text-measurement
+ * pass; the estimate only needs to be a hair wider than the glyphs, never exact.
+ */
+export function ringLabelHalo(text: string): RingLabelHalo {
+  const GLYPH_ADVANCE = 7.8;
+  const LETTER_SPACING = 1.2;
+  const PAD_X = 5;
+  const PAD_Y = 3;
+  const CAP_HEIGHT = 13;
+  const len = text.length;
+  const glyphs = len * GLYPH_ADVANCE + Math.max(0, len - 1) * LETTER_SPACING;
+  return {
+    width: glyphs + PAD_X * 2,
+    height: CAP_HEIGHT + PAD_Y * 2,
+  };
+}
+
 export function spokeLabelTransform(angleRad: number, offset = 28): SpokeLabelTransform {
   const x = CX + (OUTER_RADIUS + offset) * Math.cos(angleRad);
   const y = CY + (OUTER_RADIUS + offset) * Math.sin(angleRad);

@@ -220,6 +220,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
   /ai-usage   SuperAdminAiUsageComponent
 /onboarding   authGuard | OnboardingComponent
 /t/:tenantId   authGuard + tenantGuard | AppShellComponent
+  (empty)   tenantRootRedirectGuard | exact
   /spaces   SpaceListComponent
   /spaces/archived   SpaceArchivedListComponent
   /settings   tenantSettingsGuard | TenantSettingsComponent
@@ -279,9 +280,9 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /manage/engagement   EngagementDetailComponent
     /settings/marker-types   MarkerTypeListComponent
     /settings/taxonomies   TaxonomiesPageComponent
-    /settings/general   SpaceGeneralComponent
-    /settings/members   SpaceMembersComponent
-    /settings/fields   SpaceFieldVisibilitySettingsComponent
+    /settings/general   spaceOwnerGuard | SpaceGeneralComponent
+    /settings/members   spaceOwnerGuard | SpaceMembersComponent
+    /settings/fields   spaceOwnerGuard | SpaceFieldVisibilitySettingsComponent
     /settings/audit-log   auditSpaceGuard | SpaceAuditLogComponent
     /manage/marker-types   -> settings/marker-types
     /manage/therapeutic-areas   -> settings/taxonomies

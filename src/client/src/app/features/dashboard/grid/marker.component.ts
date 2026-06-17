@@ -9,6 +9,11 @@ import {
 } from '@angular/core';
 
 import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
+import {
+  isApproximate,
+  markerPeriodLabel,
+  markerStartCaption,
+} from '../../../core/models/marker-date-precision';
 import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
@@ -37,6 +42,13 @@ export class MarkerComponent {
    */
   readonly showDateLabel = input<boolean>(true);
 
+  /**
+   * The end-cap caption is secondary to start captions; row layout suppresses it
+   * when it would collide (see marker-label-layout.ts). Suppressed end labels
+   * stay reachable via the hover tooltip's full range.
+   */
+  readonly showEndLabel = input<boolean>(true);
+
   readonly trialName = input<string>('');
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');
@@ -64,6 +76,44 @@ export class MarkerComponent {
     )
   );
 
+  /** This marker spans time: a bounded end, or an open-ended "onwards". */
+  readonly isRange = computed(() => {
+    const m = this.marker();
+    return m.is_ongoing || !!m.end_date;
+  });
+
+  /**
+   * Right edge of the range tail in px. A bounded marker ends at its end_date;
+   * an "onwards" marker runs to the window's right edge (continuing into the
+   * future) where it fades out.
+   */
+  private readonly rangeEndX = computed(() => {
+    const m = this.marker();
+    if (m.is_ongoing) return this.totalWidth();
+    if (!m.end_date) return this.markerX();
+    return Math.min(
+      this.totalWidth(),
+      this.timeline.dateToX(m.end_date, this.startYear(), this.endYear(), this.totalWidth())
+    );
+  });
+
+  /** Tail width in px (0 when the bar is a point). */
+  readonly tailWidth = computed(() =>
+    this.isRange() ? Math.max(0, this.rangeEndX() - this.markerX()) : 0
+  );
+
+  readonly isOngoing = computed(() => this.marker().is_ongoing);
+
+  /** Period label for a fuzzy bounded end ("Q1 '27"), else null. */
+  readonly endPeriodLabel = computed(() =>
+    markerPeriodLabel(this.marker().end_date, this.marker().end_date_precision)
+  );
+
+  /** A bounded end exists and is itself approximate (render a hollow end cap). */
+  readonly endIsFuzzy = computed(
+    () => !this.marker().is_ongoing && isApproximate(this.marker().end_date_precision)
+  );
+
   readonly visual = computed(() => resolveMarkerVisual(this.marker()));
 
   readonly effectiveFillStyle = computed<FillStyle>(() => this.visual().fillStyle);
@@ -81,24 +131,10 @@ export class MarkerComponent {
 
   readonly nleOpacity = computed(() => (this.isNle() ? 0.3 : 1));
 
-  readonly shortDate = computed(() => {
-    const d = new Date(this.marker().event_date);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return `${months[d.getUTCMonth()]} '${String(d.getUTCFullYear()).slice(2)}`;
-  });
+  // Approximate markers show the period ("~Q4 '26"), not a false exact day.
+  readonly shortDate = computed(() =>
+    markerStartCaption(this.marker().event_date, this.marker().date_precision)
+  );
 
   readonly ariaLabel = computed(() => {
     const m = this.marker();

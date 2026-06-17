@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { INNER_RADIUS, OUTER_RADIUS, RINGS, ringRadius } from './bullseye-geometry';
+import {
+  INNER_RADIUS,
+  OUTER_RADIUS,
+  RINGS,
+  ringLabelHalo,
+  ringRadius,
+} from './bullseye-geometry';
 
 // devRank convention: 0 = PRECLIN ... 6 = LAUNCHED. LAUNCHED is always the
 // innermost ring; the earliest *tracked* phase is the outer rim.
@@ -45,5 +51,26 @@ describe('ringRadius rescaled to 6 rings (preclinical hidden)', () => {
     // outermost tracked ring reaches the rim; innermost sits at the center
     expect(radii[0]).toBeCloseTo(OUTER_RADIUS);
     expect(radii[radii.length - 1]).toBeCloseTo(INNER_RADIUS);
+  });
+});
+
+describe('ringLabelHalo', () => {
+  it('grows wider with longer labels', () => {
+    expect(ringLabelHalo('PRECLIN').width).toBeGreaterThan(ringLabelHalo('PH 2').width);
+  });
+
+  it('returns a positive box for a single glyph', () => {
+    const halo = ringLabelHalo('A');
+    expect(halo.width).toBeGreaterThan(0);
+    expect(halo.height).toBeGreaterThan(0);
+  });
+
+  it('keeps a constant height regardless of label length', () => {
+    expect(ringLabelHalo('PH 2').height).toBe(ringLabelHalo('PRECLIN').height);
+  });
+
+  it('estimates a halo wider than the glyph run for a typical label', () => {
+    // "PH 2" is 4 chars; halo must comfortably exceed the bare glyph advance.
+    expect(ringLabelHalo('PH 2').width).toBeGreaterThan(4 * 7.8);
   });
 });

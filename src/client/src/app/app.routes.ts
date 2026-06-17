@@ -8,10 +8,12 @@ import { tenantSettingsGuard } from './core/guards/tenant-settings.guard';
 import { auditTenantGuard } from './core/guards/audit-tenant.guard';
 import { auditAgencyGuard } from './core/guards/audit-agency.guard';
 import { auditSpaceGuard } from './core/guards/audit-space.guard';
+import { spaceOwnerGuard } from './core/guards/space-owner.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
 import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
+import { tenantRootRedirectGuard } from './core/guards/tenant-root-redirect.guard';
 import { importGuard } from './core/guards/import.guard';
 import { editGuard } from './core/guards/edit.guard';
 
@@ -145,6 +147,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./core/layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [
+      {
+        // Tenant root: route into the only / last-opened accessible space, or
+        // the picker. Guard always redirects; component is never rendered.
+        path: '',
+        pathMatch: 'full',
+        canActivate: [tenantRootRedirectGuard],
+        children: [],
+      },
       {
         path: 'spaces',
         loadComponent: () =>
@@ -422,6 +432,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/general',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-general.component').then(
                 (m) => m.SpaceGeneralComponent
@@ -429,6 +440,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/members',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-members.component').then(
                 (m) => m.SpaceMembersComponent
@@ -436,6 +448,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/fields',
+            canActivate: [spaceOwnerGuard],
             loadComponent: () =>
               import('./features/space-settings/space-field-visibility-settings.component').then(
                 (m) => m.SpaceFieldVisibilitySettingsComponent

@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 import { Select } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { SpaceMember, SpaceInvite } from '../../core/models/space.model';
 import { SpaceRoleService } from '../../core/services/space-role.service';
@@ -61,6 +62,7 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
     Select,
     InputText,
     MessageModule,
+    TooltipModule,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -109,10 +111,21 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
                   styleClass="min-w-[8rem]"
                 />
               } @else {
-                <app-status-tag
-                  [label]="roleLabel(member.role)"
-                  [tone]="member.role === 'owner' ? 'brand' : 'slate'"
-                />
+                <span class="inline-flex items-center gap-2">
+                  <app-status-tag
+                    [label]="roleLabel(member.role)"
+                    [tone]="member.role === 'owner' ? 'brand' : 'slate'"
+                  />
+                  @if (isSelf(member)) {
+                    <span
+                      class="text-[10px] font-medium uppercase tracking-wider text-slate-400"
+                      pTooltip="You can't change your own role; another owner can."
+                      tooltipPosition="top"
+                    >
+                      You
+                    </span>
+                  }
+                </span>
               }
             </td>
             <td class="col-actions">
@@ -150,46 +163,45 @@ const ROLE_CAPABILITY_SUMMARY: Record<SpaceRole, string> = {
           </h2>
           <span class="text-[11px] text-slate-400 tabular-nums">{{ invites().length }}</span>
         </div>
-        <p-table
-          styleClass="data-table"
-          [value]="invites()"
-          [tableStyle]="{ 'min-width': '40rem' }"
-          aria-label="Pending invites"
-        >
-          <ng-template #header>
-            <tr>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Code</th>
-              <th>Expires</th>
-              <th class="col-actions"></th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-invite>
-            <tr>
-              <td>{{ invite.email }}</td>
-              <td>
-                <app-status-tag
-                  [label]="roleLabel(invite.role)"
-                  [tone]="invite.role === 'owner' ? 'brand' : 'slate'"
-                />
-              </td>
-              <td class="col-identifier">{{ invite.invite_code }}</td>
-              <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
-              <td class="col-actions">
-                <app-row-actions
-                  [items]="inviteMenu(invite)"
-                  [ariaLabel]="'Actions for invite ' + invite.email"
-                />
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template #emptymessage>
-            <tr>
-              <td colspan="5">No pending invites.</td>
-            </tr>
-          </ng-template>
-        </p-table>
+        @if (invites().length === 0) {
+          <p class="text-sm text-slate-400">No pending invites.</p>
+        } @else {
+          <p-table
+            styleClass="data-table"
+            [value]="invites()"
+            [tableStyle]="{ 'min-width': '40rem' }"
+            aria-label="Pending invites"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Code</th>
+                <th>Expires</th>
+                <th class="col-actions"></th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-invite>
+              <tr>
+                <td>{{ invite.email }}</td>
+                <td>
+                  <app-status-tag
+                    [label]="roleLabel(invite.role)"
+                    [tone]="invite.role === 'owner' ? 'brand' : 'slate'"
+                  />
+                </td>
+                <td class="col-identifier">{{ invite.invite_code }}</td>
+                <td class="col-identifier">{{ invite.expires_at | date: 'MMM d, y' }}</td>
+                <td class="col-actions">
+                  <app-row-actions
+                    [items]="inviteMenu(invite)"
+                    [ariaLabel]="'Actions for invite ' + invite.email"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
       }
     </app-manage-page-shell>
 

@@ -7,11 +7,18 @@ import { PublicFooterComponent } from '../../shared/components/public-footer.com
 import { SupabaseService } from '../../core/services/supabase.service';
 import { isExistingWorkspace } from './workspace-finder';
 import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX } from '../../shared/components/clint-mark';
+import { MarketingTimelinePreviewComponent } from './marketing-timeline-preview.component';
 
 @Component({
   selector: 'app-marketing-landing',
   standalone: true,
-  imports: [ButtonModule, InputTextModule, RouterLink, PublicFooterComponent],
+  imports: [
+    ButtonModule,
+    InputTextModule,
+    RouterLink,
+    PublicFooterComponent,
+    MarketingTimelinePreviewComponent,
+  ],
   template: `
     <div class="flex min-h-screen flex-col bg-slate-50">
       <header class="border-b border-slate-200 bg-white">
@@ -49,115 +56,70 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX } from '../../shared/components/c
         </div>
       </header>
 
-      <main class="flex flex-1 items-center justify-center px-6 py-16">
-        <div class="w-full max-w-md">
-          <div class="flex flex-col items-center text-center">
-            <svg [attr.viewBox]="markViewBox" fill="none" class="h-14 w-14" aria-hidden="true">
-              <polyline
-                class="clint-mark-track"
-                [attr.points]="mark.outer"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                class="clint-mark-track"
-                [attr.points]="mark.middle"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                class="clint-mark-track"
-                [attr.points]="mark.inner"
-                stroke="var(--p-primary-700, #0f766e)"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                class="clint-mark-draw-in"
-                pathLength="1"
-                [attr.points]="mark.outer"
-                stroke="#cbd5e1"
-                stroke-width="4"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                class="clint-mark-draw-in clint-mark-draw-in--m"
-                pathLength="1"
-                [attr.points]="mark.middle"
-                stroke="#94a3b8"
-                stroke-width="5.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <polyline
-                class="clint-mark-draw-in clint-mark-draw-in--i"
-                pathLength="1"
-                [attr.points]="mark.inner"
-                stroke="var(--p-primary-700, #0f766e)"
-                stroke-width="7.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <h1 class="mt-5 text-2xl font-semibold tracking-tight text-slate-900">Clint</h1>
-            <p class="mt-2 font-mono text-xs uppercase tracking-[0.16em] text-brand-700">
+      <main class="flex flex-1 items-center px-6 py-12 sm:py-16">
+        <div
+          class="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-2 lg:gap-16"
+        >
+          <!-- Left: positioning + workspace finder -->
+          <div class="w-full max-w-md">
+            <p class="font-mono text-xs uppercase tracking-[0.16em] text-brand-700">
               Competitive intelligence for pharma
+            </p>
+            <h1 class="mt-3 text-3xl font-semibold leading-tight tracking-tight text-slate-900">
+              The competitive read on a drug program, in seconds.
+            </h1>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">
+              Pipeline intelligence, catalyst tracking, and clinical-trial timelines for the teams
+              who make the investment, licensing, and partnership calls.
+            </p>
+
+            <div class="mt-8 border border-slate-200 bg-white p-6">
+              <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-slate-900">
+                Find your workspace
+              </h2>
+              <p class="mt-1 text-xs text-slate-500">Enter your workspace subdomain to sign in.</p>
+              <form class="mt-4 flex flex-col gap-2 sm:flex-row" (submit)="goToWorkspace($event)">
+                <div class="flex flex-1 items-stretch border border-slate-300 bg-white">
+                  <input
+                    pInputText
+                    type="text"
+                    [value]="subdomain()"
+                    (input)="onInput($event)"
+                    placeholder="your-workspace"
+                    class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
+                    aria-label="Workspace subdomain"
+                  />
+                  <span
+                    class="border-l border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
+                  >
+                    .{{ apexDisplay }}
+                  </span>
+                </div>
+                <p-button
+                  label="Open workspace"
+                  styleClass="w-full sm:w-auto"
+                  [disabled]="!subdomain() || checking()"
+                  [loading]="checking()"
+                  type="submit"
+                />
+              </form>
+              @if (errorMessage()) {
+                <p class="mt-3 text-xs text-red-700" role="alert">{{ errorMessage() }}</p>
+              }
+            </div>
+
+            <p class="mt-6 text-xs text-slate-500">
+              Are you a consulting partner?
+              <a routerLink="/login" class="underline hover:text-slate-700"
+                >Sign in to your agency portal.</a
+              >
             </p>
           </div>
 
-          <div class="mt-12 border border-slate-200 bg-white p-6">
-            <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-slate-900">
-              Find your workspace
-            </h2>
-            <p class="mt-1 text-xs text-slate-500">Enter your workspace subdomain to sign in.</p>
-            <form class="mt-4 flex flex-col gap-2 sm:flex-row" (submit)="goToWorkspace($event)">
-              <div class="flex flex-1 items-stretch border border-slate-300 bg-white">
-                <input
-                  pInputText
-                  type="text"
-                  [value]="subdomain()"
-                  (input)="onInput($event)"
-                  placeholder="your-workspace"
-                  class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm focus:outline-none"
-                  aria-label="Workspace subdomain"
-                />
-                <span
-                  class="border-l border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
-                >
-                  .{{ apexDisplay }}
-                </span>
-              </div>
-              <p-button
-                label="Go"
-                styleClass="w-full sm:w-auto"
-                [disabled]="!subdomain() || checking()"
-                [loading]="checking()"
-                type="submit"
-              />
-            </form>
-            @if (errorMessage()) {
-              <p class="mt-3 text-xs text-red-700" role="alert">{{ errorMessage() }}</p>
-            }
+          <!-- Right: static product render -->
+          <div class="hidden lg:block">
+            <app-marketing-timeline-preview />
           </div>
-
-          <p class="mt-8 text-center text-xs text-slate-500">
-            Are you a consulting partner?
-            <a routerLink="/login" class="underline hover:text-slate-700"
-              >Sign in to your agency portal.</a
-            >
-          </p>
         </div>
       </main>
       <app-public-footer />

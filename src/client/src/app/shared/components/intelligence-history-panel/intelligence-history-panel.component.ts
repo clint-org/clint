@@ -18,6 +18,7 @@ import {
   PrimaryIntelligenceLink,
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
+import { resolveAuthorName } from '../../utils/intelligence-authors';
 import { diffLinks, LinksDiff } from './links-diff';
 import { foldArchivedEvents, TimelineRow } from './history-timeline';
 
@@ -181,9 +182,13 @@ export class IntelligenceHistoryPanelComponent {
     return `v${event.version_number}`;
   }
 
+  /**
+   * Resolve an actor id to a display name. Payload-supplied author names are
+   * authoritative; the authorMap input is an optional override; UUID-prefix
+   * initials are the last-resort fallback (P1.2).
+   */
   protected authorInitials(id: string | null | undefined): string {
-    if (!id) return '';
-    return this.authorMap()[id] ?? id.slice(0, 2).toUpperCase();
+    return resolveAuthorName(id, this.payload().authors, this.authorMap());
   }
 
   protected formatDate(iso: string | null | undefined): string {

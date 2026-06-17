@@ -13,42 +13,34 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
-import { cellTint } from './heatmap.component';
+import { cellTint } from './heatmap-cell';
 import { LandscapeStateService } from './landscape-state.service';
+import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
 
 @Component({
   selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SegmentedControlComponent],
   template: `
     <aside class="heatmap-controls">
       <div class="controls-section">
         <div class="section-label">GROUP BY</div>
-        <div class="group-buttons">
-          @for (opt of groupingOptions; track opt.value) {
-            <button
-              type="button"
-              [class.active]="grouping() === opt.value"
-              (click)="navigateToGrouping(opt.value)"
-            >
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+        <app-segmented-control
+          ariaLabel="Group heatmap by"
+          [options]="groupingOptions"
+          [value]="grouping()"
+          (valueChange)="navigateToGrouping($event)"
+        />
       </div>
 
       <div class="controls-section">
         <div class="section-label">COUNT</div>
-        <div class="count-toggle">
-          @for (opt of countOptions; track opt.value) {
-            <button
-              type="button"
-              [class.active]="countUnit() === opt.value"
-              (click)="state.countUnit.set(opt.value)"
-            >
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+        <app-segmented-control
+          ariaLabel="Count heatmap by"
+          [options]="countOptions"
+          [value]="countUnit()"
+          (valueChange)="onCountChange($event)"
+        />
       </div>
 
       <div class="controls-section">
@@ -124,73 +116,6 @@ import { LandscapeStateService } from './landscape-state.service';
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #94a3b8;
-    }
-
-    .group-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .group-buttons button {
-      padding: 6px 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      background: white;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .group-buttons button:hover {
-      border-color: #cbd5e1;
-      color: #334155;
-    }
-
-    .group-buttons button.active {
-      border-color: var(--brand-600, #0d9488);
-      background: var(--brand-50, #f0fdfa);
-      color: var(--brand-700, #0f766e);
-      font-weight: 600;
-    }
-
-    .count-toggle {
-      display: flex;
-      gap: 0;
-    }
-
-    .count-toggle button {
-      flex: 1;
-      text-align: center;
-      padding: 5px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #64748b;
-      background: white;
-      border: 1px solid #e2e8f0;
-      cursor: pointer;
-      transition: all 0.15s;
-      margin-right: -1px;
-    }
-
-    .count-toggle button:last-child {
-      margin-right: 0;
-    }
-
-    .count-toggle button:hover {
-      color: #334155;
-      z-index: 1;
-    }
-
-    .count-toggle button.active {
-      border-color: var(--brand-600, #0d9488);
-      background: var(--brand-50, #f0fdfa);
-      color: var(--brand-700, #0f766e);
-      font-weight: 600;
-      z-index: 1;
     }
 
     .read-content {
@@ -344,9 +269,13 @@ export class HeatmapControlsPanelComponent {
     return result.text;
   });
 
-  protected navigateToGrouping(grouping: HeatmapGrouping): void {
-    const segment = groupingToSegment(grouping);
+  protected navigateToGrouping(grouping: string): void {
+    const segment = groupingToSegment(grouping as HeatmapGrouping);
     this.router.navigate(['..', segment], { relativeTo: this.route });
+  }
+
+  protected onCountChange(unit: string): void {
+    this.state.countUnit.set(unit as CountUnit);
   }
 
   private formatPhase(phase: RingPhase): string {

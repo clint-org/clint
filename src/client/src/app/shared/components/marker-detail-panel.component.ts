@@ -74,9 +74,11 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
           [detail]="detail()"
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
+          [showEditAction]="showEditAction()"
           (markerClick)="markerClick.emit($event)"
           (eventClick)="eventClick.emit($event)"
           (trialClick)="trialClick.emit($event)"
+          (editMarkerClick)="editMarkerClick.emit($event)"
         />
       </app-detail-panel-shell>
     </ng-template>
@@ -95,10 +97,14 @@ export class MarkerDetailPanelComponent {
    * `key_catalysts_panel`.
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
+  /** Forwarded to the content body; see MarkerDetailContentComponent. */
+  readonly showEditAction = input<boolean>(false);
   readonly panelClose = output<void>();
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
+  /** Re-emitted from the content body; see MarkerDetailContentComponent. */
+  readonly editMarkerClick = output<{ trialId: string; markerId: string }>();
 
   readonly headerLabel = computed(() => {
     const d = this.detail();

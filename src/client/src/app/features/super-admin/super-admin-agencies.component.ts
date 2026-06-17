@@ -13,12 +13,14 @@ import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { MessageService } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 
 import {
   SuperAdminService,
   SuperAdminAgencySummary,
 } from '../../core/services/super-admin.service';
+import { RowActionsComponent } from '../../shared/components/row-actions.component';
+import { agencyDeleteConfirmed } from './agency-delete-confirm';
 
 type SubdomainStatus =
   | { kind: 'idle' }
@@ -35,7 +37,16 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 @Component({
   selector: 'app-super-admin-agencies',
   standalone: true,
-  imports: [DatePipe, FormsModule, TableModule, ButtonModule, Dialog, InputText, MessageModule],
+  imports: [
+    DatePipe,
+    FormsModule,
+    TableModule,
+    ButtonModule,
+    Dialog,
+    InputText,
+    MessageModule,
+    RowActionsComponent,
+  ],
   template: `
     <div class="p-6">
       <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -77,8 +88,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <th>Slug</th>
             <th>Subdomain</th>
             <th>Plan</th>
-            <th class="text-right">Max tenants</th>
-            <th class="text-right">Tenants</th>
+            <th class="text-right w-28">Tenants</th>
             <th>Created</th>
             <th class="text-right w-12"><span class="sr-only">Actions</span></th>
           </tr>
@@ -89,25 +99,21 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <td class="col-identifier text-xs">{{ agency.slug }}</td>
             <td class="col-identifier text-xs">{{ agency.subdomain }}</td>
             <td class="text-xs">{{ agency.plan_tier }}</td>
-            <td class="text-right tabular-nums">{{ agency.max_tenants }}</td>
-            <td class="text-right tabular-nums">{{ agency.tenant_count }}</td>
+            <td class="text-right tabular-nums">
+              {{ agency.tenant_count }}<span class="text-slate-400">/{{ agency.max_tenants }}</span>
+            </td>
             <td class="col-identifier text-xs">{{ agency.created_at | date: 'MMM d, y' }}</td>
             <td class="text-right">
-              <p-button
-                icon="fa-solid fa-trash"
-                severity="danger"
-                size="small"
-                [text]="true"
-                [rounded]="true"
-                [attr.aria-label]="'Delete agency ' + agency.name"
-                (onClick)="openDelete(agency)"
+              <app-row-actions
+                [items]="rowMenu(agency)"
+                [ariaLabel]="'Actions for ' + agency.name"
               />
             </td>
           </tr>
         </ng-template>
         <ng-template #emptymessage>
           <tr>
-            <td colspan="8" class="text-center py-8 text-sm text-slate-500">
+            <td colspan="7" class="text-center py-8 text-sm text-slate-500">
               No agencies yet. Provision your first one.
             </td>
           </tr>
@@ -405,6 +411,11 @@ export class SuperAdminAgenciesComponent implements OnInit {
 
   private debounceHandle: ReturnType<typeof setTimeout> | null = null;
 
+  // Memoize the per-row overflow menu so p-menu receives a stable MenuItem[]
+  // reference across change-detection cycles. Without this, PrimeNG's popup
+  // menu swallows the first click because a fresh array is built each render.
+  private readonly menuCache = new Map<string, MenuItem[]>();
+
   // Delete dialog state
   deleteDialogOpen = false;
   readonly deleteConfirmText = signal('');
@@ -429,7 +440,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
     if (!target) return false;
     if (isDeleting) return false;
     if (target.tenant_count > 0) return false;
-    return confirm.trim() === target.name;
+    return agencyDeleteConfirmed(confirm, target.name);
   });
 
   async ngOnInit(): Promise<void> {
@@ -441,6 +452,7 @@ export class SuperAdminAgenciesComponent implements OnInit {
     this.loadError.set(null);
     try {
       const list = await this.service.listAllAgencies();
+      this.menuCache.clear();
       this.agencies.set(list);
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Failed to load agencies.');
@@ -529,6 +541,21 @@ export class SuperAdminAgenciesComponent implements OnInit {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  rowMenu(agency: SuperAdminAgencySummary): MenuItem[] {
+    const cached = this.menuCache.get(agency.id);
+    if (cached) return cached;
+    const items: MenuItem[] = [
+      {
+        label: 'Delete agency',
+        icon: 'fa-solid fa-trash',
+        styleClass: 'row-actions-danger',
+        command: () => this.openDelete(agency),
+      },
+    ];
+    this.menuCache.set(agency.id, items);
+    return items;
   }
 
   openDelete(agency: SuperAdminAgencySummary): void {

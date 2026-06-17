@@ -1,4 +1,4 @@
-export type PaletteKind = 'company' | 'product' | 'trial' | 'catalyst' | 'event';
+export type PaletteKind = 'company' | 'asset' | 'trial' | 'catalyst' | 'event';
 
 export type PaletteCommandKind = 'command';
 

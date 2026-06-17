@@ -1,6 +1,6 @@
 <app-manage-page-shell>
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search companies...">
-    <app-export-button gridToolbarStart [actions]="exportActions" />
+    <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
 
   <p-table
@@ -10,7 +10,7 @@
     [tableStyle]="{ 'min-width': '48rem' }"
     [lazy]="true"
     (onLazyLoad)="grid.onLazyLoad($event)"
-    [paginator]="true"
+    [paginator]="grid.totalRecords() > grid.page().rows"
     [rows]="grid.page().rows"
     [first]="grid.page().first"
     [totalRecords]="grid.totalRecords()"

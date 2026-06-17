@@ -1,13 +1,26 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { TooltipModule } from 'primeng/tooltip';
 import { environment } from '../../../../environments/environment';
 import { APP_VERSION } from '../../../../environments/version';
 
 @Component({
   selector: 'app-env-banner',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TooltipModule],
   template: `
     <div [class]="stripClass"></div>
-    <div [class]="badgeClass">{{ label }} v{{ version }}</div>
+    @if (!dismissed()) {
+      <button
+        type="button"
+        [class]="badgeClass"
+        (click)="dismissed.set(true)"
+        pTooltip="Dismiss the environment badge"
+        tooltipPosition="left"
+        [attr.aria-label]="'Dismiss the ' + label + ' environment badge'"
+      >
+        {{ label }} v{{ version }}
+      </button>
+    }
   `,
   styles: [
     `
@@ -19,6 +32,8 @@ import { APP_VERSION } from '../../../../environments/version';
 })
 export class EnvBannerComponent {
   protected readonly version = APP_VERSION;
+  /** The badge sits bottom-right over the timeline legend / last catalyst row; let users hide it. (UI-34.) */
+  protected readonly dismissed = signal(false);
 
   protected readonly label = environment.envName === 'local' ? 'LOCAL' : 'DEV';
 
@@ -29,6 +44,6 @@ export class EnvBannerComponent {
 
   protected readonly badgeClass =
     environment.envName === 'local'
-      ? 'fixed bottom-3 right-3 z-50 rounded bg-violet-600 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-white opacity-70 hover:opacity-100 transition-opacity'
-      : 'fixed bottom-3 right-3 z-50 rounded bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-amber-950 opacity-70 hover:opacity-100 transition-opacity';
+      ? 'fixed bottom-3 right-3 z-50 cursor-pointer rounded border-0 bg-violet-600 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-white opacity-60 hover:opacity-100 transition-opacity'
+      : 'fixed bottom-3 right-3 z-50 cursor-pointer rounded border-0 bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wider text-amber-950 opacity-60 hover:opacity-100 transition-opacity';
 }

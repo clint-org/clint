@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { filterCommands } from '../../src/app/core/util/filter-commands';
+import {
+  capForEmptyState,
+  EMPTY_STATE_COMMAND_LIMIT,
+  filterCommands,
+} from '../../src/app/core/util/filter-commands';
 import type { PaletteCommand } from '../../src/app/core/models/palette.model';
 
 const noop = () => undefined;
@@ -23,10 +27,18 @@ test.describe('filterCommands', () => {
     ];
     expect(filterCommands(cmds)).toHaveLength(1);
   });
-  test('caps results to 8 entries', () => {
+  test('does not cap the searchable list', () => {
     const cmds: PaletteCommand[] = Array.from({ length: 12 }, (_, i) => ({
       id: `c${i}`, label: `C${i}`, run: noop,
     }));
-    expect(filterCommands(cmds)).toHaveLength(8);
+    expect(filterCommands(cmds)).toHaveLength(12);
+  });
+  test('capForEmptyState limits the resting list to EMPTY_STATE_COMMAND_LIMIT', () => {
+    const cmds: PaletteCommand[] = Array.from({ length: 12 }, (_, i) => ({
+      id: `c${i}`, label: `C${i}`, run: noop,
+    }));
+    expect(capForEmptyState(filterCommands(cmds))).toHaveLength(
+      EMPTY_STATE_COMMAND_LIMIT
+    );
   });
 });

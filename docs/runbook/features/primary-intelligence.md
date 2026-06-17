@@ -47,12 +47,13 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: viewer
   status: active
 - id: primary-intelligence-rls
-  summary: Published rows readable by anyone with has_space_access; drafts gated to agency members of the tenant's agency via is_agency_member_of_space.
+  summary: Published rows readable by anyone with has_space_access; drafts gated to agency members of the tenant's agency via is_agency_member_of_space. resolve_user_display_names is an internal SECURITY DEFINER identity helper (revoked from client roles) that maps editor ids to display names for the payload/history author bylines.
   routes: []
   rpcs:
     - has_space_access
     - is_agency_member_of_space
     - is_agency_member
+    - resolve_user_display_names
   tables:
     - primary_intelligence
   related: []

@@ -22,7 +22,8 @@ describe('PngExportService delegation contract', () => {
 
   it('supplies the timeline host and filename to the shared service', () => {
     expect(src).toContain('component: ExportSnapshotHostComponent');
-    expect(src).toContain("filename: 'clinical-trial-dashboard.png'");
+    // Caller-provided filename (space + view + date) with the generic default.
+    expect(src).toContain("filename: snapshot.filename ?? 'clinical-trial-dashboard.png'");
   });
 
   it('forwards the brand agency logo and snapshot tenant logo for rasterization', () => {

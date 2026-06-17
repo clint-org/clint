@@ -29,6 +29,48 @@
       />
     </div>
 
+    @if (tailWidth() > iconSize) {
+      <!-- Range tail: bounded ends at the end cap; ongoing fades to the right. -->
+      <div
+        class="pointer-events-none absolute"
+        [style.left.px]="iconSize / 2"
+        [style.top.px]="iconSize / 2 - 1.5"
+        [style.width.px]="tailWidth() - iconSize / 2"
+        [style.height.px]="3"
+        [style.border-radius.px]="2"
+        [style.background-color]="mt.color"
+        [style.opacity]="0.4"
+        [style.-webkit-mask-image]="
+          isOngoing() ? 'linear-gradient(to right, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)' : null
+        "
+        [style.mask-image]="
+          isOngoing() ? 'linear-gradient(to right, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%)' : null
+        "
+        aria-hidden="true"
+      ></div>
+      @if (!isOngoing()) {
+        <div
+          class="pointer-events-none absolute rounded-full bg-white"
+          [style.left.px]="tailWidth() - 4"
+          [style.top.px]="iconSize / 2 - 4"
+          [style.width.px]="8"
+          [style.height.px]="8"
+          [style.border]="'1.5px solid ' + mt.color"
+          aria-hidden="true"
+        ></div>
+        @if (showEndLabel() && endPeriodLabel(); as el) {
+          <div
+            class="pointer-events-none absolute whitespace-nowrap font-mono leading-none text-[8px]"
+            [style.left.px]="tailWidth() - 12"
+            [style.top.px]="iconSize + 2"
+            [style.color]="captionColor()"
+          >
+            ~{{ el }}
+          </div>
+        }
+      }
+    }
+
     @if (showDateLabel()) {
       <div
         class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
@@ -46,6 +88,10 @@
         [typeName]="markerType()?.name ?? ''"
         [typeColor]="markerType()?.color ?? '#64748b'"
         [date]="marker().event_date"
+        [datePrecision]="marker().date_precision"
+        [endDate]="marker().end_date"
+        [endDatePrecision]="marker().end_date_precision"
+        [isOngoing]="marker().is_ongoing"
         [projection]="marker().projection"
         [categoryName]="markerType()?.marker_categories?.name ?? ''"
         [description]="marker().description"

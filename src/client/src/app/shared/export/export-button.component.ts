@@ -9,6 +9,13 @@ export interface ExportAction {
   run: () => Promise<void>;
 }
 
+/** File-type glyph per export format, so menu rows read like the Materials list. */
+const FORMAT_ICON: Record<ExportAction['format'], string> = {
+  png: 'fa-solid fa-file-image',
+  pptx: 'fa-solid fa-file-powerpoint',
+  xlsx: 'fa-solid fa-file-excel',
+};
+
 /**
  * Shared export trigger. One action renders a direct button; two or more render
  * a menu. Owns loading (button disabled while a run() is in flight) and inline
@@ -60,6 +67,7 @@ export class ExportButtonComponent {
   protected readonly menuItems = computed<MenuItem[]>(() =>
     this.actions().map((a) => ({
       label: a.label,
+      icon: FORMAT_ICON[a.format],
       command: () => void this.runAction(a),
     })),
   );

@@ -7,29 +7,27 @@ import {
   RingPhase,
   SpokeGrouping,
   SPOKE_GROUPING_OPTIONS,
+  spokeGroupingNoun,
 } from '../../core/models/landscape.model';
 import { LandscapeStateService } from './landscape-state.service';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
+import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
 
 @Component({
   selector: 'app-bullseye-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SegmentedControlComponent],
   template: `
     <aside class="bullseye-controls">
       <!-- Section: Group By -->
       <div class="controls-section">
         <div class="section-label">GROUP BY</div>
-        <div class="group-buttons">
-          @for (opt of groupingOptions; track opt.value) {
-            <button
-              type="button"
-              [class.active]="state.spokeGrouping() === opt.value"
-              (click)="state.spokeGrouping.set(opt.value)"
-            >
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+        <app-segmented-control
+          ariaLabel="Group bullseye by"
+          [options]="groupingOptions"
+          [value]="state.spokeGrouping()"
+          (valueChange)="onGroupingChange($event)"
+        />
       </div>
 
       <!-- Section: Competitive Read -->
@@ -46,7 +44,7 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
         <div class="stats-grid">
           <div class="stat">
             <span class="stat-value">{{ spokeCount() }}</span>
-            <span class="stat-label">spokes</span>
+            <span class="stat-label">{{ spokeNoun() }}</span>
           </div>
           <div class="stat">
             <span class="stat-value">{{ assetCount() }}</span>
@@ -110,37 +108,6 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #94a3b8;
-    }
-
-    .group-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .group-buttons button {
-      padding: 6px 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      background: white;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .group-buttons button:hover {
-      border-color: #cbd5e1;
-      color: #334155;
-    }
-
-    .group-buttons button.active {
-      border-color: var(--brand-400, #2dd4bf);
-      background: var(--brand-50, #f0fdfa);
-      color: var(--brand-600, #0d9488);
-      font-weight: 600;
     }
 
     .read-content {
@@ -244,6 +211,13 @@ export class BullseyeControlsPanelComponent {
   readonly hasDuplicates = input(false);
 
   protected readonly groupingOptions = SPOKE_GROUPING_OPTIONS;
+
+  protected onGroupingChange(grouping: string): void {
+    this.state.spokeGrouping.set(grouping as SpokeGrouping);
+  }
+
+  /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
+  protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
 
   // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
   // the space does not track preclinical, matching the rings the server returns.

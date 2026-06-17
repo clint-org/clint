@@ -21,6 +21,7 @@ import {
 } from '../../core/models/ctgov-field.model';
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { TrialService } from '../../core/services/trial.service';
 import {
   MARKER_FIELD_LABELS,
@@ -201,6 +202,16 @@ interface CtgovProvenanceBlock {
               <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
             </div>
           }
+          @if (canEditMarker()) {
+            <button
+              type="button"
+              class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-700 hover:text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              (click)="onEditMarker()"
+            >
+              <i class="fa-solid fa-pen text-[9px]" aria-hidden="true"></i>
+              Edit marker
+            </button>
+          }
         </app-detail-panel-section>
       }
 
@@ -336,9 +347,45 @@ export class MarkerDetailContentComponent {
    * `key_catalysts_panel` or `timeline_detail` based on the active view.
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
+  /**
+   * Whether the panel offers an inline "Edit marker" action. Off by default so
+   * hosts that already provide their own marker-edit affordance (e.g. the
+   * events panel kebab) don't render a second one. The landscape + entity
+   * drawers opt in; they have no other edit entry point for a selected marker.
+   */
+  readonly showEditAction = input<boolean>(false);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
+  /**
+   * Emitted when an owner/editor invokes "Edit marker". Carries the parent
+   * trial_id; the host navigates to that trial's manage page with
+   * `?marker=<marker_id>`, which opens the inline marker editor (markers no
+   * longer have a standalone detail page). Only emitted when the marker has a
+   * parent trial and the user can edit (gated in the template + handler).
+   */
+  readonly editMarkerClick = output<{ trialId: string; markerId: string }>();
+
+  private readonly spaceRole = inject(SpaceRoleService);
+
+  /**
+   * Whether to show the "Edit marker" affordance: the current user can write
+   * to the active space AND the marker is anchored to a trial (the editor
+   * lives on the trial's manage page). Viewers and trial-less markers see no
+   * action, so there is no permission-denied-after-click (rule 13.5).
+   */
+  protected readonly canEditMarker = computed(
+    () =>
+      this.showEditAction() &&
+      this.spaceRole.canEdit() &&
+      !!this.detail()?.catalyst.trial_id,
+  );
+
+  protected onEditMarker(): void {
+    const c = this.detail()?.catalyst;
+    if (!c?.trial_id || !this.spaceRole.canEdit()) return;
+    this.editMarkerClick.emit({ trialId: c.trial_id, markerId: c.marker_id });
+  }
 
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';

@@ -1,9 +1,7 @@
 import type { FlatCatalyst } from '../../core/models/catalyst.model';
-import {
-  dateCell,
-  EXPORT_DATE_FMT,
-  type ExportColumn,
-} from '../../shared/export/grid-sheet.util';
+import { type ExportColumn } from '../../shared/export/grid-sheet.util';
+import { formatDateShort } from '../../core/services/export-common.util';
+import { formatMarkerExtent } from '../../core/models/marker-date-precision';
 
 /** Status pill text as rendered in the table and the marker detail drawer. */
 export function catalystStatusLabel(c: FlatCatalyst): string {
@@ -22,7 +20,19 @@ export function catalystStatusLabel(c: FlatCatalyst): string {
  * get_catalyst_detail; exporting them would fan out one RPC per row.
  */
 export const CATALYST_EXPORT_COLUMNS: ExportColumn<FlatCatalyst>[] = [
-  { header: 'Date', value: (c) => dateCell(c.event_date), numFmt: EXPORT_DATE_FMT, width: 12 },
+  {
+    header: 'Date',
+    value: (c) =>
+      formatMarkerExtent(
+        c.event_date,
+        c.date_precision,
+        c.end_date,
+        c.end_date_precision,
+        c.is_ongoing,
+        formatDateShort
+      ),
+    width: 14,
+  },
   { header: 'Timeframe', value: (c) => c.time_bucket, width: 14 },
   { header: 'Category', value: (c) => c.category_name, width: 16 },
   { header: 'Catalyst', value: (c) => c.title, width: 36 },

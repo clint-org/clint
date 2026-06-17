@@ -96,10 +96,10 @@
   <ng-template #body let-row>
     <tr>
       <td class="whitespace-nowrap font-mono text-xs tabular-nums">
-        {{ row.occurred_at | date: 'short' }}
+        {{ row.occurred_at | date: 'MMM d, y, h:mm a' }}
       </td>
       <td class="font-mono text-sm">{{ row.action }}</td>
-      <td class="text-sm">{{ row.actor_email ?? '(none)' }}</td>
+      <td class="text-sm">{{ row.actor_email ?? '--' }}</td>
       <td class="font-mono text-xs">
         <div>{{ row.resource_type }}</div>
         @if (row.resource_id) {
