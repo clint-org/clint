@@ -1,0 +1,9 @@
+{
+  "projectId": "950b3ea6-ecb3-4046-9f0a-9f3cb2543ebd",
+  "projectName": "Clint Design Tokens",
+  "shape": "tokens",
+  "scope": "tokens-only",
+  "note": "Clint's app UI is Angular 21 + PrimeNG + Tailwind v4, which cannot render in claude.ai/design's React runtime. This sync therefore exports design tokens, fonts, and styles.css only (no components), so the design agent's React designs match Clint's palette and typography. Token sources: src/client/src/styles.css (brand teal scale), src/client/src/app/config/primeng-theme.ts (slate surface scale, radius=0, semantic mappings), src/client/src/app/core/models/phase-colors.ts (phase + development-status colors), supabase/seed.sql (marker colors), docs/brand.md + docs/design-system.md (rules).",
+  "readmeHeader": ".design-sync/conventions.md",
+  "localDir": "./ds-bundle"
+}

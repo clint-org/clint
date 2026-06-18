@@ -73,6 +73,7 @@ function buildComputeds(
 ) {
   const stats = signal<SpaceLandingStats | null>(initialStats);
   const space = signal<SpaceStub | null>(initialSpace);
+  const latestIntelligence = signal<{ updated_at: string }[]>([]);
   const tenantIdSig = signal(tenantId);
   const spaceIdSig = signal(spaceId);
   const spaceName = computed(() => space()?.name ?? '');
@@ -151,7 +152,29 @@ function buildComputeds(
     return cells;
   });
 
-  return { stats, space, engagementName, activeSince, inventoryTotals, motionStats };
+  // feedHeaderTag: honest counts from the server stats; fall back to the
+  // capped teaser fetch only before stats resolve. Mirrors the component.
+  const feedHeaderTag = computed(() => {
+    const s = stats();
+    if (s) {
+      return { total: s.intelligence_total, week: s.new_intel_7d };
+    }
+    const rows = latestIntelligence();
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const week = rows.filter((r) => Date.parse(r.updated_at) >= cutoff).length;
+    return { total: rows.length, week };
+  });
+
+  return {
+    stats,
+    space,
+    latestIntelligence,
+    engagementName,
+    activeSince,
+    inventoryTotals,
+    motionStats,
+    feedHeaderTag,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +280,23 @@ describe('EngagementLandingComponent header computeds', () => {
     stats.set(makeStats({ new_intel_7d: 0 }));
     const cell = motionStats().find((s) => s.key === 'newIntel');
     expect(cell?.display).toBe('0');
+  });
+});
+
+describe('EngagementLandingComponent feedHeaderTag (honest counts)', () => {
+  it('uses the server stats total and this-week, not the teaser fetch size', () => {
+    const { stats, latestIntelligence, feedHeaderTag } = buildComputeds();
+    stats.set(makeStats({ intelligence_total: 47, new_intel_7d: 6 }));
+    // The teaser buffer is capped (e.g. 8 loaded rows) and must NOT drive the header.
+    latestIntelligence.set(Array.from({ length: 8 }, () => ({ updated_at: '2026-06-18T00:00:00Z' })));
+    expect(feedHeaderTag()).toEqual({ total: 47, week: 6 });
+  });
+
+  it('falls back to the teaser fetch size only before stats resolve', () => {
+    const { stats, latestIntelligence, feedHeaderTag } = buildComputeds(null);
+    expect(stats()).toBeNull();
+    latestIntelligence.set([]);
+    expect(feedHeaderTag()).toEqual({ total: 0, week: 0 });
   });
 });
 

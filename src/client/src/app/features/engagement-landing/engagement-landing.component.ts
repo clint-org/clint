@@ -367,6 +367,14 @@ export class EngagementLandingComponent implements OnInit {
   readonly restPosts = computed(() => this.visibleFeed().slice(1, 4));
 
   readonly feedHeaderTag = computed(() => {
+    // Honest counts come from the server stats RPC (true totals across the
+    // space), not the capped teaser fetch. intelligence_total counts every
+    // published post; new_intel_7d counts those published in the last 7 days.
+    const s = this.stats();
+    if (s) {
+      return { total: s.intelligence_total, week: s.new_intel_7d };
+    }
+    // Fallback before stats resolve: derive from the loaded teaser rows.
     const total = this.latestIntelligence().length;
     const week = recentCount(this.latestIntelligence(), 7);
     return { total, week };

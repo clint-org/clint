@@ -17,6 +17,7 @@ import { TriangleIconComponent } from '../../../shared/components/svg-icons/tria
 import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
 import { DatePrecision, FillStyle, InnerMark } from '../../../core/models/marker.model';
 import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marker-date-precision';
+import { phaseShortLabel } from '../../../core/models/phase-colors';
 
 @Component({
   selector: 'app-marker-tooltip',
@@ -31,134 +32,138 @@ import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marke
   ],
   template: `
     <div
-      class="fixed pointer-events-none overflow-hidden flex rounded-lg bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.08),_0_1px_3px_rgba(15,23,42,0.04)]"
+      class="fixed pointer-events-none overflow-hidden bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.08),_0_1px_3px_rgba(15,23,42,0.04)]"
       [style.z-index]="99999"
       [style.left.px]="tooltipX()"
       [style.top.px]="tooltipY()"
-      [style.min-width]="'200px'"
+      [style.min-width]="'240px'"
       [style.max-width]="'300px'"
       [style.transform]="flipAbove() ? 'translate(-50%, -100%)' : 'translateX(-50%)'"
     >
-      <!-- Left accent bar -->
-      <div class="shrink-0 w-[3px]" [style.background]="typeColor()"></div>
-
-      <!-- Content -->
-      <div class="px-3 py-2.5 flex-1 min-w-0">
-        <!-- Category tag -->
-        @if (categoryName()) {
-          <div class="mb-1.5">
-            <span class="text-[10px] uppercase tracking-wider text-slate-400">{{
-              categoryName()
-            }}</span>
-          </div>
+      <!-- Identity strip: glyph + category label + trial id -->
+      <div class="flex items-center gap-2 border-b border-slate-100 px-3.5 py-2.5">
+        <svg width="12" height="12" class="shrink-0 overflow-visible">
+          @switch (shape()) {
+            @case ('diamond') {
+              <g
+                app-diamond-icon
+                [size]="12"
+                [color]="typeColor()"
+                [fillStyle]="typedFillStyle()"
+                [innerMark]="typedInnerMark()"
+              />
+            }
+            @case ('flag') {
+              <g app-flag-icon [size]="12" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+            }
+            @case ('triangle') {
+              <g app-triangle-icon [size]="12" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+            }
+            @case ('square') {
+              <g
+                app-square-icon
+                [size]="12"
+                [color]="typeColor()"
+                [fillStyle]="typedFillStyle()"
+                [innerMark]="typedInnerMark()"
+              />
+            }
+            @default {
+              <g
+                app-circle-icon
+                [size]="12"
+                [color]="typeColor()"
+                [fillStyle]="typedFillStyle()"
+                [innerMark]="typedInnerMark()"
+              />
+            }
+          }
+        </svg>
+        <span class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          @if (categoryName() && typeName()) {
+            {{ categoryName() }} · {{ typeName() }}
+          } @else {
+            {{ categoryName() || typeName() }}
+          }
+        </span>
+        @if (trialName()) {
+          <span class="shrink-0 font-mono text-[9px] uppercase tracking-wide text-slate-400 tabular-nums">{{
+            trialName()
+          }}</span>
         }
+      </div>
 
+      <div class="px-3.5 py-3">
         <!-- Title -->
-        <div class="text-[12px] font-semibold text-slate-900 leading-snug mb-1.5">
+        <div class="mb-3 text-[12px] font-semibold leading-snug text-slate-900">
           <span>{{ title() }}</span>
           <app-ctgov-source-tag class="ml-1.5 align-middle" [metadata]="metadata()" />
         </div>
 
-        <!-- Type icon + name | date row -->
-        <div class="flex items-center gap-1.5 mb-1.5">
-          <!-- Marker shape icon -->
-          <svg width="10" height="10" class="shrink-0 overflow-visible">
-            @switch (shape()) {
-              @case ('circle') {
-                <g
-                  app-circle-icon
-                  [size]="10"
-                  [color]="typeColor()"
-                  [fillStyle]="typedFillStyle()"
-                  [innerMark]="typedInnerMark()"
-                />
-              }
-              @case ('diamond') {
-                <g
-                  app-diamond-icon
-                  [size]="10"
-                  [color]="typeColor()"
-                  [fillStyle]="typedFillStyle()"
-                  [innerMark]="typedInnerMark()"
-                />
-              }
-              @case ('flag') {
-                <g app-flag-icon [size]="10" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
-              }
-              @case ('triangle') {
-                <g
-                  app-triangle-icon
-                  [size]="10"
-                  [color]="typeColor()"
-                  [fillStyle]="typedFillStyle()"
-                />
-              }
-              @case ('square') {
-                <g
-                  app-square-icon
-                  [size]="10"
-                  [color]="typeColor()"
-                  [fillStyle]="typedFillStyle()"
-                  [innerMark]="typedInnerMark()"
-                />
-              }
-              @default {
-                <g
-                  app-circle-icon
-                  [size]="10"
-                  [color]="typeColor()"
-                  [fillStyle]="typedFillStyle()"
-                  [innerMark]="typedInnerMark()"
-                />
-              }
-            }
-          </svg>
-          <span class="text-[11px] text-slate-600">{{ typeName() }}</span>
-          <span class="text-[11px] text-slate-300 select-none">|</span>
-          <span class="text-[11px] text-slate-400 font-mono">{{ formattedDate() }}</span>
+        <!-- Focal row: date + status tag -->
+        <div class="mb-3 flex items-center justify-between gap-2.5">
+          <span class="font-mono text-[14px] font-bold tabular-nums text-slate-900">{{
+            formattedDate()
+          }}</span>
+          @if (noLongerExpected()) {
+            <span class="inline-flex items-center gap-1 border border-slate-200 bg-slate-50 px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wider leading-none text-slate-600">
+              <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+              No longer expected
+            </span>
+          } @else {
+            <span
+              class="inline-flex items-center gap-1.5 border px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wider leading-none"
+              [class.bg-amber-50]="isProjected()"
+              [class.border-amber-200]="isProjected()"
+              [class.text-amber-800]="isProjected()"
+              [class.bg-brand-50]="!isProjected()"
+              [class.border-brand-200]="!isProjected()"
+              [class.text-brand-700]="!isProjected()"
+            >
+              <span
+                class="h-1.5 w-1.5 shrink-0 rounded-full border-[1.5px] box-border"
+                [class.border-amber-500]="isProjected()"
+                [class.bg-transparent]="isProjected()"
+                [class.border-brand-600]="!isProjected()"
+                [class.bg-brand-600]="!isProjected()"
+              ></span>
+              {{ statusTagLabel() }}
+            </span>
+          }
         </div>
 
-        <!-- Projection badge -->
+        <!-- Source line -->
         @if (projectionLabel()) {
-          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-            <span class="text-[10px] font-medium text-amber-700">{{ projectionLabel() }}</span>
-          </div>
-        }
-        @if (noLongerExpected()) {
-          <div class="mb-1.5 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-            <span class="text-[10px] font-medium text-slate-500">No longer expected</span>
+          <div class="mb-3 font-mono text-[10px] tracking-[0.04em] text-slate-400">
+            Source · {{ projectionLabel() }}
           </div>
         }
 
-        <!-- Trial context -->
-        @if (trialName()) {
-          <div class="border-t border-slate-100 pt-2 mt-2">
-            <div class="text-[10px] font-medium text-slate-900 leading-snug">{{ trialName() }}</div>
-            @if (trialContext()) {
-              <div class="text-[9px] text-slate-500 mt-0.5">
-                {{ trialContext() }}
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Asset context -->
+        <!-- Footer meta: company tile + company / asset + phase chip -->
         @if (companyName()) {
-          <div class="mt-1.5">
-            <span class="text-[9px] text-slate-500 tracking-[0.03em]">
-              <span class="uppercase">{{ companyName() }}</span>
+          <div class="flex items-center gap-2 border-t border-slate-100 pt-2.5">
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center bg-slate-700 font-mono text-[11px] font-bold italic text-white">{{
+              companyInitial()
+            }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-700">
+                {{ companyName() }}
+              </div>
               @if (assetName()) {
-                · {{ assetName() }}
+                <div class="truncate text-[11px] text-slate-500">{{ assetName() }}</div>
               }
-            </span>
+            </div>
+            @if (phaseChipLabel()) {
+              <span class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600">{{
+                phaseChipLabel()
+              }}</span>
+            }
           </div>
         }
 
         <!-- Description -->
         @if (description()) {
-          <p class="text-[11px] text-slate-500 leading-relaxed mt-1.5">{{ description() }}</p>
+          <p class="mt-2 text-[11px] leading-relaxed text-slate-500">{{ description() }}</p>
         }
 
         <!-- Primary intelligence reference -->
@@ -179,7 +184,7 @@ import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marke
             [href]="sourceUrl()!"
             target="_blank"
             rel="noopener noreferrer"
-            class="pointer-events-auto mt-2 block text-brand-600 text-xs hover:text-brand-700 hover:underline"
+            class="pointer-events-auto mt-2 block text-xs text-brand-600 hover:text-brand-700 hover:underline"
             >View source</a
           >
         }
@@ -231,9 +236,23 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly typedFillStyle = computed<FillStyle>(() => (this.fillStyle() as FillStyle) ?? 'filled');
   readonly typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
 
-  readonly trialContext = computed(() =>
-    [this.trialPhase(), this.recruitmentStatus()].filter((v) => !!v).join(' \u00b7 ')
-  );
+  /** Whether the marker's date is an estimate (any non-actual projection). */
+  readonly isProjected = computed(() => this.projection() !== 'actual');
+
+  /** Compact status tag wording on the focal row. */
+  readonly statusTagLabel = computed(() => (this.isProjected() ? 'Projected' : 'Confirmed'));
+
+  /** First letter of the company name for the footer tile. */
+  readonly companyInitial = computed(() => {
+    const name = this.companyName().trim();
+    return name ? name.charAt(0).toUpperCase() : '';
+  });
+
+  /** Short phase label (P1..P4) for the footer chip; empty when no phase. */
+  readonly phaseChipLabel = computed(() => {
+    const p = this.trialPhase();
+    return p ? phaseShortLabel(p) : '';
+  });
 
   private formatPoint(iso: string, precision: DatePrecision): string {
     const period = markerPeriodLabel(iso, precision);

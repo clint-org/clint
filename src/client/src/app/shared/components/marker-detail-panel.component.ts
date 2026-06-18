@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { FillStyle, InnerMark } from '../../core/models/marker.model';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { slidePanelAnimation } from '../animations/slide-panel.animation';
 import {
   CtgovMarkerSurfaceKey,
@@ -70,15 +71,25 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
           }
         </span>
 
+        @if (canEditMarker()) {
+          <button
+            headerActions
+            type="button"
+            class="inline-flex items-center gap-1 border border-slate-300 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600 hover:border-slate-400 hover:text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            (click)="onEditMarker()"
+          >
+            <i class="fa-solid fa-pen text-[9px]" aria-hidden="true"></i>
+            Edit
+          </button>
+        }
+
         <app-marker-detail-content
           [detail]="detail()"
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
-          [showEditAction]="showEditAction()"
           (markerClick)="markerClick.emit($event)"
           (eventClick)="eventClick.emit($event)"
           (trialClick)="trialClick.emit($event)"
-          (editMarkerClick)="editMarkerClick.emit($event)"
         />
       </app-detail-panel-shell>
     </ng-template>
@@ -86,6 +97,8 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkerDetailPanelComponent {
+  private readonly spaceRole = inject(SpaceRoleService);
+
   readonly detail = input<CatalystDetail | null>(null);
   /** Optional space id, threaded through to the materials section. */
   readonly spaceId = input<string | null>(null);
@@ -111,6 +124,22 @@ export class MarkerDetailPanelComponent {
     if (!d) return '';
     return `${d.catalyst.category_name} · ${d.catalyst.marker_type_name}`;
   });
+
+  /**
+   * Whether the header shows the compact "Edit" affordance: the host opted in
+   * via showEditAction, the current user can write to the active space, and
+   * the marker is anchored to a trial (the editor lives on the trial's manage
+   * page). Mirrors the gate that previously lived in the content body.
+   */
+  protected readonly canEditMarker = computed(
+    () => this.showEditAction() && this.spaceRole.canEdit() && !!this.detail()?.catalyst.trial_id
+  );
+
+  protected onEditMarker(): void {
+    const c = this.detail()?.catalyst;
+    if (!c?.trial_id || !this.spaceRole.canEdit()) return;
+    this.editMarkerClick.emit({ trialId: c.trial_id, markerId: c.marker_id });
+  }
 
   readonly drawerClasses = computed(() => {
     const base = 'z-30 w-[340px] border-l border-slate-200 bg-white shadow-[-4px_0_16px_rgba(0,0,0,0.08)]';

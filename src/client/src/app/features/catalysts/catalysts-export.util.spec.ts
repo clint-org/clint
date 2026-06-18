@@ -8,7 +8,10 @@ function fixture(overrides: Partial<FlatCatalyst> = {}): FlatCatalyst {
     marker_id: 'm1',
     title: 'DELIVER topline readout',
     event_date: '2026-09-15',
+    date_precision: 'exact',
     end_date: null,
+    end_date_precision: 'exact',
+    is_ongoing: false,
     category_name: 'Data',
     category_id: 'cat1',
     marker_type_name: 'Data Readout',
@@ -34,7 +37,7 @@ function fixture(overrides: Partial<FlatCatalyst> = {}): FlatCatalyst {
 }
 
 describe('CATALYST_EXPORT_COLUMNS', () => {
-  it('carries the visible columns plus drawer fields, with a real date cell', () => {
+  it('carries the visible columns plus drawer fields, with an honest date label', () => {
     const spec = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [fixture()]);
     const headers = spec.columns.map((c) => c.header);
     expect(headers).toEqual([
@@ -52,12 +55,34 @@ describe('CATALYST_EXPORT_COLUMNS', () => {
       'Source URL',
     ]);
     const row = spec.rows[0];
-    expect(row['c0']).toEqual(new Date(Date.UTC(2026, 8, 15)));
+    expect(row['c0']).toBe('Sep ‘26'); // exact date -> short label
     expect(row['c3']).toBe('DELIVER topline readout');
     expect(row['c6']).toBe('DELIVER');
     expect(row['c7']).toBe('P3');
     expect(row['c8']).toBe('Projected');
     expect(row['c10']).toBe('Topline HFpEF efficacy data.');
+  });
+
+  it('exports the period label for a fuzzy date and the extent for a range / onwards', () => {
+    const fuzzy = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({ event_date: '2026-11-15', date_precision: 'quarter' }),
+    ]);
+    expect(fuzzy.rows[0]['c0']).toBe("Q4 '26");
+
+    const range = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({
+        event_date: '2026-11-15',
+        date_precision: 'quarter',
+        end_date: '2027-02-15',
+        end_date_precision: 'quarter',
+      }),
+    ]);
+    expect(range.rows[0]['c0']).toBe("Q4 '26 – Q1 '27");
+
+    const onwards = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({ event_date: '2024-08-15', date_precision: 'quarter', is_ongoing: true }),
+    ]);
+    expect(onwards.rows[0]['c0']).toBe("Q3 '24 onwards");
   });
 
   it('falls back to the trial name when there is no acronym', () => {

@@ -32,6 +32,14 @@ export interface SortEvent {
   dir: 'asc' | 'desc';
 }
 
+/** Emitted while hovering a populated heatmap cell, for the roster tooltip. */
+export interface CellHoverEvent {
+  bubble: HeatmapBubble;
+  phase: RingPhase;
+  x: number;
+  y: number;
+}
+
 export interface MatrixRow {
   bubble: HeatmapBubble;
   cells: MatrixCell[];
@@ -364,7 +372,11 @@ export interface MatrixCell {
                 </div>
               </td>
               @for (cell of row.cells; track cell.phase) {
-                <td>
+                <td
+                  (mouseenter)="cell.count > 0 && onCellHover(row.bubble, cell.phase, $event)"
+                  (mousemove)="cell.count > 0 && onCellHover(row.bubble, cell.phase, $event)"
+                  (mouseleave)="onCellLeave()"
+                >
                   <div class="heat-cell">
                     @if (cell.count === 0) {
                       <div class="heat-pip empty" aria-hidden="true"></div>
@@ -396,6 +408,7 @@ export class HeatmapComponent {
 
   readonly rowClick = output<HeatmapBubble>();
   readonly sortChange = output<SortEvent>();
+  readonly cellHover = output<CellHoverEvent | null>();
 
   readonly phases = computed(() => visibleRingOrder(this.showPreclinical()));
 
@@ -462,6 +475,14 @@ export class HeatmapComponent {
     const currentDir = this.sortDir();
     const newDir = field === currentField && currentDir === 'desc' ? 'asc' : 'desc';
     this.sortChange.emit({ field, dir: newDir });
+  }
+
+  protected onCellHover(bubble: HeatmapBubble, phase: RingPhase, event: MouseEvent): void {
+    this.cellHover.emit({ bubble, phase, x: event.clientX, y: event.clientY });
+  }
+
+  protected onCellLeave(): void {
+    this.cellHover.emit(null);
   }
 
   protected onEscape(): void {

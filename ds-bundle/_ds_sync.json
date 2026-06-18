@@ -1,0 +1,18 @@
+{
+  "shape": "tokens",
+  "scope": "tokens-only",
+  "note": "Off-script tokens-only sync. No components, no bundle. The next /design-sync run compares these per-file sha256 hashes to detect changes and re-upload only what moved.",
+  "sourceHashes": {
+    "README.md": "8ad2e45fff42abbeaec22c25b02fe0685a9643f1b26b28e6047a7a9d8d39b9a1",
+    "fonts/README.md": "0fbea8c30ee584cab9483f042a7e64e99a43510415f834f37c3e6947f17af522",
+    "fonts/fonts.css": "caa199f5a98eab5650d9ec7bbc45a796e951e9de82fbf2e675ea73cbc123acfe",
+    "guidelines/brand.md": "b16ff47b599a8f4123bccd1a534d985e69f0d82dea2abe3f3abf4ca06ae8cbc7",
+    "guidelines/color-system.md": "96d5abe80b9883de90596053207029f4018023c7bcb46072ec368ddf0e3cb510",
+    "styles.css": "6f88ab09b77392e227888d5334a6805b183b32db362290726545d38c163b14c5",
+    "tokens/foundations.css": "99a1056ce9748f22b021e87402065302b80efbebd3ccc9e17c696de84ad2eabd",
+    "tokens/palette.css": "c25b5aa9b550480184b2c562bb461421f75072f8fb877e24e77a29d5537374d5",
+    "tokens/semantic.css": "b3a19dc088b0b37c9d4732e852fcdc504d15c654aeac4648d141c1dadc63e83e",
+    "tokens/tokens.json": "9a79dba71e8caeb3396411987e234170fee14a6a1f562c9fb969c6df732692ea",
+    "tokens/typography.css": "54d469be0ba13a28b5e21689526eba00e9551219f30b8a530545d2ae18d132e5"
+  }
+}

@@ -38,6 +38,13 @@
     [gridFilters]="grid.primengFilters()"
     [query]="grid.debouncedGlobalSearch()"
     (rowSelect)="onRowClick($event)"
+    (rowHover)="onRowHover($event)"
     (filterChange)="grid.onLazyLoad($event)"
   />
 </app-manage-page-shell>
+
+<app-catalyst-row-tooltip
+  [catalyst]="hoveredCatalyst()"
+  [x]="hoverX()"
+  [y]="hoverY()"
+/>

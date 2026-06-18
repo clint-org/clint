@@ -1,0 +1,55 @@
+/*
+ * Clint -- typography tokens and the structural-label pattern.
+ *
+ * Mono/tabular is the data-instrument voice: timeline headers, axes, chips, and
+ * the small uppercase "view all"-style action links. Company names are uppercase
+ * and tracked as structural labels. There is no display typography and no hero
+ * font -- restraint is the brand. Source: docs/brand.md (Typography) +
+ * src/client/src/app/shared/styles/typography.css.
+ */
+
+:root {
+  /* Type scale -- compact and data-dense. */
+  --text-2xs: 10px;   /* uppercase tracked labels, action links */
+  --text-xs: 11px;    /* dialog titles, dense chrome */
+  --text-sm: 12px;    /* table cells, captions, messages */
+  --text-base: 13px;  /* body / default UI text */
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  /* Weights. */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Tracking. */
+  --tracking-label: 0.14em;   /* uppercase structural labels */
+  --tracking-wide: 0.08em;
+  --tracking-normal: 0;
+
+  /* Tabular figures for data columns and timeline axes. */
+  --font-numeric: tabular-nums;
+}
+
+/*
+ * Structural-label pattern -- the small uppercase, mono, tracked label used for
+ * section actions ("View feed", "All drafts"), form-field labels, and company
+ * names. This is the single most recognizable type signature in Clint. Apply
+ * `.ds-label` to reproduce it.
+ */
+.ds-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-link);
+}
+
+/* Tabular-figure helper for any numeric data column or axis. */
+.ds-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

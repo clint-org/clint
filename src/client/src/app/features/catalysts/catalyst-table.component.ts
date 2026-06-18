@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -12,6 +12,13 @@ import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-ic
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 import { catalystContextLine } from './group-catalysts';
+
+/** Hovered catalyst row + cursor position for the preview tooltip. */
+export interface CatalystHoverEvent {
+  catalyst: FlatCatalyst;
+  x: number;
+  y: number;
+}
 
 @Component({
   selector: 'app-catalyst-table',
@@ -99,17 +106,25 @@ import { catalystContextLine } from './group-catalysts';
       <ng-template #groupheader let-catalyst>
         <tr class="data-table-group-header">
           <td colspan="5">
-            <div
-              class="flex items-baseline gap-2 px-1 py-1 text-[10px] font-bold uppercase tracking-widest"
-              [class.text-brand-700]="catalyst.time_bucket === 'This Week'"
-              [class.text-slate-500]="catalyst.time_bucket !== 'This Week'"
-            >
-              {{ catalyst.time_bucket }}
+            <div class="flex items-baseline gap-2 px-1 py-1">
+              <span
+                class="text-[10px] font-bold uppercase tracking-[0.14em]"
+                [class.text-brand-700]="catalyst.time_bucket === 'This Week'"
+                [class.text-slate-500]="catalyst.time_bucket !== 'This Week'"
+              >
+                {{ catalyst.time_bucket }}
+              </span>
               @if (catalyst.time_bucket_range) {
-                <span class="font-normal tracking-normal text-slate-400">
+                <span class="font-mono text-[10px] tracking-normal text-slate-400">
                   {{ catalyst.time_bucket_range }}
                 </span>
               }
+              <span
+                class="ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400"
+              >
+                {{ bucketCount(catalyst.time_bucket) }}
+                {{ bucketCount(catalyst.time_bucket) === 1 ? 'event' : 'events' }}
+              </span>
             </div>
           </td>
         </tr>
@@ -121,6 +136,9 @@ import { catalystContextLine } from './group-catalysts';
           [class.selected-row]="catalyst.marker_id === selectedId()"
           (click)="rowSelect.emit(catalyst.marker_id)"
           (keydown.enter)="rowSelect.emit(catalyst.marker_id)"
+          (mouseenter)="onRowHover(catalyst, $event)"
+          (mousemove)="onRowHover(catalyst, $event)"
+          (mouseleave)="rowHover.emit(null)"
           tabindex="0"
           role="button"
           [attr.aria-label]="viewDetailsLabel(catalyst.title)"
@@ -134,17 +152,17 @@ import { catalystContextLine } from './group-catalysts';
             }
           </td>
           <td>
-            <span class="inline-flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-2">
               <app-marker-icon
                 [shape]="catalyst.marker_type_shape"
                 [color]="catalyst.marker_type_color"
-                [size]="14"
+                [size]="15"
                 [fillStyle]="catalyst.is_projected ? 'outline' : 'filled'"
                 [innerMark]="catalyst.marker_type_inner_mark"
                 [isNle]="catalyst.no_longer_expected"
               />
               <span
-                class="whitespace-nowrap text-xs text-slate-500"
+                class="whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500"
                 [innerHTML]="catalyst.category_name | highlight: query()"
               ></span>
             </span>
@@ -179,18 +197,35 @@ import { catalystContextLine } from './group-catalysts';
             }
           </td>
           <td>
-            <!-- Projected is the default state of a future catalyst; an
-                 amber pill on every row carried no signal. Quiet text for
-                 the default; the green pill marks confirmed exceptions. -->
-            @if (catalyst.is_projected) {
-              <span class="text-[9px] uppercase tracking-wide text-slate-500">Projected</span>
-            } @else {
+            <!-- Status as an unmistakable Projected/Confirmed pill, matching
+                 the marker-kit StatusTag: amber + hollow dot for projected,
+                 brand + filled dot for confirmed. The trailing arrow signals
+                 the row opens a detail pane. -->
+            <span class="inline-flex items-center gap-2">
               <span
-                class="inline-block rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-green-700"
+                class="inline-flex items-center gap-1.5 border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
+                [class.border-amber-200]="catalyst.is_projected"
+                [class.bg-amber-50]="catalyst.is_projected"
+                [class.text-amber-800]="catalyst.is_projected"
+                [class.border-brand-200]="!catalyst.is_projected"
+                [class.bg-brand-50]="!catalyst.is_projected"
+                [class.text-brand-700]="!catalyst.is_projected"
               >
-                Confirmed
+                <span
+                  class="box-border h-[7px] w-[7px] shrink-0 rounded-full border-[1.5px]"
+                  [class.border-amber-700]="catalyst.is_projected"
+                  [class.bg-transparent]="catalyst.is_projected"
+                  [class.border-brand-700]="!catalyst.is_projected"
+                  [class.bg-brand-700]="!catalyst.is_projected"
+                  aria-hidden="true"
+                ></span>
+                {{ catalyst.is_projected ? 'Projected' : 'Confirmed' }}
               </span>
-            }
+              <i
+                class="fa-solid fa-arrow-right text-[10px] text-slate-300"
+                aria-hidden="true"
+              ></i>
+            </span>
           </td>
         </tr>
       </ng-template>
@@ -221,6 +256,23 @@ export class CatalystTableComponent {
   protected readonly viewDetailsLabel = viewDetailsLabel;
   protected readonly catalystContextLine = catalystContextLine;
 
+  /**
+   * Event count per time bucket, derived from the rows already in view (no
+   * extra query). Surfaced in the group subheader so each bucket reads how
+   * many catalysts it holds.
+   */
+  private readonly bucketCounts = computed(() => {
+    const counts = new Map<string, number>();
+    for (const c of this.catalysts()) {
+      counts.set(c.time_bucket, (counts.get(c.time_bucket) ?? 0) + 1);
+    }
+    return counts;
+  });
+
+  protected bucketCount(bucket: string): number {
+    return this.bucketCounts().get(bucket) ?? 0;
+  }
+
   /** Approximate period label ("Q4 '26") for a fuzzy-dated catalyst, else null. */
   protected periodLabel(catalyst: FlatCatalyst): string | null {
     return markerPeriodLabel(catalyst.event_date, catalyst.date_precision);
@@ -235,6 +287,12 @@ export class CatalystTableComponent {
   readonly query = input<string>('');
   readonly rowSelect = output<string>();
   readonly filterChange = output<Record<string, unknown>>();
+  /** Hovered row + cursor position for the catalyst preview tooltip; null clears it. */
+  readonly rowHover = output<CatalystHoverEvent | null>();
+
+  protected onRowHover(catalyst: FlatCatalyst, event: MouseEvent): void {
+    this.rowHover.emit({ catalyst, x: event.clientX, y: event.clientY });
+  }
 
   protected onLazyLoad(event: unknown): void {
     // PrimeNG emits TableLazyLoadEvent here. We forward the whole event

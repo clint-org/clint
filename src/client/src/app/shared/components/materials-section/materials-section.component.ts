@@ -47,6 +47,26 @@ export class MaterialsSectionComponent implements OnInit {
   readonly entityType = input.required<MaterialEntityType>();
   readonly entityId = input.required<string>();
   readonly spaceId = input.required<string>();
+  /**
+   * Tenant context for linked-entity chip routes in each row. Optional: when
+   * not supplied (the detail-page hosts), the row derives it from the route
+   * ancestry, which always carries :tenantId beneath /t/:tenantId/s/:spaceId.
+   */
+  readonly tenantId = input<string | null>(null);
+  /**
+   * Optional section heading the component renders at its top. When empty
+   * (default) the parent owns the heading and nothing changes for existing
+   * call sites. The marker pane passes "Materials" so the section can own
+   * its own label when it is conditionally hidden.
+   */
+  readonly heading = input<string>('');
+  /**
+   * When true, the section renders nothing once it has settled into an empty
+   * read-only state: not loading, no error, no materials, and the user cannot
+   * upload. Editors who can upload still see the (empty) section so they can
+   * add the first material. Default false keeps every other host unchanged.
+   */
+  readonly hideWhenEmpty = input<boolean>(false);
 
   protected readonly materials = signal<Material[]>([]);
   protected readonly loading = signal(true);
@@ -70,6 +90,22 @@ export class MaterialsSectionComponent implements OnInit {
   });
 
   protected readonly canUpload = computed(() => this.spaceRole.canEdit());
+
+  /**
+   * Whether the whole section collapses to nothing. When a host opts in via
+   * hideWhenEmpty (e.g. a transient detail pane that is not an upload surface),
+   * the section disappears once the fetch settles with no materials, for every
+   * role. While loading or on error we still render so the user is never left
+   * with a silent gap. Hosts that are the contextual upload surface (entity
+   * detail pages) simply do not set hideWhenEmpty, so they keep the zone.
+   */
+  protected readonly hidden = computed(
+    () =>
+      this.hideWhenEmpty() &&
+      !this.loading() &&
+      !this.error() &&
+      this.materials().length === 0
+  );
 
   // Reload whenever the anchor entity changes. Guards against the
   // template binding to a fresh entity (e.g. trial detail navigation

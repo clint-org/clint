@@ -5,6 +5,7 @@ import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
   HEATMAP_GROUPING_OPTIONS,
+  HeatmapAsset,
   HeatmapBubble,
   HeatmapGrouping,
   PHASE_COLOR,
@@ -13,48 +14,41 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { cellTint } from './heatmap-cell';
 import { LandscapeStateService } from './landscape-state.service';
+import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
 
 @Component({
   selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
   template: `
     <aside class="heatmap-controls">
       <div class="controls-section">
         <div class="section-label">GROUP BY</div>
-        <div class="group-buttons">
-          @for (opt of groupingOptions; track opt.value) {
-            <button
-              type="button"
-              [class.active]="grouping() === opt.value"
-              (click)="navigateToGrouping(opt.value)"
-            >
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+        <app-segmented-control
+          ariaLabel="Group heatmap by"
+          [options]="groupingOptions"
+          [value]="grouping()"
+          (valueChange)="navigateToGrouping($event)"
+        />
       </div>
 
       <div class="controls-section">
         <div class="section-label">COUNT</div>
-        <div class="count-toggle">
-          @for (opt of countOptions; track opt.value) {
-            <button
-              type="button"
-              [class.active]="countUnit() === opt.value"
-              (click)="state.countUnit.set(opt.value)"
-            >
-              {{ opt.label }}
-            </button>
-          }
-        </div>
+        <app-segmented-control
+          ariaLabel="Count heatmap by"
+          [options]="countOptions"
+          [value]="countUnit()"
+          (valueChange)="onCountChange($event)"
+        />
       </div>
 
       <div class="controls-section">
         <div class="section-label">READ</div>
-        @if (readText()) {
-          <span class="read-content" [innerHTML]="readText()"></span>
+        @if (read().text) {
+          <app-competitive-read-strip class="read-content" [read]="read()" />
         }
       </div>
 
@@ -120,92 +114,16 @@ import { LandscapeStateService } from './landscape-state.service';
     .section-label {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #94a3b8;
-    }
-
-    .group-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .group-buttons button {
-      padding: 6px 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      background: white;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .group-buttons button:hover {
-      border-color: #cbd5e1;
-      color: #334155;
-    }
-
-    .group-buttons button.active {
-      border-color: var(--brand-600, #0d9488);
-      background: var(--brand-50, #f0fdfa);
-      color: var(--brand-700, #0f766e);
-      font-weight: 600;
-    }
-
-    .count-toggle {
-      display: flex;
-      gap: 0;
-    }
-
-    .count-toggle button {
-      flex: 1;
-      text-align: center;
-      padding: 5px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #64748b;
-      background: white;
-      border: 1px solid #e2e8f0;
-      cursor: pointer;
-      transition: all 0.15s;
-      margin-right: -1px;
-    }
-
-    .count-toggle button:last-child {
-      margin-right: 0;
-    }
-
-    .count-toggle button:hover {
-      color: #334155;
-      z-index: 1;
-    }
-
-    .count-toggle button.active {
-      border-color: var(--brand-600, #0d9488);
-      background: var(--brand-50, #f0fdfa);
-      color: var(--brand-700, #0f766e);
-      font-weight: 600;
-      z-index: 1;
     }
 
     .read-content {
       font-size: 12px;
       color: var(--slate-600, #475569);
       line-height: 1.6;
-    }
-
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {
@@ -217,20 +135,26 @@ import { LandscapeStateService } from './landscape-state.service';
     .stat {
       display: flex;
       flex-direction: column;
-      padding: 8px;
+      gap: 2px;
+      padding: 9px 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
     }
 
     .stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: #0f172a;
     }
 
     .stat-label {
-      font-size: 11px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: #94a3b8;
     }
 
@@ -331,22 +255,41 @@ export class HeatmapControlsPanelComponent {
 
   protected readonly groupCount = computed(() => this.bubbles().length);
 
-  protected readonly totalCount = computed(() =>
-    this.bubbles().reduce((sum, b) => sum + b.unit_count, 0)
-  );
+  // Count distinct entities across buckets, not the sum of per-bucket counts.
+  // A multi-indication asset appears in several buckets, so summing unit_count
+  // inflates the total (e.g. one filtered company shows as "6 companies", or 28
+  // placements as "28 assets"). Dedupe products by asset id, then tally per unit.
+  protected readonly totalCount = computed(() => {
+    const assetById = new Map<string, HeatmapAsset>();
+    for (const bubble of this.bubbles()) {
+      for (const product of bubble.products) assetById.set(product.id, product);
+    }
+    const assets = [...assetById.values()];
+    switch (this.countUnit()) {
+      case 'companies':
+        return new Set(assets.map((a) => a.company_id)).size;
+      case 'trials':
+        return assets.reduce((sum, a) => sum + a.trial_count, 0);
+      default:
+        return assets.length;
+    }
+  });
 
-  protected readonly readText = computed<string>(() => {
-    const result = buildLandscapeRead({
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
       view: 'heatmap',
       groupBy: this.grouping(),
       stats: fromBubbles(this.bubbles()),
-    });
-    return result.text;
-  });
+    })
+  );
 
-  protected navigateToGrouping(grouping: HeatmapGrouping): void {
-    const segment = groupingToSegment(grouping);
+  protected navigateToGrouping(grouping: string): void {
+    const segment = groupingToSegment(grouping as HeatmapGrouping);
     this.router.navigate(['..', segment], { relativeTo: this.route });
+  }
+
+  protected onCountChange(unit: string): void {
+    this.state.countUnit.set(unit as CountUnit);
   }
 
   private formatPhase(phase: RingPhase): string {

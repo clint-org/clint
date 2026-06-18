@@ -1,0 +1,89 @@
+/*
+ * Clint -- semantic tokens.
+ *
+ * These map the raw scales in palette.css onto roles. Always style against these,
+ * not the raw scales, so a design carries Clint's meaning (markers pop, phase bars
+ * recede, slate structures the page). The data-viz roles are a SYSTEM, not
+ * decoration -- do not invent new phase or marker colors.
+ */
+
+:root {
+  /* -- Surfaces & structure ---------------------------------------------- */
+  --surface-page: var(--slate-50);     /* app background */
+  --surface-card: #ffffff;             /* cards, panels, dialogs */
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--slate-50);
+  --surface-header: var(--slate-50);   /* table header cells, toolbars */
+
+  /* -- Text -------------------------------------------------------------- */
+  --text-strong: var(--slate-900);     /* primary text, values */
+  --text-default: var(--slate-700);
+  --text-muted: var(--slate-500);      /* secondary / captions */
+  --text-placeholder: var(--slate-400);
+  --text-on-brand: #ffffff;
+  --text-link: var(--brand-700);
+
+  /* -- Borders ----------------------------------------------------------- */
+  --border-subtle: var(--slate-100);   /* dialog footers, hairlines */
+  --border-default: var(--slate-200);  /* cards, table rows -- NOT gray-300 */
+  --border-strong: var(--slate-300);   /* form-field borders */
+
+  /* -- Brand affordances -------------------------------------------------- */
+  --accent: var(--brand-600);          /* active nav underline, primary buttons */
+  --accent-hover: var(--brand-700);
+  --accent-active: var(--brand-800);
+  --accent-wash: var(--brand-50);      /* selected-row / option wash */
+  --accent-line: var(--brand-600);     /* thin teal signature line at page top */
+  --focus-ring: 0 0 0 2px rgba(13, 148, 136, 0.15);
+
+  /* -- Clinical phase colors (trials) ------------------------------------ *
+   * PRECLIN/P1 are muted slate so the eye lands on later phases; P3 is the
+   * hero teal; P4 violet marks the regulatory transition; OBS amber sits
+   * caution-adjacent. Source: phase-colors.ts (PHASE_DESCRIPTORS). */
+  --phase-preclin: #cbd5e1;            /* slate-300 -- recedes behind P1 */
+  --phase-p1: #94a3b8;                 /* slate-400 -- early/exploratory */
+  --phase-p2: #67e8f9;                 /* cyan-300  -- building evidence */
+  --phase-p3: #2dd4bf;                 /* teal-400  -- PIVOTAL, the hero color */
+  --phase-p4: #a78bfa;                 /* violet-400 -- post-approval */
+  --phase-obs: #fbbf24;                /* amber-400 -- observational */
+  --phase-fallback: #64748b;           /* slate-500 -- unknown/unset */
+
+  /* -- Development-status colors (asset/program level) -------------------- *
+   * Extends the phase colors with two commercial milestones. Source:
+   * phase-colors.ts (DEVELOPMENT_STATUS_COLORS). */
+  --status-approved: #8b5cf6;          /* violet-500 */
+  --status-launched: #0d9488;          /* teal-600 (brand) */
+
+  /* -- Marker role colors ------------------------------------------------ *
+   * Markers are the visual FOREGROUND -- they must pop. Each event category has
+   * a fixed color and glyph. Source: docs/brand.md + supabase/seed.sql. */
+  --marker-data: #16a34a;              /* green  -- topline / interim / full data (circle) */
+  --marker-trial: #475569;             /* slate  -- PCD / trial start / trial end (circle, dashed line) */
+  --marker-trial-line: #94a3b8;        /* slate  -- trial start/end dashed lines */
+  --marker-regulatory: #f97316;        /* orange -- filing / submission / acceptance (diamond) */
+  --marker-approval: #3b82f6;          /* blue   -- approval (flag) */
+  --marker-launch: #7c3aed;            /* violet -- launch (triangle) */
+  --marker-loe: #78350f;               /* amber-900 -- loss of exclusivity (square) */
+  --marker-generic-entry: #d97706;     /* amber-600 -- generic entry */
+  --marker-fallback: #64748b;          /* slate-500 -- untyped marker */
+
+  /* -- Feedback / status severity ---------------------------------------- *
+   * success = brand (not green -- green is reserved for data markers).
+   * Source: primeng-theme.ts toast/message color schemes. */
+  --feedback-success: var(--brand-700);
+  --feedback-success-bg: var(--brand-50);
+  --feedback-success-border: var(--brand-200);
+  --feedback-error: var(--red-800);
+  --feedback-error-bg: var(--red-50);
+  --feedback-error-border: var(--red-200);
+  --feedback-warn: var(--amber-800);
+  --feedback-warn-bg: var(--amber-50);
+  --feedback-warn-border: var(--amber-200);
+  --feedback-info: var(--slate-700);
+  --feedback-info-bg: var(--slate-50);
+  --feedback-info-border: var(--slate-200);
+
+  /* -- Search-term highlight (on-brand, not pure yellow) ----------------- */
+  --highlight-bg: #fef3c7;             /* amber-100 */
+  --highlight-text: #78350f;           /* amber-900 */
+}

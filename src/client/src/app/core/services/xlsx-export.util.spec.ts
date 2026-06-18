@@ -76,14 +76,15 @@ describe('buildXlsxWorkbook', () => {
     expect(sheet.getCell('J2').value).toBe('Pivotal readout expected H2.');
   });
 
-  it('writes marker rows with Date cells and a readable NLE status', () => {
+  it('writes marker rows with honest date labels and a readable NLE status', () => {
     const wb = buildXlsxWorkbook(fixtureCompanies, meta);
     const sheet = wb.getWorksheet('Markers')!;
     // D=Marker, E=Category, F=Date, G=End Date, H=Status, I=Detail
     expect(sheet.getCell('D2').value).toBe('Data readout');
     expect(sheet.getCell('E2').value).toBe('Clinical');
-    expect(sheet.getCell('F2').value).toBeInstanceOf(Date);
-    expect(sheet.getCell('G2').value).toBeNull();
+    // Date/End Date are honest text labels (fuzzy markers have no real day).
+    expect(sheet.getCell('F2').value).toBe('Jun ‘21');
+    expect(sheet.getCell('G2').value).toBe('');
     expect(sheet.getCell('H2').value).toBe('No longer expected');
     expect(sheet.getCell('I2').value).toBe('Topline readout');
   });

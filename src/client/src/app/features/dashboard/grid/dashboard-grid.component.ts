@@ -18,8 +18,15 @@ import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
+import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
+import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
 import { computeInitialScrollLeft } from './initial-scroll';
-import { visibleLabelMarkerIds } from './marker-label-layout';
+import {
+  CaptionInterval,
+  estimateCaptionWidthPx,
+  placeOptionalCaptions,
+  visibleLabelMarkerIds,
+} from './marker-label-layout';
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { GridHeaderComponent } from './grid-header.component';
@@ -191,32 +198,101 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   });
 
   /**
-   * Marker date captions are 36px wide and centered on the icon; two captions
-   * closer than this overlap and turn to garble at year zoom. Suppressed
-   * captions remain available via the marker tooltip.
+   * Start captions are centered on the icon; two whose centers are closer than
+   * this overlap and turn to garble at year zoom. Suppressed captions remain
+   * available via the marker tooltip.
    */
   private static readonly DATE_LABEL_MIN_GAP_PX = 38;
 
-  /** Per trial row, the marker ids whose date caption may render. */
+  /** Clearance kept between a range end-cap caption and any other caption. */
+  private static readonly END_LABEL_PAD_PX = 3;
+
+  /** End-cap caption text is left-anchored at `tailEndX - 12` (see template). */
+  private static readonly END_LABEL_OFFSET_PX = 12;
+
+  /**
+   * Per trial row, the caption keys allowed to render. Start captions use the
+   * marker id; the secondary range end-cap caption uses `<id>:end`. Start
+   * captions win their slots first (greedy by x); end-cap captions render only
+   * where they clear every kept caption -- they are width-aware because their
+   * left-anchored text can be wider than the start container and lands at the
+   * tail end, not under the icon.
+   */
   private readonly visibleDateLabels = computed<Map<string, Set<string>>>(() => {
     const sy = this.startYear();
     const ey = this.endYear();
     const tw = this.totalWidth();
     const map = new Map<string, Set<string>>();
     for (const row of this.flattenedTrials()) {
-      const points = (row.trial.markers ?? [])
-        .filter((m) => this.isMarkerInWindow(m))
-        .map((m) => ({ id: m.id, x: this.timeline.dateToX(m.event_date, sy, ey, tw) }));
-      map.set(
-        row.trial.id,
-        visibleLabelMarkerIds(points, DashboardGridComponent.DATE_LABEL_MIN_GAP_PX)
+      const inWindow = (row.trial.markers ?? []).filter((m) => this.isMarkerInWindow(m));
+
+      const startX = new Map<string, number>();
+      for (const m of inWindow) {
+        startX.set(m.id, this.timeline.dateToX(m.event_date, sy, ey, tw));
+      }
+
+      const startKept = visibleLabelMarkerIds(
+        inWindow.map((m) => ({ id: m.id, x: startX.get(m.id) ?? 0 })),
+        DashboardGridComponent.DATE_LABEL_MIN_GAP_PX
       );
+
+      // Kept start captions occupy fixed intervals; end-caps must clear them.
+      const occupied: CaptionInterval[] = [];
+      for (const m of inWindow) {
+        if (!startKept.has(m.id)) continue;
+        const cx = startX.get(m.id) ?? 0;
+        const half = estimateCaptionWidthPx(markerStartCaption(m.event_date, m.date_precision)) / 2;
+        occupied.push({ key: m.id, left: cx - half, right: cx + half });
+      }
+
+      const endCaps: CaptionInterval[] = [];
+      for (const m of inWindow) {
+        const endLabel = this.endCapLabel(m, sy, ey, tw, startX.get(m.id) ?? 0);
+        if (!endLabel) continue;
+        const left = endLabel.anchorX - DashboardGridComponent.END_LABEL_OFFSET_PX;
+        endCaps.push({ key: `${m.id}:end`, left, right: left + endLabel.width });
+      }
+
+      const kept = new Set(startKept);
+      for (const key of placeOptionalCaptions(
+        occupied,
+        endCaps,
+        DashboardGridComponent.END_LABEL_PAD_PX
+      )) {
+        kept.add(key);
+      }
+      map.set(row.trial.id, kept);
     }
     return map;
   });
 
+  /**
+   * The visible end-cap caption for a bounded, fuzzy-ended range (mirrors the
+   * marker template gate: a tail longer than the icon, not ongoing, with a
+   * fuzzy end period). Returns the tail-end anchor x and estimated text width,
+   * or null when no end-cap caption renders.
+   */
+  private endCapLabel(
+    m: Marker,
+    sy: number,
+    ey: number,
+    tw: number,
+    sx: number
+  ): { anchorX: number; width: number } | null {
+    if (m.is_ongoing || !m.end_date) return null;
+    const period = markerPeriodLabel(m.end_date, m.end_date_precision);
+    if (!period) return null;
+    const endX = Math.min(tw, this.timeline.dateToX(m.end_date, sy, ey, tw));
+    if (endX - sx <= MARKER_ICON_SIZE) return null;
+    return { anchorX: endX, width: estimateCaptionWidthPx(`~${period}`) };
+  }
+
   protected dateLabelVisible(trialId: string, markerId: string): boolean {
     return this.visibleDateLabels().get(trialId)?.has(markerId) ?? true;
+  }
+
+  protected endLabelVisible(trialId: string, markerId: string): boolean {
+    return this.visibleDateLabels().get(trialId)?.has(`${markerId}:end`) ?? true;
   }
 
   ngAfterViewInit(): void {

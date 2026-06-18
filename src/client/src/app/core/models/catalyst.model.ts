@@ -74,7 +74,12 @@ export interface UpcomingMarker {
   title: string;
   event_date: string;
   marker_type_name: string;
+  marker_type_color: string;
+  marker_type_shape: MarkerShape;
+  marker_type_inner_mark: InnerMark;
   is_projected: boolean;
+  projection: string | null;
+  no_longer_expected: boolean;
 }
 
 export interface RelatedEvent {

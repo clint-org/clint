@@ -114,6 +114,22 @@ export function markerPeriodLabel(
 }
 
 /**
+ * The compact caption printed under a marker on the timeline: the approximate
+ * period prefixed with '~' ("~Q4 '26"), or the exact "Mon 'YY" for a precise
+ * date. Pure (no Date/timezone) so the node unit runner and the row-decollision
+ * width math share one source of truth with the rendered caption.
+ */
+export function markerStartCaption(
+  eventDateISO: string,
+  precision: DatePrecision | null | undefined
+): string {
+  const period = markerPeriodLabel(eventDateISO, precision);
+  if (period) return `~${period}`;
+  const { y, m } = isoParts(eventDateISO);
+  return `${MONTHS[m - 1]} '${String(y).slice(-2)}`;
+}
+
+/**
  * Compose a marker's temporal extent from pre-formatted endpoint labels:
  * "Q3 '24 onwards" (ongoing), "Q4 '26 – Q1 '27" (bounded), or just the start
  * (a point). Endpoint formatting (period label vs exact date) is the caller's
@@ -127,6 +143,37 @@ export function markerExtentLabel(
   if (isOngoing) return `${startLabel} onwards`;
   if (endLabel) return `${startLabel} – ${endLabel}`;
   return startLabel;
+}
+
+/**
+ * A single endpoint's display label: the period label for a fuzzy date
+ * ("Q4 '26"), or the caller-formatted exact date otherwise. `formatExact`
+ * lets each surface choose its exact-date format (short date, ISO, etc.).
+ */
+export function markerEndpointLabel(
+  iso: string,
+  precision: DatePrecision,
+  formatExact: (iso: string) => string
+): string {
+  return markerPeriodLabel(iso, precision) ?? formatExact(iso);
+}
+
+/**
+ * Full temporal extent of a marker for exports and any text surface: a fuzzy
+ * point ("Q4 '26"), an exact day, a bounded range ("Q4 '26 – Q1 '27"), or an
+ * open-ended "Q3 '24 onwards". Never emits a false exact day for a fuzzy date.
+ */
+export function formatMarkerExtent(
+  eventDate: string,
+  datePrecision: DatePrecision,
+  endDate: string | null,
+  endDatePrecision: DatePrecision,
+  isOngoing: boolean,
+  formatExact: (iso: string) => string
+): string {
+  const start = markerEndpointLabel(eventDate, datePrecision, formatExact);
+  const end = endDate ? markerEndpointLabel(endDate, endDatePrecision, formatExact) : null;
+  return markerExtentLabel(start, end, isOngoing);
 }
 
 /**

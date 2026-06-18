@@ -72,8 +72,10 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
     { header: 'Trial', key: 'trial', width: 22 },
     { header: 'Marker', key: 'marker', width: 20 },
     { header: 'Category', key: 'category', width: 16 },
-    { header: 'Date', key: 'date', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
-    { header: 'End Date', key: 'endDate', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
+    // Text, not date cells: a fuzzy marker has no real day, so we emit the
+    // period label ("Q4 '26") / "onwards" rather than a false exact date.
+    { header: 'Date', key: 'date', width: 14 },
+    { header: 'End Date', key: 'endDate', width: 14 },
     { header: 'Status', key: 'status', width: 18 },
     { header: 'Detail', key: 'detail', width: 60 },
   ];
@@ -84,8 +86,8 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
       trial: r.trial,
       marker: r.marker,
       category: r.category,
-      date: isoToDate(r.eventDate),
-      endDate: r.endDate ? isoToDate(r.endDate) : null,
+      date: r.startLabel,
+      endDate: r.endLabel,
       status: STATUS_LABELS[r.status],
       detail: r.detailFull,
     });
