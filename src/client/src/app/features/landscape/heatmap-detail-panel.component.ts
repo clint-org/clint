@@ -5,14 +5,16 @@ import {
   HeatmapBubble,
   HeatmapGrouping,
   HeatmapAsset,
+  PHASE_COLOR,
+  RING_DEV_RANK,
+  RingPhase,
 } from '../../core/models/landscape.model';
-import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
-import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
-import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
+import { DEVELOPMENT_STATUS_LABELS } from '../../core/models/phase-colors';
 import {
-  DetailPanelPhaseRaceComponent,
-  PhaseRaceEntry,
-} from '../../shared/components/detail-panel-phase-race.component';
+  CompetitorRaceGroup,
+  DetailPanelCompetitorRaceComponent,
+} from '../../shared/components/detail-panel-competitor-race.component';
+import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 
@@ -41,10 +43,8 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
 @Component({
   selector: 'app-heatmap-detail-panel',
   imports: [
+    DetailPanelCompetitorRaceComponent,
     DetailPanelEmptyStateComponent,
-    DetailPanelEntityListComponent,
-    DetailPanelEntityRowComponent,
-    DetailPanelPhaseRaceComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
     Tooltip,
@@ -75,43 +75,35 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
               }}</span>
               <span class="ml-1 text-slate-500">{{ countUnit() }}</span>
             </div>
+            @if (leadAsset(); as lead) {
+              <div class="flex items-baseline gap-1.5">
+                <span
+                  class="text-[13px] font-semibold"
+                  [style.color]="phaseColor(lead.highest_phase)"
+                  >{{ phaseLong(lead.highest_phase) }}</span
+                >
+                <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400"
+                  >Lead phase</span
+                >
+              </div>
+            }
           </div>
+          @if (leadAsset(); as lead) {
+            <p class="mt-2 text-[12.5px] text-slate-500">
+              <span class="font-semibold text-slate-900">{{ lead.company_name }}</span> leads with
+              {{ lead.name }}.
+            </p>
+          }
         </app-detail-panel-section>
 
-        @if (raceEntries().length > 0) {
-          <app-detail-panel-section>
-            <app-detail-panel-phase-race
-              [entries]="raceEntries()"
+        @if (competitorGroups().length > 0) {
+          <app-detail-panel-section label="Competitive phase progress">
+            <app-detail-panel-competitor-race
+              [groups]="competitorGroups()"
               [showPreclinical]="showPreclinical()"
             />
           </app-detail-panel-section>
         }
-
-        <app-detail-panel-section [label]="'Assets (' + b.products.length + ')'">
-          <app-detail-panel-entity-list>
-            @for (product of sortedAssets(); track product.id) {
-              <app-detail-panel-entity-row (rowClick)="openAsset.emit(product.id)">
-                <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span class="truncate text-[13px] font-medium text-slate-900">
-                    {{ product.name }}
-                    @if (product.generic_name) {
-                      <span class="font-normal italic text-slate-400"
-                        >({{ product.generic_name }})</span
-                      >
-                    }
-                  </span>
-                  <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-                    <span class="truncate text-slate-500">{{ product.company_name }}</span>
-                    <span class="shrink-0"
-                      >{{ product.trial_count }}
-                      {{ product.trial_count === 1 ? 'trial' : 'trials' }}</span
-                    >
-                  </span>
-                </span>
-              </app-detail-panel-entity-row>
-            }
-          </app-detail-panel-entity-list>
-        </app-detail-panel-section>
       } @else {
         <app-detail-panel-empty-state prompt="Click a row to see details">
           <p class="mt-2 text-[13px] text-slate-700">
@@ -174,18 +166,57 @@ export class HeatmapDetailPanelComponent {
     return parts.length > 0 ? parts.join(' / ') : b.label;
   });
 
-  readonly sortedAssets = computed<HeatmapAsset[]>(() => {
-    const b = this.bubble();
-    if (!b) return [];
-    return [...b.products].sort((a, x) => x.highest_phase_rank - a.highest_phase_rank);
+  /** The single furthest-developed asset in the bubble (the leader). */
+  readonly leadAsset = computed<HeatmapAsset | null>(() => {
+    const products = this.bubble()?.products ?? [];
+    if (products.length === 0) return null;
+    return products.reduce((best, p) =>
+      RING_DEV_RANK[p.highest_phase] > RING_DEV_RANK[best.highest_phase] ? p : best
+    );
   });
 
-  readonly raceEntries = computed<PhaseRaceEntry[]>(() =>
-    this.sortedAssets().map((p) => ({
-      id: p.id,
-      name: p.name,
-      subtitle: p.company_name,
-      phase: p.highest_phase,
-    }))
-  );
+  /**
+   * Bubble products grouped by company for the competitor race. company_id /
+   * company_name are already present on each product, so this is a pure
+   * re-layout of loaded data with no extra query.
+   */
+  readonly competitorGroups = computed<CompetitorRaceGroup[]>(() => {
+    const products = this.bubble()?.products ?? [];
+    const byCompany = new Map<string, CompetitorRaceGroup>();
+    for (const p of products) {
+      let group = byCompany.get(p.company_id);
+      if (!group) {
+        group = {
+          companyId: p.company_id,
+          companyName: p.company_name,
+          companyLogoUrl: null,
+          bestPhase: p.highest_phase,
+          assets: [],
+        };
+        byCompany.set(p.company_id, group);
+      }
+      if (RING_DEV_RANK[p.highest_phase] > RING_DEV_RANK[group.bestPhase]) {
+        group.bestPhase = p.highest_phase;
+      }
+      group.assets.push({
+        id: p.id,
+        name: p.name,
+        trialCount: p.trial_count,
+        phase: p.highest_phase,
+      });
+    }
+    // Within each company, order assets lead-first.
+    for (const group of byCompany.values()) {
+      group.assets.sort((a, x) => RING_DEV_RANK[x.phase] - RING_DEV_RANK[a.phase]);
+    }
+    return [...byCompany.values()];
+  });
+
+  protected phaseColor(phase: RingPhase): string {
+    return PHASE_COLOR[phase] ?? '#64748b';
+  }
+
+  protected phaseLong(phase: RingPhase): string {
+    return DEVELOPMENT_STATUS_LABELS[phase] ?? phase;
+  }
 }

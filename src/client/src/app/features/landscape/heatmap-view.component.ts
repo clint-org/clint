@@ -15,11 +15,17 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { HeatmapBubble, HeatmapGrouping } from '../../core/models/landscape.model';
+import { HeatmapBubble, HeatmapGrouping, RingPhase } from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.component';
+import {
+  HeatmapComponent,
+  type CellHoverEvent,
+  type SortEvent,
+  type SortField,
+} from './heatmap.component';
+import { HeatmapCellTooltipComponent } from './heatmap-cell-tooltip.component';
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
@@ -37,6 +43,7 @@ import { buildHeatmapSheets } from './heatmap-export.util';
   selector: 'app-heatmap-view',
   imports: [
     HeatmapComponent,
+    HeatmapCellTooltipComponent,
     HeatmapControlsPanelComponent,
     HeatmapDetailPanelComponent,
     MarkWatermarkComponent,
@@ -89,6 +96,7 @@ import { buildHeatmapSheets } from './heatmap-export.util';
                 [showPreclinical]="state.showPreclinical()"
                 (rowClick)="onBubbleClick($event)"
                 (sortChange)="onSortChange($event)"
+                (cellHover)="onCellHover($event)"
               />
             </div>
             @if (showPanel()) {
@@ -116,6 +124,14 @@ import { buildHeatmapSheets } from './heatmap-export.util';
         </div>
       }
     }
+
+    <app-heatmap-cell-tooltip
+      [bubble]="hoveredBubble()"
+      [phase]="hoveredPhase()"
+      [x]="hoverX()"
+      [y]="hoverY()"
+      [showPreclinical]="state.showPreclinical()"
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -137,6 +153,12 @@ export class HeatmapViewComponent implements OnInit {
   readonly selectedBubble = signal<HeatmapBubble | null>(null);
   readonly sortField = signal<SortField>('total');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  // Cell-hover roster tooltip state. Cleared on mouseleave (null event).
+  readonly hoveredBubble = signal<HeatmapBubble | null>(null);
+  readonly hoveredPhase = signal<RingPhase | null>(null);
+  readonly hoverX = signal(0);
+  readonly hoverY = signal(0);
 
   /**
    * The detail panel is an absolute-positioned overlay that covers the
@@ -254,6 +276,18 @@ export class HeatmapViewComponent implements OnInit {
   onSortChange(event: SortEvent): void {
     this.sortField.set(event.field as SortField);
     this.sortDir.set(event.dir);
+  }
+
+  onCellHover(event: CellHoverEvent | null): void {
+    if (!event) {
+      this.hoveredBubble.set(null);
+      this.hoveredPhase.set(null);
+      return;
+    }
+    this.hoveredBubble.set(event.bubble);
+    this.hoveredPhase.set(event.phase);
+    this.hoverX.set(event.x);
+    this.hoverY.set(event.y);
   }
 
   onOpenAsset(assetId: string): void {

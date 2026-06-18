@@ -13,6 +13,13 @@ import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 import { catalystContextLine } from './group-catalysts';
 
+/** Hovered catalyst row + cursor position for the preview tooltip. */
+export interface CatalystHoverEvent {
+  catalyst: FlatCatalyst;
+  x: number;
+  y: number;
+}
+
 @Component({
   selector: 'app-catalyst-table',
   standalone: true,
@@ -129,6 +136,9 @@ import { catalystContextLine } from './group-catalysts';
           [class.selected-row]="catalyst.marker_id === selectedId()"
           (click)="rowSelect.emit(catalyst.marker_id)"
           (keydown.enter)="rowSelect.emit(catalyst.marker_id)"
+          (mouseenter)="onRowHover(catalyst, $event)"
+          (mousemove)="onRowHover(catalyst, $event)"
+          (mouseleave)="rowHover.emit(null)"
           tabindex="0"
           role="button"
           [attr.aria-label]="viewDetailsLabel(catalyst.title)"
@@ -277,6 +287,12 @@ export class CatalystTableComponent {
   readonly query = input<string>('');
   readonly rowSelect = output<string>();
   readonly filterChange = output<Record<string, unknown>>();
+  /** Hovered row + cursor position for the catalyst preview tooltip; null clears it. */
+  readonly rowHover = output<CatalystHoverEvent | null>();
+
+  protected onRowHover(catalyst: FlatCatalyst, event: MouseEvent): void {
+    this.rowHover.emit({ catalyst, x: event.clientX, y: event.clientY });
+  }
 
   protected onLazyLoad(event: unknown): void {
     // PrimeNG emits TableLazyLoadEvent here. We forward the whole event

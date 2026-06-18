@@ -15,93 +15,173 @@
     </div>
   } @else {
     @if (selectedAsset(); as asset) {
-      <div>
-        <h2 class="text-base font-semibold leading-snug text-slate-900">{{ asset.name }}</h2>
-        @if (asset.generic_name) {
-          <p class="mt-0.5 text-[13px] italic text-slate-500">{{ asset.generic_name }}</p>
-        }
+      <!-- Identity: company tile + asset name, generic, and company link,
+           consistent with the marker detail pane's affiliation treatment. -->
+      <div class="flex items-start gap-3">
+        <app-company-tile
+          class="mt-0.5"
+          [name]="asset.company_name"
+          [logoUrl]="asset.logo_url"
+          [size]="34"
+        />
+        <div class="min-w-0 flex-1">
+          <h2 class="text-[19px] font-bold leading-tight text-slate-900">{{ asset.name }}</h2>
+          <p class="mt-0.5 text-[13px] italic text-slate-500">
+            @if (asset.generic_name) {
+              <span>{{ asset.generic_name }} · </span>
+            }
+            @if (dimension() !== 'company') {
+              <button
+                type="button"
+                class="not-italic font-semibold text-brand-700 hover:text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                (click)="onCompanyClick()"
+              >
+                {{ asset.company_name }}
+                <i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
+              </button>
+            } @else {
+              <span class="not-italic font-semibold text-slate-700">{{ asset.company_name }}</span>
+            }
+          </p>
+        </div>
       </div>
 
+      <!-- Recent-activity band: orange signal-ring dot + amber wash with a
+           left accent rule, matching the bullseye legend's activity ring. -->
       @if (asset.has_recent_activity) {
         @if (asset.most_recent_change_event_id; as aeid) {
           <button
             type="button"
-            class="mt-2 flex w-full items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 text-left font-mono text-[12px] font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-50 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5 text-left hover:bg-amber-100/70 focus:outline-none focus:ring-1 focus:ring-brand-500"
             [attr.aria-label]="
               recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type) +
               ' (open in feed)'
             "
             (click)="openChangeEvent(aeid)"
           >
-            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
-            <span>{{
-              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
-            }}</span>
-            <i class="fa-solid fa-arrow-right ml-auto text-[10px] text-amber-400" aria-hidden="true"></i>
+            <span
+              class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
+              aria-hidden="true"
+            ></span>
+            <span class="min-w-0 flex-1">
+              <span
+                class="block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800"
+                >Recent activity</span
+              >
+              <span class="mt-0.5 block text-[13px] text-amber-800/90">{{
+                recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+              }}</span>
+            </span>
+            <span
+              class="shrink-0 font-mono text-[10px] font-bold tracking-[0.1em] text-amber-800"
+              aria-hidden="true"
+              >VIEW →</span
+            >
           </button>
         } @else {
           <div
-            class="mt-2 flex items-center gap-1.5 rounded border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-[12px] font-semibold text-amber-700"
+            class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5"
           >
-            <i class="fa-solid fa-bolt text-[10px] text-amber-500" aria-hidden="true"></i>
-            <span>{{
-              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
-            }}</span>
+            <span
+              class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
+              aria-hidden="true"
+            ></span>
+            <span class="min-w-0 flex-1">
+              <span
+                class="block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800"
+                >Recent activity</span
+              >
+              <span class="mt-0.5 block text-[13px] text-amber-800/90">{{
+                recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+              }}</span>
+            </span>
           </div>
         }
       }
 
-      @if (dimension() !== 'company') {
-        <app-detail-panel-section [first]="true" label="Company">
-          <button
-            type="button"
-            class="group flex items-center gap-1 text-[13px] font-medium text-slate-900 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            (click)="onCompanyClick()"
+      <!-- Position · Phase: the bullseye coordinates made explicit. Ladder is
+           the focal row; indication spokes sit beneath it in the same box. -->
+      <div class="mt-4 border border-slate-200 px-3.5 py-3">
+        <div class="mb-2 flex items-center justify-between">
+          <span class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+            >Position · Phase</span
           >
-            {{ asset.company_name }}
-            <i
-              class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
-              aria-hidden="true"
-            ></i>
-          </button>
-        </app-detail-panel-section>
-      }
-
-      @if (asset.moas.length > 0) {
-        <app-detail-panel-section [first]="dimension() === 'company'" label="Mechanism of action">
-          <div class="flex flex-wrap gap-1">
-            @for (moa of asset.moas; track moa.id) {
+          <span
+            class="font-mono text-[11px] font-bold uppercase tracking-[0.06em]"
+            [style.color]="phaseColor(asset.highest_phase)"
+            >{{ phaseLongLabel(asset.highest_phase) }}</span
+          >
+        </div>
+        <app-detail-panel-phase-ladder
+          [reached]="asset.highest_phase"
+          [showPreclinical]="showPreclinical()"
+          [ticks]="true"
+        />
+        @if (asset.indications.length > 0) {
+          <div
+            class="mb-2 mt-3.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+          >
+            Indications · {{ asset.indications.length }}
+            {{ asset.indications.length === 1 ? 'spoke' : 'spokes' }}
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            @for (ind of asset.indications; track ind.id) {
               <span
-                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-brand-100]="isScopedMoa(moa.id)"
-                [class.text-brand-800]="isScopedMoa(moa.id)"
-                [class.font-semibold]="isScopedMoa(moa.id)"
-                [class.bg-slate-100]="!isScopedMoa(moa.id)"
-                [class.text-slate-700]="!isScopedMoa(moa.id)"
-                >{{ moa.name }}</span
+                class="inline-flex items-center gap-1.5 border border-slate-200 px-2 py-1 text-[12px] font-semibold text-slate-700"
+                [attr.title]="ind.name"
               >
+                <span class="h-[5px] w-[5px] shrink-0 bg-slate-400" aria-hidden="true"></span>
+                {{ ind.abbreviation ?? ind.name }}
+              </span>
             }
           </div>
-        </app-detail-panel-section>
-      }
+        }
+      </div>
 
-      @if (asset.roas.length > 0) {
-        <app-detail-panel-section label="Route of administration">
-          <div class="flex flex-wrap gap-1">
-            @for (roa of asset.roas; track roa.id) {
-              <span
-                class="inline-block rounded-sm px-2 py-0.5 text-[11px]"
-                [class.bg-brand-100]="isScopedRoa(roa.id)"
-                [class.text-brand-800]="isScopedRoa(roa.id)"
-                [class.font-semibold]="isScopedRoa(roa.id)"
-                [class.bg-slate-100]="!isScopedRoa(roa.id)"
-                [class.text-slate-700]="!isScopedRoa(roa.id)"
-                [attr.title]="roa.name"
-                >{{ roa.abbreviation ?? roa.name }}</span
-              >
+      <!-- Mechanism / Route meta grid: two bordered cells with a divider,
+           matching the marker pane's Asset / Trial affiliation scaffold. -->
+      @if (asset.moas.length > 0 || asset.roas.length > 0) {
+        <div class="mt-5 grid grid-cols-2 border border-slate-200">
+          <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
+            <p class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              Mechanism
+            </p>
+            @if (asset.moas.length > 0) {
+              <div class="flex flex-wrap gap-1">
+                @for (moa of asset.moas; track moa.id) {
+                  <span
+                    class="text-[12px] font-semibold leading-snug"
+                    [class.text-brand-800]="isScopedMoa(moa.id)"
+                    [class.text-slate-900]="!isScopedMoa(moa.id)"
+                    >{{ moa.name }}</span
+                  >
+                }
+              </div>
+            } @else {
+              <p class="text-[12px] text-slate-400">Not specified</p>
             }
           </div>
-        </app-detail-panel-section>
+          <div class="min-w-0 px-3 py-2.5">
+            <p class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+              Route
+            </p>
+            @if (asset.roas.length > 0) {
+              <div class="flex flex-wrap gap-x-2 gap-y-0.5">
+                @for (roa of asset.roas; track roa.id) {
+                  <span
+                    class="text-[12px] font-semibold"
+                    [class.text-brand-800]="isScopedRoa(roa.id)"
+                    [class.text-slate-900]="!isScopedRoa(roa.id)"
+                    [attr.title]="roa.name"
+                    >{{ roa.abbreviation ?? roa.name }}</span
+                  >
+                }
+              </div>
+            } @else {
+              <p class="text-[12px] text-slate-400">Not specified</p>
+            }
+          </div>
+        </div>
       }
 
       @if (asset.intelligence_count > 0) {
@@ -134,7 +214,7 @@
         </app-detail-panel-section>
       }
 
-      <app-detail-panel-section [label]="'Trials (' + asset.trials.length + ')'">
+      <app-detail-panel-section [label]="trialsSectionLabel()">
         @if (asset.trials.length === 0) {
           <p class="text-[12px] text-slate-500">No trials tracked.</p>
         } @else {
@@ -158,9 +238,6 @@
                     @if (trial.identifier) {
                       <span>{{ trial.identifier }}</span>
                     }
-                    @if (trial.phase) {
-                      <span>{{ phaseLabel(trial.phase) }}</span>
-                    }
                     @if (trial.recruitment_status) {
                       <span
                         [class]="
@@ -182,6 +259,12 @@
                     </span>
                   }
                 </span>
+                @if (trial.phase) {
+                  <span
+                    class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                    >{{ trial.phase === 'OBS' ? 'OBS' : phaseLabel(trial.phase) }}</span
+                  >
+                }
               </app-detail-panel-entity-row>
             }
           </app-detail-panel-entity-list>
