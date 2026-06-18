@@ -57,6 +57,20 @@
       .pad {
         padding: 44px 52px 52px;
       }
+      .back {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+        text-decoration: none;
+        margin-bottom: 22px;
+      }
+      .back:hover {
+        color: var(--brand-700);
+      }
       .wordmark {
         display: flex;
         align-items: center;
@@ -162,6 +176,153 @@
         color: var(--slate-900);
         font-weight: 600;
       }
+
+      /* ---- ROI section ---------------------------------------------------- */
+      .roi {
+        border: 1px solid var(--slate-200);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 14px;
+      }
+      .roi-anchor {
+        background: var(--brand-50);
+        border-bottom: 1px solid var(--slate-200);
+        padding: 22px 26px;
+      }
+      .roi-anchor .big {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+      }
+      .roi-anchor .sub {
+        font-size: 14px;
+        color: var(--slate-600);
+      }
+      .roi-body {
+        padding: 24px 26px 26px;
+      }
+      .roi-intro {
+        font-size: 13.5px;
+        color: var(--slate-600);
+        margin-bottom: 18px;
+        max-width: 62ch;
+      }
+      .boundary {
+        font-size: 13px;
+        color: var(--slate-600);
+        background: var(--slate-50);
+        border-left: 2px solid var(--brand-600);
+        padding: 12px 16px;
+        border-radius: 0 4px 4px 0;
+        margin-bottom: 24px;
+        max-width: 64ch;
+      }
+      .boundary strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      .inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 28px;
+        margin-bottom: 26px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .field .flabel {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 13px;
+        color: var(--slate-700);
+        font-weight: 500;
+      }
+      .field .flabel .val {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--brand-700);
+      }
+      .field input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--slate-200);
+        outline: none;
+      }
+      .field input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--brand-600);
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px var(--slate-300);
+      }
+      .field input[type='range']::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--brand-600);
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px var(--slate-300);
+      }
+      .field .fhint {
+        font-size: 11.5px;
+        color: var(--slate-400);
+      }
+
+      .readout {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 26px;
+      }
+      .stat {
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        padding: 14px 16px;
+        background: var(--slate-50);
+      }
+      .stat .k {
+        font-family: var(--font-mono);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        margin-bottom: 6px;
+      }
+      .stat .v {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--slate-900);
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+      }
+      .stat .note {
+        font-size: 11.5px;
+        color: var(--slate-500);
+        margin-top: 3px;
+      }
+      .stat.hero {
+        background: var(--brand-50);
+        border-color: var(--brand-200);
+      }
+      .stat.hero .v {
+        color: var(--brand-700);
+      }
+
       table.cap {
         width: 100%;
         border-collapse: collapse;
@@ -192,44 +353,33 @@
         color: var(--slate-900);
         font-weight: 600;
       }
+      table.cap tbody tr.here td {
+        outline: 1.5px solid var(--brand-600);
+        outline-offset: -1.5px;
+      }
       table.cap tbody td:first-child {
         color: var(--slate-700);
       }
-      .steps {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-      }
-      .step {
-        border: 1px solid var(--slate-200);
-        border-radius: 4px;
-        padding: 16px 18px;
-        background: var(--slate-50);
-      }
-      .step .step-label {
-        font-family: var(--font-mono);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+      table.cap td.pos {
         color: var(--brand-700);
-        margin-bottom: 8px;
+        font-weight: 600;
       }
-      .step h3 {
-        font-size: 14.5px;
-        color: var(--slate-900);
-        margin-bottom: 6px;
-      }
-      .step p {
-        font-size: 13px;
+      .gapline {
+        font-size: 13.5px;
         color: var(--slate-600);
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-200);
+      }
+      .gapline strong {
+        color: var(--slate-900);
       }
       .foot {
-        margin-top: 36px;
+        margin-top: 30px;
         padding-top: 18px;
         border-top: 1px solid var(--slate-200);
-        font-size: 13.5px;
-        color: var(--slate-500);
+        font-size: 12.5px;
+        color: var(--slate-400);
       }
       @media (max-width: 640px) {
         .pad {
@@ -238,7 +388,8 @@
         .headline .num {
           font-size: 40px;
         }
-        .steps {
+        .inputs,
+        .readout {
           grid-template-columns: 1fr;
         }
       }
@@ -248,6 +399,8 @@
     <div class="sheet">
       <div class="accent-bar"></div>
       <div class="pad">
+        <a class="back" href="stout-intro.html">&larr; Back to the Clint overview</a>
+
         <div class="wordmark">
           <svg class="logo" viewBox="0 0 140 140" fill="none">
             <polyline
@@ -276,7 +429,7 @@
             />
           </svg>
           <span class="name">Clint</span>
-          <span class="meta">Pricing &middot; for Stout</span>
+          <span class="meta">For Stout</span>
         </div>
 
         <h1>Pricing</h1>
@@ -312,56 +465,232 @@
           </ul>
         </div>
 
+        <!-- ============ ROI ============ -->
         <div class="block">
-          <div class="section-label">What it costs as you grow</div>
-          <table class="cap">
-            <thead>
-              <tr>
-                <th>Active engagements</th>
-                <th>Annual cost</th>
-                <th>Effective per engagement</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>$25,000</td>
-                <td>$25,000</td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td>$100,000</td>
-                <td>$25,000</td>
-              </tr>
-              <tr>
-                <td>8</td>
-                <td>$200,000</td>
-                <td>$25,000</td>
-              </tr>
-              <tr class="cap-row">
-                <td>12</td>
-                <td>$300,000 (cap)</td>
-                <td>$25,000</td>
-              </tr>
-              <tr>
-                <td>15</td>
-                <td>$300,000</td>
-                <td>$20,000</td>
-              </tr>
-              <tr>
-                <td>25</td>
-                <td>$300,000</td>
-                <td>$12,000</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div class="section-label">What it saves you</div>
 
-        <p class="foot">
-          A single engagement space costs less than one seat on the established data platforms, and
-          it covers the whole team plus the client.
-        </p>
+          <div class="roi">
+            <div class="roi-anchor">
+              <div class="big" id="anchorBig">It pays for itself on a single engagement.</div>
+              <div class="sub">
+                One space costs less than a single seat on the big data platforms, and it covers your
+                whole team plus the client.
+              </div>
+            </div>
+
+            <div class="roi-body">
+              <p class="roi-intro">
+                The defaults below are one program manager's hours. The analysts on her team spend
+                more on top. Set your own numbers and see where it lands.
+              </p>
+
+              <p class="boundary">
+                <strong>What Clint replaces:</strong> finding the data, checking it, and keeping it
+                current for every report. <strong>What stays yours:</strong> the analysis, the story,
+                and the final deck. The hours below count only the part Clint takes off your plate.
+              </p>
+
+              <div class="inputs">
+                <div class="field">
+                  <label class="flabel" for="upkeep"
+                    >Competitive upkeep, hrs / week / engagement
+                    <span class="val" id="upkeepV">2</span></label
+                  >
+                  <input type="range" id="upkeep" min="0" max="20" step="0.5" value="2" />
+                  <span class="fhint" id="upkeepHint"
+                    >Reading and analyzing the landscape. About 104 hrs/yr.</span
+                  >
+                </div>
+
+                <div class="field">
+                  <label class="flabel" for="deckhrs"
+                    >Data &amp; assembly hrs per deck <span class="val" id="deckhrsV">3</span></label
+                  >
+                  <input type="range" id="deckhrs" min="0" max="40" step="1" value="3" />
+                  <span class="fhint"
+                    >Only the data work Clint removes, not the analysis or design</span
+                  >
+                </div>
+
+                <div class="field">
+                  <label class="flabel" for="cycles"
+                    >Deck builds / yr <span class="val" id="cyclesV">52</span></label
+                  >
+                  <input type="range" id="cycles" min="0" max="72" step="1" value="52" />
+                  <span class="fhint">12 monthly landscape + ~40 conference &amp; adhoc reports</span>
+                </div>
+
+                <div class="field">
+                  <label class="flabel" for="rate"
+                    >Blended hourly cost <span class="val" id="rateV">$150</span></label
+                  >
+                  <input type="range" id="rate" min="75" max="400" step="5" value="150" />
+                  <span class="fhint">Loaded internal cost of the team's time</span>
+                </div>
+
+                <div class="field">
+                  <label class="flabel" for="engs"
+                    >Engagements on Clint / yr <span class="val" id="engsV">3</span></label
+                  >
+                  <input type="range" id="engs" min="1" max="20" step="1" value="3" />
+                  <span class="fhint">3 today, expanding toward 5</span>
+                </div>
+              </div>
+
+              <div class="readout">
+                <div class="stat">
+                  <div class="k">Labor saved / engagement</div>
+                  <div class="v" id="perEng">$39,000</div>
+                  <div class="note" id="perEngHrs">260 hrs &times; $150</div>
+                </div>
+                <div class="stat">
+                  <div class="k">Your cost / engagement</div>
+                  <div class="v" id="effEng">$25,000</div>
+                  <div class="note" id="effNote">list rate, below the cap</div>
+                </div>
+                <div class="stat hero">
+                  <div class="k">Net saved / yr</div>
+                  <div class="v" id="netYr">+$42,000</div>
+                  <div class="note" id="netNote">across 3 engagements</div>
+                </div>
+              </div>
+
+              <div class="section-label">As your book grows</div>
+              <table class="cap">
+                <thead>
+                  <tr>
+                    <th>Active engagements</th>
+                    <th>Your cost</th>
+                    <th>Labor saved</th>
+                    <th>Net</th>
+                  </tr>
+                </thead>
+                <tbody id="growBody"></tbody>
+              </table>
+
+              <p class="gapline" id="gapLine"></p>
+            </div>
+          </div>
+
+          <p class="foot">
+            Figures update live from the inputs above and are illustrative. Nothing is stored.
+          </p>
+        </div>
       </div>
     </div>
+
+    <script>
+      (function () {
+        var PRICE = 25000;
+        var CAP = 300000;
+        var ROWS = [1, 3, 5, 8, 12, 15, 20];
+
+        var el = function (id) {
+          return document.getElementById(id);
+        };
+        var ids = ['upkeep', 'deckhrs', 'cycles', 'rate', 'engs'];
+        var fmt = function (n) {
+          return '$' + Math.round(n).toLocaleString('en-US');
+        };
+        var fmtK = function (n) {
+          if (Math.abs(n) >= 1000000) return '$' + Math.round(n / 100000) / 10 + 'M';
+          return '$' + Math.round(n / 1000) + 'K';
+        };
+
+        function capped(n) {
+          return Math.min(n * PRICE, CAP);
+        }
+
+        function render() {
+          var upkeepWk = +el('upkeep').value;
+          var deckhrs = +el('deckhrs').value;
+          var cycles = +el('cycles').value;
+          var rate = +el('rate').value;
+          var engs = +el('engs').value;
+
+          el('upkeepV').textContent = upkeepWk;
+          el('upkeepHint').textContent =
+            'Reading and analyzing the landscape. About ' + Math.round(upkeepWk * 52) + ' hrs/yr.';
+          el('deckhrsV').textContent = deckhrs;
+          el('cyclesV').textContent = cycles;
+          el('rateV').textContent = '$' + rate;
+          el('engsV').textContent = engs;
+
+          var perEngHrs = upkeepWk * 52 + cycles * deckhrs;
+          var perEngSaved = perEngHrs * rate;
+          var totalSaved = perEngSaved * engs;
+          var totalCost = capped(engs);
+          var net = totalSaved - totalCost;
+          var effEng = totalCost / engs;
+
+          el('perEng').textContent = fmt(perEngSaved);
+          el('perEngHrs').textContent = perEngHrs + ' hrs × $' + rate;
+          el('effEng').textContent = fmt(effEng);
+          el('effNote').textContent =
+            engs * PRICE > CAP ? 'effective, after the $300K cap' : 'list rate, below the cap';
+          el('netYr').textContent = (net >= 0 ? '+' : '−') + fmt(Math.abs(net));
+          el('netNote').textContent = 'across ' + engs + ' engagement' + (engs === 1 ? '' : 's');
+
+          var heroStat = el('netYr').closest('.stat');
+          if (net < 0) heroStat.classList.remove('hero');
+          else heroStat.classList.add('hero');
+
+          // anchor headline reacts to the single-engagement result
+          var mult = perEngSaved / PRICE;
+          if (mult >= 1.2)
+            el('anchorBig').textContent =
+              'Each engagement saves about ' + Math.round(mult * 10) / 10 + '× what Clint costs.';
+          else if (perEngSaved >= PRICE)
+            el('anchorBig').textContent = 'It pays for itself on a single engagement.';
+          else el('anchorBig').textContent = 'It pays for itself across a year of engagements.';
+
+          // growth table
+          var body = el('growBody');
+          body.innerHTML = '';
+          ROWS.forEach(function (n) {
+            var cost = capped(n);
+            var saved = perEngSaved * n;
+            var rowNet = saved - cost;
+            var tr = document.createElement('tr');
+            if (n === 12) tr.className = 'cap-row';
+            if (n === engs) tr.className = (tr.className ? tr.className + ' ' : '') + 'here';
+            tr.innerHTML =
+              '<td>' +
+              n +
+              '</td><td>' +
+              fmtK(cost) +
+              (n * PRICE >= CAP ? ' (cap)' : '') +
+              '</td><td>' +
+              fmtK(saved) +
+              '</td><td class="' +
+              (rowNet >= 0 ? 'pos' : '') +
+              '">' +
+              (rowNet >= 0 ? '+' : '−') +
+              fmtK(Math.abs(rowNet)) +
+              '</td>';
+            body.appendChild(tr);
+          });
+
+          // narrative: anchor to their current book, then the cap upside
+          el('gapLine').innerHTML =
+            'At your ' +
+            engs +
+            ' engagement' +
+            (engs === 1 ? '' : 's') +
+            ', that is <strong>' +
+            fmtK(totalSaved) +
+            '</strong> of analyst time displaced against a <strong>' +
+            fmtK(totalCost) +
+            '</strong> cost. It keeps going: past twelve engagements your cost stays at ' +
+            '<strong>$300K</strong> while the hours saved keep rising. Every engagement you add ' +
+            'past the cap is free.';
+        }
+
+        ids.forEach(function (id) {
+          el(id).addEventListener('input', render);
+        });
+        render();
+      })();
+    </script>
   </body>
 </html>
