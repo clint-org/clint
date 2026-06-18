@@ -145,7 +145,7 @@ interface LadderCell {
                     class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-[#2563eb]"
                     aria-hidden="true"
                   ></span>
-                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
+                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'read' : 'reads' }}
                 </span>
               }
             </div>

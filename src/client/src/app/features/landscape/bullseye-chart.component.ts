@@ -100,7 +100,7 @@ const DIMMED_OPACITY = 0.55;
   styles: `
     @keyframes pulse-ring {
       0% {
-        r: 10;
+        r: 13;
         opacity: 0.5;
       }
       100% {

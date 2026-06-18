@@ -70,12 +70,15 @@ export class BullseyeSignalMarkComponent {
     const step = 3.45 * scale;
     const rings: SignalRing[] = [];
     let r = core + step;
-    if (this.hasRecentActivity()) {
-      rings.push({ kind: 'activity', r, stroke: '#f97316', width: 2.1 * scale, dash: null });
-      r += step;
-    }
+    // Intelligence is the static inner halo; recent activity sits OUTSIDE it
+    // (on the chart it is an outward-expanding pulse), then the dashed
+    // multi-spoke ring is outermost. Keep this order in sync with the chart dot.
     if (this.hasIntelligence()) {
       rings.push({ kind: 'intel', r, stroke: '#2563eb', width: 2.1 * scale, dash: null });
+      r += step;
+    }
+    if (this.hasRecentActivity()) {
+      rings.push({ kind: 'activity', r, stroke: '#f97316', width: 2.1 * scale, dash: null });
       r += step;
     }
     if (this.multiSpoke()) {

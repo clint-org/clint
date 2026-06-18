@@ -47,8 +47,8 @@ interface MaterialLinkChip {
 
       <!-- Title + linked-entity chips -->
       <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <p class="truncate text-sm font-semibold text-slate-900">
+        <div class="flex min-w-0 items-center gap-2">
+          <p class="min-w-0 truncate text-sm font-semibold text-slate-900">
             {{ material().title }}
           </p>
           <span
@@ -58,29 +58,29 @@ interface MaterialLinkChip {
           </span>
         </div>
         @if (showLinks() && chips().length) {
-          <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
             @for (chip of chips(); track chip.key) {
               @if (chip.route) {
                 <a
                   [routerLink]="chip.route"
-                  class="inline-flex max-w-[16rem] items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
-                  <span class="font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
+                  <span class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
                     chip.typeLabel
                   }}</span>
-                  <span class="truncate font-medium">{{ chip.name }}</span>
+                  <span class="min-w-0 truncate font-medium">{{ chip.name }}</span>
                 </a>
               } @else {
                 <span
-                  class="inline-flex max-w-[16rem] items-center gap-1 rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px]"
+                  class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px]"
                   [class.text-slate-400]="chip.deleted"
                   [class.text-slate-600]="!chip.deleted"
                   [class.italic]="chip.deleted"
                 >
-                  <span class="font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
+                  <span class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
                     chip.typeLabel
                   }}</span>
-                  <span class="truncate">{{ chip.name }}</span>
+                  <span class="min-w-0 truncate">{{ chip.name }}</span>
                 </span>
               }
             }
