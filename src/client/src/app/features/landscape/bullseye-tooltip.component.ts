@@ -15,9 +15,9 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
       <div
         @fadeTooltip
         class="fixed z-50 pointer-events-none bg-slate-800 text-white text-xs rounded-md px-3 py-2 shadow-lg max-w-64"
-        [style.left.px]="x()"
-        [style.top.px]="y()"
-        [style.transform]="'translate(-50%, -100%) translateY(-10px)'"
+        [style.left.px]="pos().left"
+        [style.top.px]="pos().top"
+        [style.transform]="pos().transform"
         role="tooltip"
       >
         <div class="font-semibold mb-0.5">{{ p.name }}</div>
@@ -60,6 +60,26 @@ export class BullseyeTooltipComponent {
   readonly x = input<number>(0);
   readonly y = input<number>(0);
   readonly spokeCount = input<number>(0);
+
+  /**
+   * Place the tooltip beside the cursor rather than centered above it, so it
+   * never lands on the chart: when the cursor is in the left half of the
+   * viewport the tooltip sits to its right, otherwise to its left. The vertical
+   * anchor is centered on the cursor and clamped so the card stays on-screen.
+   */
+  protected readonly pos = computed(() => {
+    const x = this.x();
+    const y = this.y();
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const gap = 18;
+    const placeRight = x <= vw / 2;
+    return {
+      left: placeRight ? x + gap : x - gap,
+      top: Math.min(Math.max(y, 96), vh - 96),
+      transform: placeRight ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
+    };
+  });
 
   readonly moaList = computed<string[]>(() => {
     const p = this.product();
