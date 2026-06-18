@@ -83,12 +83,9 @@ interface CtgovProvenanceBlock {
   ],
   template: `
     @if (detail(); as d) {
-      <!-- Title block: trial-acronym eyebrow + bold title + CT.gov source tag -->
-      @if (titleEyebrow(); as eyebrow) {
-        <p class="mb-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-          {{ eyebrow }}
-        </p>
-      }
+      <!-- Title block: bold title + CT.gov source tag. The marker title already
+           leads with the trial and the Trial cell below is the canonical
+           reference, so there is no separate trial eyebrow here. -->
       <div class="flex items-start justify-between gap-2">
         <h2 class="text-base font-semibold leading-snug text-slate-900">
           {{ d.catalyst.title }}
@@ -398,17 +395,6 @@ export class MarkerDetailContentComponent {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
-
-  /**
-   * Small mono eyebrow above the title: the trial acronym (or name) so the
-   * reader sees which trial this marker belongs to before the title. Null
-   * when the marker has no parent trial.
-   */
-  protected readonly titleEyebrow = computed<string | null>(() => {
-    const c = this.detail()?.catalyst;
-    if (!c) return null;
-    return c.trial_acronym ?? c.trial_name ?? null;
-  });
 
   /** True when the date is an estimate (projection pill tone is amber). */
   protected readonly isProjectedStatus = computed(

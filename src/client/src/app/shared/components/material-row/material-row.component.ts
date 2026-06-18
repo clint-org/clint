@@ -42,7 +42,7 @@ interface MaterialLinkChip {
     <div class="group flex w-full items-center gap-3.5 px-5 py-3 transition-colors hover:bg-slate-50">
       <!-- File-type glyph (PowerPoint amber, PDF red, Word blue, other slate) -->
       <span class="flex h-10 w-7 shrink-0 items-center justify-center" aria-hidden="true">
-        <i [class]="'fa-solid text-[26px] ' + iconGlyph() + ' ' + iconColor()"></i>
+        <i [class]="'fa-regular text-[26px] ' + iconGlyph() + ' ' + iconColor()"></i>
       </span>
 
       <!-- Title + linked-entity chips -->

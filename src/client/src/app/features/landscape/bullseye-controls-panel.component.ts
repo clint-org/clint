@@ -190,17 +190,17 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     }
 
     .legend-intel {
-      border: 2px solid var(--brand-600, #0d9488);
+      border: 2px solid #2563eb;
       background: transparent;
     }
 
     .legend-activity {
-      border: 2px solid #f59e0b;
+      border: 2px solid #f97316;
       background: transparent;
     }
 
     .legend-duplicate {
-      border: 2px dashed #475569;
+      border: 2px dashed #94a3b8;
       background: transparent;
     }
   `,

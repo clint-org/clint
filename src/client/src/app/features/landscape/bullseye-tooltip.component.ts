@@ -54,7 +54,7 @@ interface LadderCell {
             </div>
           </div>
           <!-- Live chart mark: phase-colored core ringed by the same signal
-               rings the bullseye plots (orange = recent activity, brand =
+               rings the bullseye plots (orange = recent activity, blue =
                intelligence, dashed slate = multiple spokes). -->
           <svg
             class="mt-0.5 block shrink-0"
@@ -142,10 +142,10 @@ interface LadderCell {
               }
               @if (p.intelligence_count > 0) {
                 <span
-                  class="inline-flex items-center gap-1.5 border border-brand-200 bg-brand-50 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.04em] text-brand-700"
+                  class="inline-flex items-center gap-1.5 border border-blue-200 bg-blue-50 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.04em] text-blue-700"
                 >
                   <span
-                    class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-brand-600"
+                    class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-[#2563eb]"
                     aria-hidden="true"
                   ></span>
                   {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
@@ -200,11 +200,10 @@ export class BullseyeTooltipComponent {
 
   /**
    * Concentric signal rings for the header mark, faithful to the bullseye
-   * PhaseDot: orange for recent activity, brand for attached intelligence,
+   * PhaseDot: orange for recent activity, blue for attached intelligence,
    * dashed slate for an asset that appears on multiple spokes. Rings step
    * outward from the phase-colored core (size 30 geometry: core r=4.5,
-   * step=3.45). Colors are fixed chart-mark colors, never whitelabeled --
-   * except the intel ring, which echoes the brand legend treatment.
+   * step=3.45). These are fixed chart-mark colors, never whitelabeled.
    */
   protected readonly dotRings = computed<
     { kind: string; r: number; stroke: string; width: number; dash: string | null }[]
@@ -219,7 +218,7 @@ export class BullseyeTooltipComponent {
       r += 3.45;
     }
     if (p.intelligence_count > 0) {
-      rings.push({ kind: 'intel', r, stroke: 'var(--brand-600)', width: 2.1, dash: null });
+      rings.push({ kind: 'intel', r, stroke: '#2563eb', width: 2.1, dash: null });
       r += 3.45;
     }
     if (this.spokeCount() > 1) {

@@ -80,7 +80,11 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
           }
         </svg>
         <span class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500">
-          {{ categoryName() || typeName() }}
+          @if (categoryName() && typeName()) {
+            {{ categoryName() }} · {{ typeName() }}
+          } @else {
+            {{ categoryName() || typeName() }}
+          }
         </span>
         @if (trialName()) {
           <span class="shrink-0 font-mono text-[9px] uppercase tracking-wide text-slate-400 tabular-nums">{{

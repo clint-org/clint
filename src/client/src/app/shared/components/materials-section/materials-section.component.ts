@@ -92,18 +92,19 @@ export class MaterialsSectionComponent implements OnInit {
   protected readonly canUpload = computed(() => this.spaceRole.canEdit());
 
   /**
-   * Whether the whole section collapses to nothing. Only hides once the
-   * fetch has settled into a genuinely empty state the current role cannot
-   * act on. While loading or on error we still render so the user is never
-   * left with a silent gap.
+   * Whether the whole section collapses to nothing. When a host opts in via
+   * hideWhenEmpty (e.g. a transient detail pane that is not an upload surface),
+   * the section disappears once the fetch settles with no materials, for every
+   * role. While loading or on error we still render so the user is never left
+   * with a silent gap. Hosts that are the contextual upload surface (entity
+   * detail pages) simply do not set hideWhenEmpty, so they keep the zone.
    */
   protected readonly hidden = computed(
     () =>
       this.hideWhenEmpty() &&
       !this.loading() &&
       !this.error() &&
-      this.materials().length === 0 &&
-      !this.canUpload()
+      this.materials().length === 0
   );
 
   // Reload whenever the anchor entity changes. Guards against the
