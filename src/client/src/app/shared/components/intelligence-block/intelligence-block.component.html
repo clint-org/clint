@@ -116,45 +116,46 @@
           <h4 class="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             Linked
           </h4>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap gap-2">
             @for (g of linkedGroups(); track g.relationship) {
-              <div class="flex flex-wrap items-center gap-2">
-                <span
-                  class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-600"
-                >
-                  {{ g.relationship }}
-                </span>
-                @for (link of g.items; track link.entity_id) {
-                  @let route = linkRoute(link);
-                  @if (route) {
-                    <a
-                      [routerLink]="route.commands"
-                      [queryParams]="route.queryParams ?? null"
-                      class="inline-flex items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
-                    >
-                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                        {{ link.entity_type }}
-                      </span>
-                      <span>{{ linkLabel(link) }}</span>
-                      @if (link.gloss) {
-                        <span class="text-slate-400">-- {{ link.gloss }}</span>
-                      }
-                    </a>
-                  } @else {
-                    <span
-                      class="inline-flex items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700"
-                    >
-                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                        {{ link.entity_type }}
-                      </span>
-                      <span>{{ linkLabel(link) }}</span>
-                      @if (link.gloss) {
-                        <span class="text-slate-400">-- {{ link.gloss }}</span>
-                      }
+              @for (link of g.items; track link.entity_id) {
+                @let route = linkRoute(link);
+                @if (route) {
+                  <a
+                    [routerLink]="route.commands"
+                    [queryParams]="route.queryParams ?? null"
+                    class="inline-flex items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                  >
+                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                      {{ link.entity_type }}
                     </span>
-                  }
+                    <span class="font-medium">{{ linkLabel(link) }}</span>
+                    <span class="text-slate-300" aria-hidden="true">·</span>
+                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                      {{ g.relationship }}
+                    </span>
+                    @if (link.gloss) {
+                      <span class="text-slate-400">-- {{ link.gloss }}</span>
+                    }
+                  </a>
+                } @else {
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                  >
+                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                      {{ link.entity_type }}
+                    </span>
+                    <span class="font-medium">{{ linkLabel(link) }}</span>
+                    <span class="text-slate-300" aria-hidden="true">·</span>
+                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                      {{ g.relationship }}
+                    </span>
+                    @if (link.gloss) {
+                      <span class="text-slate-400">-- {{ link.gloss }}</span>
+                    }
+                  </span>
                 }
-              </div>
+              }
             }
           </div>
         </div>
