@@ -14,6 +14,7 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { cellTint } from './heatmap-cell';
 import { LandscapeStateService } from './landscape-state.service';
 import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
@@ -21,7 +22,7 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
 @Component({
   selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SegmentedControlComponent],
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
   template: `
     <aside class="heatmap-controls">
       <div class="controls-section">
@@ -46,8 +47,8 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
 
       <div class="controls-section">
         <div class="section-label">READ</div>
-        @if (readText()) {
-          <span class="read-content" [innerHTML]="readText()"></span>
+        @if (read().text) {
+          <app-competitive-read-strip class="read-content" [read]="read()" />
         }
       </div>
 
@@ -123,15 +124,6 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       font-size: 12px;
       color: var(--slate-600, #475569);
       line-height: 1.6;
-    }
-
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {
@@ -283,14 +275,13 @@ export class HeatmapControlsPanelComponent {
     }
   });
 
-  protected readonly readText = computed<string>(() => {
-    const result = buildLandscapeRead({
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
       view: 'heatmap',
       groupBy: this.grouping(),
       stats: fromBubbles(this.bubbles()),
-    });
-    return result.text;
-  });
+    })
+  );
 
   protected navigateToGrouping(grouping: string): void {
     const segment = groupingToSegment(grouping as HeatmapGrouping);

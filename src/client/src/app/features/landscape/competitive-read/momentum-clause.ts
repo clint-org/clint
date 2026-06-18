@@ -8,6 +8,8 @@ const MOMENTUM_THRESHOLD = 3;
 export interface MomentumResult {
   segment: ReadSegment;
   text: string;
+  /** The most-active entity named in the clause (a company in company mode). */
+  entityName: string;
 }
 
 export function momentumClause(
@@ -35,5 +37,6 @@ export function momentumClause(
   return {
     segment: { clause: 'momentum', shape: 'most-active', detail },
     text: `<strong>${escapeName(winner.name)}</strong> most active (${winner.recentChanges} ${noun})`,
+    entityName: winner.name,
   };
 }
