@@ -99,6 +99,7 @@ export class LandscapeService {
                 : null,
               p_phases: filters.phases.length ? filters.phases : null,
               p_asset_ids: filters.assetIds.length ? filters.assetIds : null,
+              p_trial_ids: filters.trialIds.length ? filters.trialIds : null,
             })
             .throwOnError();
           const result = data as { assets: BullseyeAsset[] };

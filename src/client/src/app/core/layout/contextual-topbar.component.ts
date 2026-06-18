@@ -193,13 +193,17 @@ export interface TopbarTab {
                 </button>
               }
               <div class="dropdown-footer">
-                <button
-                  type="button"
-                  class="dropdown-item dropdown-item--footer"
-                  (click)="onSpaceSettingsClick()"
-                >
-                  <i class="fa-solid fa-gear text-[10px]"></i> Space settings
-                </button>
+                <!-- Space settings acts on the current space; only offer it once
+                     one is selected, otherwise it points at nothing. -->
+                @if (currentSpaceId()) {
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onSpaceSettingsClick()"
+                  >
+                    <i class="fa-solid fa-gear text-[10px]"></i> Space settings
+                  </button>
+                }
                 <button
                   type="button"
                   class="dropdown-item dropdown-item--footer"

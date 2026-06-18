@@ -167,6 +167,28 @@ export class EventDetailPanelComponent {
     return [{ label: 'Edit', icon: 'fa-solid fa-pen', command: () => this.edit.emit() }];
   });
 
+  /**
+   * Marker glyph for the panel header when a MARKER-source row is selected,
+   * mirroring the timeline marker detail pane (which leads its header with
+   * app-marker-icon). Null for event / detected selections, which lead with no
+   * glyph -- matching how the events table marks marker rows alone.
+   */
+  protected readonly selectedMarkerGlyph = computed<{
+    shape: MarkerShape;
+    color: string;
+    innerMark: InnerMark;
+    projected: boolean;
+  } | null>(() => {
+    const fi = this.selectedFeedItem();
+    if (!fi || fi.source_type !== 'marker' || !fi.marker_type_shape) return null;
+    return {
+      shape: fi.marker_type_shape,
+      color: fi.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
+      innerMark: fi.marker_type_inner_mark ?? ('none' as InnerMark),
+      projected: !!fi.is_projected,
+    };
+  });
+
   readonly headerLabel = computed(() => {
     const d = this.detail();
     if (d) return d.category.name;

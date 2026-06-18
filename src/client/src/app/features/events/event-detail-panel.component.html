@@ -4,6 +4,18 @@
   [showClose]="hasSelection()"
   (closed)="panelClose.emit()"
 >
+  @if (selectedMarkerGlyph(); as glyph) {
+    <span headerLeading class="inline-flex shrink-0 items-center">
+      <app-marker-icon
+        [shape]="glyph.shape"
+        [color]="glyph.color"
+        [size]="12"
+        [fillStyle]="glyph.projected ? 'outline' : 'filled'"
+        [innerMark]="glyph.innerMark"
+      />
+    </span>
+  }
+
   @if (headerMenu().length > 0) {
     <app-row-actions headerActions [items]="headerMenu()" ariaLabel="Event actions" />
   }
