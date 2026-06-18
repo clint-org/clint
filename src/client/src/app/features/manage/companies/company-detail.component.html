@@ -33,8 +33,31 @@
       </div>
     </header>
 
+    <!-- Timeline (full width above the two-column record + rail). -->
+    <section id="timeline" class="mb-4 bg-white border border-slate-200">
+      <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          Timeline
+        </h2>
+        <button
+          type="button"
+          class="font-mono text-[10px] uppercase tracking-[0.1em] text-brand-700 hover:underline"
+          (click)="legendVisible.set(!legendVisible())"
+        >
+          {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
+        </button>
+      </header>
+      <div>
+        <app-timeline-view
+          [hideCompanyColumn]="true"
+          [hideLegend]="true"
+          [legendVisible]="legendVisible()"
+        />
+      </div>
+    </section>
+
     <div class="flex flex-col items-start gap-4 lg:flex-row">
-      <!-- Main column: the read as a document, then the timeline. -->
+      <!-- Main column: the read as a document. -->
       <div class="min-w-0 flex-1">
         @if (hasIntelligence()) {
           <app-intelligence-block
@@ -82,29 +105,6 @@
           (cancelled)="purgeDialogOpen.set(false)"
           (confirmed)="onPurgeConfirmed($event)"
         />
-
-        <!-- Timeline -->
-        <section id="timeline" class="mb-4 bg-white border border-slate-200">
-          <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Timeline
-            </h2>
-            <button
-              type="button"
-              class="font-mono text-[10px] uppercase tracking-[0.1em] text-brand-700 hover:underline"
-              (click)="legendVisible.set(!legendVisible())"
-            >
-              {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-            </button>
-          </header>
-          <div>
-            <app-timeline-view
-              [hideCompanyColumn]="true"
-              [hideLegend]="true"
-              [legendVisible]="legendVisible()"
-            />
-          </div>
-        </section>
       </div>
 
       <!-- Rail: everything referential (events, referenced-in, materials). -->
