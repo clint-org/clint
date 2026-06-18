@@ -179,7 +179,7 @@ const DRAFTS_LIMIT = 200;
             @for (i of skeletonRows; track i) {
               <li class="flex border-b border-slate-100 last:border-b-0" aria-hidden="true">
                 <span class="w-[3px] shrink-0 bg-slate-200"></span>
-                <div class="min-w-0 flex-1 px-4 py-3.5">
+                <div class="min-w-0 flex-1 px-[22px] py-[17px]">
                   <div class="mb-2 flex items-center gap-2.5">
                     <app-skeleton w="56px" h="20px" />
                     <span class="ml-auto inline-flex">

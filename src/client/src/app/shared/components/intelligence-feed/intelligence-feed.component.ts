@@ -40,7 +40,7 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
             [class.bg-slate-300]="row.entity_type !== 'space'"
             aria-hidden="true"
           ></span>
-          <div class="min-w-0 flex-1 px-4 py-3.5 transition-colors group-hover:bg-slate-50">
+          <div class="min-w-0 flex-1 px-[22px] py-[17px] transition-colors group-hover:bg-slate-50">
             <div class="mb-2 flex items-center gap-2.5">
               <span
                 class="inline-flex items-center border border-slate-200 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
@@ -55,11 +55,11 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
             </div>
             <a
               [routerLink]="entityRouterLink(row)"
-              class="block text-[15px] font-semibold leading-snug text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+              class="block text-[17px] font-bold leading-snug text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
               [innerHTML]="headline(row)"
             ></a>
             @if (excerpt(row); as e) {
-              <p class="mt-1.5 text-[13px] leading-relaxed text-slate-600 line-clamp-2" [innerHTML]="e"></p>
+              <p class="mt-[7px] text-[13.5px] leading-relaxed text-slate-600 line-clamp-2" [innerHTML]="e"></p>
             }
             <div class="mt-2.5 flex items-center gap-2">
               <span class="h-[18px] w-[18px] shrink-0 rounded-full bg-slate-200" aria-hidden="true"></span>
