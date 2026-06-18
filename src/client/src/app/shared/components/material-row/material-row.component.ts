@@ -21,15 +21,9 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   imports: [],
   template: `
     <div class="group flex w-full items-center gap-3 px-4 py-2.5 hover:bg-slate-50">
-      <!-- File-type badge (PPTX amber, PDF red, DOCX blue, other slate) -->
-      <span
-        [class]="
-          'flex h-9 w-7 shrink-0 items-center justify-center rounded-sm text-[9px] font-bold uppercase tracking-wider ' +
-          iconClasses()
-        "
-        aria-hidden="true"
-      >
-        {{ kindLabel() }}
+      <!-- File-type glyph (PowerPoint amber, PDF red, Word blue, other slate) -->
+      <span class="flex h-9 w-7 shrink-0 items-center justify-center" aria-hidden="true">
+        <i [class]="'fa-solid text-2xl ' + iconGlyph() + ' ' + iconColor()"></i>
       </span>
 
       <!-- Title + metadata -->
@@ -101,29 +95,29 @@ export class MaterialRowComponent {
     classifyMaterialMime(this.material().mime_type, this.material().file_name)
   );
 
-  protected readonly kindLabel = computed(() => {
+  protected readonly iconGlyph = computed(() => {
     switch (this.kind()) {
       case 'pptx':
-        return 'PPT';
+        return 'fa-file-powerpoint';
       case 'pdf':
-        return 'PDF';
+        return 'fa-file-pdf';
       case 'docx':
-        return 'DOC';
+        return 'fa-file-word';
       default:
-        return 'FILE';
+        return 'fa-file-lines';
     }
   });
 
-  protected readonly iconClasses = computed(() => {
+  protected readonly iconColor = computed(() => {
     switch (this.kind()) {
       case 'pptx':
-        return 'border border-amber-300 bg-amber-50 text-amber-700';
+        return 'text-amber-600';
       case 'pdf':
-        return 'border border-red-300 bg-red-50 text-red-700';
+        return 'text-red-600';
       case 'docx':
-        return 'border border-blue-300 bg-blue-50 text-blue-700';
+        return 'text-blue-600';
       default:
-        return 'border border-slate-300 bg-slate-50 text-slate-600';
+        return 'text-slate-500';
     }
   });
 
