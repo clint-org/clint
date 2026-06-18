@@ -930,4 +930,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618130000_catalyst_detail_upcoming_marker_glyph.sql`
 - `20260618140000_events_feed_status_glyph.sql`
 - `20260618150000_backfill_active_trial_phase_end.sql`
+- `20260618160000_seed_completed_trial_readouts_confirmed.sql`
 <!-- /AUTO-GEN:DRIFT -->
