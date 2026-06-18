@@ -53,11 +53,29 @@ interface LadderCell {
               <span class="not-italic font-medium text-slate-600">{{ p.company_name }}</span>
             </div>
           </div>
-          <span
-            class="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-            [style.background]="phaseColor(p.highest_phase)"
+          <!-- Live chart mark: phase-colored core ringed by the same signal
+               rings the bullseye plots (orange = recent activity, brand =
+               intelligence, dashed slate = multiple spokes). -->
+          <svg
+            class="mt-0.5 block shrink-0"
+            width="30"
+            height="30"
+            viewBox="0 0 30 30"
             aria-hidden="true"
-          ></span>
+          >
+            @for (ring of dotRings(); track ring.kind) {
+              <circle
+                cx="15"
+                cy="15"
+                fill="none"
+                [attr.r]="ring.r"
+                [attr.stroke]="ring.stroke"
+                [attr.stroke-width]="ring.width"
+                [attr.stroke-dasharray]="ring.dash"
+              />
+            }
+            <circle cx="15" cy="15" r="4.5" [attr.fill]="phaseColor(p.highest_phase)" />
+          </svg>
         </div>
 
         <div class="px-3.5 py-3">
@@ -105,8 +123,11 @@ interface LadderCell {
             </div>
           }
 
-          <!-- Signal chips -->
-          @if (p.has_recent_activity || p.intelligence_count > 0 || spokeCount() > 1) {
+          <!-- Signal chips: the chart's activity + intelligence rings rendered
+               inline as labeled chips. Multi-spoke is already carried by the
+               header dot and the "Indications · N spokes" label, so it is not
+               repeated here. -->
+          @if (p.has_recent_activity || p.intelligence_count > 0) {
             <div class="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
               @if (p.has_recent_activity) {
                 <span
@@ -128,17 +149,6 @@ interface LadderCell {
                     aria-hidden="true"
                   ></span>
                   {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
-                </span>
-              }
-              @if (spokeCount() > 1) {
-                <span
-                  class="inline-flex items-center gap-1.5 border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.04em] text-slate-600"
-                >
-                  <span
-                    class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-dashed border-slate-400"
-                    aria-hidden="true"
-                  ></span>
-                  {{ spokeCount() }} spokes
                 </span>
               }
             </div>
@@ -186,6 +196,37 @@ export class BullseyeTooltipComponent {
       top: Math.min(Math.max(y, 130), vh - 130),
       transform: placeRight ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
     };
+  });
+
+  /**
+   * Concentric signal rings for the header mark, faithful to the bullseye
+   * PhaseDot: orange for recent activity, brand for attached intelligence,
+   * dashed slate for an asset that appears on multiple spokes. Rings step
+   * outward from the phase-colored core (size 30 geometry: core r=4.5,
+   * step=3.45). Colors are fixed chart-mark colors, never whitelabeled --
+   * except the intel ring, which echoes the brand legend treatment.
+   */
+  protected readonly dotRings = computed<
+    { kind: string; r: number; stroke: string; width: number; dash: string | null }[]
+  >(() => {
+    const p = this.product();
+    if (!p) return [];
+    const rings: { kind: string; r: number; stroke: string; width: number; dash: string | null }[] =
+      [];
+    let r = 4.5 + 3.45;
+    if (p.has_recent_activity) {
+      rings.push({ kind: 'activity', r, stroke: '#f97316', width: 2.1, dash: null });
+      r += 3.45;
+    }
+    if (p.intelligence_count > 0) {
+      rings.push({ kind: 'intel', r, stroke: 'var(--brand-600)', width: 2.1, dash: null });
+      r += 3.45;
+    }
+    if (this.spokeCount() > 1) {
+      rings.push({ kind: 'spokes', r, stroke: '#94a3b8', width: 1.5, dash: '1.5 1.5' });
+      r += 3.45;
+    }
+    return rings;
   });
 
   readonly moaList = computed<string[]>(() => {

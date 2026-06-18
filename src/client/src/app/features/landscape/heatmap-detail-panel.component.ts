@@ -154,7 +154,7 @@ export class HeatmapDetailPanelComponent {
   readonly openInBullseye = output<void>();
 
   readonly headerLabel = computed(() =>
-    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Heatmap . overview'
+    this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Heatmap · overview'
   );
 
   readonly openInBullseyeTooltip = computed(
