@@ -15,11 +15,22 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { HeatmapBubble, HeatmapGrouping } from '../../core/models/landscape.model';
+import {
+  HeatmapBubble,
+  HeatmapGrouping,
+  RingPhase,
+  SpokeGrouping,
+} from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { HeatmapComponent, type SortEvent, type SortField } from './heatmap.component';
+import {
+  HeatmapComponent,
+  type CellHoverEvent,
+  type SortEvent,
+  type SortField,
+} from './heatmap.component';
+import { HeatmapCellTooltipComponent } from './heatmap-cell-tooltip.component';
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
 import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
@@ -37,6 +48,7 @@ import { buildHeatmapSheets } from './heatmap-export.util';
   selector: 'app-heatmap-view',
   imports: [
     HeatmapComponent,
+    HeatmapCellTooltipComponent,
     HeatmapControlsPanelComponent,
     HeatmapDetailPanelComponent,
     MarkWatermarkComponent,
@@ -89,6 +101,7 @@ import { buildHeatmapSheets } from './heatmap-export.util';
                 [showPreclinical]="state.showPreclinical()"
                 (rowClick)="onBubbleClick($event)"
                 (sortChange)="onSortChange($event)"
+                (cellHover)="onCellHover($event)"
               />
             </div>
             @if (showPanel()) {
@@ -116,6 +129,14 @@ import { buildHeatmapSheets } from './heatmap-export.util';
         </div>
       }
     }
+
+    <app-heatmap-cell-tooltip
+      [bubble]="hoveredBubble()"
+      [phase]="hoveredPhase()"
+      [x]="hoverX()"
+      [y]="hoverY()"
+      [showPreclinical]="state.showPreclinical()"
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -137,6 +158,12 @@ export class HeatmapViewComponent implements OnInit {
   readonly selectedBubble = signal<HeatmapBubble | null>(null);
   readonly sortField = signal<SortField>('total');
   readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  // Cell-hover roster tooltip state. Cleared on mouseleave (null event).
+  readonly hoveredBubble = signal<HeatmapBubble | null>(null);
+  readonly hoveredPhase = signal<RingPhase | null>(null);
+  readonly hoverX = signal(0);
+  readonly hoverY = signal(0);
 
   /**
    * The detail panel is an absolute-positioned overlay that covers the
@@ -256,6 +283,18 @@ export class HeatmapViewComponent implements OnInit {
     this.sortDir.set(event.dir);
   }
 
+  onCellHover(event: CellHoverEvent | null): void {
+    if (!event) {
+      this.hoveredBubble.set(null);
+      this.hoveredPhase.set(null);
+      return;
+    }
+    this.hoveredBubble.set(event.bubble);
+    this.hoveredPhase.set(event.phase);
+    this.hoverX.set(event.x);
+    this.hoverY.set(event.y);
+  }
+
   onOpenAsset(assetId: string): void {
     this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
       queryParams: { assetIds: assetId },
@@ -263,25 +302,22 @@ export class HeatmapViewComponent implements OnInit {
   }
 
   onOpenInBullseye(): void {
-    this.router.navigate([
-      '/t',
-      this.tenantId(),
-      's',
-      this.spaceId(),
-      'bullseye',
-      this.bullseyeSegment(),
-    ]);
+    // Bullseye groups via in-memory spoke-grouping state (the old per-dimension
+    // path segments are now legacy redirects to the default), so carry the
+    // heatmap grouping across explicitly before navigating to the plain route.
+    this.state.spokeGrouping.set(this.bullseyeSpokeGrouping());
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye']);
   }
 
-  /** Map heatmap grouping to the closest bullseye dimension segment. */
-  private bullseyeSegment(): string {
-    const map: Record<HeatmapGrouping, string> = {
-      moa: 'by-moa',
-      indication: 'by-indication',
-      'moa+indication': 'by-indication',
-      company: 'by-company',
-      roa: 'by-roa',
+  /** Map the heatmap grouping to the closest bullseye spoke grouping. */
+  private bullseyeSpokeGrouping(): SpokeGrouping {
+    const map: Record<HeatmapGrouping, SpokeGrouping> = {
+      moa: 'moa',
+      indication: 'indication',
+      'moa+indication': 'indication',
+      company: 'company',
+      roa: 'roa',
     };
-    return map[this.state.heatmapGrouping()] ?? 'by-indication';
+    return map[this.state.heatmapGrouping()] ?? 'indication';
   }
 }

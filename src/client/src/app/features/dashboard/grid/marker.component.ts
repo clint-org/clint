@@ -53,6 +53,8 @@ export class MarkerComponent {
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');
   readonly companyName = input<string>('');
+  /** Owning company's logo, threaded to the hover tooltip's company tile. */
+  readonly companyLogoUrl = input<string | null>(null);
   readonly assetName = input<string>('');
 
   readonly markerClick = output<Marker>();

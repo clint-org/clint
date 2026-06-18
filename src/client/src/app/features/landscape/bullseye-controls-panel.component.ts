@@ -11,12 +11,13 @@ import {
 } from '../../core/models/landscape.model';
 import { LandscapeStateService } from './landscape-state.service';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
 
 @Component({
   selector: 'app-bullseye-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SegmentedControlComponent],
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
   template: `
     <aside class="bullseye-controls">
       <!-- Section: Group By -->
@@ -33,19 +34,21 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       <!-- Section: Competitive Read -->
       <div class="controls-section">
         <div class="section-label">READ</div>
-        @if (readText()) {
-          <span class="read-content" [innerHTML]="readText()"></span>
+        @if (read().text) {
+          <app-competitive-read-strip class="read-content" [read]="read()" />
         }
       </div>
 
       <!-- Section: Stats -->
       <div class="controls-section">
         <div class="section-label">STATS</div>
-        <div class="stats-grid">
-          <div class="stat">
-            <span class="stat-value">{{ spokeCount() }}</span>
-            <span class="stat-label">{{ spokeNoun() }}</span>
-          </div>
+        <div class="stats-grid" [class.stats-grid--single]="singleStat()">
+          @if (!singleStat()) {
+            <div class="stat">
+              <span class="stat-value">{{ spokeCount() }}</span>
+              <span class="stat-label">{{ spokeNoun() }}</span>
+            </div>
+          }
           <div class="stat">
             <span class="stat-value">{{ assetCount() }}</span>
             <span class="stat-label">assets</span>
@@ -104,8 +107,8 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     .section-label {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #94a3b8;
     }
@@ -116,38 +119,39 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       line-height: 1.6;
     }
 
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--brand-600, #0d9488);
-    }
-
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
+    .stats-grid--single {
+      grid-template-columns: 1fr;
+    }
+
     .stat {
       display: flex;
       flex-direction: column;
-      padding: 8px;
+      gap: 2px;
+      padding: 9px 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
     }
 
     .stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: #0f172a;
     }
 
     .stat-label {
-      font-size: 11px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: #94a3b8;
     }
 
@@ -186,17 +190,17 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     }
 
     .legend-intel {
-      border: 2px solid var(--brand-600, #0d9488);
+      border: 2px solid #2563eb;
       background: transparent;
     }
 
     .legend-activity {
-      border: 2px solid #f59e0b;
+      border: 2px solid #f97316;
       background: transparent;
     }
 
     .legend-duplicate {
-      border: 2px dashed #475569;
+      border: 2px dashed #94a3b8;
       background: transparent;
     }
   `,
@@ -219,6 +223,10 @@ export class BullseyeControlsPanelComponent {
   /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
   protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
 
+  // When grouping by asset, the spoke count and the asset count are the same
+  // number with the same noun ("N assets" twice). Collapse to a single box.
+  protected readonly singleStat = computed(() => this.grouping() === 'asset');
+
   // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
   // the space does not track preclinical, matching the rings the server returns.
   protected readonly phases = computed<{ value: RingPhase; label: string; color: string }[]>(() =>
@@ -229,14 +237,13 @@ export class BullseyeControlsPanelComponent {
     }))
   );
 
-  protected readonly readText = computed<string>(() => {
-    const result = buildLandscapeRead({
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
       view: 'radial',
       groupBy: this.grouping(),
       stats: fromSpokes(this.spokes()),
-    });
-    return result.text;
-  });
+    })
+  );
 
   private formatPhase(phase: RingPhase): string {
     const labels: Record<RingPhase, string> = {

@@ -171,6 +171,45 @@ begin
   set local role authenticated;
   perform public.seed_demo_data('00000000-0000-0000-0000-0000000d0100'::uuid);
   reset role;
+
+  -- The active P3 trials ship without a phase_end_date, so their phase bars
+  -- feather to "today" on the demo timeline instead of running to completion.
+  -- Give them their projected primary-completion dates so the demo reads
+  -- correctly. (Run as the seeding superuser, after reset role, so RLS does not
+  -- block the update.)
+  update public.trials set phase_end_date = '2025-10-31'
+    where space_id = '00000000-0000-0000-0000-0000000d0100'
+      and identifier = 'NCT05556512' and phase_end_date is null; -- SURMOUNT-MMO
+  update public.trials set phase_end_date = '2026-11-30'
+    where space_id = '00000000-0000-0000-0000-0000000d0100'
+      and identifier = 'NCT05929066' and phase_end_date is null; -- TRIUMPH-1
+  update public.trials set phase_end_date = '2026-06-30'
+    where space_id = '00000000-0000-0000-0000-0000000d0100'
+      and identifier = 'NCT06081894' and phase_end_date is null; -- ACACIA-HCM
+
+  -- A completed trial's data readouts (topline / interim / full data) happened
+  -- by the time the trial finished, so they must read as confirmed, not as a
+  -- future projection. Mark them actual and clamp any post-completion date to
+  -- the trial end. Data category only -- approval / launch / LOE legitimately
+  -- post-date completion and stay as-is.
+  update public.markers m
+  set projection = 'actual',
+      event_date = case
+        when t.phase_end_date is not null and m.event_date > t.phase_end_date
+          then t.phase_end_date
+        else m.event_date
+      end
+  from public.marker_assignments ma
+  join public.trials t on t.id = ma.trial_id
+  where ma.marker_id = m.id
+    and t.space_id = '00000000-0000-0000-0000-0000000d0100'
+    and lower(t.status) in ('completed', 'terminated', 'withdrawn')
+    and m.projection <> 'actual'
+    and m.marker_type_id in (
+      select mt.id from public.marker_types mt
+      where mt.category_id = 'c0000000-0000-0000-0000-000000000002'
+        and mt.name <> 'Full Data'
+    );
 end
 $$;
 

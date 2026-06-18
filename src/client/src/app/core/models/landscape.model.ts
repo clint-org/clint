@@ -142,6 +142,8 @@ export interface BullseyeAsset {
   logo_url: string | null;
   company_id: string;
   company_name: string;
+  /** The owning company's logo (companies.logo_url), for the company tile. */
+  company_logo_url: string | null;
   highest_phase: RingPhase;
   highest_phase_rank: number;
   trials: BullseyeTrial[];
@@ -435,6 +437,8 @@ export interface HeatmapAsset {
   generic_name: string | null;
   company_id: string;
   company_name: string;
+  /** The owning company's logo (companies.logo_url), for the company tile. */
+  company_logo_url: string | null;
   highest_phase: RingPhase;
   highest_phase_rank: number;
   trial_count: number;

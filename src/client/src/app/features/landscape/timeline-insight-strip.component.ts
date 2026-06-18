@@ -4,12 +4,13 @@ import { Checkbox } from 'primeng/checkbox';
 
 import { Company } from '../../core/models/company.model';
 import { buildLandscapeRead, fromCompanies } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { computeTimelineStats } from './timeline-stats';
 import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
   selector: 'app-timeline-insight-strip',
-  imports: [Checkbox, FormsModule],
+  imports: [Checkbox, FormsModule, CompetitiveReadStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -23,11 +24,11 @@ import { LandscapeStateService } from './landscape-state.service';
             class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
             >READ</span
           >
-          @if (read().text; as text) {
-            <span
-              class="text-xs text-slate-600 leading-relaxed read-content"
-              [innerHTML]="text"
-            ></span>
+          @if (read().text) {
+            <app-competitive-read-strip
+              class="text-xs text-slate-600 leading-relaxed"
+              [read]="read()"
+            />
           }
         </div>
 
@@ -125,15 +126,6 @@ import { LandscapeStateService } from './landscape-state.service';
         </div>
       </div>
     </div>
-  `,
-  styles: `
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--brand-600, #0d9488);
-    }
   `,
 })
 export class TimelineInsightStripComponent {

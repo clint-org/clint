@@ -1,0 +1,32 @@
+name: IaC PR check
+# WS3 Phase E: credential-free gate on tofu/config changes. Catches malformed config
+# and local/cloud auth-policy divergence before merge. The credential-needing drift
+# plan runs on a schedule in iac-drift.yml.
+on:
+  pull_request:
+    paths:
+      - 'infra/tofu/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+      - name: tofu fmt
+        run: tofu fmt -check -recursive infra/tofu
+      - name: tofu validate (each root, no backend)
+        run: |
+          set -e
+          for r in shared dev prod; do
+            echo "== $r =="
+            tofu -chdir="infra/tofu/$r" init -backend=false -input=false
+            tofu -chdir="infra/tofu/$r" validate
+          done
+      - name: Supabase auth-policy parity
+        run: python3 infra/tofu/scripts/config_parity_check.py

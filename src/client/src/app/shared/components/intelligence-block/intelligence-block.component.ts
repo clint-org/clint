@@ -86,21 +86,45 @@ export class IntelligenceBlockComponent {
     return c.record.state === 'draft' ? 'Draft' : 'Published';
   });
 
-  protected readonly clientByline = computed(() => {
+  /** Updated date, pre-formatted, for the byline row. */
+  protected readonly updatedLabel = computed(() => {
     const c = this.current();
-    if (!c) return '';
-    const updated = formatDate(c.record.updated_at);
-    return `Published by ${this.agencyName()}, updated ${updated}`;
+    return c ? formatDate(c.record.updated_at) : '';
   });
 
-  protected readonly agencyByline = computed(() => {
+  /**
+   * The lead name shown beside the avatar tile in the byline. For clients it
+   * is the agency; for agency members it is the person who last edited the read.
+   */
+  protected readonly bylineLeadName = computed(() => {
     const c = this.current();
     if (!c) return '';
-    const updated = formatDate(c.record.updated_at);
+    if (this.agencyView()) {
+      const override = this.authorMap();
+      return resolveAuthorName(c.record.last_edited_by, c.authors, override) || this.agencyName();
+    }
+    return this.agencyName();
+  });
+
+  /** First character of the lead name, used for the avatar tile. */
+  protected readonly bylineInitial = computed(() => {
+    const name = this.bylineLeadName().trim();
+    return name ? name.charAt(0).toUpperCase() : '?';
+  });
+
+  /**
+   * Contributor line for the agency-internal view only. Shown as a quiet
+   * secondary line under the lead byline when there is more than one
+   * contributor, so the redesign keeps the credit without the loud mono row.
+   */
+  protected readonly contributorLine = computed<string | null>(() => {
+    if (!this.agencyView()) return null;
+    const c = this.current();
+    if (!c) return null;
     const override = this.authorMap();
-    const contributors = resolveContributorLine(c.contributors, c.authors, override);
-    const publisher = resolveAuthorName(c.record.last_edited_by, c.authors, override);
-    return `Contributors: ${contributors} -- updated ${updated} by ${publisher}`;
+    const line = resolveContributorLine(c.contributors, c.authors, override);
+    if (!line || line === '--') return null;
+    return line;
   });
 
   protected readonly publishNote = computed<string | null>(() => {

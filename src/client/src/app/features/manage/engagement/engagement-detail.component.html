@@ -5,9 +5,11 @@
   @if (loading()) {
     <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
   } @else {
-    <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-      <h1 class="text-base font-semibold uppercase tracking-[0.08em] text-slate-900">Engagement</h1>
-      <p class="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+    <header class="mb-4 border border-slate-200 bg-white px-5 py-3.5">
+      <h1 class="font-mono text-[13px] font-bold uppercase tracking-[0.1em] text-slate-900">
+        Engagement
+      </h1>
+      <p class="mt-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
         Space-level primary intelligence
       </p>
     </header>
@@ -64,8 +66,8 @@
     />
 
     <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2">
-        <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-5 py-2.5">
+        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
       </header>
       <app-materials-section entityType="space" [entityId]="spaceIdSig()" [spaceId]="spaceIdSig()" />
     </section>

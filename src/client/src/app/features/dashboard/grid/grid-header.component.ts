@@ -65,7 +65,7 @@ import { TimelineColumn } from '../../../core/services/timeline.service';
             [style.left.px]="todayX()"
           ></div>
           <span
-            class="absolute top-0 -translate-x-1/2 rounded-b bg-slate-100 px-1 font-mono text-[9px] font-semibold uppercase tracking-widest text-slate-500"
+            class="absolute bottom-0 -translate-x-1/2 rounded-t bg-slate-100 px-1 font-mono text-[9px] font-semibold uppercase tracking-widest text-slate-500"
             [style.left.px]="todayX()"
             >Today</span
           >

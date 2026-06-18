@@ -18,6 +18,12 @@ export interface Catalyst {
   no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
+  /**
+   * The owning company's logo (companies.logo_url), threaded from the dashboard
+   * data the catalyst list flattens from. Optional so a catalyst built from a
+   * payload without it renders the initial-tile fallback.
+   */
+  company_logo_url?: string | null;
   asset_name: string | null;
   asset_id: string | null;
   trial_name: string | null;
@@ -74,7 +80,12 @@ export interface UpcomingMarker {
   title: string;
   event_date: string;
   marker_type_name: string;
+  marker_type_color: string;
+  marker_type_shape: MarkerShape;
+  marker_type_inner_mark: InnerMark;
   is_projected: boolean;
+  projection: string | null;
+  no_longer_expected: boolean;
 }
 
 export interface RelatedEvent {

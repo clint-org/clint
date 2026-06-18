@@ -5,6 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Tooltip } from 'primeng/tooltip';
@@ -12,7 +13,8 @@ import { FlatCatalyst } from '../../core/models/catalyst.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../shared/grids';
-import { CatalystTableComponent } from './catalyst-table.component';
+import { CatalystTableComponent, type CatalystHoverEvent } from './catalyst-table.component';
+import { CatalystRowTooltipComponent } from './catalyst-row-tooltip.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LandscapeStateService } from '../landscape/landscape-state.service';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
@@ -26,6 +28,7 @@ import { CATALYST_EXPORT_COLUMNS } from './catalysts-export.util';
     ManagePageShellComponent,
     GridToolbarComponent,
     CatalystTableComponent,
+    CatalystRowTooltipComponent,
     RouterLink,
     Tooltip,
     ExportButtonComponent,
@@ -143,7 +146,22 @@ export class CatalystsPageComponent {
     }
   }
 
+  // Row-hover preview tooltip state. Cleared on mouseleave (null event).
+  readonly hoveredCatalyst = signal<FlatCatalyst | null>(null);
+  readonly hoverX = signal(0);
+  readonly hoverY = signal(0);
+
   onRowClick(markerId: string): void {
     this.state.selectMarker(markerId);
+  }
+
+  onRowHover(event: CatalystHoverEvent | null): void {
+    if (!event) {
+      this.hoveredCatalyst.set(null);
+      return;
+    }
+    this.hoveredCatalyst.set(event.catalyst);
+    this.hoverX.set(event.x);
+    this.hoverY.set(event.y);
   }
 }

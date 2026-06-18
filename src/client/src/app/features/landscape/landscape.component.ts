@@ -183,6 +183,13 @@ export class LandscapeComponent implements OnInit {
     return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
+  /** Whether the selected asset appears on more than one spoke. Mirrors the
+   *  chart's dashed multi-spoke ring on the detail pane identity mark. */
+  readonly selectedAssetMultiSpoke = computed<boolean>(() => {
+    const id = this.selectedAssetId();
+    return id ? this.duplicatedAssetIds().has(id) : false;
+  });
+
   /**
    * Dims assets that don't match recruitment status or study type filters.
    * Scope-level filters (companies, indications, moas, roas, phases, assets)

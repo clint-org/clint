@@ -10,11 +10,11 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
  *     tighter top padding).
  *   - `roomy`: persistent column on /catalysts /events /landscape (default).
  *
- * Header label tone:
+ * Header label tone (both slate, matching the hover tooltip eyebrow):
  *   - `brand`: object class shown when something is selected (e.g.
- *     "Clinical Readout · Phase 3 Topline"). Reads as the lens.
+ *     "Clinical Readout · Phase 3 Topline"); slate-500.
  *   - `muted`: passive overview eyebrow shown in empty states (e.g.
- *     "Catalysts · overview").
+ *     "Catalysts · overview"); slate-400.
  */
 @Component({
   selector: 'app-detail-panel-shell',
@@ -42,7 +42,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
             @if (label()) {
               <p
                 class="truncate text-[10px] font-semibold uppercase tracking-widest"
-                [class.text-brand-600]="labelTone() === 'brand'"
+                [class.text-slate-500]="labelTone() === 'brand'"
                 [class.text-slate-400]="labelTone() === 'muted'"
               >
                 {{ label() }}

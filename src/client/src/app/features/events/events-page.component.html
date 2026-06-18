@@ -109,8 +109,8 @@
             <th pSortableColumn="entity_display" class="col-secondary">
               Entity <p-sortIcon field="entity_display" />
             </th>
-            <th pSortableColumn="priority" class="col-priority">
-              Priority <p-sortIcon field="priority" />
+            <th pSortableColumn="priority" class="col-status">
+              Status <p-sortIcon field="priority" />
               <p-column-filter
                 field="priority"
                 display="menu"
@@ -181,6 +181,7 @@
               </span>
             </td>
             <td class="min-w-[18rem]">
+              <div class="flex min-w-0 flex-col gap-1">
               <div class="flex min-w-0 items-center gap-1.5">
                 @if (item.source_type === 'detected' && item.change_event_type) {
                   <span class="truncate text-sm text-slate-900">
@@ -222,11 +223,43 @@
                   ></i>
                 }
               </div>
+              @if (item.tags.length) {
+                <div class="flex flex-wrap items-center gap-1">
+                  @for (tag of item.tags.slice(0, 3); track tag) {
+                    <span
+                      class="inline-block border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[9px] font-semibold tracking-wide text-slate-500"
+                      >#{{ tag }}</span
+                    >
+                  }
+                  @if (item.tags.length > 3) {
+                    <span class="font-mono text-[9px] text-slate-400"
+                      >+{{ item.tags.length - 3 }}</span
+                    >
+                  }
+                </div>
+              }
+              </div>
             </td>
-            <td class="col-secondary text-xs text-slate-500">
-              <span
-                [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
-              ></span>
+            <td class="col-secondary text-xs text-slate-700">
+              <span class="inline-flex items-center gap-1.5 align-middle">
+                @if (item.source_type === 'marker' && item.marker_type_shape) {
+                  <app-marker-icon
+                    [shape]="item.marker_type_shape"
+                    [color]="item.marker_type_color ?? '#64748b'"
+                    [size]="12"
+                    [fillStyle]="markerFillStyle(item)"
+                    [innerMark]="item.marker_type_inner_mark ?? 'none'"
+                  />
+                } @else {
+                  <span
+                    class="inline-block h-2 w-2 shrink-0 rounded-full border-[1.5px] border-slate-400"
+                    aria-hidden="true"
+                  ></span>
+                }
+                <span
+                  [innerHTML]="item.category_name | highlight: grid.debouncedGlobalSearch()"
+                ></span>
+              </span>
             </td>
             <td class="col-secondary whitespace-nowrap text-xs">
               @let ec = entityCell(item);
@@ -254,14 +287,40 @@
                 }
               </span>
             </td>
-            <td class="col-priority text-center">
-              @if (item.priority === 'high') {
-                <span
-                  class="inline-block h-2 w-2 rounded-full bg-red-500"
-                  pTooltip="High priority"
-                  tooltipPosition="top"
-                  aria-label="High priority"
-                ></span>
+            <td class="col-status whitespace-nowrap text-right">
+              @switch (item.source_type) {
+                @case ('marker') {
+                  <app-detail-panel-pill [tone]="item.is_projected ? 'amber' : 'brand'">
+                    {{ item.is_projected ? 'Projected' : 'Confirmed' }}
+                  </app-detail-panel-pill>
+                }
+                @case ('detected') {
+                  @if (detectedShift(item); as shift) {
+                    <span
+                      class="inline-flex items-center gap-1 border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-800"
+                      [attr.aria-label]="'Shifted ' + shift.text"
+                    >
+                      <i
+                        class="fa-solid text-[8px]"
+                        [class.fa-arrow-down]="shift.later"
+                        [class.fa-arrow-up]="!shift.later"
+                        aria-hidden="true"
+                      ></i>
+                      {{ shift.text }}
+                    </span>
+                  } @else if (item.priority === 'high') {
+                    <app-detail-panel-pill tone="red">High</app-detail-panel-pill>
+                  }
+                }
+                @default {
+                  @if (item.priority === 'high') {
+                    <app-detail-panel-pill tone="red">High</app-detail-panel-pill>
+                  } @else {
+                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400"
+                      >News</span
+                    >
+                  }
+                }
               }
             </td>
           </tr>
@@ -275,7 +334,7 @@
               { w: '60%' },
               { w: '52%' },
               { w: '52%' },
-              { w: '8px', h: '8px', class: 'col-priority' },
+              { w: '56px', h: '16px', class: 'col-status' },
             ]"
           />
         </ng-template>

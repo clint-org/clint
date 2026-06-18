@@ -15,19 +15,19 @@ locals {
 # Custom domains route apex + www directly to the clint Worker (Cloudflare manages
 # the DNS record + TLS cert for each).
 resource "cloudflare_workers_custom_domain" "apex" {
-  account_id  = var.cloudflare_account_id
-  hostname    = "clintapp.com"
-  service     = "clint"
-  zone_id     = local.clintapp_zone_id
-  zone_name   = "clintapp.com"
+  account_id = var.cloudflare_account_id
+  hostname   = "clintapp.com"
+  service    = "clint"
+  zone_id    = local.clintapp_zone_id
+  zone_name  = "clintapp.com"
 }
 
 resource "cloudflare_workers_custom_domain" "www" {
-  account_id  = var.cloudflare_account_id
-  hostname    = "www.clintapp.com"
-  service     = "clint"
-  zone_id     = local.clintapp_zone_id
-  zone_name   = "clintapp.com"
+  account_id = var.cloudflare_account_id
+  hostname   = "www.clintapp.com"
+  service    = "clint"
+  zone_id    = local.clintapp_zone_id
+  zone_name  = "clintapp.com"
 }
 
 # Route catching every tenant subdomain (*.clintapp.com) for the clint Worker.

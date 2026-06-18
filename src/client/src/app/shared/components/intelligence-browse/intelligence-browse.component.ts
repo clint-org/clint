@@ -166,31 +166,41 @@ const DRAFTS_LIMIT = 200;
             (onClick)="onClearAll()"
           />
         }
-        <span class="ml-auto font-mono text-[10px] tabular-nums text-slate-400">
+        <span
+          class="ml-auto font-mono text-[10px] font-bold uppercase tracking-wider tabular-nums text-slate-500"
+        >
           {{ totalLabel() }}
         </span>
       </div>
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
-          <ul aria-busy="true" aria-label="Loading reads" class="divide-y divide-slate-100">
+          <ul aria-busy="true" aria-label="Loading reads">
             @for (i of skeletonRows; track i) {
-              <li class="px-4 py-3" aria-hidden="true">
-                <div class="mb-1 flex items-baseline gap-2">
-                  <app-skeleton w="44px" h="14px" />
-                  <app-skeleton w="220px" h="14px" />
-                  <span class="ml-auto inline-flex">
-                    <app-skeleton w="62px" h="10px" />
-                  </span>
-                </div>
-                <div class="mt-1.5">
-                  <app-skeleton [block]="true" w="100%" h="11px" />
-                </div>
-                <div class="mt-1">
-                  <app-skeleton [block]="true" w="62%" h="11px" />
-                </div>
-                <div class="mt-2">
-                  <app-skeleton w="84px" h="10px" />
+              <li class="flex border-b border-slate-100 last:border-b-0" aria-hidden="true">
+                <span class="w-[3px] shrink-0 bg-slate-200"></span>
+                <div class="min-w-0 flex-1 px-[22px] py-[17px]">
+                  <div class="mb-2 flex items-center gap-2.5">
+                    <app-skeleton w="56px" h="20px" />
+                    <span class="ml-auto inline-flex">
+                      <app-skeleton w="68px" h="10px" />
+                    </span>
+                  </div>
+                  <div>
+                    <app-skeleton [block]="true" w="80%" h="15px" />
+                  </div>
+                  <div class="mt-1.5">
+                    <app-skeleton [block]="true" w="100%" h="11px" />
+                  </div>
+                  <div class="mt-1">
+                    <app-skeleton [block]="true" w="62%" h="11px" />
+                  </div>
+                  <div class="mt-2.5 flex items-center gap-2">
+                    <app-skeleton w="84px" h="10px" />
+                    <span class="ml-auto inline-flex">
+                      <app-skeleton w="40px" h="10px" />
+                    </span>
+                  </div>
                 </div>
               </li>
             }

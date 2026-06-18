@@ -16,6 +16,8 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import type { ChangeEvent } from '../../core/models/change-event.model';
 import { EventDetail, FeedItem } from '../../core/models/event.model';
+import type { InnerMark, MarkerShape } from '../../core/models/marker.model';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { AnnotationService, Annotation } from '../../core/services/annotation.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
@@ -37,12 +39,20 @@ interface CategoryHistogramEntry {
   name: string;
   count: number;
   color: string;
+  /** Share of the largest category, 0-100, for the distribution bar width. */
+  sharePct: number;
+  /** Marker glyph for marker categories; null for event/detected categories. */
+  glyph: { shape: MarkerShape; color: string; innerMark: InnerMark; projected: boolean } | null;
 }
 
 interface RecentItemSummary {
   id: string;
   title: string;
   event_date: string;
+  /** Marker glyph for marker rows; null otherwise. */
+  glyph: { shape: MarkerShape; color: string; innerMark: InnerMark; projected: boolean } | null;
+  isProjected: boolean | null;
+  sourceType: FeedItem['source_type'];
 }
 
 const CATEGORY_COLOR_FALLBACK = '#94a3b8';
@@ -72,6 +82,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     DetailPanelShellComponent,
     ExternalLinkComponent,
     MarkerDetailContentComponent,
+    MarkerIconComponent,
     RowActionsComponent,
   ],
   templateUrl: './event-detail-panel.component.html',
@@ -201,15 +212,37 @@ export class EventDetailPanelComponent {
 
   readonly categoryHistogram = computed<CategoryHistogramEntry[]>(() => {
     const counts = new Map<string, number>();
+    // Remember a representative marker FeedItem per category so the bar can
+    // carry that category's marker glyph + color (markers only). The glyph
+    // colors the share bar; event categories fall back to the static palette.
+    const sample = new Map<string, FeedItem>();
     for (const item of this.feedItems()) {
       counts.set(item.category_name, (counts.get(item.category_name) ?? 0) + 1);
+      if (item.source_type === 'marker' && item.marker_type_shape && !sample.has(item.category_name)) {
+        sample.set(item.category_name, item);
+      }
     }
+    const max = Math.max(1, ...counts.values());
     return [...counts.entries()]
-      .map(([name, count]) => ({
-        name,
-        count,
-        color: CATEGORY_COLOR[name] ?? CATEGORY_COLOR_FALLBACK,
-      }))
+      .map(([name, count]) => {
+        const rep = sample.get(name);
+        const glyph =
+          rep && rep.marker_type_shape
+            ? {
+                shape: rep.marker_type_shape,
+                color: rep.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
+                innerMark: rep.marker_type_inner_mark ?? ('none' as InnerMark),
+                projected: false,
+              }
+            : null;
+        return {
+          name,
+          count,
+          color: rep?.category_color ?? CATEGORY_COLOR[name] ?? CATEGORY_COLOR_FALLBACK,
+          sharePct: Math.round((count / max) * 100),
+          glyph,
+        };
+      })
       .sort((a, b) => b.count - a.count);
   });
 
@@ -218,7 +251,22 @@ export class EventDetailPanelComponent {
       .slice()
       .sort((a, b) => b.event_date.localeCompare(a.event_date))
       .slice(0, 3)
-      .map((i) => ({ id: i.id, title: i.title, event_date: i.event_date }))
+      .map((i) => ({
+        id: i.id,
+        title: i.title,
+        event_date: i.event_date,
+        sourceType: i.source_type,
+        isProjected: i.is_projected,
+        glyph:
+          i.source_type === 'marker' && i.marker_type_shape
+            ? {
+                shape: i.marker_type_shape,
+                color: i.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
+                innerMark: i.marker_type_inner_mark ?? ('none' as InnerMark),
+                projected: !!i.is_projected,
+              }
+            : null,
+      }))
   );
 
   /**
@@ -287,6 +335,35 @@ export class EventDetailPanelComponent {
       // Error handled by service
     }
   }
+
+  /**
+   * The WAS -> NOW date diff for a detected `date_moved` change, with a
+   * directional shift label. Drives the amber diff-hero card so a slipped
+   * projection reads at a glance (later = bad = down arrow). Null for any
+   * non-date change.
+   */
+  protected readonly dateDiff = computed<{
+    was: string;
+    now: string;
+    shift: string;
+    later: boolean;
+  } | null>(() => {
+    const item = this.selectedFeedItem();
+    if (!item || item.source_type !== 'detected' || item.change_event_type !== 'date_moved') {
+      return null;
+    }
+    const payload = item.change_payload ?? {};
+    const was = payload['from'] != null ? String(payload['from']) : '';
+    const now = payload['to'] != null ? String(payload['to']) : '';
+    if (!was || !now) return null;
+    const raw = payload['days_shifted'] ?? payload['days_diff'];
+    const days = raw == null ? NaN : Number(raw);
+    const later = Number.isFinite(days) ? days > 0 : now > was;
+    const shift = Number.isFinite(days)
+      ? `${Math.abs(days)} days ${days > 0 ? 'later' : 'earlier'}`
+      : 'date moved';
+    return { was, now, shift, later };
+  });
 
   /**
    * Extract change detail rows from the payload for the structured

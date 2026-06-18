@@ -35,7 +35,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
           >
             Recent materials
           </h2>
-          <a [href]="allMaterialsLink()" class="section-action-link"> All materials </a>
+          <a [href]="allMaterialsLink()" class="section-action-link">View all materials →</a>
         </header>
         <div class="materials-section__list">
           @if (loading()) {
@@ -64,6 +64,8 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
                   <app-material-row
                     [material]="material"
                     [showLinks]="true"
+                    [tenantId]="tenantId()"
+                    [spaceId]="spaceId()"
                     (downloadClick)="onDownloadClick($event)"
                     (deleteClick)="onDeleteClick($event)"
                   />

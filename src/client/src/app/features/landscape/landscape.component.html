@@ -66,6 +66,7 @@
                     [data]="chartData()!"
                     [dimension]="chartData()!.dimension"
                     [selectedAsset]="selectedAsset()"
+                    [multiSpoke]="selectedAssetMultiSpoke()"
                     (openTrial)="onOpenTrial($event)"
                     (openCompany)="onOpenCompany($event)"
                     (openInTimeline)="onOpenInTimeline($event)"
@@ -89,4 +90,5 @@
   [x]="tooltipX()"
   [y]="tooltipY()"
   [spokeCount]="hoveredAssetSpokeCount()"
+  [showPreclinical]="state.showPreclinical()"
 />

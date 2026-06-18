@@ -15,20 +15,21 @@ A unified chronological feed showing analyst-created events, timeline markers, a
 |---|---|
 | Date | Event date, sorted descending by default |
 | Source | Badge: "EVENT" (green), "MARKER" (slate), or "DETECTED" (amber) |
-| Title | Event title with thread indicator if applicable |
-| Category | 6 system categories: Leadership, Regulatory, Financial, Strategic, Clinical, Commercial |
+| Title | Event title with thread indicator if applicable; tags render as `#hashtag` chips beneath the title |
+| Category | 6 system event categories: Leadership, Regulatory, Financial, Strategic, Clinical, Commercial. Marker-source rows lead the cell with their fixed marker-taxonomy glyph (shape + color, outline when projected); the colour also drives the overview distribution bars |
 | Entity | Company / Product / Trial name, or "Industry" for space-level |
+| Status | Marker rows: a Projected / Confirmed pill (amber / brand). Detected date-moves: an amber "+Nd later / earlier" shift chip. Events: a High-priority pill or a "News" tag |
 | Priority | Red dot for high, empty for low |
 
 **Detail panel (340px overlay):** For analyst events and markers: description, source URLs, tags, thread context (ordered list of events in the narrative), related events (ad-hoc links), and created timestamp. For detected events: structured change detail with annotation CRUD (create, edit, delete via `AnnotationService`), annotation indicator, and signal bar.
 
-**Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority. Detected events additionally carry `change_event_type`, `change_payload`, `change_source`, `has_annotation`, `observed_at`, and `company_logo_url` fields on the `FeedItem` interface.
+**Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority. Detected events additionally carry `change_event_type`, `change_payload`, `change_source`, `has_annotation`, `observed_at`, and `company_logo_url` fields on the `FeedItem` interface. Marker-source items also carry `is_projected`, `marker_type_shape`, `marker_type_color`, `marker_type_inner_mark`, and `category_color` (returned by `get_events_page_data`) so the table can render the category glyph and the projected/confirmed status without an extra fetch.
 
 ## Capabilities
 
 ```yaml
 - id: events-feed
-  summary: Unified chronological data table mixing analyst events, timeline markers, and detected change events across four entity levels. Server-side pagination via {items, total} return shape.
+  summary: Unified chronological data table mixing analyst events, timeline markers, and detected change events across four entity levels. Server-side pagination via {items, total} return shape. Marker rows show their category glyph and a projected/confirmed status; the overview pane shows a colour-coded category distribution.
   routes:
     - /t/:tenantId/s/:spaceId/events
   rpcs:

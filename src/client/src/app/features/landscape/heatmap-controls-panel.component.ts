@@ -5,6 +5,7 @@ import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
   HEATMAP_GROUPING_OPTIONS,
+  HeatmapAsset,
   HeatmapBubble,
   HeatmapGrouping,
   PHASE_COLOR,
@@ -13,6 +14,7 @@ import {
   groupingToSegment,
 } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromBubbles } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { cellTint } from './heatmap-cell';
 import { LandscapeStateService } from './landscape-state.service';
 import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
@@ -20,7 +22,7 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
 @Component({
   selector: 'app-heatmap-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SegmentedControlComponent],
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
   template: `
     <aside class="heatmap-controls">
       <div class="controls-section">
@@ -45,8 +47,8 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
 
       <div class="controls-section">
         <div class="section-label">READ</div>
-        @if (readText()) {
-          <span class="read-content" [innerHTML]="readText()"></span>
+        @if (read().text) {
+          <app-competitive-read-strip class="read-content" [read]="read()" />
         }
       </div>
 
@@ -112,8 +114,8 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     .section-label {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #94a3b8;
     }
@@ -122,15 +124,6 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       font-size: 12px;
       color: var(--slate-600, #475569);
       line-height: 1.6;
-    }
-
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--brand-600, #0d9488);
     }
 
     .stats-grid {
@@ -142,20 +135,26 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     .stat {
       display: flex;
       flex-direction: column;
-      padding: 8px;
+      gap: 2px;
+      padding: 9px 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
     }
 
     .stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: #0f172a;
     }
 
     .stat-label {
-      font-size: 11px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: #94a3b8;
     }
 
@@ -256,18 +255,33 @@ export class HeatmapControlsPanelComponent {
 
   protected readonly groupCount = computed(() => this.bubbles().length);
 
-  protected readonly totalCount = computed(() =>
-    this.bubbles().reduce((sum, b) => sum + b.unit_count, 0)
-  );
+  // Count distinct entities across buckets, not the sum of per-bucket counts.
+  // A multi-indication asset appears in several buckets, so summing unit_count
+  // inflates the total (e.g. one filtered company shows as "6 companies", or 28
+  // placements as "28 assets"). Dedupe products by asset id, then tally per unit.
+  protected readonly totalCount = computed(() => {
+    const assetById = new Map<string, HeatmapAsset>();
+    for (const bubble of this.bubbles()) {
+      for (const product of bubble.products) assetById.set(product.id, product);
+    }
+    const assets = [...assetById.values()];
+    switch (this.countUnit()) {
+      case 'companies':
+        return new Set(assets.map((a) => a.company_id)).size;
+      case 'trials':
+        return assets.reduce((sum, a) => sum + a.trial_count, 0);
+      default:
+        return assets.length;
+    }
+  });
 
-  protected readonly readText = computed<string>(() => {
-    const result = buildLandscapeRead({
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
       view: 'heatmap',
       groupBy: this.grouping(),
       stats: fromBubbles(this.bubbles()),
-    });
-    return result.text;
-  });
+    })
+  );
 
   protected navigateToGrouping(grouping: string): void {
     const segment = groupingToSegment(grouping as HeatmapGrouping);

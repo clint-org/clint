@@ -264,7 +264,8 @@
 
 .data-table th.col-status,
 .data-table td.col-status {
-  width: 5.5rem;
+  width: 6.5rem;
+  white-space: nowrap;
 }
 
 .data-table th.col-actions,
