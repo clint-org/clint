@@ -928,4 +928,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260616120100_dashboard_data_marker_range_fields.sql`
 - `20260618120000_material_links_entity_name.sql`
 - `20260618130000_catalyst_detail_upcoming_marker_glyph.sql`
+- `20260618140000_events_feed_status_glyph.sql`
 <!-- /AUTO-GEN:DRIFT -->
