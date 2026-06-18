@@ -21,7 +21,6 @@ import {
 } from '../../core/models/ctgov-field.model';
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
-import { SpaceRoleService } from '../../core/services/space-role.service';
 import { TrialService } from '../../core/services/trial.service';
 import {
   MARKER_FIELD_LABELS,
@@ -38,9 +37,11 @@ import {
 import { DetailPanelEntityLinkDirective } from './detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from './detail-panel-entity-list.component';
 import { DetailPanelEntityRowComponent } from './detail-panel-entity-row.component';
+import { DetailPanelStatusBandComponent } from './detail-panel-status-band.component';
 import { ExternalLinkComponent } from './external-link.component';
 import { DetailPanelPillComponent, PillTone } from './detail-panel-pill.component';
 import { DetailPanelSectionComponent } from './detail-panel-section.component';
+import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
 export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
@@ -75,12 +76,19 @@ interface CtgovProvenanceBlock {
     DetailPanelHistoryComponent,
     DetailPanelPillComponent,
     DetailPanelSectionComponent,
+    DetailPanelStatusBandComponent,
     ExternalLinkComponent,
+    MarkerIconComponent,
     MaterialsSectionComponent,
   ],
   template: `
     @if (detail(); as d) {
-      <!-- Title + CT.gov source tag -->
+      <!-- Title block: trial-acronym eyebrow + bold title + CT.gov source tag -->
+      @if (titleEyebrow(); as eyebrow) {
+        <p class="mb-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          {{ eyebrow }}
+        </p>
+      }
       <div class="flex items-start justify-between gap-2">
         <h2 class="text-base font-semibold leading-snug text-slate-900">
           {{ d.catalyst.title }}
@@ -88,130 +96,151 @@ interface CtgovProvenanceBlock {
         <app-ctgov-source-tag [metadata]="d.catalyst.metadata" />
       </div>
 
-      <!-- Meta strip: status pill + date + optional "no longer expected".
-           Items align at baseline so the pill (with vertical padding) and
-           the date text share a visual horizontal line instead of the
-           pill sitting taller than the date. -->
-      <div class="mt-2 flex flex-wrap items-baseline gap-2">
-        @if (projectionPill(); as pill) {
-          <app-detail-panel-pill [tone]="pill.tone">{{ pill.text }}</app-detail-panel-pill>
-        }
-        <span class="font-mono text-[11px] tabular-nums leading-none text-slate-500">
-          {{ d.catalyst.event_date | date: 'mediumDate' }}
-        </span>
-        @if (d.catalyst.no_longer_expected) {
-          <app-detail-panel-pill tone="slate">No longer expected</app-detail-panel-pill>
-        }
+      <!-- Focal status band: projected vs confirmed is the key data-quality
+           signal, so it gets a full-width band rather than an inline pill. -->
+      <div class="mt-3">
+        <app-detail-panel-status-band
+          [projected]="isProjectedStatus()"
+          [date]="formattedDate(d.catalyst.event_date)"
+          [source]="statusSource()"
+          [labelOverride]="statusLabel()"
+        />
       </div>
-
-      @if (d.catalyst.company_name) {
-        <app-detail-panel-section [first]="true" label="Asset">
-          <div class="flex items-center gap-2 text-[13px] text-slate-900">
-            @if (d.catalyst.company_logo_url) {
-              <img
-                [ngSrc]="d.catalyst.company_logo_url"
-                [alt]="d.catalyst.company_name"
-                width="20"
-                height="20"
-                class="h-5 w-5 flex-none rounded object-contain"
-              />
-            }
-            <p>
-              @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
-                <a
-                  [routerLink]="[
-                    '/t',
-                    tenantIdSig(),
-                    's',
-                    spaceId(),
-                    'manage',
-                    'companies',
-                    d.catalyst.company_id,
-                  ]"
-                  appDetailPanelEntityLink
-                  class="font-semibold uppercase"
-                >
-                  {{ d.catalyst.company_name }}
-                </a>
-              } @else {
-                <span class="font-semibold uppercase">{{ d.catalyst.company_name }}</span>
-              }
-              @if (d.catalyst.asset_name) {
-                &middot;
-                @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
-                  <a
-                    [routerLink]="[
-                      '/t',
-                      tenantIdSig(),
-                      's',
-                      spaceId(),
-                      'manage',
-                      'assets',
-                      d.catalyst.asset_id,
-                    ]"
-                    appDetailPanelEntityLink
-                  >
-                    {{ d.catalyst.asset_name }}
-                  </a>
-                } @else {
-                  {{ d.catalyst.asset_name }}
-                }
-              }
-            </p>
-          </div>
-        </app-detail-panel-section>
+      @if (d.catalyst.no_longer_expected) {
+        <div class="mt-2">
+          <app-detail-panel-pill tone="slate">No longer expected</app-detail-panel-pill>
+        </div>
       }
 
-      @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as _trialLabel) {
-        <app-detail-panel-section [first]="!d.catalyst.company_name" label="Trial">
-          @if (d.catalyst.trial_id; as trialId) {
-            <button
-              type="button"
-              class="group flex w-full flex-col items-start gap-0.5 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
-              (click)="trialClick.emit(trialId)"
-            >
-              <span
-                class="inline-flex items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
-              >
-                {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
-                <i
-                  class="fa-solid fa-arrow-right text-[10px] text-slate-300 group-hover:text-brand-600"
-                  aria-hidden="true"
-                ></i>
-              </span>
-              <span class="text-[11px] text-slate-500">
-                {{ phaseLabel(d.catalyst.trial_phase) }}
-                @if (d.catalyst.recruitment_status) {
-                  &middot; {{ d.catalyst.recruitment_status }}
+      <!-- Asset + Trial identity grid: two bordered cells with a vertical
+           divider, matching the standardized affiliation scaffold. -->
+      @if (d.catalyst.company_name || (d.catalyst.trial_acronym ?? d.catalyst.trial_name)) {
+        <div class="mt-4 grid grid-cols-2 border border-slate-200">
+          <!-- Asset cell -->
+          <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
+            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              Asset
+            </p>
+            @if (d.catalyst.company_name) {
+              <div class="flex items-center gap-2">
+                @if (d.catalyst.company_logo_url) {
+                  <img
+                    [ngSrc]="d.catalyst.company_logo_url"
+                    [alt]="d.catalyst.company_name"
+                    width="20"
+                    height="20"
+                    class="h-5 w-5 flex-none rounded object-contain"
+                  />
                 }
-              </span>
-            </button>
-          } @else {
-            <p class="text-[13px] font-medium text-slate-900">
-              {{ d.catalyst.trial_acronym ?? d.catalyst.trial_name }}
+                <div class="min-w-0">
+                  @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
+                    <a
+                      [routerLink]="[
+                        '/t',
+                        tenantIdSig(),
+                        's',
+                        spaceId(),
+                        'manage',
+                        'companies',
+                        d.catalyst.company_id,
+                      ]"
+                      appDetailPanelEntityLink
+                      class="block truncate text-[11px] font-semibold uppercase tracking-wide"
+                    >
+                      {{ d.catalyst.company_name }}
+                    </a>
+                  } @else {
+                    <span class="block truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                      {{ d.catalyst.company_name }}
+                    </span>
+                  }
+                  @if (d.catalyst.asset_name) {
+                    @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
+                      <a
+                        [routerLink]="[
+                          '/t',
+                          tenantIdSig(),
+                          's',
+                          spaceId(),
+                          'manage',
+                          'assets',
+                          d.catalyst.asset_id,
+                        ]"
+                        appDetailPanelEntityLink
+                        class="mt-0.5 block truncate text-[12px]"
+                      >
+                        {{ d.catalyst.asset_name }}
+                      </a>
+                    } @else {
+                      <span class="mt-0.5 block truncate text-[12px] text-slate-700">
+                        {{ d.catalyst.asset_name }}
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            } @else {
+              <p class="text-[12px] text-slate-400">No asset linked</p>
+            }
+          </div>
+
+          <!-- Trial cell -->
+          <div class="min-w-0 px-3 py-2.5">
+            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              Trial
             </p>
-            <p class="text-[11px] text-slate-500">
-              {{ phaseLabel(d.catalyst.trial_phase) }}
-              @if (d.catalyst.recruitment_status) {
-                &middot; {{ d.catalyst.recruitment_status }}
+            @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
+              @if (d.catalyst.trial_id; as trialId) {
+                <button
+                  type="button"
+                  class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  (click)="trialClick.emit(trialId)"
+                >
+                  <span
+                    class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                  >
+                    <span class="truncate">{{ trialLabel }}</span>
+                    <i
+                      class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
+                      aria-hidden="true"
+                    ></i>
+                  </span>
+                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
+                    <span
+                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                      >{{ phase }}</span
+                    >
+                  }
+                </button>
+              } @else {
+                <div class="flex w-full items-center justify-between gap-2">
+                  <span class="truncate text-[13px] font-medium text-slate-900">{{
+                    trialLabel
+                  }}</span>
+                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
+                    <span
+                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                      >{{ phase }}</span
+                    >
+                  }
+                </div>
               }
-            </p>
-          }
-          @if (ctgovPaths().length > 0 && snapshotPayload(); as snap) {
-            <div class="mt-2 text-[12px]">
-              <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
-            </div>
-          }
-          @if (canEditMarker()) {
-            <button
-              type="button"
-              class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-700 hover:text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              (click)="onEditMarker()"
-            >
-              <i class="fa-solid fa-pen text-[9px]" aria-hidden="true"></i>
-              Edit marker
-            </button>
-          }
+              @if (d.catalyst.recruitment_status) {
+                <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
+              }
+            } @else {
+              <p class="text-[12px] text-slate-400">No trial linked</p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- CT.gov field overlay: kept as its own small block below the grid. -->
+      @if (ctgovPaths().length > 0 && snapshotPayload(); as snap) {
+        <app-detail-panel-section label="Trial fields">
+          <div class="text-[12px]">
+            <app-ctgov-field-renderer [snapshot]="snap" [paths]="ctgovPaths()" [dense]="true" />
+          </div>
         </app-detail-panel-section>
       }
 
@@ -260,14 +289,21 @@ interface CtgovProvenanceBlock {
           <app-detail-panel-entity-list>
             @for (um of d.upcoming_markers; track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
-                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                <app-marker-icon
+                  class="shrink-0"
+                  shape="circle"
+                  color="#64748b"
+                  [size]="12"
+                  [fillStyle]="um.is_projected ? 'outline' : 'filled'"
+                />
+                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'MMM yyyy'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
                   um.marker_type_name
                 }}</span>
                 @if (um.is_projected) {
-                  <span class="shrink-0 text-[10px] font-medium text-amber-600">(projected)</span>
+                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -280,13 +316,19 @@ interface CtgovProvenanceBlock {
           <app-detail-panel-entity-list>
             @for (re of d.related_events; track re.event_id) {
               <app-detail-panel-entity-row (rowClick)="eventClick.emit(re.event_id)">
-                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                <svg width="14" height="14" class="shrink-0" aria-hidden="true">
+                  <rect x="1.5" y="2" width="11" height="10" rx="1.5" class="fill-brand-600" />
+                  <rect x="3.6" y="4.4" width="6.8" height="1.4" fill="#fff" />
+                  <rect x="3.6" y="6.8" width="6.8" height="1.4" fill="#fff" />
+                  <rect x="3.6" y="9.2" width="4.2" height="1.4" fill="#fff" />
+                </svg>
+                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   re.event_date | date: 'mediumDate'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
                   re.title
                 }}</span>
-                <span class="shrink-0 text-[10px] text-slate-400">({{ re.category_name }})</span>
+                <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-400">{{ re.category_name }}</span>
               </app-detail-panel-entity-row>
             }
           </app-detail-panel-entity-list>
@@ -294,13 +336,15 @@ interface CtgovProvenanceBlock {
       }
 
       @if (spaceId()) {
-        <app-detail-panel-section label="Materials">
+        <section class="mt-3 border-t border-slate-100 pt-3">
           <app-materials-section
+            heading="Materials"
+            [hideWhenEmpty]="true"
             entityType="marker"
             [entityId]="d.catalyst.marker_id"
             [spaceId]="spaceId()!"
           />
-        </app-detail-panel-section>
+        </section>
       }
 
       <app-detail-panel-section>
@@ -347,48 +391,52 @@ export class MarkerDetailContentComponent {
    * `key_catalysts_panel` or `timeline_detail` based on the active view.
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
-  /**
-   * Whether the panel offers an inline "Edit marker" action. Off by default so
-   * hosts that already provide their own marker-edit affordance (e.g. the
-   * events panel kebab) don't render a second one. The landscape + entity
-   * drawers opt in; they have no other edit entry point for a selected marker.
-   */
-  readonly showEditAction = input<boolean>(false);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
-  /**
-   * Emitted when an owner/editor invokes "Edit marker". Carries the parent
-   * trial_id; the host navigates to that trial's manage page with
-   * `?marker=<marker_id>`, which opens the inline marker editor (markers no
-   * longer have a standalone detail page). Only emitted when the marker has a
-   * parent trial and the user can edit (gated in the template + handler).
-   */
-  readonly editMarkerClick = output<{ trialId: string; markerId: string }>();
-
-  private readonly spaceRole = inject(SpaceRoleService);
-
-  /**
-   * Whether to show the "Edit marker" affordance: the current user can write
-   * to the active space AND the marker is anchored to a trial (the editor
-   * lives on the trial's manage page). Viewers and trial-less markers see no
-   * action, so there is no permission-denied-after-click (rule 13.5).
-   */
-  protected readonly canEditMarker = computed(
-    () =>
-      this.showEditAction() &&
-      this.spaceRole.canEdit() &&
-      !!this.detail()?.catalyst.trial_id,
-  );
-
-  protected onEditMarker(): void {
-    const c = this.detail()?.catalyst;
-    if (!c?.trial_id || !this.spaceRole.canEdit()) return;
-    this.editMarkerClick.emit({ trialId: c.trial_id, markerId: c.marker_id });
-  }
 
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
+  }
+
+  /**
+   * Small mono eyebrow above the title: the trial acronym (or name) so the
+   * reader sees which trial this marker belongs to before the title. Null
+   * when the marker has no parent trial.
+   */
+  protected readonly titleEyebrow = computed<string | null>(() => {
+    const c = this.detail()?.catalyst;
+    if (!c) return null;
+    return c.trial_acronym ?? c.trial_name ?? null;
+  });
+
+  /** True when the date is an estimate (projection pill tone is amber). */
+  protected readonly isProjectedStatus = computed(
+    () => this.projectionPill()?.tone === 'amber'
+  );
+
+  /** Status-band label: reuse the projection pill text so wording stays faithful. */
+  protected readonly statusLabel = computed<string | null>(
+    () => this.projectionPill()?.text ?? null
+  );
+
+  /**
+   * Concise provenance string for the status band. Only the CT.gov date-type
+   * label when the marker was auto-derived; null otherwise (no invented copy).
+   */
+  protected readonly statusSource = computed<string | null>(
+    () => this.ctgovProvenance()?.dateTypeLabel ?? null
+  );
+
+  /** Formats an ISO date the same way the inline meta strip did. */
+  protected formattedDate(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
   }
 
   // Per-space CT.gov field overlay state. Snapshot is lazy-loaded by
