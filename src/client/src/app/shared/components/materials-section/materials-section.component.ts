@@ -48,6 +48,12 @@ export class MaterialsSectionComponent implements OnInit {
   readonly entityId = input.required<string>();
   readonly spaceId = input.required<string>();
   /**
+   * Tenant context for linked-entity chip routes in each row. Optional: when
+   * not supplied (the detail-page hosts), the row derives it from the route
+   * ancestry, which always carries :tenantId beneath /t/:tenantId/s/:spaceId.
+   */
+  readonly tenantId = input<string | null>(null);
+  /**
    * Optional section heading the component renders at its top. When empty
    * (default) the parent owns the heading and nothing changes for existing
    * call sites. The marker pane passes "Materials" so the section can own

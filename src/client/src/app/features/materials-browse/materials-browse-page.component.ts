@@ -48,62 +48,69 @@ type EntityFilter = MaterialEntityType | 'all';
   ],
   template: `
     <app-manage-page-shell>
-      <div
-        class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50/50 px-4 py-2"
-      >
-        <span
-          class="font-mono text-[10px] uppercase tracking-wider text-slate-500"
-          aria-hidden="true"
-        >
-          Type
-        </span>
-        @for (chip of typeFilters; track chip.value) {
-          <button
-            type="button"
-            class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [class.border-brand-300]="typeFilter() === chip.value"
-            [class.bg-brand-50]="typeFilter() === chip.value"
-            [class.text-brand-700]="typeFilter() === chip.value"
-            [class.border-slate-200]="typeFilter() !== chip.value"
-            [class.bg-white]="typeFilter() !== chip.value"
-            [class.text-slate-500]="typeFilter() !== chip.value"
-            [attr.aria-pressed]="typeFilter() === chip.value"
-            (click)="setTypeFilter(chip.value)"
+      <div class="border-b border-slate-200 bg-slate-50/60 px-5 py-3">
+        <div class="mb-2.5 flex items-center gap-3">
+          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Materials
+          </span>
+          <span class="font-mono text-[10px] uppercase tracking-wider tabular-nums text-slate-400">
+            {{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}
+          </span>
+          @if (canUpload()) {
+            <p-button
+              class="ml-auto"
+              label="Register material"
+              icon="fa-solid fa-cloud-arrow-up"
+              size="small"
+              [outlined]="registerOpen()"
+              (onClick)="toggleRegister()"
+            />
+          }
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span
+            class="mr-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400"
+            aria-hidden="true"
           >
-            {{ chip.label }}
-          </button>
-        }
-        <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
-          Entity
-        </span>
-        @for (chip of entityFilters; track chip.value) {
-          <button
-            type="button"
-            class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [class.border-brand-300]="entityFilter() === chip.value"
-            [class.bg-brand-50]="entityFilter() === chip.value"
-            [class.text-brand-700]="entityFilter() === chip.value"
-            [class.border-slate-200]="entityFilter() !== chip.value"
-            [class.bg-white]="entityFilter() !== chip.value"
-            [class.text-slate-500]="entityFilter() !== chip.value"
-            [attr.aria-pressed]="entityFilter() === chip.value"
-            (click)="setEntityFilter(chip.value)"
-          >
-            {{ chip.label }}
-          </button>
-        }
-        <span class="ml-auto font-mono text-[10px] tabular-nums text-slate-400">
-          {{ rows().length }} {{ rows().length === 1 ? 'material' : 'materials' }}
-        </span>
-        @if (canUpload()) {
-          <p-button
-            label="Register material"
-            icon="fa-solid fa-cloud-arrow-up"
-            size="small"
-            [outlined]="registerOpen()"
-            (onClick)="toggleRegister()"
-          />
-        }
+            Type
+          </span>
+          @for (chip of typeFilters; track chip.value) {
+            <button
+              type="button"
+              class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
+              [class.border-brand-300]="typeFilter() === chip.value"
+              [class.bg-brand-50]="typeFilter() === chip.value"
+              [class.text-brand-700]="typeFilter() === chip.value"
+              [class.border-slate-200]="typeFilter() !== chip.value"
+              [class.bg-white]="typeFilter() !== chip.value"
+              [class.text-slate-500]="typeFilter() !== chip.value"
+              [attr.aria-pressed]="typeFilter() === chip.value"
+              (click)="setTypeFilter(chip.value)"
+            >
+              {{ chip.label }}
+            </button>
+          }
+          <span class="mx-1.5 h-4 w-px bg-slate-200" aria-hidden="true"></span>
+          <span class="mr-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Linked to
+          </span>
+          @for (chip of entityFilters; track chip.value) {
+            <button
+              type="button"
+              class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
+              [class.border-brand-300]="entityFilter() === chip.value"
+              [class.bg-brand-50]="entityFilter() === chip.value"
+              [class.text-brand-700]="entityFilter() === chip.value"
+              [class.border-slate-200]="entityFilter() !== chip.value"
+              [class.bg-white]="entityFilter() !== chip.value"
+              [class.text-slate-500]="entityFilter() !== chip.value"
+              [attr.aria-pressed]="entityFilter() === chip.value"
+              (click)="setEntityFilter(chip.value)"
+            >
+              {{ chip.label }}
+            </button>
+          }
+        </div>
       </div>
 
       <!--
@@ -151,6 +158,8 @@ type EntityFilter = MaterialEntityType | 'all';
                 <app-material-row
                   [material]="material"
                   [showLinks]="true"
+                  [tenantId]="tenantId()"
+                  [spaceId]="spaceId()"
                   (downloadClick)="onDownloadClick($event)"
                   (deleteClick)="onDeleteClick($event)"
                 />
@@ -172,6 +181,7 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   private readonly spaceRole = inject(SpaceRoleService);
 
   protected readonly spaceId = signal('');
+  protected readonly tenantId = signal('');
   protected readonly typeFilter = signal<MaterialFilter>('all');
   protected readonly entityFilter = signal<EntityFilter>('all');
 
@@ -215,7 +225,20 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('spaceId') ?? '';
     this.spaceId.set(id);
+    this.tenantId.set(this.findRouteParam('tenantId'));
     this.topbarState.entityTitle.set('All materials');
+  }
+
+  /** Walk the route ancestry for a parameter (tenant id lives on a parent). */
+  private findRouteParam(name: string): string {
+    let snap = this.route.snapshot;
+    while (snap) {
+      const v = snap.paramMap.get(name);
+      if (v) return v;
+      if (!snap.parent) break;
+      snap = snap.parent;
+    }
+    return '';
   }
 
   ngOnDestroy(): void {

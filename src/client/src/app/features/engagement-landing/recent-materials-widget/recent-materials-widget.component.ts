@@ -64,6 +64,8 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
                   <app-material-row
                     [material]="material"
                     [showLinks]="true"
+                    [tenantId]="tenantId()"
+                    [spaceId]="spaceId()"
                     (downloadClick)="onDownloadClick($event)"
                     (deleteClick)="onDeleteClick($event)"
                   />

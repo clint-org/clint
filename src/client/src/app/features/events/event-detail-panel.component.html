@@ -371,10 +371,17 @@
                   [style.background-color]="entry.color"
                   aria-hidden="true"
                 ></span>
-                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                <span class="w-24 shrink-0 truncate text-[12px] text-slate-700">{{
                   entry.name
                 }}</span>
-                <span class="shrink-0 font-mono text-[12px] tabular-nums text-slate-900">{{
+                <span class="h-1.5 min-w-0 flex-1 rounded-sm bg-slate-100" aria-hidden="true">
+                  <span
+                    class="block h-full rounded-sm"
+                    [style.width]="categoryBarWidth(entry.count)"
+                    [style.background-color]="entry.color"
+                  ></span>
+                </span>
+                <span class="w-5 shrink-0 text-right font-mono text-[12px] font-semibold tabular-nums text-slate-900">{{
                   entry.count
                 }}</span>
               </app-detail-panel-entity-row>

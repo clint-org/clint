@@ -166,16 +166,19 @@
             </td>
             <td class="col-source">
               <span
-                class="inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                class="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.1em]"
+                [class.border-brand-200]="item.source_type === 'event'"
                 [class.bg-brand-50]="item.source_type === 'event'"
                 [class.text-brand-700]="item.source_type === 'event'"
+                [class.border-slate-300]="item.source_type === 'marker'"
                 [class.bg-slate-100]="item.source_type === 'marker'"
-                [class.text-slate-500]="item.source_type === 'marker'"
+                [class.text-slate-600]="item.source_type === 'marker'"
+                [class.border-amber-300]="item.source_type === 'detected'"
                 [class.bg-amber-50]="item.source_type === 'detected'"
-                [class.text-amber-700]="item.source_type === 'detected'"
+                [class.text-amber-800]="item.source_type === 'detected'"
               >
                 @if (item.source_type === 'detected') {
-                  <i class="fa-solid fa-bolt mr-0.5"></i>
+                  <i class="fa-solid fa-bolt text-[8px]" aria-hidden="true"></i>
                 }
                 {{ item.source_type === 'detected' ? 'Detected' : item.source_type }}
               </span>
@@ -222,6 +225,16 @@
                   ></i>
                 }
               </div>
+              @if (item.source_type === 'event' && item.tags?.length) {
+                <div class="mt-1 flex flex-wrap gap-1">
+                  @for (tag of item.tags.slice(0, 3); track tag) {
+                    <span
+                      class="inline-flex items-center rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] font-medium tracking-wide text-slate-500"
+                      >#{{ tag }}</span
+                    >
+                  }
+                </div>
+              }
             </td>
             <td class="col-secondary text-xs text-slate-500">
               <span

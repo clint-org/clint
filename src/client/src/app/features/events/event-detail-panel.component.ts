@@ -213,6 +213,16 @@ export class EventDetailPanelComponent {
       .sort((a, b) => b.count - a.count);
   });
 
+  /** Largest category count, for sizing the distribution share bars. */
+  readonly categoryMax = computed(() =>
+    Math.max(1, ...this.categoryHistogram().map((e) => e.count))
+  );
+
+  /** Bar width (percent) for a category's share of the busiest category. */
+  protected categoryBarWidth(count: number): string {
+    return `${Math.round((count / this.categoryMax()) * 100)}%`;
+  }
+
   readonly mostRecent = computed<RecentItemSummary[]>(() =>
     this.feedItems()
       .slice()
