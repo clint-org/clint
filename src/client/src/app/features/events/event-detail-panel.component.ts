@@ -31,6 +31,7 @@ import { DetailPanelShellComponent } from '../../shared/components/detail-panel-
 import { ExternalLinkComponent } from '../../shared/components/external-link.component';
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { buildEntityActionMenu } from '../../shared/entity-actions/entity-action-menu';
@@ -84,6 +85,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     MarkerDetailContentComponent,
     MarkerIconComponent,
     RowActionsComponent,
+    LoaderComponent,
   ],
   templateUrl: './event-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -240,7 +242,11 @@ export class EventDetailPanelComponent {
     const sample = new Map<string, FeedItem>();
     for (const item of this.feedItems()) {
       counts.set(item.category_name, (counts.get(item.category_name) ?? 0) + 1);
-      if (item.source_type === 'marker' && item.marker_type_shape && !sample.has(item.category_name)) {
+      if (
+        item.source_type === 'marker' &&
+        item.marker_type_shape &&
+        !sample.has(item.category_name)
+      ) {
         sample.set(item.category_name, item);
       }
     }

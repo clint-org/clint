@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-seed-demo',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, LoaderComponent],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="max-w-sm text-center">
@@ -19,11 +20,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
             Back to spaces
           </a>
         } @else {
-          <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
-            role="status"
-            aria-label="Seeding demo data"
-          ></div>
+          <app-loader [size]="40" />
           <p class="mt-4 text-xs uppercase tracking-wider text-slate-400">Seeding demo data</p>
         }
       </div>

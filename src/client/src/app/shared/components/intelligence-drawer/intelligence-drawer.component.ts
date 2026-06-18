@@ -26,6 +26,7 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { isPermissionDenied } from '../../../core/util/db-error';
 import { ProseMirrorEditorComponent } from '../prose-mirror-editor/prose-mirror-editor.component';
 import { LinkedEntitiesPickerComponent } from '../linked-entities-picker/linked-entities-picker.component';
+import { LoaderComponent } from '../loader/loader.component';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -46,6 +47,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
     Dialog,
     ProseMirrorEditorComponent,
     LinkedEntitiesPickerComponent,
+    LoaderComponent,
   ],
   template: `
     <p-drawer
@@ -60,7 +62,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
       (onHide)="closed.emit()"
     >
       @if (loading()) {
-        <p class="px-2 py-4 text-sm text-slate-500">Loading...</p>
+        <app-loader class="px-2 py-4" [size]="24" label="Loading" />
       } @else {
         <div class="space-y-5 px-1">
           <div>

@@ -1,6 +1,6 @@
 @if (loading()) {
   <div class="border-t border-slate-200 bg-slate-800 px-4 py-2" data-export-waiting>
-    <span class="text-[10px] text-slate-400">Loading legend...</span>
+    <app-loader [size]="16" label="Loading legend" />
   </div>
 } @else if (groupedMarkerTypes().length === 0) {
   <div class="border-t border-slate-200 bg-slate-800 px-4 py-2">
