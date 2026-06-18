@@ -42,6 +42,7 @@ import { DetailPanelPhaseLadderComponent } from '../../shared/components/detail-
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
+import { BullseyeSignalMarkComponent } from './bullseye-signal-mark.component';
 
 interface RingHistogramEntry {
   phase: RingPhase;
@@ -63,6 +64,7 @@ interface RingHistogramEntry {
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
     MarkerIconComponent,
+    BullseyeSignalMarkComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -73,6 +75,9 @@ export class BullseyeDetailPanelComponent {
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
   readonly dimension = input<BullseyeDimension>('indication');
+  /** Whether the selected asset appears on more than one spoke. Drives the
+   *  dashed multi-spoke ring on the identity chart mark. */
+  readonly multiSpoke = input<boolean>(false);
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();

@@ -44,6 +44,18 @@
             }
           </p>
         </div>
+        <!-- Chart mark: phase-colored core ringed by the same signal rings the
+             bullseye plots (orange = recent activity, blue = intelligence,
+             dashed slate = multiple spokes). Shared geometry with the chart dot
+             and hover tooltip. -->
+        <app-bullseye-signal-mark
+          class="mt-0.5"
+          [phase]="asset.highest_phase"
+          [hasRecentActivity]="asset.has_recent_activity"
+          [hasIntelligence]="asset.intelligence_count > 0"
+          [multiSpoke]="multiSpoke()"
+          [size]="34"
+        />
       </div>
 
       <!-- Recent-activity band: orange signal-ring dot + amber wash with a

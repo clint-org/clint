@@ -55,6 +55,7 @@ import { IntelligenceHistoryHost } from '../../../shared/components/intelligence
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
+import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
 import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { fetchIndicationsSafe } from './trial-indications';
@@ -94,6 +95,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     MaterialsSectionComponent,
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
+    MarkerIconComponent,
     ChangeEventRowComponent,
     TrialEditDialogComponent,
     TimelineViewComponent,
@@ -360,6 +362,15 @@ export class TrialDetailComponent implements OnDestroy {
     } finally {
       this.syncing.set(false);
     }
+  }
+
+  // Mirror the marker-icon fill rule used on the timeline grid and marker
+  // drawer: projected markers render outline, actuals render filled. A marker
+  // is projected when its is_projected flag is set or its projection is not
+  // the literal 'actual'.
+  protected markerFillStyle(marker: Marker): 'outline' | 'filled' {
+    const projected = marker.is_projected || (!!marker.projection && marker.projection !== 'actual');
+    return projected ? 'outline' : 'filled';
   }
 
   markerMenu(marker: Marker): MenuItem[] {
