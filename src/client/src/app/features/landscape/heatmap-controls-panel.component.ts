@@ -5,6 +5,7 @@ import {
   COUNT_UNIT_OPTIONS,
   CountUnit,
   HEATMAP_GROUPING_OPTIONS,
+  HeatmapAsset,
   HeatmapBubble,
   HeatmapGrouping,
   PHASE_COLOR,
@@ -256,9 +257,25 @@ export class HeatmapControlsPanelComponent {
 
   protected readonly groupCount = computed(() => this.bubbles().length);
 
-  protected readonly totalCount = computed(() =>
-    this.bubbles().reduce((sum, b) => sum + b.unit_count, 0)
-  );
+  // Count distinct entities across buckets, not the sum of per-bucket counts.
+  // A multi-indication asset appears in several buckets, so summing unit_count
+  // inflates the total (e.g. one filtered company shows as "6 companies", or 28
+  // placements as "28 assets"). Dedupe products by asset id, then tally per unit.
+  protected readonly totalCount = computed(() => {
+    const assetById = new Map<string, HeatmapAsset>();
+    for (const bubble of this.bubbles()) {
+      for (const product of bubble.products) assetById.set(product.id, product);
+    }
+    const assets = [...assetById.values()];
+    switch (this.countUnit()) {
+      case 'companies':
+        return new Set(assets.map((a) => a.company_id)).size;
+      case 'trials':
+        return assets.reduce((sum, a) => sum + a.trial_count, 0);
+      default:
+        return assets.length;
+    }
+  });
 
   protected readonly readText = computed<string>(() => {
     const result = buildLandscapeRead({

@@ -41,11 +41,13 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       <!-- Section: Stats -->
       <div class="controls-section">
         <div class="section-label">STATS</div>
-        <div class="stats-grid">
-          <div class="stat">
-            <span class="stat-value">{{ spokeCount() }}</span>
-            <span class="stat-label">{{ spokeNoun() }}</span>
-          </div>
+        <div class="stats-grid" [class.stats-grid--single]="singleStat()">
+          @if (!singleStat()) {
+            <div class="stat">
+              <span class="stat-value">{{ spokeCount() }}</span>
+              <span class="stat-label">{{ spokeNoun() }}</span>
+            </div>
+          }
           <div class="stat">
             <span class="stat-value">{{ assetCount() }}</span>
             <span class="stat-label">assets</span>
@@ -129,6 +131,10 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    .stats-grid--single {
+      grid-template-columns: 1fr;
     }
 
     .stat {
@@ -218,6 +224,10 @@ export class BullseyeControlsPanelComponent {
 
   /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
   protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
+
+  // When grouping by asset, the spoke count and the asset count are the same
+  // number with the same noun ("N assets" twice). Collapse to a single box.
+  protected readonly singleStat = computed(() => this.grouping() === 'asset');
 
   // Ring legend narrowed to the space's tracked phases. PRECLIN drops out when
   // the space does not track preclinical, matching the rings the server returns.

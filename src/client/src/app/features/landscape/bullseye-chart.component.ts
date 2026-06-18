@@ -306,8 +306,16 @@ export class BullseyeChartComponent {
   protected readonly productCountSummary = computed(() => {
     const d = this.data();
     if (!d) return '';
-    const productCount = this.dots().length;
-    return `${productCount} ${productCount === 1 ? 'asset' : 'assets'}`;
+    // The chart draws one dot per placement; a multi-indication / multi-spoke
+    // asset draws more than once. Counting placements as "assets" is misleading
+    // (e.g. 28 dots across 23 distinct assets), so name both when they differ.
+    const placements = this.dots().length;
+    const distinct = new Set(this.dots().map((dot) => dot.product.id)).size;
+    const assetsNoun = distinct === 1 ? 'asset' : 'assets';
+    if (placements === distinct) {
+      return `${distinct} ${assetsNoun}`;
+    }
+    return `${placements} placements · ${distinct} ${assetsNoun}`;
   });
 
   protected dotRadius(dot: DotSpec): number {

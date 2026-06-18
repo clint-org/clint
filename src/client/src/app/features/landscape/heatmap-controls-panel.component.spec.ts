@@ -3,12 +3,27 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type CountUnit,
+  type HeatmapAsset,
   type HeatmapBubble,
   type HeatmapGrouping,
   PHASE_COLOR,
   type RingPhase,
 } from '../../core/models/landscape.model';
 import { cellTint } from './heatmap-cell';
+
+function makeAsset(overrides: Partial<HeatmapAsset> = {}): HeatmapAsset {
+  return {
+    id: 'a1',
+    name: 'Test asset',
+    generic_name: null,
+    company_id: 'c1',
+    company_name: 'Test Co',
+    highest_phase: 'P3',
+    highest_phase_rank: 3,
+    trial_count: 1,
+    ...overrides,
+  };
+}
 
 function makeBubble(overrides: Partial<HeatmapBubble> = {}): HeatmapBubble {
   return {
@@ -74,7 +89,21 @@ function buildComputeds(
   const countUnit = signal<CountUnit>(initialCountUnit);
 
   const groupCount = computed(() => bubbles().length);
-  const totalCount = computed(() => bubbles().reduce((sum, b) => sum + b.unit_count, 0));
+  const totalCount = computed(() => {
+    const assetById = new Map<string, HeatmapAsset>();
+    for (const bubble of bubbles()) {
+      for (const product of bubble.products) assetById.set(product.id, product);
+    }
+    const assets = [...assetById.values()];
+    switch (countUnit()) {
+      case 'companies':
+        return new Set(assets.map((a) => a.company_id)).size;
+      case 'trials':
+        return assets.reduce((sum, a) => sum + a.trial_count, 0);
+      default:
+        return assets.length;
+    }
+  });
   const readText = computed<string>(() => buildReadText(bubbles(), countUnit()));
 
   return { bubbles, grouping, countUnit, groupCount, totalCount, readText };
@@ -246,14 +275,45 @@ describe('HeatmapControlsPanelComponent STATS', () => {
     expect(groupCount()).toBe(0);
   });
 
-  it('total count sums unit_count values', () => {
+  it('total count tallies distinct assets across buckets', () => {
     const bubbles = [
-      makeBubble({ unit_count: 10 }),
-      makeBubble({ unit_count: 25 }),
-      makeBubble({ unit_count: 7 }),
+      makeBubble({ products: [makeAsset({ id: 'a1' }), makeAsset({ id: 'a2' })] }),
+      makeBubble({ products: [makeAsset({ id: 'a3' })] }),
     ];
-    const { totalCount } = buildComputeds(bubbles);
-    expect(totalCount()).toBe(42);
+    const { totalCount } = buildComputeds(bubbles, 'moa', 'assets');
+    expect(totalCount()).toBe(3);
+  });
+
+  it('does not double-count an asset that spans multiple buckets', () => {
+    // A multi-indication asset (a1) appears in two buckets; summing unit_count
+    // would report 3, but there are only 2 distinct assets.
+    const bubbles = [
+      makeBubble({ unit_count: 2, products: [makeAsset({ id: 'a1' }), makeAsset({ id: 'a2' })] }),
+      makeBubble({ unit_count: 1, products: [makeAsset({ id: 'a1' })] }),
+    ];
+    const { totalCount } = buildComputeds(bubbles, 'indication', 'assets');
+    expect(totalCount()).toBe(2);
+  });
+
+  it('counts distinct companies, not per-bucket placements', () => {
+    // One company (c1) sits in several buckets; the stat should read 1, not 3.
+    const bubbles = [
+      makeBubble({ products: [makeAsset({ id: 'a1', company_id: 'c1' })] }),
+      makeBubble({ products: [makeAsset({ id: 'a2', company_id: 'c1' })] }),
+      makeBubble({ products: [makeAsset({ id: 'a3', company_id: 'c1' })] }),
+    ];
+    const { totalCount } = buildComputeds(bubbles, 'moa', 'companies');
+    expect(totalCount()).toBe(1);
+  });
+
+  it('sums trial counts over distinct assets', () => {
+    const bubbles = [
+      makeBubble({ products: [makeAsset({ id: 'a1', trial_count: 3 })] }),
+      // a1 repeated in another bucket must not re-add its trials
+      makeBubble({ products: [makeAsset({ id: 'a1', trial_count: 3 }), makeAsset({ id: 'a2', trial_count: 2 })] }),
+    ];
+    const { totalCount } = buildComputeds(bubbles, 'indication', 'trials');
+    expect(totalCount()).toBe(5);
   });
 
   it('total count returns zero for empty bubbles', () => {
@@ -270,13 +330,18 @@ describe('HeatmapControlsPanelComponent STATS', () => {
     expect(countUnit()).toBe('companies');
   });
 
-  it('updates group count reactively when bubbles change', () => {
-    const { bubbles, groupCount, totalCount } = buildComputeds([makeBubble({ unit_count: 5 })]);
+  it('updates group and distinct-asset counts reactively when bubbles change', () => {
+    const { bubbles, groupCount, totalCount } = buildComputeds([
+      makeBubble({ products: [makeAsset({ id: 'a1' })] }),
+    ]);
     expect(groupCount()).toBe(1);
-    expect(totalCount()).toBe(5);
+    expect(totalCount()).toBe(1);
 
-    bubbles.set([makeBubble({ unit_count: 5 }), makeBubble({ unit_count: 15 })]);
+    bubbles.set([
+      makeBubble({ products: [makeAsset({ id: 'a1' })] }),
+      makeBubble({ products: [makeAsset({ id: 'a2' }), makeAsset({ id: 'a3' })] }),
+    ]);
     expect(groupCount()).toBe(2);
-    expect(totalCount()).toBe(20);
+    expect(totalCount()).toBe(3);
   });
 });

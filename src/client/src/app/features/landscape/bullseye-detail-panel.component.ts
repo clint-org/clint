@@ -250,7 +250,7 @@ export class BullseyeDetailPanelComponent {
   protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
 
   protected readonly headerLabel = computed(() =>
-    this.selectedAsset() ? 'Drug' : 'Bullseye · overview'
+    this.selectedAsset() ? 'Asset' : 'Bullseye · overview'
   );
 
   protected isScopedMoa(moaId: string): boolean {
