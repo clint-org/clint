@@ -189,7 +189,7 @@ export class HeatmapDetailPanelComponent {
         group = {
           companyId: p.company_id,
           companyName: p.company_name,
-          companyLogoUrl: null,
+          companyLogoUrl: p.company_logo_url,
           bestPhase: p.highest_phase,
           assets: [],
         };

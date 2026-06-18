@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
+import { CompanyTileComponent } from '../../../shared/components/company-tile.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
 import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
 import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
@@ -24,6 +25,7 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
   standalone: true,
   imports: [
     CircleIconComponent,
+    CompanyTileComponent,
     CtgovSourceTagComponent,
     DiamondIconComponent,
     FlagIconComponent,
@@ -142,9 +144,7 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
         <!-- Footer meta: company tile + company / asset + phase chip -->
         @if (companyName()) {
           <div class="flex items-center gap-2 border-t border-slate-100 pt-2.5">
-            <span class="flex h-5 w-5 shrink-0 items-center justify-center bg-slate-700 font-mono text-[11px] font-bold italic text-white">{{
-              companyInitial()
-            }}</span>
+            <app-company-tile [name]="companyName()" [logoUrl]="companyLogoUrl()" [size]="20" />
             <div class="min-w-0 flex-1">
               <div class="truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-700">
                 {{ companyName() }}
@@ -220,6 +220,8 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly trialPhase = input<string>('');
   readonly recruitmentStatus = input<string>('');
   readonly companyName = input<string>('');
+  /** Owning company's logo for the footer tile; falls back to an initial tile. */
+  readonly companyLogoUrl = input<string | null>(null);
   readonly assetName = input<string>('');
 
   /**
@@ -241,12 +243,6 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   /** Compact status tag wording on the focal row. */
   readonly statusTagLabel = computed(() => (this.isProjected() ? 'Projected' : 'Confirmed'));
-
-  /** First letter of the company name for the footer tile. */
-  readonly companyInitial = computed(() => {
-    const name = this.companyName().trim();
-    return name ? name.charAt(0).toUpperCase() : '';
-  });
 
   /** Short phase label (P1..P4) for the footer chip; empty when no phase. */
   readonly phaseChipLabel = computed(() => {

@@ -18,6 +18,12 @@ export interface Catalyst {
   no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
+  /**
+   * The owning company's logo (companies.logo_url), threaded from the dashboard
+   * data the catalyst list flattens from. Optional so a catalyst built from a
+   * payload without it renders the initial-tile fallback.
+   */
+  company_logo_url?: string | null;
   asset_name: string | null;
   asset_id: string | null;
   trial_name: string | null;

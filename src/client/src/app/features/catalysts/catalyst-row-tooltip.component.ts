@@ -93,7 +93,11 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
 
           @if (c.company_name) {
             <div class="flex items-center gap-2.5 border-t border-slate-100 pt-3">
-              <app-company-tile [name]="c.company_name" [size]="22" />
+              <app-company-tile
+                [name]="c.company_name"
+                [logoUrl]="c.company_logo_url ?? null"
+                [size]="22"
+              />
               <div class="min-w-0 flex-1">
                 <div
                   class="truncate font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700"

@@ -7,6 +7,7 @@ import {
   visibleRingOrder,
 } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
@@ -27,7 +28,7 @@ interface LadderCell {
  */
 @Component({
   selector: 'app-bullseye-tooltip',
-  imports: [],
+  imports: [CompanyTileComponent],
   animations: [fadeTooltipAnimation],
   template: `
     @if (product()) {
@@ -42,6 +43,12 @@ interface LadderCell {
       >
         <!-- Identity strip -->
         <div class="flex items-start gap-2.5 border-b border-slate-100 px-3.5 py-3">
+          <app-company-tile
+            class="mt-0.5"
+            [name]="p.company_name"
+            [logoUrl]="p.company_logo_url"
+            [size]="22"
+          />
           <div class="min-w-0 flex-1">
             <div class="truncate text-[14px] font-semibold leading-tight text-slate-900">
               {{ p.name }}
